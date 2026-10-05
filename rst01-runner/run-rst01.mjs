@@ -107,7 +107,6 @@ for(const browserName of manifest.baseline.browsers){
     const made=await runtime.launchPersistent(browserName,{viewport:{width:1440,height:900},suffix:'suite'});
     context=made.context;
     const page=context.pages()[0]||await context.newPage();
-    await runtime.ensureCareer(page,`RST01 ${browserName}`);
     const ctx={
       browserName,
       baseURL:runtime.baseURL,
