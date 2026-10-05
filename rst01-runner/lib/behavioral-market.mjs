@@ -68,7 +68,7 @@ export async function runMarketNegotiationBehavior(page,baseURL){
 export async function runLoanClauseBehavior(page,baseURL){
   await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
   return page.evaluate(async()=>{
-    const [{makeWorld},{startCareer,simulateRound,newSeason,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerContracts,proposeCareerRenewal,respondCareerRenewal,validateCareerContracts},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,validateCareerMarket}]=await Promise.all([
+    const [{makeWorld},{startCareer,simulateRound,newSeason,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerContracts,proposeCareerRenewal,respondCareerRenewal,validateCareerContracts},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,returnMarketLoansAfterArchive,validateCareerMarket}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-contracts.js'),import('/src/domain/career-market.js')
     ]);
     const setup=(contracts=false)=>{const w=makeWorld();startCareer(w,1,'RST01 F02');enableAdvancedCareer(w);enableCareerWorld(w);if(contracts)enableCareerContracts(w);enableCareerMarket(w);return w;};
