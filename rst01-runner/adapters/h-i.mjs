@@ -44,6 +44,7 @@ async function H02(ctx){
   const focusInside=sequence.some(x=>x.insideSidebar);
   await ctx.page.keyboard.press('Escape');
   const focusReturned=await ctx.page.evaluate(()=>document.activeElement?.matches?.('[data-action="toggle-sidebar"]')||false);
+
   await openCareers(ctx.page);
   const rename=ctx.page.locator('.career-card.career-active [data-action="career-rename"]').first();
   let modal={available:false};
@@ -58,12 +59,19 @@ async function H02(ctx){
     await ctx.page.keyboard.press('Escape');
     modal.closed=(await ctx.page.locator('[role="dialog"]:visible').count())===0;
   }
-  if(!focusInside||!focusReturned||(modal.available&&(!modal.focusInside||!modal.closed))){
-    return {state:'FAIL',reason:'Keyboard/focus contract failed',focusInside,focusReturned,sequence,modal};
-  }
-  return pass({focusInside,focusReturned,sequence,modal});
-}
 
+  await navigateCore(ctx.page,'dashboard');
+  const structuralRuleIds=new Set(['landmark-one-main','region','button-name','link-name','label','select-name','input-button-name','aria-command-name']);
+  const structural=(await axeScan(ctx.page)).filter(v=>structuralRuleIds.has(v.id));
+  const landmarks=await ctx.page.locator('main,[role="main"],nav,[role="navigation"]').count();
+
+  if(!focusInside||!focusReturned||(modal.available&&(!modal.focusInside||!modal.closed))){
+    return {state:'FAIL',reason:'Keyboard/focus contract failed',focusInside,focusReturned,sequence,modal,landmarks,structural};
+  }
+  if(landmarks<2)return {state:'FAIL',reason:'Expected main/navigation landmarks were not both present',landmarks,structural};
+  if(structural.length)return {state:'FAIL',reason:'Accessible landmark/control-name rules failed',landmarks,structural};
+  return pass({focusInside,focusReturned,sequence,modal,landmarks,structuralViolations:0});
+}
 async function H03(ctx){
   await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 H03');
   const scans=[];
