@@ -1,3 +1,4 @@
 RST-00 Windows baseline completion ready
-revision=3
+revision=4
 split-checks=true
+syntax-fixed=true
