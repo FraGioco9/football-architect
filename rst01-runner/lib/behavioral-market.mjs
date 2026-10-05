@@ -1,7 +1,7 @@
 export async function runMarketNegotiationBehavior(page,baseURL){
   await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
   return page.evaluate(async()=>{
-    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,returnMarketLoansAfterArchive,validateCareerMarket}]=await Promise.all([
+    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,validateCareerMarket}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-market.js')
     ]);
     const setup=()=>{const w=makeWorld();startCareer(w,1,'RST01 F01');enableAdvancedCareer(w);enableCareerWorld(w);enableCareerMarket(w);return w;};
@@ -90,8 +90,7 @@ export async function runLoanClauseBehavior(page,baseURL){
     const loanSeason=loan.season;
     while(loan.round<loan.fixtures.length)simulateRound(loan);
     newSeason(loan);
-    returnMarketLoansAfterArchive(loan);
-    const returnedOwner=marketPlayers(loan,{limit:3000}).find(x=>x.id===target.x.id)?.clubKey;
+    const returnedOwner=marketPlayers(loan,{countryId:target.x.countryId,search:target.x.id,limit:20}).find(x=>x.id===target.x.id)?.clubKey;
     const loanRollover={fromSeason:loanSeason,toSeason:loan.season,round:loan.round};
 
     const clause=setup(true),clauseManaged=managedClubKey(clause),p=clause.players.find(x=>x.clubId===clause.clubId&&x.position!=='POR'&&!clause.lineup.includes(x.id));
