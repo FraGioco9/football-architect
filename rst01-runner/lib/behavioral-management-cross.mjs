@@ -153,7 +153,7 @@ export async function runCrossInjuryTransferBehavior(page,baseURL){
     const first=simulateRound(w),manual=first.result?.advancedV1?.matchday?.changes?.find(x=>x.teamId===w.clubId&&x.reason==='manual')??null;
 
     let injury=null;
-    for(let i=0;i<14&&w.round<w.fixtures.length&&!injury;i++){
+    for(let i=0;w.round<w.fixtures.length&&!injury;i++){
       const m=simulateRound(w),adv=m.result?.advancedV1;
       const ch=adv?.matchday?.changes?.find(x=>x.teamId===w.clubId&&x.reason==='injury');
       if(ch)injury={change:ch,injury:(adv.injuries??[]).find(x=>x.playerId===ch.out)??null,round:w.round};
