@@ -42,15 +42,19 @@ async function createContext(browserName,{headless=true,viewport={width:1440,hei
 }
 async function ensureCareer(page){
   await page.goto(baseURL,{waitUntil:'domcontentloaded'});
-  await page.waitForTimeout(180);
-  const menuNew=page.locator('[data-action="menu-new"]');
-  if(await menuNew.count()&&await menuNew.first().isVisible())await menuNew.first().click();
+  const dashboard=page.locator('[data-action="nav"][data-page="dashboard"]').first();
+  if(await dashboard.isVisible().catch(()=>false))return;
+  const menuNew=page.locator('[data-action="menu-new"]').first();
+  if(await menuNew.isVisible().catch(()=>false)){
+    await menuNew.click();
+    await page.locator('#manager-name').waitFor({state:'visible',timeout:15000});
+  }
   const manager=page.locator('#manager-name');
-  if(await manager.count()&&await manager.isVisible()){
+  if(await manager.isVisible().catch(()=>false)){
     await manager.fill('RST00 Test Manager');
     await page.locator('[data-action="start-career"]').click();
   }
-  await page.locator('[data-action="nav"][data-page="dashboard"]').first().waitFor({state:'visible',timeout:12000});
+  await dashboard.waitFor({state:'visible',timeout:30000});
 }
 async function navigateCore(page,id){
   const b=page.locator(`[data-action="nav"][data-page="${id}"]`).first();
