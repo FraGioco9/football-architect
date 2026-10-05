@@ -64,20 +64,25 @@ export async function runInjuryRecoveryBehavior(page,baseURL){
     const [{makeWorld},{startCareer,simulateRound,autoLineup,validateSave},{enableAdvancedCareer,prepareAdvancedRound},{enableCareerMatchday,validateCareerMatchday},{medicalAvailability}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-matchday.js'),import('/src/addons/domain/player-medical.mjs')
     ]);
-    const w=makeWorld();startCareer(w,1,'RST01 D05');enableAdvancedCareer(w);enableCareerMatchday(w);autoLineup(w);
-    let found=null;
-    for(let i=0;i<w.fixtures.length&&!found;i++){
-      const m=simulateRound(w),adv=m.result?.advancedV1,changes=adv?.matchday?.changes??[];
-      const injuryChange=changes.find(x=>x.teamId===w.clubId&&x.reason==='injury');
-      if(injuryChange){
-        const injury=(adv.injuries??[]).find(x=>x.playerId===injuryChange.out)??null;
-        const minutes=adv.matchday.minutes.find(x=>x.teamId===w.clubId)?.players.find(x=>x.playerId===injuryChange.out)??null;
-        const p=w.players.find(x=>x.id===injuryChange.out);
-        found={round:w.round,change:injuryChange,injury,minutes,playerId:p.id,beforeRecovery:{fitness:p.fitness,medical:structuredClone(p.medicalV1),injuryLegacy:p.injury}};
+    let selected=null,scanned=[];
+    for(let clubId=1;clubId<=20&&!selected;clubId++){
+      const w=makeWorld();startCareer(w,clubId,`RST01 D05 Club ${clubId}`);enableAdvancedCareer(w);enableCareerMatchday(w);autoLineup(w);
+      let found=null;
+      while(w.round<w.fixtures.length&&!found){
+        const m=simulateRound(w),adv=m.result?.advancedV1,changes=adv?.matchday?.changes??[];
+        const injuryChange=changes.find(x=>x.teamId===w.clubId&&x.reason==='injury');
+        if(injuryChange){
+          const injury=(adv.injuries??[]).find(x=>x.playerId===injuryChange.out)??null;
+          const minutes=adv.matchday.minutes.find(x=>x.teamId===w.clubId)?.players.find(x=>x.playerId===injuryChange.out)??null;
+          const p=w.players.find(x=>x.id===injuryChange.out);
+          found={clubId,round:w.round,change:injuryChange,injury,minutes,playerId:p.id,beforeRecovery:{fitness:p.fitness,medical:structuredClone(p.medicalV1),injuryLegacy:p.injury}};
+        }
       }
+      scanned.push({clubId,rounds:w.round,found:Boolean(found)});
+      if(found)selected={w,found};
     }
-    if(!found)return {ok:false,reason:'no managed injury substitution observed in the complete deterministic season'};
-    const p=w.players.find(x=>x.id===found.playerId),recovery=[];
+    if(!selected)return {ok:false,reason:'no managed injury substitution observed across 20 deterministic club-season paths',scanned};
+    const {w,found}=selected,p=w.players.find(x=>x.id===found.playerId),recovery=[];
     for(let week=1;week<=30;week++){
       prepareAdvancedRound(w);
       const availability=medicalAvailability(p.medicalV1);
@@ -85,7 +90,7 @@ export async function runInjuryRecoveryBehavior(page,baseURL){
       if(!p.medicalV1.injury&&availability.eligible){found.recoveredWeek=week;break;}
     }
     const finalAvailability=medicalAvailability(p.medicalV1);
-    return {ok:Boolean(found.injury&&found.minutes&&found.recoveredWeek&&finalAvailability.eligible&&validateCareerMatchday(w)&&validateSave(w)),found,recovery,finalAvailability,validMatchday:validateCareerMatchday(w),validSave:validateSave(w)};
+    return {ok:Boolean(found.injury&&found.minutes&&found.recoveredWeek&&finalAvailability.eligible&&validateCareerMatchday(w)&&validateSave(w)),found,recovery,finalAvailability,scanned,validMatchday:validateCareerMatchday(w),validSave:validateSave(w)};
   });
 }
 
