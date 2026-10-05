@@ -28,17 +28,25 @@ function status(code,state,details={}){results.checks[code]={state,...details};}
 function finding(id,severity,message,details={}){results.findings.push({id,severity,message,...details});}
 function median(values){const a=values.filter(Number.isFinite).sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 async function shot(page,name){await page.screenshot({path:path.join(artifactDir,name),fullPage:true}).catch(()=>{});}
-async function launchPersistent(browserName,userData,{headless=true,viewport={width:1440,height:1000}}={}){
+async function seedNativeZoomPreference(userData,factor){
+  const zoomLevel=Math.log(factor)/Math.log(1.2);
+  const profileDir=path.join(userData,'Default');
+  await fs.mkdir(profileDir,{recursive:true});
+  await fs.writeFile(path.join(profileDir,'Preferences'),JSON.stringify({partition:{default_zoom_level:zoomLevel}}));
+  return zoomLevel;
+}
+async function launchPersistent(browserName,userData,{headless=true,viewport={width:1440,height:1000},extraArgs=[]}={}){
   const exe=executable[browserName];
   if(!exe)throw new Error(`${browserName} executable unavailable`);
-  const context=await chromium.launchPersistentContext(userData,{executablePath:exe,headless,viewport,acceptDownloads:true,args:['--no-first-run','--no-default-browser-check']});
+  const context=await chromium.launchPersistentContext(userData,{executablePath:exe,headless,viewport,acceptDownloads:true,args:['--no-first-run','--no-default-browser-check',...extraArgs]});
   context.setDefaultTimeout(6000);context.setDefaultNavigationTimeout(45000);
   return context;
 }
-async function createContext(browserName,{headless=true,viewport={width:1440,height:1000},suffix=''}={}){
+async function createContext(browserName,{headless=true,viewport={width:1440,height:1000},suffix='',nativeZoomFactor=null,extraArgs=[]}={}){
   const userData=await fs.mkdtemp(path.join(os.tmpdir(),`fa-rst00-${browserName}-${suffix}-`));
-  const context=await launchPersistent(browserName,userData,{headless,viewport});
-  return {context,userData};
+  const zoomLevel=nativeZoomFactor?await seedNativeZoomPreference(userData,nativeZoomFactor):null;
+  const context=await launchPersistent(browserName,userData,{headless,viewport,extraArgs});
+  return {context,userData,zoomLevel};
 }
 async function ensureCareer(page){
   await page.goto(baseURL,{waitUntil:'domcontentloaded'});
@@ -108,30 +116,38 @@ async function readPrimary(page){return page.evaluate(async()=>{
 });}
 
 async function runB04(){
-  const detail={browserRuns:{}};let verified=0;
+  const detail={browserRuns:{},method:'Chromium native profile zoom preference (partition.default_zoom_level)',targetFactor:2};let verified=0;
   for(const browserName of ['chrome','edge']){
-    let context;
+    let baselineContext,zoomContext;
     try{
-      ({context}=await createContext(browserName,{headless:false,viewport:{width:1440,height:900},suffix:'b04'}));
-      const page=context.pages()[0]||await context.newPage();await ensureCareer(page);await page.evaluate(()=>{document.title='FA-RST00-B04';});
-      const before=await globalGeometry(page);let sendKeysError=null;
-      try{
-        const ps=`Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName Microsoft.VisualBasic; $ok=[Microsoft.VisualBasic.Interaction]::AppActivate('FA-RST00-B04'); Start-Sleep -Milliseconds 600; if(-not $ok){throw 'window-not-found'}; 1..5 | ForEach-Object { [System.Windows.Forms.SendKeys]::SendWait('^{+}'); Start-Sleep -Milliseconds 180 }`;
-        await execFileAsync('powershell.exe',['-NoProfile','-Command',ps],{timeout:12000});
-      }catch(err){sendKeysError=String(err?.message||err);}
-      await page.waitForTimeout(700);const after=await globalGeometry(page);const ratio=before.iw/Math.max(1,after.iw);const native=ratio>=1.70&&ratio<=2.35;
-      const pages=[];detail.browserRuns[browserName]={before,after,effectiveRatio:ratio,nativeZoomObserved:native,sendKeysError,pages};
+      const base=await createContext(browserName,{headless:true,viewport:null,suffix:'b04-base',extraArgs:['--window-size=1440,900']});
+      baselineContext=base.context;
+      let page=baselineContext.pages()[0]||await baselineContext.newPage();
+      await ensureCareer(page);
+      const before=await globalGeometry(page);
+      await baselineContext.close();baselineContext=null;
+
+      const zoomed=await createContext(browserName,{headless:true,viewport:null,suffix:'b04-zoom',nativeZoomFactor:2,extraArgs:['--window-size=1440,900']});
+      zoomContext=zoomed.context;
+      page=zoomContext.pages()[0]||await zoomContext.newPage();
+      await ensureCareer(page);
+      const after=await globalGeometry(page);
+      const viewportRatio=before.iw/Math.max(1,after.iw);
+      const dprRatio=after.dpr/Math.max(0.01,before.dpr);
+      const native=(viewportRatio>=1.70&&viewportRatio<=2.35)||(dprRatio>=1.70&&dprRatio<=2.35);
+      const pages=[];
+      detail.browserRuns[browserName]={before,after,viewportRatio,dprRatio,nativeZoomObserved:native,zoomLevel:zoomed.zoomLevel,pages};
       if(native){
         verified++;
         for(const id of navPagesCore){await navigateCore(page,id);const g=await globalGeometry(page);pages.push({id,...g,overflow:g.sw>g.cw+2});}
         await openCareers(page);const g=await globalGeometry(page);pages.push({id:'careers',...g,overflow:g.sw>g.cw+2});
-        await shot(page,`b04-${browserName}-zoom.png`);
+        await shot(page,`b04-${browserName}-native-200.png`);
       }
-    }catch(err){detail.browserRuns[browserName]={error:String(err?.message||err)};}
-    finally{await context?.close().catch(()=>{});}
+    }catch(err){detail.browserRuns[browserName]={...(detail.browserRuns[browserName]||{}),error:String(err?.message||err)};}
+    finally{await baselineContext?.close().catch(()=>{});await zoomContext?.close().catch(()=>{});}
   }
-  if(verified)status('B04','PASS',{...detail,note:'Native Windows browser zoom was observed and geometry/scroll evidence captured. Overflow remains a baseline finding.'});
-  else status('B04','NON_ESEGUITO',{...detail,reason:'Hosted Windows desktop did not yield verifiable native browser zoom; no CSS/CDP substitute was used.'});
+  if(verified===2)status('B04','PASS',{...detail,note:'Chrome and Edge both applied verifiable native 200% browser zoom from their Chromium profile preference; geometry/scroll evidence captured without CSS zoom, device scale factor or CDP zoom emulation.'});
+  else status('B04','NON_ESEGUITO',{...detail,reason:`Native 200% browser zoom was verified in ${verified}/2 browsers; both Chrome and Edge are required.`});
 }
 
 async function runB05(){
