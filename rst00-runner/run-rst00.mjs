@@ -42,25 +42,41 @@ async function createContext(browserName,{headless=true,viewport={width:1440,hei
 }
 async function ensureCareer(page){
   await page.goto(baseURL,{waitUntil:'domcontentloaded'});
-  const dashboard=page.locator('[data-action="nav"][data-page="dashboard"]').first();
+  const dashboard=page.locator('.dashboard-hero').first();
   if(await dashboard.isVisible().catch(()=>false))return;
-  const menuNew=page.locator('[data-action="menu-new"]').first();
-  if(await menuNew.isVisible().catch(()=>false)){
-    await menuNew.click();
-    await page.locator('#manager-name').waitFor({state:'visible',timeout:15000});
+  let manager=page.locator('#manager-name').first();
+  if(!(await manager.isVisible().catch(()=>false))){
+    const menuNew=page.locator('[data-action="menu-new"]').first();
+    if(await menuNew.isVisible().catch(()=>false)){
+      await menuNew.click();
+      await manager.waitFor({state:'visible',timeout:15000});
+    }
   }
-  const manager=page.locator('#manager-name');
+  manager=page.locator('#manager-name').first();
   if(await manager.isVisible().catch(()=>false)){
     await manager.fill('RST00 Test Manager');
-    await page.locator('[data-action="start-career"]').click();
+    const start=page.locator('[data-action="start-career"]').first();
+    await start.click();
   }
-  await dashboard.waitFor({state:'visible',timeout:30000});
+  try{
+    await dashboard.waitFor({state:'visible',timeout:30000});
+  }catch(err){
+    const state=await page.evaluate(()=>({title:document.title,text:(document.body?.innerText||'').slice(0,1200),url:location.href}));
+    throw new Error(`career onboarding did not reach dashboard: ${JSON.stringify(state)}; ${String(err?.message||err)}`);
+  }
 }
 async function navigateCore(page,id){
   const b=page.locator(`[data-action="nav"][data-page="${id}"]`).first();
-  await b.scrollIntoViewIfNeeded();await b.click();await page.waitForTimeout(70);
+  if(!(await b.count()))throw new Error(`navigation target missing: ${id}`);
+  await b.evaluate(el=>el.click());
+  await page.waitForTimeout(100);
 }
-async function openCareers(page){await page.locator('[data-action="open-careers"]').first().click();await page.locator('.career-hub-main').waitFor({state:'visible'});}
+async function openCareers(page){
+  const b=page.locator('[data-action="open-careers"]').first();
+  if(!(await b.count()))throw new Error('open-careers action missing');
+  await b.evaluate(el=>el.click());
+  await page.locator('.career-hub-main').waitFor({state:'visible',timeout:15000});
+}
 async function globalGeometry(page){return page.evaluate(()=>({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,sh:document.documentElement.scrollHeight,ch:document.documentElement.clientHeight,dpr:devicePixelRatio,iw:innerWidth,ih:innerHeight,active:document.activeElement?.outerHTML?.slice(0,180)||''}));}
 async function injectAxe(page){await page.addScriptTag({content:axe.source});}
 async function axeScan(page,id){
