@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - rst/rst00-windows-baseline
+    paths:
+      - rst00-ready.flag
   workflow_dispatch:
 
 permissions:
@@ -25,6 +27,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Reconstruct immutable 2.0.0 ZIP
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem ./release-b64/zip-*.part | Sort-Object Name
+          if ($parts.Count -ne 12) { throw "Expected 12 release chunks, found $($parts.Count)" }
+          $builder = New-Object System.Text.StringBuilder
+          foreach ($part in $parts) {
+            [void]$builder.Append((Get-Content $part.FullName -Raw))
+          }
+          $bytes = [Convert]::FromBase64String($builder.ToString())
+          [IO.File]::WriteAllBytes("./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip", $bytes)
 
       - name: Verify immutable 2.0.0 ZIP
         shell: pwsh
@@ -49,7 +63,10 @@ jobs:
           $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD\work\football-architect" -PassThru
           $p.Id | Out-File -Encoding ascii ./server.pid
           for($i=0;$i -lt 60;$i++) {
-            try { $r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ exit 0 } } catch {}
+            try {
+              $r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2
+              if($r.StatusCode -eq 200){ exit 0 }
+            } catch {}
             Start-Sleep -Seconds 1
           }
           throw 'Football Architect server did not become ready.'
@@ -63,7 +80,7 @@ jobs:
           FA_ARTIFACT_DIR: ${{ github.workspace }}\rst00-artifacts
         run: npm run rst00
 
-      - name: Verify release ZIP unchanged
+      - name: Verify reconstructed release ZIP unchanged
         if: always()
         shell: pwsh
         run: |
@@ -74,7 +91,10 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if(Test-Path ./server.pid) { $pidValue=[int](Get-Content ./server.pid); Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue }
+          if(Test-Path ./server.pid) {
+            $pidValue=[int](Get-Content ./server.pid)
+            Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Upload RST-00 evidence
         if: always()
@@ -83,3 +103,4 @@ jobs:
           name: rst00-windows-evidence
           path: rst00-artifacts
           if-no-files-found: error
+          retention-days: 14
