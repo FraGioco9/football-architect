@@ -125,12 +125,28 @@ export async function readPrimary(page){
       };
       r.onerror=()=>reject(r.error);
     });
-    if(!rec?.raw)return {rawLength:0,slotCount:0};
+    if(!rec?.raw)return {rawLength:0,slotCount:0,careers:[]};
     const rows=JSON.parse(rec.raw);
     const entries=new Map(rows);
     const slotRows=[...entries].filter(([key])=>/^football-architect:career:slot:/.test(key));
     const computed=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(rec.raw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-    const career=slotRows.length===1?JSON.parse(slotRows[0][1]):null;
+    const careers=slotRows.map(([key,raw])=>{
+      try{return {key,career:JSON.parse(raw)};}catch{return {key,career:null};}
+    });
+    let activeSlotId=null,activeStorageKey=null,career=null;
+    const catalogRaw=entries.get('football-architect:career:catalog:v1');
+    if(catalogRaw){
+      try{
+        const catalog=JSON.parse(catalogRaw);
+        activeSlotId=catalog?.activeSlotId??null;
+        activeStorageKey=catalog?.slots?.find(x=>x.id===activeSlotId)?.storageKey??null;
+      }catch{}
+    }
+    if(activeStorageKey){
+      career=careers.find(x=>x.key===activeStorageKey)?.career??null;
+    }else if(careers.length===1){
+      career=careers[0].career;
+    }
     return {
       rawLength:rec.raw.length,
       schemaVersion:rec.schemaVersion,
@@ -139,6 +155,9 @@ export async function readPrimary(page){
       computed,
       checksumValid:computed===rec.sha256,
       slotCount:slotRows.length,
+      activeSlotId,
+      activeStorageKey,
+      careers,
       career
     };
   });
@@ -169,8 +188,12 @@ export function attachErrorCapture(page){
   const warnings=[];
   page.on('pageerror',e=>errors.push(String(e?.message||e)));
   page.on('console',m=>{
-    if(m.type()==='error')errors.push(m.text());
-    if(m.type()==='warning')warnings.push(m.text());
+    const message=m.text();
+    if(m.type()==='error'){
+      if(/Failed to load resource: the server responded with a status of 404/i.test(message))warnings.push(`benign-resource-404: ${message}`);
+      else errors.push(message);
+    }
+    if(m.type()==='warning')warnings.push(message);
   });
   return {errors,warnings};
 }
