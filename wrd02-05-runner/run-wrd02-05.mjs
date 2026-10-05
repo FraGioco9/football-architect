@@ -80,7 +80,10 @@ async function exercise(browserName){
   try{
     context=await launch(browserName,userData);
     const page=context.pages()[0]||await context.newPage();
-    await page.goto(baseURL,{waitUntil:'domcontentloaded'});
+    // Use a same-origin static module document while constructing and committing
+    // the synthetic career so the production app does not open a competing
+    // primary-storage writer during the long two-season simulation.
+    await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
 
     const memory=await page.evaluate(async()=>{
       localStorage.clear();
@@ -210,7 +213,9 @@ async function exercise(browserName){
       };
     });
 
-    await page.reload({waitUntil:'domcontentloaded'});
+    // Now boot the real application against the committed IndexedDB record
+    // and verify that its normal continue flow reads the persisted career.
+    await page.goto(baseURL,{waitUntil:'domcontentloaded'});
     const continueButton=page.locator('[data-action="menu-continue"]').first();
     await continueButton.waitFor({state:'visible',timeout:20000});
     await continueButton.click();
