@@ -13,6 +13,7 @@ const artifactDir=process.env.FA_ARTIFACT_DIR||path.resolve('artifacts');
 await fs.mkdir(artifactDir,{recursive:true});
 const startedAt=new Date().toISOString();
 const results={startedAt,platform:process.platform,release:'2.0.0',checks:{},findings:[],browsers:{}};
+const requestedChecks=process.argv.slice(2).map(x=>String(x).toUpperCase()).filter(Boolean);
 const navPagesCore=['dashboard','calendar','inbox','club','squad','tactics','training','youth','league','world','advanced','market','finances','board','manager','settings'];
 const navPages=[...navPagesCore,'careers'];
 const browserCandidates={
@@ -164,8 +165,19 @@ async function runD02(){
   }catch(err){status('D02','NON_ESEGUITO',{...detail,reason:String(err?.message||err)});}finally{await context?.close().catch(()=>{});}
 }
 
-for(const [name,fn] of [['B04',runB04],['B05',runB05],['C03',runC03],['D02',runD02]]){
-  try{await fn();}catch(err){status(name,'NON_ESEGUITO',{reason:String(err?.message||err)});}await fs.writeFile(path.join(artifactDir,'partial-results.json'),JSON.stringify(results,null,2));
+const registry=[['B04',runB04],['B05',runB05],['C03',runC03],['D02',runD02]];
+const selected=requestedChecks.length?registry.filter(([name])=>requestedChecks.includes(name)):registry;
+if(!selected.length)throw new Error('No valid RST-00 check selected.');
+for(const [name,fn] of selected){
+  console.log(\`RST00_START ${name}\`);
+  try{await fn();}catch(err){status(name,'NON_ESEGUITO',{reason:String(err?.message||err)});}
+  console.log(\`RST00_DONE ${name} ${results.checks[name]?.state||'UNKNOWN'}\`);
+  await fs.writeFile(path.join(artifactDir,\`partial-results-${name}.json\`),JSON.stringify(results,null,2));
 }
-results.finishedAt=new Date().toISOString();results.summary=Object.fromEntries(['PASS','FAIL','NON_ESEGUITO'].map(s=>[s,Object.values(results.checks).filter(x=>x.state===s).length]));await fs.writeFile(path.join(artifactDir,'RST00-WIN-RESULTS.json'),JSON.stringify(results,null,2));
-const md=['# Football Architect — RST-00 Windows addendum','',`Generated: ${results.finishedAt}`,'','| Check | Result |','|---|---|',...Object.entries(results.checks).map(([k,v])=>`| ${k} | **${v.state}** |`),'',`Summary: ${results.summary.PASS} PASS · ${results.summary.FAIL} FAIL · ${results.summary.NON_ESEGUITO} NON ESEGUITO`,'','This addendum does not rewrite the original 16 PASS / 4 NON ESEGUITO baseline. It records the separate Windows rerun only.','RST-01 was not started. WRD02.05 remains non-certified.'].join('\n');await fs.writeFile(path.join(artifactDir,'RST00-WIN-ADDENDUM.md'),md);console.log(JSON.stringify(results.summary));
+results.finishedAt=new Date().toISOString();
+results.summary=Object.fromEntries(['PASS','FAIL','NON_ESEGUITO'].map(s=>[s,Object.values(results.checks).filter(x=>x.state===s).length]));
+const suffix=selected.map(([name])=>name).join('-');
+await fs.writeFile(path.join(artifactDir,\`RST00-WIN-RESULTS-${suffix}.json\`),JSON.stringify(results,null,2));
+const md=['# Football Architect — RST-00 Windows addendum','',\`Generated: ${results.finishedAt}\`,'',\`Checks: ${suffix}\`,'','| Check | Result |','|---|---|',...Object.entries(results.checks).map(([k,v])=>\`| ${k} | **${v.state}** |\`),'',\`Summary: ${results.summary.PASS} PASS · ${results.summary.FAIL} FAIL · ${results.summary.NON_ESEGUITO} NON ESEGUITO\`,'','This addendum does not rewrite the original 16 PASS / 4 NON ESEGUITO baseline. It records the separate Windows rerun only.','RST-01 was not started. WRD02.05 remains non-certified.'].join('\\n');
+await fs.writeFile(path.join(artifactDir,\`RST00-WIN-ADDENDUM-${suffix}.md\`),md);
+console.log(JSON.stringify({checks:suffix,summary:results.summary}));
