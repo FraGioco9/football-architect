@@ -65,7 +65,7 @@ export async function runInjuryRecoveryBehavior(page,baseURL){
     ]);
     const w=makeWorld();startCareer(w,1,'RST01 D05');enableAdvancedCareer(w);enableCareerMatchday(w);autoLineup(w);
     let found=null;
-    for(let i=0;i<Math.min(18,w.fixtures.length)&&!found;i++){
+    for(let i=0;i<w.fixtures.length&&!found;i++){
       const m=simulateRound(w),adv=m.result?.advancedV1,changes=adv?.matchday?.changes??[];
       const injuryChange=changes.find(x=>x.teamId===w.clubId&&x.reason==='injury');
       if(injuryChange){
