@@ -54,25 +54,29 @@ export async function playerAttributeAudit(page){
   const c=p.career||{};
   return page.evaluate(career=>{
     const players=Array.isArray(career.players)?career.players:[];
-    const flattenNumeric=(obj,depth=0)=>{
+    const exclude=/^(id|age|clubId|teamId|number|shirt|height|weight|value|price|wage|salary|contract|matches|appearances|minutes|goals|assists|yellow|red|season|year|birth|retire)/i;
+    const collect=(obj,path='',depth=0)=>{
       if(!obj||typeof obj!=='object'||depth>3)return [];
       const out=[];
       for(const [k,v] of Object.entries(obj)){
-        if(typeof v==='number'&&Number.isFinite(v))out.push(k);
-        else if(v&&typeof v==='object'&&!Array.isArray(v)){
-          out.push(...flattenNumeric(v,depth+1).map(x=>k+'.'+x));
-        }
+        const q=path?path+'.'+k:k;
+        if(typeof v==='number'&&Number.isFinite(v)&&!exclude.test(k))out.push(q);
+        else if(v&&typeof v==='object'&&!Array.isArray(v))out.push(...collect(v,q,depth+1));
       }
       return out;
     };
-    const sample=players.slice(0,25).map(p=>({id:p.id,numeric:flattenNumeric(p),age:p.age}));
+    const sample=players.slice(0,25).map(p=>({id:p.id,keys:[...new Set(collect(p))].sort()}));
+    const common=sample.length?sample.map(x=>new Set(x.keys)).reduce((acc,set)=>new Set([...acc].filter(k=>set.has(k)))):new Set();
+    const union=new Set(sample.flatMap(x=>x.keys));
     const ids=players.map(p=>p.id);
     return {
       players:players.length,
       uniqueIds:new Set(ids).size,
-      minNumeric:sample.length?Math.min(...sample.map(x=>x.numeric.length)):0,
-      maxNumeric:sample.length?Math.max(...sample.map(x=>x.numeric.length)):0,
-      sample
+      minCandidateAttributes:sample.length?Math.min(...sample.map(x=>x.keys.length)):0,
+      maxCandidateAttributes:sample.length?Math.max(...sample.map(x=>x.keys.length)):0,
+      commonCandidateAttributes:[...common],
+      unionCandidateAttributes:[...union],
+      sample:sample.slice(0,8)
     };
   },c);
 }
