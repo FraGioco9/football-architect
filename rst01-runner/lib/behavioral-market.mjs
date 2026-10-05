@@ -184,7 +184,7 @@ export async function runScoutingBehavior(page,baseURL){
     const refresh=refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId:target.id});
     const reportAfter=w.advancedV1.scoutingV1.reports[target.id]??null,after=scoutingEstimate(w,target.id);
     return {
-      ok:Boolean(reportBefore&&reportAfter&&reportAfter.confidence>=reportBefore.confidence&&reportAfter.confidence>0&&shortlisted&&w.advancedV1.scoutingV1.missions.find(m=>m.id===mission)?.status==='completed'&&validateCareerScouting(w)&&validateSave(w)),
+      ok:Boolean(reportBefore&&reportAfter&&reportAfter.confidence>=reportBefore.confidence&&reportAfter.confidence>0&&JSON.stringify(before)!==JSON.stringify(after)&&shortlisted&&w.advancedV1.scoutingV1.missions.find(m=>m.id===mission)?.status==='completed'&&validateCareerScouting(w)&&validateSave(w)),
       target:{id:target.id,countryId:target.countryId},mission,before,reportBefore,refresh,reportAfter,after,shortlisted,validScouting:validateCareerScouting(w),validSave:validateSave(w)
     };
   });
