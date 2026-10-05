@@ -87,7 +87,7 @@ export async function runInjuryRecoveryBehavior(page,baseURL){
       prepareAdvancedRound(w);
       const availability=medicalAvailability(p.medicalV1);
       recovery.push({week,day:w.advancedV1.clockDay,fitness:p.fitness,injury:structuredClone(p.medicalV1.injury),availability});
-      if(!p.medicalV1.injury&&availability.eligible){found.recoveredWeek=week;break;}
+      if(availability.eligible&&availability.canStart&&p.medicalV1.injury?.stage==='cleared'){found.recoveredWeek=week;break;}
     }
     const finalAvailability=medicalAvailability(p.medicalV1);
     return {ok:Boolean(found.injury&&found.minutes&&found.recoveredWeek&&finalAvailability.eligible&&validateCareerMatchday(w)&&validateSave(w)),found,recovery,finalAvailability,scanned,validMatchday:validateCareerMatchday(w),validSave:validateSave(w)};
