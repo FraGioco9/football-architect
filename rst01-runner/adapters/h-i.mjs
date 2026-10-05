@@ -93,6 +93,13 @@ async function H04(ctx){
   };
   const cdp=await ctx.context.newCDPSession(ctx.page);
   await cdp.send('Network.enable');
+  await cdp.send('Performance.enable');
+  const heapSample=async label=>{
+    await cdp.send('HeapProfiler.collectGarbage').catch(()=>{});
+    const snapshot=await cdp.send('Performance.getMetrics');
+    const metric=name=>snapshot.metrics.find(x=>x.name===name)?.value??null;
+    return {label,usedBytes:metric('JSHeapUsedSize'),totalBytes:metric('JSHeapTotalSize')};
+  };
 
   const cold=[];
   for(let i=0;i<5;i++){
@@ -105,9 +112,13 @@ async function H04(ctx){
   const warm=[];
   for(let i=0;i<5;i++){await ctx.page.reload({waitUntil:'load'});warm.push(await collect(`warm-${i+1}`));}
 
+  const memorySamples=[await heapSample('before-navigation')];
   const navigation=[];
-  for(let round=0;round<2;round++)for(const id of navPagesCore){
-    const t=performance.now();await navigateCore(ctx.page,id);navigation.push({round,id,ms:performance.now()-t});
+  for(let round=0;round<2;round++){
+    for(const id of navPagesCore){
+      const t=performance.now();await navigateCore(ctx.page,id);navigation.push({round,id,ms:performance.now()-t});
+    }
+    memorySamples.push(await heapSample(`after-navigation-round-${round+1}`));
   }
   await navigateCore(ctx.page,'squad');
   const inputSamples=[];
@@ -115,7 +126,9 @@ async function H04(ctx){
   if(await search.count()){
     for(let i=0;i<5;i++){const t=performance.now();await search.fill(`RST${i}`);await ctx.page.waitForTimeout(100);inputSamples.push(performance.now()-t);}
   }
+  memorySamples.push(await heapSample('after-input'));
 
+  const usedMB=memorySamples.map(x=>Number.isFinite(x.usedBytes)?x.usedBytes/1048576:null).filter(Number.isFinite);
   const metrics={
     coldLoad:median(cold.map(x=>x.load)),
     warmLoad:median(warm.map(x=>x.load)),
@@ -123,15 +136,21 @@ async function H04(ctx){
     warmLcp:median(warm.map(x=>x.lcp)),
     cls:median([...cold,...warm].map(x=>x.cls)),
     navigation:median(navigation.map(x=>x.ms)),
-    input:median(inputSamples)
+    input:median(inputSamples),
+    heapMaxMB:usedMB.length?Math.max(...usedMB):null,
+    heapGrowthMB:usedMB.length>=2?usedMB.at(-1)-usedMB[0]:null
   };
-  const baseline={coldLoad:274,warmLoad:275.1,coldLcp:368,warmLcp:380,cls:0,navigation:148.9,input:110.1};
-  const thresholds={coldLoad:550,warmLoad:550,coldLcp:800,warmLcp:800,cls:0.10,navigation:320,input:250};
-  const required=['coldLoad','warmLoad','coldLcp','warmLcp','cls','navigation','input'];
-  if(required.some(k=>!Number.isFinite(metrics[k])))return nonExecuted('H04 required performance matrix is incomplete',{metrics,baseline,thresholds,cold,warm,navigation,inputSamples});
+  const baseline={
+    timingSource:'RST-00 Windows D02 certified evidence',
+    coldLoad:274,warmLoad:275.1,coldLcp:368,warmLcp:380,cls:0,navigation:148.9,input:110.1,
+    memorySource:'RST-01 conservative post-GC JS heap guardrail; RST-00 D02 did not record heap memory'
+  };
+  const thresholds={coldLoad:550,warmLoad:550,coldLcp:800,warmLcp:800,cls:0.10,navigation:320,input:250,heapMaxMB:256,heapGrowthMB:64};
+  const required=['coldLoad','warmLoad','coldLcp','warmLcp','cls','navigation','input','heapMaxMB','heapGrowthMB'];
+  if(required.some(k=>!Number.isFinite(metrics[k])))return nonExecuted('H04 required performance/memory matrix is incomplete',{metrics,baseline,thresholds,cold,warm,navigation,inputSamples,memorySamples});
   const exceeded=required.filter(k=>metrics[k]>thresholds[k]);
-  if(exceeded.length)return {state:'FAIL',reason:'Performance threshold exceeded',exceeded,metrics,baseline,thresholds,cold,warm,navigation,inputSamples};
-  return pass({metrics,baseline,thresholds,cold,warm,navigation,inputSamples,note:'Thresholds are documented tolerances derived from the certified RST-00 Windows D02 medians.'});
+  if(exceeded.length)return {state:'FAIL',reason:'Performance or memory threshold exceeded',exceeded,metrics,baseline,thresholds,cold,warm,navigation,inputSamples,memorySamples};
+  return pass({metrics,baseline,thresholds,cold,warm,navigation,inputSamples,memorySamples,note:'Timing limits derive from certified RST-00 medians; memory uses an explicit RST-01 post-GC guardrail because RST-00 did not capture heap metrics.'});
 }
 async function H05(ctx){
   const soak=ctx.shared.worldSoak;
@@ -155,18 +174,31 @@ async function I02(ctx){
   const firstTwo=soak.cycles.slice(0,2);
   const leagueOk=firstTwo.length===2&&firstTwo.every(row=>Object.values(row.countries).every(x=>x.promoted.length===3&&x.relegated.length===3&&x.playoffWinner!=null));
   assert(leagueOk,'I02 league/division rollover invalid',firstTwo);
-  const cupRows=firstTwo.map(row=>{
-    const evidence=[...row.cupEndEvidence,...row.cupPostEvidence];
-    return {
-      cycle:row.cycle,
-      terminal:evidence.filter(x=>/winner|champion/i.test(x.path)&&x.value!==undefined&&String(x.value)!=='').length,
-      progression:evidence.filter(x=>/round|stage/i.test(x.path)).length,
-      qualification:evidence.filter(x=>/qualif/i.test(x.path)).length,
-      archive:evidence.filter(x=>/archive|history/i.test(x.path)).length
-    };
-  });
-  if(!cupRows.every(x=>x.terminal&&x.progression&&(x.qualification||x.archive)))return nonExecuted('I02 cup evidence incomplete in one of the first two rollover cycles',{cupRows});
-  return pass({cycles:[1,2],cupRows,movementCountries:8});
+
+  const national=firstTwo.map(row=>({
+    cycle:row.cycle,
+    countries:Object.fromEntries(Object.entries(row.countries).map(([country,x])=>[country,{
+      champion:x.cupChampionId,
+      rounds:x.cupRounds,
+      honours:x.cupHonours,
+      valid:x.cupChampionId!=null&&x.cupRounds>0&&x.cupHonours===row.cycle
+    }]))
+  }));
+  const nationalOk=national.every(row=>Object.values(row.countries).every(x=>x.valid));
+  assert(nationalOk,'I02 national cup/league cycle coherence invalid',national);
+
+  const second=firstTwo[1];
+  const continental={
+    champion:second?.continentalEnd?.championKey??null,
+    entrants:second?.continentalEnd?.entrants??0,
+    groupRounds:second?.continentalEnd?.groupRounds??0,
+    knockoutRounds:second?.continentalEnd?.knockoutRounds??0,
+    honours:second?.continentalHonours??0
+  };
+  if(!continental.champion||continental.entrants!==32||continental.groupRounds<1||continental.knockoutRounds<1||continental.honours!==1){
+    return {state:'FAIL',reason:'I02 continental competition is not coherent with the second league rollover',details:{continental,firstTwo}};
+  }
+  return pass({cycles:[1,2],movementCountries:8,national,continental});
 }
 async function I03(ctx){
   const result=await runCrossInjuryTransferBehavior(ctx.page,ctx.baseURL);
