@@ -80,12 +80,14 @@ async function exercise(browserName){
       const [
         {makeWorld},
         {startCareer,simulateRound,newSeason,validateSave,autoLineup},
+        advancedCareer,
         {enableCareerWorld,careerWorldLeague,OFFICIAL_WORLD_COUNTRIES,validateCareerWorld},
         {enableCareerDivisions,captureDivisionSeason,divisionLeague,divisionArchive,validateCareerDivisions},
         {createFreshCareerSlot}
       ]=await Promise.all([
         import('/src/data.js'),
         import('/src/engine.js'),
+        import('/src/domain/advanced-career.js'),
         import('/src/domain/career-world.js'),
         import('/src/domain/career-divisions.js'),
         import('/src/career-management.js')
@@ -94,6 +96,10 @@ async function exercise(browserName){
       const fail=(ok,message,details)=>{if(!ok)throw new Error(`${message} :: ${JSON.stringify(details||{})}`);};
       const w=makeWorld();
       startCareer(w,1,'WRD02.05 Windows Test');
+      const enableAdvanced=advancedCareer.enableAdvancedCareer
+        ||Object.entries(advancedCareer).find(([name,value])=>/^enable/i.test(name)&&typeof value==='function')?.[1];
+      fail(typeof enableAdvanced==='function','advanced career enable API unavailable',{exports:Object.keys(advancedCareer)});
+      enableAdvanced(w);
       enableCareerWorld(w);
       enableCareerDivisions(w);
 
