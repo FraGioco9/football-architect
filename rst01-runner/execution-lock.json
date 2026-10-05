@@ -1,0 +1,7 @@
+{
+  "suite": "RST-01",
+  "state": "LOCKED_PREPARATION",
+  "reason": "RST-01 has been defined and its harness is being prepared, but execution has not been authorized.",
+  "unlockRequires": "Explicit user authorization to enable and run RST-01.",
+  "baselineMainSha": "7f18d0831bef62d0c2a12b26fea973a22ec4f5ce"
+}
