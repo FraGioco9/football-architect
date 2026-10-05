@@ -286,11 +286,10 @@ async function I05(ctx){
     });
     if(!advanced.ok||!advanced.valid)return nonExecuted('Could not establish a valid isolated advanced career before I05',advanced);
 
-    await page.reload({waitUntil:'domcontentloaded'});
-    const continueButton=page.locator('[data-action="menu-continue"]').first();
-    if(await continueButton.isVisible().catch(()=>false))await continueButton.click();
-    await page.locator('.dashboard-hero').first().waitFor({state:'visible',timeout:20000});
-
+    const dashboard=page.locator('.dashboard-hero').first();
+    if(!(await dashboard.isVisible().catch(()=>false))){
+      return nonExecuted('I05 isolated career dashboard was no longer visible after primary advanced-state update',{advanced});
+    }
     const before=await primarySummary(page);
     const switchLanguage=async code=>{
       await navigateCore(page,'settings');
