@@ -15,11 +15,6 @@ on:
         description: "For execute mode type RUN-RST-01"
         required: false
         type: string
-  push:
-    branches:
-      - rst/rst01-preparation
-    paths:
-      - rst01-run.flag
 
 permissions:
   contents: read
@@ -44,20 +39,14 @@ jobs:
           INPUT_MODE: ${{ inputs.mode }}
           INPUT_CONFIRM: ${{ inputs.confirm }}
         run: |
-          $mode = if ($env:EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_MODE } else { 'execute' }
+          $mode = $env:INPUT_MODE
           if ($mode -eq 'plan') {
             "mode=plan" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             exit 0
           }
 
-          if ($env:EVENT_NAME -eq 'workflow_dispatch') {
-            if ($env:INPUT_CONFIRM -ne 'RUN-RST-01') {
-              throw 'RST-01 execution refused: confirmation token RUN-RST-01 is required.'
-            }
-          } else {
-            if (-not (Test-Path ./rst01-run.flag)) { throw 'RST-01 run flag missing.' }
-            $flag=(Get-Content ./rst01-run.flag -Raw).Trim()
-            if ($flag -ne 'AUTHORIZED=YES') { throw 'RST-01 run flag is not authorized.' }
+          if ($env:INPUT_CONFIRM -ne 'RUN-RST-01') {
+            throw 'RST-01 execution refused: confirmation token RUN-RST-01 is required.'
           }
           "mode=execute" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
