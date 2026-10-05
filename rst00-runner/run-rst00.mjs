@@ -32,7 +32,7 @@ async function launchPersistent(browserName,userData,{headless=true,viewport={wi
   const exe=executable[browserName];
   if(!exe)throw new Error(`${browserName} executable unavailable`);
   const context=await chromium.launchPersistentContext(userData,{executablePath:exe,headless,viewport,acceptDownloads:true,args:['--no-first-run','--no-default-browser-check']});
-  context.setDefaultTimeout(6000);context.setDefaultNavigationTimeout(15000);
+  context.setDefaultTimeout(6000);context.setDefaultNavigationTimeout(45000);
   return context;
 }
 async function createContext(browserName,{headless=true,viewport={width:1440,height:1000},suffix=''}={}){
@@ -66,6 +66,10 @@ async function ensureCareer(page){
     req.onblocked=()=>reject(new Error('primary IndexedDB delete blocked'));
   }));
   await page.reload({waitUntil:'domcontentloaded'});
+  const continueButton=page.locator('[data-action="menu-continue"]').first();
+  if(await continueButton.isVisible().catch(()=>false)){
+    await continueButton.evaluate(el=>el.click());
+  }
   try{
     await dashboard.waitFor({state:'visible',timeout:30000});
     await page.waitForTimeout(500);
