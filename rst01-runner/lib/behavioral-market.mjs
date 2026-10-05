@@ -74,9 +74,9 @@ export async function runLoanClauseBehavior(page,baseURL){
     const setup=(contracts=false)=>{const w=makeWorld();startCareer(w,1,'RST01 F02');enableAdvancedCareer(w);enableCareerWorld(w);if(contracts)enableCareerContracts(w);enableCareerMarket(w);return w;};
 
     const loan=setup(),managed=managedClubKey(loan),managedClub=loan.teams.find(c=>c.id===loan.clubId);
-    const target=marketPlayers(loan,{limit:2000}).filter(x=>x.clubKey!==managed).map(x=>({x,v:marketValuation(loan,x.id,managed)})).filter(({v})=>v.askingEUR*.04<managedClub.transferBudget*.5).sort((a,b)=>a.v.askingEUR-b.v.askingEUR)[0];
+    const target=marketPlayers(loan,{limit:2000}).filter(x=>x.clubKey!==managed).map(x=>({x,v:marketValuation(loan,x.id,managed)})).filter(({v})=>v.askingEUR*.05<managedClub.transferBudget*.5).sort((a,b)=>a.v.askingEUR-b.v.askingEUR)[0];
     if(!target)return {ok:false,reason:'no loan target'};
-    const fee=Math.max(1000,Math.round(target.v.askingEUR*.03/1000)*1000);
+    const fee=Math.max(1000,Math.round(target.v.askingEUR*.05/1000)*1000);
     const q=createCareerQuote(loan,{type:'loan',feeEUR:fee,days:90,loanEndSeason:loan.season,salarySharePct:50});
     const loanId=startMarketDeal(loan,{revision:loan.advancedV1.marketV1.revision,playerId:target.x.id,buyerKey:managed,quote:q});
     const ld=marketClubDecision(loan,loan.advancedV1.marketV1.deals[loanId]);
@@ -173,19 +173,26 @@ export async function runScoutingBehavior(page,baseURL){
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-market.js'),import('/src/domain/career-scouting.js')
     ]);
     const w=makeWorld();startCareer(w,1,'RST01 F04');enableAdvancedCareer(w);enableCareerWorld(w);enableCareerMarket(w);enableCareerScouting(w);
-    const target=scoutingPlayers(w).find(x=>x.countryId!==w.countryId);
-    if(!target)return {ok:false,reason:'no foreign scouting target'};
-    const before=scoutingEstimate(w,target.id);
-    const mission=assignScoutingMission(w,{revision:w.advancedV1.scoutingV1.revision,countryId:target.countryId,position:'ALL',ageMin:15,ageMax:45,contractMax:20,weeks:2});
+    const foreign=scoutingPlayers(w).find(x=>x.countryId!==w.countryId);
+    if(!foreign)return {ok:false,reason:'no foreign scouting country'};
+    const mission=assignScoutingMission(w,{revision:w.advancedV1.scoutingV1.revision,countryId:foreign.countryId,position:'ALL',ageMin:15,ageMax:45,contractMax:20,weeks:2});
     for(let i=0;i<2;i++){prepareAdvancedRound(w);advanceCareerScouting(w);}
-    const reportBefore=w.advancedV1.scoutingV1.reports[target.id]??null;
-    shortlistScoutedPlayer(w,{revision:w.advancedV1.scoutingV1.revision,playerId:target.id,add:true});
-    const shortlisted=w.advancedV1.scoutingV1.shortlist.includes(target.id);
-    const refresh=refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId:target.id});
-    const reportAfter=w.advancedV1.scoutingV1.reports[target.id]??null,after=scoutingEstimate(w,target.id);
+    const completed=w.advancedV1.scoutingV1.missions.find(m=>m.id===mission);
+    const reportEntry=Object.entries(w.advancedV1.scoutingV1.reports).find(([,r])=>r.countryId===foreign.countryId);
+    if(!reportEntry)return {ok:false,reason:'mission produced no scouting report',mission:completed};
+    const [playerId,reportBefore]=reportEntry;
+    const before=scoutingEstimate(w,playerId);
+    shortlistScoutedPlayer(w,{revision:w.advancedV1.scoutingV1.revision,playerId,add:true});
+    const shortlisted=w.advancedV1.scoutingV1.shortlist.includes(playerId);
+    const refresh=refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId});
+    const reportAfter=w.advancedV1.scoutingV1.reports[playerId],after=scoutingEstimate(w,playerId);
     return {
-      ok:Boolean(reportBefore&&reportAfter&&reportAfter.confidence>=reportBefore.confidence&&reportAfter.confidence>0&&JSON.stringify(before)!==JSON.stringify(after)&&shortlisted&&w.advancedV1.scoutingV1.missions.find(m=>m.id===mission)?.status==='completed'&&validateCareerScouting(w)&&validateSave(w)),
-      target:{id:target.id,countryId:target.countryId},mission,before,reportBefore,refresh,reportAfter,after,shortlisted,validScouting:validateCareerScouting(w),validSave:validateSave(w)
+      ok:Boolean(
+        completed?.status==='completed'&&reportAfter.confidence>=reportBefore.confidence&&reportAfter.confidence>0&&
+        JSON.stringify(before)!==JSON.stringify(after)&&shortlisted&&validateCareerScouting(w)&&validateSave(w)
+      ),
+      target:{id:playerId,countryId:foreign.countryId},mission:completed,before,reportBefore,refresh,reportAfter,after,shortlisted,
+      validScouting:validateCareerScouting(w),validSave:validateSave(w)
     };
   });
 }
@@ -193,13 +200,17 @@ export async function runScoutingBehavior(page,baseURL){
 export async function runAIMarketBehavior(page,baseURL){
   await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
   return page.evaluate(async()=>{
-    const [{makeWorld},{startCareer,simulateRound,newSeason,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerMarket,validateCareerMarket},{enableCareerCalendar,validateCareerCalendar},{enableCareerScouting,validateCareerScouting},{enableCareerAIMarket,validateCareerAIMarket}]=await Promise.all([
+    const [{makeWorld},{startCareer,simulateRound,newSeason,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerMarket,validateCareerMarket},{enableCareerCalendar,previewCalendarAdvance,validateCareerCalendar},{enableCareerScouting,validateCareerScouting},{enableCareerAIMarket,validateCareerAIMarket}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-market.js'),import('/src/domain/career-calendar.js'),import('/src/domain/career-scouting.js'),import('/src/domain/career-ai-market.js')
     ]);
     const w=makeWorld();startCareer(w,1,'RST01 F05');enableAdvancedCareer(w);enableCareerWorld(w);enableCareerMarket(w);enableCareerCalendar(w);enableCareerScouting(w);enableCareerAIMarket(w);
+    const playRound=()=>{
+      const preview=previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+7});
+      return simulateRound(w,{calendarConfirmationToken:preview.confirmationToken});
+    };
     const seasons=[];
     for(let seasonIndex=0;seasonIndex<2;seasonIndex++){
-      while(w.round<w.fixtures.length)simulateRound(w);
+      while(w.round<w.fixtures.length)playRound();
       seasons.push({season:w.season,metrics:structuredClone(w.advancedV1.aiMarketV1.metrics),history:w.advancedV1.aiMarketV1.history.length,offers:w.advancedV1.aiMarketV1.offers.length});
       if(seasonIndex===0)newSeason(w);
     }
