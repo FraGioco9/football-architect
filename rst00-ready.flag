@@ -1,4 +1,5 @@
 RST-00 Windows baseline completion ready
-revision=4
+revision=5
 split-checks=true
 syntax-fixed=true
+onboarding-wait=true
