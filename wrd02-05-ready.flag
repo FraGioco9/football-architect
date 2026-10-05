@@ -1,0 +1,4 @@
+WRD02.05 Windows/IndexedDB certification trigger
+phase: rebased-on-main
+release-sha256: 686f3abaea01807b04d1811da093f6b017eb372f1abb57e6788e6d52bc78d74c
+base-main: e3f66adec4412ecd445fc46d2a181d9fa61590d6
