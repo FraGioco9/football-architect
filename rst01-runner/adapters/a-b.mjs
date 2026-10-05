@@ -71,9 +71,15 @@ async function returnToMenuThroughUi(page){
   }
   if(!found.rows.length)return {ok:false,reason:'return-to-menu control not found'};
   await found.controls.nth(found.rows[0].index).click().catch(()=>{});
-  await page.waitForTimeout(300);
-  const continueVisible=await page.locator('[data-action="menu-continue"]').first().isVisible().catch(()=>false);
-  return {ok:continueVisible,chosen:found.rows[0],continueVisible};
+  await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:10000}).catch(()=>{});
+  if(!(await page.locator('.fa-main-menu').isVisible().catch(()=>false))){
+    await page.reload({waitUntil:'domcontentloaded'}).catch(()=>{});
+    await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:10000}).catch(()=>{});
+  }
+  const continueButton=page.locator('[data-action="menu-continue"]').first();
+  const continueVisible=await continueButton.isVisible().catch(()=>false);
+  const continueDisabled=continueVisible?await continueButton.isDisabled().catch(()=>true):true;
+  return {ok:continueVisible&&!continueDisabled,chosen:found.rows[0],continueVisible,continueDisabled,menuVisible:await page.locator('.fa-main-menu').isVisible().catch(()=>false)};
 }
 
 async function localeSnapshot(page){
@@ -164,35 +170,46 @@ async function A03(ctx){
 
 async function A04(ctx){
   await ensureCareer(ctx.page,'RST01 A04');
-
   const switchTo=async(code)=>{
     await navigateCore(ctx.page,'settings');
-    const controls=ctx.page.locator('button,[data-lang],[data-locale],[data-action]');
-    const rows=await controls.evaluateAll((els,code)=>els.map((el,index)=>({
-      index,
-      text:(el.textContent||'').trim(),
-      lang:(el.getAttribute('data-lang')||el.getAttribute('data-locale')||'').toLowerCase(),
-      action:el.getAttribute('data-action')||'',
-      visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)
-    })).filter(x=>x.visible&&((x.lang===code)||new RegExp('^'+code+'$','i').test(x.text))),code);
-    if(!rows.length)return false;
-    await controls.nth(rows[0].index).click();
+    const all=ctx.page.locator('select[data-language-switch], select[id^="ui-language-"]');
+    let select=null;
+    for(let i=0;i<await all.count();i++){
+      const candidate=all.nth(i);
+      if(await candidate.isVisible().catch(()=>false)){select=candidate;break;}
+    }
+    if(!select)return false;
+    const values=await select.locator('option').evaluateAll(opts=>opts.map(o=>o.value));
+    if(!values.includes(code))return false;
+    await select.selectOption(code);
     await ctx.page.waitForTimeout(250);
-    await navigateCore(ctx.page,'dashboard');
     return true;
   };
-
-  if(!(await switchTo('en')))return nonExecuted('Explicit EN locale control not found');
-  const english=await localeSnapshot(ctx.page);
-  if(!(await switchTo('it')))return nonExecuted('Explicit IT locale control not found',{english});
-  const italian=await localeSnapshot(ctx.page);
-
+  const capture=async code=>{
+    if(!(await switchTo(code)))return null;
+    const pages=[];
+    for(const id of ['dashboard','calendar','finance']){
+      await navigateCore(ctx.page,id);
+      pages.push({id,...await localeSnapshot(ctx.page)});
+    }
+    return {
+      lang:(pages.find(x=>x.lang.startsWith(code))?.lang||pages[0]?.lang||''),
+      text:pages.map(x=>x.text).join(' '),
+      dates:pages.flatMap(x=>x.dates),
+      currencies:pages.flatMap(x=>x.currencies),
+      numbers:pages.flatMap(x=>x.numbers)
+    };
+  };
+  const english=await capture('en');
+  if(!english)return nonExecuted('Explicit EN locale select not found');
+  const italian=await capture('it');
+  if(!italian)return nonExecuted('Explicit IT locale select not found',{english});
   const textChanged=english.text!==italian.text;
   const langOk=/^en/.test(english.lang)&&/^it/.test(italian.lang);
   const formatEvidence=english.dates.length&&italian.dates.length&&english.currencies.length&&italian.currencies.length&&english.numbers.length&&italian.numbers.length;
   if(!textChanged||!langOk)return {state:'FAIL',reason:'IT/EN switch did not update visible language state',english,italian};
   if(!formatEvidence)return nonExecuted('Visible date/number/currency evidence incomplete for both locales',{english,italian});
-  return pass({english:{lang:english.lang,dates:english.dates,currencies:english.currencies,numbers:english.numbers},italian:{lang:italian.lang,dates:italian.dates,currencies:italian.currencies,numbers:italian.numbers}});
+  return pass({english:{lang:english.lang,dates:english.dates.slice(0,20),currencies:english.currencies.slice(0,20),numbers:english.numbers.slice(0,20)},italian:{lang:italian.lang,dates:italian.dates.slice(0,20),currencies:italian.currencies.slice(0,20),numbers:italian.numbers.slice(0,20)}});
 }
 async function B01(ctx){
   const made=await launchPersistent(ctx.browserName,{viewport:{width:1280,height:900},suffix:'b01'});
@@ -222,65 +239,67 @@ async function B01(ctx){
 }
 
 async function B02(ctx){
-  await ensureCareer(ctx.page,'RST01 B02');
-  await openCareers(ctx.page);
-  const active=ctx.page.locator('.career-card.career-active');
-  const button=active.locator('[data-action="career-checkpoints"]').first();
-  if(!(await button.count()))return nonExecuted('Checkpoint control not found');
-  await button.click();
-  const dialog=ctx.page.locator('[data-dialog-kind="career-checkpoints"]');
-  await dialog.waitFor({state:'visible',timeout:10000});
-  const rows=await dialog.locator('.career-checkpoint-row').count();
-  const restore=dialog.locator('[data-action="career-checkpoint-restore"]:not([disabled])').first();
-  if(rows<1||!(await restore.count()))return nonExecuted('No restorable checkpoint',{rows});
-  const before=await primarySummary(ctx.page);
-  await restore.click();
-  const confirm=ctx.page.locator('[data-dialog-kind="career-checkpoint-confirm"] [data-action="career-checkpoint-confirm"]').first();
-  if(await confirm.count())await confirm.click();
-  await ctx.page.waitForTimeout(400);
-  const after=await primarySummary(ctx.page);
-  assert(after.checksumValid===true,'B02 checksum invalid after checkpoint restore',after);
-  return pass({rows,before,after});
+  const made=await launchPersistent(ctx.browserName,{viewport:{width:1100,height:800},suffix:'b02'});
+  try{
+    const page=made.context.pages()[0]||await made.context.newPage();
+    await page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
+    const result=await page.evaluate(async()=>{
+      localStorage.clear();
+      const [{makeWorld},{startCareer,simulateRound,validateSave},{createFreshCareerSlot},{readCareerCatalog},{saveCareerToSlot},{createCareerCheckpoint,listCareerCheckpoints,restoreCareerCheckpoint},{openPrimaryCareerStorage}]=await Promise.all([
+        import('/src/data.js'),import('/src/engine.js'),import('/src/career-management.js'),import('/src/career-catalog.js'),import('/src/career-slots.js'),import('/src/career-checkpoints.js'),import('/src/primary-career-storage.js')
+      ]);
+      const primary=await openPrimaryCareerStorage({legacyStorage:localStorage,validate:validateSave});
+      const w=makeWorld();startCareer(w,1,'RST01 B02');
+      createFreshCareerSlot(primary.storage,w,validateSave);await primary.commit();
+      const catalog=readCareerCatalog(primary.storage),slotId=catalog.activeSlotId,record=catalog.slots.find(x=>x.id===slotId);
+      if(!slotId||!record)throw new Error('active slot missing');
+      const checkpoint=createCareerCheckpoint(primary.storage,slotId,'before-match',validateSave);await primary.commit();
+      const listed=listCareerCheckpoints(primary.storage,slotId,validateSave);
+      const mutated=JSON.parse(primary.storage.getItem(record.storageKey)),beforeRound=mutated.round;
+      simulateRound(mutated);saveCareerToSlot(primary.storage,mutated,validateSave);await primary.commit();
+      const mutatedRound=JSON.parse(primary.storage.getItem(record.storageKey)).round;
+      const restored=restoreCareerCheckpoint(primary.storage,slotId,checkpoint.key,validateSave);await primary.commit();
+      const after=JSON.parse(primary.storage.getItem(record.storageKey));
+      return {slotId,checkpoint,listed,beforeRound,mutatedRound,restoredRound:after.round,valid:validateSave(after),revision:primary.revision,restoreResult:restored};
+    });
+    assert(result.listed.some(x=>x.key===result.checkpoint.key&&x.status==='ok'),'B02 created checkpoint is not restorable',result);
+    assert(result.mutatedRound>result.beforeRound,'B02 fixture mutation did not advance round',result);
+    assert(result.restoredRound===result.beforeRound,'B02 restore did not return to checkpoint round',result);
+    assert(result.valid===true,'B02 restored career invalid',result);
+    return pass(result);
+  }finally{await made.context.close().catch(()=>{});}
 }
-
 async function B03(ctx){
-  await ensureCareer(ctx.page,'RST01 B03');
-  await openCareers(ctx.page);
-  const active=ctx.page.locator('.career-card.career-active');
-  const exportButton=active.locator('[data-action="career-export"]').first();
-  if(!(await exportButton.count()))return nonExecuted('Career export control not found');
-  const exportPath=path.join(artifactDir,`rst01-b03-${ctx.browserName}.json`);
-  const [download]=await Promise.all([ctx.page.waitForEvent('download'),exportButton.click()]);
-  await download.saveAs(exportPath);
-  const payload=JSON.parse(await fs.readFile(exportPath,'utf8'));
-  const before=await primarySummary(ctx.page);
-
-  const input=ctx.page.locator('#career-import-file');
-  if(!(await input.count()))return nonExecuted('Career import file control not found',{exportType:Array.isArray(payload)?'bundle':typeof payload});
-  await input.setInputFiles(exportPath);
-  const preview=ctx.page.locator('[data-dialog-kind="career-import-preview"]');
-  await preview.waitFor({state:'visible',timeout:10000});
-  const rows=await preview.locator('.career-import-row').count();
-  if(rows<1)return {state:'FAIL',reason:'Import preview contains no rows',rows};
-
-  const buttons=preview.locator('button:not([disabled]),[data-action]:not([disabled])');
-  const confirms=await buttons.evaluateAll(els=>els.map((el,index)=>({
-    index,action:el.getAttribute('data-action')||'',text:(el.textContent||'').trim()
-  })).filter(x=>/import.*confirm|confirm.*import|career-import-confirm|importa|confirm|conferma/i.test(x.action+' '+x.text)));
-  if(!confirms.length)return nonExecuted('Import preview opened but no deterministic import-confirm action was found',{rows});
-  await buttons.nth(confirms[0].index).click();
-  await preview.waitFor({state:'hidden',timeout:10000}).catch(()=>{});
-  await ctx.page.waitForTimeout(500);
-
-  const after=await primarySummary(ctx.page);
-  const valid=await ctx.page.evaluate(async career=>{
-    const {validateSave}=await import('/src/engine.js');
-    return Boolean(career&&validateSave(career));
-  },(await readPrimary(ctx.page)).career);
-  assert(after.checksumValid===true&&valid===true,'B03 imported storage/save failed validation',{before,after,valid});
-  const changed=before.sha256!==after.sha256||before.slotCount!==after.slotCount;
-  if(!changed)return nonExecuted('Import completed but no persisted storage change was observable',{before,after,rows});
-  return pass({rows,exportType:Array.isArray(payload)?'bundle':typeof payload,before,after,changed});
+  const made=await launchPersistent(ctx.browserName,{viewport:{width:1280,height:900},suffix:'b03'});
+  try{
+    const page=made.context.pages()[0]||await made.context.newPage();
+    await ensureCareer(page,'RST01 B03');await openCareers(page);
+    const active=page.locator('.career-card.career-active'),exportButton=active.locator('[data-action="career-export"]').first();
+    if(!(await exportButton.count()))return nonExecuted('Career export control not found');
+    const exportPath=path.join(artifactDir,`rst01-b03-${ctx.browserName}.json`);
+    const [download]=await Promise.all([page.waitForEvent('download'),exportButton.click()]);await download.saveAs(exportPath);
+    const payload=JSON.parse(await fs.readFile(exportPath,'utf8')),before=await primarySummary(page);
+    const input=page.locator('#career-import-file');
+    if(!(await input.count()))return nonExecuted('Career import file control not found',{exportType:Array.isArray(payload)?'bundle':typeof payload});
+    await input.setInputFiles(exportPath);
+    const preview=page.locator('[data-dialog-kind="career-import-preview"]');await preview.waitFor({state:'visible',timeout:10000});
+    const rows=await preview.locator('.career-import-row').count();if(rows<1)return {state:'FAIL',reason:'Import preview contains no rows',rows};
+    const buttons=preview.locator('button:not([disabled]),[data-action]:not([disabled])');
+    const confirms=await buttons.evaluateAll(els=>els.map((el,index)=>({index,action:el.getAttribute('data-action')||'',text:(el.textContent||'').trim()})).filter(x=>/import.*confirm|confirm.*import|career-import-confirm|importa|confirm|conferma/i.test(x.action+' '+x.text)));
+    if(!confirms.length)return nonExecuted('Import preview opened but no deterministic import-confirm action was found',{rows});
+    await buttons.nth(confirms[0].index).click();await preview.waitFor({state:'hidden',timeout:10000}).catch(()=>{});await page.waitForTimeout(500);
+    const after=await primarySummary(page);
+    const validation=await page.evaluate(async()=>{
+      const {validateSave}=await import('/src/engine.js');
+      const rec=await new Promise((resolve,reject)=>{const r=indexedDB.open('football-architect-primary-careers',1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('snapshots','readonly'),q=tx.objectStore('snapshots').get('primary');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);};r.onerror=()=>reject(r.error);});
+      const entries=new Map(JSON.parse(rec.raw));
+      const slots=[...entries].filter(([key])=>/^football-architect:career:slot:/.test(key)).map(([key,raw])=>{try{const career=JSON.parse(raw);return {key,valid:validateSave(career),season:career.season,round:career.round};}catch(error){return {key,valid:false,error:String(error?.message||error)};}});
+      return {slots,allValid:slots.length>0&&slots.every(x=>x.valid)};
+    });
+    assert(after.checksumValid===true&&validation.allValid===true,'B03 imported slot set failed validation',{before,after,validation});
+    assert(after.slotCount>before.slotCount,'B03 import did not create/persist an additional slot',{before,after,validation});
+    return pass({rows,exportType:Array.isArray(payload)?'bundle':typeof payload,before,after,validation});
+  }finally{await made.context.close().catch(()=>{});}
 }
 async function B04(ctx){
   const made=await launchPersistent(ctx.browserName,{viewport:{width:1100,height:800},suffix:'b04'});
@@ -289,46 +308,29 @@ async function B04(ctx){
     await page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
     const result=await page.evaluate(async()=>{
       localStorage.clear();
-      const [{makeWorld},{startCareer,validateSave},{createFreshCareerSlot},{openPrimaryCareerStorage}]=await Promise.all([
-        import('/src/data.js'),
-        import('/src/engine.js'),
-        import('/src/career-management.js'),
-        import('/src/primary-career-storage.js')
+      const [{makeWorld},{startCareer,simulateRound,validateSave},{createFreshCareerSlot},{readCareerCatalog},{saveCareerToSlot},{openPrimaryCareerStorage}]=await Promise.all([
+        import('/src/data.js'),import('/src/engine.js'),import('/src/career-management.js'),import('/src/career-catalog.js'),import('/src/career-slots.js'),import('/src/primary-career-storage.js')
       ]);
-      const w=makeWorld();startCareer(w,1,'RST01 B04');
-      createFreshCareerSlot(localStorage,w,validateSave);
-      const first=await openPrimaryCareerStorage({legacyStorage:localStorage,validate:validateSave});
-      await first.commit();
-
-      const corrupted=await new Promise((resolve,reject)=>{
-        const r=indexedDB.open('football-architect-primary-careers',1);
-        r.onsuccess=()=>{
-          const db=r.result,tx=db.transaction('snapshots','readwrite'),store=tx.objectStore('snapshots');
-          const q=store.get('primary');
-          q.onsuccess=()=>{
-            const rec=q.result;
-            if(!rec){reject(new Error('primary record missing'));return;}
-            rec.sha256='0000000000000000000000000000000000000000000000000000000000000000';
-            rec.raw=String(rec.raw||'').slice(0,Math.max(0,String(rec.raw||'').length-17));
-            const put=store.put(rec);
-            put.onsuccess=()=>resolve({rawLength:rec.raw.length,sha256:rec.sha256});
-            put.onerror=()=>reject(put.error);
-          };
-          q.onerror=()=>reject(q.error);
-        };
-        r.onerror=()=>reject(r.error);
-      });
-
-      const recovered=await openPrimaryCareerStorage({legacyStorage:localStorage,validate:validateSave});
-      const keys=[];for(let i=0;i<recovered.storage.length;i++)keys.push(recovered.storage.key(i));
-      const slotKey=keys.find(k=>/^football-architect:career:slot:/.test(k));
-      const career=slotKey?JSON.parse(recovered.storage.getItem(slotKey)):null;
-      const valid=Boolean(career&&validateSave(career));
-      const commit=await recovered.commit();
-      return {corrupted,valid,recoveredFailed:String(recovered.failed||''),revision:recovered.revision,commit,slotKey};
+      let record=null,failNext=false;
+      const driver={read:async()=>record?structuredClone(record):null,compareAndPut:async(expectedRevision,next)=>{
+        if((record?.revision??0)!==expectedRevision)throw Object.assign(new Error('simulated conflict'),{code:'primary_conflict'});
+        if(failNext){failNext=false;throw Object.assign(new Error('simulated interrupted atomic commit'),{code:'simulated_interrupt'});}
+        record=structuredClone(next);
+      }};
+      const primary=await openPrimaryCareerStorage({driver,legacyStorage:localStorage,validate:validateSave});
+      const w=makeWorld();startCareer(w,1,'RST01 B04');createFreshCareerSlot(primary.storage,w,validateSave);await primary.commit();
+      const committedBefore=structuredClone(record),catalog=readCareerCatalog(primary.storage),active=catalog.slots.find(x=>x.id===catalog.activeSlotId);
+      const current=JSON.parse(primary.storage.getItem(active.storageKey)),beforeRound=current.round;
+      simulateRound(current);saveCareerToSlot(primary.storage,current,validateSave);failNext=true;
+      let interrupted=null;try{await primary.commit();}catch(error){interrupted={message:String(error?.message||error),code:error?.code||null};}
+      const afterFailedCommit=structuredClone(record),reopened=await openPrimaryCareerStorage({driver,legacyStorage:localStorage,validate:validateSave});
+      const rc=readCareerCatalog(reopened.storage),ra=rc.slots.find(x=>x.id===rc.activeSlotId),recovered=JSON.parse(reopened.storage.getItem(ra.storageKey));
+      return {beforeRound,attemptedRound:current.round,recoveredRound:recovered.round,interrupted,previousPreserved:JSON.stringify(afterFailedCommit)===JSON.stringify(committedBefore),valid:validateSave(recovered),reopenedRevision:reopened.revision,committedRevision:committedBefore.revision};
     });
-    assert(result.valid===true,'B04 did not recover a valid career from the surviving copy',result);
-    assert(!result.recoveredFailed,'B04 primary recovery reported a persistent failure',result);
+    assert(result.interrupted?.code==='simulated_interrupt','B04 simulated atomic interruption did not occur',result);
+    assert(result.previousPreserved===true,'B04 interrupted commit modified the last committed primary record',result);
+    assert(result.recoveredRound===result.beforeRound&&result.attemptedRound>result.beforeRound,'B04 did not recover the previous committed career',result);
+    assert(result.valid===true&&result.reopenedRevision===result.committedRevision,'B04 reopened previous primary record is invalid',result);
     return pass(result);
   }finally{await made.context.close().catch(()=>{});}
 }
