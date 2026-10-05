@@ -1,0 +1,176 @@
+name: RST-01 Windows certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Preparation plan or authorized execution"
+        required: true
+        type: choice
+        options:
+          - plan
+          - execute
+        default: plan
+      confirm:
+        description: "For execute mode type RUN-RST-01"
+        required: false
+        type: string
+  push:
+    branches:
+      - rst/rst01-preparation
+    paths:
+      - rst01-run.flag
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_ZIP_SHA256: 686f3abaea01807b04d1811da093f6b017eb372f1abb57e6788e6d52bc78d74c
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+jobs:
+  rst01:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+
+      - name: Authorization gate
+        id: auth
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_CONFIRM: ${{ inputs.confirm }}
+        run: |
+          $mode = if ($env:EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_MODE } else { 'execute' }
+          if ($mode -eq 'plan') {
+            "mode=plan" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            exit 0
+          }
+
+          if ($env:EVENT_NAME -eq 'workflow_dispatch') {
+            if ($env:INPUT_CONFIRM -ne 'RUN-RST-01') {
+              throw 'RST-01 execution refused: confirmation token RUN-RST-01 is required.'
+            }
+          } else {
+            if (-not (Test-Path ./rst01-run.flag)) { throw 'RST-01 run flag missing.' }
+            $flag=(Get-Content ./rst01-run.flag -Raw).Trim()
+            if ($flag -ne 'AUTHORIZED=YES') { throw 'RST-01 run flag is not authorized.' }
+          }
+          "mode=execute" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install RST-01 test-only dependencies
+        working-directory: rst01-runner
+        shell: pwsh
+        run: npm install --no-audit --no-fund
+
+      - name: Validate RST-01 preparation plan
+        working-directory: rst01-runner
+        shell: pwsh
+        env:
+          FA_ARTIFACT_DIR: ${{ github.workspace }}\rst01-artifacts
+        run: npm run plan
+
+      - name: Stop after preparation plan
+        if: steps.auth.outputs.mode == 'plan'
+        shell: pwsh
+        run: Write-Host 'RST-01 plan validated. No browser, simulation, save mutation or deployment executed.'
+
+      - name: Reconstruct immutable 2.0.0 ZIP
+        if: steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem ./release-b64/zip-*.part | Sort-Object Name
+          if ($parts.Count -ne 12) { throw "Expected 12 release chunks, found $($parts.Count)" }
+          $builder = New-Object System.Text.StringBuilder
+          foreach ($part in $parts) {
+            [void]$builder.Append((Get-Content $part.FullName -Raw))
+          }
+          $bytes = [Convert]::FromBase64String($builder.ToString())
+          [IO.File]::WriteAllBytes("./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip", $bytes)
+
+      - name: Verify immutable 2.0.0 ZIP
+        if: steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          $actual=(Get-FileHash ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:EXPECTED_ZIP_SHA256) { throw "Unexpected release SHA256: $actual" }
+
+      - name: Extract isolated copy
+        if: steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force work | Out-Null
+          Expand-Archive -LiteralPath ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -DestinationPath ./work -Force
+
+      - name: Start Football Architect local server
+        if: steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD\work\football-architect" -PassThru
+          $p.Id | Out-File -Encoding ascii ./server.pid
+          for($i=0;$i -lt 60;$i++) {
+            try {
+              $r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2
+              if($r.StatusCode -eq 200){ exit 0 }
+            } catch {}
+            Start-Sleep -Seconds 1
+          }
+          throw 'Football Architect server did not become ready.'
+
+      - name: Run RST-01 certification
+        if: steps.auth.outputs.mode == 'execute'
+        continue-on-error: true
+        timeout-minutes: 90
+        working-directory: rst01-runner
+        shell: pwsh
+        env:
+          FA_RST01_EXECUTE: YES
+          FA_BASE_URL: http://127.0.0.1:2000
+          FA_APP_DIR: ${{ github.workspace }}\work\football-architect
+          FA_ARTIFACT_DIR: ${{ github.workspace }}\rst01-artifacts
+        run: npm run certify -- --execute
+
+      - name: Verify reconstructed release ZIP unchanged
+        if: always() && steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          $actual=(Get-FileHash ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:EXPECTED_ZIP_SHA256) { throw "Release ZIP changed: $actual" }
+
+      - name: Stop server
+        if: always() && steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          if(Test-Path ./server.pid) {
+            $pidValue=[int](Get-Content ./server.pid)
+            Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload RST-01 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rst01-windows-evidence
+          path: rst01-artifacts
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Completion gate
+        if: always() && steps.auth.outputs.mode == 'execute'
+        shell: pwsh
+        run: |
+          $resultPath = "./rst01-artifacts/RST01-RESULTS.json"
+          if (-not (Test-Path $resultPath)) { throw "RST-01 results missing" }
+          $data = Get-Content $resultPath -Raw | ConvertFrom-Json
+          if ($data.summary.fail -ne 0) { throw "RST-01 has FAIL results" }
+          if ($data.summary.mandatoryNonExecuted -ne 0) { throw "RST-01 has mandatory NON_ESEGUITO results" }
+          if ($data.summary.pass -ne 43) { throw "RST-01 completion requires 43/43 PASS" }
+          Write-Host 'RST-01 completion gate: 43/43 PASS'
