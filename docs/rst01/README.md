@@ -63,3 +63,41 @@ The concrete scenario adapters A01–I05 are now implemented and statically revi
 A later, separately authorized change must review any remaining adapter assumptions and switch the lock to `READY_FOR_EXECUTION`.
 
 RST-01 remains **not started** until an actual certification workflow is explicitly authorized and launched.
+
+
+## RST-01A hardening
+
+The pre-execution read-only audit identified false-PASS risks in the first adapter draft. RST-01A hardened those paths without running the certification.
+
+Key changes:
+
+- A01 now requires a genuinely clean browser profile.
+- A02 drives the real new-career UI and verifies return-to-menu + continue.
+- A04 requires visible IT/EN text plus date/number/currency evidence.
+- B03 completes import and validates persisted storage rather than stopping at preview.
+- B04 corrupts the primary IndexedDB snapshot and requires recovery from a surviving valid copy.
+- B05 mutates one of two persisted slots and proves the other slot remains byte-for-byte unchanged after reopen.
+- C04/C05 require semantic cup/history evidence rather than key presence.
+- D01 requires a distinct 11-player starting XI plus formation.
+- D02 requires a persisted tactical-state transition.
+- H04 uses cold/warm cache control and documented thresholds derived from certified RST-00 D02 medians.
+- H05 records browser/page errors across the ten-season soak.
+- I04 now reloads persisted saves at both mid-season and pre-rollover boundaries.
+- top-level test dependencies are pinned to exact versions.
+
+### Readiness after hardening
+
+- **28/43 adapters: driver-ready for a future execution attempt**
+- **15/43 adapters: intentionally blocked**
+- **0/43 executed**
+- execution lock: `LOCKED_PREPARATION`
+
+Blocked behavioral drivers:
+
+`D03 D04 D05 E02 E03 F01 F02 F03 F04 F05 G01 G03 G04 I01 I03`
+
+These adapters return `NON_ESEGUITO` by design until a real behavioral driver exists. UI/API/state presence alone cannot produce PASS.
+
+The detailed machine-readable matrix is in `rst01-runner/readiness.json`.
+
+RST-01 remains **not started**.
