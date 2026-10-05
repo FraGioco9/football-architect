@@ -68,7 +68,7 @@ export async function runMarketNegotiationBehavior(page,baseURL){
 export async function runLoanClauseBehavior(page,baseURL){
   await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
   return page.evaluate(async()=>{
-    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerContracts,proposeCareerRenewal,respondCareerRenewal,validateCareerContracts},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,returnMarketLoansAfterArchive,validateCareerMarket}]=await Promise.all([
+    const [{makeWorld},{startCareer,simulateRound,newSeason,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerContracts,proposeCareerRenewal,respondCareerRenewal,validateCareerContracts},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,validateCareerMarket}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-contracts.js'),import('/src/domain/career-market.js')
     ]);
     const setup=(contracts=false)=>{const w=makeWorld();startCareer(w,1,'RST01 F02');enableAdvancedCareer(w);enableCareerWorld(w);if(contracts)enableCareerContracts(w);enableCareerMarket(w);return w;};
@@ -87,8 +87,11 @@ export async function runLoanClauseBehavior(page,baseURL){
     completeMarketDeal(loan,{revision:loan.advancedV1.marketV1.revision,dealId:loanId});
     const loanRecord=structuredClone(loan.advancedV1.marketV1.loans[target.x.id]);
     const loanOwner=marketPlayers(loan,{limit:3000}).find(x=>x.id===target.x.id)?.clubKey;
-    returnMarketLoansAfterArchive(loan);
+    const loanSeason=loan.season;
+    while(loan.round<loan.fixtures.length)simulateRound(loan);
+    newSeason(loan);
     const returnedOwner=marketPlayers(loan,{limit:3000}).find(x=>x.id===target.x.id)?.clubKey;
+    const loanRollover={fromSeason:loanSeason,toSeason:loan.season,round:loan.round};
 
     const clause=setup(true),clauseManaged=managedClubKey(clause),p=clause.players.find(x=>x.clubId===clause.clubId&&x.position!=='POR'&&!clause.lineup.includes(x.id));
     if(!p)return {ok:false,reason:'no clause sale player'};
@@ -112,11 +115,11 @@ export async function runLoanClauseBehavior(page,baseURL){
 
     return {
       ok:Boolean(
-        ld.decision==='accept'&&loanRecord&&loanOwner===managed&&!loan.advancedV1.marketV1.loans[target.x.id]&&returnedOwner===target.x.clubKey&&
+        ld.decision==='accept'&&loanRecord&&loanOwner===managed&&loan.season===loanSeason+1&&loan.round===0&&!loan.advancedV1.marketV1.loans[target.x.id]&&returnedOwner===target.x.clubKey&&
         decision.decision==='accept'&&movement?.feeEUR===releaseFee&&sold?.clubId===0&&
         validateCareerMarket(loan)&&validateCareerMarket(clause)&&validateCareerContracts(clause)&&validateSave(loan)&&validateSave(clause)
       ),
-      loan:{playerId:target.x.id,decision:ld,record:loanRecord,loanOwner,returnedOwner,origin:target.x.clubKey},
+      loan:{playerId:target.x.id,decision:ld,record:loanRecord,loanOwner,returnedOwner,origin:target.x.clubKey,rollover:loanRollover},
       clause:{playerId:pid,releaseFee,decision,movement,localClubId:sold?.clubId},
       valid:{loan:validateCareerMarket(loan),clause:validateCareerMarket(clause),contracts:validateCareerContracts(clause)}
     };
@@ -169,21 +172,21 @@ export async function runCalendarBehavior(page,baseURL){
 export async function runScoutingBehavior(page,baseURL){
   await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
   return page.evaluate(async()=>{
-    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer,prepareAdvancedRound},{enableCareerWorld},{enableCareerMarket},{enableCareerScouting,scoutingPlayers,scoutingEstimate,assignScoutingMission,shortlistScoutedPlayer,refreshScoutingReport,advanceCareerScouting,validateCareerScouting}]=await Promise.all([
+    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer,prepareAdvancedRound},{enableCareerWorld,syncCareerWorldClock},{enableCareerMarket},{enableCareerScouting,scoutingPlayers,scoutingEstimate,assignScoutingMission,shortlistScoutedPlayer,refreshScoutingReport,advanceCareerScouting,validateCareerScouting}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-market.js'),import('/src/domain/career-scouting.js')
     ]);
     const w=makeWorld();startCareer(w,1,'RST01 F04');enableAdvancedCareer(w);enableCareerWorld(w);enableCareerMarket(w);enableCareerScouting(w);
     const foreign=scoutingPlayers(w).find(x=>x.countryId!==w.countryId);
     if(!foreign)return {ok:false,reason:'no foreign scouting country'};
     const mission=assignScoutingMission(w,{revision:w.advancedV1.scoutingV1.revision,countryId:foreign.countryId,position:'ALL',ageMin:15,ageMax:45,contractMax:20,weeks:2});
-    for(let i=0;i<2;i++){prepareAdvancedRound(w);advanceCareerScouting(w);}
+    for(let i=0;i<2;i++){prepareAdvancedRound(w);syncCareerWorldClock(w);advanceCareerScouting(w);}
     const completed=w.advancedV1.scoutingV1.missions.find(m=>m.id===mission);
     const reportEntry=Object.entries(w.advancedV1.scoutingV1.reports).find(([,r])=>r.countryId===foreign.countryId);
     if(!reportEntry)return {ok:false,reason:'mission produced no scouting report',mission:completed};
     const [playerId,reportBefore]=reportEntry;
     shortlistScoutedPlayer(w,{revision:w.advancedV1.scoutingV1.revision,playerId,add:true});
     const shortlisted=w.advancedV1.scoutingV1.shortlist.includes(playerId);
-    for(let i=0;i<5;i++)prepareAdvancedRound(w);
+    for(let i=0;i<5;i++){prepareAdvancedRound(w);syncCareerWorldClock(w);}
     const before=scoutingEstimate(w,playerId);
     const refresh=refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId});
     const reportAfter=w.advancedV1.scoutingV1.reports[playerId],after=scoutingEstimate(w,playerId);
