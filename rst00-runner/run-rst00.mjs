@@ -115,8 +115,30 @@ async function readPrimary(page){return page.evaluate(async()=>{
   return {schemaVersion:rec?.schemaVersion,revision:rec?.revision,sha256:rec?.sha256,computed:rec?.raw?await hash(rec.raw):null,rawLength:rec?.raw?.length||0};
 });}
 
+async function setNativeBrowserDefaultZoom(page,browserName,factor){
+  const settingsURL=browserName==='edge'?'edge://settings/appearance':'chrome://settings/appearance';
+  await page.goto(settingsURL,{waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(700);
+  const viaApi=await page.evaluate(async factor=>{
+    const api=globalThis.chrome?.settingsPrivate;
+    if(!api?.setDefaultZoom)return {ok:false,reason:'settingsPrivate.setDefaultZoom unavailable'};
+    api.setDefaultZoom(factor);
+    await new Promise(resolve=>setTimeout(resolve,500));
+    return {ok:true,method:'settingsPrivate.setDefaultZoom'};
+  },factor).catch(err=>({ok:false,reason:String(err?.message||err)}));
+  if(viaApi.ok)return {...viaApi,settingsURL};
+
+  const select=page.locator('select#zoomLevel').first();
+  if(await select.count()){
+    await select.selectOption(String(factor));
+    await page.waitForTimeout(500);
+    return {ok:true,method:'settings appearance #zoomLevel',settingsURL,apiFallback:viaApi};
+  }
+  throw new Error(`native browser zoom control unavailable at ${settingsURL}: ${JSON.stringify(viaApi)}`);
+}
+
 async function runB04(){
-  const detail={browserRuns:{},method:'Chromium native profile zoom preference (partition.default_zoom_level)',targetFactor:2};let verified=0;
+  const detail={browserRuns:{},method:'Native browser Settings page default zoom',targetFactor:2};let verified=0;
   for(const browserName of ['chrome','edge']){
     let baselineContext,zoomContext;
     try{
@@ -127,16 +149,17 @@ async function runB04(){
       const before=await globalGeometry(page);
       await baselineContext.close();baselineContext=null;
 
-      const zoomed=await createContext(browserName,{headless:true,viewport:null,suffix:'b04-zoom',nativeZoomFactor:2,extraArgs:['--window-size=1440,900']});
+      const zoomed=await createContext(browserName,{headless:true,viewport:null,suffix:'b04-zoom',extraArgs:['--window-size=1440,900']});
       zoomContext=zoomed.context;
       page=zoomContext.pages()[0]||await zoomContext.newPage();
+      const nativeControl=await setNativeBrowserDefaultZoom(page,browserName,2);
       await ensureCareer(page);
       const after=await globalGeometry(page);
       const viewportRatio=before.iw/Math.max(1,after.iw);
       const dprRatio=after.dpr/Math.max(0.01,before.dpr);
       const native=(viewportRatio>=1.70&&viewportRatio<=2.35)||(dprRatio>=1.70&&dprRatio<=2.35);
       const pages=[];
-      detail.browserRuns[browserName]={before,after,viewportRatio,dprRatio,nativeZoomObserved:native,zoomLevel:zoomed.zoomLevel,pages};
+      detail.browserRuns[browserName]={before,after,viewportRatio,dprRatio,nativeZoomObserved:native,nativeControl,pages};
       if(native){
         verified++;
         for(const id of navPagesCore){await navigateCore(page,id);const g=await globalGeometry(page);pages.push({id,...g,overflow:g.sw>g.cw+2});}
@@ -146,7 +169,7 @@ async function runB04(){
     }catch(err){detail.browserRuns[browserName]={...(detail.browserRuns[browserName]||{}),error:String(err?.message||err)};}
     finally{await baselineContext?.close().catch(()=>{});await zoomContext?.close().catch(()=>{});}
   }
-  if(verified===2)status('B04','PASS',{...detail,note:'Chrome and Edge both applied verifiable native 200% browser zoom from their Chromium profile preference; geometry/scroll evidence captured without CSS zoom, device scale factor or CDP zoom emulation.'});
+  if(verified===2)status('B04','PASS',{...detail,note:'Chrome and Edge both applied verifiable native 200% browser zoom through their internal Settings page; geometry/scroll evidence captured without CSS zoom, device scale factor or CDP zoom emulation.'});
   else status('B04','NON_ESEGUITO',{...detail,reason:`Native 200% browser zoom was verified in ${verified}/2 browsers; both Chrome and Edge are required.`});
 }
 
