@@ -1,0 +1,85 @@
+name: RST-00 Windows baseline completion
+
+on:
+  push:
+    branches:
+      - rst/rst00-windows-baseline
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_ZIP_SHA256: 686f3abaea01807b04d1811da093f6b017eb372f1abb57e6788e6d52bc78d74c
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+jobs:
+  rst00-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify immutable 2.0.0 ZIP
+        shell: pwsh
+        run: |
+          $actual=(Get-FileHash ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:EXPECTED_ZIP_SHA256) { throw "Unexpected release SHA256: $actual" }
+
+      - name: Extract isolated copy
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force work | Out-Null
+          Expand-Archive -LiteralPath ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -DestinationPath ./work -Force
+
+      - name: Install test-only dependencies
+        working-directory: rst00-runner
+        shell: pwsh
+        run: npm install --no-audit --no-fund
+
+      - name: Start Football Architect local server
+        shell: pwsh
+        run: |
+          $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD\work\football-architect" -PassThru
+          $p.Id | Out-File -Encoding ascii ./server.pid
+          for($i=0;$i -lt 60;$i++) {
+            try { $r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ exit 0 } } catch {}
+            Start-Sleep -Seconds 1
+          }
+          throw 'Football Architect server did not become ready.'
+
+      - name: Run B04 B05 C03 D02
+        working-directory: rst00-runner
+        shell: pwsh
+        env:
+          FA_BASE_URL: http://127.0.0.1:2000
+          FA_APP_DIR: ${{ github.workspace }}\work\football-architect
+          FA_ARTIFACT_DIR: ${{ github.workspace }}\rst00-artifacts
+        run: npm run rst00
+
+      - name: Verify release ZIP unchanged
+        if: always()
+        shell: pwsh
+        run: |
+          $actual=(Get-FileHash ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:EXPECTED_ZIP_SHA256) { throw "Release ZIP changed: $actual" }
+
+      - name: Stop server
+        if: always()
+        shell: pwsh
+        run: |
+          if(Test-Path ./server.pid) { $pidValue=[int](Get-Content ./server.pid); Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue }
+
+      - name: Upload RST-00 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rst00-windows-evidence
+          path: rst00-artifacts
+          if-no-files-found: error
