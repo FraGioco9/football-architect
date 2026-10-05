@@ -1,7 +1,7 @@
 {
   "suite": "RST-01",
-  "phase": "RST-01B",
-  "state": "BEHAVIORAL_DRIVERS_READY_LOCKED",
+  "phase": "PRE_UNLOCK_GATE",
+  "state": "PRE_UNLOCK_GATE_PASS_LOCKED",
   "executionLock": "LOCKED_PREPARATION",
   "totalChecks": 43,
   "driverReadyCount": 43,
@@ -56,10 +56,15 @@
   "staticGates": {
     "adapterRegistry": "43/43",
     "syntaxModules": "11/11 PASS",
-    "frozenReleaseApiContract": "100/100 matched across 21 modules",
-    "workflow": "manual-only workflow_dispatch",
+    "frozenReleaseApiContract": "101/101 matched across 21 modules (including syncCareerWorldClock)",
+    "staleReferenceAudit": "PASS",
+    "prScope": "Harness/docs/workflow only; no src/ or release-b64/ changes",
+    "branchSync": "44 commits ahead / 0 behind main at gate",
+    "workflow": "manual-only workflow_dispatch with RUN-RST-01 confirmation",
+    "runnerAuthorization": "FA_RST01_EXECUTE=YES + READY_FOR_EXECUTION required",
     "antiDeploy": "PASS",
-    "workflowRunsDuringPreparation": 0
+    "workflowRunsDuringPreparation": 0,
+    "preUnlockGate": "PASS"
   },
   "behavioralCoverage": {
     "substitutions": "manual + AI + substitution/window regulations + minutes/fitness",
@@ -80,7 +85,7 @@
     "D05 and I03 scan the complete frozen-season fixture set for an official injury substitution; absence yields NON_ESEGUITO rather than a false PASS."
   ],
   "performanceBaseline": {
-    "source": "RST-00 Windows D02 certified evidence",
+    "source": "RST-00 Windows D02 certified timing evidence + explicit RST-01 memory guardrail",
     "mediansMs": {
       "coldLoad": 274,
       "warmLoad": 275.1,
@@ -97,13 +102,25 @@
       "warmLcp": 800,
       "navigation": 320,
       "input": 250,
-      "cls": 0.1
-    }
+      "cls": 0.1,
+      "heapMaxMB": 256,
+      "heapGrowthMB": 64
+    },
+    "memoryNote": "RST-00 D02 did not record heap memory. RST-01 measures post-GC JSHeapUsedSize via CDP and uses a documented conservative guardrail."
   },
   "notes": [
-    "Driver-ready means implemented and statically validated; it does not mean PASS.",
-    "No RST-01 check has been executed.",
-    "The execution lock remains active and requires separate explicit authorization to change.",
+    "43/43 driver-ready means implemented and statically validated; it does not mean PASS.",
+    "The pre-unlock gate is PASS, but no RST-01 check has been executed.",
+    "The execution lock remains LOCKED_PREPARATION and may change only after explicit user authorization.",
     "No deployment is authorized."
+  ],
+  "preUnlockFixes": [
+    "F04 synchronizes worldV1.day after direct advanced-clock movement.",
+    "I02 consumes the current structured WRD03/WRD04 soak evidence.",
+    "D04 attributes fitness only to the immediately measured substitution match.",
+    "H04 measures post-GC JS heap peak and growth in addition to timing metrics.",
+    "F02 verifies loan return through the official newSeason rollover.",
+    "D03/D05 wording and observation windows match complete-season behavior.",
+    "H02 explicitly checks keyboard/focus plus landmark/control-name accessibility rules."
   ]
 }
