@@ -1,0 +1,12 @@
+{
+  "name": "football-architect-rst00-runner",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "axe-core": "^4.10.3",
+    "playwright-core": "^1.55.0"
+  },
+  "scripts": {
+    "rst00": "node run-rst00.mjs"
+  }
+}
