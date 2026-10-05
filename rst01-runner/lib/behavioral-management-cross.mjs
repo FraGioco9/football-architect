@@ -144,28 +144,37 @@ export async function runCrossInjuryTransferBehavior(page,baseURL){
     const [{makeWorld},{startCareer,simulateRound,autoLineup,validateSave},{enableAdvancedCareer},{enableCareerMatchday,careerMatchdayBench,planCareerSubstitution,validateCareerMatchday},{enableCareerContracts,proposeCareerRenewal,respondCareerRenewal,syncCareerContracts,validateCareerContracts},{enableCareerWorld},{enableCareerMarket,managedClubKey,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,validateCareerMarket}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-matchday.js'),import('/src/domain/career-contracts.js'),import('/src/domain/career-world.js'),import('/src/domain/career-market.js')
     ]);
-    const w=makeWorld();startCareer(w,1,'RST01 I03');enableAdvancedCareer(w);enableCareerMatchday(w);enableCareerContracts(w);enableCareerWorld(w);enableCareerMarket(w);autoLineup(w);
-    const bench=careerMatchdayBench(w,w.clubId,w.lineup),players=new Map(w.players.map(p=>[p.id,p]));
-    let pair=null;
-    for(const out of w.lineup){for(const inc of bench){if((players.get(out)?.position==='POR')===(inc.position==='POR')){pair={outgoing:out,incoming:inc.id};break;}}if(pair)break;}
-    if(!pair)return {ok:false,reason:'no manual substitution pair'};
-    planCareerSubstitution(w,{minute:60,...pair});
-    const first=simulateRound(w),manual=first.result?.advancedV1?.matchday?.changes?.find(x=>x.teamId===w.clubId&&x.reason==='manual')??null;
 
-    let injury=null;
-    for(let i=0;w.round<w.fixtures.length&&!injury;i++){
-      const m=simulateRound(w),adv=m.result?.advancedV1;
-      const ch=adv?.matchday?.changes?.find(x=>x.teamId===w.clubId&&x.reason==='injury');
-      if(ch)injury={change:ch,injury:(adv.injuries??[]).find(x=>x.playerId===ch.out)??null,round:w.round};
+    let chosen=null,scanned=[];
+    for(let clubId=1;clubId<=20&&!chosen;clubId++){
+      const w=makeWorld();startCareer(w,clubId,`RST01 I03 Club ${clubId}`);enableAdvancedCareer(w);enableCareerMatchday(w);enableCareerContracts(w);enableCareerWorld(w);enableCareerMarket(w);autoLineup(w);
+      const bench=careerMatchdayBench(w,w.clubId,w.lineup),players=new Map(w.players.map(p=>[p.id,p]));
+      let pair=null;
+      for(const out of w.lineup){for(const inc of bench){if((players.get(out)?.position==='POR')===(inc.position==='POR')){pair={outgoing:out,incoming:inc.id};break;}}if(pair)break;}
+      if(!pair){scanned.push({clubId,reason:'no_manual_pair'});continue;}
+      planCareerSubstitution(w,{minute:60,...pair});
+      const first=simulateRound(w),manual=first.result?.advancedV1?.matchday?.changes?.find(x=>x.teamId===w.clubId&&x.reason==='manual')??null;
+      let injury=null;
+      while(w.round<w.fixtures.length&&!injury){
+        const m=simulateRound(w),adv=m.result?.advancedV1;
+        const ch=adv?.matchday?.changes?.find(x=>x.teamId===w.clubId&&x.reason==='injury');
+        if(ch)injury={change:ch,injury:(adv.injuries??[]).find(x=>x.playerId===ch.out)??null,round:w.round};
+      }
+      scanned.push({clubId,rounds:w.round,manual:Boolean(manual),injury:Boolean(injury)});
+      if(manual&&injury?.injury)chosen={w,manual,injury};
     }
-    if(!injury)return {ok:false,reason:'no injury substitution observed',manual};
+    if(!chosen)return {ok:false,reason:'no injury substitution observed across 20 deterministic club-season paths',scanned};
 
+    const {w,manual,injury}=chosen;
     const contractPlayer=w.players.find(p=>p.clubId===w.clubId&&p.id!==injury.change.out&&p.position!=='POR');
     const offer=proposeCareerRenewal(w,{playerId:contractPlayer.id,expectedRevision:w.advancedV1.contractsV1.revision,years:2,annualWage:contractPlayer.wage*52,releaseFee:2_000_000});
     respondCareerRenewal(w,{offerId:offer,expectedRevision:w.advancedV1.contractsV1.revision,decision:'accept'});
 
-    const managed=managedClubKey(w),target=marketPlayers(w,{limit:2000}).filter(x=>x.clubKey!==managed).map(x=>({x,v:marketValuation(w,x.id,managed)})).filter(({v})=>v.askingEUR<w.teams.find(c=>c.id===w.clubId).transferBudget*.5).sort((a,b)=>a.v.askingEUR-b.v.askingEUR)[0];
-    if(!target)return {ok:false,reason:'no transfer target',manual,injury};
+    const managed=managedClubKey(w);
+    const target=marketPlayers(w,{limit:2000}).filter(x=>x.clubKey!==managed).map(x=>({x,v:marketValuation(w,x.id,managed)}))
+      .filter(({v})=>v.askingEUR<=10_000_000&&v.askingEUR<w.teams.find(c=>c.id===w.clubId).transferBudget*.5)
+      .sort((a,b)=>a.v.askingEUR-b.v.askingEUR)[0];
+    if(!target)return {ok:false,reason:'no affordable cross-domain transfer target',manual,injury,scanned};
     const q=createCareerQuote(w,{type:'permanent',feeEUR:target.v.askingEUR,days:120});
     const deal=startMarketDeal(w,{revision:w.advancedV1.marketV1.revision,playerId:target.x.id,buyerKey:managed,quote:q});
     answerMarketClub(w,{revision:w.advancedV1.marketV1.revision,dealId:deal,side:'seller',decision:'accept'});
@@ -177,8 +186,9 @@ export async function runCrossInjuryTransferBehavior(page,baseURL){
     const ids=w.players.map(p=>p.id),managedPlayers=w.players.filter(p=>p.clubId===w.clubId),orphans=managedPlayers.filter(p=>!w.advancedV1.contractsV1.contracts[String(p.id)]).map(p=>p.id);
     return {
       ok:Boolean(manual&&injury.injury&&w.advancedV1.contractsV1.offers[offer]?.status==='accepted'&&w.advancedV1.marketV1.deals[deal]?.status==='completed'&&new Set(ids).size===ids.length&&orphans.length===0&&validateCareerMatchday(w)&&validateCareerContracts(w)&&validateCareerMarket(w)&&validateSave(w)),
-      manual,injury,renewal:{offer,status:w.advancedV1.contractsV1.offers[offer]?.status},transfer:{deal,status:w.advancedV1.marketV1.deals[deal]?.status},integrity:{players:ids.length,unique:new Set(ids).size,orphans},
+      manual,injury,renewal:{offer,status:w.advancedV1.contractsV1.offers[offer]?.status},transfer:{deal,status:w.advancedV1.marketV1.deals[deal]?.status},integrity:{players:ids.length,unique:new Set(ids).size,orphans},scanned,
       valid:{matchday:validateCareerMatchday(w),contracts:validateCareerContracts(w),market:validateCareerMarket(w),save:validateSave(w)}
     };
   });
 }
+
