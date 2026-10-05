@@ -1,0 +1,105 @@
+name: WRD02.05 Windows IndexedDB certification
+
+on:
+  push:
+    branches:
+      - wrd/wrd02-05-windows-cert
+    paths:
+      - wrd02-05-ready.flag
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_ZIP_SHA256: 686f3abaea01807b04d1811da093f6b017eb372f1abb57e6788e6d52bc78d74c
+
+jobs:
+  discovery:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Reconstruct immutable 2.0.0 ZIP
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem ./release-b64/zip-*.part | Sort-Object Name
+          if ($parts.Count -ne 12) { throw "Expected 12 release chunks, found $($parts.Count)" }
+          $builder = New-Object System.Text.StringBuilder
+          foreach ($part in $parts) {
+            [void]$builder.Append((Get-Content $part.FullName -Raw))
+          }
+          $bytes = [Convert]::FromBase64String($builder.ToString())
+          [IO.File]::WriteAllBytes("./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip", $bytes)
+
+      - name: Verify immutable ZIP
+        shell: pwsh
+        run: |
+          $actual=(Get-FileHash ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:EXPECTED_ZIP_SHA256) { throw "Unexpected release SHA256: $actual" }
+
+      - name: Extract isolated copy
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force work | Out-Null
+          Expand-Archive -LiteralPath ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -DestinationPath ./work -Force
+
+      - name: Discover season and movement APIs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force wrd02-05-artifacts | Out-Null
+          $src = Join-Path $PWD "work/football-architect/src"
+          Get-ChildItem $src -Recurse -File -Filter *.js |
+            Select-Object FullName |
+            Out-File -Encoding utf8 ./wrd02-05-artifacts/source-files.txt
+
+          $patterns = @(
+            'promot',
+            'releg',
+            'playoff',
+            'endSeason',
+            'advanceSeason',
+            'seasonEnd',
+            'newSeason',
+            'nextSeason',
+            'division',
+            'standings'
+          )
+          Get-ChildItem $src -Recurse -File -Filter *.js |
+            Select-String -Pattern $patterns -CaseSensitive:$false -Context 3,8 |
+            Out-String -Width 500 |
+            Out-File -Encoding utf8 ./wrd02-05-artifacts/season-movement-search.txt
+
+          Get-Content (Join-Path $src "engine.js") -Raw |
+            Out-File -Encoding utf8 ./wrd02-05-artifacts/engine.js.txt
+
+          if (Test-Path (Join-Path $src "data.js")) {
+            Get-Content (Join-Path $src "data.js") -Raw |
+              Out-File -Encoding utf8 ./wrd02-05-artifacts/data.js.txt
+          }
+
+          if (Test-Path (Join-Path $src "career-management.js")) {
+            Get-Content (Join-Path $src "career-management.js") -Raw |
+              Out-File -Encoding utf8 ./wrd02-05-artifacts/career-management.js.txt
+          }
+
+      - name: Verify ZIP unchanged
+        shell: pwsh
+        run: |
+          $actual=(Get-FileHash ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $env:EXPECTED_ZIP_SHA256) { throw "Release ZIP changed: $actual" }
+
+      - name: Upload discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrd02-05-discovery
+          path: wrd02-05-artifacts
+          if-no-files-found: error
+          retention-days: 14
