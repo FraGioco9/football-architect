@@ -52,6 +52,16 @@ jobs:
           New-Item -ItemType Directory -Force work | Out-Null
           Expand-Archive -LiteralPath ./Football-Architect-2.0.0-UX-STABILE-ESSENZIALE.zip -DestinationPath ./work -Force
 
+      - name: Capture primary storage contract
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force wrd02-05-artifacts | Out-Null
+          Get-Content ./work/football-architect/src/primary-career-storage.js -Raw |
+            Out-File -Encoding utf8 ./wrd02-05-artifacts/primary-career-storage.js.txt
+          Select-String -Path ./work/football-architect/src/main.js -Pattern 'primary\\.' -Context 3,6 |
+            Out-String -Width 500 |
+            Out-File -Encoding utf8 ./wrd02-05-artifacts/main-primary-usage.txt
+
       - name: Install test-only dependencies
         working-directory: wrd02-05-runner
         shell: pwsh
