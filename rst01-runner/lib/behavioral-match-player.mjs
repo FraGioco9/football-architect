@@ -144,7 +144,7 @@ export async function runYouthBehavior(page,baseURL){
     if(!candidate)return {ok:false,reason:'no promotable academy prospect',before};
     const academyBefore=new Map(before.academy.map(p=>[p.id,p.ovr]));
     const promotedId=promoteCareerProspect(w,candidate.id);
-    const promoted=w.players.find(p=>p.id===promotedId);
+    const promoted=w.players.find(p=>p.id===promotedId),promotedBeforeOvr=promoted?.ovr;
     const afterPromotion=careerYouthSummary(w);
     if(!promoted||afterPromotion.academy.some(p=>p.id===promotedId))return {ok:false,reason:'promotion state mismatch',promotedId};
 
@@ -154,10 +154,10 @@ export async function runYouthBehavior(page,baseURL){
     const commonGrowth=after.academy.filter(p=>academyBefore.has(p.id)&&p.ovr!==academyBefore.get(p.id)).map(p=>({id:p.id,before:academyBefore.get(p.id),after:p.ovr}));
     const intake=after.academy.filter(p=>!academyBefore.has(p.id)).map(p=>({id:p.id,age:p.age,ovr:p.ovr}));
     const promotedAfter=w.players.find(p=>p.id===promotedId);
-    const growthEvidence=commonGrowth.length>0||promotedAfter?.ovr!==promoted.ovr||intake.length>0;
+    const growthEvidence=commonGrowth.length>0||(promotedAfter&&promotedAfter.ovr!==promotedBeforeOvr);
     return {
       ok:Boolean(growthEvidence&&w.season===seasonBefore+1&&validateCareerYouth(w)&&validateCareerTraining(w)&&validateSave(w)),
-      promoted:{id:promotedId,beforeOvr:promoted.ovr,afterOvr:promotedAfter?.ovr,stillFirstTeam:Boolean(promotedAfter)},
+      promoted:{id:promotedId,beforeOvr:promotedBeforeOvr,afterOvr:promotedAfter?.ovr,stillFirstTeam:Boolean(promotedAfter)},
       commonGrowth,intake:intake.slice(0,20),beforeAcademy:before.academy.length,afterAcademy:after.academy.length,
       validYouth:validateCareerYouth(w),validTraining:validateCareerTraining(w),validSave:validateSave(w),season:w.season
     };
