@@ -101,3 +101,27 @@ These adapters return `NON_ESEGUITO` by design until a real behavioral driver ex
 The detailed machine-readable matrix is in `rst01-runner/readiness.json`.
 
 RST-01 remains **not started**.
+
+
+## RST-01B behavioral drivers
+
+RST-01B replaces the 15 remaining blocked/proxy adapters with behavioral drivers backed by the actual frozen 2.0.0 APIs.
+
+### Result
+
+- **43/43 drivers implemented**
+- **43/43 registered**
+- **0 blocked drivers**
+- **0/43 executed**
+- JavaScript static syntax gate: **PASS**
+- frozen-release API contract: **100/100 names matched across 21 source modules**
+- workflow runs during preparation: **0**
+- execution lock: `LOCKED_PREPARATION`
+
+New behavioral coverage includes real substitution rules/minutes, injury substitution and recovery, contract negotiations and expiry/release, academy promotion/development, transfer buy/sell/reject, loans/clauses, windows/free agents/registration, scouting uncertainty, two-season AI market activity, board evaluation/dismissal, staff/facility projects, manager interviews/appointments, and cross-module rollover/injury/transfer integrity.
+
+The 10-season world soak now explicitly enables and validates WRD03 national cups, WRD04 continental competition and WRD05 official records/rivalries in addition to the eight leagues and divisions.
+
+D05/I03 use a complete-season deterministic scan of the frozen fixture set for an official injury substitution. If the frozen deterministic season contains no such event, the check returns `NON_ESEGUITO`; it never fabricates an injury or PASS.
+
+**Driver-ready is not equivalent to tested or PASS. RST-01 remains NOT STARTED.**
