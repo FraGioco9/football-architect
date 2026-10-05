@@ -36,9 +36,10 @@ export async function runSubstitutionBehavior(page,baseURL){
 
     const match=simulateRound(w),md=match.result?.advancedV1?.matchday,changes=md?.changes??[];
     const manual=changes.find(x=>x.teamId===w.clubId&&x.reason==='manual'&&x.out===pairs[0].outgoing&&x.in===pairs[0].incoming);
+    const afterFirstMatch=Object.fromEntries([pairs[0].outgoing,pairs[0].incoming].map(id=>{const p=w.players.find(x=>x.id===id);return [id,{fitness:p.fitness,medical:structuredClone(p.medicalV1)}];}));
     let ai=changes.find(x=>x.reason==='ai')??null;
     const aiRounds=[];
-    for(let i=0;i<6&&!ai&&w.round<w.fixtures.length;i++){
+    while(!ai&&w.round<w.fixtures.length){
       const m=simulateRound(w),day=m.result?.advancedV1?.matchday;
       const found=day?.changes?.find(x=>x.reason==='ai')??null;
       aiRounds.push({round:w.round,changes:day?.changes??[]});
@@ -46,12 +47,12 @@ export async function runSubstitutionBehavior(page,baseURL){
     }
     const ledger=md?.minutes?.find(x=>x.teamId===w.clubId)?.players??[];
     const outRow=ledger.find(x=>x.playerId===pairs[0].outgoing),inRow=ledger.find(x=>x.playerId===pairs[0].incoming);
-    const after=Object.fromEntries([pairs[0].outgoing,pairs[0].incoming].map(id=>{const p=w.players.find(x=>x.id===id);return [id,{fitness:p.fitness,medical:structuredClone(p.medicalV1)}];}));
+    const finalAfterAiScan=Object.fromEntries([pairs[0].outgoing,pairs[0].incoming].map(id=>{const p=w.players.find(x=>x.id===id);return [id,{fitness:p.fitness,medical:structuredClone(p.medicalV1)}];}));
     const total=ledger.reduce((n,x)=>n+x.seconds,0);
     return {
       ok:Boolean(manual&&ai&&validateCareerMatchday(w)&&validateSave(w)),
       planned,manual,ai,aiRounds,ledger:{total,count:ledger.length,outRow,inRow},
-      before,after,subLimitError,windowLimitError,
+      before,afterFirstMatch,finalAfterAiScan,subLimitError,windowLimitError,
       validMatchday:validateCareerMatchday(w),validSave:validateSave(w)
     };
   });
@@ -75,7 +76,7 @@ export async function runInjuryRecoveryBehavior(page,baseURL){
         found={round:w.round,change:injuryChange,injury,minutes,playerId:p.id,beforeRecovery:{fitness:p.fitness,medical:structuredClone(p.medicalV1),injuryLegacy:p.injury}};
       }
     }
-    if(!found)return {ok:false,reason:'no managed injury substitution observed within 18 rounds'};
+    if(!found)return {ok:false,reason:'no managed injury substitution observed in the complete deterministic season'};
     const p=w.players.find(x=>x.id===found.playerId),recovery=[];
     for(let week=1;week<=30;week++){
       prepareAdvancedRound(w);
