@@ -19,13 +19,14 @@ The manifest declares **43 mandatory checks** across areas A–I.
 
 The preparation branch cannot certify RST-01.
 
-Execution is protected by three independent gates:
+Execution is protected by independent gates:
 
-1. workflow trigger is limited to manual dispatch or an explicit `rst01-run.flag`;
-2. execute mode requires the confirmation token `RUN-RST-01` or an authorized flag;
-3. `rst01-runner/execution-lock.json` remains `LOCKED_PREPARATION`.
+1. the workflow is **manual-only** (`workflow_dispatch`); no push trigger can start RST-01;
+2. execute mode requires the confirmation token `RUN-RST-01`;
+3. the workflow passes `FA_RST01_EXECUTE=YES` only on the execute path;
+4. `rst01-runner/execution-lock.json` must be `READY_FOR_EXECUTION`.
 
-The runner also requires `FA_RST01_EXECUTE=YES` before any execution path.
+The current lock remains `LOCKED_PREPARATION`, so even a manual execute request is refused before any browser certification begins.
 
 No deploy step exists.
 
@@ -57,6 +58,8 @@ When execution is explicitly authorized in a later step, the suite will:
 
 The current runner intentionally refuses the execute path after all authorization checks. This prevents the preparation work itself from starting RST-01.
 
-A later, separately authorized change must add/review the concrete scenario adapters and switch the lock to `READY_FOR_EXECUTION`.
+The concrete scenario adapters A01–I05 are now implemented and statically reviewed on the preparation branch. They deliberately return `NON_ESEGUITO` when the requested feature/API cannot be identified deterministically, instead of manufacturing a PASS.
+
+A later, separately authorized change must review any remaining adapter assumptions and switch the lock to `READY_FOR_EXECUTION`.
 
 RST-01 remains **not started** until an actual certification workflow is explicitly authorized and launched.
