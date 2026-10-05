@@ -67,9 +67,8 @@ async function ensureCareer(page){
   }));
   await page.reload({waitUntil:'domcontentloaded'});
   const continueButton=page.locator('[data-action="menu-continue"]').first();
-  if(await continueButton.isVisible().catch(()=>false)){
-    await continueButton.evaluate(el=>el.click());
-  }
+  await continueButton.waitFor({state:'visible',timeout:15000});
+  await continueButton.click();
   try{
     await dashboard.waitFor({state:'visible',timeout:30000});
     await page.waitForTimeout(500);
@@ -163,10 +162,11 @@ async function runB05(){
 }
 
 async function runC03(){
-  const detail={};
+  const detail={};let currentContext=null;
   try{
     for(const browserName of ['chrome','edge']){
-      const {context,userData}=await createContext(browserName,{headless:true,viewport:{width:1280,height:900},suffix:'c03'});let page=context.pages()[0]||await context.newPage();await ensureCareer(page);
+      const created=await createContext(browserName,{headless:true,viewport:{width:1280,height:900},suffix:'c03'});
+      const {context,userData}=created;currentContext=context;let page=context.pages()[0]||await context.newPage();await ensureCareer(page);
       const initial=await readPrimary(page);if(!initial.rawLength||initial.sha256!==initial.computed)throw new Error(`${browserName}: initial IndexedDB integrity mismatch`);
       await page.locator('[data-action="advance"]').first().click();await page.waitForTimeout(900);const close=page.locator('[data-action="close-modal"]').first();if(await close.count()&&await close.isVisible())await close.click();
       const afterMatch=await readPrimary(page);if(!afterMatch.rawLength||afterMatch.sha256!==afterMatch.computed)throw new Error(`${browserName}: post-match IndexedDB integrity mismatch`);
@@ -176,14 +176,15 @@ async function runC03(){
       await active.locator('[data-action="career-checkpoints"]').click();await page.locator('[data-dialog-kind="career-checkpoints"]').waitFor();const checkpointRows=await page.locator('.career-checkpoint-row').count();if(checkpointRows<1)throw new Error(`${browserName}: checkpoint not created`);
       const restore=page.locator('[data-action="career-checkpoint-restore"]:not([disabled])').first();if(await restore.count()){await restore.click();await page.locator('[data-dialog-kind="career-checkpoint-confirm"]').waitFor();await page.locator('[data-action="career-checkpoint-confirm"]').click();await page.waitForTimeout(500);}else throw new Error(`${browserName}: no restorable checkpoint`);
       await openCareers(page);await page.locator('#career-import-file').setInputFiles(exportPath);await page.locator('[data-dialog-kind="career-import-preview"]').waitFor();const importPreviewRows=await page.locator('.career-import-row').count();await page.locator('[data-action="close-modal"]').first().click();
-      const beforeClose=await readPrimary(page);await context.close();
-      const reopenedContext=await launchPersistent(browserName,userData,{headless:true,viewport:{width:1280,height:900}});page=reopenedContext.pages()[0]||await reopenedContext.newPage();await page.goto(baseURL,{waitUntil:'domcontentloaded'});await page.waitForTimeout(300);const reopened=await readPrimary(page);await reopenedContext.close();
+      const beforeClose=await readPrimary(page);await context.close();currentContext=null;
+      const reopenedContext=await launchPersistent(browserName,userData,{headless:true,viewport:{width:1280,height:900}});currentContext=reopenedContext;page=reopenedContext.pages()[0]||await reopenedContext.newPage();await page.goto(baseURL,{waitUntil:'domcontentloaded'});await page.waitForTimeout(300);const reopened=await readPrimary(page);await reopenedContext.close();
       const persistent=beforeClose.sha256===reopened.sha256&&reopened.rawLength>0&&reopened.sha256===reopened.computed;
       detail[browserName]={initial,afterMatch,beforeClose,reopened,persistent,checkpointRows,importPreviewRows,exportedType:Array.isArray(exported)?'bundle':typeof exported};
       if(!persistent||importPreviewRows<1)throw new Error(`${browserName}: persistence/import verification failed`);
     }
     await fs.writeFile(path.join(artifactDir,'c03-storage.json'),JSON.stringify(detail,null,2));status('C03','PASS',{...detail,note:'Real Chrome/Edge IndexedDB, verified checkpoint restore, JSON export/import preview and persistence across browser relaunch completed in disposable profiles.'});
   }catch(err){status('C03','NON_ESEGUITO',{...detail,reason:String(err?.message||err)});}
+  finally{await currentContext?.close().catch(()=>{});}
 }
 
 async function installPerfObservers(page){await page.addInitScript(()=>{window.__rst00Perf={cls:0,lcp:null,mutations:0};try{new PerformanceObserver(list=>{for(const e of list.getEntries()){if(!e.hadRecentInput)window.__rst00Perf.cls+=e.value;}}).observe({type:'layout-shift',buffered:true});}catch{}try{new PerformanceObserver(list=>{for(const e of list.getEntries())window.__rst00Perf.lcp=e.startTime;}).observe({type:'largest-contentful-paint',buffered:true});}catch{}addEventListener('DOMContentLoaded',()=>{const target=document.getElementById('app')||document.body;new MutationObserver(()=>window.__rst00Perf.mutations++).observe(target,{childList:true,subtree:true,attributes:true});},{once:true});});}
