@@ -14,7 +14,7 @@ await fs.mkdir(artifactDir,{recursive:true});
 const startedAt=new Date().toISOString();
 const results={startedAt,platform:process.platform,release:'2.0.0',checks:{},findings:[],browsers:{}};
 const requestedChecks=process.argv.slice(2).map(x=>String(x).toUpperCase()).filter(Boolean);
-const navPagesCore=['dashboard','calendar','inbox','club','squad','tactics','training','youth','league','world','advanced','market','finances','board','manager','settings'];
+const navPagesCore=['dashboard','calendar','inbox','club','squad','tactics','training','youth','league','world','advanced','market','finance','board','manager','settings'];
 const navPages=[...navPagesCore,'careers'];
 const browserCandidates={
   chrome:['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'],
