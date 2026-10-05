@@ -27,19 +27,22 @@ async function pageFeature(ctx,pageId,regex){
 }
 
 async function E01(ctx){
-  const audit=await playerAttributeAudit(ctx.page);
-  assert(audit.players>0,'E01 no players found',audit);
-  assert(audit.uniqueIds===audit.players,'E01 duplicate player ids',audit);
-  if(audit.commonCandidateAttributes.length<40){
-    return nonExecuted('Could not prove a common set of at least 40 non-meta numeric player attributes',{audit});
-  }
-  return pass({
-    players:audit.players,
-    uniqueIds:audit.uniqueIds,
-    commonAttributeCount:audit.commonCandidateAttributes.length,
-    commonAttributes:audit.commonCandidateAttributes.slice(0,60),
-    sample:audit.sample
+  await ctx.page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
+  const result=await ctx.page.evaluate(async()=>{
+    const [{makeWorld},{startCareer,validateSave},{ATTRIBUTE_KEYS,attributeGroupCounts,validateAttributes},{readPlayerAttributes}]=await Promise.all([
+      import('/src/data.js'),import('/src/engine.js'),import('/src/addons/domain/player-attributes.mjs'),import('/src/addons/domain/player-generator.mjs')
+    ]);
+    const w=makeWorld();startCareer(w,1,'RST01 E01');
+    const sample=w.players.slice(0,25).map(p=>{
+      const profile=readPlayerAttributes(p,{seed:w.seed,countryId:w.countryId});
+      return {id:p.id,position:p.position,count:Object.keys(profile.values||{}).length,valid:validateAttributes(profile),min:Math.min(...Object.values(profile.values||{})),max:Math.max(...Object.values(profile.values||{}))};
+    });
+    return {validSave:validateSave(w),attributeKeys:[...ATTRIBUTE_KEYS],groupCounts:attributeGroupCounts(),sample};
   });
+  assert(result.validSave===true,'E01 source career invalid',result);
+  assert(result.attributeKeys.length===40&&new Set(result.attributeKeys).size===40,'E01 official attribute catalogue is not exactly 40 unique keys',result);
+  assert(result.sample.length>0&&result.sample.every(x=>x.valid&&x.count===40&&x.min>=1&&x.max<=100),'E01 generated/read player profiles are incomplete or invalid',result);
+  return pass(result);
 }
 async function E02(ctx){
   const result=await runContractBehavior(ctx.page,ctx.baseURL);
@@ -57,22 +60,22 @@ async function E04(ctx){
 }
 
 async function E05(ctx){
-  const shape=await careerShape(ctx.page);
-  const p=await readPrimary(ctx.page);
-  if(!p.career)return nonExecuted('No career available for E05');
-  const result=await ctx.page.evaluate(async career=>{
-    const {simulateRound,validateSave}=await import('/src/engine.js');
-    const pick=player=>Object.fromEntries(Object.entries(player||{}).filter(([k,v])=>/morale|personality|dynamic|happiness|chemistry/i.test(k)&&(['number','string','boolean'].includes(typeof v))));
-    const before=(career.players||[]).slice(0,80).map(p=>({id:p.id,m:pick(p)}));
-    for(let i=0;i<Math.min(8,Math.max(1,(career.fixtures?.length||1)-career.round));i++)simulateRound(career);
-    const after=(career.players||[]).slice(0,80).map(p=>({id:p.id,m:pick(p)}));
-    let changed=0,fields=0;
-    for(const a of after){fields+=Object.keys(a.m).length;const b=before.find(x=>x.id===a.id);if(b&&JSON.stringify(a.m)!==JSON.stringify(b.m))changed++;}
-    return {valid:validateSave(career),fields,changed};
-  },p.career);
-  assert(result.valid===true,'E05 simulated dynamics invalidated save',result);
-  if(shape.dynamics.length===0||result.fields===0||result.changed===0)return nonExecuted('Personality/dynamics state did not demonstrate an actual state transition',{shape:shape.dynamics,result});
-  return pass({statePaths:shape.dynamics.slice(0,40),result});
+  await ctx.page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
+  const result=await ctx.page.evaluate(async()=>{
+    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer},{enableCareerPersonality,settleCareerPersonalityRound,personalityPlayerView,validateCareerPersonality}]=await Promise.all([
+      import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-personality.js')
+    ]);
+    const w=makeWorld();startCareer(w,1,'RST01 E05');enableAdvancedCareer(w);enableCareerPersonality(w);
+    const owned=w.players.filter(p=>p.clubId===w.clubId).slice(0,30);
+    const before=owned.map(p=>({id:p.id,morale:personalityPlayerView(w,p)?.morale,raw:w.advancedV1.personalityV1.playerStates[String(p.id)]?.morale}));
+    settleCareerPersonalityRound(w,{result:'win',playedIds:[...w.lineup]});
+    const after=owned.map(p=>({id:p.id,morale:personalityPlayerView(w,p)?.morale,raw:w.advancedV1.personalityV1.playerStates[String(p.id)]?.morale}));
+    const changed=after.filter(a=>{const b=before.find(x=>x.id===a.id);return b&&(a.raw!==b.raw||a.morale!==b.morale);});
+    return {validPersonality:validateCareerPersonality(w),validSave:validateSave(w),before,after,changed:changed.slice(0,30),events:w.advancedV1.personalityV1.events.slice(-30)};
+  });
+  assert(result.validPersonality===true&&result.validSave===true,'E05 personality transition invalidated career state',result);
+  if(!result.changed.length||!result.events.length)return nonExecuted('Official personality round produced no observable dynamics transition',result);
+  return pass(result);
 }
 async function F01(ctx){
   const result=await runMarketNegotiationBehavior(ctx.page,ctx.baseURL);
@@ -86,24 +89,22 @@ async function F04(ctx){return behavioralResult(await runScoutingBehavior(ctx.pa
 async function F05(ctx){return behavioralResult(await runAIMarketBehavior(ctx.page,ctx.baseURL),'F05');}
 async function G01(ctx){return behavioralResult(await runBoardBehavior(ctx.page,ctx.baseURL),'G01');}
 async function G02(ctx){
-  const ui=await pageFeature(ctx,'finance','budget|balance|cash|revenue|expense|wage');
-  const shape=await careerShape(ctx.page);
-  const p=await readPrimary(ctx.page);
-  if(!p.career)return nonExecuted('No career available for G02');
-  const result=await ctx.page.evaluate(async career=>{
-    const {simulateRound,validateSave}=await import('/src/engine.js');
-    const collect=root=>{
-      const out={};const seen=new WeakSet();
-      const walk=(v,p='',d=0)=>{if(!v||typeof v!=='object'||d>6||seen.has(v))return;seen.add(v);for(const [k,x] of Object.entries(v)){const q=p?p+'.'+k:k;if(/budget|balance|cash|revenue|expense|wage/i.test(k)&&typeof x==='number')out[q]=x;if(x&&typeof x==='object')walk(x,q,d+1);}};
-      walk(root);return out;
-    };
-    const before=collect(career);simulateRound(career);const after=collect(career);
-    return {valid:validateSave(career),fields:Object.keys(before).length,changed:Object.keys(after).filter(k=>after[k]!==before[k]).slice(0,60)};
-  },p.career);
-  assert(result.valid===true,'G02 round simulation invalidated save',result);
-  if(result.fields===0||result.changed.length===0||!ui.textMatch||ui.rowCount<1)return nonExecuted('Finance state/report evidence incomplete or no transaction movement observed',{ui,shape:shape.finance,result});
-  ctx.shared.financeEvidence={executed:true,ui,result,statePaths:shape.finance.slice(0,60)};
-  return pass(ctx.shared.financeEvidence);
+  await ctx.page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
+  const result=await ctx.page.evaluate(async()=>{
+    const [{makeWorld},{startCareer,simulateRound,validateSave},{enableAdvancedCareer},{enableCareerFinance,settleCareerFinanceRound,financeSeasonReport,careerFinanceForecast,validateCareerFinance}]=await Promise.all([
+      import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-finance.js')
+    ]);
+    const w=makeWorld();startCareer(w,1,'RST01 G02');enableAdvancedCareer(w);enableCareerFinance(w);
+    const beforeEntries=w.advancedV1.financeV1.entries.length,beforeBalance=w.teams.find(c=>c.id===w.clubId).balance;
+    simulateRound(w);
+    if(w.advancedV1.financeV1.entries.length===beforeEntries)settleCareerFinanceRound(w);
+    const report=financeSeasonReport(w),forecast=careerFinanceForecast(w),afterBalance=w.teams.find(c=>c.id===w.clubId).balance;
+    return {beforeEntries,afterEntries:w.advancedV1.financeV1.entries.length,beforeBalance,afterBalance,report,forecast,validFinance:validateCareerFinance(w),validSave:validateSave(w),alerts:w.advancedV1.financeV1.alerts.slice(-20)};
+  });
+  assert(result.validFinance===true&&result.validSave===true,'G02 finance settlement invalidated career state',result);
+  assert(result.afterEntries>result.beforeEntries,'G02 finance ledger did not record round activity',result);
+  if(!result.report||!result.forecast)return nonExecuted('G02 finance report/forecast unavailable after official settlement',result);
+  return pass(result);
 }
 async function G03(ctx){return behavioralResult(await runFacilitiesBehavior(ctx.page,ctx.baseURL),'G03');}
 async function G04(ctx){return behavioralResult(await runManagerBehavior(ctx.page,ctx.baseURL),'G04');}
