@@ -2,6 +2,7 @@ import {
   assert,attachErrorCapture,domainCandidates,exportProbe,launchPersistent,navigateCore,pass,nonExecuted,
   primarySummary,readPrimary,uiProbe
 } from '../lib/runtime.mjs';
+import {runSubstitutionBehavior,runInjuryRecoveryBehavior} from '../lib/behavioral-match-player.mjs';
 
 async function ensureSoak(ctx){
   if(ctx.shared.worldSoak)return ctx.shared.worldSoak;
@@ -285,22 +286,36 @@ async function D02(ctx){
   return pass({changedControl,before,after,beforeFingerprint:beforeFp,afterFingerprint:afterFp});
 }
 async function D03(ctx){
-  await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 D03');
-  const exports=await exportProbe(ctx.page,['substitut','change.*player','bench','window']);
-  const probe=await uiProbe(ctx.page);
-  ctx.shared.substitutionEvidence={executed:false,exports,uiActions:probe.actions.filter(x=>/sub|bench|change/i.test(x)).slice(0,40)};
-  return nonExecuted('Behavioral substitution driver is still required: API/UI presence alone is not accepted as PASS',ctx.shared.substitutionEvidence);
+  const result=await runSubstitutionBehavior(ctx.page,ctx.baseURL);
+  ctx.shared.substitutionEvidence=result;
+  if(result.reason)return nonExecuted(result.reason,result);
+  if(!result.manual)return {state:'FAIL',reason:'Manual substitution was not applied to the official matchday',details:result};
+  if(!/SUB_LIMIT/.test(result.subLimitError||''))return {state:'FAIL',reason:'Substitution limit was not enforced',details:result};
+  if(!/WINDOW_LIMIT/.test(result.windowLimitError||''))return {state:'FAIL',reason:'Substitution window limit was not enforced',details:result};
+  if(!result.ai)return nonExecuted('AI substitution not observed within the deterministic six-round window',result);
+  if(!result.validMatchday||!result.validSave)return {state:'FAIL',reason:'Substitution scenario ended in invalid state',details:result};
+  return pass(result);
 }
 async function D04(ctx){
-  if(!ctx.shared.substitutionEvidence?.executed){
-    return nonExecuted('D04 requires a completed D03 substitution scenario; no substitution was behaviorally executed',ctx.shared.substitutionEvidence||{});
+  const result=ctx.shared.substitutionEvidence;
+  if(!result?.manual)return nonExecuted('D04 requires the behavioral D03 manual substitution result',result||{});
+  const out=result.ledger?.outRow,incoming=result.ledger?.inRow;
+  if(!out||!incoming)return {state:'FAIL',reason:'Matchday minutes ledger is missing manual substitution participants',details:result};
+  if(out.seconds!==3600||incoming.seconds!==1800||Math.abs(out.minutes-60)>.0001||Math.abs(incoming.minutes-30)>.0001){
+    return {state:'FAIL',reason:'Effective minutes do not match the minute-60 substitution',details:{out,incoming,result}};
   }
-  return nonExecuted('D04 post-substitution minutes/fitness assertions are intentionally blocked until D03 produces concrete substitution evidence');
+  if(result.ledger.total!==11*5400)return {state:'FAIL',reason:'Team matchday seconds do not equal eleven full player-equivalents',details:result.ledger};
+  const ids=[result.manual.out,result.manual.in],fitnessChanged=ids.some(id=>result.before?.[id]?.fitness!==result.after?.[id]?.fitness);
+  if(!fitnessChanged)return nonExecuted('Minutes are correct but no post-match fitness change was observable for the substituted pair',result);
+  return pass({out,incoming,total:result.ledger.total,before:result.before,after:result.after});
 }
 async function D05(ctx){
-  if(!ctx.shared.substitutionEvidence?.executed){
-    return nonExecuted('D05 requires a completed substitution scenario before injury-during-change/recovery can be certified',ctx.shared.substitutionEvidence||{});
-  }
-  return nonExecuted('D05 injury-during-substitution and medical-return driver remains to be implemented');
+  const result=await runInjuryRecoveryBehavior(ctx.page,ctx.baseURL);
+  if(result.reason)return nonExecuted(result.reason,result);
+  if(!result.found?.change||result.found.change.reason!=='injury'||!result.found.injury)return {state:'FAIL',reason:'Injury substitution evidence is incomplete',details:result};
+  if(!result.found.minutes||result.found.minutes.seconds>=5400)return {state:'FAIL',reason:'Injured player did not leave before full time',details:result.found};
+  if(!result.found.recoveredWeek||!result.finalAvailability?.eligible)return {state:'FAIL',reason:'Medical recovery did not return the player to eligibility',details:result};
+  if(!result.validMatchday||!result.validSave)return {state:'FAIL',reason:'Injury/recovery scenario ended in invalid state',details:result};
+  return pass(result);
 }
 export const adapters={C01,C02,C03,C04,C05,D01,D02,D03,D04,D05};
