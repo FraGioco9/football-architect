@@ -278,7 +278,7 @@ async function I05(ctx){
   const after=await primarySummary(ctx.page);
   assert(after.checksumValid===true,'I05 primary checksum invalid after language/viewport changes',{before,after,lang,mobile,desktop});
   assert(before.sha256===after.sha256,'I05 UI-only language/viewport changes mutated advanced career snapshot',{before,after,lang,mobile,desktop});
-  if(mobile.sw>mobile.cw+2||desktop.sw>desktop.cw+2)return {state:'FAIL',reason:'I05 viewport switch introduced horizontal overflow',{mobile,desktop}};
+  if(mobile.sw>mobile.cw+2||desktop.sw>desktop.cw+2)return {state:'FAIL',reason:'I05 viewport switch introduced horizontal overflow',mobile,desktop};
   return pass({advanced,lang,mobile,desktop,before,after});
 }
 export const adapters={H01,H02,H03,H04,H05,I01,I02,I03,I04,I05};

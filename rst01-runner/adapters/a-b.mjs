@@ -105,7 +105,7 @@ async function A01(ctx){
     return {state:'FAIL',reason:'A01 browser profile was not clean',storage};
   }
   if(!(probe.text||'').trim())return nonExecuted('Empty first paint',{probe,storage});
-  if(continueVisible&&!continueDisabled)return {state:'FAIL',reason:'Continue action enabled on clean install',{probe,storage}};
+  if(continueVisible&&!continueDisabled)return {state:'FAIL',reason:'Continue action enabled on clean install',probe,storage};
   if(cap.errors.length)return {state:'FAIL',reason:'Blocking console/page errors on clean first paint',errors:cap.errors,probe,storage};
   return pass({probe,storage,continueVisible,continueDisabled,warnings:cap.warnings});
 }
@@ -169,7 +169,7 @@ async function A04(ctx){
   const textChanged=english.text!==italian.text;
   const langOk=/^en/.test(english.lang)&&/^it/.test(italian.lang);
   const formatEvidence=english.dates.length&&italian.dates.length&&english.currencies.length&&italian.currencies.length&&english.numbers.length&&italian.numbers.length;
-  if(!textChanged||!langOk)return {state:'FAIL',reason:'IT/EN switch did not update visible language state',{english,italian}};
+  if(!textChanged||!langOk)return {state:'FAIL',reason:'IT/EN switch did not update visible language state',english,italian};
   if(!formatEvidence)return nonExecuted('Visible date/number/currency evidence incomplete for both locales',{english,italian});
   return pass({english:{lang:english.lang,dates:english.dates,currencies:english.currencies,numbers:english.numbers},italian:{lang:italian.lang,dates:italian.dates,currencies:italian.currencies,numbers:italian.numbers}});
 }
