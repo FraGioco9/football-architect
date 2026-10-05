@@ -261,7 +261,7 @@ async function D03(ctx){
   if(!result.manual)return {state:'FAIL',reason:'Manual substitution was not applied to the official matchday',details:result};
   if(!/SUB_LIMIT/.test(result.subLimitError||''))return {state:'FAIL',reason:'Substitution limit was not enforced',details:result};
   if(!/WINDOW_LIMIT/.test(result.windowLimitError||''))return {state:'FAIL',reason:'Substitution window limit was not enforced',details:result};
-  if(!result.ai)return nonExecuted('AI substitution not observed within the deterministic six-round window',result);
+  if(!result.ai)return nonExecuted('AI substitution not observed in the complete deterministic season',result);
   if(!result.validMatchday||!result.validSave)return {state:'FAIL',reason:'Substitution scenario ended in invalid state',details:result};
   return pass(result);
 }
@@ -274,9 +274,9 @@ async function D04(ctx){
     return {state:'FAIL',reason:'Effective minutes do not match the minute-60 substitution',details:{out,incoming,result}};
   }
   if(result.ledger.total!==11*5400)return {state:'FAIL',reason:'Team matchday seconds do not equal eleven full player-equivalents',details:result.ledger};
-  const ids=[result.manual.out,result.manual.in],fitnessChanged=ids.some(id=>result.before?.[id]?.fitness!==result.after?.[id]?.fitness);
-  if(!fitnessChanged)return nonExecuted('Minutes are correct but no post-match fitness change was observable for the substituted pair',result);
-  return pass({out,incoming,total:result.ledger.total,before:result.before,after:result.after});
+  const ids=[result.manual.out,result.manual.in],fitnessChanged=ids.some(id=>result.before?.[id]?.fitness!==result.afterFirstMatch?.[id]?.fitness);
+  if(!fitnessChanged)return nonExecuted('Minutes are correct but no immediate post-match fitness change was observable for the substituted pair',result);
+  return pass({out,incoming,total:result.ledger.total,before:result.before,afterFirstMatch:result.afterFirstMatch});
 }
 async function D05(ctx){
   const result=await runInjuryRecoveryBehavior(ctx.page,ctx.baseURL);
