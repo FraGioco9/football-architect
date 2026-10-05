@@ -1,13 +1,15 @@
 import {
-  assert,domainCandidates,exportProbe,launchPersistent,navigateCore,pass,nonExecuted,
+  assert,attachErrorCapture,domainCandidates,exportProbe,launchPersistent,navigateCore,pass,nonExecuted,
   primarySummary,readPrimary,uiProbe
 } from '../lib/runtime.mjs';
 
 async function ensureSoak(ctx){
   if(ctx.shared.worldSoak)return ctx.shared.worldSoak;
   const made=await launchPersistent(ctx.browserName,{viewport:{width:1280,height:850},suffix:'c-soak'});
+  const started=Date.now();
   try{
     const page=made.context.pages()[0]||await made.context.newPage();
+    const cap=attachErrorCapture(page);
     await page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
     const result=await page.evaluate(async()=>{
       const [
@@ -32,14 +34,24 @@ async function ensureSoak(ctx){
       const countries=[...OFFICIAL_WORLD_COUNTRIES];
       fail(countries.length===8,'expected eight countries',{countries});
 
-      const keyFootprint=(root,re)=>{
+      const semanticFootprint=(root,scopeRe,leafRe)=>{
         const seen=new WeakSet(),hits=[];
         const walk=(v,p='',d=0)=>{
-          if(!v||typeof v!=='object'||d>8||seen.has(v))return;
+          if(v===null||v===undefined||d>9)return;
+          if(typeof v!=='object')return;
+          if(seen.has(v))return;
           seen.add(v);
           for(const [k,x] of Object.entries(v)){
             const q=p?p+'.'+k:k;
-            if(re.test(k)&&hits.length<120)hits.push({path:q,type:Array.isArray(x)?'array':typeof x,size:Array.isArray(x)?x.length:undefined});
+            const inScope=scopeRe.test(q);
+            if(inScope&&leafRe.test(k)&&hits.length<240){
+              hits.push({
+                path:q,
+                value:(typeof x==='string'||typeof x==='number'||typeof x==='boolean')?x:undefined,
+                size:Array.isArray(x)?x.length:undefined,
+                type:Array.isArray(x)?'array':typeof x
+              });
+            }
             if(x&&typeof x==='object')walk(x,q,d+1);
           }
         };
@@ -74,21 +86,43 @@ async function ensureSoak(ctx){
             archiveBefore:divisionArchive(w,country).length
           };
         }
-        const cupFootprint=keyFootprint(w,/cup|continental|domestic|tournament|knockout/i);
-        const historyFootprint=keyFootprint(w,/history|record|rival/i);
+
+        const cupEndEvidence=semanticFootprint(
+          w,
+          /cup|continental|domestic|tournament|knockout/i,
+          /winner|champion|qualified|qualif|round|stage|archive|history/i
+        );
+        const historyEndEvidence=semanticFootprint(
+          w,
+          /history|record|rival/i,
+          /history|record|rival|club|season|winner|champion|value/i
+        );
+
         newSeason(w);
         fail(validateSave(w),'save invalid after rollover',{cycle});
         fail(validateCareerWorld(w),'world invalid after rollover',{cycle});
         fail(validateCareerDivisions(w),'divisions invalid after rollover',{cycle});
-        for(const country of countries){
-          countryRows[country].archiveAfter=divisionArchive(w,country).length;
-        }
+        for(const country of countries)countryRows[country].archiveAfter=divisionArchive(w,country).length;
+
+        const cupPostEvidence=semanticFootprint(
+          w,
+          /cup|continental|domestic|tournament|knockout/i,
+          /winner|champion|qualified|qualif|round|stage|archive|history/i
+        );
+        const historyPostEvidence=semanticFootprint(
+          w,
+          /history|record|rival/i,
+          /history|record|rival|club|season|winner|champion|value/i
+        );
+
         seasonRows.push({
           cycle,
           resultingSeason:w.season,
           countries:countryRows,
-          cupFootprint,
-          historyFootprint,
+          cupEndEvidence,
+          cupPostEvidence,
+          historyEndEvidence,
+          historyPostEvidence,
           playerCount:(w.players||[]).length
         });
       }
@@ -105,13 +139,13 @@ async function ensureSoak(ctx){
         }
       };
     });
+    result.runtime={errors:cap.errors,warnings:cap.warnings,elapsedMs:Date.now()-started};
     ctx.shared.worldSoak=result;
     return result;
   }finally{
     await made.context.close().catch(()=>{});
   }
 }
-
 async function C01(ctx){
   const soak=await ensureSoak(ctx);
   const ok=soak.cycles.every(row=>Object.keys(row.countries).length===8&&Object.values(row.countries).every(x=>x.topClubs===20&&x.lowerClubs===20));
@@ -138,21 +172,37 @@ async function C03(ctx){
 
 async function C04(ctx){
   const soak=await ensureSoak(ctx);
-  const footprint=soak.cycles.map(x=>x.cupFootprint.length);
-  if(!footprint.some(n=>n>0))return nonExecuted('No cup/continental state footprint discovered during ten-season soak',{footprint});
-  return pass({footprint,examples:soak.cycles.find(x=>x.cupFootprint.length)?.cupFootprint.slice(0,20)});
+  const rows=soak.cycles.map(row=>{
+    const evidence=[...row.cupEndEvidence,...row.cupPostEvidence];
+    const terminal=evidence.filter(x=>/winner|champion/i.test(x.path)&&x.value!==undefined&&String(x.value)!=='');
+    const qualification=evidence.filter(x=>/qualif/i.test(x.path));
+    const progression=evidence.filter(x=>/round|stage/i.test(x.path));
+    const archive=evidence.filter(x=>/archive|history/i.test(x.path));
+    return {cycle:row.cycle,terminal,qualification,progression,archive};
+  });
+  const complete=rows.every(x=>x.terminal.length&&x.progression.length&&(x.qualification.length||x.archive.length));
+  if(!complete)return nonExecuted('Cup certification lacks terminal/progression/qualification-or-archive evidence for one or more seasons',{rows});
+  const signatures=new Set(rows.map(x=>JSON.stringify(x.terminal.map(v=>[v.path,v.value]))));
+  if(signatures.size<2)return nonExecuted('Cup terminal evidence did not vary across the ten-season run',{rows});
+  return pass({cycles:rows.map(x=>({cycle:x.cycle,terminal:x.terminal.slice(0,12),qualificationCount:x.qualification.length,progressionCount:x.progression.length,archiveCount:x.archive.length}))});
 }
-
 async function C05(ctx){
   const soak=await ensureSoak(ctx);
   const archives=soak.cycles.at(-1)?.countries||{};
   const archiveOk=Object.values(archives).every(x=>x.archiveAfter===10);
   assert(archiveOk,'C05 division history did not persist for ten cycles',archives);
-  const historyHits=soak.cycles.reduce((n,x)=>n+x.historyFootprint.length,0);
-  if(historyHits===0)return nonExecuted('No record/rivalry state footprint discovered',{archives});
-  return pass({historyHits,playerChurn:soak.playerChurn});
-}
 
+  const semantic=soak.cycles.map(row=>({
+    cycle:row.cycle,
+    evidence:[...row.historyEndEvidence,...row.historyPostEvidence]
+  }));
+  const hasRecord=semantic.some(x=>x.evidence.some(v=>/record/i.test(v.path)));
+  const hasRivalry=semantic.some(x=>x.evidence.some(v=>/rival/i.test(v.path)));
+  if(!hasRecord||!hasRivalry)return nonExecuted('Record/rivalry state could not both be evidenced across the ten-season history',{hasRecord,hasRivalry,semantic});
+  const signatures=new Set(semantic.map(x=>JSON.stringify(x.evidence.map(v=>[v.path,v.value,v.size]))));
+  if(signatures.size<2)return nonExecuted('Record/rivalry history did not produce distinct persisted season signatures',{semantic});
+  return pass({archiveSeasons:10,hasRecord,hasRivalry,signatures:signatures.size,playerChurn:soak.playerChurn});
+}
 async function D01(ctx){
   const primary=await readPrimary(ctx.page);
   if(!primary.career)await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 D01');
@@ -160,95 +210,97 @@ async function D01(ctx){
   const result=await ctx.page.evaluate(async career=>{
     const {autoLineup,validateSave}=await import('/src/engine.js');
     autoLineup(career);
-    const seen=[];
+    const candidates=[];
+    const seen=new WeakSet();
     const walk=(v,p='',d=0)=>{
-      if(!v||typeof v!=='object'||d>5)return;
+      if(!v||typeof v!=='object'||d>7||seen.has(v))return;
+      seen.add(v);
       for(const [k,x] of Object.entries(v)){
         const q=p?p+'.'+k:k;
-        if(/lineup|formation|starter|slot|position/i.test(k)&&seen.length<80)seen.push({path:q,type:Array.isArray(x)?'array':typeof x,size:Array.isArray(x)?x.length:undefined});
+        if(Array.isArray(x)&&/lineup|starter|starting.*xi|starting/i.test(k)){
+          const ids=x.map(item=>typeof item==='number'||typeof item==='string'?item:(item?.playerId??item?.id)).filter(v=>v!==undefined&&v!==null);
+          candidates.push({path:q,size:x.length,ids,unique:new Set(ids).size});
+        }
         if(x&&typeof x==='object')walk(x,q,d+1);
       }
     };
     walk(career);
-    return {valid:validateSave(career),lineupFootprint:seen};
+    const formation=[];
+    const walkFormation=(v,p='',d=0)=>{
+      if(!v||typeof v!=='object'||d>5)return;
+      for(const [k,x] of Object.entries(v)){
+        const q=p?p+'.'+k:k;
+        if(/formation/i.test(k)&&(typeof x==='string'||typeof x==='number'))formation.push({path:q,value:x});
+        if(x&&typeof x==='object')walkFormation(x,q,d+1);
+      }
+    };
+    walkFormation(career);
+    return {valid:validateSave(career),candidates,formation};
   },p.career);
   assert(result.valid===true,'D01 auto-lineup produced invalid save',result);
-  if(!result.lineupFootprint.length)return nonExecuted('No lineup/formation state footprint found after autoLineup',result);
-  return pass(result);
+  const exact=result.candidates.find(x=>x.size===11&&x.ids.length===11&&x.unique===11);
+  if(!exact||!result.formation.length)return nonExecuted('Could not prove an exact 11-player distinct starting lineup plus formation state',result);
+  return pass({lineup:exact,formation:result.formation.slice(0,20)});
 }
-
 async function D02(ctx){
   await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 D02');
   await navigateCore(ctx.page,'tactics');
   const before=await primarySummary(ctx.page);
-  const actions=await ctx.page.locator('[data-action]:not([disabled])').evaluateAll(els=>els.map((el,index)=>({
-    index,action:el.getAttribute('data-action')||'',text:(el.textContent||'').trim(),
-    visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)
-  })).filter(x=>x.visible&&/tactic|preset|style|formation/i.test(x.action+' '+x.text)));
-  const exports=await exportProbe(ctx.page,['tactic','formation','style','preset']);
-  if(!actions.length&&!exports.length)return nonExecuted('No tactics preset/style controls or exports found',{actions,exports});
-  let clicked=null;
-  if(actions.length){
-    const all=ctx.page.locator('[data-action]:not([disabled])');
-    clicked=actions[0];
-    await all.nth(clicked.index).click().catch(()=>{});
-    await ctx.page.waitForTimeout(300);
-  }
-  const after=await primarySummary(ctx.page);
-  assert(after.checksumValid===true,'D02 checksum invalid after tactics interaction',{before,after,clicked,exports});
-  return pass({before,after,clicked,exports:exports.slice(0,30)});
-}
+  const fingerprint=async()=>ctx.page.evaluate(async()=>{
+    const rec=await new Promise((resolve,reject)=>{
+      const r=indexedDB.open('football-architect-primary-careers',1);
+      r.onsuccess=()=>{const db=r.result,tx=db.transaction('snapshots','readonly'),q=tx.objectStore('snapshots').get('primary');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);};
+      r.onerror=()=>reject(r.error);
+    });
+    if(!rec?.raw)return [];
+    const rows=JSON.parse(rec.raw),entries=new Map(rows),slot=[...entries].find(([k])=>/^football-architect:career:slot:/.test(k));
+    if(!slot)return [];
+    const career=JSON.parse(slot[1]),out=[],seen=new WeakSet();
+    const walk=(v,p='',d=0)=>{if(!v||typeof v!=='object'||d>7||seen.has(v))return;seen.add(v);for(const [k,x] of Object.entries(v)){const q=p?p+'.'+k:k;if(/tactic|formation|style|press|tempo/i.test(k)&&(['string','number','boolean'].includes(typeof x)))out.push([q,x]);if(x&&typeof x==='object')walk(x,q,d+1);}};
+    walk(career);return out.sort((a,b)=>a[0].localeCompare(b[0]));
+  });
+  const beforeFp=await fingerprint();
 
+  const selects=ctx.page.locator('select:visible:not([disabled])');
+  let changedControl=null;
+  for(let i=0;i<await selects.count();i++){
+    const el=selects.nth(i);
+    const meta=await el.evaluate(node=>({name:node.name||'',id:node.id||'',aria:node.getAttribute('aria-label')||'',value:node.value,options:[...node.options].map(o=>({value:o.value,disabled:o.disabled}))}));
+    if(!/tactic|formation|style|press|tempo/i.test(meta.name+' '+meta.id+' '+meta.aria))continue;
+    const alt=meta.options.find(o=>!o.disabled&&o.value!==meta.value);
+    if(!alt)continue;
+    await el.selectOption(alt.value);
+    await ctx.page.waitForTimeout(400);
+    changedControl={...meta,to:alt.value};
+    break;
+  }
+  if(!changedControl)return nonExecuted('No deterministic tactics select with an alternate value was found');
+
+  const after=await primarySummary(ctx.page);
+  const afterFp=await fingerprint();
+  assert(after.checksumValid===true,'D02 checksum invalid after tactics change',{before,after,changedControl});
+  const semanticChanged=JSON.stringify(beforeFp)!==JSON.stringify(afterFp);
+  const persistedChanged=before.sha256!==after.sha256||before.revision!==after.revision;
+  if(!semanticChanged||!persistedChanged)return nonExecuted('Tactics UI changed but a persisted tactical-state change could not be proven',{changedControl,beforeFp,afterFp,before,after});
+  return pass({changedControl,before,after,beforeFingerprint:beforeFp,afterFingerprint:afterFp});
+}
 async function D03(ctx){
   await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 D03');
   const exports=await exportProbe(ctx.page,['substitut','change.*player','bench','window']);
-  if(!exports.length)return nonExecuted('No substitution/window API exports discovered',{candidates:domainCandidates});
   const probe=await uiProbe(ctx.page);
-  return pass({exports:exports.slice(0,40),uiActions:probe.actions.filter(x=>/sub|bench|change/i.test(x)).slice(0,40)});
+  ctx.shared.substitutionEvidence={executed:false,exports,uiActions:probe.actions.filter(x=>/sub|bench|change/i.test(x)).slice(0,40)};
+  return nonExecuted('Behavioral substitution driver is still required: API/UI presence alone is not accepted as PASS',ctx.shared.substitutionEvidence);
 }
-
 async function D04(ctx){
-  const p=await readPrimary(ctx.page);
-  if(!p.career)return nonExecuted('No career available for D04');
-  const result=await ctx.page.evaluate(async career=>{
-    const {simulateRound,validateSave}=await import('/src/engine.js');
-    const players=Array.isArray(career.players)?career.players:[];
-    const numeric=(obj,re)=>Object.fromEntries(Object.entries(obj||{}).filter(([k,v])=>re.test(k)&&typeof v==='number'));
-    const before=players.slice(0,80).map(p=>({id:p.id,metrics:numeric(p,/minute|fitness|fatigue|condition|stamina/i)}));
-    simulateRound(career);
-    const after=players.slice(0,80).map(p=>({id:p.id,metrics:numeric(p,/minute|fitness|fatigue|condition|stamina/i)}));
-    let changed=0;
-    for(const a of after){
-      const b=before.find(x=>x.id===a.id);if(!b)continue;
-      if(JSON.stringify(a.metrics)!==JSON.stringify(b.metrics))changed++;
-    }
-    return {valid:validateSave(career),changed,before:before.slice(0,10),after:after.slice(0,10)};
-  },p.career);
-  assert(result.valid===true,'D04 simulateRound produced invalid save',result);
-  if(result.changed===0)return nonExecuted('No minutes/fitness metrics changed after simulated round',result);
-  return pass(result);
+  if(!ctx.shared.substitutionEvidence?.executed){
+    return nonExecuted('D04 requires a completed D03 substitution scenario; no substitution was behaviorally executed',ctx.shared.substitutionEvidence||{});
+  }
+  return nonExecuted('D04 post-substitution minutes/fitness assertions are intentionally blocked until D03 produces concrete substitution evidence');
 }
-
 async function D05(ctx){
-  const p=await readPrimary(ctx.page);
-  if(!p.career)return nonExecuted('No career available for D05');
-  const result=await ctx.page.evaluate(async career=>{
-    const {simulateRound,validateSave}=await import('/src/engine.js');
-    const signature=player=>Object.fromEntries(Object.entries(player||{}).filter(([k])=>/injur|medical|recover|fitness|condition/i.test(k)));
-    const before=(career.players||[]).map(p=>({id:p.id,s:signature(p)}));
-    const rounds=Math.min(20,Math.max(1,(career.fixtures?.length||1)-career.round));
-    for(let i=0;i<rounds;i++)simulateRound(career);
-    const after=(career.players||[]).map(p=>({id:p.id,s:signature(p)}));
-    let changed=0,injured=0;
-    for(const a of after){
-      const b=before.find(x=>x.id===a.id);if(b&&JSON.stringify(a.s)!==JSON.stringify(b.s))changed++;
-      if(Object.entries(a.s).some(([k,v])=>/injur/i.test(k)&&((typeof v==='number'&&v>0)||(typeof v==='string'&&v))))injured++;
-    }
-    return {valid:validateSave(career),rounds,changed,injured,fieldSample:after.find(x=>Object.keys(x.s).length)?.s||{}};
-  },p.career);
-  assert(result.valid===true,'D05 repeated rounds produced invalid save',result);
-  if(result.changed===0)return nonExecuted('No injury/medical/condition state changed in deterministic window',result);
-  return pass(result);
+  if(!ctx.shared.substitutionEvidence?.executed){
+    return nonExecuted('D05 requires a completed substitution scenario before injury-during-change/recovery can be certified',ctx.shared.substitutionEvidence||{});
+  }
+  return nonExecuted('D05 injury-during-substitution and medical-return driver remains to be implemented');
 }
-
 export const adapters={C01,C02,C03,C04,C05,D01,D02,D03,D04,D05};
