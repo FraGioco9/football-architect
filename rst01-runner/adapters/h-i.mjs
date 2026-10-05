@@ -29,6 +29,7 @@ async function H01(ctx){
 async function H02(ctx){
   await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 H02');
   await ctx.page.setViewportSize({width:390,height:844});
+
   const trigger=ctx.page.locator('[data-action="toggle-sidebar"]').first();
   if(!(await trigger.count()))return nonExecuted('Sidebar keyboard target unavailable');
   await trigger.click();
@@ -45,6 +46,11 @@ async function H02(ctx){
   await ctx.page.keyboard.press('Escape');
   const focusReturned=await ctx.page.evaluate(()=>document.activeElement?.matches?.('[data-action="toggle-sidebar"]')||false);
 
+  // Structural accessibility belongs to the game page, before entering the separate career hub.
+  const structuralRuleIds=new Set(['landmark-one-main','region','button-name','link-name','label','select-name','input-button-name','aria-command-name']);
+  const structural=(await axeScan(ctx.page)).filter(v=>structuralRuleIds.has(v.id));
+  const landmarks=await ctx.page.locator('main,[role="main"],nav,[role="navigation"]').count();
+
   await openCareers(ctx.page);
   const rename=ctx.page.locator('.career-card.career-active [data-action="career-rename"]').first();
   let modal={available:false};
@@ -52,18 +58,10 @@ async function H02(ctx){
     await rename.click();
     const dialog=ctx.page.locator('[role="dialog"]').last();
     await dialog.waitFor({state:'visible',timeout:5000});
-    modal={
-      available:true,
-      focusInside:await ctx.page.evaluate(()=>Boolean(document.activeElement?.closest?.('[role="dialog"]')))
-    };
+    modal={available:true,focusInside:await ctx.page.evaluate(()=>Boolean(document.activeElement?.closest?.('[role="dialog"]')))};
     await ctx.page.keyboard.press('Escape');
     modal.closed=(await ctx.page.locator('[role="dialog"]:visible').count())===0;
   }
-
-  await navigateCore(ctx.page,'dashboard');
-  const structuralRuleIds=new Set(['landmark-one-main','region','button-name','link-name','label','select-name','input-button-name','aria-command-name']);
-  const structural=(await axeScan(ctx.page)).filter(v=>structuralRuleIds.has(v.id));
-  const landmarks=await ctx.page.locator('main,[role="main"],nav,[role="navigation"]').count();
 
   if(!focusInside||!focusReturned||(modal.available&&(!modal.focusInside||!modal.closed))){
     return {state:'FAIL',reason:'Keyboard/focus contract failed',focusInside,focusReturned,sequence,modal,landmarks,structural};
@@ -270,50 +268,54 @@ async function I04(ctx){
   }finally{await made.context.close().catch(()=>{});}
 }
 async function I05(ctx){
-  await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 I05');
-  const advanced=await ctx.page.evaluate(async()=>{
-    const [{validateSave},{openPrimaryCareerStorage},advancedCareer]=await Promise.all([
-      import('/src/engine.js'),import('/src/primary-career-storage.js'),import('/src/domain/advanced-career.js')
-    ]);
-    const primary=await openPrimaryCareerStorage({legacyStorage:localStorage,validate:validateSave});
-    const keys=[];for(let i=0;i<primary.storage.length;i++){const k=primary.storage.key(i);if(/^football-architect:career:slot:/.test(k))keys.push(k);}
-    if(keys.length!==1)return {ok:false,reason:'expected one career slot'};
-    const key=keys[0],career=JSON.parse(primary.storage.getItem(key));
-    const enable=advancedCareer.enableAdvancedCareer||Object.entries(advancedCareer).find(([name,value])=>/^enable/i.test(name)&&typeof value==='function')?.[1];
-    if(!career.advancedV1&&typeof enable==='function'){enable(career);primary.storage.setItem(key,JSON.stringify(career));await primary.commit();}
-    return {ok:Boolean(career.advancedV1),valid:validateSave(career)};
-  });
-  if(!advanced.ok||!advanced.valid)return nonExecuted('Could not establish a valid advanced career before I05',advanced);
+  const made=await launchPersistent(ctx.browserName,{viewport:{width:390,height:844},suffix:'i05'});
+  try{
+    const page=made.context.pages()[0]||await made.context.newPage();
+    await (await import('../lib/runtime.mjs')).ensureCareer(page,'RST01 I05');
+    const advanced=await page.evaluate(async()=>{
+      const [{validateSave},{openPrimaryCareerStorage},advancedCareer]=await Promise.all([
+        import('/src/engine.js'),import('/src/primary-career-storage.js'),import('/src/domain/advanced-career.js')
+      ]);
+      const primary=await openPrimaryCareerStorage({legacyStorage:localStorage,validate:validateSave});
+      const keys=[];for(let i=0;i<primary.storage.length;i++){const k=primary.storage.key(i);if(/^football-architect:career:slot:/.test(k))keys.push(k);}
+      if(keys.length!==1)return {ok:false,reason:'isolated I05 profile did not contain exactly one slot',keys};
+      const key=keys[0],career=JSON.parse(primary.storage.getItem(key));
+      const enable=advancedCareer.enableAdvancedCareer||Object.entries(advancedCareer).find(([name,value])=>/^enable/i.test(name)&&typeof value==='function')?.[1];
+      if(!career.advancedV1&&typeof enable==='function'){enable(career);primary.storage.setItem(key,JSON.stringify(career));await primary.commit();}
+      return {ok:Boolean(career.advancedV1),valid:validateSave(career)};
+    });
+    if(!advanced.ok||!advanced.valid)return nonExecuted('Could not establish a valid isolated advanced career before I05',advanced);
 
-  const before=await primarySummary(ctx.page);
-  const switchLanguage=async()=>{
-    await navigateCore(ctx.page,'settings');
-    const controls=ctx.page.locator('button,[data-lang],[data-locale],[data-action]');
-    const rows=await controls.evaluateAll(els=>els.map((el,index)=>({
-      index,text:(el.textContent||'').trim(),lang:(el.getAttribute('data-lang')||el.getAttribute('data-locale')||'').toLowerCase(),
-      visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)
-    })).filter(x=>x.visible&&(/^(it|en)$/i.test(x.text)||/^(it|en)$/i.test(x.lang))));
-    if(rows.length<2)return {ok:false,rows};
-    const beforeText=(await uiProbe(ctx.page)).text;
-    await controls.nth(rows[0].index).click();await ctx.page.waitForTimeout(120);
-    const midText=(await uiProbe(ctx.page)).text;
-    await controls.nth(rows[1].index).click();await ctx.page.waitForTimeout(120);
-    const afterText=(await uiProbe(ctx.page)).text;
-    return {ok:beforeText!==midText||midText!==afterText,rows};
-  };
+    await page.reload({waitUntil:'domcontentloaded'});
+    const continueButton=page.locator('[data-action="menu-continue"]').first();
+    if(await continueButton.isVisible().catch(()=>false))await continueButton.click();
+    await page.locator('.dashboard-hero').first().waitFor({state:'visible',timeout:20000});
 
-  await ctx.page.setViewportSize({width:390,height:844});
-  const lang=await switchLanguage();
-  if(!lang.ok)return nonExecuted('I05 could not prove a visible language transition in advanced career',{advanced,lang});
-  await navigateCore(ctx.page,'dashboard');
-  const mobile=await geometry(ctx.page);
-  await ctx.page.setViewportSize({width:1440,height:900});
-  await navigateCore(ctx.page,'dashboard');
-  const desktop=await geometry(ctx.page);
-  const after=await primarySummary(ctx.page);
-  assert(after.checksumValid===true,'I05 primary checksum invalid after language/viewport changes',{before,after,lang,mobile,desktop});
-  assert(before.sha256===after.sha256,'I05 UI-only language/viewport changes mutated advanced career snapshot',{before,after,lang,mobile,desktop});
-  if(mobile.sw>mobile.cw+2||desktop.sw>desktop.cw+2)return {state:'FAIL',reason:'I05 viewport switch introduced horizontal overflow',mobile,desktop};
-  return pass({advanced,lang,mobile,desktop,before,after});
+    const before=await primarySummary(page);
+    const switchLanguage=async code=>{
+      await navigateCore(page,'settings');
+      const all=page.locator('select[data-language-switch], select[id^="ui-language-"]');
+      let select=null;
+      for(let i=0;i<await all.count();i++){const c=all.nth(i);if(await c.isVisible().catch(()=>false)){select=c;break;}}
+      if(!select)return false;
+      await select.selectOption(code);await page.waitForTimeout(150);return true;
+    };
+    if(!(await switchLanguage('en')))return nonExecuted('I05 EN language select unavailable',{advanced});
+    const enText=(await uiProbe(page)).text;
+    if(!(await switchLanguage('it')))return nonExecuted('I05 IT language select unavailable',{advanced});
+    const itText=(await uiProbe(page)).text;
+    if(enText===itText)return {state:'FAIL',reason:'I05 language switch did not change visible text',advanced};
+
+    await navigateCore(page,'dashboard');
+    const mobile=await geometry(page);
+    await page.setViewportSize({width:1440,height:900});
+    await navigateCore(page,'dashboard');
+    const desktop=await geometry(page);
+    const after=await primarySummary(page);
+    assert(after.checksumValid===true,'I05 primary checksum invalid after language/viewport changes',{before,after,mobile,desktop});
+    assert(before.sha256===after.sha256,'I05 UI-only language/viewport changes mutated advanced career snapshot',{before,after,mobile,desktop});
+    if(mobile.sw>mobile.cw+2||desktop.sw>desktop.cw+2)return {state:'FAIL',reason:'I05 viewport switch introduced horizontal overflow',mobile,desktop};
+    return pass({advanced,mobile,desktop,before,after,languageChanged:true});
+  }finally{await made.context.close().catch(()=>{});}
 }
 export const adapters={H01,H02,H03,H04,H05,I01,I02,I03,I04,I05};
