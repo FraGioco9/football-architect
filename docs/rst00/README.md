@@ -46,4 +46,4 @@ D02 is **PASS** with the required cold/warm samples, navigation samples, cached 
 - No deployment step exists.
 - Browser profiles and careers are synthetic and disposable.
 - **RST-01 was not started.**
-- **WRD02.05 remains non-certified.**
+- **WRD02.05 was subsequently certified on Windows/IndexedDB in run #6 (`37321042160`).**
