@@ -3,6 +3,7 @@ import {
   navPagesCore,openCareers,pass,nonExecuted,primarySummary,readPrimary,uiProbe
 } from '../lib/runtime.mjs';
 import {careerShape,referenceAudit} from '../lib/audit.mjs';
+import {runCrossRolloverBehavior,runCrossInjuryTransferBehavior} from '../lib/behavioral-management-cross.mjs';
 
 async function H01(ctx){
   await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 H01');
@@ -142,14 +143,11 @@ async function H05(ctx){
   return pass({cycles:soak.cycles.length,final:soak.final,playerChurn:soak.playerChurn,runtime:soak.runtime});
 }
 async function I01(ctx){
-  if(!ctx.shared.contractEvidence?.executed||!ctx.shared.marketEvidence?.executed||!ctx.shared.financeEvidence?.executed){
-    return nonExecuted('I01 requires behavioral PASS evidence from contracts, market and finance before the two-rollover cross-domain gate can run',{
-      contract:ctx.shared.contractEvidence||null,
-      market:ctx.shared.marketEvidence||null,
-      finance:ctx.shared.financeEvidence||null
-    });
-  }
-  return nonExecuted('I01 two-rollover behavioral cross-domain driver remains intentionally blocked until E02/F01 are implemented');
+  const result=await runCrossRolloverBehavior(ctx.page,ctx.baseURL);
+  if(result?.ok)return pass(result);
+  const reason=String(result?.reason||'I01 cross-rollover driver failed');
+  if(/^no |insufficient/i.test(reason))return nonExecuted(reason,result||{});
+  return {state:'FAIL',reason,details:result||{}};
 }
 async function I02(ctx){
   const soak=ctx.shared.worldSoak;
@@ -171,14 +169,11 @@ async function I02(ctx){
   return pass({cycles:[1,2],cupRows,movementCountries:8});
 }
 async function I03(ctx){
-  if(!ctx.shared.substitutionEvidence?.executed||!ctx.shared.contractEvidence?.executed||!ctx.shared.marketEvidence?.executed){
-    return nonExecuted('I03 requires behavioral substitution, contract and transfer evidence before injury/substitution/contract-transfer coherence can be certified',{
-      substitution:ctx.shared.substitutionEvidence||null,
-      contract:ctx.shared.contractEvidence||null,
-      market:ctx.shared.marketEvidence||null
-    });
-  }
-  return nonExecuted('I03 combined behavioral driver remains to be implemented after its prerequisite adapters are executable');
+  const result=await runCrossInjuryTransferBehavior(ctx.page,ctx.baseURL);
+  if(result?.ok)return pass(result);
+  const reason=String(result?.reason||'I03 cross-domain driver failed');
+  if(/^no |insufficient/i.test(reason))return nonExecuted(reason,result||{});
+  return {state:'FAIL',reason,details:result||{}};
 }
 async function I04(ctx){
   const made=await launchPersistent(ctx.browserName,{viewport:{width:1200,height:800},suffix:'i04'});
