@@ -69,7 +69,7 @@ async function A04(ctx){
   await ctx.page.waitForTimeout(250);
   const italian=await uiProbe(ctx.page);
   const changed=english.text!==italian.text||english.lang!==italian.lang;
-  if(!changed)return {state:'FAIL',reason:'IT/EN controls did not change locale-visible state',{before,english,italian,candidates}};
+  if(!changed)return {state:'FAIL',reason:'IT/EN controls did not change locale-visible state',before,english,italian,candidates};
   return pass({before:{lang:before.lang},english:{lang:english.lang,text:english.text.slice(0,500)},italian:{lang:italian.lang,text:italian.text.slice(0,500)}});
 }
 
@@ -138,7 +138,7 @@ async function B03(ctx){
   const preview=ctx.page.locator('[data-dialog-kind="career-import-preview"]');
   await preview.waitFor({state:'visible',timeout:10000});
   const rows=await preview.locator('.career-import-row').count();
-  if(rows<1)return {state:'FAIL',reason:'Import preview contains no rows',{rows}};
+  if(rows<1)return {state:'FAIL',reason:'Import preview contains no rows',rows};
   return pass({rows,exportType:Array.isArray(payload)?'bundle':typeof payload});
 }
 
