@@ -181,15 +181,16 @@ export async function runScoutingBehavior(page,baseURL){
     const reportEntry=Object.entries(w.advancedV1.scoutingV1.reports).find(([,r])=>r.countryId===foreign.countryId);
     if(!reportEntry)return {ok:false,reason:'mission produced no scouting report',mission:completed};
     const [playerId,reportBefore]=reportEntry;
-    const before=scoutingEstimate(w,playerId);
     shortlistScoutedPlayer(w,{revision:w.advancedV1.scoutingV1.revision,playerId,add:true});
     const shortlisted=w.advancedV1.scoutingV1.shortlist.includes(playerId);
+    for(let i=0;i<5;i++)prepareAdvancedRound(w);
+    const before=scoutingEstimate(w,playerId);
     const refresh=refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId});
     const reportAfter=w.advancedV1.scoutingV1.reports[playerId],after=scoutingEstimate(w,playerId);
     return {
       ok:Boolean(
         completed?.status==='completed'&&reportAfter.confidence>=reportBefore.confidence&&reportAfter.confidence>0&&
-        JSON.stringify(before)!==JSON.stringify(after)&&shortlisted&&validateCareerScouting(w)&&validateSave(w)
+        before.confidence<after.confidence&&JSON.stringify(before)!==JSON.stringify(after)&&shortlisted&&validateCareerScouting(w)&&validateSave(w)
       ),
       target:{id:playerId,countryId:foreign.countryId},mission:completed,before,reportBefore,refresh,reportAfter,after,shortlisted,
       validScouting:validateCareerScouting(w),validSave:validateSave(w)
