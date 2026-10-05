@@ -44,7 +44,12 @@ async function readPrimary(page){
       r.onerror=()=>reject(r.error);
     });
     if(!rec?.raw)return {rawLength:0};
-    const career=JSON.parse(rec.raw);
+    const rows=JSON.parse(rec.raw);
+    const entries=new Map(rows);
+    const slotRows=[...entries].filter(([key])=>/^football-architect:career:slot:/.test(key));
+    if(slotRows.length!==1)throw new Error(`expected exactly one primary career slot, found ${slotRows.length}`);
+    const career=JSON.parse(slotRows[0][1]);
+    const computed=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(rec.raw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
     const [{validateSave},{validateCareerDivisions,divisionArchive}]=await Promise.all([
       import('/src/engine.js'),
       import('/src/domain/career-divisions.js')
@@ -55,6 +60,8 @@ async function readPrimary(page){
       schemaVersion:rec.schemaVersion,
       revision:rec.revision,
       sha256:rec.sha256,
+      checksumValid:computed===rec.sha256,
+      slotCount:slotRows.length,
       season:career.season,
       round:career.round,
       clubId:career.clubId,
@@ -83,14 +90,16 @@ async function exercise(browserName){
         advancedCareer,
         {enableCareerWorld,careerWorldLeague,OFFICIAL_WORLD_COUNTRIES,validateCareerWorld},
         {enableCareerDivisions,captureDivisionSeason,divisionLeague,divisionArchive,validateCareerDivisions},
-        {createFreshCareerSlot}
+        {createFreshCareerSlot},
+        {openPrimaryCareerStorage}
       ]=await Promise.all([
         import('/src/data.js'),
         import('/src/engine.js'),
         import('/src/domain/advanced-career.js'),
         import('/src/domain/career-world.js'),
         import('/src/domain/career-divisions.js'),
-        import('/src/career-management.js')
+        import('/src/career-management.js'),
+        import('/src/primary-career-storage.js')
       ]);
 
       const fail=(ok,message,details)=>{if(!ok)throw new Error(`${message} :: ${JSON.stringify(details||{})}`);};
@@ -181,7 +190,11 @@ async function exercise(browserName){
       fail(Object.values(histories).every(n=>n===2),'expected two history records per country',{histories});
       fail(w.advancedV1.divisionsV1.movements.length===2,'expected two movement batches',{movements:w.advancedV1.divisionsV1.movements.length});
 
-      createFreshCareerSlot(window.localStorage,w,validateSave);
+      const primary=await openPrimaryCareerStorage({legacyStorage:window.localStorage,validate:validateSave});
+      const slotResult=createFreshCareerSlot(primary.storage,w,validateSave);
+      const primaryCommit=await primary.commit();
+      fail(primary.failed===null,'primary IndexedDB storage reported failure',{failed:String(primary.failed||'')});
+      fail(primaryCommit.changed===true,'primary IndexedDB commit did not record career',{primaryCommit,revision:primary.revision});
       return {
         season:w.season,
         round:w.round,
@@ -191,12 +204,12 @@ async function exercise(browserName){
         promotedTarget,
         histories,
         movements:w.advancedV1.divisionsV1.movements.length,
+        primary:{revision:primary.revision,bytes:primary.bytes,slotId:slotResult.entry.id},
         season1:Object.fromEntries(countries.map(c=>[c,{promoted:plan1.countries[c].promoted,relegated:plan1.countries[c].relegated,playoffWinner:plan1.countries[c].playoff.winnerId}])),
         season2:Object.fromEntries(countries.map(c=>[c,{promoted:plan2.countries[c].promoted,relegated:plan2.countries[c].relegated,playoffWinner:plan2.countries[c].playoff.winnerId}]))
       };
     });
 
-    await deletePrimary(page);
     await page.reload({waitUntil:'domcontentloaded'});
     const continueButton=page.locator('[data-action="menu-continue"]').first();
     await continueButton.waitFor({state:'visible',timeout:20000});
@@ -206,6 +219,8 @@ async function exercise(browserName){
 
     const persisted=await readPrimary(page);
     assert(persisted.rawLength>0,'IndexedDB primary snapshot missing',{browserName,persisted});
+    assert(persisted.checksumValid===true,'IndexedDB checksum mismatch',{browserName,persisted});
+    assert(persisted.slotCount===1,'unexpected primary career slot count',{browserName,persisted});
     assert(persisted.saveValid===true,'persisted save failed validation',{browserName,persisted});
     assert(persisted.divisionsValid===true,'persisted divisions failed validation',{browserName,persisted});
     assert(persisted.season===memory.season&&persisted.round===0,'persisted season/round mismatch',{memory,persisted});
