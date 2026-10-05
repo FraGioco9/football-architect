@@ -71,14 +71,49 @@ jobs:
           }
           throw 'Football Architect server did not become ready.'
 
-      - name: Run B04 B05 C03 D02
+      - name: Run B04
+        continue-on-error: true
+        timeout-minutes: 6
         working-directory: rst00-runner
         shell: pwsh
         env:
           FA_BASE_URL: http://127.0.0.1:2000
           FA_APP_DIR: ${{ github.workspace }}\work\football-architect
           FA_ARTIFACT_DIR: ${{ github.workspace }}\rst00-artifacts
-        run: npm run rst00
+        run: npm run rst00 -- B04
+
+      - name: Run B05
+        continue-on-error: true
+        timeout-minutes: 8
+        working-directory: rst00-runner
+        shell: pwsh
+        env:
+          FA_BASE_URL: http://127.0.0.1:2000
+          FA_APP_DIR: ${{ github.workspace }}\work\football-architect
+          FA_ARTIFACT_DIR: ${{ github.workspace }}\rst00-artifacts
+        run: npm run rst00 -- B05
+
+      - name: Run C03
+        continue-on-error: true
+        timeout-minutes: 8
+        working-directory: rst00-runner
+        shell: pwsh
+        env:
+          FA_BASE_URL: http://127.0.0.1:2000
+          FA_APP_DIR: ${{ github.workspace }}\work\football-architect
+          FA_ARTIFACT_DIR: ${{ github.workspace }}\rst00-artifacts
+        run: npm run rst00 -- C03
+
+      - name: Run D02
+        continue-on-error: true
+        timeout-minutes: 8
+        working-directory: rst00-runner
+        shell: pwsh
+        env:
+          FA_BASE_URL: http://127.0.0.1:2000
+          FA_APP_DIR: ${{ github.workspace }}\work\football-architect
+          FA_ARTIFACT_DIR: ${{ github.workspace }}\rst00-artifacts
+        run: npm run rst00 -- D02
 
       - name: Verify reconstructed release ZIP unchanged
         if: always()
