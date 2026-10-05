@@ -1,0 +1,82 @@
+{
+  "suite": "RST-01",
+  "phase": "RST-01A",
+  "state": "HARDENED_LOCKED",
+  "executionLock": "LOCKED_PREPARATION",
+  "totalChecks": 43,
+  "driverReadyCount": 28,
+  "blockedDriverCount": 15,
+  "driverReady": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "D01",
+    "D02",
+    "E01",
+    "E04",
+    "E05",
+    "G02",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "I02",
+    "I04",
+    "I05"
+  ],
+  "blockedDrivers": {
+    "D03": "Behavioral manual/AI substitution, window and regulation driver not yet implemented.",
+    "D04": "Depends on executed substitution evidence before minutes/fitness assertions.",
+    "D05": "Depends on executed substitution plus injury-during-change and medical-return flow.",
+    "E02": "Renewal/expiry/clause/release lifecycle must be driven behaviorally.",
+    "E03": "Youth generation/development is observed, but explicit academy promotion is still required.",
+    "F01": "Buy/sell/reject transfer negotiation transitions must be executed.",
+    "F02": "Loan and clause behavior must be executed.",
+    "F03": "Transfer-window/free-agent/registration transitions must be executed.",
+    "F04": "Shortlist persistence and scouting uncertainty change must be executed.",
+    "F05": "AI transfer decisions must be tied to budget constraints across seasons.",
+    "G01": "Board objective evaluation and sack-risk transitions must be executed.",
+    "G03": "Staff hire/facility upgrade plus persisted impact must be executed.",
+    "G04": "Offer/interview/club-switch mobility must be executed and persisted.",
+    "I01": "Requires behavioral E02 + F01 + G02 evidence across two rollovers.",
+    "I03": "Requires behavioral substitution + injury + contract/transfer evidence."
+  },
+  "performanceBaseline": {
+    "source": "RST-00 Windows D02 certified evidence",
+    "mediansMs": {
+      "coldLoad": 274,
+      "warmLoad": 275.1,
+      "coldLcp": 368,
+      "warmLcp": 380,
+      "navigation": 148.9,
+      "input": 110.1
+    },
+    "cls": 0,
+    "rst01Thresholds": {
+      "coldLoad": 550,
+      "warmLoad": 550,
+      "coldLcp": 800,
+      "warmLcp": 800,
+      "navigation": 320,
+      "input": 250,
+      "cls": 0.1
+    }
+  },
+  "notes": [
+    "Driver-ready means statically hardened and suitable for a future execution attempt; it does not mean PASS.",
+    "Blocked drivers deliberately return NON_ESEGUITO rather than inferring PASS from UI/API/state presence.",
+    "RST-01 remains unstarted and no deployment is authorized."
+  ]
+}
