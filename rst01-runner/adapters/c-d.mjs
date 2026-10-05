@@ -174,85 +174,45 @@ async function C05(ctx){
   });
 }
 async function D01(ctx){
-  const primary=await readPrimary(ctx.page);
-  if(!primary.career)await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 D01');
-  const p=await readPrimary(ctx.page);
-  const result=await ctx.page.evaluate(async career=>{
-    const {autoLineup,validateSave}=await import('/src/engine.js');
-    autoLineup(career);
-    const candidates=[];
-    const seen=new WeakSet();
-    const walk=(v,p='',d=0)=>{
-      if(!v||typeof v!=='object'||d>7||seen.has(v))return;
-      seen.add(v);
-      for(const [k,x] of Object.entries(v)){
-        const q=p?p+'.'+k:k;
-        if(Array.isArray(x)&&/lineup|starter|starting.*xi|starting/i.test(k)){
-          const ids=x.map(item=>typeof item==='number'||typeof item==='string'?item:(item?.playerId??item?.id)).filter(v=>v!==undefined&&v!==null);
-          candidates.push({path:q,size:x.length,ids,unique:new Set(ids).size});
-        }
-        if(x&&typeof x==='object')walk(x,q,d+1);
-      }
-    };
-    walk(career);
-    const formation=[];
-    const walkFormation=(v,p='',d=0)=>{
-      if(!v||typeof v!=='object'||d>5)return;
-      for(const [k,x] of Object.entries(v)){
-        const q=p?p+'.'+k:k;
-        if(/formation/i.test(k)&&(typeof x==='string'||typeof x==='number'))formation.push({path:q,value:x});
-        if(x&&typeof x==='object')walkFormation(x,q,d+1);
-      }
-    };
-    walkFormation(career);
-    return {valid:validateSave(career),candidates,formation};
-  },p.career);
+  await ctx.page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
+  const result=await ctx.page.evaluate(async()=>{
+    const [{makeWorld,FORMATIONS},{startCareer,autoLineup,validateSave}]=await Promise.all([import('/src/data.js'),import('/src/engine.js')]);
+    const w=makeWorld();startCareer(w,1,'RST01 D01');autoLineup(w);
+    const lineup=Array.isArray(w.lineup)?[...w.lineup]:[];
+    const formation=w.formation??w.tactics?.formation??null;
+    const knownFormation=formation==null?null:(Array.isArray(FORMATIONS)?FORMATIONS.includes(formation):Object.hasOwn(FORMATIONS,formation));
+    return {valid:validateSave(w),lineup,unique:new Set(lineup).size,formation,knownFormation,formationCount:Array.isArray(FORMATIONS)?FORMATIONS.length:Object.keys(FORMATIONS||{}).length};
+  });
   assert(result.valid===true,'D01 auto-lineup produced invalid save',result);
-  const exact=result.candidates.find(x=>x.size===11&&x.ids.length===11&&x.unique===11);
-  if(!exact||!result.formation.length)return nonExecuted('Could not prove an exact 11-player distinct starting lineup plus formation state',result);
-  return pass({lineup:exact,formation:result.formation.slice(0,20)});
+  assert(result.lineup.length===11&&result.unique===11,'D01 starting XI is not eleven distinct players',result);
+  if(result.formation==null)return nonExecuted('D01 formation field unavailable after official autoLineup',result);
+  if(result.knownFormation===false)return {state:'FAIL',reason:'D01 formation is not in the official formation catalogue',details:result};
+  return pass(result);
 }
 async function D02(ctx){
-  await (await import('../lib/runtime.mjs')).ensureCareer(ctx.page,'RST01 D02');
-  await navigateCore(ctx.page,'tactics');
-  const before=await primarySummary(ctx.page);
-  const fingerprint=async()=>ctx.page.evaluate(async()=>{
-    const rec=await new Promise((resolve,reject)=>{
-      const r=indexedDB.open('football-architect-primary-careers',1);
-      r.onsuccess=()=>{const db=r.result,tx=db.transaction('snapshots','readonly'),q=tx.objectStore('snapshots').get('primary');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);};
-      r.onerror=()=>reject(r.error);
-    });
-    if(!rec?.raw)return [];
-    const rows=JSON.parse(rec.raw),entries=new Map(rows),slot=[...entries].find(([k])=>/^football-architect:career:slot:/.test(k));
-    if(!slot)return [];
-    const career=JSON.parse(slot[1]),out=[],seen=new WeakSet();
-    const walk=(v,p='',d=0)=>{if(!v||typeof v!=='object'||d>7||seen.has(v))return;seen.add(v);for(const [k,x] of Object.entries(v)){const q=p?p+'.'+k:k;if(/tactic|formation|style|press|tempo/i.test(k)&&(['string','number','boolean'].includes(typeof x)))out.push([q,x]);if(x&&typeof x==='object')walk(x,q,d+1);}};
-    walk(career);return out.sort((a,b)=>a[0].localeCompare(b[0]));
+  await ctx.page.goto(`${ctx.baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
+  const result=await ctx.page.evaluate(async()=>{
+    const [{makeWorld},{startCareer,simulateRound,validateSave},{enableAdvancedCareer},{enableCareerMatchday},{enableCareerTactics,saveCareerTacticPreset,planCareerTacticChange,validateCareerTactics}]=await Promise.all([
+      import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-matchday.js'),import('/src/domain/career-tactics.js')
+    ]);
+    const w=makeWorld();startCareer(w,1,'RST01 D02');enableAdvancedCareer(w);enableCareerMatchday(w);enableCareerTactics(w);
+    const before=structuredClone(w.advancedV1.tactics);
+    saveCareerTacticPreset(w,'RST01 Baseline');
+    const planner=w.advancedV1.tacticPlannerV1,preset=planner.book.presets.at(-1);
+    if(!preset)return {ok:false,reason:'preset was not created'};
+    planCareerTacticChange(w,{minute:60,presetId:preset.id});
+    const planned=structuredClone(w.advancedV1.tacticPlannerV1.plans);
+    const match=simulateRound(w),changes=match.result?.advancedV1?.tacticalChanges??[];
+    const applied=changes.find(x=>x.teamId===w.clubId&&x.minute===60&&x.presetId===preset.id)??null;
+    return {
+      ok:Boolean(applied&&validateCareerTactics(w)&&validateSave(w)),
+      before,preset:{id:preset.id,name:preset.name},planned,applied,changes,
+      validTactics:validateCareerTactics(w),validSave:validateSave(w),style:w.advancedV1.style
+    };
   });
-  const beforeFp=await fingerprint();
-
-  const selects=ctx.page.locator('select:visible:not([disabled])');
-  let changedControl=null;
-  for(let i=0;i<await selects.count();i++){
-    const el=selects.nth(i);
-    const meta=await el.evaluate(node=>({name:node.name||'',id:node.id||'',aria:node.getAttribute('aria-label')||'',value:node.value,options:[...node.options].map(o=>({value:o.value,disabled:o.disabled}))}));
-    if(!/tactic|formation|style|press|tempo/i.test(meta.name+' '+meta.id+' '+meta.aria))continue;
-    const alt=meta.options.find(o=>!o.disabled&&o.value!==meta.value);
-    if(!alt)continue;
-    await el.selectOption(alt.value);
-    await ctx.page.waitForTimeout(400);
-    changedControl={...meta,to:alt.value};
-    break;
-  }
-  if(!changedControl)return nonExecuted('No deterministic tactics select with an alternate value was found');
-
-  const after=await primarySummary(ctx.page);
-  const afterFp=await fingerprint();
-  assert(after.checksumValid===true,'D02 checksum invalid after tactics change',{before,after,changedControl});
-  const semanticChanged=JSON.stringify(beforeFp)!==JSON.stringify(afterFp);
-  const persistedChanged=before.sha256!==after.sha256||before.revision!==after.revision;
-  if(!semanticChanged||!persistedChanged)return nonExecuted('Tactics UI changed but a persisted tactical-state change could not be proven',{changedControl,beforeFp,afterFp,before,after});
-  return pass({changedControl,before,after,beforeFingerprint:beforeFp,afterFingerprint:afterFp});
+  if(result.reason)return nonExecuted(result.reason,result);
+  if(!result.ok)return {state:'FAIL',reason:'D02 official preset/live tactical change did not apply cleanly',details:result};
+  return pass(result);
 }
 async function D03(ctx){
   const result=await runSubstitutionBehavior(ctx.page,ctx.baseURL);
