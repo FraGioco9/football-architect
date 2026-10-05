@@ -1,8 +1,8 @@
 {
   "suite": "RST-01",
   "phase": "PRE_UNLOCK_GATE",
-  "state": "PRE_UNLOCK_GATE_PASS_LOCKED",
-  "executionLock": "LOCKED_PREPARATION",
+  "state": "READY_FOR_EXECUTION",
+  "executionLock": "READY_FOR_EXECUTION",
   "totalChecks": 43,
   "driverReadyCount": 43,
   "blockedDriverCount": 0,
@@ -110,8 +110,9 @@
   },
   "notes": [
     "43/43 driver-ready means implemented and statically validated; it does not mean PASS.",
-    "The pre-unlock gate is PASS, but no RST-01 check has been executed.",
-    "The execution lock remains LOCKED_PREPARATION and may change only after explicit user authorization.",
+    "The pre-unlock gate is PASS.",
+    "Execution readiness was explicitly authorized; RST-01 has still not been started.",
+    "Starting RST-01 requires a separate explicit user authorization.",
     "No deployment is authorized."
   ],
   "preUnlockFixes": [
