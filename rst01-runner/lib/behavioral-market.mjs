@@ -1,7 +1,7 @@
 export async function runMarketNegotiationBehavior(page,baseURL){
   await page.goto(`${baseURL}/src/data.js`,{waitUntil:'domcontentloaded'});
   return page.evaluate(async()=>{
-    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,validateCareerMarket}]=await Promise.all([
+    const [{makeWorld},{startCareer,validateSave},{enableAdvancedCareer},{enableCareerWorld},{enableCareerMarket,managedClubKey,marketClubs,marketPlayers,marketValuation,marketExistingWageEUR,createCareerQuote,startMarketDeal,marketClubDecision,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal,returnMarketLoansAfterArchive,validateCareerMarket}]=await Promise.all([
       import('/src/data.js'),import('/src/engine.js'),import('/src/domain/advanced-career.js'),import('/src/domain/career-world.js'),import('/src/domain/career-market.js')
     ]);
     const setup=()=>{const w=makeWorld();startCareer(w,1,'RST01 F01');enableAdvancedCareer(w);enableCareerWorld(w);enableCareerMarket(w);return w;};
@@ -21,7 +21,7 @@ export async function runMarketNegotiationBehavior(page,baseURL){
     };
 
     const buy=setup(),managed=managedClubKey(buy),managedClub=buy.teams.find(c=>c.id===buy.clubId);
-    const foreign=marketPlayers(buy,{limit:2000}).filter(x=>x.clubKey!==managed).map(x=>({x,v:marketValuation(buy,x.id,managed)})).filter(({v})=>v.askingEUR<managedClub.transferBudget*.65&&v.askingEUR<managedClub.balance*.65).sort((a,b)=>a.v.askingEUR-b.v.askingEUR)[0];
+    const foreign=marketPlayers(buy,{limit:2000}).filter(x=>x.clubKey!==managed).map(x=>({x,v:marketValuation(buy,x.id,managed)})).filter(({v})=>v.askingEUR<=10_000_000&&v.askingEUR<managedClub.transferBudget*.65&&v.askingEUR<managedClub.balance*.65).sort((a,b)=>a.v.askingEUR-b.v.askingEUR)[0];
     if(!foreign)return {ok:false,reason:'no affordable foreign buy target'};
     const buyResult=negotiate(buy,foreign.x.id,managed);
     const bought=marketPlayers(buy,{limit:3000}).find(x=>x.id===foreign.x.id);
@@ -35,7 +35,7 @@ export async function runMarketNegotiationBehavior(page,baseURL){
       const pid=`${sell.countryId}:${p.id}`;
       for(const c of clubs){
         const v=marketValuation(sell,pid,c.key),fund=sell.advancedV1.marketV1.foreignFinances[c.key];
-        if(fund&&v.askingEUR<fund.budget*.7&&v.askingEUR<fund.balance*.7){sellChoice={p,pid,c,v};break;}
+        if(fund&&v.askingEUR<=10_000_000&&v.askingEUR<fund.budget*.7&&v.askingEUR<fund.balance*.7){sellChoice={p,pid,c,v};break;}
       }
       if(sellChoice)break;
     }
@@ -90,6 +90,7 @@ export async function runLoanClauseBehavior(page,baseURL){
     const loanSeason=loan.season;
     while(loan.round<loan.fixtures.length)simulateRound(loan);
     newSeason(loan);
+    returnMarketLoansAfterArchive(loan);
     const returnedOwner=marketPlayers(loan,{limit:3000}).find(x=>x.id===target.x.id)?.clubKey;
     const loanRollover={fromSeason:loanSeason,toSeason:loan.season,round:loan.round};
 
