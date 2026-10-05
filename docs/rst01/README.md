@@ -125,3 +125,35 @@ The 10-season world soak now explicitly enables and validates WRD03 national cup
 D05/I03 use a complete-season deterministic scan of the frozen fixture set for an official injury substitution. If the frozen deterministic season contains no such event, the check returns `NON_ESEGUITO`; it never fabricates an injury or PASS.
 
 **Driver-ready is not equivalent to tested or PASS. RST-01 remains NOT STARTED.**
+
+
+## Final pre-unlock gate
+
+Status: **PASS — still locked**
+
+The final read-only/static gate found and resolved four execution blockers before any RST-01 run:
+
+- F04 now synchronizes `worldV1.day` after direct advanced-clock movement.
+- I02 now consumes the current structured WRD03/WRD04 soak evidence.
+- D04 now measures fitness immediately after the substitution match, before any later AI-substitution scan.
+- H04 now measures post-GC `JSHeapUsedSize` through CDP.
+
+Additional tightening:
+
+- F02 proves loan return through the official `newSeason()` rollover.
+- D03/D05 use complete-season deterministic observation windows.
+- H02 explicitly checks landmarks and accessible control names in addition to keyboard/focus.
+- RST-00 did not capture heap memory, so H04 documents a separate RST-01 memory guardrail: **256 MB maximum post-GC JS heap and 64 MB maximum post-GC growth**.
+
+Final static state:
+
+- registry: **43/43**
+- syntax: **11/11 PASS**
+- frozen release API contract: **101/101**
+- stale-reference audit: **PASS**
+- branch scope: harness/docs/workflow only
+- release/source changes: **0**
+- workflow runs: **0**
+- execution lock: `LOCKED_PREPARATION`
+
+The pre-unlock gate being PASS does **not** authorize execution. RST-01 remains **NOT STARTED**.
