@@ -94,15 +94,36 @@ async function A01(ctx){
   await ctx.page.goto(ctx.baseURL,{waitUntil:'domcontentloaded'});
   await ctx.page.waitForTimeout(250);
   const probe=await uiProbe(ctx.page);
-  const storage=await ctx.page.evaluate(async()=>({
-    localCareerKeys:Object.keys(localStorage).filter(k=>/football-architect:career:/i.test(k)),
-    dbs:typeof indexedDB.databases==='function'?(await indexedDB.databases()).map(x=>x.name).filter(Boolean):[]
-  }));
+  const storage=await ctx.page.evaluate(async()=>{
+    const localCareerKeys=Object.keys(localStorage).filter(k=>/football-architect:career:/i.test(k));
+    const dbs=typeof indexedDB.databases==='function'?(await indexedDB.databases()).map(x=>x.name).filter(Boolean):[];
+    let primary=null;
+    if(dbs.includes('football-architect-primary-careers')){
+      primary=await new Promise(resolve=>{
+        const r=indexedDB.open('football-architect-primary-careers',1);
+        r.onsuccess=()=>{
+          const db=r.result;
+          if(!db.objectStoreNames.contains('snapshots')){resolve(null);return;}
+          const tx=db.transaction('snapshots','readonly'),q=tx.objectStore('snapshots').get('primary');
+          q.onsuccess=()=>resolve(q.result??null);q.onerror=()=>resolve(null);
+        };
+        r.onerror=()=>resolve(null);
+      });
+    }
+    let primaryCareerSlots=0;
+    if(primary?.raw){
+      try{
+        const entries=JSON.parse(primary.raw);
+        primaryCareerSlots=entries.filter(([key])=>/^football-architect:career:slot:/.test(key)).length;
+      }catch{primaryCareerSlots=-1;}
+    }
+    return {localCareerKeys,dbs,primaryExists:Boolean(primary),primaryCareerSlots};
+  });
   const continueButton=ctx.page.locator('[data-action="menu-continue"]').first();
   const continueVisible=await continueButton.isVisible().catch(()=>false);
   const continueDisabled=continueVisible?await continueButton.isDisabled().catch(()=>false):true;
-  if(storage.localCareerKeys.length||storage.dbs.includes('football-architect-primary-careers')){
-    return {state:'FAIL',reason:'A01 browser profile was not clean',storage};
+  if(storage.localCareerKeys.length||storage.primaryCareerSlots!==0){
+    return {state:'FAIL',reason:'A01 browser profile contained an existing career payload',storage};
   }
   if(!(probe.text||'').trim())return nonExecuted('Empty first paint',{probe,storage});
   if(continueVisible&&!continueDisabled)return {state:'FAIL',reason:'Continue action enabled on clean install',probe,storage};
