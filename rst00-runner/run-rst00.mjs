@@ -44,36 +44,50 @@ async function ensureCareer(page){
   await page.goto(baseURL,{waitUntil:'domcontentloaded'});
   const dashboard=page.locator('.dashboard-hero').first();
   if(await dashboard.isVisible().catch(()=>false))return;
-  let manager=page.locator('#manager-name').first();
-  if(!(await manager.isVisible().catch(()=>false))){
-    const menuNew=page.locator('[data-action="menu-new"]').first();
-    if(await menuNew.isVisible().catch(()=>false)){
-      await menuNew.click();
-      await manager.waitFor({state:'visible',timeout:15000});
-    }
-  }
-  manager=page.locator('#manager-name').first();
-  if(await manager.isVisible().catch(()=>false)){
-    await manager.fill('RST00 Test Manager');
-    const start=page.locator('[data-action="start-career"]').first();
-    await start.click();
-  }
+
+  // Test-only setup: construct a valid career with production modules, write the
+  // normal legacy/catalog keys, then recreate the PRIMARY IndexedDB database so
+  // application boot performs its real migration into a disposable browser profile.
+  const seeded=await page.evaluate(async()=>{
+    const [{makeWorld},{startCareer,validateSave},{createFreshCareerSlot}]=await Promise.all([
+      import('/src/data.js'),
+      import('/src/engine.js'),
+      import('/src/career-management.js')
+    ]);
+    const career=makeWorld();
+    startCareer(career,1,'RST00 Test Manager');
+    createFreshCareerSlot(window.localStorage,career,validateSave);
+    return {clubId:career.clubId,season:career.season,round:career.round,keys:Object.keys(localStorage)};
+  });
+  await page.evaluate(()=>new Promise((resolve,reject)=>{
+    const req=indexedDB.deleteDatabase('football-architect-primary-careers');
+    req.onsuccess=()=>resolve(true);
+    req.onerror=()=>reject(req.error||new Error('primary IndexedDB delete failed'));
+    req.onblocked=()=>reject(new Error('primary IndexedDB delete blocked'));
+  }));
+  await page.reload({waitUntil:'domcontentloaded'});
   try{
     await dashboard.waitFor({state:'visible',timeout:30000});
+    await page.waitForTimeout(500);
   }catch(err){
-    const state=await page.evaluate(()=>({title:document.title,text:(document.body?.innerText||'').slice(0,1200),url:location.href}));
-    throw new Error(`career onboarding did not reach dashboard: ${JSON.stringify(state)}; ${String(err?.message||err)}`);
+    const state=await page.evaluate(()=>({title:document.title,text:(document.body?.innerText||'').slice(0,1600),url:location.href,localKeys:Object.keys(localStorage)}));
+    throw new Error(`synthetic production-format career did not reach dashboard: seed=${JSON.stringify(seeded)} state=${JSON.stringify(state)}; ${String(err?.message||err)}`);
   }
 }
 async function navigateCore(page,id){
   const b=page.locator(`[data-action="nav"][data-page="${id}"]`).first();
   if(!(await b.count()))throw new Error(`navigation target missing: ${id}`);
   await b.evaluate(el=>el.click());
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(120);
 }
 async function openCareers(page){
-  const b=page.locator('[data-action="open-careers"]').first();
-  if(!(await b.count()))throw new Error('open-careers action missing');
+  if(await page.locator('.career-hub-main').isVisible().catch(()=>false))return;
+  let b=page.locator('[data-action="open-careers"]').first();
+  if(!(await b.count())){
+    await navigateCore(page,'settings');
+    b=page.locator('[data-action="open-careers"]').first();
+  }
+  if(!(await b.count()))throw new Error('open-careers action missing after navigating to settings');
   await b.evaluate(el=>el.click());
   await page.locator('.career-hub-main').waitFor({state:'visible',timeout:15000});
 }
