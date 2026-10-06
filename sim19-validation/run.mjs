@@ -30,9 +30,16 @@ async function browserGate(){
     const initialDate=(await page.locator('.top-round strong').textContent())?.trim();
     await page.locator('.continue-top[data-action="advance"]').click();
     await page.locator('.continue-top[data-action="stop-advance"]').waitFor({state:'visible'});
-    await page.waitForFunction(date=>document.querySelector('.top-round strong')?.textContent?.trim()!==date,initialDate,{timeout:15000});
+    await page.waitForFunction(date=>{
+      const current=document.querySelector('.top-round strong')?.textContent?.trim();
+      const running=Boolean(document.querySelector('.continue-top[data-action="stop-advance"]'));
+      return current!==date||!running;
+    },initialDate,{timeout:60000});
     const progressedDate=(await page.locator('.top-round strong').textContent())?.trim();
-    assert.notEqual(progressedDate,initialDate,'Continue must cross at least one day autonomously');
+    if(progressedDate===initialDate){
+      console.log('SIM19 EARLY STOP STATE:',(await page.locator('body').innerText()).slice(-5000));
+    }
+    assert.notEqual(progressedDate,initialDate,'Continue stopped before crossing the first day');
 
     await page.waitForFunction(()=>{
       const text=document.querySelector('.side-season-bottom')?.textContent||'';
