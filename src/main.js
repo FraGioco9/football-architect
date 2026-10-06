@@ -33,6 +33,7 @@ import {isNavigationPage} from './navigation-model.js';
 import {createControlHints} from './controls-system.js';
 import {createDialogCoordinator} from './dialog-system.js';
 import {createFeedbackCenter} from './feedback-system.js';
+import {ensureCareerDates,fixtureIsDue,nextFixtureDate,addDaysISO,formatCareerDate} from './domain/career-date.js';
 import {MARKET_VIEWS,marketCostPreview} from './market-view-model.js';
 import {displayCareerMoney} from './domain/career-locale.js';
 import {preferredLanguage, saveLanguage, translateUi, translate, pageTitle, GAME_NAME} from './i18n.js';
@@ -44,7 +45,7 @@ import {createCareerCheckpoint,listCareerCheckpoints,restoreCareerCheckpoint} fr
 import {exportCareerSlotJson,exportAllCareersJson,previewCareerImport,applyCareerImport,listImportBackups,restoreImportBackup,MAX_TRANSFER_BYTES} from './career-transfer.js';
 import {createIndexedDbVault,mirrorCatalogToVault,estimateCareerStorage,createEmergencyExport,readVerifiedVaultSlot,restoreSlotFromVault} from './career-vault.js';
 import {openPrimaryCareerStorage} from './primary-career-storage.js';
-import {validateSave,startCareer,simulateRound,changeFormation,autoLineup,assignPlayer,signPlayer,sellPlayer,newSeason,clubPlayers,playerById,clubById,myClub} from './engine.js';
+import {validateSave,startCareer,advanceDay,simulateRound,changeFormation,autoLineup,assignPlayer,signPlayer,sellPlayer,newSeason,clubPlayers,playerById,clubById,myClub} from './engine.js';
 
 // Boot is deliberately asynchronous: never render a writable world until
 // the authoritative IndexedDB snapshot has been verified and hydrated.
@@ -76,6 +77,7 @@ let vaultSync=Promise.resolve();
 const careerVault=createIndexedDbVault();
 let pendingNewCatalogSlot=false;
 let world=load();
+ensureCareerDates(world);
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
 let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
@@ -1001,21 +1003,26 @@ root.addEventListener('click',async ev=>{
         updatePreviewSurface();break;
       }
       case 'advance':{
-        const notice=previewCalendarAdvance(world,{toDay:world.advancedV1?.clockDay+7});
-        if(notice.requiresConfirmation&&!confirmAction(ui.language==='en'?`Next match crosses ${notice.due.length} registrations, ${notice.closing.length} window deadlines and ${notice.expiring.length} offer expirations. Continue?`:`La prossima partita attraversa ${notice.due.length} registrazioni, ${notice.closing.length} chiusure di mercato e ${notice.expiring.length} scadenze delle offerte. Continuare?`))break;
-        if(substitutionsEnabled(world)&&!notice.due?.length){
+        ensureCareerDates(world);
+        const dueNow=fixtureIsDue(world),tomorrow=addDaysISO(world.currentDate,1),nextDate=nextFixtureDate(world);
+        const notice=world.advancedV1?.calendarV1?previewCalendarAdvance(world,{toDay:world.advancedV1.clockDay+(dueNow?0:1)}):{requiresConfirmation:false,confirmationToken:null,due:[],closing:[],expiring:[]};
+        if(notice.requiresConfirmation&&!confirmAction(ui.language==='en'?`Tomorrow processes ${notice.due.length} registrations, ${notice.closing.length} window deadlines and ${notice.expiring.length} offer expirations. Continue?`:`Domani saranno elaborate ${notice.due.length} registrazioni, ${notice.closing.length} chiusure di mercato e ${notice.expiring.length} scadenze delle offerte. Continuare?`))break;
+        const matchDay=dueNow||nextDate===tomorrow;
+        if(substitutionsEnabled(world)&&matchDay&&!notice.due?.length){
+          if(!dueNow)await runCheckpointed('before-match',()=>advanceDay(world,{calendarConfirmationToken:notice.confirmationToken,simulateDueMatch:false}));
           const next=expectedNextMatch(world);
-          if(next){ui.modal={type:'sim04-halftime',round:world.round,preview:previewAdvancedHalf(world,next)};render();break;}
+          if(next){ui.modal={type:'sim04-halftime',round:world.round,preview:previewAdvancedHalf(world,next)};render();toast(formatCareerDate(world.currentDate,ui.language));break;}
         }
-        const m=await runCheckpointed('before-match',()=>simulateRound(world,{calendarConfirmationToken:notice.confirmationToken}));ui.calendarRound=world.round;
-        ui.modal={type:'match',id:m.id};toast(`Giornata ${world.round} completata · ${matchText(m)}`);break;
+        const result=await runCheckpointed(matchDay?'before-match':'before-day',()=>advanceDay(world,{calendarConfirmationToken:notice.confirmationToken}));
+        ui.calendarRound=world.round;
+        if(result.match){ui.modal={type:'match',id:result.match.id};toast(`${formatCareerDate(world.currentDate,ui.language)} · Giornata ${world.round} · ${matchText(result.match)}`);}
+        else {render();toast(formatCareerDate(world.currentDate,ui.language));}
+        break;
       }
       case 'sim04-half-continue':{
         if(!substitutionsEnabled(world)||ui.modal?.type!=='sim04-halftime'||ui.modal.round!==world.round||ui.modal.preview.matchId!==expectedNextMatch(world)?.id)throw new Error('SIM04_HALFTIME_STALE');
-        const notice=previewCalendarAdvance(world,{toDay:world.advancedV1.clockDay+7});
-        if(notice.requiresConfirmation&&!confirmAction(ui.language==='en'?'Transfer registrations will be processed before the match. Continue?':'Prima della partita saranno elaborate registrazioni di mercato. Continuare?'))break;
-        const m=await runCheckpointed('before-match',()=>simulateRound(world,{calendarConfirmationToken:notice.confirmationToken}));ui.calendarRound=world.round;
-        ui.modal={type:'match',id:m.id};toast(`Giornata ${world.round} completata · ${matchText(m)}`);break;
+        const m=await runCheckpointed('before-match',()=>simulateRound(world,{advanceDays:0,calendarAlreadySettled:true}));ui.calendarRound=world.round;
+        ui.modal={type:'match',id:m.id};toast(`${formatCareerDate(world.currentDate,ui.language)} · Giornata ${world.round} · ${matchText(m)}`);break;
       }
       case 'new-season':{
         if(!confirmAction(`Avviare la stagione ${world.season+1}? La classifica e le statistiche stagionali ripartiranno da zero.`))break;
