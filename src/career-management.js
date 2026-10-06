@@ -32,10 +32,19 @@ function mirror(storage,career,validate){
 export function listCareerSlots(storage,validate){
   const catalog=readCareerCatalog(storage);
   return {activeSlotId:catalog.activeSlotId,slots:catalog.slots.map(record=>{
-    let status='ok';
-    try{parseSlot(storage,record,validate);}catch(err){status=err?.code||'invalid_slot';}
-    return {...record,status};
-  }).sort((a,b)=>b.lastSavedAt.localeCompare(a.lastSavedAt))};
+    let status='ok',currentDate=null;
+    try{
+      const {career}=parseSlot(storage,record,validate);
+      currentDate=typeof career.currentDate==='string'?career.currentDate:null;
+    }catch(err){status=err?.code||'invalid_slot';}
+    return {...record,status,currentDate};
+  }).sort((a,b)=>{
+    if(a.id===catalog.activeSlotId&&b.id!==catalog.activeSlotId)return -1;
+    if(b.id===catalog.activeSlotId&&a.id!==catalog.activeSlotId)return 1;
+    if(a.status==='ok'&&b.status!=='ok')return -1;
+    if(b.status==='ok'&&a.status!=='ok')return 1;
+    return b.lastSavedAt.localeCompare(a.lastSavedAt);
+  })};
 }
 export function switchCareerSlot(storage,id,validate){
   const before=storage.getItem(CAREER_CATALOG_KEY),catalog=readCareerCatalog(storage);
