@@ -174,7 +174,7 @@ function makeKnockout(w,ed,index,winners){
  else{const draw=shuffle(winners,scopedSeed(w.seed,'wrd04-knockout',w.season,index));for(let i=0;i<draw.length;i+=2)pairs.push([draw[i],draw[i+1]]);}
  const matches=pairs.map(([home,away],i)=>dayMatch(w,'ko',index+1,i+1,home,away,null));
  const round={index:index+1,day,neutral:index===3,venue:index===3?ed.venue:null,matches};
- scheduleContinentalRound(w,round,7+index);
+ if(isCareerDate(ed.groupRounds[0]?.date))scheduleContinentalRound(w,round,7+index);
  ed.knockout.push(round);
 }
 function processDueContinental(w,{simulateManagedCup=null,fromRound=false}={}){
