@@ -303,9 +303,9 @@ export function rescheduleLeagueRound(w,roundNumber,{date,reason='calendar',kick
   if(round.date===date)return round;
 
   const previous=w.fixtures[roundNumber-2]?.date??null,next=w.fixtures[roundNumber]?.date??null;
+  if(occupiedCompetitionDates(w).has(date))throw new Error('CAREER_RESCHEDULE_COMPETITION_COLLISION');
   if(previous&&daysBetweenISO(previous,date)<3)throw new Error('CAREER_RESCHEDULE_PREVIOUS_GAP');
   if(next&&daysBetweenISO(date,next)<3)throw new Error('CAREER_RESCHEDULE_NEXT_GAP');
-  if(occupiedCompetitionDates(w).has(date))throw new Error('CAREER_RESCHEDULE_COMPETITION_COLLISION');
 
   if(kickoffs!==null&&(!Array.isArray(kickoffs)||kickoffs.length!==round.matches.length||kickoffs.some(x=>!isCareerKickoff(x))))throw new Error('CAREER_RESCHEDULE_KICKOFFS');
   const fromDate=round.date,changedOn=w.currentDate,cleanReason=String(reason||'calendar').trim().slice(0,120)||'calendar';
