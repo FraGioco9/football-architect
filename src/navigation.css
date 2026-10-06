@@ -1,4 +1,4 @@
-/* UX2-01: grouped navigation and quick links; purely presentational. */
+/* UX2-01: grouped navigation; purely presentational. */
 .sidebar-scroll { min-height:0; }
 .sidebar .navigation { display:flex; flex-direction:column; gap:8px; padding:0 12px 20px; }
 .nav-group { min-width:0; border:1px solid transparent; border-radius:10px; }
@@ -13,7 +13,9 @@
 .nav-group-items { display:flex; flex-direction:column; gap:3px; padding:0 5px 8px; }
 .nav-group-items .nav-item { width:100%; min-height:42px; flex-shrink:0; }
 .nav-group-items .nav-item.active:before { left:6px; }
+.nav-group-toggle:focus-visible,.nav-group-items .nav-item:focus-visible { outline:3px solid var(--navigation-focus-ring,#54d19b); outline-offset:2px; }
 @media(max-width:1000px) {
   .sidebar-scroll { overscroll-behavior:contain; }
+  .nav-group-toggle,.nav-group-items .nav-item { min-height:44px; }
 }
 @media(prefers-reduced-motion:reduce) { .nav-group-toggle svg { transition:none; } }
