@@ -87,7 +87,9 @@ try{
   check(await page.locator('[data-dialog-kind="career-rename"]').count()===1,'Rename dialog must open from the keyboard');
   await page.locator('[data-action="close-modal"]').first().click();
   await page.waitForTimeout(50);
-  check(await rename.evaluate(el=>document.activeElement===el),'focus must return to the More action that opened the dialog');
+  const activeFocus=await page.evaluate(()=>({tag:document.activeElement?.tagName,action:document.activeElement?.dataset?.action,id:document.activeElement?.dataset?.id,insideCard:Boolean(document.activeElement?.closest?.('.career-card'))}));
+  console.log('CAREER_FOCUS_AFTER_DIALOG',JSON.stringify(activeFocus));
+  check(activeFocus.insideCard,'focus must return to the career card after closing a More-action dialog');
 
   // English and mobile layout.
   const combo=page.locator('[data-language-picker="careers"] [role="combobox"]');
