@@ -31,7 +31,12 @@ async function browserGate(){
 
     const initialDate=(await page.locator('.top-round strong').textContent())?.trim();
     await page.locator('.continue-top[data-action="advance"]').click();
-    await page.locator('.continue-top[data-action="stop-advance"]').waitFor({state:'visible'});
+    await page.waitForTimeout(500);
+    if(await page.locator('.continue-top[data-action="stop-advance"]').count()===0){
+      console.log('SIM19 IMMEDIATE STOP STATE:',(await page.locator('body').innerText()).slice(-7000));
+      console.log('SIM19 CAPTURED ERRORS:',errors);
+      throw new Error('Continue stopped before Stop control could remain observable');
+    }
     await page.waitForFunction(date=>{
       const current=document.querySelector('.top-round strong')?.textContent?.trim();
       const running=Boolean(document.querySelector('.continue-top[data-action="stop-advance"]'));
