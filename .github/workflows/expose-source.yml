@@ -1,0 +1,49 @@
+name: Expose runnable source
+
+on:
+  push:
+    branches:
+      - ux/fixed-controls-dropdowns
+    paths:
+      - .github/workflows/expose-source.yml
+
+permissions:
+  contents: write
+
+jobs:
+  expose:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ux/fixed-controls-dropdowns
+
+      - name: Reconstruct validated candidate
+        shell: pwsh
+        run: |
+          $parts=Get-ChildItem ./release-b64/zip-*.part | Sort-Object Name
+          $builder=New-Object System.Text.StringBuilder
+          foreach($part in $parts){[void]$builder.Append((Get-Content $part.FullName -Raw))}
+          [IO.File]::WriteAllBytes("./candidate.zip",[Convert]::FromBase64String($builder.ToString()))
+          $hash=(Get-FileHash ./candidate.zip -Algorithm SHA256).Hash.ToLower()
+          if($hash -ne "80651ede8e5f3db5659ae9b1d7e077573affc18fa3ed440b2069505c2ee05c20"){throw "Unexpected candidate hash: $hash"}
+          Expand-Archive ./candidate.zip ./candidate -Force
+
+      - name: Copy runnable source to repository root
+        shell: pwsh
+        run: |
+          $app="./candidate/football-architect"
+          if(-not (Test-Path "$app/server.mjs")){throw "server.mjs missing"}
+          if(-not (Test-Path "$app/src/main.js")){throw "src/main.js missing"}
+          Copy-Item "$app/index.html" ./index.html -Force
+          Copy-Item "$app/package.json" ./package.json -Force
+          Copy-Item "$app/server.mjs" ./server.mjs -Force
+          Copy-Item "$app/avvia-windows.bat" ./avvia-windows.bat -Force
+          Copy-Item "$app/assets" ./assets -Recurse -Force
+          Copy-Item "$app/src" ./src -Recurse -Force
+          git add index.html package.json server.mjs avvia-windows.bat assets src
+          git config user.name "FraGioco9"
+          git config user.email "giocolifrancesco@gmail.com"
+          git commit -m "Repo: expose runnable game source at root"
+          git push origin HEAD:ux/fixed-controls-dropdowns
