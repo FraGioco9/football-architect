@@ -850,7 +850,8 @@ async function handleImport(file){
     const raw=await file.text();
     const preview=await previewCareerImport(raw,validateSave);
     ui.importPreview=preview;ui.importMode='add';ui.importTarget='';ui.importCatalogRaw=careerStorage.getItem(CAREER_CATALOG_KEY);
-    ui.page='careers';ui.modal={type:'career-import-preview'};render();
+    applyRoute(parseAppRoute('/careers'),{renderNow:false});
+    ui.modal={type:'career-import-preview'};render();
   }catch(err){reportError(`${ui.language==='en'?'Import failed':'Importazione non riuscita'}: ${readableStorageError(err)}`);}
 }
 let actionBusy=false;
@@ -1095,7 +1096,7 @@ root.addEventListener('click',async ev=>{
         if(!saveBeforeSlotChange())break;
         const restored=restoreCareerCheckpoint(careerStorage,id,field,validateSave);
         world=restored.career;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi();
-        toast(ui.language==='en'?'Checkpoint restored.':'Checkpoint ripristinato.');window.scrollTo(0,0);
+        navigate('dashboard',{replace:true});toast(ui.language==='en'?'Checkpoint restored.':'Checkpoint ripristinato.');window.scrollTo(0,0);
         if(restored.mirrorError)reportError(readableStorageError(restored.mirrorError));
         break;
       }
