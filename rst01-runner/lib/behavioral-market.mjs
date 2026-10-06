@@ -92,7 +92,7 @@ export async function runLoanClauseBehavior(page,baseURL){
     newSeason(loan);
     const countryPool=marketPlayers(loan,{countryId:target.x.countryId,limit:10000});
     const allPool=marketPlayers(loan,{limit:10000});
-    const returnedLocal=loan.players.find(p=>p.globalId===target.x.id||\`${loan.countryId}:${p.id}\`===target.x.id);
+    const returnedLocal=loan.players.find(p=>p.globalId===target.x.id||(loan.countryId+':'+p.id)===target.x.id);
     const returnedOwner=countryPool.find(x=>x.id===target.x.id)?.clubKey
       ?? allPool.find(x=>x.id===target.x.id)?.clubKey
       ?? returnedLocal?.departedTo;
