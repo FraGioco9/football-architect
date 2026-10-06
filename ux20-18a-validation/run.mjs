@@ -17,11 +17,17 @@ async function withFreshPage(fn){
 }
 
 await withFreshPage(async page=>{
-  const before=await page.evaluate(()=>localStorage.getItem('football-architect:career-catalog'));
+  await page.locator('[data-action="menu-manage"]').click();
+  await page.waitForURL('**/careers');
+  const before=await page.locator('[data-action="career-load"]').count();
+  await page.locator('[data-action="career-back"]').click();
+  await page.waitForURL(base+'/');
   await page.locator('[data-action="menu-new"]').click();
   await page.waitForURL('**/careers/new');
-  const after=await page.evaluate(()=>localStorage.getItem('football-architect:career-catalog'));
-  check(after===before,'opening /careers/new must not create or modify a career catalog slot');
+  await page.locator('[data-action="open-careers"]').click();
+  await page.waitForURL('**/careers');
+  const after=await page.locator('[data-action="career-load"]').count();
+  check(after===before,'opening and abandoning /careers/new must not create a career slot');
 });
 
 await withFreshPage(async page=>{
