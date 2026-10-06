@@ -45,8 +45,15 @@ async function browserGate(){
 
     await page.waitForFunction(()=>{
       const text=document.querySelector('.side-season-bottom')?.textContent||'';
-      return /1\s*\/\s*38/.test(text);
-    },null,{timeout:30000});
+      const running=Boolean(document.querySelector('.continue-top[data-action="stop-advance"]'));
+      return /1\s*\/\s*38/.test(text)||!running;
+    },null,{timeout:90000});
+    const roundText=(await page.locator('.side-season-bottom').textContent())||'';
+    const reachedFirstMatch=/1\s*\/\s*38/.test(roundText);
+    if(!reachedFirstMatch){
+      console.log('SIM19 PRE-MATCH STOP STATE:',(await page.locator('body').innerText()).slice(-5000));
+    }
+    assert.equal(reachedFirstMatch,true,'continuous simulation stopped before the first matchday');
     assert.equal(await page.locator('.continue-top[data-action="stop-advance"]').count(),1,'a matchday must not stop continuous simulation');
 
     await page.locator('.continue-top[data-action="stop-advance"]').click();
