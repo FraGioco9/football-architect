@@ -53,6 +53,7 @@ const emptyActions=[...emptyHtml.matchAll(/data-action="(menu-[^"]+)"/g)].map(ma
 assert.deepEqual(emptyActions,['menu-continue','menu-new','menu-manage','menu-settings'],
   'empty Home must keep the same four-entry information architecture');
 assert.match(emptyHtml,/data-action="menu-continue"[^>]*disabled/,'Continue must remain visible but disabled without an active career');
+assert.equal((emptyHtml.match(/fa-menu-primary/g)||[]).length,0,'empty Home must not present a disabled primary action');
 assert.doesNotMatch(emptyHtml,/fa-menu-active-summary/,'active career card must be absent without a valid career');
 
 console.log('UX20 00A HOME CONTRACT PASS');
