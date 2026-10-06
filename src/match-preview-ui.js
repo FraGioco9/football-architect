@@ -4,10 +4,12 @@ import {esc} from './ui-components.js';
 import {matchPlaybackSnapshot} from './match-playback.js';
 import {officialMatchClock} from './domain/match-timeline.js';
 import {previewEventTimeline} from './match-experience.js';
+import {formatCareerDateTime} from './domain/career-date.js';
 
 const phrase=(lang,it,en)=>lang==='en'?en:it;
 const playerName=(world,event)=>event.playerId?playerById(world,event.playerId)?.name||'—':null;
 const clubName=(world,event)=>event.teamId?clubById(world,event.teamId)?.short||'—':null;
+const previewFixture=(world,record)=>world.fixtures?.flatMap(round=>round.matches??[]).find(match=>match.id===record?.matchId)??null;
 export function commentaryForEvent(world,event,lang='it'){
   const player=playerName(world,event),club=clubName(world,event),detail=event.xg===null?'':` · xG ${event.xg.toFixed(2)}`;
   switch(event.type){
@@ -44,8 +46,8 @@ export function matchPreviewStatus(world,playback,language='it'){
 }
 export function matchPreviewPage(world,playback,language='it'){
   if(!playback)return '';
-  const en=language==='en';
-  return `<div class="match-preview-page"><div class="match-preview-heading"><div><span class="eyebrow">${en?'MATCH ENGINE · PREVIEW':'MATCH ENGINE · ANTEPRIMA'}</span><h1>${en?'Live match commentary':'Cronaca della partita'}</h1><p>${en?'Demonstration only: this match does not change your career, fixtures or saves.':'Solo dimostrazione: questa partita non modifica carriera, calendario o salvataggi.'}</p></div><button type="button" class="btn btn-quiet" data-action="preview-exit">${en?'Back to calendar':'Torna al calendario'}</button></div>
+  const en=language==='en',fixture=previewFixture(world,playback.record),scheduled=fixture?formatCareerDateTime(fixture.date,fixture.kickoff,language):'—';
+  return `<div class="match-preview-page"><div class="match-preview-heading"><div><span class="eyebrow">${en?'MATCH ENGINE · PREVIEW':'MATCH ENGINE · ANTEPRIMA'}</span><h1>${en?'Live match commentary':'Cronaca della partita'}</h1><p class="match-preview-schedule"><strong>${scheduled}</strong></p><p>${en?'Demonstration only: this match does not change your career, fixtures or saves.':'Solo dimostrazione: questa partita non modifica carriera, calendario o salvataggi.'}</p></div><button type="button" class="btn btn-quiet" data-action="preview-exit">${en?'Back to calendar':'Torna al calendario'}</button></div>
   <aside class="match-center-mode" role="note"><strong>${en?'UNOFFICIAL PREVIEW · NOT A CAREER RESULT':'ANTEPRIMA NON UFFICIALE · NON È UN RISULTATO DI CARRIERA'}</strong><p>${en?'The preview has no effect on standings, fatigue, substitutions or official match results. To play the official matchday, return to Calendar.':'L’anteprima non modifica classifiche, fitness, sostituzioni o risultati ufficiali. Per giocare la giornata ufficiale torna al Calendario.'}</p></aside><section class="panel match-preview-controls" aria-label="${en?'Playback controls':'Controlli riproduzione'}"><button class="btn btn-secondary" type="button" data-action="preview-toggle" data-preview-pause ${playback.cursor===playback.record.events.length?'disabled':''}>${playback.paused?(en?'Resume':'Riprendi'):(en?'Pause':'Pausa')}</button><div role="group" aria-label="${en?'Playback speed':'Velocità riproduzione'}" class="match-preview-speeds">${[1,2,4].map(speed=>`<button class="btn btn-quiet" data-action="preview-speed" data-value="${speed}" aria-pressed="${playback.speed===speed}">${speed}×</button>`).join('')}</div><button class="btn btn-outline" type="button" data-action="preview-finish" ${playback.cursor===playback.record.events.length?'disabled':''}>${en?'Skip to full-time':'Vai al fischio finale'}</button><button class="btn btn-quiet" type="button" data-action="preview-discard">${en?'Discard saved preview':'Elimina anteprima salvata'}</button></section>
   <div id="match-playback-updates">${matchPreviewStatus(world,playback,language)}</div>
   <p class="muted small">${en?'The preview is generated once from a reproducible seed. Playback speed does not alter the score. Every event is saved to this career’s preview slot. Reloading resumes at the same event, paused; the official match remains unchanged.':'L’anteprima è generata una volta con un seed riproducibile. La velocità non cambia il risultato. Ogni evento viene salvato nello slot di anteprima della carriera. Ricaricando la pagina riprendi dallo stesso punto, in pausa; la partita ufficiale resta invariata.'}</p></div>`;
