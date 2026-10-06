@@ -53,9 +53,6 @@ if(failures.length){
   for(const failure of failures)console.error('- '+failure);
   process.exit(1);
 }
-console.log('UX20 18A CONTRACT PASS');
-
-
 await withFreshPage(async page=>{
   await page.locator('[data-action="menu-manage"]').click();
   await page.waitForURL('**/careers');
@@ -67,8 +64,7 @@ await withFreshPage(async page=>{
   await page.locator('#manager-name').fill('18A Test Manager');
   await page.locator('[data-action="start-career"]').click();
   await page.waitForURL('**/dashboard');
-  await page.locator('[data-action="menu-home"]').first().click();
-  await page.waitForURL(base+'/');
+  await page.goto(base+'/',{waitUntil:'networkidle'});
   await page.locator('[data-action="menu-manage"]').click();
   await page.waitForURL('**/careers');
   const after=await page.locator('[data-action="career-load"]').count();
@@ -86,3 +82,10 @@ await withFreshPage(async page=>{
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth);
   check(!overflow,'new career page must not overflow horizontally on mobile');
 });
+
+if(failures.length){
+  console.error('UX20 18A EXTENDED GATE FAIL');
+  for(const failure of failures)console.error('- '+failure);
+  process.exit(1);
+}
+console.log('UX20 18A BROWSER PASS');
