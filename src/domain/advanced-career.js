@@ -122,7 +122,7 @@ export function advanceAdvancedDay(w){
 
 /** Compatibility path for callers that still advance a whole match week. */
 export function prepareAdvancedRound(w,{days=7}={}){
-  if(!active(w)||!Number.isSafeInteger(days)||days<0||days>31)invalid('DAY_SPAN');
+  if(!active(w)||!Number.isSafeInteger(days)||days<0||days>120)invalid('DAY_SPAN');
   for(let i=0;i<days;i++)advanceAdvancedDay(w);
 }
 export function settleAdvancedLegacyAbsences(w){
