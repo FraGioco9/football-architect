@@ -15,6 +15,7 @@ import {hasAdvancedCareer,advanceAdvancedDay,prepareAdvancedRound,simulateAdvanc
 import {hasCareerTraining,settleCareerTrainingSeason,openCareerTrainingSeason} from './career-training.js';
 import {hasCareerYouth,settleCareerYouthSeason} from './career-youth.js';
 import {hasCareerWorld,advanceCareerWorldRound,advanceCareerWorldSeason,syncCareerWorldClock} from './career-world.js';
+import {syncCareerCoachesWorld} from './career-coaches.js';
 import {settleCareerMarketSeason,expireCareerMarketOffers} from './career-market.js';
 import {advanceCareerScouting,settleCareerScoutingSeason} from './career-scouting.js';
 import {advanceCareerAIMarket,settleCareerAIMarketSeason} from './career-ai-market.js';
@@ -193,6 +194,7 @@ function newSeasonMutating(w){
   settleCareerMarketSeason(w);
   w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);
   if(divisionPlan){openCareerDivisionsSeason(w,divisionPlan);w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);}
+  syncCareerCoachesWorld(w);
   const rand=randomFactory(seasonSeed(w.seed,w.season));
   for(const p of w.players){
     if(!youthRollover)p.age++;p.contract=Math.max(1,p.contract-1);p.fitness=95;p.injury=0;p.morale=clamp(p.morale+12,55,95);
