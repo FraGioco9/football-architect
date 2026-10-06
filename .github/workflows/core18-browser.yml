@@ -1,0 +1,96 @@
+name: CORE-18 browser smoke
+
+on:
+  push:
+    branches:
+      - core/issue-18-auto-systems
+    paths:
+      - .github/workflows/core18-browser.yml
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install browser harness
+        run: npm install --no-save --no-package-lock --no-audit --no-fund playwright-core@1.55.1
+      - name: Full-system UI smoke
+        run: |
+          cat > .core18-browser.mjs <<'EOF'
+          import {chromium} from 'playwright-core';
+          import fs from 'node:fs';
+          import fsp from 'node:fs/promises';
+          import os from 'node:os';
+          import path from 'node:path';
+
+          const candidates=[
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser'
+          ];
+          const executablePath=candidates.find(p=>fs.existsSync(p));
+          if(!executablePath)throw new Error('Chrome/Chromium unavailable');
+
+          const assert=(ok,msg,data={})=>{if(!ok)throw new Error(msg+' '+JSON.stringify(data));};
+          const profile=await fsp.mkdtemp(path.join(os.tmpdir(),'fa-core18-'));
+          const context=await chromium.launchPersistentContext(profile,{
+            executablePath,headless:true,viewport:{width:1440,height:950},
+            args:['--no-sandbox','--disable-dev-shm-usage']
+          });
+          try{
+            const page=context.pages()[0]||await context.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+String(e?.message||e)));
+            page.on('console',m=>{
+              if(m.type()==='error'&&!/favicon|404/i.test(m.text()))errors.push('console: '+m.text());
+            });
+            await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
+            await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:15000});
+            await page.locator('[data-action="menu-new"]').click();
+            await page.locator('#manager-name').fill('CORE 18 Browser');
+            await page.locator('[data-action="start-career"]').click();
+            await page.locator('.dashboard-hero').waitFor({state:'visible',timeout:15000});
+
+            const legacyActions=['personality-enable','board-enable','manager-enable','contracts-enable','sim04-enable','finance-enable','facility-enable'];
+            const pages=['dashboard','squad','tactics','finance','board','manager','settings'];
+            for(const target of pages){
+              const nav=page.locator(`button[data-action="nav"][data-page="${target}"]`).first();
+              if(await nav.count()){
+                await nav.click();
+                await page.waitForTimeout(100);
+              }
+              for(const action of legacyActions){
+                assert(await page.locator(`[data-action="${action}"]`).count()===0,'legacy activation action visible',{target,action});
+              }
+              const body=(await page.locator('body').innerText()).toLowerCase();
+              for(const phrase of ['attiva ply05','enable ply05','attiva sim04','enable sim04','attiva mgt01','enable mgt01','attiva mgt02','enable mgt02','attiva mgt03','enable mgt03','attiva wrd06','enable wrd06','attiva personalità','enable personality']){
+                assert(!body.includes(phrase),'legacy opt-in copy visible',{target,phrase});
+              }
+            }
+            assert(errors.length===0,'browser errors detected',{errors});
+            console.log('CORE18_BROWSER_PASS '+JSON.stringify({pages:pages.length,legacyActions:legacyActions.length,errors}));
+          } finally {
+            await context.close();
+          }
+          EOF
+          node server.mjs > .core18-server.log 2>&1 &
+          SERVER_PID=$!
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:2000 >/dev/null; then break; fi
+            sleep 1
+          done
+          set +e
+          node .core18-browser.mjs
+          CODE=$?
+          set -e
+          kill $SERVER_PID 2>/dev/null || true
+          rm -f .core18-browser.mjs .core18-server.log
+          exit $CODE
