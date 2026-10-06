@@ -2,7 +2,7 @@ import {CLUBS,FORMATIONS,POSITION_LABELS,POSITIONS,ROLE_GROUPS,clamp} from './da
 import {currency,compactMoney,clubById,playerById,clubPlayers,myClub,teamStrength,table,leagueScorers,latestResult,clubMatch,standingsSummary,formationSlots,findMatch} from './engine.js';
 
 import {translate} from './i18n.js';
-import {NAV_GROUPS,QUICK_NAV_IDS,navItem,navigationLabels,isGroupExpanded} from './navigation-model.js';
+import {NAV_GROUPS,navigationLabels,isGroupExpanded} from './navigation-model.js';
 import {renderHomeMenu} from './home-menu.js';
 import {dashboardFocus,dashboardSchedule} from './dashboard-model.js';
 import {clubPage} from './club-overview-ui.js';
@@ -145,13 +145,12 @@ const languagePicker=(ui,context)=>{
   const popupId=`language-list-${context}`,buttonId=`language-combobox-${context}`;
   const options=[{value:'it',code:'IT',label:'Italiano'},{value:'en',code:'EN',label:'English'}];
   return `<div class="language-picker language-picker-${context}" data-language-picker="${context}">
-    <span class="sr-only" id="${buttonId}-label">${label}</span>
-    <button type="button" class="language-combobox" id="${buttonId}" role="combobox" aria-haspopup="listbox" aria-expanded="${open}" aria-controls="${popupId}" aria-labelledby="${buttonId}-label ${buttonId}-value" data-action="language-toggle" data-value="${context}">
+    <button type="button" class="language-combobox" id="${buttonId}" role="combobox" aria-label="${label}: ${current.name}" aria-haspopup="listbox" aria-expanded="${open}" aria-controls="${popupId}" data-action="language-toggle" data-value="${context}">
       <span class="language-icon" aria-hidden="true">${icon('flag',15)}</span>
       <span class="language-current" id="${buttonId}-value"><b>${current.code}</b><span>${current.name}</span></span>
       <span class="language-chevron" aria-hidden="true">${icon('down',14)}</span>
     </button>
-    ${open?`<div class="language-listbox" id="${popupId}" role="listbox" aria-labelledby="${buttonId}-label" data-language-listbox="${context}">
+    ${open?`<div class="language-listbox" id="${popupId}" role="listbox" aria-label="${label}" data-language-listbox="${context}">
       ${options.map(option=>`<button type="button" class="language-option${ui.language===option.value?' is-selected':''}" role="option" aria-selected="${ui.language===option.value}" data-action="language-option" data-value="${option.value}" data-context="${context}" tabindex="-1"><span class="language-option-code">${option.code}</span><span>${option.label}</span>${ui.language===option.value?icon('check',14):''}</button>`).join('')}
     </div>`:''}
   </div>`;
@@ -180,12 +179,8 @@ const skipToContent=lang=>`<a class="skip-link" href="#main-content">${lang==='e
 const renderNavigation=(w,ui)=>{
   const en=ui.language==='en',locale=en?'en':'it';
   const links=group=>group.items.map(item=>`<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''}>${icon(item.icon,19)}<span>${esc(item[locale])}</span>${item.id==='inbox'&&w.unread?`<span class="nav-count">${w.unread}</span>`:''}</button>`).join('');
-  const quick=QUICK_NAV_IDS.map(page=>{
-    const item=navItem(page);
-    return `<button type="button" class="nav-quick-link" data-action="nav" data-page="${page}" ${ui.page===page?'aria-current="page"':''} aria-label="${esc(item[locale])}" title="${esc(item[locale])}">${icon(item.icon,16)}<span>${esc(item[locale])}</span></button>`;
-  }).join('');
   const groups=NAV_GROUPS.map(group=>`<details class="nav-group" data-nav-group="${group.id}" ${isGroupExpanded(group.id,ui.page,ui.navOpenGroups)?'open':''}><summary class="nav-group-toggle"><span>${esc(group[locale])}</span><span class="nav-group-count" aria-hidden="true">${group.items.length}</span>${icon('down',15)}</summary><div class="nav-group-items">${links(group)}</div></details>`).join('');
-  return `<div class="nav-quick" role="group" aria-label="${en?'Quick links':'Collegamenti rapidi'}"><span class="nav-quick-heading">${en?'Quick links':'Accessi rapidi'}</span><div class="nav-quick-items">${quick}</div></div><nav class="navigation" aria-label="${en?'Main navigation':'Navigazione principale'}">${groups}</nav>`;
+  return `<nav class="navigation" aria-label="${en?'Main navigation':'Navigazione principale'}">${groups}</nav>`;
 };
 export function shell(w,ui,body){
   const team=myClub(w),day=w.fixtures[w.round],next=clubMatch(day,w.clubId),opponent=next?clubById(w,next.home===w.clubId?next.away:next.home):null;

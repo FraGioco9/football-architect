@@ -390,11 +390,6 @@ function qol03Enhance(){
  const en=ui.language==='en',main=root.querySelector('#main-content');if(!main)return;
  const crumbs=root.querySelector('.breadcrumb');
  if(crumbs){const back=document.createElement('button');back.type='button';back.className='qol03-back';back.dataset.action='qol03-back';back.textContent=en?'← Back':'← Indietro';back.setAttribute('aria-label',en?'Go to previous page':'Torna alla pagina precedente');crumbs.prepend(back);}
- const shortcuts=document.createElement('nav');shortcuts.className='qol03-shortcuts';shortcuts.setAttribute('aria-label',en?'Quick navigation':'Navigazione rapida');
- for(const [page,it,english] of [['dashboard','Scrivania','Dashboard'],['calendar','Calendario','Calendar'],['league','Classifica','League'],['world','Mondo','World'],['market','Mercato','Market'],['inbox','Posta','Inbox']]){
-  const b=document.createElement('button');b.type='button';b.dataset.action='nav';b.dataset.page=page;b.className='qol03-shortcut';b.textContent=en?english:it;const shortcut={dashboard:'1',calendar:'2',league:'3',world:'4',market:'5',inbox:'6'}[page];b.title=(en?'Shortcut: Alt+':'Scorciatoia: Alt+')+shortcut;if(ui.page===page)b.setAttribute('aria-current','page');shortcuts.append(b);
- }
- main.prepend(shortcuts);
  const status=document.createElement('div');status.id='qol03-live';status.className='sr-only';status.setAttribute('role','status');status.setAttribute('aria-live','polite');main.prepend(status);
  if(ui.page==='dashboard'){
   const widgets=new Map([['kpis',main.querySelector('.kpi-grid')],['fixtures',main.querySelector('.dashboard-two:not(.dashboard-two-bottom)')],['results',main.querySelector('.dashboard-two-bottom')]]);
