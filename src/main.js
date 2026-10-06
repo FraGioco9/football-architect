@@ -79,7 +79,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -140,6 +140,42 @@ function toggleDrawer(open){
   }
 }
 function focusPage(){root.querySelector('#main-content')?.focus({preventScroll:true});}
+function languageOptions(context){return [...root.querySelectorAll(`[data-language-listbox="${context}"] [role="option"]`)];}
+function focusLanguageOption(context,index=null){
+  queueMicrotask(()=>{
+    const options=languageOptions(context);if(!options.length)return;
+    const selected=Math.max(0,options.findIndex(option=>option.getAttribute('aria-selected')==='true'));
+    const target=index===null?selected:((index%options.length)+options.length)%options.length;
+    options[target]?.focus({preventScroll:true});
+  });
+}
+function focusLanguageCombobox(context){
+  queueMicrotask(()=>root.querySelector(`[data-language-picker="${context}"] [role="combobox"]`)?.focus({preventScroll:true}));
+}
+function openLanguageMenu(context,{focusOption=false,index=null}={}){
+  ui.languageMenu=context;render();
+  if(focusOption)focusLanguageOption(context,index);else focusLanguageCombobox(context);
+}
+function closeLanguageMenu(context,{restoreFocus=true}={}){
+  if(ui.languageMenu!==context)return;
+  ui.languageMenu=null;render();
+  if(restoreFocus)focusLanguageCombobox(context);
+}
+function chooseLanguage(language,context){
+  if(!['it','en'].includes(language))return;
+  ui.language=saveLanguage(language);ui.languageMenu=null;render();focusLanguageCombobox(context);
+}
+function tabFromLanguageMenu(context,backward=false){
+  ui.languageMenu=null;render();
+  queueMicrotask(()=>{
+    const focusable=[...root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+      .filter(element=>!element.closest('[hidden],[inert]')&&element.getClientRects().length);
+    const combo=root.querySelector(`[data-language-picker="${context}"] [role="combobox"]`);
+    const index=focusable.indexOf(combo);
+    if(backward)combo?.focus({preventScroll:true});
+    else focusable[index+1]?.focus({preventScroll:true});
+  });
+}
 drawerQuery.addEventListener?.('change',syncDrawerAccess);
 function load(){
   try{
@@ -856,7 +892,12 @@ async function handleImport(file){
 }
 let actionBusy=false;
 root.addEventListener('click',async ev=>{
-  const target=ev.target.closest('[data-action]');if(!target)return;
+  const target=ev.target.closest('[data-action]');
+  if(!target){
+    if(ui.languageMenu&&!ev.target.closest('[data-language-picker]')){ui.languageMenu=null;render();}
+    return;
+  }
+  if(ui.languageMenu&&!target.closest('[data-language-picker]'))ui.languageMenu=null;
   const action=target.dataset.action,id=target.dataset.id,field=target.dataset.value,index=Number(target.dataset.index);
   // Stop must remain responsive even while another click action is completing.
   if(action==='stop-advance'){
@@ -893,6 +934,12 @@ root.addEventListener('click',async ev=>{
         if(action==='qol03-sort-direction')render();break;
       }
       case 'clear-field':clearField(target.dataset.target);break;
+      case 'language-toggle':{
+        const context=String(field||'top');
+        if(ui.languageMenu===context)closeLanguageMenu(context);else openLanguageMenu(context);
+        break;
+      }
+      case 'language-option':chooseLanguage(String(field),String(target.dataset.context||'top'));break;
       case 'choose-country':{
         if(world.clubId)throw new Error('La nazione può essere scelta soltanto prima di iniziare una carriera.');
         const league=leagueById(id);
@@ -1469,7 +1516,6 @@ root.addEventListener('change',async ev=>{
   if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
-  if(el.matches('[data-language-switch]')){ui.language=saveLanguage(el.value);render();return;}
   if(el.id==='squad-sort'){ui.squadSort=el.value;render();}
   if(el.id==='ply01-attribute'){ui.qol03.rosterAttribute=el.value;qol03Save();render();return;}
   if(el.id==='ply01-minimum'){ui.qol03.rosterMinimum=Number(el.value);qol03Save();render();return;}
@@ -1496,6 +1542,28 @@ root.addEventListener('toggle',ev=>{
   ui.navOpenGroups[details.dataset.navGroup]=details.open;
 },true);
 root.addEventListener('keydown',ev=>{
+  const combo=ev.target.closest?.('[data-action="language-toggle"]');
+  if(combo){
+    const context=String(combo.dataset.value||'top');
+    if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){
+      ev.preventDefault();
+      openLanguageMenu(context,{focusOption:true,index:ev.key==='ArrowDown'?null:(ui.language==='en'?0:1)});
+      return;
+    }
+    if(ev.key==='Escape'&&ui.languageMenu===context){ev.preventDefault();closeLanguageMenu(context);return;}
+  }
+  const option=ev.target.closest?.('[data-action="language-option"]');
+  if(option){
+    const context=String(option.dataset.context||'top'),options=languageOptions(context),current=options.indexOf(option);
+    if(ev.key==='ArrowDown'||ev.key==='ArrowUp'||ev.key==='Home'||ev.key==='End'){
+      ev.preventDefault();
+      const next=ev.key==='Home'?0:ev.key==='End'?options.length-1:current+(ev.key==='ArrowDown'?1:-1);
+      options[((next%options.length)+options.length)%options.length]?.focus({preventScroll:true});
+      return;
+    }
+    if(ev.key==='Escape'){ev.preventDefault();closeLanguageMenu(context);return;}
+    if(ev.key==='Tab'){ev.preventDefault();tabFromLanguageMenu(context,ev.shiftKey);return;}
+  }
   if(!ui.sidebarOpen||!drawerQuery.matches)return;
   if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();toggleDrawer(false);return;}
   if(ev.key!=='Tab'||!ev.target.closest('#club-sidebar'))return;

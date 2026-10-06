@@ -139,7 +139,23 @@ export const sliderControl=({id,label,min=0,max=100,step=1,value=min,disabled=fa
 };
 // Exclusive choices use native radio inputs; the internal keys stay in Italian.
 const segmentedChoice=(name,value,selected,action,label=value)=>`<label class="selection-segment${selected?' seg-active':''}"><input class="selection-native" type="radio" name="${esc(name)}" value="${esc(value)}" data-action="${esc(action)}" data-value="${esc(value)}"${selected?' checked':''}><span>${esc(label)}</span></label>`;
-const languagePicker=(ui,context)=>{const label=ui.language==='en'?'Language':'Lingua';return `<label class="language-switch language-switch-${context}"><span>${icon('flag',15)} ${label}</span>${selectControl({id:`ui-language-${context}`,value:ui.language,options:[{value:'it',label:'Italiano'},{value:'en',label:'English'}],ariaLabel:label,attrs:'data-language-switch'})}</label>`;};
+const languagePicker=(ui,context)=>{
+  const en=ui.language==='en',label=en?'Language':'Lingua',open=ui.languageMenu===context;
+  const current=en?{code:'EN',name:'English'}:{code:'IT',name:'Italiano'};
+  const popupId=`language-list-${context}`,buttonId=`language-combobox-${context}`;
+  const options=[{value:'it',code:'IT',label:'Italiano'},{value:'en',code:'EN',label:'English'}];
+  return `<div class="language-picker language-picker-${context}" data-language-picker="${context}">
+    <span class="sr-only" id="${buttonId}-label">${label}</span>
+    <button type="button" class="language-combobox" id="${buttonId}" role="combobox" aria-haspopup="listbox" aria-expanded="${open}" aria-controls="${popupId}" aria-labelledby="${buttonId}-label ${buttonId}-value" data-action="language-toggle" data-value="${context}">
+      <span class="language-icon" aria-hidden="true">${icon('flag',15)}</span>
+      <span class="language-current" id="${buttonId}-value"><b>${current.code}</b><span>${current.name}</span></span>
+      <span class="language-chevron" aria-hidden="true">${icon('down',14)}</span>
+    </button>
+    ${open?`<div class="language-listbox" id="${popupId}" role="listbox" aria-labelledby="${buttonId}-label" data-language-listbox="${context}">
+      ${options.map(option=>`<button type="button" class="language-option${ui.language===option.value?' is-selected':''}" role="option" aria-selected="${ui.language===option.value}" data-action="language-option" data-value="${option.value}" data-context="${context}" tabindex="-1"><span class="language-option-code">${option.code}</span><span>${option.label}</span>${ui.language===option.value?icon('check',14):''}</button>`).join('')}
+    </div>`:''}
+  </div>`;
+};
 // QOL05.05 — reusable text field / search shell. Visuals are defined in styles.css.
 // Every clear action is an explicit user gesture; never mutate filters on input render.
 const clearableField=({id,label,value='',placeholder='',maxLength,search=false,helpId=''})=>{
