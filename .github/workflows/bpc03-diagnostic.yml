@@ -33,3 +33,5 @@ jobs:
           path: extracted/football-architect
           if-no-files-found: error
           retention-days: 2
+
+# trigger diagnostic after workflow registration
