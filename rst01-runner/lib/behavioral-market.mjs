@@ -90,7 +90,7 @@ export async function runLoanClauseBehavior(page,baseURL){
     const loanSeason=loan.season;
     while(loan.round<loan.fixtures.length)simulateRound(loan);
     newSeason(loan);
-    const returnedOwner=marketPlayers(loan,{countryId:target.x.countryId,search:target.x.id,limit:20}).find(x=>x.id===target.x.id)?.clubKey;
+    const returnedOwner=marketPlayers(loan,{countryId:target.x.countryId,limit:3000}).find(x=>x.id===target.x.id)?.clubKey;
     const loanRollover={fromSeason:loanSeason,toSeason:loan.season,round:loan.round};
 
     const clause=setup(true),clauseManaged=managedClubKey(clause),p=clause.players.find(x=>x.clubId===clause.clubId&&x.position!=='POR'&&!clause.lineup.includes(x.id));
