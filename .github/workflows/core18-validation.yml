@@ -42,6 +42,8 @@ jobs:
           } from './src/domain/career-official.js';
           import {LEAGUES} from './src/leagues.js';
           import {previewCalendarAdvance} from './src/domain/career-calendar.js';
+          import {medicalAvailability} from './src/addons/domain/player-medical.mjs';
+          import {prepareCoachTeam} from './src/domain/career-coaches.js';
 
           const assert=(ok,msg,data={})=>{if(!ok)throw new Error(msg+' '+JSON.stringify(data));};
 
@@ -90,7 +92,17 @@ jobs:
                   simulateRound(w,{calendarConfirmationToken:calendarPreview.confirmationToken});
                 }catch(error){
                   const xi=w.lineup.map(id=>{const p=w.players.find(x=>x.id===id);return {id,name:p?.name,position:p?.position,clubId:p?.clubId,injury:p?.injury,fitness:p?.fitness};});
-                  throw new Error('simulation failure '+JSON.stringify({country:league.id,season:w.season,round:w.round,clubId:w.clubId,formation:w.formation,xi,error:String(error?.message||error)}));
+                  const myMatch=w.fixtures[w.round]?.matches?.find(m=>m.home===w.clubId||m.away===w.clubId);
+                  const teamIds=myMatch?[myMatch.home,myMatch.away]:[];
+                  const rosters=teamIds.map(teamId=>({
+                    teamId,
+                    keepers:w.players.filter(p=>p.clubId===teamId&&p.position==='POR').map(p=>({
+                      id:p.id,name:p.name,injury:p.injury,fitness:p.fitness,
+                      medical:p.medicalV1?medicalAvailability(p.medicalV1):null
+                    })),
+                    prep:teamId===w.clubId?null:(()=>{try{return prepareCoachTeam(w,teamId,w.clubId)}catch(e){return {error:String(e?.message||e)}}})()
+                  }));
+                  throw new Error('simulation failure '+JSON.stringify({country:league.id,season:w.season,round:w.round,clubId:w.clubId,formation:w.formation,match:myMatch,xi,rosters,error:String(error?.message||error)}));
                 }
                 assert(officialCareerSystemsReady(w),'system disabled mid-season',{country:league.id,season:w.season,round:w.round,status:officialCareerSystemStatus(w)});
               }
