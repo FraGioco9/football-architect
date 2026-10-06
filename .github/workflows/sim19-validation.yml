@@ -1,0 +1,46 @@
+name: SIM19 temporary validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/main.js src/ui.js src/domain/history.js src/match-experience.js; do
+            node --input-type=module --check < "$file"
+          done
+      - name: Install browser test dependency
+        working-directory: sim19-validation
+        run: |
+          npm init -y
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start Football Architect
+        shell: bash
+        run: |
+          node server.mjs > sim19-server.log 2>&1 &
+          echo $! > sim19-server.pid
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:2000/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat sim19-server.log
+          exit 1
+      - name: Domain and browser gate
+        working-directory: sim19-validation
+        run: node run.mjs
