@@ -149,60 +149,131 @@ html { scrollbar-gutter: stable; overflow-y: auto; }
 
 /* UX-POLISH — stable button geometry, invisible scrollbar tracks and fully themed select menus. */
 :root {
-  --ux-button-width: 168px;
-  --ux-button-width-mini: 108px;
-  --ux-button-height: 40px;
-  --ux-button-height-mini: 34px;
-  --ux-shortcut-width: 128px;
+  --ux-button-w-compact: 112px;
+  --ux-button-w-standard: 144px;
+  --ux-button-w-wide: 176px;
+  --ux-button-w-mini: 92px;
+  --ux-button-h: 40px;
+  --ux-button-h-mini: 34px;
+  --ux-shortcut-w: 112px;
+  --ux-back-w: 104px;
+  --ux-chip-w: 104px;
   --ux-select-selected: #1c463c;
   --ux-select-selected-text: #d7fff0;
 }
 
-/* Text buttons use a content-independent box so IT/EN swaps never resize the layout. */
-:where(.btn:not(.btn-icon):not(.btn-mini)) {
-  width: var(--ux-button-width);
-  height: var(--ux-button-height);
-  flex: 0 0 var(--ux-button-width);
+/* Action buttons are fixed by semantic family, never by translated label length.
+   flex-basis stays auto so column layouts cannot turn width into height. */
+.btn:not(.btn-icon):not(.btn-mini) {
+  box-sizing: border-box;
+  width: var(--ux-button-w-standard);
+  height: var(--ux-button-h);
+  flex: 0 0 auto;
   padding-inline: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-:where(.btn.btn-mini) {
-  width: var(--ux-button-width-mini);
-  height: var(--ux-button-height-mini);
-  flex: 0 0 var(--ux-button-width-mini);
+.btn.btn-mini {
+  box-sizing: border-box;
+  width: var(--ux-button-w-mini);
+  height: var(--ux-button-h-mini);
+  flex: 0 0 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-:where(.qol03-shortcut,.qol03-back) {
-  width: var(--ux-shortcut-width);
-  height: var(--ux-button-height);
-  flex: 0 0 var(--ux-shortcut-width);
+.qol03-shortcut {
+  box-sizing: border-box;
+  width: var(--ux-shortcut-w);
+  height: var(--ux-button-h);
+  flex: 0 0 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Glyph-only actions remain square instead of inheriting the text-button width. */
-:where(.btn[data-action="qol03-widget-up"],.btn[data-action="qol03-widget-down"],
-       .btn[data-action="qol03-sort-direction"],.btn[data-action="qol03-table-prev"],
-       .btn[data-action="qol03-table-next"],.btn[data-action="sim04-plan-remove"],
-       .btn[data-action="sim02-cancel"],.btn[data-action="preview-speed"]) {
-  width: var(--ux-button-height);
-  min-width: var(--ux-button-height);
-  max-width: var(--ux-button-height);
-  height: var(--ux-button-height);
-  flex: 0 0 var(--ux-button-height);
+.qol03-back {
+  box-sizing: border-box;
+  width: var(--ux-back-w);
+  height: var(--ux-button-h);
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Filter chips are a button family too: equal footprint, independent of IT/EN labels. */
+.chip {
+  box-sizing: border-box;
+  width: var(--ux-chip-w);
+  min-width: var(--ux-chip-w);
+  max-width: var(--ux-chip-w);
+  height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Glyph-only actions stay square. */
+.btn[data-action="qol03-widget-up"],
+.btn[data-action="qol03-widget-down"],
+.btn[data-action="qol03-sort-direction"],
+.btn[data-action="qol03-table-prev"],
+.btn[data-action="qol03-table-next"],
+.btn[data-action="sim04-plan-remove"],
+.btn[data-action="sim02-cancel"],
+.btn[data-action="preview-speed"] {
+  width: var(--ux-button-h);
+  min-width: var(--ux-button-h);
+  max-width: var(--ux-button-h);
+  height: var(--ux-button-h);
+  flex: 0 0 auto;
   padding: 0;
 }
-/* Existing intentional full-width contexts keep their layout contract. */
-:where(.begin-button,.page-head .head-actions>.btn,.modal-actions .btn,
-       .match-center-preparation-actions .btn,.sim02-official-buttons .btn,
-       .roster-reset,.fa-tool-controls .btn) {
+
+/* Compact top-level actions. */
+.btn.continue-top,
+.btn[data-action="preview-toggle"],
+.btn[data-action="career-back"] {
+  width: var(--ux-button-w-compact);
+}
+
+/* Long but ordinary actions use the wide family instead of expanding with content. */
+.btn.match-preview-hero-link,
+.btn[data-action="career-export-all"],
+.btn[data-action="career-import"],
+.btn[data-action="export-emergency"],
+.btn[data-action="request-storage-persistence"],
+.btn[data-action="auto-lineup"],
+.btn[data-action="mark-all"],
+.btn[data-action="preview-finish"],
+.btn[data-action="preview-discard"] {
+  width: var(--ux-button-w-wide);
+}
+
+/* Sidebar/home and onboarding have intentional container-sized controls. */
+.btn.fa-home-sidebar {
+  width: 100%;
+  max-width: 100%;
+}
+.btn.begin-button {
   width: 100%;
   max-width: 100%;
   flex: 1 1 auto;
+}
+
+/* Match preparation is a three-action bar on desktop, full-width stack only on small screens. */
+.match-center-preparation-actions .btn {
+  width: 220px;
+  max-width: 220px;
+  height: 42px;
+  flex: 0 0 220px;
+}
+@media (max-width: 700px) {
+  .match-center-preparation-actions .btn {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+  }
 }
 
 /* Tracks/corners are always transparent; only the thumb remains visible. */
