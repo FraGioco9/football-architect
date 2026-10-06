@@ -5,7 +5,7 @@ export {clubById,playerById,clubPlayers,clubMatch,fullName,myClub} from './domai
 export {latestResult,findMatch} from './domain/history.js';
 export {table,leagueScorers,standingsSummary} from './domain/standings.js';
 export {formationSlots,teamStrength} from './domain/lineups.js';
-export {startCareer,simulateRound,newSeason} from './domain/career.js';
+export {startCareer,advanceDay,simulateRound,newSeason} from './domain/career.js';
 export {changeFormation,assignPlayer,autoLineup} from './domain/tactics.js';
 export {signPlayer,sellPlayer} from './domain/transfers.js';
 export {validateSave} from './domain/save-validation.js';
