@@ -322,7 +322,12 @@ function clearField(id){
     render({focus:{id,start:0,end:0}});
   }
 }
-const dialogCoordinator=createDialogCoordinator(root,document,()=>{ui.modal=null;render();});
+function closeModalUi(){
+  const careerMoreId=ui.page==='careers'?ui.careerMoreId:null;
+  ui.modal=null;render();
+  if(careerMoreId)queueMicrotask(()=>root.querySelector(`[data-action="career-more"][data-id="${careerMoreId}"]`)?.focus({preventScroll:true}));
+}
+const dialogCoordinator=createDialogCoordinator(root,document,closeModalUi);
 const controlHints=createControlHints(root,document);
 function reconcileRenderedRoute(){
   if(ui.routeKind==='not-found'||ui.routeKind==='new-career'||ui.routeKind==='match-preview')return;
@@ -1283,8 +1288,8 @@ root.addEventListener('click',async ev=>{
       case 'player':openPlayerRoute(Number(id));break;
       case 'match':ui.modal={type:'match',id};render();break;
       case 'slot':ui.modal={type:'slot',index};render();break;
-      case 'close-modal':if(!closeRoutedResource()){ui.modal=null;render();}break;
-      case 'dismiss-modal':if(!ev.target.closest('[data-stop-close]')){if(!closeRoutedResource()){ui.modal=null;render();}}break;
+      case 'close-modal':if(!closeRoutedResource())closeModalUi();break;
+      case 'dismiss-modal':if(!ev.target.closest('[data-stop-close]')){if(!closeRoutedResource())closeModalUi();}break;
       case 'formation':changeFormation(world,field);syncCareerTrainingFormation(world);refresh(`Modulo ${field} applicato.`);break;
       case 'auto-lineup':autoLineup(world);refresh('Miglior undici disponibile selezionato.');break;
       case 'assign':assignPlayer(world,index,Number(id));ui.modal=null;refresh('Formazione aggiornata.');break;
