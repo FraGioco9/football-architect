@@ -39,7 +39,7 @@ export function startCareer(w,clubId,manager){
   ensureOfficialCareerSystems(w);
   addMessage(w,'Benvenuto sulla panchina',`La dirigenza di ${myClub(w).name} ti ha affidato la prima squadra. Il tuo obiettivo è costruire un progetto competitivo nella competizione ${w.competition||'Lega Aurora'}.`,'welcome',{type:'welcome',params:{club:myClub(w).name,league:w.competition||'Lega Aurora'}});
   const opening=clubMatch(w.fixtures[0],w.clubId),openingOpponent=fullName(w,opening.home===w.clubId?opening.away:opening.home);
-  addMessage(w,'Prestagione iniziata',`La preparazione parte il ${formatCareerDateTime(w.currentDate,null,'it')}. Il campionato comprende ${w.teams.length} club e ${w.fixtures.length} giornate; la prima partita contro ${openingOpponent} è fissata per ${formatCareerDateTime(opening.date,opening.kickoff,'it')}.`,'calendar',{type:'calendar.start',params:{clubs:w.teams.length,rounds:w.fixtures.length,opponent:openingOpponent,date:opening.date,kickoff:opening.kickoff}});
+  addMessage(w,'Prestagione iniziata',`La preparazione parte il ${formatCareerDateTime(w.currentDate,null,'it')}. Il campionato comprende ${w.teams.length} club e ${w.fixtures.length} giornate; la prima partita contro ${openingOpponent} è fissata per ${formatCareerDateTime(opening.date,opening.kickoff,'it')}.`,'calendar',{type:'calendar.start',params:{clubs:w.teams.length,rounds:w.fixtures.length,opponent:openingOpponent}});
   return w;
 }
 
@@ -247,7 +247,7 @@ function newSeasonMutating(w){
   settleCareerAIMarketSeason(w);
   if(developed)openCareerTrainingSeason(w);
   w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
-  addMessage(w,`Stagione ${w.season}: prestagione al via`,`Hai chiuso la precedente stagione al ${position}° posto. La nuova preparazione parte il ${formatCareerDateTime(w.currentDate,null,'it')} e la prima giornata è fissata per ${formatCareerDateTime(w.fixtures[0].date,w.fixtures[0].matches[0]?.kickoff,'it')}. La società ha stanziato ${compactMoney(prize)} in premi e nuovi fondi.`,'calendar',{type:'season.new',params:{season:w.season,position,prizeEURMinor:Math.round(prize*100),date:w.currentDate,firstMatchDate:w.fixtures[0].date}});
+  addMessage(w,`Stagione ${w.season}: prestagione al via`,`Hai chiuso la precedente stagione al ${position}° posto. La nuova preparazione parte il ${formatCareerDateTime(w.currentDate,null,'it')} e la prima giornata è fissata per ${formatCareerDateTime(w.fixtures[0].date,w.fixtures[0].matches[0]?.kickoff,'it')}. La società ha stanziato ${compactMoney(prize)} in premi e nuovi fondi.`,'calendar',{type:'season.new',params:{season:w.season,position,prizeEURMinor:Math.round(prize*100)}});
   w.lastMatchId=null;w.updatedAt=new Date().toISOString();
   return {position,prize};
 }
