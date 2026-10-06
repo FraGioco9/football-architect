@@ -164,7 +164,7 @@ html { scrollbar-gutter: stable; overflow-y: auto; }
 
 /* Action buttons are fixed by semantic family, never by translated label length.
    flex-basis stays auto so column layouts cannot turn width into height. */
-.btn:not(.btn-icon):not(.btn-mini) {
+.btn:not(.btn-icon, .btn-mini) {
   box-sizing: border-box;
   width: var(--ux-button-w-standard);
   height: var(--ux-button-h);
