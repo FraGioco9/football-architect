@@ -278,7 +278,24 @@ function clearField(id){
 }
 const dialogCoordinator=createDialogCoordinator(root,document,()=>{ui.modal=null;render();});
 const controlHints=createControlHints(root,document);
+function reconcileRenderedRoute(){
+  if(ui.routeKind==='not-found'||ui.routeKind==='new-career'||ui.routeKind==='match-preview')return;
+  if(ui.routeKind==='player'){
+    if(ui.modal)return;
+    const fallback=ui.routeReturnPage||'squad';
+    ui.routeKind='page';ui.routePath=pagePath(fallback)||'/squad';ui.routeReturnPage=null;ui.page=fallback;
+    writeRoute(ui.routePath,{replace:true});
+    return;
+  }
+  if(ui.pendingRoute&&ui.page==='careers')return;
+  const target=ui.page==='home-settings'?'/settings':pagePath(ui.page);
+  if(target&&(window.location.pathname!==target||window.location.search)){
+    ui.routeKind='page';ui.routePath=target;ui.routeNotFoundPath=null;ui.routeMatchId=null;
+    writeRoute(target,{replace:true});
+  }
+}
 function render({focus}={}){
+  reconcileRenderedRoute();
   const previousDialog=dialogCoordinator.beforeRender();
   let y=window.scrollY;
   if(ui.page==='careers'&&ui.modal?.type==='career-checkpoints'){
