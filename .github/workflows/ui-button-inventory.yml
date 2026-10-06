@@ -1,4 +1,4 @@
-name: UI button inventory
+name: UI controls final validation
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  inventory:
+  validate:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -23,7 +23,7 @@ jobs:
         working-directory: rst01-runner
         shell: pwsh
         run: npm install --no-audit --no-fund
-      - name: Write full inventory script
+      - name: Write validation
         shell: pwsh
         run: |
           $test=@'
@@ -35,83 +35,96 @@ jobs:
 
           const exe=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'].find(p=>fs.existsSync(p));
           if(!exe)throw new Error('Chrome unavailable');
-          const userData=await fsp.mkdtemp(path.join(os.tmpdir(),'fa-button-inventory-all-'));
+          const userData=await fsp.mkdtemp(path.join(os.tmpdir(),'fa-controls-final-'));
           const context=await chromium.launchPersistentContext(userData,{executablePath:exe,headless:true,viewport:{width:1440,height:1000}});
           const page=context.pages()[0]||await context.newPage();
-
-          async function snapshot(label){
-            const data=await page.evaluate(label=>{
-              const visible=el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};
-              const buttons=[...document.querySelectorAll('button')].filter(visible).map(b=>{
-                const r=b.getBoundingClientRect(),s=getComputedStyle(b);
-                return {
-                  text:(b.innerText||b.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,140),
-                  action:b.dataset.action||null,page:b.dataset.page||null,cls:b.className,
-                  w:Math.round(r.width),h:Math.round(r.height),
-                  font:Math.round(parseFloat(s.fontSize)),
-                  whiteSpace:s.whiteSpace,overflow:s.overflow
-                };
-              });
-              return {label,buttons};
-            },label);
-            console.log('BUTTON_SNAPSHOT '+JSON.stringify(data));
-          }
+          const assert=(ok,msg,data={})=>{if(!ok)throw new Error(msg+' '+JSON.stringify(data));};
+          const box=async loc=>{const b=await loc.boundingBox();return {w:Math.round(b?.width||0),h:Math.round(b?.height||0)}};
 
           await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
           await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:15000});
-          await snapshot('main-menu');
-
-          for(const action of ['menu-settings','menu-manage']){
-            const b=page.locator(`[data-action="${action}"]`).first();
-            if(await b.count()){
-              await b.click().catch(()=>{});
-              await page.waitForTimeout(150);
-              await snapshot(action);
-              const close=page.locator('[data-action="dialog-close"],[data-action="modal-close"],.modal [data-action="close"],.career-dialog [data-action="close"]').first();
-              if(await close.count())await close.click().catch(()=>{});
-              else await page.keyboard.press('Escape').catch(()=>{});
-            }
-          }
-
-          await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
-          await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:10000});
-          const newCareer=page.locator('[data-action="menu-new"]').first();
-          await newCareer.click();
-          await page.locator('.onboarding').waitFor({state:'visible',timeout:10000});
-          await snapshot('onboarding');
-          await page.locator('#manager-name').fill('Full Button Audit');
+          await page.locator('[data-action="menu-new"]').click();
+          await page.locator('#manager-name').fill('Controls Final');
           await page.locator('[data-action="start-career"]').click();
           await page.locator('.dashboard-hero').waitFor({state:'visible',timeout:10000});
 
           const pages=await page.evaluate(()=>[...new Set([...document.querySelectorAll('button[data-action="nav"][data-page]')].map(x=>x.dataset.page).filter(Boolean))]);
-          console.log('PAGE_LIST '+JSON.stringify(pages));
-
+          const all=[];
           for(const target of pages){
             const b=page.locator(`button[data-action="nav"][data-page="${target}"]`).first();
             if(!(await b.count()))continue;
-            try{
-              await b.click({timeout:4000});
-              await page.waitForTimeout(180);
-              await snapshot('page:'+target);
-            }catch(error){
-              console.log('PAGE_SKIP '+JSON.stringify({target,error:String(error?.message||error)}));
-            }
+            await b.click().catch(()=>{});
+            await page.waitForTimeout(120);
+            const rows=await page.evaluate(target=>[...document.querySelectorAll('button')].map(el=>{
+              const s=getComputedStyle(el),r=el.getBoundingClientRect();
+              if(s.display==='none'||s.visibility==='hidden'||r.width<=0||r.height<=0)return null;
+              return {target,text:(el.innerText||el.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,100),action:el.dataset.action||null,cls:el.className,w:Math.round(r.width),h:Math.round(r.height)};
+            }).filter(Boolean),target);
+            all.push(...rows);
           }
 
-          const preview=page.locator('[data-action="preview-match"]').first();
-          if(await preview.count()){
-            await preview.click().catch(()=>{});
-            await page.waitForTimeout(150);
-            await snapshot('match-preview');
+          const standard=all.filter(x=>/\bbtn\b/.test(x.cls));
+          const badHeight=standard.filter(x=>x.h>44);
+          const badWidth=standard.filter(x=>x.w>320);
+          assert(!badHeight.length,'standard action button taller than 44px',{badHeight:badHeight.slice(0,20)});
+          assert(!badWidth.length,'standard action button wider than 320px',{badWidth:badWidth.slice(0,20)});
+
+          const minis=all.filter(x=>x.cls==='btn btn-mini');
+          assert(minis.length>0&&minis.every(x=>x.w===92&&x.h===34),'mini buttons are not 92x34',{minis:minis.slice(0,8)});
+
+          const chips=all.filter(x=>x.cls.includes('chip'));
+          assert(chips.length>0&&chips.every(x=>x.w===104&&x.h===36),'filter chips are not uniform 104x36',{chips});
+
+          const shortcuts=all.filter(x=>x.cls==='qol03-shortcut');
+          assert(shortcuts.length>0&&shortcuts.every(x=>x.w===112&&x.h===40),'QOL shortcuts are not 112x40',{shortcuts:shortcuts.slice(0,8)});
+
+          const backs=all.filter(x=>x.cls==='qol03-back');
+          assert(backs.length>0&&backs.every(x=>x.w===104&&x.h===40),'back buttons are not 104x40',{backs:backs.slice(0,8)});
+
+          await page.locator('button[data-action="nav"][data-page="calendar"]').first().click();
+          await page.waitForTimeout(120);
+          const heroPreview=page.locator('.highlight-fixture .btn[data-action="preview-match"]').first();
+          if(await heroPreview.count()){
+            const b=await box(heroPreview);
+            assert(b.w===144&&b.h===40,'calendar preview button geometry wrong',{b});
+          }
+          const prep=page.locator('.match-center-preparation-actions .btn');
+          if(await prep.count()){
+            const sizes=await prep.evaluateAll(btns=>btns.map(b=>{const r=b.getBoundingClientRect();return {w:Math.round(r.width),h:Math.round(r.height)}}));
+            assert(sizes.every(x=>x.w===220&&x.h===42),'match preparation action geometry wrong',{sizes});
           }
 
+          await page.locator('button[data-action="nav"][data-page="dashboard"]').first().click();
+          const it={
+            home:await box(page.locator('.fa-home-top').first()),
+            cont:await box(page.locator('.continue-top').first()),
+            shortcut:await box(page.locator('.qol03-shortcut').first())
+          };
+          const native=page.locator('.language-switch select').first();
+          await native.selectOption('en');
+          await page.waitForTimeout(150);
+          const en={
+            home:await box(page.locator('.fa-home-top').first()),
+            cont:await box(page.locator('.continue-top').first()),
+            shortcut:await box(page.locator('.qol03-shortcut').first())
+          };
+          assert(JSON.stringify(it)===JSON.stringify(en),'button geometry changes across IT/EN',{it,en});
+
+          const track=await page.evaluate(()=>getComputedStyle(document.documentElement,'::-webkit-scrollbar-track').backgroundColor);
+          assert(track==='rgba(0, 0, 0, 0)'||track==='transparent','scrollbar track visible',{track});
+          assert(await page.locator('.language-switch .fa-select-trigger').count()===1,'custom dropdown missing');
+
+          await page.setViewportSize({width:390,height:844});
+          const overflow=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth}));
+          assert(overflow.sw<=overflow.cw+1,'horizontal overflow on mobile',{overflow});
+
+          console.log('FINAL_CONTROLS_PASS '+JSON.stringify({pages:pages.length,buttons:all.length,it,en,track,overflow}));
           await context.close();
           '@
-          Set-Content ./rst01-runner/.button-inventory-all.mjs -Value $test -NoNewline -Encoding utf8
-
-      - name: Run inventory
+          Set-Content ./rst01-runner/.controls-final.mjs -Value $test -NoNewline -Encoding utf8
+      - name: Run validation
         shell: pwsh
         run: |
           $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD" -PassThru
           for($i=0;$i -lt 60;$i++){try{$r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2;if($r.StatusCode -eq 200){break}}catch{};Start-Sleep 1}
-          try{node ./rst01-runner/.button-inventory-all.mjs}finally{Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          try{node ./rst01-runner/.controls-final.mjs}finally{Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
