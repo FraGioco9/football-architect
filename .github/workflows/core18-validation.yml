@@ -1,5 +1,5 @@
 name: CORE-18 full-system validation
-# rerun after SIM04 starter-slot projection fix
+# final rerun after slot-aware SIM04 substitutions
 
 on:
   push:
