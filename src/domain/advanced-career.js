@@ -212,10 +212,21 @@ export function simulateAdvancedMatch(w,m){
   let matchday=null;
   if(sim04){
     const rules=w.advancedV1.matchdayV1.rules[matchKind(m)];
-    const sheets=sidesPlans.map(({side,bench})=>createMatchSheet({teamId:side.teamId,
-      players:clubPlayers(w,side.teamId).map(p=>({...p,position:toAddonPosition(p.position),unavailable:p.injury>0||!medicalAvailability(p.medicalV1).eligible})),
-      starters:side.ids,bench:bench.map(p=>p.id),unavailable:clubPlayers(w,side.teamId).filter(p=>p.injury>0||!medicalAvailability(p.medicalV1).eligible).map(p=>p.id),
-      formation:side.rolePlan.assignments.map(x=>x.position),rules}));
+    const sheets=sidesPlans.map(({side,bench})=>{
+      // SIM04 validates the role occupied on the pitch, not only a player's
+      // natural registry position. Project every starter to the formation
+      // slot they actually occupies; bench players retain their natural role.
+      // This guarantees exactly one goalkeeper slot even when a natural GK is
+      // adapted outfield or an outfielder must serve as emergency goalkeeper.
+      const starterPosition=new Map(side.rolePlan.assignments.map(a=>[String(a.playerId),a.position]));
+      return createMatchSheet({teamId:side.teamId,
+        players:clubPlayers(w,side.teamId).map(p=>({...p,
+          position:starterPosition.get(String(p.id))??toAddonPosition(p.position),
+          unavailable:p.injury>0||!medicalAvailability(p.medicalV1).eligible})),
+        starters:side.ids,bench:bench.map(p=>p.id),
+        unavailable:clubPlayers(w,side.teamId).filter(p=>p.injury>0||!medicalAvailability(p.medicalV1).eligible).map(p=>p.id),
+        formation:side.rolePlan.assignments.map(x=>x.position),rules});
+    });
     matchday=createMatchday({matchId:m.id,home:sheets[0],away:sheets[1],rules});
   }
   const sim02=careerTacticsEnabled(w) && (m.home===w.clubId||m.away===w.clubId);
@@ -289,16 +300,23 @@ export function simulateAdvancedMatch(w,m){
       if(sim04&&side.teamId!==w.clubId&&minute>=60){
         const count=changes.filter(c=>c.teamId===side.teamId).length;
         if(count>=matchday.rules.maxSubstitutions)continue;
-        const starters=side.ids.map(id=>playerById(w,id)).filter(p=>p.position!=='POR');
+        const starterRows=side.rolePlan.assignments
+          .filter(a=>a.position!=='GK')
+          .map(a=>({assignment:a,player:playerById(w,a.playerId)}))
+          .filter(x=>x.player);
         const ownSide=side.teamId===m.home?'home':'away';
         const goals={home:0,away:0};
         for(const event of session.events)if(event.type==='goal')goals[event.side]++;
         const trailing=goals[ownSide]<goals[ownSide==='home'?'away':'home'];
-        const attack=starters.filter(p=>['ATT','AS','AD','COC'].includes(p.position));
-        const candidates=trailing&&attack.length?attack:starters;
-        const tired=[...candidates].sort((a,b)=>a.fitness-b.fitness||a.id-b.id)[0];
-        if(tired){const incoming=bench.find(p=>p.position===tired.position&&p.ovr>=tired.ovr-15)||bench.find(p=>p.position!=='POR'&&p.ovr>=tired.ovr-15);
-          if(incoming)doChange(side,tired.id,incoming.id,minute,'ai');}
+        const attack=starterRows.filter(x=>['ST','LW','RW','CAM','CF'].includes(x.assignment.position));
+        const candidates=trailing&&attack.length?attack:starterRows;
+        const tiredRow=[...candidates].sort((a,b)=>a.player.fitness-b.player.fitness||a.player.id-b.player.id)[0];
+        if(tiredRow){
+          const tired=tiredRow.player,slotPosition=tiredRow.assignment.position;
+          const incoming=bench.find(p=>toAddonPosition(p.position)===slotPosition&&p.ovr>=tired.ovr-15)
+            ||bench.find(p=>toAddonPosition(p.position)!=='GK'&&p.ovr>=tired.ovr-15);
+          if(incoming)doChange(side,tired.id,incoming.id,minute,'ai');
+        }
       }
     }
   }

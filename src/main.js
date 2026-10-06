@@ -3,28 +3,22 @@ import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
 import {view} from './ui.js';
 import {generateMatchActions} from './domain/match-actions.js';
-import {enableAdvancedCareer,hasAdvancedCareer,setAdvancedStyle,editAdvancedTactic,setAdvancedPlayerRole,previewAdvancedHalf} from './domain/advanced-career.js';
-import {enableCareerMatchday,substitutionsEnabled,planCareerSubstitution,cancelCareerSubstitution,setCareerMatchdayRules,expectedNextMatch} from './domain/career-matchday.js';
-import {enableCareerRoles,setCareerSlotRole,resetCareerRoleFormation} from './domain/career-roles.js';
-import {enableCareerCoaches} from './domain/career-coaches.js';
-import {enableCareerStatistics} from './domain/career-statistics.js';
-import {enableCareerTactics,saveCareerTacticPreset,duplicateCareerTacticPreset,editCareerTacticPreset,clearCareerTacticPlans,deleteCareerTacticPreset,applyCareerTacticPreset,planCareerTacticChange,cancelCareerTacticChange} from './domain/career-tactics.js';
-import {enableCareerTraining,hasCareerTraining,configureCareerSession,configureCareerIndividual,delegateCareerTraining,syncCareerTrainingFormation} from './domain/career-training.js';
-import {enableCareerYouth,promoteCareerProspect,configureCareerAcademy} from './domain/career-youth.js';
-import {enableCareerWorld} from './domain/career-world.js';
-import {marketEnabled,marketValuation,marketExistingWageEUR,marketClubDecision,managedClubKey,marketPlayers,enableCareerMarket,createCareerQuote,startMarketDeal,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal} from './domain/career-market.js';
-import {calendarEnabled,enableCareerCalendar,bookCareerTransfer,cancelCareerBooking,releaseCareerFreeAgent,signCareerFreeAgent,previewCalendarAdvance} from './domain/career-calendar.js';
-import {enableCareerScouting,assignScoutingMission,cancelScoutingMission,shortlistScoutedPlayer,refreshScoutingReport} from './domain/career-scouting.js';
-import {enableCareerAIMarket} from './domain/career-ai-market.js';
-import {enableCareerCups,settleCupCredits} from './domain/career-cups.js';
-import {enableCareerContinental,settleContinentalCredits} from './domain/career-continental.js';
-import {enableCareerDivisions} from './domain/career-divisions.js';
-import {enableCareerBoard,negotiateBoardGoals,acceptBoardJob,endBoardCareer,boardStatus} from './domain/career-board.js';
-import {managerCareerEnabled,enableManagerCareer,applyManagerJob,negotiateManagerOffer,decideManagerOffer,registerBoardAppointment,registerManagerRetirement} from './domain/career-manager.js';
-import {enableCareerFinance,financeEnabled,reconcileCareerFinance,configureCareerFinanceBudget,financeCanCommit} from './domain/career-finance.js';
-import {enableCareerPersonality} from './domain/career-personality.js';
-import {contractsEnabled,enableCareerContracts,syncCareerContracts,proposeCareerRenewal,respondCareerRenewal,decideCareerCounter} from './domain/career-contracts.js';
-import {enableCareerFacilities,facilityEnabled,hireCareerStaff,delegateCareerStaff,planFacilityProject,decideFacilityProject} from './domain/career-facilities.js';
+import {hasAdvancedCareer,setAdvancedStyle,editAdvancedTactic,setAdvancedPlayerRole,previewAdvancedHalf} from './domain/advanced-career.js';
+import {substitutionsEnabled,planCareerSubstitution,cancelCareerSubstitution,setCareerMatchdayRules,expectedNextMatch} from './domain/career-matchday.js';
+import {setCareerSlotRole,resetCareerRoleFormation} from './domain/career-roles.js';
+import {saveCareerTacticPreset,duplicateCareerTacticPreset,editCareerTacticPreset,clearCareerTacticPlans,deleteCareerTacticPreset,applyCareerTacticPreset,planCareerTacticChange,cancelCareerTacticChange} from './domain/career-tactics.js';
+import {hasCareerTraining,configureCareerSession,configureCareerIndividual,delegateCareerTraining,syncCareerTrainingFormation} from './domain/career-training.js';
+import {promoteCareerProspect,configureCareerAcademy} from './domain/career-youth.js';
+import {marketEnabled,marketValuation,marketExistingWageEUR,marketClubDecision,managedClubKey,marketPlayers,createCareerQuote,startMarketDeal,answerMarketClub,proposeMarketTerms,answerMarketPlayer,completeMarketDeal} from './domain/career-market.js';
+import {calendarEnabled,bookCareerTransfer,cancelCareerBooking,releaseCareerFreeAgent,signCareerFreeAgent,previewCalendarAdvance} from './domain/career-calendar.js';
+import {assignScoutingMission,cancelScoutingMission,shortlistScoutedPlayer,refreshScoutingReport} from './domain/career-scouting.js';
+import {settleCupCredits} from './domain/career-cups.js';
+import {settleContinentalCredits} from './domain/career-continental.js';
+import {negotiateBoardGoals,acceptBoardJob,endBoardCareer,boardStatus} from './domain/career-board.js';
+import {managerCareerEnabled,applyManagerJob,negotiateManagerOffer,decideManagerOffer,registerBoardAppointment,registerManagerRetirement} from './domain/career-manager.js';
+import {financeEnabled,reconcileCareerFinance,configureCareerFinanceBudget,financeCanCommit} from './domain/career-finance.js';
+import {contractsEnabled,syncCareerContracts,proposeCareerRenewal,respondCareerRenewal,decideCareerCounter} from './domain/career-contracts.js';
+import {facilityEnabled,hireCareerStaff,delegateCareerStaff,planFacilityProject,decideFacilityProject} from './domain/career-facilities.js';
 import {createMatchPlayback,advanceMatchPlayback,finishMatchPlayback,setMatchPlaybackPaused,setMatchPlaybackSpeed,matchPlaybackSnapshot} from './match-playback.js';
 import {matchPreviewStatus} from './match-preview-ui.js';
 import {loadStoredMatchPreview,startStoredMatchPreview,saveStoredMatchPreviewProgress,discardStoredMatchPreview} from './match-preview-storage.js';
@@ -34,6 +28,7 @@ import {createControlHints} from './controls-system.js';
 import {createDialogCoordinator} from './dialog-system.js';
 import {createFeedbackCenter} from './feedback-system.js';
 import {ensureCareerDates,fixtureIsDue,nextFixtureDate,addDaysISO,formatCareerDate} from './domain/career-date.js';
+import {ensureOfficialCareerSystems,officialCareerSystemsReady} from './domain/career-official.js';
 import {MARKET_VIEWS,marketCostPreview} from './market-view-model.js';
 import {displayCareerMoney} from './domain/career-locale.js';
 import {preferredLanguage, saveLanguage, translateUi, translate, pageTitle, GAME_NAME} from './i18n.js';
@@ -46,7 +41,6 @@ import {exportCareerSlotJson,exportAllCareersJson,previewCareerImport,applyCaree
 import {createIndexedDbVault,mirrorCatalogToVault,estimateCareerStorage,createEmergencyExport,readVerifiedVaultSlot,restoreSlotFromVault} from './career-vault.js';
 import {openPrimaryCareerStorage} from './primary-career-storage.js';
 import {validateSave,startCareer,advanceDay,simulateRound,changeFormation,autoLineup,assignPlayer,signPlayer,sellPlayer,newSeason,clubPlayers,playerById,clubById,myClub} from './engine.js';
-
 // Boot is deliberately asynchronous: never render a writable world until
 // the authoritative IndexedDB snapshot has been verified and hydrated.
 const primary=await openPrimaryCareerStorage({legacyStorage:window.localStorage,validate:validateSave}).catch(error=>{
@@ -78,6 +72,7 @@ const careerVault=createIndexedDbVault();
 let pendingNewCatalogSlot=false;
 let world=load();
 ensureCareerDates(world);
+const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
 let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
@@ -97,6 +92,11 @@ function restorePendingPreview({open=true}={}){
   }catch(err){ui.previewRecoveryError=err;}
 }
 const feedback=createFeedbackCenter(document,{language:()=>ui.language});
+if(officialSystemMigration.changed&&!blockedSaveError){
+  if(!officialCareerSystemsReady(world))throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_INCOMPLETE');
+  if(!save())throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_SAVE_FAILED');
+  await primary.commit();
+}
 restorePendingPreview({open:false});
 let searchTimer;
 let qol03Trail=[];
@@ -226,6 +226,16 @@ function save(){
     reportError(readableStorageError(err));
     return false;
   }
+}
+async function migrateActiveCareerSystems(){
+  ensureCareerDates(world);
+  if(!world.clubId)return {changed:false,enabled:[]};
+  const migration=ensureOfficialCareerSystems(world);
+  if(!migration.changed)return migration;
+  if(!officialCareerSystemsReady(world))throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_INCOMPLETE');
+  if(!save())throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_SAVE_FAILED');
+  await primary.commit();
+  return migration;
 }
 function updateFieldShell(input){
   const shell=input.closest('.field-shell');
@@ -595,7 +605,7 @@ async function handleVaultRestore(id){
     const result=await restoreSlotFromVault(careerStorage,careerVault,id,validateSave);
     ui.modal=null;
     if(readCareerCatalog(careerStorage).activeSlotId===id&&result.restored){
-      world=result.career;blockedSaveError=null;emergencyWorldRaw=null;resetCareerUi('careers');
+      world=result.career;blockedSaveError=null;emergencyWorldRaw=null;await migrateActiveCareerSystems();resetCareerUi('careers');
       try{persistCareer(careerStorage,result.career,validateSave);}
       catch(err){ui.storageWarning='Copia di compatibilità non aggiornata: lo slot recuperato è al sicuro. '+(err?.message||'');}
     }
@@ -682,10 +692,6 @@ root.addEventListener('click',async ev=>{
         startCareer(world,ui.chosenClub,field?.value||ui.managerDraft||'Allenatore');
         ui.page='dashboard';refresh(`Benvenuto al ${myClub(world).name}!`);window.scrollTo(0,0);break;
       }
-      case 'contracts-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable structured player contracts? Export a JSON backup first.':'Attivare i contratti strutturati? Esporta prima un backup JSON.'))break;
-        await runCheckpointed('before-transfer',()=>enableCareerContracts(world));render();toast(ui.language==='en'?'Contracts activated.':'Contratti attivati.');break;
-      }
       case 'contracts-propose':{
         const pid=Number(document.getElementById('ply05-player')?.value);
         const wage=Number(document.getElementById('ply05-weekly')?.value);
@@ -704,30 +710,10 @@ root.addEventListener('click',async ev=>{
       case 'contracts-decide-counter':{
         await runCheckpointed('before-transfer',()=>decideCareerCounter(world,{offerId:id,expectedRevision:world.advancedV1.contractsV1.revision,decision:field==='accept'?'accept':'reject'}));render();break;
       }
-      case 'personality-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable PLY02 for this career? Existing match results will not change. Export a backup first.':'Attivare PLY02 in questa carriera? I risultati già giocati resteranno invariati. Esporta prima un backup.'))break;
-        await runCheckpointed('before-season',()=>enableCareerPersonality(world));ui.page='squad';render();toast(ui.language==='en'?'PLY02 personality enabled.':'Personalità PLY02 attivata.');break;
-      }
-      case 'sim06-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable event-derived statistics for future matches? Previous games will not be backfilled. Export a JSON backup first.':'Attivare statistiche dagli eventi solo per le prossime partite? Le partite passate non saranno ricostruite. Esporta prima un backup JSON.'))break;
-        await runCheckpointed('before-match',()=>enableCareerStatistics(world));ui.advancedTab='matches';render();break;
-      }
-      case 'sim05-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable AI managers and opponent scouting for future fixtures? Export a JSON backup first.':'Attivare allenatori AI e report avversario per le prossime partite? Esporta prima un backup JSON.'))break;
-        await runCheckpointed('before-match',()=>enableCareerCoaches(world));render();break;
-      }
       case 'sim03-slot':ui.sim03Slot=Number(index);render();break;
-      case 'sim03-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable the official per-formation role editor? Export a JSON backup first.':'Attivare l’editor ufficiale dei ruoli per modulo? Esporta prima un backup JSON.'))break;
-        await runCheckpointed('before-match',()=>enableCareerRoles(world));ui.sim03Slot=0;render();break;
-      }
       case 'sim03-reset':{
         if(!confirmAction(ui.language==='en'?'Reset roles for this formation only?':'Ripristinare i ruoli soltanto per questo modulo?'))break;
         await runCheckpointed('before-match',()=>resetCareerRoleFormation(world));render();break;
-      }
-      case 'sim02-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable official tactical presets and in-match changes? Export a JSON backup first.':'Attivare preset e cambi tattici ufficiali? Esporta prima un backup JSON.'))break;
-        await runCheckpointed('before-match',()=>enableCareerTactics(world));render();break;
       }
       case 'sim02-save':case 'sim02-update':case 'sim02-duplicate':case 'sim02-apply':case 'sim02-delete':
       case 'sim02-plan':case 'sim02-cancel':{
@@ -747,10 +733,6 @@ root.addEventListener('click',async ev=>{
         const surface=root.querySelector('[data-dialog-kind="sim04-halftime"]')||root;
         ui.sim02CompareId=surface.querySelector('#sim02-compare-id')?.value||'balanced';render();break;
       }
-      case 'sim04-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable official match substitutions for this career? Export a JSON backup first.':'Attivare le sostituzioni ufficiali? Esporta prima un backup JSON.'))break;
-        await runCheckpointed('before-match',()=>enableCareerMatchday(world));render();break;
-      }
       case 'sim04-plan-add':{
         const surface=root.querySelector('[data-dialog-kind="sim04-halftime"]')||root;
         const value=key=>Number(surface.querySelector(key)?.value);
@@ -763,26 +745,7 @@ root.addEventListener('click',async ev=>{
         const kind=String(surface.querySelector('#sim04-kind')?.value||'league');
         await runCheckpointed('before-match',()=>setCareerMatchdayRules(world,{kind,maxSubstitutions,maxWindows}));render();break;
       }
-      case 'advanced-enable':{
-        // A saved SIM01 replay can otherwise outlive its authoritative fixture.
-        // Ask the user to finish/discard that separate preview first, rather
-        // than silently dropping its cursor or committing an incompatible mode.
-        if(ui.matchPreview||ui.previewSaved){
-          reportError(ui.language==='en'?'Finish or discard the saved match preview before enabling advanced gameplay.':'Completa o elimina l’anteprima partita salvata prima di attivare il motore avanzato.');
-          break;
-        }
-        if(!confirmAction(ui.language==='en'?'Enable the advanced match engine for this career? Previous matches stay unchanged. Export a JSON backup first.':'Attivare il motore avanzato in questa carriera? Le partite già giocate non cambieranno. Esporta prima una copia JSON.'))break;
-        const current=structuredClone(world);enableAdvancedCareer(current);const original=world;world=current;if(!save()){world=original;throw new Error('Attivazione annullata: salvataggio non verificato.');}ui.advancedTab='tactics';render();toast(ui.language==='en'?'Advanced simulation activated.':'Simulazione avanzata attivata.');break;
-      }
-      case 'training-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable structured training for future weeks? Previously played fixtures will stay unchanged. Export a JSON backup first.':'Attivare gli allenamenti strutturati per le prossime settimane? Le partite già disputate resteranno invariate. Esporta prima un backup JSON.'))break;
-        await changeOfficialTraining(w=>enableCareerTraining(w));break;
-      }
       case 'training-delegate':{await changeOfficialTraining(w=>delegateCareerTraining(w));break;}
-      case 'youth-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable the youth academy and retirements? Export a JSON backup first.':'Attivare vivaio e ritiri? Esporta prima un backup JSON.'))break;
-        await changeOfficialTraining(w=>enableCareerYouth(w));ui.page='youth';render();break;
-      }
       case 'youth-program':{await changeOfficialTraining(w=>configureCareerAcademy(w,field));break;}
       case 'youth-promote':{
         const prospect=world.advancedV1?.youthV1?.academy?.[String(world.clubId)]?.find(p=>p.id===Number(id));
@@ -791,23 +754,6 @@ root.addEventListener('click',async ev=>{
         await changeOfficialTraining(w=>promoteCareerProspect(w,Number(id)));break;
       }
       case 'addon-tab':{const allowed=['players','health','training','tactics','matches','world','market'];if(allowed.includes(field)){ui.advancedTab=field;render();}break;}
-      case 'enable-world':{
-        if(!confirmAction(ui.language==='en'?'Enable the eight-league world for this career? Your existing fixtures will be preserved.':'Attivare gli otto campionati per questa carriera? Le partite già disputate saranno preservate.'))break;
-        await changeOfficialTraining(enableCareerWorld);ui.worldCountry=world.countryId;break;
-      }
-      case 'enable-cups':{
-        if(!confirmAction(ui.language==='en'?'Enable fictional national cups in all eight countries? Already played league fixtures will be preserved.':'Attivare otto coppe nazionali di fantasia? Le giornate già giocate resteranno inalterate.'))break;
-        await changeOfficialTraining(enableCareerCups);ui.page='world';render();toast(ui.language==='en'?'WRD03 national cups enabled.':'Otto coppe nazionali WRD03 attivate.');break;
-      }
-      case 'enable-continental':{
-        if(!confirmAction(ui.language==='en'?'Enable the fictional Constellations Cup? Qualification uses final national standings and national cup winners, and the first edition starts next season.':'Attivare la Coppa delle Costellazioni? Le qualificazioni usano classifiche finali e coppe nazionali, e la prima edizione partirà dalla prossima stagione.'))break;
-        await changeOfficialTraining(enableCareerContinental);ui.page='world';render();toast(ui.language==='en'?'WRD04 continental cups enabled.':'Coppe continentali WRD04 attivate.');break;
-      }
-      case 'manager-enable':{
-        const origin=document.getElementById('manager-origin')?.value||'';
-        const style=document.getElementById('manager-style')?.value||'balanced';
-        await runCheckpointed('before-season',()=>enableManagerCareer(world,{origin,style}));ui.page='manager';render();break;
-      }
       case 'manager-apply':{
         await runCheckpointed('before-transfer',()=>applyManagerJob(world,{revision:world.advancedV1.managerV1.revision,clubKey:field}));ui.page='manager';render();break;
       }
@@ -822,10 +768,6 @@ root.addEventListener('click',async ev=>{
         if(accept&&!confirmAction(ui.language==='en'?'Accept this new job and leave your current club?':'Accettare la nuova panchina e lasciare il club attuale?'))break;
         await runCheckpointed('before-season',()=>{const previous=world.clubId;decideManagerOffer(world,{revision:world.advancedV1.managerV1.revision,offerId:Number(id),accept});if(previous!==world.clubId)clearCareerTacticPlans(world);});ui.page='manager';render();break;
       }
-      case 'board-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable board objectives and manager employment? Export a backup first.':'Attivare obiettivi societari e carriera dell’allenatore? Esporta prima un backup.'))break;
-        await runCheckpointed('before-season',()=>enableCareerBoard(world));ui.page='board';render();break;
-      }
       case 'board-negotiate':{
         await runCheckpointed('before-season',()=>negotiateBoardGoals(world,{revision:world.advancedV1.boardV1.revision,plan:target.dataset.plan}));ui.page='board';render();break;
       }
@@ -835,10 +777,6 @@ root.addEventListener('click',async ev=>{
       case 'board-retire':{
         if(!confirmAction(ui.language==='en'?'End this manager career? The save will remain available.':'Terminare la carriera da allenatore? Il salvataggio resterà disponibile.'))break;
         await runCheckpointed('before-season',()=>{endBoardCareer(world,{revision:world.advancedV1.boardV1.revision});if(managerCareerEnabled(world))registerManagerRetirement(world);});ui.page='board';render();break;
-      }
-      case 'enable-divisions':{
-        if(!confirmAction(ui.language==='en'?'Enable second divisions and promotion/relegation in all eight countries?':'Attivare le seconde divisioni e promozioni/retrocessioni negli otto Paesi?'))break;
-        await changeOfficialTraining(enableCareerDivisions);ui.page='world';render();toast(ui.language==='en'?'WRD02 enabled.':'WRD02 attivato.');break;
       }
       case 'world-country':ui.worldCountry=target.dataset.country;ui.worldClub=null;ui.worldPlayer=null;render();break;
       case 'world-club':ui.worldClub=target.dataset.club;ui.worldPlayer=null;render();break;
@@ -861,7 +799,7 @@ root.addEventListener('click',async ev=>{
       case 'career-load':{
         if(!saveBeforeSlotChange())break;
         const selected=switchCareerSlot(careerStorage,id,validateSave);
-        world=selected.career;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi();
+        world=selected.career;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi();
         render();window.scrollTo(0,0);
         if(selected.mirrorError)reportError(readableStorageError(selected.mirrorError));
         break;
@@ -903,7 +841,7 @@ root.addEventListener('click',async ev=>{
           mode:ui.importMode,targetSlotId:ui.importTarget||null,expectedCatalogRaw:ui.importCatalogRaw,
         });
         ui.importPreview=null;ui.importCatalogRaw=null;ui.modal=null;
-        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi('careers');}
+        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
         toast(ui.language==='en'?`${result.count} careers imported.`:`${result.count} carriere importate.`);
         if(result.mirrorError)reportError(readableStorageError(result.mirrorError));
         break;
@@ -921,7 +859,7 @@ root.addEventListener('click',async ev=>{
       case 'career-import-backup-confirm':{
         const result=restoreImportBackup(careerStorage,id,field,validateSave);
         ui.modal=null;
-        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi('careers');}
+        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
         toast(ui.language==='en'?'Previous career restored.':'Copia precedente ripristinata.');
         if(result.mirrorError)reportError(readableStorageError(result.mirrorError));
         break;
@@ -939,7 +877,7 @@ root.addEventListener('click',async ev=>{
       case 'career-checkpoint-confirm':{
         if(!saveBeforeSlotChange())break;
         const restored=restoreCareerCheckpoint(careerStorage,id,field,validateSave);
-        world=restored.career;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi();
+        world=restored.career;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi();
         toast(ui.language==='en'?'Checkpoint restored.':'Checkpoint ripristinato.');window.scrollTo(0,0);
         if(restored.mirrorError)reportError(readableStorageError(restored.mirrorError));
         break;
@@ -975,7 +913,7 @@ root.addEventListener('click',async ev=>{
         const deleted=deleteCareerSlot(careerStorage,id,validateSave);
         ui.modal=null;
         try{discardStoredMatchPreview(careerStorage,id);}catch(err){reportError(err.message);}
-        if(deleted.activeDeleted){world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi('careers');}
+        if(deleted.activeDeleted){world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
         render();
         if(deleted.cleanupError||deleted.mirrorError)reportError(readableStorageError(deleted.cleanupError||deleted.mirrorError));
         break;
@@ -1067,11 +1005,6 @@ root.addEventListener('click',async ev=>{
       case 'watch':{
         const pid=Number(id);world.watchlist=world.watchlist.includes(pid)?world.watchlist.filter(i=>i!==pid):[...world.watchlist,pid];refresh(world.watchlist.includes(pid)?'Calciatore aggiunto agli osservati.':'Calciatore rimosso dagli osservati.');break;
       }
-      case 'facility-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable staff and facilities for this career? Export a backup first.':'Attivare staff e infrastrutture? Esporta prima un backup.'))break;
-        await runCheckpointed('before-finance',()=>enableCareerFacilities(world));
-        ui.page='finance';render();break;
-      }
       case 'facility-hire':{
         const role=document.getElementById('staff-role')?.value,quality=Number(document.getElementById('staff-quality')?.value);
         await runCheckpointed('before-finance',()=>hireCareerStaff(world,{revision:world.advancedV1.facilitiesV1.revision,role,quality}));render();break;
@@ -1088,25 +1021,12 @@ root.addEventListener('click',async ev=>{
         const decision=action.slice('facility-'.length);
         await runCheckpointed('before-finance',()=>decideFacilityProject(world,{revision:world.advancedV1.facilitiesV1.revision,id,decision}));render();break;
       }
-      case 'finance-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable company accounts for this career? Export a backup first.':'Attivare la contabilità societaria per questa carriera? Esporta prima un backup.'))break;
-        const old=world;const candidate=structuredClone(world);enableCareerFinance(candidate);world=candidate;
-        if(!save()){world=old;throw Error('MGT02_SAVE_FAILED');}
-        await primary.commit();render();toast(ui.language==='en'?'Company accounts enabled.':'Contabilità societaria attivata.');break;
-      }
       case 'finance-budget':{
         if(!financeEnabled(world))throw Error('MGT02_NOT_ENABLED');
         const rev=world.advancedV1.financeV1.revision;
         const val=id=>Number(document.getElementById(id)?.value);
         await runCheckpointed('before-finance',()=>configureCareerFinanceBudget(world,{revision:rev,wageCapWeeklyEUR:val('finance-wages-cap'),transferReserveEUR:val('finance-transfer-reserve')}));
         toast(ui.language==='en'?'Financial budgets saved.':'Budget salvati.');break;
-      }
-      case 'market-enable':{
-        if(!world.advancedV1?.worldV1)throw Error('Attiva prima gli otto campionati dal menu Mondo.');
-        if(!confirmAction(ui.language==='en'?'Enable market negotiation for this career? Export a backup first.':'Attivare le trattative MKT01 nella carriera? Esporta prima un backup.'))break;
-        const candidate=structuredClone(world);enableCareerMarket(candidate);settleCupCredits(candidate);settleContinentalCredits(candidate);const original=world;world=candidate;
-        if(!save()){world=original;throw Error('Mercato non attivato: salvataggio non verificato.');}
-        await primary.commit();render();toast('Mercato internazionale attivato.');break;
       }
       case 'market-offer-player':if(!marketEnabled(world))throw Error('Attiva il mercato internazionale.');ui.modal={type:'market-offer',id};render();break;
       case 'market-open-deal':ui.modal={type:'market-deal',id};render();break;
@@ -1146,14 +1066,6 @@ root.addEventListener('click',async ev=>{
         await runCheckpointed('before-transfer',()=>answerMarketPlayer(world,{revision:rev,dealId:id,decision:accepted?'accept':'counter',annualWageEUR:accepted?null:Math.ceil(val.weeklyWageEUR*52/100)*100}));
         ui.modal={type:'market-deal',id};render();toast('Risposta del calciatore registrata.');break;
       }
-      case 'ai-market-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable AI clubs trading autonomously in this career?':'Attivare il mercato autonomo dei club AI in questa carriera?'))break;
-        await runCheckpointed('before-transfer',()=>enableCareerAIMarket(world));ui.page='market';render();toast(ui.language==='en'?'MKT04 autonomous AI market enabled.':'Mercato AI MKT04 attivato.');break;
-      }
-      case 'scout-enable':{
-        if(!confirmAction(ui.language==='en'?'Enable scouting and limited information for this career?':'Attivare lo scouting con conoscenza limitata in questa carriera?'))break;
-        await runCheckpointed('before-transfer',()=>enableCareerScouting(world));ui.page='market';render();toast('Scouting MKT03 attivato.');break;
-      }
       case 'scout-assign':{
         const get=n=>document.getElementById(n)?.value;
         await runCheckpointed('before-transfer',()=>assignScoutingMission(world,{revision:world.advancedV1.scoutingV1.revision,countryId:get('scout-mission-country'),position:get('scout-mission-position'),ageMin:Number(get('scout-mission-age-min')),ageMax:Number(get('scout-mission-age-max')),contractMax:Number(get('scout-mission-contract')),weeks:Number(get('scout-mission-weeks'))}));ui.page='market';render();toast('Missione osservatori avviata.');break;
@@ -1163,7 +1075,6 @@ root.addEventListener('click',async ev=>{
         await runCheckpointed('before-transfer',()=>shortlistScoutedPlayer(world,{revision:world.advancedV1.scoutingV1.revision,playerId:id,add:action==='scout-shortlist'}));render();break;
       }
       case 'scout-refresh':await runCheckpointed('before-transfer',()=>refreshScoutingReport(world,{revision:world.advancedV1.scoutingV1.revision,playerId:id}));render();break;
-      case 'market-calendar-enable':{await runCheckpointed('before-transfer',()=>enableCareerCalendar(world));ui.page='market';render();toast('Calendario MKT02 attivato.');break;}
       case 'market-book':{
         const day=Number(document.getElementById('mkt-effective-day')?.value??NaN);
         await runCheckpointed('before-transfer',()=>bookCareerTransfer(world,{revision:world.advancedV1.calendarV1.revision,dealId:id,effectiveDay:day}));

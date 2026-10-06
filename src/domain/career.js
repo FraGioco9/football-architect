@@ -15,6 +15,7 @@ import {hasAdvancedCareer,advanceAdvancedDay,prepareAdvancedRound,simulateAdvanc
 import {hasCareerTraining,settleCareerTrainingSeason,openCareerTrainingSeason} from './career-training.js';
 import {hasCareerYouth,settleCareerYouthSeason} from './career-youth.js';
 import {hasCareerWorld,advanceCareerWorldRound,advanceCareerWorldSeason,syncCareerWorldClock} from './career-world.js';
+import {syncCareerCoachesWorld} from './career-coaches.js';
 import {settleCareerMarketSeason,expireCareerMarketOffers} from './career-market.js';
 import {advanceCareerScouting,settleCareerScoutingSeason} from './career-scouting.js';
 import {advanceCareerAIMarket,settleCareerAIMarketSeason} from './career-ai-market.js';
@@ -27,6 +28,7 @@ import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCaree
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
 import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,addDaysISO} from './career-date.js';
+import {ensureOfficialCareerSystems} from './career-official.js';
 
 export function startCareer(w,clubId,manager){
   ensureCareerDates(w);
@@ -34,6 +36,7 @@ export function startCareer(w,clubId,manager){
   w.clubId=Number(clubId);
   w.manager=String(manager||'Allenatore').trim().slice(0,50)||'Allenatore';
   w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
+  ensureOfficialCareerSystems(w);
   addMessage(w,'Benvenuto sulla panchina',`La dirigenza di ${myClub(w).name} ti ha affidato la prima squadra. Il tuo obiettivo è costruire un progetto competitivo nella competizione ${w.competition||'Lega Aurora'}.`,'welcome',{type:'welcome',params:{club:myClub(w).name,league:w.competition||'Lega Aurora'}});
   addMessage(w,'La stagione sta per iniziare',`Il campionato comprende ${w.teams.length} club e ${w.fixtures.length} giornate. La prima partita sarà contro ${fullName(w,clubMatch(w.fixtures[0],w.clubId).home===w.clubId?clubMatch(w.fixtures[0],w.clubId).away:clubMatch(w.fixtures[0],w.clubId).home)}.`,'calendar',{type:'calendar.start',params:{clubs:w.teams.length,rounds:w.fixtures.length,opponent:fullName(w,clubMatch(w.fixtures[0],w.clubId).home===w.clubId?clubMatch(w.fixtures[0],w.clubId).away:clubMatch(w.fixtures[0],w.clubId).home)}});
   return w;
@@ -191,6 +194,7 @@ function newSeasonMutating(w){
   settleCareerMarketSeason(w);
   w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);
   if(divisionPlan){openCareerDivisionsSeason(w,divisionPlan);w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);}
+  syncCareerCoachesWorld(w);
   const rand=randomFactory(seasonSeed(w.seed,w.season));
   for(const p of w.players){
     if(!youthRollover)p.age++;p.contract=Math.max(1,p.contract-1);p.fitness=95;p.injury=0;p.morale=clamp(p.morale+12,55,95);
