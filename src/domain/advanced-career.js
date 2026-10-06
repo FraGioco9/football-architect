@@ -122,7 +122,7 @@ export function advanceAdvancedDay(w){
 
 /** Compatibility path for callers that still advance a whole match week. */
 export function prepareAdvancedRound(w,{days=7}={}){
-  if(!active(w)||!Number.isSafeInteger(days)||days<0||days>31)invalid('DAY_SPAN');
+  if(!active(w)||!Number.isSafeInteger(days)||days<0||days>120)invalid('DAY_SPAN');
   for(let i=0;i<days;i++)advanceAdvancedDay(w);
 }
 export function settleAdvancedLegacyAbsences(w){
@@ -383,10 +383,11 @@ export function simulateAdvancedMatch(w,m){
 import {synchronizeTacticalLineup} from '../addons/domain/team-tactics-match.mjs';
 function awaitSyncLineup(session,args){return synchronizeTacticalLineup(session,args);}
 /** Season rollover keeps persisted profiles, and the recovery clock is monotonically increasing. */
-export function settleAdvancedSeason(w){
+export function settleAdvancedSeason(w,{days=21}={}){
   if(!active(w))return;
+  if(!Number.isSafeInteger(days)||days<0||days>180)invalid('SEASON_BREAK_DAYS');
   clearCareerTacticPlans(w);
-  const day=w.advancedV1.clockDay+21;
+  const day=w.advancedV1.clockDay+days;
   for(const p of w.players){p.medicalV1=trimMedicalForSave(recoverMedical(p.medicalV1,{day,rest:90,training:5,recovery:p.attributeProfile.values.recovery??50}));p.injury=p.medicalV1.injury?.stage==='recovering'?Math.max(1,Math.ceil(p.medicalV1.injury.daysRemaining/7)):0;p.fitness=Math.round(p.medicalV1.freshness);}
   w.advancedV1.clockDay=day;
   for(const id of Object.keys(w.advancedV1.legacyInjuryRounds)){const p=playerById(w,Number(id));p.medicalV1=trimMedicalForSave(resolveLegacyAbsence(p.medicalV1,{day,cleared:true}));p.injury=0;}

@@ -80,30 +80,41 @@ export function decideFacilityProject(w,{revision,id,decision}={}){return transa
  }
  archive(s,`project_${decision}`,{projectId:project.id});return project.status;
 });}
-/** Apply once at the end of each official 7-day round. The wage bill is *new*
- * named-contract pay above the MGT02 baseline operating staff cost. */
-export function advanceCareerFacilitiesRound(w){if(!facilityEnabled(w))return false;const s=state(w),now=w.advancedV1.clockDay;
- if(now!==s.lastDay+7||now!==s.lastPayrollDay+7)error('CLOCK');
+/** Catch facilities up to the authoritative career clock.
+ * Payroll remains weekly even when matchdays are irregular or the clock moves
+ * one day at a time. Projects use their exact due day. */
+export function advanceCareerFacilitiesRound(w){
+ if(!facilityEnabled(w))return false;
+ const s=state(w),now=w.advancedV1.clockDay;
+ if(!whole(now,0,10000000)||now<s.lastDay||now<s.lastPayrollDay)error('CLOCK');
+ const previousDay=s.lastDay;
+ const weeklyWage=Object.values(s.staff).reduce((total,a)=>total+a.wageEUR,0);
+ let changed=now>previousDay;
+ while(s.lastPayrollDay+7<=now){
+  const payrollDay=s.lastPayrollDay+7;
+  const due=weeklyWage+s.staffArrearsEUR;
+  const payable=Math.min(due,Math.max(0,club(w).balance));
+  if(payable)postCareerFacilityCash(w,`mgt03:payroll:${w.season}:${payrollDay}`,-payable,'staff');
+  s.staffArrearsEUR=due-payable;
+  s.lastPayrollDay=payrollDay;
+  if(s.staffArrearsEUR&&payrollDay%35===0)addMessage(w,'Stipendi staff da saldare',`Compensi differiti: ${s.staffArrearsEUR} EUR.`,'finance',{type:'facilities.payroll',params:{amountEUR:s.staffArrearsEUR}});
+  changed=true;
+ }
  s.lastDay=now;
- const wage=Object.values(s.staff).reduce((total,a)=>total+a.wageEUR,0)+s.staffArrearsEUR;
- // If there is no liquidity, carry a transparently recorded payable forward.
- // Never throw halfway through a played matchday due to a new MGT03 payroll.
- const payable=Math.min(wage,Math.max(0,club(w).balance));
- if(payable)postCareerFacilityCash(w,`mgt03:payroll:${w.season}:${now}`,-payable,'staff');
- s.staffArrearsEUR=wage-payable;s.lastPayrollDay=now;
- if(s.staffArrearsEUR&&now%35===0)addMessage(w,'Stipendi staff da saldare',`Compensi differiti: ${s.staffArrearsEUR} EUR.`,'finance',{type:'facilities.payroll',params:{amountEUR:s.staffArrearsEUR}});
  for(const p of s.projects){if(p.status!=='building'||p.dueDay>now)continue;
   if(s.buildings[p.type].level+1!==p.targetLevel)error('PROJECT_LEVEL');
   s.buildings[p.type].level=p.targetLevel;p.status='completed';
   if(p.type==='stadium')club(w).capacity+=1000*p.targetLevel;
   archive(s,'project_completed',{projectId:p.id,level:p.targetLevel});
   addMessage(w,'Struttura completata',`${p.type}: livello ${p.targetLevel}.`,'finance',{type:'facilities.completed',params:{type:p.type,level:p.targetLevel}});
+  changed=true;
  }
  // Delegation does not fabricate transfers or observations. Scout managers
  // improve reliability within existing MKT03 uncertainty ceilings.
  if(s.delegations.scouting&&w.advancedV1.scoutingV1){const scout=w.advancedV1.scoutingV1;scout.staffLevel=Math.max(scout.staffLevel,Math.min(5,s.staff.scouting.quality));}
- if(now%28===0&&Object.values(s.delegations).some(Boolean))archive(s,'delegated_report',{tasks:Object.entries(s.delegations).filter(([,on])=>on).map(([key])=>key)});
- return true;
+ const crossedReport=Math.floor(now/28)>Math.floor(previousDay/28);
+ if(crossedReport&&Object.values(s.delegations).some(Boolean))archive(s,'delegated_report',{tasks:Object.entries(s.delegations).filter(([,on])=>on).map(([key])=>key)});
+ return changed;
 }
 /** Previous club must retain its facilities; appointment opens a separate budget. */
 export function changeCareerFacilitiesClub(w,previousClubId){if(!facilityEnabled(w))return false;const s=state(w);
@@ -121,7 +132,7 @@ export function openCareerFacilitiesSeason(w){if(!facilityEnabled(w))return fals
  return validateCareerFacilities(w);
 }
 export function validateCareerFacilities(w){const s=w?.advancedV1?.facilitiesV1;if(s===undefined)return true;
- if(!financeEnabled(w)||s?.schemaVersion!==1||s.clubId!==w.clubId||s.season!==w.season||s.lastDay!==w.advancedV1.clockDay||s.lastPayrollDay!==s.lastDay||!whole(s.revision,0,1000000)||!whole(s.sequence,0,1000000)||!whole(s.staffArrearsEUR,0,1000000000000))return false;
+ if(!financeEnabled(w)||s?.schemaVersion!==1||s.clubId!==w.clubId||s.season!==w.season||s.lastDay!==w.advancedV1.clockDay||!whole(s.lastPayrollDay,0,s.lastDay)||s.lastDay-s.lastPayrollDay>=7||!whole(s.revision,0,1000000)||!whole(s.sequence,0,1000000)||!whole(s.staffArrearsEUR,0,1000000000000))return false;
  if(!s.staff||!s.buildings||!s.delegations||!Array.isArray(s.projects)||s.projects.length>100||!Array.isArray(s.events)||s.events.length>160||!Array.isArray(s.formerClubs)||s.formerClubs.length>10)return false;
  const ids=new Set(),live=new Set();
  for(const role of ROLES){const p=s.staff[role];if(!p||p.role!==role||typeof p.id!=='string'||ids.has(p.id)||!whole(p.quality,1,5)||!whole(p.wageEUR,0,100000)||!whole(p.contractUntil,s.season, s.season+20))return false;ids.add(p.id);}
