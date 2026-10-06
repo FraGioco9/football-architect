@@ -16,6 +16,7 @@ export const EVENT_TYPES=Object.freeze({
  'contract.enabled':[],
  'contract.expired':['player'],
  'contract.promise':['player'],
+ 'contract.counter':['player'],
  'youth.promoted':['player','club'],
  'transfer.completed':['player','from','to','amountEURMinor'],
  'transfer.booked':['player','to','day'],
