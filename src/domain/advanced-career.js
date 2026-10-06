@@ -300,16 +300,23 @@ export function simulateAdvancedMatch(w,m){
       if(sim04&&side.teamId!==w.clubId&&minute>=60){
         const count=changes.filter(c=>c.teamId===side.teamId).length;
         if(count>=matchday.rules.maxSubstitutions)continue;
-        const starters=side.ids.map(id=>playerById(w,id)).filter(p=>p.position!=='POR');
+        const starterRows=side.rolePlan.assignments
+          .filter(a=>a.position!=='GK')
+          .map(a=>({assignment:a,player:playerById(w,a.playerId)}))
+          .filter(x=>x.player);
         const ownSide=side.teamId===m.home?'home':'away';
         const goals={home:0,away:0};
         for(const event of session.events)if(event.type==='goal')goals[event.side]++;
         const trailing=goals[ownSide]<goals[ownSide==='home'?'away':'home'];
-        const attack=starters.filter(p=>['ATT','AS','AD','COC'].includes(p.position));
-        const candidates=trailing&&attack.length?attack:starters;
-        const tired=[...candidates].sort((a,b)=>a.fitness-b.fitness||a.id-b.id)[0];
-        if(tired){const incoming=bench.find(p=>p.position===tired.position&&p.ovr>=tired.ovr-15)||bench.find(p=>p.position!=='POR'&&p.ovr>=tired.ovr-15);
-          if(incoming)doChange(side,tired.id,incoming.id,minute,'ai');}
+        const attack=starterRows.filter(x=>['ST','LW','RW','CAM','CF'].includes(x.assignment.position));
+        const candidates=trailing&&attack.length?attack:starterRows;
+        const tiredRow=[...candidates].sort((a,b)=>a.player.fitness-b.player.fitness||a.player.id-b.player.id)[0];
+        if(tiredRow){
+          const tired=tiredRow.player,slotPosition=tiredRow.assignment.position;
+          const incoming=bench.find(p=>toAddonPosition(p.position)===slotPosition&&p.ovr>=tired.ovr-15)
+            ||bench.find(p=>toAddonPosition(p.position)!=='GK'&&p.ovr>=tired.ovr-15);
+          if(incoming)doChange(side,tired.id,incoming.id,minute,'ai');
+        }
       }
     }
   }
