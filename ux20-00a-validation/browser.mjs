@@ -43,9 +43,9 @@ try{
   await summary.waitFor({state:'visible'});
   const summaryText=await summary.innerText();
   assert.match(summaryText,/00A Test Manager/);
-  assert.match(summaryText,/Stagione|Season/);
-  assert.match(summaryText,/Data di gioco|Game date/);
-  assert.match(summaryText,/Ultimo salvataggio|Last save/);
+  assert.match(summaryText,/Stagione|Season/i);
+  assert.match(summaryText,/Data di gioco|Game date/i);
+  assert.match(summaryText,/Ultimo salvataggio|Last save/i);
 
   const actions=page.locator('.fa-menu-actions > .fa-menu-option');
   await actions.first().focus();
@@ -65,9 +65,9 @@ try{
   assert.ok(before&&after);
   assert.ok(Math.abs(before.width-after.width)<1,'IT/EN must not change main stack width');
   await actionContract(page);
-  assert.match(await summary.innerText(),/Manager/);
-  assert.match(await summary.innerText(),/Game date/);
-  assert.match(await summary.innerText(),/Last save/);
+  assert.match(await summary.innerText(),/Manager/i);
+  assert.match(await summary.innerText(),/Game date/i);
+  assert.match(await summary.innerText(),/Last save/i);
 
   await page.setViewportSize({width:390,height:844});
   await page.goto(base+'/',{waitUntil:'networkidle'});
