@@ -207,9 +207,9 @@ export function nextSeasonCalendarPlan(w){
 }
 
 export function openNextSeasonDates(w,{plan=null}={}){
-  ensureCareerDates(w);
+  if(!plan)ensureCareerDates(w);
   const next=plan??nextSeasonCalendarPlan(w);
-  if(!Number.isSafeInteger(next.days)||next.days<0)throw new Error('CAREER_OFFSEASON_DATE');
+  if(!next||!Number.isSafeInteger(next.days)||next.days<0||!isCareerDate(next.seasonStartDate)||!isCareerDate(next.firstMatchDate))throw new Error('CAREER_OFFSEASON_DATE');
   w.calendarModelVersion=CAREER_CALENDAR_VERSION;
   w.seasonCalendarYear=next.seasonYear;
   w.currentDate=next.seasonStartDate;
