@@ -1,4 +1,5 @@
 name: CORE-18 full-system validation
+# rerun after emergency goalkeeper fix
 # rerun after coach rollover fix
 
 on:
