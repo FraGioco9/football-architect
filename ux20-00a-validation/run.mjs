@@ -44,7 +44,7 @@ assert.doesNotMatch(html,/IndexedDB/,'Home must not display storage implementati
 
 assert.match(html,/Francesco/,'active career summary must show manager');
 assert.match(html,/Bologna Città/,'active career summary must show club');
-assert.match(html,/Stagione[^<]*3/,'active career summary must show season');
+assert.match(html,/Stagione<\/dt><dd>3<\/dd>/,'active career summary must show season');
 assert.match(html,/16 set 2028/i,'active career summary must show in-game date');
 assert.match(html,/06\/10\/2026|6 ott 2026|06 ott 2026/i,'active career summary must show last save');
 
