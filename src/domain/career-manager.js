@@ -74,6 +74,23 @@ function syncEmployment(w){
  s.status=status;
 }
 const countries=w=>w.advancedV1.worldV1.leagues;
+function syncManagerCoachesWorld(w){
+ const s=state(w);
+ for(const league of countries(w)){
+  const clubs=(league.locked?w.teams:league.clubs).filter(c=>!(league.countryId===w.countryId&&c.id===w.clubId));
+  const existing=new Map((s.coaches[league.countryId]??[]).map(c=>[c.clubId,c]));
+  s.coaches[league.countryId]=clubs.map(c=>existing.get(c.id)??({
+    clubId:c.id,
+    name:names[Math.abs((c.id*7+league.countryId.charCodeAt(0))%names.length)],
+    reputation:clamp(Math.round((c.reputation??50)*.68+15),20,95),
+    contractUntil:w.season+2,
+    status:c.id%9===0?'vacant':'active',
+    vacancyRound:c.id%9===0?w.round:null
+  }));
+ }
+ for(const country of Object.keys(s.coaches))if(!countries(w).some(l=>l.countryId===country))delete s.coaches[country];
+}
+
 export function managerVacancies(w){
  if(!managerCareerEnabled(w))return [];
  const s=state(w),jobs=[];
@@ -241,6 +258,7 @@ export function openManagerCareerSeason(w){
  if(!managerCareerEnabled(w))return false;
  const s=state(w);if(s.lastRound.season!==w.season-1)fail('SEASON_SYNC');
  syncEmployment(w);
+ syncManagerCoachesWorld(w);
  for(const o of s.offers)if(o.status==='open')o.status='expired';
  for(const coaches of Object.values(s.coaches))for(const c of coaches){
   if(c.status==='active'&&c.contractUntil<=w.season){
@@ -248,6 +266,7 @@ export function openManagerCareerSeason(w){
    else {c.status='vacant';c.vacancyRound=0;s.aiHistory.push({season:w.season,round:0,clubId:c.clubId,type:'departure',coach:c.name});}
   }
  }
+ if(s.aiHistory.length>250)s.aiHistory.splice(0,s.aiHistory.length-250);
  s.lastRound={season:w.season,round:0};event(w,'new_season',String(w.season));return true;
 }
 export function validateManagerCareer(w){
