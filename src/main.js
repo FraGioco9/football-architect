@@ -28,7 +28,7 @@ import {createControlHints} from './controls-system.js';
 import {createDialogCoordinator} from './dialog-system.js';
 import {createFeedbackCenter} from './feedback-system.js';
 import {ensureCareerDates,fixtureIsDue,nextFixtureDate,addDaysISO,formatCareerDate} from './domain/career-date.js';
-import {careerMessageRequiresUserInput} from './domain/history.js';
+import {firstCareerInputMessage} from './domain/history.js';
 import {ensureOfficialCareerSystems,officialCareerSystemsReady} from './domain/career-official.js';
 import {MARKET_VIEWS,marketCostPreview} from './market-view-model.js';
 import {displayCareerMoney} from './domain/career-locale.js';
@@ -449,7 +449,6 @@ async function runCheckpointed(kind,apply){
 }
 async function commitContinuousAdvanceTick({calendarConfirmationToken=null}={}){
   const before=JSON.stringify(world);
-  const knownMessageIds=new Set((world.inbox||[]).map(message=>String(message.id)));
   let result;
   try{
     result=advanceDay(world,{calendarConfirmationToken});
@@ -468,7 +467,7 @@ async function commitContinuousAdvanceTick({calendarConfirmationToken=null}={}){
   // The primary IndexedDB commit above is authoritative for every day.
   // Mirror the optional recovery vault only when the continuous run stops:
   // mirroring every tick races the changing catalog and can produce stale-copy warnings.
-  const blockingMessage=(world.inbox||[]).find(message=>!knownMessageIds.has(String(message.id))&&careerMessageRequiresUserInput(message))||null;
+  const blockingMessage=firstCareerInputMessage(world);
   return {result,blockingMessage};
 }
 function continuousCalendarNotice(){
@@ -482,7 +481,21 @@ async function runContinuousAdvance(){
   const token=++continuousAdvanceToken;
   ui.continuing=true;ui.continuationBlocker=null;ui.modal=null;render();
   try{
+    const existingBlocker=firstCareerInputMessage(world);
+    if(existingBlocker){
+      ui.continuing=false;ui.continuationBlocker={type:'mail',id:existingBlocker.id};ui.page='inbox';ui.openMail=existingBlocker.id;ui.modal=null;
+      render();
+      toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
+      return;
+    }
     await runCheckpointed('before-day',()=>null);
+    const checkpointBlocker=firstCareerInputMessage(world);
+    if(checkpointBlocker){
+      ui.continuing=false;ui.continuationBlocker={type:'mail',id:checkpointBlocker.id};ui.page='inbox';ui.openMail=checkpointBlocker.id;ui.modal=null;
+      void queueVaultSync();render();
+      toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
+      return;
+    }
     while(ui.continuing&&token===continuousAdvanceToken&&world.round<world.fixtures.length){
       ensureCareerDates(world);
       const notice=continuousCalendarNotice();
