@@ -32,7 +32,9 @@ await withFreshPage(async page=>{
   await page.locator('[data-action="start-career"]').click();
   await page.waitForTimeout(200);
   check(new URL(page.url()).pathname==='/careers/new','blank manager name must keep the user on /careers/new');
-  check((await field.getAttribute('aria-invalid'))==='true','blank manager name must mark the field aria-invalid');
+  const fieldStillPresent=await page.locator('#manager-name').count()===1;
+  check(fieldStillPresent,'blank manager name must keep the manager field visible');
+  if(fieldStillPresent)check((await page.locator('#manager-name').getAttribute('aria-invalid'))==='true','blank manager name must mark the field aria-invalid');
   check(await page.locator('#manager-name-error:not([hidden])').count()===1,'blank manager name must show an inline validation message');
 });
 
