@@ -270,6 +270,60 @@ export function decorateCompetitionMatches(matches,{date,kickoff}={}){
   return matches;
 }
 
+export function validateFixtureRescheduleState(round){
+  if(round?.rescheduleHistory===undefined)return true;
+  if(!Array.isArray(round.rescheduleHistory)||round.rescheduleHistory.length>8)return false;
+  return round.rescheduleHistory.every((entry,index)=>entry&&isCareerDate(entry.fromDate)&&isCareerDate(entry.toDate)
+    &&entry.fromDate!==entry.toDate&&isCareerDate(entry.changedOn)
+    &&typeof entry.reason==='string'&&entry.reason.length>=1&&entry.reason.length<=120
+    &&(index===0||round.rescheduleHistory[index-1].toDate===entry.fromDate));
+}
+
+function occupiedCompetitionDates(w){
+  const dates=new Set();
+  const cups=w?.advancedV1?.cupsV1?.cups??[];
+  for(const cup of cups)for(const round of cup.rounds??[])if(isCareerDate(round.date))dates.add(round.date);
+  const edition=w?.advancedV1?.continentalV1?.edition;
+  if(edition)for(const round of [...(edition.groupRounds??[]),...(edition.knockout??[])])if(isCareerDate(round.date))dates.add(round.date);
+  return dates;
+}
+
+/**
+ * Future-proof postponement/recovery primitive.
+ * It deliberately moves a whole league matchday because league standings are
+ * settled atomically by round. Individual match postponements can later be
+ * layered on top without changing the persisted history contract.
+ */
+export function rescheduleLeagueRound(w,roundNumber,{date,reason='calendar',kickoffs=null}={}){
+  ensureCareerDates(w);
+  if(!Number.isSafeInteger(roundNumber)||roundNumber<1||roundNumber>w.fixtures.length)throw new Error('CAREER_RESCHEDULE_ROUND');
+  if(!isCareerDate(date)||date<=w.currentDate)throw new Error('CAREER_RESCHEDULE_DATE');
+  const round=w.fixtures[roundNumber-1];
+  if(roundNumber<=w.round||round.matches.some(m=>m.result))throw new Error('CAREER_RESCHEDULE_PLAYED');
+  if(round.date===date)return round;
+
+  const previous=w.fixtures[roundNumber-2]?.date??null,next=w.fixtures[roundNumber]?.date??null;
+  if(previous&&daysBetweenISO(previous,date)<3)throw new Error('CAREER_RESCHEDULE_PREVIOUS_GAP');
+  if(next&&daysBetweenISO(date,next)<3)throw new Error('CAREER_RESCHEDULE_NEXT_GAP');
+  if(occupiedCompetitionDates(w).has(date))throw new Error('CAREER_RESCHEDULE_COMPETITION_COLLISION');
+
+  if(kickoffs!==null&&(!Array.isArray(kickoffs)||kickoffs.length!==round.matches.length||kickoffs.some(x=>!isCareerKickoff(x))))throw new Error('CAREER_RESCHEDULE_KICKOFFS');
+  const fromDate=round.date,changedOn=w.currentDate,cleanReason=String(reason||'calendar').trim().slice(0,120)||'calendar';
+  round.rescheduleHistory=Array.isArray(round.rescheduleHistory)?round.rescheduleHistory:[];
+  round.rescheduleHistory.push({fromDate,toDate:date,changedOn,reason:cleanReason});
+  if(round.rescheduleHistory.length>8)round.rescheduleHistory.shift();
+
+  round.date=date;
+  round.slot=[0,6].includes(weekday(date))?'weekend':'midweek';
+  for(let i=0;i<round.matches.length;i++){
+    const match=round.matches[i],kickoff=kickoffs?.[i]??match.kickoff;
+    if(!isCareerKickoff(kickoff))throw new Error('CAREER_RESCHEDULE_KICKOFF');
+    match.date=date;match.kickoff=kickoff;match.datetime=`${date}T${kickoff}:00`;
+  }
+  if(roundNumber===1)w.firstMatchDate=date;
+  return round;
+}
+
 export function advanceCareerDate(w){
   ensureCareerDates(w);
   w.currentDate=addDaysISO(w.currentDate,1);
