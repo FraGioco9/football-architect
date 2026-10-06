@@ -44,8 +44,6 @@ try{
   const cards=page.locator('.career-card');
   check(await cards.count()===2,'fixture must expose two career cards');
 
-  const cardTexts=await cards.allInnerTexts();
-  console.log('CAREER_CARD_ORDER',JSON.stringify(cardTexts));
   const firstText=(await cards.first().innerText()).trim();
   check(firstText.includes('Manager Alpha'),'the active career must be sorted first');
   check(firstText.includes('Attiva'),'the first card must visibly identify the active career');
@@ -75,6 +73,31 @@ try{
     check(await security.locator('[data-action="request-storage-persistence"]').count()===1,'storage protection must remain available in Security and recovery');
   }
   check(await page.locator('.career-transfer-toolbar').count()===0,'the old technical transfer toolbar must not remain in the primary hierarchy');
+
+  // Keyboard/focus contract for More actions and its dialogs.
+  const activeCard=cards.first();
+  const more=activeCard.locator('[data-action="career-more"]');
+  await more.focus();
+  await page.keyboard.press('Enter');
+  check((await more.getAttribute('aria-expanded'))==='true','More must open from the keyboard');
+  const rename=activeCard.locator('[data-action="career-rename"]');
+  check(await rename.isVisible(),'Rename must be reachable after opening More');
+  await rename.focus();
+  await page.keyboard.press('Enter');
+  check(await page.locator('[data-dialog-kind="career-rename"]').count()===1,'Rename dialog must open from the keyboard');
+  await page.locator('[data-action="close-modal"]').first().click();
+  await page.waitForTimeout(50);
+  check(await rename.evaluate(el=>document.activeElement===el),'focus must return to the More action that opened the dialog');
+
+  // English and mobile layout.
+  const combo=page.locator('[data-language-picker="careers"] [role="combobox"]');
+  await combo.click();
+  await page.locator('[data-language-listbox="careers"] [data-value="en"]').click();
+  check((await page.locator('h1').first().innerText()).includes('Your careers'),'Careers heading must translate to English');
+  check((await cards.first().innerText()).includes('Game date'),'career metadata must translate Game date to English');
+  await page.setViewportSize({width:390,height:844});
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth);
+  check(!overflow,'Careers page must not overflow horizontally on mobile');
 
   check(runtimeErrors.length===0,'browser runtime errors: '+runtimeErrors.join(' | '));
 }finally{
