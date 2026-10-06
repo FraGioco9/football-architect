@@ -1,6 +1,7 @@
 // UX2-07: presentational match centre. No engine/storage imports or mutations.
 import {esc} from './ui-components.js';
 import {clubById,clubPlayers} from './engine.js';
+import {formatCareerDateTime} from './domain/career-date.js';
 
 const say=(lang,it,en)=>lang==='en'?en:it;
 const number=(v)=>Number.isFinite(Number(v))?Number(v):0;
@@ -20,7 +21,7 @@ export function matchPreparation(world,fixture,lang='it',{advanced=false,preview
   const home=clubById(world,fixture.home),away=clubById(world,fixture.away),ready=matchReadiness(world);
   const tr=(it,en)=>say(lang,it,en);
   return `<section class="match-center-preparation panel" aria-label="${tr('Preparazione partita','Match preparation')}">
-    <div class="match-center-preparation-heading"><span class="eyebrow">${tr('PRIMA DEL FISCHIO','BEFORE KICKOFF')}</span><h3>${tr('Prepara la prossima partita','Prepare the next match')}</h3><p>${esc(home?.name||'—')} · ${tr('contro','versus')} · ${esc(away?.name||'—')}${home?.stadium?` · ${esc(home.stadium)}`:''}</p></div>
+    <div class="match-center-preparation-heading"><span class="eyebrow">${tr('PRIMA DEL FISCHIO','BEFORE KICKOFF')}</span><h3>${tr('Prepara la prossima partita','Prepare the next match')}</h3><p>${esc(home?.name||'—')} · ${tr('contro','versus')} · ${esc(away?.name||'—')}${home?.stadium?` · ${esc(home.stadium)}`:''}</p><p class="match-scheduled-at"><strong>${formatCareerDateTime(fixture.date,fixture.kickoff,lang)}</strong></p></div>
     <div class="match-center-preparation-metrics" role="group" aria-label="${tr('Disponibilità formazione','Lineup readiness')}">
       <div><span>${tr('Titolari','Starters')}</span><strong>${ready.starters}/11</strong></div>
       <div><span>${tr('Indisponibili tra i titolari','Unavailable starters')}</span><strong>${ready.unavailable}</strong></div>
