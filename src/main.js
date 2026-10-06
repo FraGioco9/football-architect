@@ -741,11 +741,18 @@ async function handleImport(file){
 }
 let actionBusy=false;
 root.addEventListener('click',async ev=>{
-  const target=ev.target.closest('[data-action]');if(!target||actionBusy)return;
+  const target=ev.target.closest('[data-action]');if(!target)return;
+  const action=target.dataset.action,id=target.dataset.id,field=target.dataset.value,index=Number(target.dataset.index);
+  // Stop must remain responsive even while another click action is completing.
+  if(action==='stop-advance'){
+    if(stopContinuousAdvance({renderNow:true}))toast(ui.language==='en'?'Simulation stopped safely.':'Simulazione interrotta in sicurezza.','info');
+    return;
+  }
+  if(actionBusy)return;
   actionBusy=true;
+  let startContinuousAfterCommit=false;
   const previousWorld=world;
   dialogCoordinator.noteOpener(target);
-  const action=target.dataset.action,id=target.dataset.id,field=target.dataset.value,index=Number(target.dataset.index);
   // Re-rendering a radio group should not discard keyboard focus after using arrows.
   const restoreRadioFocus=()=>{
     if(ev.detail!==0||!target.matches('input[type="radio"]'))return;
@@ -1033,11 +1040,7 @@ root.addEventListener('click',async ev=>{
         updatePreviewSurface();break;
       }
       case 'advance':{
-        await runContinuousAdvance();
-        break;
-      }
-      case 'stop-advance':{
-        if(stopContinuousAdvance({renderNow:true}))toast(ui.language==='en'?'Simulation stopped safely.':'Simulazione interrotta in sicurezza.','info');
+        startContinuousAfterCommit=true;
         break;
       }
       case 'play-matchday':{
@@ -1243,15 +1246,20 @@ root.addEventListener('click',async ev=>{
     reportError(err.message||'Si è verificato un errore.');console.error(err);
   }
   finally {
+    let commitSucceeded=true;
     try {
       const result=await primary.commit();
       if(result.changed)void queueVaultSync();
     } catch(error) {
+      commitSucceeded=false;
       primary.rollback();
       try{world=loadActiveCareer(careerStorage,validateSave,makeWorld);}catch{world=previousWorld;}
       blockedSaveError=error;ui.storageWarning='Salvataggio IndexedDB non verificato: operazioni bloccate. Esporta un backup di emergenza. '+(error.message||'');
       reportError(readableStorageError(error));render();
-    } finally {actionBusy=false;}
+    } finally {
+      actionBusy=false;
+      if(commitSucceeded&&startContinuousAfterCommit)void runContinuousAdvance();
+    }
   }
 });
 root.addEventListener('input',ev=>{
