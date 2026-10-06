@@ -24,6 +24,18 @@ In alternativa puoi eseguire `avvia-windows.bat`.
 
 Non servono Docker, build, concatenazione di file base64 o `npm install`.
 
+
+## Calendario carriera
+
+La carriera usa date di calendario reali:
+
+- una nuova carriera parte dalla data corrente;
+- **Continua** avanza di un solo giorno per click;
+- le giornate di campionato hanno una data precisa e vengono simulate soltanto quando quella data viene raggiunta;
+- allenamento, recupero medico e scadenze collegate al calendario seguono il tempo della carriera;
+- le date sono salvate con la carriera e mostrate nell'interfaccia;
+- tra due stagioni è previsto un intervallo di 21 giorni, poi la prima giornata della nuova stagione è fissata 7 giorni dopo.
+
 ## Modifiche e test locali
 
 Il gioco è direttamente nel repository:
