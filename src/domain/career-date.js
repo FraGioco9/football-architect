@@ -202,7 +202,7 @@ export function nextSeasonCalendarPlan(w){
   let seasonYear=(Number.isSafeInteger(w.seasonCalendarYear)?w.seasonCalendarYear:inferYear(w.seasonStartDate)??careerCampaignYear(w.currentDate,w.countryId))+1;
   let seasonStartDate=careerPreseasonStart(w.countryId,seasonYear);
   while(seasonStartDate<=w.currentDate){seasonYear++;seasonStartDate=careerPreseasonStart(w.countryId,seasonYear);}
-  const firstMatchDate=careerFirstLeagueDate(w.countryId,seasonYear,{seed:w.seed,season:w.season});
+  const firstMatchDate=careerFirstLeagueDate(w.countryId,seasonYear,{seed:w.seed,season:w.season+1});
   return {seasonYear,seasonStartDate,firstMatchDate,days:daysBetweenISO(w.currentDate,seasonStartDate)};
 }
 
