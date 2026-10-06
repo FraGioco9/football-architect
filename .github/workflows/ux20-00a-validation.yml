@@ -8,7 +8,7 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,5 +18,25 @@ jobs:
         run: |
           node --input-type=module --check < src/home-menu.js
           node --input-type=module --check < ux20-00a-validation/run.mjs
+          node --input-type=module --check < ux20-00a-validation/browser.mjs
       - name: 00A home contract
         run: node ux20-00a-validation/run.mjs
+      - name: Install browser test dependency
+        working-directory: ux20-00a-validation
+        run: |
+          npm init -y
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start Football Architect
+        run: |
+          node server.mjs > ux20-00a-server.log 2>&1 &
+          echo $! > ux20-00a-server.pid
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:2000/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat ux20-00a-server.log
+          exit 1
+      - name: Desktop mobile IT EN keyboard gate
+        working-directory: ux20-00a-validation
+        run: node browser.mjs
