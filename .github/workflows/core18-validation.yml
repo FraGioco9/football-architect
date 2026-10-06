@@ -1,0 +1,106 @@
+name: CORE-18 full-system validation
+
+on:
+  push:
+    branches:
+      - core/issue-18-auto-systems
+    paths:
+      - .github/workflows/core18-validation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Syntax
+        run: |
+          find src -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+          node --check server.mjs
+
+      - name: Official systems gate
+        run: |
+          cat > .core18-test.mjs <<'EOF'
+          import {makeWorld,FORMATIONS} from './src/data.js';
+          import {startCareer,simulateRound,newSeason} from './src/domain/career.js';
+          import {makeDefaultLineup} from './src/domain/lineups.js';
+          import {validateSave} from './src/domain/save-validation.js';
+          import {
+            OFFICIAL_SYSTEM_KEYS,
+            ensureOfficialCareerSystems,
+            officialCareerSystemStatus,
+            officialCareerSystemsReady
+          } from './src/domain/career-official.js';
+          import {LEAGUES} from './src/leagues.js';
+
+          const assert=(ok,msg,data={})=>{if(!ok)throw new Error(msg+' '+JSON.stringify(data));};
+
+          // New careers: everything is standard, no opt-in.
+          for(const league of LEAGUES){
+            const w=makeWorld(181800+league.id.charCodeAt(0),league.id);
+            startCareer(w,1,'CORE New');
+            const status=officialCareerSystemStatus(w);
+            assert(officialCareerSystemsReady(w),'new career missing official systems',{country:league.id,status});
+            assert(OFFICIAL_SYSTEM_KEYS.every(k=>status[k]===true),'status matrix incomplete',{country:league.id,status});
+            assert(validateSave(w),'new full career invalid',{country:league.id});
+          }
+
+          // Legacy valid save: no advancedV1 at all. Migration must be one-shot and idempotent.
+          {
+            const w=makeWorld(181899,'IT');
+            w.clubId=1;
+            w.manager='Legacy Manager';
+            w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
+            assert(validateSave(w),'legacy baseline unexpectedly invalid');
+            const first=ensureOfficialCareerSystems(w);
+            assert(first.changed&&first.enabled.length===OFFICIAL_SYSTEM_KEYS.length,'legacy migration did not enable every official system',{first});
+            assert(officialCareerSystemsReady(w)&&validateSave(w),'migrated save invalid');
+            const snapshot=JSON.stringify(w);
+            const second=ensureOfficialCareerSystems(w);
+            assert(!second.changed&&second.enabled.length===0,'bootstrap not idempotent',{second});
+            assert(JSON.stringify(w)===snapshot,'idempotent bootstrap mutated career');
+          }
+
+          // Multi-season stability across all eight countries.
+          // Board dismissal is a legitimate gameplay outcome; keep trust at 100
+          // so this gate tests system persistence rather than manager performance.
+          for(const league of LEAGUES){
+            const w=makeWorld(182000+league.id.charCodeAt(0),league.id);
+            startCareer(w,1,'CORE Stability');
+            for(let seasonIndex=0;seasonIndex<10;seasonIndex++){
+              while(w.round<w.fixtures.length){
+                if(w.advancedV1?.boardV1){
+                  w.advancedV1.boardV1.trust=100;
+                  w.advancedV1.boardV1.warnings=0;
+                  w.advancedV1.boardV1.status='active';
+                }
+                if(w.advancedV1?.managerV1)w.advancedV1.managerV1.status='active';
+                simulateRound(w);
+                assert(officialCareerSystemsReady(w),'system disabled mid-season',{country:league.id,season:w.season,round:w.round,status:officialCareerSystemStatus(w)});
+              }
+              assert(validateSave(w),'season-end save invalid',{country:league.id,season:w.season});
+              if(seasonIndex<9){
+                if(w.advancedV1?.boardV1){
+                  w.advancedV1.boardV1.trust=100;
+                  w.advancedV1.boardV1.warnings=0;
+                  w.advancedV1.boardV1.status='active';
+                }
+                if(w.advancedV1?.managerV1)w.advancedV1.managerV1.status='active';
+                newSeason(w);
+                assert(officialCareerSystemsReady(w),'system disabled after rollover',{country:league.id,season:w.season,status:officialCareerSystemStatus(w)});
+                assert(validateSave(w),'post-rollover save invalid',{country:league.id,season:w.season});
+              }
+            }
+            console.log('CORE18_COUNTRY_PASS',league.id,w.season);
+          }
+          console.log('CORE18_ALL_PASS');
+          EOF
+          node .core18-test.mjs
+          rm .core18-test.mjs
