@@ -81,7 +81,10 @@ jobs:
           const assert=(ok,msg,data={})=>{if(!ok)throw new Error(msg+' '+JSON.stringify(data));};
           const box=async loc=>{const b=await loc.boundingBox();return {w:Math.round(b?.width||0),h:Math.round(b?.height||0)};};
 
-          async function chooseLanguage(page,label){
+          async function chooseLanguage(page,value){
+            const native=page.locator('.language-switch select').first();
+            const index=await native.locator('option').evaluateAll((opts,target)=>opts.findIndex(option=>option.value===target),value);
+            assert(index>=0,'language option value missing',{value});
             const trigger=page.locator('.language-switch .fa-select-trigger').first();
             await trigger.waitFor({state:'visible',timeout:10000});
             await trigger.click();
@@ -90,7 +93,7 @@ jobs:
             const style=await menu.evaluate(el=>({bg:getComputedStyle(el).backgroundColor,radius:getComputedStyle(el).borderRadius}));
             assert(style.bg!=='rgba(0, 0, 0, 0)'&&style.bg!=='transparent','custom dropdown surface is transparent',style);
             assert(parseFloat(style.radius)>0,'custom dropdown has no themed radius',style);
-            await menu.locator('.fa-select-option',{hasText:label}).click();
+            await menu.locator(`.fa-select-option[data-index="${index}"]`).click();
           }
 
           async function run(browserName){
@@ -122,7 +125,7 @@ jobs:
               assert(await native.getAttribute('aria-hidden')==='true','native select was not progressively hidden');
               assert(await custom.getAttribute('role')==='combobox','custom select trigger lacks combobox role');
 
-              await chooseLanguage(page,'English');
+              await chooseLanguage(page,'en');
               await page.locator('.fa-menu-main').waitFor({state:'visible'});
               assert(await page.locator('.language-switch select').first().inputValue()==='en','custom dropdown did not update native select');
 
@@ -131,7 +134,7 @@ jobs:
               const homeEn=await box(page.locator('[data-action="menu-home"]').first());
               const careersEn=await box(page.locator('[data-action="open-careers"]').first());
 
-              await chooseLanguage(page,'Italiano');
+              await chooseLanguage(page,'it');
               await page.locator('.onboarding').waitFor({state:'visible'});
               const homeIt=await box(page.locator('[data-action="menu-home"]').first());
               const careersIt=await box(page.locator('[data-action="open-careers"]').first());
