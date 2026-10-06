@@ -62,7 +62,7 @@ jobs:
             const legacyActions=['personality-enable','board-enable','manager-enable','contracts-enable','sim04-enable','finance-enable','facility-enable'];
             const pages=['dashboard','squad','tactics','finance','board','manager','settings'];
             for(const target of pages){
-              const nav=page.locator(`button[data-action="nav"][data-page="${target}"]`).first();
+              const nav=page.locator(`button[data-action="nav"][data-page="${target}"]:visible`).first();
               if(await nav.count()){
                 await nav.click();
                 await page.waitForTimeout(100);
