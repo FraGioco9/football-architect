@@ -50,7 +50,14 @@ async function startCareerThroughUi(page,baseURL){
     })).filter(x=>/next|continue|start|create|begin|confirm|avanti|continua|inizia|crea|conferma/i.test(x.action+' '+x.text)&&!/menu-continue/i.test(x.action)));
     steps.push({step,candidates:candidates.slice(0,12)});
     if(!candidates.length)break;
-    await buttons.nth(candidates[0].index).click().catch(()=>{});
+    const chosen=candidates[0];
+    await buttons.nth(chosen.index).click().catch(()=>{});
+    if(chosen.action==='start-career'){
+      await page.locator('.dashboard-hero').first().waitFor({state:'visible',timeout:5000}).catch(()=>{});
+      const dashboardVisible=await page.locator('.dashboard-hero').first().isVisible().catch(()=>false);
+      if(!dashboardVisible)return {ok:false,reason:'dashboard did not appear immediately after start-career without refresh or second action',fresh,steps};
+      return {ok:true,fresh,steps};
+    }
     await page.waitForTimeout(250);
   }
   return {ok:await page.locator('.dashboard-hero').first().isVisible().catch(()=>false),fresh,steps};
