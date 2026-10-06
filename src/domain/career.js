@@ -33,8 +33,10 @@ import {ensureOfficialCareerSystems} from './career-official.js';
 export function startCareer(w,clubId,manager){
   ensureCareerDates(w);
   if(!clubById(w,clubId))throw new Error('Club non valido.');
+  const managerName=typeof manager==='string'?manager.trim():'';
+  if(!managerName)throw new Error('Nome allenatore obbligatorio.');
   w.clubId=Number(clubId);
-  w.manager=String(manager||'Allenatore').trim().slice(0,50)||'Allenatore';
+  w.manager=managerName.slice(0,50);
   w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
   ensureOfficialCareerSystems(w);
   addMessage(w,'Benvenuto sulla panchina',`La dirigenza di ${myClub(w).name} ti ha affidato la prima squadra. Il tuo obiettivo è costruire un progetto competitivo nella competizione ${w.competition||'Lega Aurora'}.`,'welcome',{type:'welcome',params:{club:myClub(w).name,league:w.competition||'Lega Aurora'}});
