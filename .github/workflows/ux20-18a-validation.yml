@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Domain 18A contract
+        run: node ux20-18a-validation/domain.mjs
       - name: Install browser
         working-directory: ux20-18a-validation
         run: |
