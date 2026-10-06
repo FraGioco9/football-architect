@@ -43,6 +43,8 @@ try{
   const cards=page.locator('.career-card');
   check(await cards.count()===2,'fixture must expose two career cards');
 
+  const cardTexts=await cards.allInnerTexts();
+  console.log('CAREER_CARD_ORDER',JSON.stringify(cardTexts));
   const firstText=(await cards.first().innerText()).trim();
   check(firstText.includes('Manager Alpha'),'the active career must be sorted first');
   check(firstText.includes('Attiva'),'the first card must visibly identify the active career');
