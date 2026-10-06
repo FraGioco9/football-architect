@@ -11,7 +11,7 @@ import {addMessage} from './history.js';
 import {table} from './standings.js';
 import {simulateMatch} from './match.js';
 import {compactMoney} from './format.js';
-import {hasAdvancedCareer,prepareAdvancedRound,simulateAdvancedMatch,settleAdvancedLegacyAbsences,settleAdvancedSeason} from './advanced-career.js';
+import {hasAdvancedCareer,advanceAdvancedDay,prepareAdvancedRound,simulateAdvancedMatch,settleAdvancedLegacyAbsences,settleAdvancedSeason} from './advanced-career.js';
 import {hasCareerTraining,settleCareerTrainingSeason,openCareerTrainingSeason} from './career-training.js';
 import {hasCareerYouth,settleCareerYouthSeason} from './career-youth.js';
 import {hasCareerWorld,advanceCareerWorldRound,advanceCareerWorldSeason,syncCareerWorldClock} from './career-world.js';
@@ -26,8 +26,10 @@ import {advanceManagerCareerRound,settleManagerCareerSeason,openManagerCareerSea
 import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCareerPrize,closeCareerFinanceSeason,openCareerFinanceSeason} from './career-finance.js';
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
+import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates} from './career-date.js';
 
 export function startCareer(w,clubId,manager){
+  ensureCareerDates(w);
   if(!clubById(w,clubId))throw new Error('Club non valido.');
   w.clubId=Number(clubId);
   w.manager=String(manager||'Allenatore').trim().slice(0,50)||'Allenatore';
@@ -37,19 +39,54 @@ export function startCareer(w,clubId,manager){
   return w;
 }
 
-export function simulateRound(w,{calendarConfirmationToken=null}={}){
+export function advanceDay(w,{calendarConfirmationToken=null,simulateDueMatch=true}={}){
+  const candidate=structuredClone(w);
+  const result=advanceDayMutating(candidate,{calendarConfirmationToken,simulateDueMatch});
+  Object.assign(w,candidate);
+  return result;
+}
+function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=true}={}){
+  ensureCareerDates(w);
+  if(fixtureIsDue(w)){
+    if(!simulateDueMatch)return {date:w.currentDate,advanced:false,matchDue:true,match:null};
+    const match=simulateRoundMutating(w,{calendarConfirmationToken,advanceDays:0,calendarAlreadySettled:true});
+    return {date:w.currentDate,advanced:false,matchDue:false,match};
+  }
+  const calendarPreview=calendarEnabled(w)?previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+1}):null;
+  if(calendarPreview)processCareerCalendarRound(w,{confirmationToken:calendarConfirmationToken,preview:calendarPreview});
+  advanceCareerDate(w);
+  if(hasAdvancedCareer(w)){
+    advanceAdvancedDay(w);
+    if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');
+    if(hasCareerWorld(w))syncCareerWorldClock(w);
+  }
+  if(calendarPreview)settleCareerCalendarRound(w,{preview:calendarPreview});
+  expireCareerMarketOffers(w);
+  advanceCareerScouting(w);
+  let match=null,matchDue=fixtureIsDue(w);
+  if(matchDue&&simulateDueMatch){
+    match=simulateRoundMutating(w,{calendarConfirmationToken,advanceDays:0,calendarAlreadySettled:true});
+    matchDue=false;
+  }
+  w.updatedAt=new Date().toISOString();
+  return {date:w.currentDate,advanced:true,matchDue,match};
+}
+
+export function simulateRound(w,{calendarConfirmationToken=null,advanceDays=7,calendarAlreadySettled=false}={}){
   // Advanced transitions are transactional: a failure never half-plays a matchday.
   if(hasAdvancedCareer(w)){
     const candidate=structuredClone(w);
-    simulateRoundMutating(candidate,{calendarConfirmationToken});
+    simulateRoundMutating(candidate,{calendarConfirmationToken,advanceDays,calendarAlreadySettled});
     Object.assign(w,candidate);
     return clubMatch(w.fixtures[w.round-1],w.clubId);
   }
-  return simulateRoundMutating(w,{calendarConfirmationToken});
+  return simulateRoundMutating(w,{calendarConfirmationToken,advanceDays,calendarAlreadySettled});
 }
-function simulateRoundMutating(w,{calendarConfirmationToken=null}={}){
+function simulateRoundMutating(w,{calendarConfirmationToken=null,advanceDays=7,calendarAlreadySettled=false}={}){
+  ensureCareerDates(w);
+  if(!Number.isSafeInteger(advanceDays)||advanceDays<0||advanceDays>31)throw new Error('CAREER_ADVANCE_DAYS');
   if(financeEnabled(w))reconcileCareerFinance(w,{reason:'round'});
-  const calendarPreview=calendarEnabled(w)?previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+7}):null;
+  const calendarPreview=calendarEnabled(w)&&!calendarAlreadySettled&&advanceDays>0?previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+advanceDays}):null;
   if(calendarPreview)processCareerCalendarRound(w,{confirmationToken:calendarConfirmationToken,preview:calendarPreview});
   if(boardEnabled(w)&&boardStatus(w)!=='active')throw new Error('MGT01_MANAGER_NOT_ACTIVE');
   if(!w.clubId)throw new Error('Seleziona prima un club.');
@@ -59,8 +96,11 @@ function simulateRoundMutating(w,{calendarConfirmationToken=null}={}){
   const rand=randomFactory(roundSeed(w.seed,w.season,week.round));
   const enhanced=hasAdvancedCareer(w);
   const recovering=enhanced?[]:w.players.filter(p=>p.injury>0).map(p=>p.id);
-  if(enhanced)prepareAdvancedRound(w);
-  else for(const p of w.players)p.fitness=clamp(p.fitness+12,0,100);
+  if(advanceDays>0){
+    for(let day=0;day<advanceDays;day++)advanceCareerDate(w);
+    if(enhanced){prepareAdvancedRound(w,{days:advanceDays});if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');}
+  }
+  if(!enhanced&&advanceDays>0)for(const p of w.players)p.fitness=clamp(p.fitness+12,0,100);
   for(const match of week.matches){
     if(enhanced)simulateAdvancedMatch(w,match);
     else simulateMatch(w,match,rand);
@@ -152,6 +192,7 @@ function newSeasonMutating(w){
   settleCareerMarketSeason(w);
   w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);
   if(divisionPlan){openCareerDivisionsSeason(w,divisionPlan);w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);}
+  openNextSeasonDates(w);
   const rand=randomFactory(seasonSeed(w.seed,w.season));
   for(const p of w.players){
     if(!youthRollover)p.age++;p.contract=Math.max(1,p.contract-1);p.fitness=95;p.injury=0;p.morale=clamp(p.morale+12,55,95);
