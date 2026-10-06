@@ -96,3 +96,42 @@ jobs:
           '@ | Set-Content ./.daily-calendar-test.mjs -Encoding utf8
           node ./.daily-calendar-test.mjs
           Remove-Item ./.daily-calendar-test.mjs -Force
+
+      - name: Install browser harness
+        shell: pwsh
+        run: npm install --no-save --no-package-lock playwright-core@1.55.1
+      - name: Browser continue gate
+        shell: pwsh
+        run: |
+          @'
+          import {chromium} from 'playwright-core';
+          import fs from 'node:fs';
+          import fsp from 'node:fs/promises';
+          import os from 'node:os';
+          import path from 'node:path';
+
+          const exe=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'].find(p=>fs.existsSync(p));
+          if(!exe)throw new Error('Chrome unavailable');
+          const profile=await fsp.mkdtemp(path.join(os.tmpdir(),'fa-daily-ui-'));
+          const context=await chromium.launchPersistentContext(profile,{executablePath:exe,headless:true,viewport:{width:1440,height:900}});
+          const page=context.pages()[0]||await context.newPage();
+          await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
+          await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:15000});
+          await page.locator('[data-action="menu-new"]').click();
+          await page.locator('#manager-name').fill('Daily UI');
+          await page.locator('[data-action="start-career"]').click();
+          await page.locator('.dashboard-hero').waitFor({state:'visible',timeout:15000});
+          const before=await page.locator('.top-round').getAttribute('data-current-date');
+          await page.locator('.continue-top').click();
+          await page.waitForFunction(previous=>document.querySelector('.top-round')?.getAttribute('data-current-date')!==previous,before);
+          const after=await page.locator('.top-round').getAttribute('data-current-date');
+          const add=(value,n)=>{const [y,m,d]=value.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10);};
+          if(after!==add(before,1))throw new Error(`Continue skipped date: ${before} -> ${after}`);
+          if(await page.locator('.fa-main-menu').count())throw new Error('Returned to main menu after Continue');
+          console.log('DAILY_UI_PASS '+JSON.stringify({before,after}));
+          await context.close();
+          '@ | Set-Content ./.daily-ui-test.mjs -Encoding utf8
+          $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD" -PassThru
+          for($i=0;$i -lt 60;$i++){try{$r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2;if($r.StatusCode -eq 200){break}}catch{};Start-Sleep 1}
+          try{node ./.daily-ui-test.mjs}finally{Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          Remove-Item ./.daily-ui-test.mjs -Force
