@@ -77,26 +77,31 @@ export function scoutingEstimate(w,id){
    attributes:effective>=58?Object.fromEntries(Object.entries(found.player.attributes??found.player.attributeProfile?.values??{}).slice(0,12).map(([k,v])=>[k,mk(v,k)])):null};
 }
 export function advanceCareerScouting(w){
- if(!scoutingEnabled(w))return;
+ if(!scoutingEnabled(w))return false;
  const s=w.advancedV1.scoutingV1,day=w.advancedV1.clockDay;
- if(day<=s.lastDay)return;
+ if(day<=s.lastDay)return false;
  const weeks=Math.min(52,Math.floor((day-s.lastDay)/7));
- for(let week=0;week<weeks;week++)for(const m of s.missions){if(m.status!=='active')continue;
-  m.progress++;
-  s.coverage[m.countryId]=limit(s.coverage[m.countryId]+(m.progress%2===0?1:0),0,5);
-  const candidates=scoutingPlayers(w).filter(x=>x.countryId===m.countryId&&(m.position==='ALL'||x.player.position===m.position)&&x.player.age>=m.ageMin&&x.player.age<=m.ageMax&&x.player.contract<=m.contractMax);
-  // deterministic rotation spreads work beyond the same high-rating players.
-  const sample=candidates.length?Array.from({length:Math.min(3,candidates.length)},(_,i)=>candidates[(m.progress*3-3+i)%candidates.length]):[];
-  for(const c of sample){const previous=s.reports[c.id]?.confidence??0;
-   s.reports[c.id]={confidence:limit(Math.max(previous,24)+9+s.staffLevel*2,0,88),lastCheckedDay:day,countryId:m.countryId};
+ if(!weeks)return false;
+ for(let week=0;week<weeks;week++){
+  const reportDay=s.lastDay+7*(week+1);
+  for(const m of s.missions){if(m.status!=='active')continue;
+   m.progress++;
+   s.coverage[m.countryId]=limit(s.coverage[m.countryId]+(m.progress%2===0?1:0),0,5);
+   const candidates=scoutingPlayers(w).filter(x=>x.countryId===m.countryId&&(m.position==='ALL'||x.player.position===m.position)&&x.player.age>=m.ageMin&&x.player.age<=m.ageMax&&x.player.contract<=m.contractMax);
+   // deterministic rotation spreads work beyond the same high-rating players.
+   const sample=candidates.length?Array.from({length:Math.min(3,candidates.length)},(_,i)=>candidates[(m.progress*3-3+i)%candidates.length]):[];
+   for(const c of sample){const previous=s.reports[c.id]?.confidence??0;
+    s.reports[c.id]={confidence:limit(Math.max(previous,24)+9+s.staffLevel*2,0,88),lastCheckedDay:reportDay,countryId:m.countryId};
+   }
+   if(m.progress>=m.weeks){m.status='completed';addMessage(w,'Rapporto osservatori',`Missione completata: ${m.countryId}. I rapporti scouting sono aggiornati.`,'scouting',{type:'scouting.updated',params:{club:m.countryId}});}
   }
-  if(m.progress>=m.weeks){m.status='completed';addMessage(w,'Rapporto osservatori',`Missione completata: ${m.countryId}. I rapporti scouting sono aggiornati.`,'scouting',{type:'scouting.updated',params:{club:m.countryId}});}
  }
  s.staffLevel=Math.max(s.staffLevel,Math.min(5,2+Math.floor(s.missions.filter(m=>m.status==='completed').length/3)));
- s.lastDay=day;s.season=w.season;s.revision++;
+ s.lastDay+=weeks*7;s.season=w.season;s.revision++;
  // Retain most recent reports, always including shortlists; bound save growth.
  const entries=Object.entries(s.reports).sort((a,b)=>b[1].lastCheckedDay-a[1].lastCheckedDay);
  if(entries.length>180){const keep=new Set([...s.shortlist,...entries.slice(0,180).map(([id])=>id)]);s.reports=Object.fromEntries(entries.filter(([id])=>keep.has(id)).slice(0,220));}
+ return true;
 }
 export function validateCareerScouting(w){
  const s=w?.advancedV1?.scoutingV1;if(s===undefined)return true;
