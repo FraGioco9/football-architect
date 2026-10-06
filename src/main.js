@@ -112,6 +112,7 @@ function stopContinuousAdvance({renderNow=false}={}){
   const wasRunning=Boolean(ui.continuing);
   continuousAdvanceToken++;
   ui.continuing=false;
+  if(wasRunning)void queueVaultSync();
   if(renderNow&&wasRunning)render();
   return wasRunning;
 }
@@ -464,7 +465,9 @@ async function commitContinuousAdvanceTick({calendarConfirmationToken=null}={}){
   }
   try{await primary.commit();}
   catch(error){primary.rollback();world=JSON.parse(before);throw error;}
-  void queueVaultSync();
+  // The primary IndexedDB commit above is authoritative for every day.
+  // Mirror the optional recovery vault only when the continuous run stops:
+  // mirroring every tick races the changing catalog and can produce stale-copy warnings.
   const blockingMessage=(world.inbox||[]).find(message=>!knownMessageIds.has(String(message.id))&&careerMessageRequiresUserInput(message))||null;
   return {result,blockingMessage};
 }
@@ -474,35 +477,33 @@ function continuousCalendarNotice(){
     ?previewCalendarAdvance(world,{toDay:world.advancedV1.clockDay+(dueNow?0:1)})
     :{requiresConfirmation:false,confirmationToken:null,due:[],closing:[],expiring:[]};
 }
-async function runContinuousAdvance({firstConfirmationToken=null}={}){
+async function runContinuousAdvance(){
   if(ui.continuing||blockedSaveError||!world.clubId)return;
   const token=++continuousAdvanceToken;
   ui.continuing=true;ui.continuationBlocker=null;ui.modal=null;render();
   try{
     await runCheckpointed('before-day',()=>null);
-    let confirmationToken=firstConfirmationToken;
     while(ui.continuing&&token===continuousAdvanceToken&&world.round<world.fixtures.length){
       ensureCareerDates(world);
       const notice=continuousCalendarNotice();
-      if(notice.requiresConfirmation&&confirmationToken!==notice.confirmationToken){
-        ui.continuing=false;
-        ui.continuationBlocker={type:'calendar'};
-        render();
-        toast(ui.language==='en'?'Simulation stopped: a calendar or transfer decision requires confirmation. Press Continue to review it.':'Simulazione interrotta: una decisione di calendario o mercato richiede conferma. Premi Continua per esaminarla.','info');
-        return;
-      }
-      const {result,blockingMessage}=await commitContinuousAdvanceTick({calendarConfirmationToken:notice.requiresConfirmation?confirmationToken:null});
-      confirmationToken=null;
+      // MKT02 confirmations acknowledge deterministic processing (registrations,
+      // window closures and offer expiries); they are not user decisions.
+      // Continuous Continue therefore supplies the verified token automatically.
+      const {result,blockingMessage}=await commitContinuousAdvanceTick({
+        calendarConfirmationToken:notice.requiresConfirmation?notice.confirmationToken:null
+      });
       if(token!==continuousAdvanceToken||!ui.continuing)return;
       ui.calendarRound=world.round;
       if(blockingMessage){
         ui.continuing=false;ui.continuationBlocker={type:'mail',id:blockingMessage.id};ui.page='inbox';ui.openMail=blockingMessage.id;ui.modal=null;
+        void queueVaultSync();
         render();
         toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
         return;
       }
       if(boardStatus(world)!=='active'){
         ui.continuing=false;ui.continuationBlocker={type:'board'};ui.page='board';ui.modal=null;
+        void queueVaultSync();
         render();
         toast(ui.language==='en'?'Simulation stopped: the board requires your attention.':'Simulazione interrotta: la dirigenza richiede il tuo intervento.','info');
         return;
@@ -514,12 +515,12 @@ async function runContinuousAdvance({firstConfirmationToken=null}={}){
     }
   }catch(error){
     if(token===continuousAdvanceToken){
-      ui.continuing=false;ui.continuationBlocker={type:'error'};render();reportError(error.message);
+      ui.continuing=false;ui.continuationBlocker={type:'error'};void queueVaultSync();render();reportError(error.message);
     }
     return;
   }
   if(token===continuousAdvanceToken){
-    ui.continuing=false;ui.continuationBlocker=world.round>=world.fixtures.length?{type:'season-end'}:null;render();
+    ui.continuing=false;ui.continuationBlocker=world.round>=world.fixtures.length?{type:'season-end'}:null;void queueVaultSync();render();
     if(world.round>=world.fixtures.length)toast(ui.language==='en'?'Season complete. Review the season before starting the next one.':'Stagione completata. Esamina la stagione prima di avviare la successiva.','info');
   }
 }
@@ -1032,15 +1033,7 @@ root.addEventListener('click',async ev=>{
         updatePreviewSurface();break;
       }
       case 'advance':{
-        let firstConfirmationToken=null;
-        if(ui.continuationBlocker?.type==='calendar'){
-          const notice=continuousCalendarNotice();
-          if(notice.requiresConfirmation){
-            if(!confirmAction(ui.language==='en'?`This step processes ${notice.due.length} registrations, ${notice.closing.length} window deadlines and ${notice.expiring.length} offer expirations. Continue?`:`Questo passaggio elabora ${notice.due.length} registrazioni, ${notice.closing.length} chiusure di mercato e ${notice.expiring.length} scadenze delle offerte. Continuare?`))break;
-            firstConfirmationToken=notice.confirmationToken;
-          }
-        }
-        await runContinuousAdvance({firstConfirmationToken});
+        await runContinuousAdvance();
         break;
       }
       case 'stop-advance':{
