@@ -16,32 +16,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct candidate
-        shell: pwsh
-        run: |
-          $parts=Get-ChildItem ./release-b64/zip-*.part | Sort-Object Name
-          $builder=New-Object System.Text.StringBuilder
-          foreach($part in $parts){[void]$builder.Append((Get-Content $part.FullName -Raw))}
-          [IO.File]::WriteAllBytes("./candidate.zip",[Convert]::FromBase64String($builder.ToString()))
-          $hash=(Get-FileHash ./candidate.zip -Algorithm SHA256).Hash.ToLower()
-          if($hash -ne "80651ede8e5f3db5659ae9b1d7e077573affc18fa3ed440b2069505c2ee05c20"){throw "Unexpected candidate hash: $hash"}
-          Expand-Archive ./candidate.zip ./work -Force
-          Write-Host "=== APP TREE ==="
-          Get-ChildItem ./work/football-architect -Recurse -File | ForEach-Object {
-            $_.FullName.Replace((Resolve-Path ./work/football-architect).Path+"\","")
-          }
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "24"
-
       - name: Install browser harness
         working-directory: rst01-runner
         shell: pwsh
         run: npm install --no-audit --no-fund
-
-      - name: Write inventory script
+      - name: Write full inventory script
         shell: pwsh
         run: |
           $test=@'
@@ -51,90 +33,83 @@ jobs:
           import os from 'node:os';
           import path from 'node:path';
 
-          const exe=[
-            'C:/Program Files/Google/Chrome/Application/chrome.exe',
-            'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'
-          ].find(p=>fs.existsSync(p));
+          const exe=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'].find(p=>fs.existsSync(p));
           if(!exe)throw new Error('Chrome unavailable');
-
-          const userData=await fsp.mkdtemp(path.join(os.tmpdir(),'fa-button-inventory-'));
+          const userData=await fsp.mkdtemp(path.join(os.tmpdir(),'fa-button-inventory-all-'));
           const context=await chromium.launchPersistentContext(userData,{executablePath:exe,headless:true,viewport:{width:1440,height:1000}});
           const page=context.pages()[0]||await context.newPage();
 
           async function snapshot(label){
-            const data=await page.evaluate((label)=>{
-              const visible=el=>{
-                const s=getComputedStyle(el),r=el.getBoundingClientRect();
-                return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;
-              };
-              const buttons=[...document.querySelectorAll('button')].filter(visible).map((b,i)=>{
+            const data=await page.evaluate(label=>{
+              const visible=el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};
+              const buttons=[...document.querySelectorAll('button')].filter(visible).map(b=>{
                 const r=b.getBoundingClientRect(),s=getComputedStyle(b);
                 return {
-                  i,
-                  text:(b.innerText||b.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,120),
-                  action:b.dataset.action||null,
-                  page:b.dataset.page||null,
-                  view:b.dataset.view||null,
-                  cls:b.className,
-                  w:Math.round(r.width),
-                  h:Math.round(r.height),
+                  text:(b.innerText||b.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,140),
+                  action:b.dataset.action||null,page:b.dataset.page||null,cls:b.className,
+                  w:Math.round(r.width),h:Math.round(r.height),
                   font:Math.round(parseFloat(s.fontSize)),
-                  padX:Math.round(parseFloat(s.paddingLeft)+parseFloat(s.paddingRight)),
-                  whiteSpace:s.whiteSpace,
-                  overflow:s.overflow
+                  whiteSpace:s.whiteSpace,overflow:s.overflow
                 };
               });
-              const navish=[...document.querySelectorAll('[data-action],[data-page],[data-view],nav a,nav button,.nav-item,.sidebar button,.sidebar a')]
-                .filter(visible)
-                .map(el=>({
-                  tag:el.tagName,
-                  text:(el.innerText||el.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,100),
-                  action:el.dataset.action||null,page:el.dataset.page||null,view:el.dataset.view||null,cls:el.className
-                }));
-              return {label,url:location.href,title:document.title,buttons,navish};
+              return {label,buttons};
             },label);
             console.log('BUTTON_SNAPSHOT '+JSON.stringify(data));
-            return data;
           }
 
           await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
           await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:15000});
           await snapshot('main-menu');
 
-          await page.locator('[data-action="menu-new"]').click();
+          for(const action of ['menu-settings','menu-manage']){
+            const b=page.locator(`[data-action="${action}"]`).first();
+            if(await b.count()){
+              await b.click().catch(()=>{});
+              await page.waitForTimeout(150);
+              await snapshot(action);
+              const close=page.locator('[data-action="dialog-close"],[data-action="modal-close"],.modal [data-action="close"],.career-dialog [data-action="close"]').first();
+              if(await close.count())await close.click().catch(()=>{});
+              else await page.keyboard.press('Escape').catch(()=>{});
+            }
+          }
+
+          const newCareer=page.locator('[data-action="menu-new"]').first();
+          await newCareer.click();
           await page.locator('.onboarding').waitFor({state:'visible',timeout:10000});
           await snapshot('onboarding');
-          await page.locator('#manager-name').fill('Button Audit');
+          await page.locator('#manager-name').fill('Full Button Audit');
           await page.locator('[data-action="start-career"]').click();
           await page.locator('.dashboard-hero').waitFor({state:'visible',timeout:10000});
-          const dash=await snapshot('dashboard');
 
-          const candidates=dash.navish.filter(x=>
-            x.tag==='BUTTON' &&
-            x.action &&
-            !/(advance|simulate|delete|remove|release|transfer|offer|sign|sack|reset|clear|start|new|save|import|export)/i.test(x.action)
-          );
-          const seen=new Set();
-          for(const item of candidates){
-            if(seen.has(item.action))continue;
-            seen.add(item.action);
-            const loc=page.locator(`button[data-action="${item.action}"]`).first();
-            if(await loc.count()){
-              try{
-                await loc.click({timeout:3000});
-                await page.waitForTimeout(150);
-                await snapshot('action:'+item.action);
-              }catch{}
+          const pages=await page.evaluate(()=>[...new Set([...document.querySelectorAll('button[data-action="nav"][data-page]')].map(x=>x.dataset.page).filter(Boolean))]);
+          console.log('PAGE_LIST '+JSON.stringify(pages));
+
+          for(const target of pages){
+            const b=page.locator(`button[data-action="nav"][data-page="${target}"]`).first();
+            if(!(await b.count()))continue;
+            try{
+              await b.click({timeout:4000});
+              await page.waitForTimeout(180);
+              await snapshot('page:'+target);
+            }catch(error){
+              console.log('PAGE_SKIP '+JSON.stringify({target,error:String(error?.message||error)}));
             }
+          }
+
+          const preview=page.locator('[data-action="preview-match"]').first();
+          if(await preview.count()){
+            await preview.click().catch(()=>{});
+            await page.waitForTimeout(150);
+            await snapshot('match-preview');
           }
 
           await context.close();
           '@
-          Set-Content ./rst01-runner/.button-inventory.mjs -Value $test -NoNewline -Encoding utf8
+          Set-Content ./rst01-runner/.button-inventory-all.mjs -Value $test -NoNewline -Encoding utf8
 
       - name: Run inventory
         shell: pwsh
         run: |
-          $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD\work\football-architect" -PassThru
+          $p=Start-Process node -ArgumentList 'server.mjs' -WorkingDirectory "$PWD" -PassThru
           for($i=0;$i -lt 60;$i++){try{$r=Invoke-WebRequest http://127.0.0.1:2000 -UseBasicParsing -TimeoutSec 2;if($r.StatusCode -eq 200){break}}catch{};Start-Sleep 1}
-          try{node ./rst01-runner/.button-inventory.mjs}finally{Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
+          try{node ./rst01-runner/.button-inventory-all.mjs}finally{Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}
