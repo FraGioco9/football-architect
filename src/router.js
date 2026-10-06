@@ -45,6 +45,7 @@ export function parseAppRoute(pathname='/'){
   const path=normalizeAppPath(pathname);
   if(path===null)return {kind:'not-found',path:String(pathname||'/')};
   if(path==='/')return {kind:'page',page:'home',path,requiresCareer:false};
+  if(path==='/careers/new')return {kind:'new-career',path,requiresCareer:false};
   const page=PATH_PAGES[path];
   if(page)return {kind:'page',page,path,requiresCareer:!['careers','settings'].includes(page)};
   let match=path.match(/^\/player\/(\d+)$/);
