@@ -33,6 +33,10 @@ jobs:
           import {startCareer,advanceDay,newSeason} from './src/domain/career.js';
           import {enableAdvancedCareer} from './src/domain/advanced-career.js';
           import {enableCareerTraining} from './src/domain/career-training.js';
+          import {enableCareerWorld} from './src/domain/career-world.js';
+          import {enableCareerMarket} from './src/domain/career-market.js';
+          import {enableCareerCalendar} from './src/domain/career-calendar.js';
+          import {enableCareerScouting,assignScoutingMission} from './src/domain/career-scouting.js';
           import {validateSave} from './src/domain/save-validation.js';
           import {addDaysISO,isCareerDate} from './src/domain/career-date.js';
 
@@ -91,6 +95,25 @@ jobs:
             ok(w.seasonStartDate===finalDate,'new season start date not anchored to current date',{finalDate,seasonStart:w.seasonStartDate});
             ok(w.fixtures[0].date===addDaysISO(finalDate,7),'new season first fixture date wrong',{first:w.fixtures[0].date,finalDate});
             ok(validateSave(w),'new season dated save invalid');
+          }
+
+
+          {
+            const w=makeWorld(260129,'IT');
+            startCareer(w,1,'Weekly Systems');
+            enableAdvancedCareer(w);
+            enableCareerWorld(w);
+            enableCareerMarket(w);
+            enableCareerCalendar(w);
+            enableCareerScouting(w);
+            assignScoutingMission(w,{revision:w.advancedV1.scoutingV1.revision,countryId:'ENG',position:'ALL',ageMin:16,ageMax:38,contractMax:12,weeks:4});
+            for(let i=0;i<6;i++)advanceDay(w);
+            ok(w.advancedV1.scoutingV1.missions[0].progress===0,'scouting progressed before a full week');
+            advanceDay(w);
+            ok(w.round===1,'weekly systems test did not reach matchday');
+            ok(w.advancedV1.scoutingV1.missions[0].progress===1,'scouting weekly cadence was lost',{mission:w.advancedV1.scoutingV1.missions[0]});
+            ok(w.advancedV1.scoutingV1.lastDay===7,'scouting lastDay wrong',{lastDay:w.advancedV1.scoutingV1.lastDay});
+            ok(validateSave(w),'weekly systems dated save invalid');
           }
 
           console.log('DAILY_CALENDAR_PASS');
