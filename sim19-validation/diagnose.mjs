@@ -23,12 +23,22 @@ import {validateCareerStatistics} from '../src/domain/career-statistics.js';
 import {validateCareerMatchday} from '../src/domain/career-matchday.js';
 import {validateCareerTraining} from '../src/domain/career-training.js';
 import {validateCareerYouth} from '../src/domain/career-youth.js';
+import {previewCalendarAdvance} from '../src/domain/career-calendar.js';
+import {boardStatus} from '../src/domain/career-board.js';
+import {fixtureIsDue} from '../src/domain/career-date.js';
+import {careerMessageRequiresUserInput} from '../src/domain/history.js';
 
 const w=makeWorld(190019);
 startCareer(w,1,'SIM19 Domain');
 const before={date:w.currentDate,clock:w.advancedV1?.clockDay,valid:validateSave(w),messages:validCareerMessages(w.inbox)};
+const preNotice=previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+(fixtureIsDue(w)?0:1)});
+const preBoard=boardStatus(w);
+const preBlocking=(w.inbox||[]).filter(careerMessageRequiresUserInput).map(m=>({id:m.id,type:m.localeEvent?.type}));
 const result=advanceDay(w);
 syncCareerContracts(w);
+const postNotice=previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+(fixtureIsDue(w)?0:1)});
+const postBoard=boardStatus(w);
+const postBlocking=(w.inbox||[]).filter(careerMessageRequiresUserInput).map(m=>({id:m.id,type:m.localeEvent?.type}));
 const checks={
   save:validateSave(w),messages:validCareerMessages(w.inbox),advanced:validateAdvancedCareer(w),
   statistics:validateCareerStatistics(w),coaches:validateCareerCoaches(w),roles:validateCareerRoles(w),
@@ -39,5 +49,5 @@ const checks={
   continental:validateCareerContinental(w),divisions:validateCareerDivisions(w),board:validateCareerBoard(w),
   manager:validateManagerCareer(w),finance:validateCareerFinance(w),facilities:validateCareerFacilities(w)
 };
-console.log(JSON.stringify({before,after:{date:w.currentDate,clock:w.advancedV1?.clockDay,advanced:result.advanced,match:Boolean(result.match),inbox:w.inbox.slice(0,15).map(m=>({id:m.id,type:m.localeEvent?.type,requiresUserInput:m.requiresUserInput}))},checks},null,2));
+console.log(JSON.stringify({before,gates:{preNotice,preBoard,preBlocking,postNotice,postBoard,postBlocking},after:{date:w.currentDate,clock:w.advancedV1?.clockDay,advanced:result.advanced,match:Boolean(result.match),inbox:w.inbox.slice(0,15).map(m=>({id:m.id,type:m.localeEvent?.type,requiresUserInput:m.requiresUserInput}))},checks},null,2));
 if(!checks.save)process.exitCode=1;
