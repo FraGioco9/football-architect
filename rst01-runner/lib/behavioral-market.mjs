@@ -90,8 +90,40 @@ export async function runLoanClauseBehavior(page,baseURL){
     const loanSeason=loan.season;
     while(loan.round<loan.fixtures.length)simulateRound(loan);
     newSeason(loan);
-    const returnedOwner=marketPlayers(loan,{countryId:target.x.countryId,limit:3000}).find(x=>x.id===target.x.id)?.clubKey;
+    const countryPool=marketPlayers(loan,{countryId:target.x.countryId,limit:10000});
+    const allPool=marketPlayers(loan,{limit:10000});
+    const returnedOwner=countryPool.find(x=>x.id===target.x.id)?.clubKey;
     const loanRollover={fromSeason:loanSeason,toSeason:loan.season,round:loan.round};
+    const findTargetRefs=(root,targetId)=>{
+      const seen=new WeakSet(),hits=[];
+      const visit=(value,path,depth)=>{
+        if(hits.length>=100||depth>9||!value||typeof value!=='object')return;
+        if(seen.has(value))return;seen.add(value);
+        if(!Array.isArray(value)){
+          const values=Object.values(value);
+          if(values.some(v=>v===targetId)){
+            hits.push({path,keys:Object.keys(value).slice(0,30),id:value.id,globalId:value.globalId,clubId:value.clubId,clubKey:value.clubKey,countryId:value.countryId,originKey:value.originKey,destinationKey:value.destinationKey,endSeason:value.endSeason});
+          }
+        }
+        if(Array.isArray(value)){for(let i=0;i<value.length;i++)visit(value[i],path+'['+i+']',depth+1);}
+        else {for(const [k,v] of Object.entries(value))visit(v,path+'.'+k,depth+1);}
+      };
+      visit(root,'loan',0);return hits;
+    };
+    const postRolloverRefs=findTargetRefs(loan,target.x.id);
+    const diagnostics={
+      countryMatches:countryPool.filter(x=>x.id===target.x.id).slice(0,10),
+      allMatches:allPool.filter(x=>x.id===target.x.id).slice(0,10),
+      localMatches:loan.players.filter(p=>p.globalId===target.x.id||`${loan.countryId}:${p.id}`===target.x.id).slice(0,10),
+      worldKeys:Object.keys(loan.advancedV1?.worldV1||{}),
+      marketKeys:Object.keys(loan.advancedV1?.marketV1||{}),
+      postRolloverRefs,
+      sources:{
+        newSeason:String(newSeason).slice(0,6000),
+        returnMarketLoansAfterArchive:String(returnMarketLoansAfterArchive).slice(0,6000),
+        marketPlayers:String(marketPlayers).slice(0,6000)
+      }
+    };
 
     const clause=setup(true),clauseManaged=managedClubKey(clause),p=clause.players.find(x=>x.clubId===clause.clubId&&x.position!=='POR'&&!clause.lineup.includes(x.id));
     if(!p)return {ok:false,reason:'no clause sale player'};
@@ -119,7 +151,7 @@ export async function runLoanClauseBehavior(page,baseURL){
         decision.decision==='accept'&&movement?.feeEUR===releaseFee&&sold?.clubId===0&&
         validateCareerMarket(loan)&&validateCareerMarket(clause)&&validateCareerContracts(clause)&&validateSave(loan)&&validateSave(clause)
       ),
-      loan:{playerId:target.x.id,decision:ld,record:loanRecord,loanOwner,returnedOwner,origin:target.x.clubKey,rollover:loanRollover},
+      loan:{playerId:target.x.id,decision:ld,record:loanRecord,loanOwner,returnedOwner,origin:target.x.clubKey,rollover:loanRollover,diagnostics},
       clause:{playerId:pid,releaseFee,decision,movement,localClubId:sold?.clubId},
       valid:{loan:validateCareerMarket(loan),clause:validateCareerMarket(clause),contracts:validateCareerContracts(clause)}
     };
