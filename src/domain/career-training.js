@@ -50,7 +50,7 @@ export function validateCareerTraining(w){
  try{
   if(!t||t.schemaVersion!==1||t.clubId!==String(w.clubId)||t.season!==w.season||t.lastDay!==w.advancedV1.clockDay)return false;
   validateTrainingWeek(t.week);
-  if(t.week.clubId!==t.clubId||t.week.weekStartDay!==t.lastDay+1||!t.week.sessions.some(s=>s.dayIndex===6&&s.kind==='match'))return false;
+  if(t.week.clubId!==t.clubId||t.week.weekStartDay+t.week.processedDays.length!==t.lastDay+1||!t.week.sessions.some(s=>s.dayIndex===6&&s.kind==='match'))return false;
   if(!t.playerStates||typeof t.playerStates!=='object'||Array.isArray(t.playerStates)||Object.keys(t.playerStates).length>1000)return false;
   if(!t.seasonStats||typeof t.seasonStats!=='object'||Array.isArray(t.seasonStats)||Object.keys(t.seasonStats).length>w.players.length)return false;
   if(!Array.isArray(t.reports)||t.reports.length>12||t.reports.some(r=>!Number.isSafeInteger(r.weekStartDay)||r.weekStartDay<1||r.weekStartDay>t.lastDay||!Array.isArray(r.days)||r.days.length!==7))return false;
@@ -114,17 +114,14 @@ export function syncCareerTrainingFormation(w){
  const next=structuredClone(t.week);next.formation=w.formation;next.revision++;
  validateTrainingWeek(next);t.week=next;
 }
-/** Called once at the start of each official weekly match round. This is the
- * ONLY daily recovery for the managed club; advanced match load follows on day 7. */
-export function settleCareerTrainingWeek(w,day){
+/** Process exactly one calendar day for the managed club. */
+export function settleCareerTrainingDay(w,day){
  if(!hasCareerTraining(w))bad('INACTIVE');
  const t=w.advancedV1.trainingV1;
- if(t.lastDay+7!==day||t.week.weekStartDay!==t.lastDay+1||t.week.processedDays.length)bad('DAY_SEQUENCE');
+ if(day!==t.lastDay+1||t.week.weekStartDay+t.week.processedDays.length!==day)bad('DAY_SEQUENCE');
  let roster=updatedRoster(w),plan=t.week;
- for(let i=0;i<7;i++){
-  const result=runTrainingDay(plan,roster,{day:t.lastDay+i+1,seed:w.seed});
-  plan=result.plan;roster=result.roster;
- }
+ const result=runTrainingDay(plan,roster,{day,seed:w.seed});
+ plan=result.plan;roster=result.roster;
  const owned=new Map(own(w).map(p=>[String(p.id),p]));
  for(const [id,record] of Object.entries(roster.players)){
   const p=owned.get(id);if(!p)bad('TRANSFER_CONFLICT');
@@ -135,19 +132,34 @@ export function settleCareerTrainingWeek(w,day){
   p.fitness=Math.round(p.medicalV1.freshness);
   p.injury=w.advancedV1.legacyInjuryRounds[String(p.id)]??(record.medical.injury?.stage==='recovering'?Math.max(1,Math.ceil(record.medical.injury.daysRemaining/7)):0);
   t.playerStates[id]={carry:record.carry,familiarity:record.familiarity};
-  const s=t.seasonStats[id]??emptyStats();
-  for(const row of plan.logs){if(['technical','physical','tactical'].includes(row.kind)){
-   s.workloadSum+=row.trainingLoad;s.trainingDays++;
-  }}
-  t.seasonStats[id]=s;
+  const stat=t.seasonStats[id]??emptyStats();
+  const row=plan.logs.at(-1);
+  if(row&&['technical','physical','tactical'].includes(row.kind)){stat.workloadSum+=row.trainingLoad;stat.trainingDays++;}
+  t.seasonStats[id]=stat;
  }
- t.reports.push({weekStartDay:t.lastDay+1,days:plan.logs.map(l=>({day:l.day,kind:l.kind,trained:l.trained,injuries:l.injuries,trainingLoad:l.trainingLoad}))});
- t.reports=t.reports.slice(-12);
  t.lastDay=day;
- t.week=plannedWeek(w,day+1);
- t.week.individuals=structuredClone(plan.individuals); // Long-running personal programmes persist across weekly plans.
- if(!validateCareerTraining(w))bad('POST_WEEK');
- return t.reports.at(-1);
+ if(plan.processedDays.length>=7){
+  t.reports.push({weekStartDay:plan.weekStartDay,days:plan.logs.map(l=>({day:l.day,kind:l.kind,trained:l.trained,injuries:l.injuries,trainingLoad:l.trainingLoad}))});
+  t.reports=t.reports.slice(-12);
+  const individuals=structuredClone(plan.individuals);
+  t.week=plannedWeek(w,day+1);
+  t.week.individuals=individuals;
+ }else t.week=plan;
+ if(!validateCareerTraining(w))bad('POST_DAY');
+ return plan.logs.at(-1)??null;
+}
+
+/** Compatibility helper: process seven consecutive daily ticks. */
+export function settleCareerTrainingWeek(w,day){
+ if(!hasCareerTraining(w))bad('INACTIVE');
+ const start=w.advancedV1.trainingV1.lastDay;
+ if(start+7!==day)bad('DAY_SEQUENCE');
+ let result=null;
+ for(let target=start+1;target<=day;target++){
+  w.advancedV1.clockDay=target;
+  result=settleCareerTrainingDay(w,target);
+ }
+ return result;
 }
 /** Called by the actual seeded match simulator, once per player's real minutes. */
 export function recordCareerMinutes(w,playerId,seconds,form){
