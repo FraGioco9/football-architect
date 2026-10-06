@@ -173,7 +173,7 @@ export function createControlHints(root,doc=globalThis.document){
     }
   }
   function decorateOverflowButtons(){
-    for(const el of root.querySelectorAll('.btn,.qol03-shortcut,.qol03-back')){
+    for(const el of root.querySelectorAll('.btn,.qol03-back')){
       const label=(el.textContent||'').replace(/\s+/g,' ').trim();
       if(!label||el.hasAttribute('data-fa-tooltip'))continue;
       if(el.scrollWidth>el.clientWidth+1){el.setAttribute('data-fa-tooltip',label);el.setAttribute('aria-describedby',tip.id);}
