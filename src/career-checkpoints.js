@@ -19,7 +19,7 @@ const makeId=()=>{
 };
 const validTime=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString()===value;
 const validKey=value=>typeof value==='string'&&/^football-architect:career:checkpoint:v1:[a-zA-Z0-9-]{8,80}$/.test(value);
-const kinds=new Set(['before-match','before-transfer','before-season','before-restore']);
+const kinds=new Set(['before-day','before-match','before-transfer','before-season','before-restore']);
 const validItem=item=>item&&validKey(item.key)&&typeof item.slotId==='string'&&/^[a-zA-Z0-9-]{8,80}$/.test(item.slotId)
   &&kinds.has(item.kind)&&validTime(item.createdAt)&&Number.isSafeInteger(item.season)&&item.season>=1
   &&Number.isSafeInteger(item.round)&&item.round>=0;
