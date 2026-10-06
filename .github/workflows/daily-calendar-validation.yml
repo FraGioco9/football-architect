@@ -1,4 +1,5 @@
 name: Daily calendar validation
+# rerun after before-day checkpoint support
 
 on:
   push:
