@@ -130,8 +130,9 @@ export function cupHonours(w,country){return cupsEnabled(w)?state(w).history.map
 function goodCup(c,w,season){const league=careerWorldLeague(w,c.countryId),clubs=new Set(season===w.season?league?.clubs.map(x=>x.id):c.participants);if(!clubs||!Number.isSafeInteger(c.season)||c.season!==season||!Array.isArray(c.participants)||c.participants.length<8||c.participants.length>20||new Set(c.participants).size!==c.participants.length||c.participants.some(x=>!clubs.has(x))||!Array.isArray(c.calendar)||!Array.isArray(c.rounds)||c.rounds.length>5||c.rounds.length<1||!Array.isArray(c.awards)||!Array.isArray(c.scorers))return false;
  const dateAware=isCareerDate(c.rounds[0]?.date);
  const stages=(Math.log2(nearestPower(c.participants.length))|0)+(c.participants.length>nearestPower(c.participants.length)?1:0);
- const expectedSlots=dateAware?slots(w,stages):legacySlots(w.fixtures.length,stages);
- if(c.calendar.length!==stages||c.calendar.some((r,i)=>!Number.isSafeInteger(r)||r<1||r>=w.fixtures.length||(season===w.season&&r!==expectedSlots[i])))return false;
+ const expectedSlots=dateAware?null:legacySlots(w.fixtures.length,stages);
+ if(c.calendar.length!==stages||new Set(c.calendar).size!==c.calendar.length||c.calendar.some((r,i)=>!Number.isSafeInteger(r)||r<1||r>=w.fixtures.length||(!dateAware&&season===w.season&&r!==expectedSlots[i])))return false;
+ if(dateAware&&season===w.season){const leagueDates=new Set(w.fixtures.map(r=>r.date));if(c.rounds.some(r=>leagueDates.has(r.date)))return false;}
  const seen=new Set();for(const [ix,r] of c.rounds.entries()){
   if(r.index!==ix+1||r.leagueRound!==c.calendar[ix]||(dateAware&&!isCareerDate(r.date))||(!dateAware&&r.date!==undefined)||!Array.isArray(r.matches)||!Array.isArray(r.byes)||!Array.isArray(r.draw))return false;
   if(ix===0&&r.matches.length!==(c.participants.length-nearestPower(c.participants.length)||c.participants.length/2))return false;
