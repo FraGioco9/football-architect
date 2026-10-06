@@ -36,7 +36,8 @@ jobs:
             OFFICIAL_SYSTEM_KEYS,
             ensureOfficialCareerSystems,
             officialCareerSystemStatus,
-            officialCareerSystemsReady
+            officialCareerSystemsReady,
+            officialCareerValidationStatus
           } from './src/domain/career-official.js';
           import {LEAGUES} from './src/leagues.js';
           import {previewCalendarAdvance} from './src/domain/career-calendar.js';
@@ -97,7 +98,7 @@ jobs:
                 if(w.advancedV1?.managerV1)w.advancedV1.managerV1.status='active';
                 newSeason(w);
                 assert(officialCareerSystemsReady(w),'system disabled after rollover',{country:league.id,season:w.season,status:officialCareerSystemStatus(w)});
-                assert(validateSave(w),'post-rollover save invalid',{country:league.id,season:w.season});
+                assert(validateSave(w),'post-rollover save invalid',{country:league.id,season:w.season,status:officialCareerValidationStatus(w),clockDay:w.advancedV1?.clockDay,careerDay:w.careerDay});
               }
             }
             console.log('CORE18_COUNTRY_PASS',league.id,w.season);
