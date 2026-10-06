@@ -86,7 +86,12 @@ jobs:
                 }
                 if(w.advancedV1?.managerV1)w.advancedV1.managerV1.status='active';
                 const calendarPreview=previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+7});
-                simulateRound(w,{calendarConfirmationToken:calendarPreview.confirmationToken});
+                try{
+                  simulateRound(w,{calendarConfirmationToken:calendarPreview.confirmationToken});
+                }catch(error){
+                  const xi=w.lineup.map(id=>{const p=w.players.find(x=>x.id===id);return {id,name:p?.name,position:p?.position,clubId:p?.clubId,injury:p?.injury,fitness:p?.fitness};});
+                  throw new Error('simulation failure '+JSON.stringify({country:league.id,season:w.season,round:w.round,clubId:w.clubId,formation:w.formation,xi,error:String(error?.message||error)}));
+                }
                 assert(officialCareerSystemsReady(w),'system disabled mid-season',{country:league.id,season:w.season,round:w.round,status:officialCareerSystemStatus(w)});
               }
               assert(validateSave(w),'season-end save invalid',{country:league.id,season:w.season});
