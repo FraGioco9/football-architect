@@ -327,7 +327,7 @@ function render({focus}={}){
   enhanceDesignSystem(root,ui.language);
   controlHints.enhance();
   dialogCoordinator.afterRender(previousDialog);
-  document.title=['home','home-settings'].includes(ui.page)?(ui.language==='en'?'Main menu':'Menu principale')+' · '+GAME_NAME:ui.page==='match-preview'?(ui.language==='en'?'Match preview':'Anteprima partita')+' · '+GAME_NAME:ui.page==='careers'?pageTitle('careers',ui.language):world.clubId?pageTitle(ui.page,ui.language):GAME_NAME;
+  document.title=ui.page==='not-found'?(ui.language==='en'?'Page not found':'Pagina non trovata')+' · '+GAME_NAME:['home','home-settings'].includes(ui.page)?(ui.language==='en'?'Main menu':'Menu principale')+' · '+GAME_NAME:ui.page==='match-preview'?(ui.language==='en'?'Match preview':'Anteprima partita')+' · '+GAME_NAME:ui.page==='careers'?pageTitle('careers',ui.language):world.clubId?pageTitle(ui.page,ui.language):GAME_NAME;
   if(focus){const input=document.getElementById(focus.id);if(input){input.focus();try{input.setSelectionRange(focus.start,focus.end);}catch{}}}
   window.scrollTo(0,y);
 }
@@ -1503,6 +1503,7 @@ root.addEventListener('keydown',ev=>{dialogCoordinator.keydown(ev);},true);
 applyRoute(routeFromLocation(),{fromHistory:true,replace:true,renderNow:false});
 window.history.replaceState({footballArchitectRoute:window.location.pathname},'',window.location.pathname+window.location.search);
 render();
+if(ui.routeKind==='match-preview'&&ui.page==='match-preview')startPreviewTimer();
 queueVaultSync();
 
 // UX2-06: keyboard navigation for the four non-persistent tactical panels.
