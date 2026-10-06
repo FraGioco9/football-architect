@@ -1,5 +1,5 @@
 name: CORE-18 full-system validation
-# final rerun after slot-aware SIM04 substitutions and opt-in UI removal
+# final rerun after slot-aware SIM04 substitutions and complete opt-in UI removal
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
         run: |
           find src -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
           node --check server.mjs
-          if grep -E 'data-action="(personality-enable|board-enable|manager-enable)"' src/ui.js; then
+          if grep -E '(personality-enable|board-enable|manager-enable|contracts-enable|sim04-enable|finance-enable|facility-enable)' src/ui.js; then
             echo "Legacy manual activation control is still exposed"
             exit 1
           fi
