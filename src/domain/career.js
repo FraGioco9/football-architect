@@ -27,6 +27,7 @@ import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCaree
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
 import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,addDaysISO} from './career-date.js';
+import {ensureOfficialCareerSystems} from './career-official.js';
 
 export function startCareer(w,clubId,manager){
   ensureCareerDates(w);
@@ -34,6 +35,7 @@ export function startCareer(w,clubId,manager){
   w.clubId=Number(clubId);
   w.manager=String(manager||'Allenatore').trim().slice(0,50)||'Allenatore';
   w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
+  ensureOfficialCareerSystems(w);
   addMessage(w,'Benvenuto sulla panchina',`La dirigenza di ${myClub(w).name} ti ha affidato la prima squadra. Il tuo obiettivo è costruire un progetto competitivo nella competizione ${w.competition||'Lega Aurora'}.`,'welcome',{type:'welcome',params:{club:myClub(w).name,league:w.competition||'Lega Aurora'}});
   addMessage(w,'La stagione sta per iniziare',`Il campionato comprende ${w.teams.length} club e ${w.fixtures.length} giornate. La prima partita sarà contro ${fullName(w,clubMatch(w.fixtures[0],w.clubId).home===w.clubId?clubMatch(w.fixtures[0],w.clubId).away:clubMatch(w.fixtures[0],w.clubId).home)}.`,'calendar',{type:'calendar.start',params:{clubs:w.teams.length,rounds:w.fixtures.length,opponent:fullName(w,clubMatch(w.fixtures[0],w.clubId).home===w.clubId?clubMatch(w.fixtures[0],w.clubId).away:clubMatch(w.fixtures[0],w.clubId).home)}});
   return w;
