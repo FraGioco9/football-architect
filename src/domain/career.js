@@ -63,13 +63,14 @@ function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=t
     advanceAdvancedDay(w);
     if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');
     if(hasCareerWorld(w))syncCareerWorldClock(w);
-    if(facilityEnabled(w))advanceCareerFacilitiesRound(w);
     advanceCareerScouting(w);
     advanceCareerCupsDay(w,{simulateManagedCup:simulateAdvancedMatch});
     advanceCareerContinentalDay(w,{simulateManagedCup:simulateAdvancedMatch});
   }
   if(calendarPreview)settleCareerCalendarRound(w,{preview:calendarPreview});
   expireCareerMarketOffers(w);
+  if(financeEnabled(w))reconcileCareerFinance(w,{reason:'external'});
+  if(facilityEnabled(w))advanceCareerFacilitiesRound(w);
   let match=null,matchDue=fixtureIsDue(w);
   if(matchDue&&simulateDueMatch){
     match=simulateRoundMutating(w,{calendarConfirmationToken,advanceDays:0,calendarAlreadySettled:true});
