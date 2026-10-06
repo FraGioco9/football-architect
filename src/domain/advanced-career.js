@@ -213,16 +213,15 @@ export function simulateAdvancedMatch(w,m){
   if(sim04){
     const rules=w.advancedV1.matchdayV1.rules[matchKind(m)];
     const sheets=sidesPlans.map(({side,bench})=>{
-      // A club can legitimately reach matchday with every natural goalkeeper
-      // unavailable after the pre-match training/medical ticks. Keep the
-      // authoritative player position unchanged, but project the footballer
-      // assigned to the GK slot as an emergency goalkeeper for SIM04 only.
-      const goalkeeperSlot=side.rolePlan.assignments.find(x=>x.position==='GK');
-      const emergencyGoalkeeperId=goalkeeperSlot&&playerById(w,goalkeeperSlot.playerId)?.position!=='POR'
-        ?goalkeeperSlot.playerId:null;
+      // SIM04 validates the role occupied on the pitch, not only a player's
+      // natural registry position. Project every starter to the formation
+      // slot they actually occupies; bench players retain their natural role.
+      // This guarantees exactly one goalkeeper slot even when a natural GK is
+      // adapted outfield or an outfielder must serve as emergency goalkeeper.
+      const starterPosition=new Map(side.rolePlan.assignments.map(a=>[String(a.playerId),a.position]));
       return createMatchSheet({teamId:side.teamId,
         players:clubPlayers(w,side.teamId).map(p=>({...p,
-          position:p.id===emergencyGoalkeeperId?'GK':toAddonPosition(p.position),
+          position:starterPosition.get(String(p.id))??toAddonPosition(p.position),
           unavailable:p.injury>0||!medicalAvailability(p.medicalV1).eligible})),
         starters:side.ids,bench:bench.map(p=>p.id),
         unavailable:clubPlayers(w,side.teamId).filter(p=>p.injury>0||!medicalAvailability(p.medicalV1).eligible).map(p=>p.id),
