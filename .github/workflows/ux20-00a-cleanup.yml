@@ -1,0 +1,43 @@
+name: UX20 00A cleanup validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: |
+          node --input-type=module --check < src/ui.js
+      - name: Static cleanup gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -q "QUICK_NAV_IDS" src/ui.js
+          ! grep -q "nav-quick" src/navigation.css
+      - name: Install browser
+        working-directory: ux20-00a-cleanup
+        run: |
+          npm init -y
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start Football Architect
+        run: |
+          node server.mjs > ux20-00a-cleanup-server.log 2>&1 &
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:2000/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat ux20-00a-cleanup-server.log
+          exit 1
+      - name: Browser cleanup gate
+        working-directory: ux20-00a-cleanup
+        run: node run.mjs
