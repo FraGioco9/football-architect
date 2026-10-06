@@ -242,6 +242,8 @@
 .language-option[aria-disabled="true"]{opacity:.42;cursor:not-allowed}
 .language-option-code{font-size:9px;letter-spacing:.09em;color:#83aaa9}
 .settings-language{padding:var(--space-16) var(--space-20) 22px}
+.settings-grid>.panel:has(.settings-language){overflow:visible;position:relative;z-index:2}
+.settings-grid>.panel:has(.settings-language) .language-listbox{z-index:3}
 @media(max-width:900px){
   .language-picker-top{width:96px;flex-basis:96px}
   .language-picker-top .language-current span{display:none}
