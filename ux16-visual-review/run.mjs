@@ -8,7 +8,7 @@ async function snap(channel,name){
   const browser=await chromium.launch({headless:true,channel});
   const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
   const page=await context.newPage();
-  await page.addInitScript(()=>localStorage.setItem('football-architect:language','it'));
+  await page.addInitScript(()=>{if(!localStorage.getItem('football-architect:language'))localStorage.setItem('football-architect:language','it');});
   try{
     await page.goto(base+'/',{waitUntil:'networkidle'});
     const home=page.locator('[data-language-picker="home"] [role="combobox"]');
