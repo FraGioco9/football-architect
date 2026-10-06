@@ -219,6 +219,57 @@ export function openNextSeasonDates(w,{plan=null}={}){
   return next;
 }
 
+export function competitionGapSlots(fixtures,count,{reserved=[],seed=0,season=1,label='competition'}={}){
+  if(!Array.isArray(fixtures)||!Number.isSafeInteger(count)||count<1)throw new Error('CAREER_COMPETITION_SLOTS');
+  const blocked=new Set(reserved),eligible=[];
+  for(let round=1;round<fixtures.length;round++){
+    const from=fixtures[round-1]?.date,to=fixtures[round]?.date;
+    if(!isCareerDate(from)||!isCareerDate(to))continue;
+    if(daysBetweenISO(from,to)>=5&&!blocked.has(round))eligible.push(round);
+  }
+  if(eligible.length<count)throw new Error('CAREER_COMPETITION_CALENDAR_FULL');
+  const chosen=[];
+  for(let i=0;i<count;i++){
+    const ideal=Math.max(0,Math.min(eligible.length-1,Math.round((i+1)*(eligible.length+1)/(count+1))-1));
+    const jitter=(hash('competition-slot',label,seed,season,i)%3)-1;
+    let pos=Math.max(0,Math.min(eligible.length-1,ideal+jitter));
+    while(chosen.includes(eligible[pos])&&pos<eligible.length-1)pos++;
+    while(chosen.includes(eligible[pos])&&pos>0)pos--;
+    const value=eligible[pos];
+    if(chosen.includes(value))throw new Error('CAREER_COMPETITION_SLOT_DUPLICATE');
+    chosen.push(value);
+  }
+  return chosen.sort((a,b)=>a-b);
+}
+
+export function competitionDateForGap(fixtures,gapRound,{seed=0,season=1,label='competition',index=0}={}){
+  if(!Number.isSafeInteger(gapRound)||gapRound<1||gapRound>=fixtures.length)throw new Error('CAREER_COMPETITION_GAP');
+  const from=fixtures[gapRound-1]?.date,to=fixtures[gapRound]?.date;
+  if(!isCareerDate(from)||!isCareerDate(to))throw new Error('CAREER_COMPETITION_GAP_DATE');
+  const span=daysBetweenISO(from,to),preferred=[],fallback=[];
+  for(let offset=1;offset<span;offset++){
+    const date=addDaysISO(from,offset);
+    if(offset>=2&&offset<=span-2)fallback.push(date);
+    if(offset>=2&&offset<=span-2&&[2,3,4].includes(weekday(date)))preferred.push(date);
+  }
+  const candidates=preferred.length?preferred:fallback;
+  if(!candidates.length)throw new Error('CAREER_COMPETITION_GAP_FULL');
+  return pick(candidates,'competition-date',label,seed,season,gapRound,index);
+}
+
+export function competitionKickoffTime(countryId,{seed=0,season=1,label='competition',index=0,continental=false}={}){
+  const pool=continental?['18:45','20:00','21:00']:profile(countryId).midweekTimes;
+  return pick(pool,'competition-kickoff',label,seed,season,countryId,index);
+}
+
+export function decorateCompetitionMatches(matches,{date,kickoff}={}){
+  if(!Array.isArray(matches)||!isCareerDate(date)||!isCareerKickoff(kickoff))throw new Error('CAREER_COMPETITION_FIXTURE');
+  for(const match of matches){
+    match.date=date;match.kickoff=kickoff;match.datetime=`${date}T${kickoff}:00`;
+  }
+  return matches;
+}
+
 export function advanceCareerDate(w){
   ensureCareerDates(w);
   w.currentDate=addDaysISO(w.currentDate,1);
