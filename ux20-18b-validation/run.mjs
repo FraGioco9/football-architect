@@ -36,6 +36,7 @@ try{
   check(await alpha.count()===1,'fixture must expose the Alpha career');
   await alpha.locator('[data-action="career-load"]').click();
   await page.waitForURL('**/dashboard');
+  await page.waitForTimeout(500);
   await home();
   await page.locator('[data-action="menu-manage"]').click();
   await page.waitForURL('**/careers');
