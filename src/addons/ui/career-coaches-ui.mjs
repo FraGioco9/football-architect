@@ -1,0 +1,12 @@
+import {careerCoachesEnabled,opponentCoachReport} from '../../domain/career-coaches.js';
+import {esc} from '../../ui-components.js';
+const labels={balanced:['Equilibrato','Balanced'],possession:['Possesso','Possession'],highPress:['Pressing alto','High press'],lowBlock:['Blocco basso','Low block'],direct:['Gioco diretto','Direct'],counter:['Contropiede','Counterattack']};
+export function renderCareerCoachPanel(w,lang='it'){
+ if(w?.advancedV1?.enabled!==true)return '';
+ const en=lang==='en',tr=(it,english)=>en?english:it;
+ if(!careerCoachesEnabled(w))return `<section class="panel sim05-panel" aria-label="SIM05"><h3>${tr('Allenatori AI e scouting avversario','AI managers and opponent scouting')}</h3><p>${tr('Attiva le scelte tattiche degli allenatori avversari soltanto per le partite future.','Enable opponent AI decisions for future fixtures only.')}</p><button class="btn btn-primary" type="button" data-action="sim05-enable">${tr('Attiva SIM05','Enable SIM05')}</button></section>`;
+ const r=opponentCoachReport(w);
+ if(!r)return `<section class="panel sim05-panel" aria-label="SIM05"><h3>SIM05</h3><p>${tr('Nessuna prossima partita. Identità AI e decisioni salvate nella carriera.','No upcoming match. AI identities and decisions are saved in the career.')}</p></section>`;
+ const probable=r.suspectedStyle?labels[r.suspectedStyle]?.[en?1:0]||r.suspectedStyle:'—';
+ return `<section class="panel sim05-panel" aria-label="SIM05"><h3>${tr('Analisi allenatore avversario','Opponent coach analysis')}</h3><div class="sim05-stats"><div><small>${tr('Prossimo avversario','Next opponent')}</small><strong>${esc(r.club)}</strong></div><div><small>${tr('Allenatore','Manager')}</small><strong>${esc(r.coachName)}</strong></div><div><small>${tr('Partite osservate','Observed matches')}</small><strong>${r.observed}</strong></div><div><small>${tr('Attendibilità indicativa','Estimated confidence')}</small><strong>${r.confidence}%</strong></div></div><p>${tr('Stile probabile','Likely style')}: <strong>${esc(probable)}</strong> · ${tr('Modulo probabile','Likely formation')}: <strong>${esc(r.suspectedFormation??'—')}</strong></p><p class="note">${r.warning==='insufficient'?tr('Campione insufficiente: nessuna previsione tattica divulgata.','Insufficient sample: no tactical prediction shown.'):tr('Stima ricavata dalle partite già disputate, non dalle capacità nascoste AI.','Estimate based on played matches, not private AI ratings.')}</p></section>`;
+}

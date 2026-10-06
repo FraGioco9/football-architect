@@ -1,0 +1,28 @@
+/* UX2-02: operational dashboard. Presentation-only, no global layout changes. */
+.dashboard-priorities{padding:clamp(16px,2vw,24px);margin:0 0 var(--space-16);min-width:0;overflow:hidden}
+.dashboard-priorities-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;min-width:0}
+.dashboard-priorities-heading h2{margin:4px 0 3px;font-size:clamp(17px,2vw,21px);line-height:1.3}
+.dashboard-priorities-heading p{margin:0;color:var(--color-text-secondary);font-size:12px;line-height:1.5}
+.dashboard-priorities-total{flex-shrink:0;white-space:nowrap;padding:6px 9px;background:rgba(61,117,105,.19);border-radius:9px;color:#b4d5c9;font-size:11px;font-weight:700}
+.dashboard-priorities-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dashboard-task{display:flex;align-items:center;gap:11px;min-width:0;border:1px solid #36535a;border-radius:12px;padding:13px;background:#1a2d35;color:var(--color-text-primary,#e9f4f1);text-align:left;cursor:pointer;transition:border-color .15s,background-color .15s}
+.dashboard-task:hover{background:#223a42;border-color:#6aab99}
+.dashboard-task:focus-visible{outline:3px solid var(--color-accent,#64d6a4);outline-offset:3px}
+.dashboard-task-icon{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#25463e;color:#88e5bf}
+.dashboard-task-warning .dashboard-task-icon{background:#4a3c2c;color:#f7ce8b}
+.dashboard-task-copy{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.dashboard-task-copy strong{font-size:12px;font-weight:750;line-height:1.35}
+.dashboard-task-copy small{font-size:11px;color:#a7bdc5;line-height:1.35}
+.dashboard-task-count{font-variant-numeric:tabular-nums;color:#f7ead1;background:#554333;padding:3px 7px;border-radius:8px;font-size:12px;font-weight:800}
+.dashboard-task>svg:last-child{flex:none;color:#9ab2b9}
+.dashboard-priorities .ds-empty{grid-column:1/-1}
+.dashboard-hero,.dashboard-priorities,.dashboard-two,.kpi-grid{scrollbar-gutter:stable;min-width:0}
+@media(max-width:760px){.dashboard-priorities-grid{grid-template-columns:1fr}.dashboard-priorities-heading{flex-wrap:wrap}.dashboard-priorities{margin-bottom:var(--space-12)}}
+@media(prefers-reduced-motion:reduce){.dashboard-task{transition:none}}
+@media(forced-colors:active){.dashboard-task{border:1px solid ButtonText}.dashboard-task:focus-visible{outline:2px solid Highlight}}
+/* Keep decorative pitch artwork inside the hero at intermediate widths. */
+.dashboard-hero{overflow:hidden}
+@media (min-width:761px) and (max-width:1120px){
+  /* The current season remains visible in the dashboard heading and sidebar. */
+  body:has(.dashboard-priorities) .top-round{display:none}
+}
