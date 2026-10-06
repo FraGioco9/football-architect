@@ -37,7 +37,7 @@ import {preferredLanguage, saveLanguage, translateUi, translate, pageTitle, GAME
 import {CAREER_STORAGE_KEY,PREVIOUS_CAREER_STORAGE_KEY,LEGACY_CAREER_STORAGE_KEY,persistCareer,parseCareerJson} from './storage.js';
 import {CAREER_CATALOG_KEY,readCareerCatalog} from './career-catalog.js';
 import {loadActiveCareer,migrateCurrentCareerToSlot,saveCareerToSlot} from './career-slots.js';
-import {listCareerSlots,switchCareerSlot,renameCareerSlot,duplicateCareerSlot,deleteCareerSlot,createFreshCareerSlot} from './career-management.js';
+import {listCareerSlots,switchCareerSlot,renameCareerSlot,duplicateCareerSlot,deleteCareerSlot} from './career-management.js';
 import {createCareerCheckpoint,listCareerCheckpoints,restoreCareerCheckpoint} from './career-checkpoints.js';
 import {exportCareerSlotJson,exportAllCareersJson,previewCareerImport,applyCareerImport,listImportBackups,restoreImportBackup,MAX_TRANSFER_BYTES} from './career-transfer.js';
 import {createIndexedDbVault,mirrorCatalogToVault,estimateCareerStorage,createEmergencyExport,readVerifiedVaultSlot,restoreSlotFromVault} from './career-vault.js';
@@ -976,10 +976,9 @@ root.addEventListener('click',async ev=>{
           if(!newCareerDraft)throw new Error('NEW_CAREER_DRAFT_MISSING');
           const candidate=structuredClone(newCareerDraft);
           startCareer(candidate,ui.chosenClub,managerName);
-          let created;
-          try{created=createFreshCareerSlot(careerStorage,candidate,validateSave);}
+          try{saveCareerToSlot(careerStorage,candidate,validateSave,{newCareer:true});}
           catch(error){primary.rollback();throw error;}
-          stagedNewCareer={career:created.career,mirrorError:created.mirrorError};
+          stagedNewCareer={career:candidate,mirrorError:null};
           break;
         }
         startCareer(world,ui.chosenClub,managerName);
