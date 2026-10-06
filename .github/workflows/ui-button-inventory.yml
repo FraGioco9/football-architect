@@ -73,6 +73,8 @@ jobs:
             }
           }
 
+          await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
+          await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:10000});
           const newCareer=page.locator('[data-action="menu-new"]').first();
           await newCareer.click();
           await page.locator('.onboarding').waitFor({state:'visible',timeout:10000});
