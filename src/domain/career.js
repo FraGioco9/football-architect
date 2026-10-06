@@ -19,8 +19,8 @@ import {syncCareerCoachesWorld} from './career-coaches.js';
 import {settleCareerMarketSeason,expireCareerMarketOffers} from './career-market.js';
 import {advanceCareerScouting,settleCareerScoutingSeason} from './career-scouting.js';
 import {advanceCareerAIMarket,settleCareerAIMarketSeason} from './career-ai-market.js';
-import {advanceCareerCupsRound,archiveCareerCupsSeason,openCareerCupsSeason} from './career-cups.js';
-import {advanceCareerContinentalRound,archiveCareerContinentalSeason,captureContinentalQualifiers,openCareerContinentalSeason} from './career-continental.js';
+import {advanceCareerCupsDay,advanceCareerCupsRound,archiveCareerCupsSeason,openCareerCupsSeason} from './career-cups.js';
+import {advanceCareerContinentalDay,advanceCareerContinentalRound,archiveCareerContinentalSeason,captureContinentalQualifiers,openCareerContinentalSeason} from './career-continental.js';
 import {advanceCareerDivisionsRound,captureDivisionSeason,openCareerDivisionsSeason} from './career-divisions.js';
 import {boardEnabled,boardStatus,recordBoardRound,settleBoardSeason,openBoardSeason} from './career-board.js';
 import {advanceManagerCareerRound,settleManagerCareerSeason,openManagerCareerSeason} from './career-manager.js';
@@ -65,6 +65,8 @@ function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=t
     if(hasCareerWorld(w))syncCareerWorldClock(w);
     if(facilityEnabled(w))advanceCareerFacilitiesRound(w);
     advanceCareerScouting(w);
+    advanceCareerCupsDay(w,{simulateManagedCup:simulateAdvancedMatch});
+    advanceCareerContinentalDay(w,{simulateManagedCup:simulateAdvancedMatch});
   }
   if(calendarPreview)settleCareerCalendarRound(w,{preview:calendarPreview});
   expireCareerMarketOffers(w);
