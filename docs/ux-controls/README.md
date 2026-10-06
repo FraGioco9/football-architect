@@ -7,5 +7,5 @@
 - Keyboard open/close, selection change, responsive overflow and B-PC03 career creation are covered by the targeted browser gate.
 
 Targeted gate: Chrome + Edge on Node 20 and Node 24 — PASS.
-Candidate SHA-256: $env:NEW_HASH
+Candidate SHA-256: 80651ede8e5f3db5659ae9b1d7e077573affc18fa3ed440b2069505c2ee05c20
 No deploy.
