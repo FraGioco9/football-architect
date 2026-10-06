@@ -1,25 +1,25 @@
 import {enableAdvancedCareer,hasAdvancedCareer} from './advanced-career.js';
-import {enableCareerTactics,careerTacticsEnabled} from './career-tactics.js';
-import {enableCareerRoles,careerRolesEnabled} from './career-roles.js';
-import {enableCareerMatchday,substitutionsEnabled} from './career-matchday.js';
-import {enableCareerStatistics,careerStatisticsEnabled} from './career-statistics.js';
-import {enableCareerTraining,hasCareerTraining} from './career-training.js';
-import {enableCareerYouth,hasCareerYouth} from './career-youth.js';
-import {enableCareerWorld,hasCareerWorld} from './career-world.js';
-import {enableCareerCoaches,careerCoachesEnabled} from './career-coaches.js';
-import {enableCareerMarket,marketEnabled} from './career-market.js';
-import {enableCareerCalendar,calendarEnabled} from './career-calendar.js';
-import {enableCareerScouting,scoutingEnabled} from './career-scouting.js';
-import {enableCareerAIMarket,aiMarketEnabled} from './career-ai-market.js';
-import {enableCareerDivisions,divisionsEnabled} from './career-divisions.js';
-import {enableCareerCups,cupsEnabled} from './career-cups.js';
-import {enableCareerContinental,continentalEnabled} from './career-continental.js';
-import {enableCareerPersonality,personalityEnabled} from './career-personality.js';
-import {enableCareerContracts,contractsEnabled} from './career-contracts.js';
-import {enableCareerFinance,financeEnabled} from './career-finance.js';
-import {enableCareerFacilities,facilityEnabled} from './career-facilities.js';
-import {enableCareerBoard,boardEnabled} from './career-board.js';
-import {enableManagerCareer,managerCareerEnabled} from './career-manager.js';
+import {enableCareerTactics,careerTacticsEnabled,validateCareerTactics} from './career-tactics.js';
+import {enableCareerRoles,careerRolesEnabled,validateCareerRoles} from './career-roles.js';
+import {enableCareerMatchday,substitutionsEnabled,validateCareerMatchday} from './career-matchday.js';
+import {enableCareerStatistics,careerStatisticsEnabled,validateCareerStatistics} from './career-statistics.js';
+import {enableCareerTraining,hasCareerTraining,validateCareerTraining} from './career-training.js';
+import {enableCareerYouth,hasCareerYouth,validateCareerYouth} from './career-youth.js';
+import {enableCareerWorld,hasCareerWorld,validateCareerWorld} from './career-world.js';
+import {enableCareerCoaches,careerCoachesEnabled,validateCareerCoaches} from './career-coaches.js';
+import {enableCareerMarket,marketEnabled,validateCareerMarket} from './career-market.js';
+import {enableCareerCalendar,calendarEnabled,validateCareerCalendar} from './career-calendar.js';
+import {enableCareerScouting,scoutingEnabled,validateCareerScouting} from './career-scouting.js';
+import {enableCareerAIMarket,aiMarketEnabled,validateCareerAIMarket} from './career-ai-market.js';
+import {enableCareerDivisions,divisionsEnabled,validateCareerDivisions} from './career-divisions.js';
+import {enableCareerCups,cupsEnabled,validateCareerCups} from './career-cups.js';
+import {enableCareerContinental,continentalEnabled,validateCareerContinental} from './career-continental.js';
+import {enableCareerPersonality,personalityEnabled,validateCareerPersonality} from './career-personality.js';
+import {enableCareerContracts,contractsEnabled,validateCareerContracts} from './career-contracts.js';
+import {enableCareerFinance,financeEnabled,validateCareerFinance} from './career-finance.js';
+import {enableCareerFacilities,facilityEnabled,validateCareerFacilities} from './career-facilities.js';
+import {enableCareerBoard,boardEnabled,validateCareerBoard} from './career-board.js';
+import {enableManagerCareer,managerCareerEnabled,validateManagerCareer} from './career-manager.js';
 
 export const OFFICIAL_SYSTEM_KEYS=Object.freeze([
   'advanced','tactics','roles','matchday','statistics','training','youth','world','coaches',
@@ -52,6 +52,32 @@ export function officialCareerSystemStatus(w){
     facilities:facilityEnabled(w),
     board:boardEnabled(w),
     manager:managerCareerEnabled(w)
+  };
+}
+
+export function officialCareerValidationStatus(w){
+  return {
+    tactics:validateCareerTactics(w),
+    roles:validateCareerRoles(w),
+    matchday:validateCareerMatchday(w),
+    statistics:validateCareerStatistics(w),
+    training:validateCareerTraining(w),
+    youth:validateCareerYouth(w),
+    world:validateCareerWorld(w),
+    coaches:validateCareerCoaches(w),
+    market:validateCareerMarket(w),
+    calendar:validateCareerCalendar(w),
+    scouting:validateCareerScouting(w),
+    aiMarket:validateCareerAIMarket(w),
+    divisions:validateCareerDivisions(w),
+    cups:validateCareerCups(w),
+    continental:validateCareerContinental(w),
+    personality:validateCareerPersonality(w),
+    contracts:validateCareerContracts(w),
+    finance:validateCareerFinance(w),
+    facilities:validateCareerFacilities(w),
+    board:validateCareerBoard(w),
+    manager:validateManagerCareer(w)
   };
 }
 
