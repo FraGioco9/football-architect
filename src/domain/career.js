@@ -62,7 +62,6 @@ function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=t
   }
   if(calendarPreview)settleCareerCalendarRound(w,{preview:calendarPreview});
   expireCareerMarketOffers(w);
-  advanceCareerScouting(w);
   let match=null,matchDue=fixtureIsDue(w);
   if(matchDue&&simulateDueMatch){
     match=simulateRoundMutating(w,{calendarConfirmationToken,advanceDays:0,calendarAlreadySettled:true});
@@ -100,7 +99,7 @@ function simulateRoundMutating(w,{calendarConfirmationToken=null,advanceDays=7,c
     for(let day=0;day<advanceDays;day++)advanceCareerDate(w);
     if(enhanced){prepareAdvancedRound(w,{days:advanceDays});if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');}
   }
-  if(!enhanced&&advanceDays>0)for(const p of w.players)p.fitness=clamp(p.fitness+12,0,100);
+  if(!enhanced)for(const p of w.players)p.fitness=clamp(p.fitness+12,0,100);
   for(const match of week.matches){
     if(enhanced)simulateAdvancedMatch(w,match);
     else simulateMatch(w,match,rand);
