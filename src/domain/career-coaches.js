@@ -21,7 +21,9 @@ function teams(w){
 export function syncCareerCoachesWorld(w){
  if(!careerCoachesEnabled(w))return;
  const s=w.advancedV1.coachesV1;
- for(const club of teams(w)){
+ const current=teams(w),present=new Set(current.map(club=>key(club.countryId,club.id)));
+ for(const k of Object.keys(s.coaches))if(!present.has(k))delete s.coaches[k];
+ for(const club of current){
   const k=key(club.countryId,club.id);
   if(!s.coaches[k])s.coaches[k]=createOfficialCoach(w,k,club.countryId);
  }
