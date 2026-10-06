@@ -27,7 +27,7 @@ import {advanceManagerCareerRound,settleManagerCareerSeason,openManagerCareerSea
 import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCareerPrize,closeCareerFinanceSeason,openCareerFinanceSeason} from './career-finance.js';
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
-import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,addDaysISO} from './career-date.js';
+import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,nextSeasonCalendarPlan,addDaysISO,formatCareerDateTime} from './career-date.js';
 import {ensureOfficialCareerSystems} from './career-official.js';
 
 export function startCareer(w,clubId,manager){
@@ -38,7 +38,8 @@ export function startCareer(w,clubId,manager){
   w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
   ensureOfficialCareerSystems(w);
   addMessage(w,'Benvenuto sulla panchina',`La dirigenza di ${myClub(w).name} ti ha affidato la prima squadra. Il tuo obiettivo è costruire un progetto competitivo nella competizione ${w.competition||'Lega Aurora'}.`,'welcome',{type:'welcome',params:{club:myClub(w).name,league:w.competition||'Lega Aurora'}});
-  addMessage(w,'La stagione sta per iniziare',`Il campionato comprende ${w.teams.length} club e ${w.fixtures.length} giornate. La prima partita sarà contro ${fullName(w,clubMatch(w.fixtures[0],w.clubId).home===w.clubId?clubMatch(w.fixtures[0],w.clubId).away:clubMatch(w.fixtures[0],w.clubId).home)}.`,'calendar',{type:'calendar.start',params:{clubs:w.teams.length,rounds:w.fixtures.length,opponent:fullName(w,clubMatch(w.fixtures[0],w.clubId).home===w.clubId?clubMatch(w.fixtures[0],w.clubId).away:clubMatch(w.fixtures[0],w.clubId).home)}});
+  const opening=clubMatch(w.fixtures[0],w.clubId),openingOpponent=fullName(w,opening.home===w.clubId?opening.away:opening.home);
+  addMessage(w,'Prestagione iniziata',`La preparazione parte il ${formatCareerDateTime(w.currentDate,null,'it')}. Il campionato comprende ${w.teams.length} club e ${w.fixtures.length} giornate; la prima partita contro ${openingOpponent} è fissata per ${formatCareerDateTime(opening.date,opening.kickoff,'it')}.`,'calendar',{type:'calendar.start',params:{clubs:w.teams.length,rounds:w.fixtures.length,opponent:openingOpponent,date:opening.date,kickoff:opening.kickoff}});
   return w;
 }
 
@@ -169,6 +170,7 @@ function newSeasonMutating(w){
   if(w.round<w.fixtures.length)throw new Error('Termina il campionato prima di iniziare una nuova stagione.');
   clearCareerMatchdayPlans(w);
   beforeCareerCalendarSeason(w);
+  const nextCalendar=nextSeasonCalendarPlan(w);
   const previous=table(w),position=previous.findIndex(r=>r.id===w.clubId)+1;
   const boardReview=settleBoardSeason(w);
   settleManagerCareerSeason(w,{boardReview});
@@ -202,13 +204,13 @@ function newSeasonMutating(w){
     if(!developed&&p.age>30&&rand()<.3)p.ovr=Math.max(48,p.ovr-1);
   }
   if(hasAdvancedCareer(w)){
-    settleAdvancedSeason(w);
-    w.currentDate=addDaysISO(w.currentDate,21);w.careerDay+=21;
+    settleAdvancedSeason(w,{days:nextCalendar.days});
+    w.currentDate=addDaysISO(w.currentDate,nextCalendar.days);w.careerDay+=nextCalendar.days;
     if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');
   }else{
-    w.currentDate=addDaysISO(w.currentDate,21);w.careerDay+=21;
+    w.currentDate=addDaysISO(w.currentDate,nextCalendar.days);w.careerDay+=nextCalendar.days;
   }
-  openNextSeasonDates(w);
+  openNextSeasonDates(w,{plan:nextCalendar});
   settleCareerPersonalitySeason(w);
   if(hasCareerWorld(w))syncCareerWorldClock(w);
   openBoardSeason(w);
@@ -241,7 +243,7 @@ function newSeasonMutating(w){
   settleCareerAIMarketSeason(w);
   if(developed)openCareerTrainingSeason(w);
   w.lineup=makeDefaultLineup(w.players,w.clubId,w.formation);
-  addMessage(w,`Stagione ${w.season}: si riparte!`,`Hai chiuso la precedente stagione al ${position}° posto. La società ha stanziato ${compactMoney(prize)} in premi e nuovi fondi.`,'calendar',{type:'season.new',params:{season:w.season,position,prizeEURMinor:Math.round(prize*100)}});
+  addMessage(w,`Stagione ${w.season}: prestagione al via`,`Hai chiuso la precedente stagione al ${position}° posto. La nuova preparazione parte il ${formatCareerDateTime(w.currentDate,null,'it')} e la prima giornata è fissata per ${formatCareerDateTime(w.fixtures[0].date,w.fixtures[0].matches[0]?.kickoff,'it')}. La società ha stanziato ${compactMoney(prize)} in premi e nuovi fondi.`,'calendar',{type:'season.new',params:{season:w.season,position,prizeEURMinor:Math.round(prize*100),date:w.currentDate,firstMatchDate:w.fixtures[0].date}});
   w.lastMatchId=null;w.updatedAt=new Date().toISOString();
   return {position,prize};
 }
