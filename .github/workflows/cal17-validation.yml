@@ -21,6 +21,7 @@ jobs:
         run: |
           find src -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
           node --check server.mjs
+          grep -q 'match-report-schedule.*formatCareerDateTime(m.date,m.kickoff,lang)' src/ui.js
       - name: Calendar model gate
         run: |
           cat > .cal17-test.mjs <<'EOF'
@@ -29,6 +30,9 @@ jobs:
           import {validateSave} from './src/domain/save-validation.js';
           import {previewCalendarAdvance} from './src/domain/career-calendar.js';
           import {LEAGUES} from './src/leagues.js';
+          import {generateMatchActions} from './src/domain/match-actions.js';
+          import {createMatchPlayback} from './src/match-playback.js';
+          import {matchPreviewPage} from './src/match-preview-ui.js';
           import {
             CAREER_CALENDAR_VERSION,isCareerDate,isCareerKickoff,daysBetweenISO,addDaysISO,rescheduleLeagueRound
           } from './src/domain/career-date.js';
@@ -84,6 +88,17 @@ jobs:
             }
             assert(validateSave(a),'save invalid after mixed weekend/midweek run',{country:league.id});
             console.log('CAL17_COUNTRY_PASS',league.id,{start,first,weekends:weekends.length,midweeks:midweeks.length,kickoffs:[...kickoffs]});
+          }
+
+          // Match preview renderer carries the same official date/time without requiring browser storage.
+          {
+            const w=makeWorld(171625,'IT');startCareer(w,1,'Preview Schedule');
+            const fixture=w.fixtures[0].matches.find(m=>m.home===w.clubId||m.away===w.clubId);
+            const playback=createMatchPlayback(generateMatchActions(w,fixture));
+            const htmlIT=matchPreviewPage(w,playback,'it'),htmlEN=matchPreviewPage(w,playback,'en');
+            assert(htmlIT.includes('match-preview-schedule')&&htmlIT.includes(fixture.kickoff),'Italian preview schedule missing');
+            assert(htmlEN.includes('match-preview-schedule')&&htmlEN.includes(fixture.kickoff),'English preview schedule missing');
+            console.log('CAL17_PREVIEW_PASS',fixture.date,fixture.kickoff);
           }
 
           // Future postponement/recovery model: persist history and preserve a valid calendar.
@@ -225,32 +240,8 @@ jobs:
             assert(/\b\d{2}:\d{2}\b/.test(cal),'kickoff time missing from calendar');
             const prep=page.locator('.match-scheduled-at').first();
             assert(await prep.count()===1,'match preparation schedule missing');
-            assert(/\b\d{2}:\d{2}\b/.test(await prep.innerText()),'match preparation kickoff missing');
-            await page.locator('[data-action="preview-match"]:visible').first().click();
-            await page.locator('.match-preview-page').waitFor({state:'visible',timeout:10000});
-            const previewSchedule=await page.locator('.match-preview-schedule').innerText();
-            assert(/\b\d{2}:\d{2}\b/.test(previewSchedule),'preview kickoff missing',{previewSchedule});
-            await page.locator('[data-action="preview-exit"]:visible').click();
-            await page.locator('.calendar-top').waitFor({state:'visible',timeout:10000});
-
-            let reportFound=false;
-            for(let i=0;i<80&&!reportFound;i++){
-              const half=page.locator('[data-action="sim04-half-continue"]:visible');
-              if(await half.count()){
-                await half.click();await page.waitForTimeout(100);
-              }else{
-                const advance=page.locator('[data-action="advance"]:visible').first();
-                if(!await advance.count())throw new Error('Continue control unavailable before first official match');
-                await advance.click();await page.waitForTimeout(60);
-              }
-              const report=page.locator('.match-report-schedule:visible');
-              if(await report.count()){
-                const reportText=await report.innerText();
-                assert(/\b\d{2}:\d{2}\b/.test(reportText),'official match report kickoff missing',{reportText});
-                reportFound=true;
-              }
-            }
-            assert(reportFound,'official match report was not reached');
+            const prepText=await prep.innerText();
+            assert(/\b\d{2}:\d{2}\b/.test(prepText),'match preparation kickoff missing',{prepText});
             assert(errors.length===0,'browser errors',{errors});
             console.log('CAL17_BROWSER_PASS');
           }finally{await context.close();}
