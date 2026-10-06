@@ -1,4 +1,4 @@
-import {readPrefs,writePrefs,moveWidget,applyTableView,PAGES} from './qol03.js';
+import {readPrefs,writePrefs,moveWidget,applyTableView} from './qol03.js';
 import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
 import {view} from './ui.js';
@@ -24,6 +24,7 @@ import {matchPreviewStatus} from './match-preview-ui.js';
 import {loadStoredMatchPreview,startStoredMatchPreview,saveStoredMatchPreviewProgress,discardStoredMatchPreview} from './match-preview-storage.js';
 import {enhanceDesignSystem} from './design-system.js';
 import {isNavigationPage} from './navigation-model.js';
+import {parseAppRoute,pagePath,playerPath,matchPreviewPath} from './router.js';
 import {createControlHints} from './controls-system.js';
 import {createDialogCoordinator} from './dialog-system.js';
 import {createFeedbackCenter} from './feedback-system.js';
@@ -78,7 +79,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -102,8 +103,6 @@ if(officialSystemMigration.changed&&!blockedSaveError){
 }
 restorePendingPreview({open:false});
 let searchTimer;
-let qol03Trail=[];
-let qol03SkipHistory=false;
 function qol03Scope(){return String(activePreviewSlot()||'local');}
 function qol03Load(){ui.qol03=readPrefs(window.localStorage,qol03Scope());return ui.qol03;}
 function qol03Save(){return writePrefs(window.localStorage,qol03Scope(),ui.qol03);}
@@ -568,14 +567,93 @@ function resetCareerUi(page='dashboard'){
   // Caller may already have swapped `world`: old cursor was committed on each tick.
   stopPreviewTimer();
   stopContinuousAdvance();
-  ui={...ui,page,matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,chosenClub:1,managerDraft:'',modal:null,calendarRound:null,openMail:null,sidebarOpen:false,worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,squadSearch:'',marketSearch:'',squadFilter:'ALL',squadAvailability:'all',marketPosition:'ALL',marketTab:'explore'};
+  ui={...ui,page,matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,routeKind:'page',routePath:pagePath(page)||'/dashboard',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,chosenClub:1,managerDraft:'',modal:null,calendarRound:null,openMail:null,sidebarOpen:false,worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,squadSearch:'',marketSearch:'',squadFilter:'ALL',squadAvailability:'all',marketPosition:'ALL',marketTab:'explore'};
   restorePendingPreview({open:page==='dashboard'});
 }
-function showCareers(){stopContinuousAdvance();suspendPreview();ui.matchPreview=null;ui.page='careers';ui.modal=null;ui.sidebarOpen=false;render();window.scrollTo(0,0);}
+function writeRoute(path,{replace=false,state={}}={}){
+  const method=replace?'replaceState':'pushState';
+  window.history?.[method]?.({footballArchitectRoute:path,...state},'',path);
+}
+function deferredRoutePath(route){return `/careers?next=${encodeURIComponent(route.path)}`;}
+function deferCareerRoute(route,{replace=false,renderNow=true}={}){
+  stopContinuousAdvance();suspendPreview();
+  ui.pendingRoute=route;ui.routeKind='page';ui.routePath='/careers';ui.routeReturnPage=null;ui.routeNotFoundPath=null;ui.routeMatchId=null;
+  ui.matchPreview=null;ui.page='careers';ui.modal=null;ui.sidebarOpen=false;
+  writeRoute(deferredRoutePath(route),{replace,state:{pending:route.path}});
+  if(renderNow){render();window.scrollTo(0,0);}
+}
+function fixtureByRouteId(matchId){
+  return world.fixtures.flatMap(round=>round.matches||[]).find(match=>String(match.id)===String(matchId))||null;
+}
+function applyRoute(route,{replace=false,fromHistory=false,renderNow=true}={}){
+  if(!route||route.kind==='not-found'){
+    stopContinuousAdvance();suspendPreview();
+    ui.pendingRoute=null;ui.routeKind='not-found';ui.routePath=route?.path||window.location.pathname;ui.routeNotFoundPath=route?.path||window.location.pathname;ui.routeReturnPage=null;ui.routeMatchId=null;
+    ui.matchPreview=null;ui.modal=null;ui.sidebarOpen=false;ui.page='not-found';
+    if(!fromHistory)writeRoute(ui.routePath,{replace});
+    if(renderNow){render();window.scrollTo(0,0);}return;
+  }
+  if(route.requiresCareer&&!world.clubId){deferCareerRoute(route,{replace:replace||fromHistory,renderNow});return;}
+  stopContinuousAdvance();suspendPreview();
+  ui.pendingRoute=null;ui.routeKind=route.kind;ui.routePath=route.path;ui.routeNotFoundPath=null;ui.routeMatchId=null;ui.sidebarOpen=false;
+  if(route.kind==='page'){
+    ui.matchPreview=null;ui.modal=null;
+    if(route.page==='home')ui.page='home';
+    else if(route.page==='settings'&&!world.clubId)ui.page='home-settings';
+    else ui.page=route.page;
+    if(ui.page==='calendar'&&!ui.calendarRound)ui.calendarRound=Math.min(world.fixtures.length,world.round+1);
+  }else if(route.kind==='player'){
+    if(!world.players.some(player=>player.id===route.playerId)){
+      applyRoute({kind:'not-found',path:route.path},{replace:true,fromHistory,renderNow});return;
+    }
+    ui.routeReturnPage=isNavigationPage(ui.page)&&ui.page!=='careers'?ui.page:'squad';
+    ui.page=ui.routeReturnPage;ui.comparePlayerId=null;ui.modal={type:'player',id:route.playerId};ui.matchPreview=null;
+  }else if(route.kind==='match-preview'){
+    const fixture=fixtureByRouteId(route.matchId);
+    if(!fixture||fixture.result||!(fixture.home===world.clubId||fixture.away===world.clubId)){
+      applyRoute({kind:'not-found',path:route.path},{replace:true,fromHistory,renderNow});return;
+    }
+    ui.routeMatchId=route.matchId;ui.modal=null;
+    if(hasAdvancedCareer(world)){
+      ui.matchPreview=null;ui.page='advanced';ui.advancedTab='tactics';
+    }else{
+      openMatchPreview(route.matchId,{routeManaged:true});
+    }
+  }
+  if(!fromHistory)writeRoute(route.path,{replace,state:{kind:route.kind}});
+  if(renderNow){render();window.scrollTo(0,0);if(route.kind==='match-preview'&&!hasAdvancedCareer(world))startPreviewTimer();}
+}
+function routeFromLocation(){
+  const route=parseAppRoute(window.location.pathname);
+  if(route.kind==='page'&&route.page==='careers'){
+    const next=new URLSearchParams(window.location.search).get('next');
+    if(next){
+      const target=parseAppRoute(next);
+      if(target.kind!=='not-found'&&target.requiresCareer)ui.pendingRoute=target;
+    }
+  }
+  return route;
+}
+function resumePendingRoute({replace=true}={}){
+  const pending=ui.pendingRoute;
+  if(pending&&world.clubId){ui.pendingRoute=null;applyRoute(pending,{replace});return true;}
+  return false;
+}
+function showCareers({replace=false}={}){
+  applyRoute(parseAppRoute('/careers'),{replace});
+}
+function openPlayerRoute(id){
+  const path=playerPath(id);if(!path)throw new Error('PLAYER_ROUTE');
+  applyRoute(parseAppRoute(path));
+}
+function openMatchRoute(id){
+  const path=matchPreviewPath(id);if(!path)throw new Error('MATCH_ROUTE');
+  applyRoute(parseAppRoute(path));
+}
 // UX2-10: the main menu is UI state only. A failed durable commit must
 // leave the game visible and cannot create or replace a career slot.
 async function returnToMainMenu({confirmDraft=true}={}){
-  if(ui.page==='home'){return;}
+  if(ui.page==='home'&&ui.routePath==='/'){return;}
   if(confirmDraft&&ui.page!=='careers'&&ui.page!=='home-settings'&&!(window.confirm(ui.language==='en'
     ?'Return to the main menu? Unconfirmed form edits will be lost; saved careers will remain intact.'
     :'Tornare al menu principale? Le modifiche non confermate ai moduli andranno perse; le carriere salvate resteranno intatte.')))return;
@@ -595,24 +673,20 @@ async function returnToMainMenu({confirmDraft=true}={}){
       :'Anteprima salvata e carriera non coincidono. Rimani nel gioco ed esporta un backup.');
   }else if(!saveBeforeSlotChange())throw new Error(ui.language==='en'?'Could not verify the career save. Remain in game.':'Salvataggio della carriera non verificato. Resta nel gioco.');
   await primary.commit();
-  ui.page='home';ui.modal=null;ui.sidebarOpen=false;ui.matchPreview=null;
-  render();window.scrollTo(0,0);
+  applyRoute(parseAppRoute('/'));
   root.querySelector('#home-title')?.focus({preventScroll:true});
 }
 
-function navigate(page){
-  stopContinuousAdvance();
-  suspendPreview();
-  const historyEntry=!qol03SkipHistory;qol03SkipHistory=false;
+function navigate(page,{replace=false,fromHistory=false}={}){
   if(!isNavigationPage(page))return;
-  if(historyEntry&&ui.page!==page){qol03Trail.push(ui.page);if(qol03Trail.length>40)qol03Trail.shift();}
-  ui.matchPreview=null;ui.page=page;ui.modal=null;ui.sidebarOpen=false;
-  if(page==='calendar'&&!ui.calendarRound)ui.calendarRound=Math.min(world.fixtures.length,world.round+1);
-  if(historyEntry&&window.history?.pushState)window.history.pushState({qol03Page:page},'',window.location.pathname+window.location.search);
-  render();window.scrollTo({top:0,behavior:'instant'});
+  const path=pagePath(page);if(!path)return;
+  applyRoute(parseAppRoute(path),{replace,fromHistory});
 }
-function qol03Back(){const prev=qol03Trail.pop()||'dashboard';qol03SkipHistory=true;navigate(prev);} 
-window.addEventListener('popstate',ev=>{const page=ev.state?.qol03Page;if(page&&PAGES.includes(page)){qol03SkipHistory=true;navigate(page);}else if(world.clubId)qol03Back();});
+function qol03Back(){
+  if(window.history.length>1)window.history.back();
+  else navigate(world.clubId?'dashboard':'careers',{replace:true});
+}
+window.addEventListener('popstate',()=>applyRoute(routeFromLocation(),{fromHistory:true,replace:true}));
 
 // Read-only SIM01.05 preview: save only its independent event/cursor keys, NEVER the career.
 function updatePreviewSurface(){
@@ -637,7 +711,7 @@ function startPreviewTimer(){
     if(matchPlaybackSnapshot(ui.matchPreview).finished)stopPreviewTimer();
   },interval);
 }
-function openMatchPreview(matchId){
+function openMatchPreview(matchId,{routeManaged=false}={}){
   const fixture=world.fixtures[world.round]?.matches.find(match=>match.id===matchId &&
     (match.home===world.clubId||match.away===world.clubId) && !match.result);
   if(!fixture)throw new Error(ui.language==='en'?'Only your upcoming unplayed fixture can be previewed.':'Puoi vedere soltanto l’anteprima della prossima partita da giocare.');
@@ -650,7 +724,8 @@ function openMatchPreview(matchId){
     createMatchPlayback(generateMatchActions(world,fixture)));
   ui.previewSaved=true;
   ui.page='match-preview';ui.modal=null;ui.sidebarOpen=false;
-  render();window.scrollTo(0,0);startPreviewTimer();
+  if(!routeManaged){const path=matchPreviewPath(matchId);if(path){ui.routeKind='match-preview';ui.routePath=path;ui.routeMatchId=matchId;writeRoute(path);}}
+  if(!routeManaged){render();window.scrollTo(0,0);startPreviewTimer();}
 }
 // Background tabs must not silently finish a match while the player is away.
 document.addEventListener('visibilitychange',()=>{
