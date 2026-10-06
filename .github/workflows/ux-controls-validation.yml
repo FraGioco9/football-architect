@@ -44,8 +44,11 @@ jobs:
             $output=[IO.File]::Create($dest)
             try{$gzip.CopyTo($output)}finally{$output.Dispose();$gzip.Dispose();$input.Dispose()}
           }
-          Expand-GzipBase64 $env:JS_GZ_B64 "./work/football-architect/src/controls-system.js"
-          Expand-GzipBase64 $env:CSS_GZ_B64 "./work/football-architect/src/controls-system.css"
+          $js=(Get-Content ./ux-patch/controls-system.js.gz.b64 -Raw).Trim()
+          $css=(Get-Content ./ux-patch/controls-system.css.gz.b64 -Raw).Trim()
+          Expand-GzipBase64 $js "./work/football-architect/src/controls-system.js"
+          Expand-GzipBase64 $css "./work/football-architect/src/controls-system.css"
+          if(-not (Select-String -Path ./work/football-architect/src/controls-system.js -Pattern "export function createControlHints" -Quiet)){throw "controls-system export missing"}
           node --check ./work/football-architect/src/controls-system.js
           node --check ./work/football-architect/src/main.js
 
