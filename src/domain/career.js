@@ -27,7 +27,7 @@ import {advanceManagerCareerRound,settleManagerCareerSeason,openManagerCareerSea
 import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCareerPrize,closeCareerFinanceSeason,openCareerFinanceSeason} from './career-finance.js';
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
-import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,nextSeasonCalendarPlan,addDaysISO,formatCareerDateTime} from './career-date.js';
+import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,nextSeasonCalendarPlan,addDaysISO,daysBetweenISO,formatCareerDateTime} from './career-date.js';
 import {ensureOfficialCareerSystems} from './career-official.js';
 
 export function startCareer(w,clubId,manager){
@@ -75,19 +75,23 @@ function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=t
   return {date:w.currentDate,advanced:true,matchDue,match};
 }
 
-export function simulateRound(w,{calendarConfirmationToken=null,advanceDays=7,calendarAlreadySettled=false}={}){
+export function simulateRound(w,{calendarConfirmationToken=null,advanceDays=null,calendarAlreadySettled=false}={}){
+  ensureCareerDates(w);
+  const next=w.fixtures[w.round],resolvedAdvanceDays=advanceDays===null
+    ?(next?Math.max(0,daysBetweenISO(w.currentDate,next.date)):0)
+    :advanceDays;
   // Advanced transitions are transactional: a failure never half-plays a matchday.
   if(hasAdvancedCareer(w)){
     const candidate=structuredClone(w);
-    simulateRoundMutating(candidate,{calendarConfirmationToken,advanceDays,calendarAlreadySettled});
+    simulateRoundMutating(candidate,{calendarConfirmationToken,advanceDays:resolvedAdvanceDays,calendarAlreadySettled});
     Object.assign(w,candidate);
     return clubMatch(w.fixtures[w.round-1],w.clubId);
   }
-  return simulateRoundMutating(w,{calendarConfirmationToken,advanceDays,calendarAlreadySettled});
+  return simulateRoundMutating(w,{calendarConfirmationToken,advanceDays:resolvedAdvanceDays,calendarAlreadySettled});
 }
 function simulateRoundMutating(w,{calendarConfirmationToken=null,advanceDays=7,calendarAlreadySettled=false}={}){
   ensureCareerDates(w);
-  if(!Number.isSafeInteger(advanceDays)||advanceDays<0||advanceDays>31)throw new Error('CAREER_ADVANCE_DAYS');
+  if(!Number.isSafeInteger(advanceDays)||advanceDays<0||advanceDays>120)throw new Error('CAREER_ADVANCE_DAYS');
   if(financeEnabled(w))reconcileCareerFinance(w,{reason:'round'});
   const calendarPreview=calendarEnabled(w)&&!calendarAlreadySettled&&advanceDays>0?previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+advanceDays}):null;
   if(calendarPreview)processCareerCalendarRound(w,{confirmationToken:calendarConfirmationToken,preview:calendarPreview});
