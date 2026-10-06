@@ -507,16 +507,16 @@ async function runContinuousAdvance(){
       if(token!==continuousAdvanceToken||!ui.continuing)return;
       ui.calendarRound=world.round;
       if(blockingMessage){
-        ui.continuing=false;ui.continuationBlocker={type:'mail',id:blockingMessage.id};ui.page='inbox';ui.openMail=blockingMessage.id;ui.modal=null;
+        ui.continuing=false;ui.continuationBlocker={type:'mail',id:blockingMessage.id};ui.openMail=blockingMessage.id;ui.modal=null;
         void queueVaultSync();
-        render();
+        navigate('inbox',{replace:true});
         toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
         return;
       }
       if(boardStatus(world)!=='active'){
-        ui.continuing=false;ui.continuationBlocker={type:'board'};ui.page='board';ui.modal=null;
+        ui.continuing=false;ui.continuationBlocker={type:'board'};ui.modal=null;
         void queueVaultSync();
-        render();
+        navigate('board',{replace:true});
         toast(ui.language==='en'?'Simulation stopped: the board requires your attention.':'Simulazione interrotta: la dirigenza richiede il tuo intervento.','info');
         return;
       }
@@ -595,13 +595,15 @@ function applyRoute(route,{replace=false,fromHistory=false,renderNow=true}={}){
   }
   if(route.requiresCareer&&!world.clubId){deferCareerRoute(route,{replace:replace||fromHistory,renderNow});return;}
   stopContinuousAdvance();suspendPreview();
-  ui.pendingRoute=null;ui.routeKind=route.kind;ui.routePath=route.path;ui.routeNotFoundPath=null;ui.routeMatchId=null;ui.sidebarOpen=false;
+  ui.pendingRoute=route.pendingTarget??null;ui.routeKind=route.kind;ui.routePath=route.path;ui.routeNotFoundPath=null;ui.routeMatchId=null;ui.sidebarOpen=false;
   if(route.kind==='page'){
     ui.matchPreview=null;ui.modal=null;
     if(route.page==='home')ui.page='home';
     else if(route.page==='settings'&&!world.clubId)ui.page='home-settings';
     else ui.page=route.page;
     if(ui.page==='calendar'&&!ui.calendarRound)ui.calendarRound=Math.min(world.fixtures.length,world.round+1);
+  }else if(route.kind==='new-career'){
+    ui.matchPreview=null;ui.modal=null;ui.page=world.clubId?'careers':'dashboard';
   }else if(route.kind==='player'){
     if(!world.players.some(player=>player.id===route.playerId)){
       applyRoute({kind:'not-found',path:route.path},{replace:true,fromHistory,renderNow});return;
@@ -609,6 +611,7 @@ function applyRoute(route,{replace=false,fromHistory=false,renderNow=true}={}){
     ui.routeReturnPage=isNavigationPage(ui.page)&&ui.page!=='careers'?ui.page:'squad';
     ui.page=ui.routeReturnPage;ui.comparePlayerId=null;ui.modal={type:'player',id:route.playerId};ui.matchPreview=null;
   }else if(route.kind==='match-preview'){
+    ui.routeReturnPage=isNavigationPage(ui.page)&&ui.page!=='careers'?ui.page:'calendar';
     const fixture=fixtureByRouteId(route.matchId);
     if(!fixture||fixture.result||!(fixture.home===world.clubId||fixture.away===world.clubId)){
       applyRoute({kind:'not-found',path:route.path},{replace:true,fromHistory,renderNow});return;
@@ -629,7 +632,7 @@ function routeFromLocation(){
     const next=new URLSearchParams(window.location.search).get('next');
     if(next){
       const target=parseAppRoute(next);
-      if(target.kind!=='not-found'&&target.requiresCareer)ui.pendingRoute=target;
+      if(target.kind!=='not-found'&&target.requiresCareer)return {...route,pendingTarget:target};
     }
   }
   return route;
@@ -649,6 +652,12 @@ function openPlayerRoute(id){
 function openMatchRoute(id){
   const path=matchPreviewPath(id);if(!path)throw new Error('MATCH_ROUTE');
   applyRoute(parseAppRoute(path));
+}
+function closeRoutedResource(){
+  if(!['player','match-preview'].includes(ui.routeKind))return false;
+  const fallback=ui.routeReturnPage||(ui.routeKind==='player'?'squad':'calendar');
+  navigate(fallback,{replace:true});
+  return true;
 }
 // UX2-10: the main menu is UI state only. A failed durable commit must
 // leave the game visible and cannot create or replace a career slot.
@@ -877,7 +886,10 @@ root.addEventListener('click',async ev=>{
       case 'start-career':{
         const field=document.getElementById('manager-name');
         startCareer(world,ui.chosenClub,field?.value||ui.managerDraft||'Allenatore');
-        ui.page='dashboard';refresh(`Benvenuto al ${myClub(world).name}!`);window.scrollTo(0,0);break;
+        if(!save())throw new Error('Salvataggio carriera non riuscito.');
+        const welcome=`Benvenuto al ${myClub(world).name}!`;
+        if(!resumePendingRoute())navigate('dashboard',{replace:true});
+        toast(welcome);window.scrollTo(0,0);break;
       }
       case 'contracts-propose':{
         const pid=Number(document.getElementById('ply05-player')?.value);
@@ -974,20 +986,21 @@ root.addEventListener('click',async ev=>{
       case 'menu-home':await returnToMainMenu();break;
       case 'menu-continue':{
         if(blockedSaveError)throw blockedSaveError;
-        if(!world.clubId){ui.page='dashboard';render();break;}
+        if(!world.clubId){showCareers();break;}
+        if(resumePendingRoute()){focusPage();break;}
         restorePendingPreview({open:true});
-        if(ui.page!=='match-preview')ui.page='dashboard';
-        ui.modal=null;ui.sidebarOpen=false;render();window.scrollTo(0,0);focusPage();break;
+        if(ui.page==='match-preview'&&ui.matchPreview?.record?.matchId){openMatchRoute(ui.matchPreview.record.matchId);}
+        else navigate('dashboard',{replace:true});
+        focusPage();break;
       }
       case 'menu-load':case 'menu-manage':showCareers();break;
-      case 'menu-settings':stopContinuousAdvance();ui.page='home-settings';ui.modal=null;render();focusPage();break;
-      case 'menu-open-settings':stopContinuousAdvance();ui.page=world.clubId?'settings':'home-settings';render();focusPage();break;
+      case 'menu-settings':case 'menu-open-settings':applyRoute(parseAppRoute('/settings'));focusPage();break;
       case 'menu-import':root.querySelector('#home-import-file')?.click();break;
       case 'career-load':{
         if(!saveBeforeSlotChange())break;
         const selected=switchCareerSlot(careerStorage,id,validateSave);
         world=selected.career;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi();
-        render();window.scrollTo(0,0);
+        if(!resumePendingRoute())navigate('dashboard',{replace:true});
         if(selected.mirrorError)reportError(readableStorageError(selected.mirrorError));
         break;
       }
@@ -997,7 +1010,7 @@ root.addEventListener('click',async ev=>{
         const fresh=makeWorld();
         const created=createFreshCareerSlot(careerStorage,fresh,validateSave);
         world=created.career;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi();
-        render();window.scrollTo(0,0);
+        applyRoute(parseAppRoute('/careers/new'),{replace:true});
         if(created.mirrorError)reportError(readableStorageError(created.mirrorError));
         break;
       }
@@ -1107,7 +1120,7 @@ root.addEventListener('click',async ev=>{
       }
       case 'toggle-sidebar':toggleDrawer(!ui.sidebarOpen);break;
       case 'close-sidebar':toggleDrawer(false);break;
-      case 'preview-match':if(hasAdvancedCareer(world)){ui.page='advanced';ui.advancedTab='tactics';toast(ui.language==='en'?'Advanced mode: set tactics before playing; the official report will show the recorded actions.':'Modalità avanzata: prepara le tattiche prima di giocare; il tabellino mostrerà gli eventi registrati.');}else openMatchPreview(id);break;
+      case 'preview-match':openMatchRoute(id);if(hasAdvancedCareer(world))toast(ui.language==='en'?'Advanced mode: set tactics before playing; the official report will show the recorded actions.':'Modalità avanzata: prepara le tattiche prima di giocare; il tabellino mostrerà gli eventi registrati.');break;
       case 'preview-exit':navigate('calendar');break;
       case 'preview-discard':ui.modal={type:'preview-discard-confirm'};render();break;
       case 'preview-discard-confirm':discardActivePreview();ui.modal=null;navigate('calendar');break;
@@ -1157,13 +1170,13 @@ root.addEventListener('click',async ev=>{
       case 'new-season':{
         stopContinuousAdvance();
         if(!confirmAction(`Avviare la stagione ${world.season+1}? La classifica e le statistiche stagionali ripartiranno da zero.`))break;
-        const res=await runCheckpointed('before-season',()=>newSeason(world));ui.calendarRound=1;ui.page='dashboard';toast(`Nuova stagione! ${res.position}° posto e premio ${Math.round(res.prize/1e6*10)/10} milioni €.`);break;
+        const res=await runCheckpointed('before-season',()=>newSeason(world));ui.calendarRound=1;navigate('dashboard',{replace:true});toast(`Nuova stagione! ${res.position}° posto e premio ${Math.round(res.prize/1e6*10)/10} milioni €.`);break;
       }
-      case 'player':ui.comparePlayerId=null;ui.modal={type:'player',id:Number(id)};render();break;
+      case 'player':openPlayerRoute(Number(id));break;
       case 'match':ui.modal={type:'match',id};render();break;
       case 'slot':ui.modal={type:'slot',index};render();break;
-      case 'close-modal':ui.modal=null;render();break;
-      case 'dismiss-modal':if(!ev.target.closest('[data-stop-close]')){ui.modal=null;render();}break;
+      case 'close-modal':if(!closeRoutedResource()){ui.modal=null;render();}break;
+      case 'dismiss-modal':if(!ev.target.closest('[data-stop-close]')){if(!closeRoutedResource()){ui.modal=null;render();}}break;
       case 'formation':changeFormation(world,field);syncCareerTrainingFormation(world);refresh(`Modulo ${field} applicato.`);break;
       case 'auto-lineup':autoLineup(world);refresh('Miglior undici disponibile selezionato.');break;
       case 'assign':assignPlayer(world,index,Number(id));ui.modal=null;refresh('Formazione aggiornata.');break;
@@ -1487,6 +1500,8 @@ root.addEventListener('keydown',ev=>{
 });
 // Capture keyboard focus inside dialogs before underlying navigation shortcuts.
 root.addEventListener('keydown',ev=>{dialogCoordinator.keydown(ev);},true);
+applyRoute(routeFromLocation(),{fromHistory:true,replace:true,renderNow:false});
+window.history.replaceState({footballArchitectRoute:window.location.pathname},'',window.location.pathname+window.location.search);
 render();
 queueVaultSync();
 
