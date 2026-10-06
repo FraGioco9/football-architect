@@ -306,17 +306,20 @@ export function tactics(w,ui){
 function cupCalendarStrip(w,ui,dayNumber){
  if(!cupsEnabled(w)||w.advancedV1.cupsV1.deferred)return '';
  const cup=cupForCountry(w,w.countryId),round=cup?.rounds.find(r=>r.leagueRound===dayNumber);if(!round)return '';
- const en=ui.language==='en',name=id=>w.teams.find(c=>c.id===id)?.name??String(id);
- const matches=round.matches.map(m=>`<li>${esc(name(m.home))} · ${m.result?`${m.result.homeGoals}–${m.result.awayGoals}`:'vs'} · ${esc(name(m.away))}${m.result?.penalties?` (${m.result.penalties.home}–${m.result.penalties.away} ${en?'pens':'rig.'})`:''}</li>`).join('');
- return `<section class="panel cup-calendar-slot" aria-label="WRD03"><h3>🏆 ${en?'National Cup':'Coppa nazionale'} · ${en?'Midweek slot after matchday':'Turno infrasettimanale dopo la giornata'} ${dayNumber}</h3><p>${en?'Separate knockout slot — the league fixture is never replaced.':'Gara a eliminazione diretta separata: il calendario di campionato resta invariato.'}</p><ul>${matches}</ul><button class="btn btn-outline" data-action="nav" data-page="world">${en?'Open cup bracket':'Apri tabellone di coppa'}</button></section>`;
+ const en=ui.language==='en',name=id=>w.teams.find(c=>c.id===id)?.name??String(id),dated=Boolean(round.date);
+ const matches=round.matches.map(m=>`<li>${m.kickoff?`<strong>${esc(m.kickoff)}</strong> · `:''}${esc(name(m.home))} · ${m.result?`${m.result.homeGoals}–${m.result.awayGoals}`:'vs'} · ${esc(name(m.away))}${m.result?.penalties?` (${m.result.penalties.home}–${m.result.penalties.away} ${en?'pens':'rig.'})`:''}</li>`).join('');
+ const when=dated?formatCareerDate(round.date,ui.language):`${en?'after matchday':'dopo giornata'} ${dayNumber}`;
+ return `<section class="panel cup-calendar-slot" aria-label="WRD03"><h3>🏆 ${en?'National Cup':'Coppa nazionale'} · ${when}</h3><p>${en?'Separate midweek knockout date — the league fixture is never replaced.':'Data infrasettimanale separata: il calendario di campionato non viene sostituito.'}</p><ul>${matches}</ul><button class="btn btn-outline" data-action="nav" data-page="world">${en?'Open cup bracket':'Apri tabellone di coppa'}</button></section>`;
 }
 function continentalCalendarStrip(w,ui,dayNumber){
  if(!continentalEnabled(w))return '';
  const edition=continentalEdition(w);if(!edition)return '';
  const stage=[...edition.groupRounds,...edition.knockout].find(r=>r.day===dayNumber);if(!stage)return '';
- const en=ui.language==='en',managed=`${w.countryId}:club:${w.clubId}`;
+ const en=ui.language==='en',managed=`${w.countryId}:club:${w.clubId}`,dated=Boolean(stage.date);
  const mine=stage.matches.filter(m=>m.home===managed||m.away===managed);
- return `<section class="panel cup-calendar-slot" aria-label="WRD04"><h3>🌌 ${en?'Continental Cup':'Coppa continentale'} · ${en?'after matchday':'dopo giornata'} ${dayNumber}</h3><p>${en?'Separate midweek fixture slot, no league rescheduling.':'Slot infrasettimanale separato, senza spostare il campionato.'}</p>${mine.length?`<p>${en?'Your matches:':'Le tue partite:'} ${mine.length}</p>`:''}<button class="btn btn-outline" data-action="nav" data-page="world">${en?'View continental cup':'Apri coppa continentale'}</button></section>`;
+ const mineText=mine.map(m=>`${formatCareerDateTime(m.date,m.kickoff,ui.language)} · ${m.home===managed?(en?'Home':'Casa'):(en?'Away':'Trasferta')}`).join(' · ');
+ const when=dated?formatCareerDate(stage.date,ui.language):`${en?'after matchday':'dopo giornata'} ${dayNumber}`;
+ return `<section class="panel cup-calendar-slot" aria-label="WRD04"><h3>🌌 ${en?'Continental Cup':'Coppa continentale'} · ${when}</h3><p>${en?'Separate midweek fixture date, no league rescheduling.':'Data infrasettimanale separata, senza spostare il campionato.'}</p>${mine.length?`<p>${en?'Your match:':'La tua partita:'} ${mineText}</p>`:''}<button class="btn btn-outline" data-action="nav" data-page="world">${en?'View continental cup':'Apri coppa continentale'}</button></section>`;
 }
 export function calendar(w,ui){const dayNumber=clamp(Number(ui.calendarRound)||Math.min(w.fixtures.length,w.round+1),1,w.fixtures.length),week=w.fixtures[dayNumber-1],my=clubMatch(week,w.clubId);
  return `${sectionHead(esc(w.competition||'Lega Aurora').toUpperCase(),'Calendario e risultati',`${w.fixtures.length} giornate, andata e ritorno. Tutte le gare del campionato.`)}
