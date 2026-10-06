@@ -29,7 +29,6 @@ jobs:
         run: |
           npm init -y
           npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium
       - name: Start Football Architect
         shell: bash
         run: |
