@@ -98,11 +98,12 @@ async function runBrowser(channel,name){
 
     let topbar=page.locator('.topbar');
     const topbarBefore=await box(topbar);
+    const topMetricsBefore=await topbar.evaluate(el=>({clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));
     await assertPickerGeometryStable(page,'top');
     const topbarAfter=await box(page.locator('.topbar'));
+    const topMetricsAfter=await page.locator('.topbar').evaluate(el=>({clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));
     approxEqual(topbarBefore.height,topbarAfter.height,0.75,name+' topbar height');
-    const topMetrics=await page.locator('.topbar').evaluate(el=>({clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));
-    assert.equal(topMetrics.clientHeight,topMetrics.scrollHeight,name+' topbar vertical shift/overflow');
+    assert.deepEqual(topMetricsAfter,topMetricsBefore,name+' topbar geometry/overflow must remain unchanged by IT↔EN');
 
     await page.goto(base+'/settings',{waitUntil:'networkidle'});
     await assertPickerGeometryStable(page,'settings');
