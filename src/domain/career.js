@@ -1,7 +1,7 @@
 // Domain logic: no DOM, browser storage or UI dependencies.
 import {clamp} from './rules.js';
 import {clearCareerMatchdayPlans} from './career-matchday.js';
-import {settleCareerPersonalityRound,settleCareerPersonalitySeason} from './career-personality.js';
+import {personalityEnabled,syncCareerPersonality,settleCareerPersonalityRound,settleCareerPersonalitySeason} from './career-personality.js';
 import {contractsEnabled,syncCareerContracts,settleCareerContractsRound} from './career-contracts.js';
 import {randomFactory,roundSeed,seasonSeed} from './rng.js';
 import {createFixtures} from './fixtures.js';
@@ -62,6 +62,7 @@ function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=t
   if(hasAdvancedCareer(w)){
     advanceAdvancedDay(w);
     if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');
+    if(personalityEnabled(w))syncCareerPersonality(w);
     if(hasCareerWorld(w))syncCareerWorldClock(w);
     advanceCareerScouting(w);
     advanceCareerCupsDay(w,{simulateManagedCup:simulateAdvancedMatch});
