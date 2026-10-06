@@ -1,4 +1,5 @@
 name: CORE-18 full-system validation
+# rerun after SIM04 starter-slot projection fix
 
 on:
   push:
