@@ -44,7 +44,7 @@ export function renderHomeMenu(world,ui,{languagePicker='' }={}){
       <div class="fa-menu-stack">
         ${activeSummary}
         <section class="fa-menu-panel fa-menu-actions" aria-label="${tr('Azioni principali','Main actions')}"><h2>${tr('Inizia a giocare','Start playing')}</h2>
-          ${option('menu-continue',tr('Continua','Continue'),active?tr('Riprendi la carriera attiva','Resume the active career'):tr('Nessuna carriera attiva','No active career'),{primary:true,disabled:!canContinue})}
+          ${option('menu-continue',tr('Continua','Continue'),active?tr('Riprendi la carriera attiva','Resume the active career'):tr('Nessuna carriera attiva','No active career'),{primary:canContinue,disabled:!canContinue})}
           ${option('menu-new',tr('Nuova carriera','New career'),tr('Crea una nuova storia','Start a new story'))}
           ${option('menu-manage',tr('Carriere','Careers'),tr('Slot, importazione, esportazione e backup','Slots, import, export and backups'))}
           ${option('menu-settings',tr('Impostazioni','Settings'),tr('Lingua e preferenze globali','Language and global preferences'))}
