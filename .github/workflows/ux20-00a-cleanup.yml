@@ -23,6 +23,8 @@ jobs:
           set -euo pipefail
           ! grep -q "QUICK_NAV_IDS" src/ui.js
           ! grep -q "nav-quick" src/navigation.css
+          grep -q "nav-group-toggle:focus-visible" src/navigation.css
+          grep -q "nav-group-toggle,.nav-group-items .nav-item { min-height:44px; }" src/navigation.css
       - name: Install browser
         working-directory: ux20-00a-cleanup
         run: |
