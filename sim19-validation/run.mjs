@@ -6,11 +6,13 @@ function testBlockingMessageContract(){
   const world={season:1,round:0,currentDate:'2026-07-01',inbox:[],unread:0};
   addMessage(world,'Informativa','Solo informazione','info');
   assert.equal(careerMessageRequiresUserInput(world.inbox[0]),false,'informational mail must not block');
-  addMessage(world,'Contratto scaduto','Serve una decisione','transfer',{type:'contract.expired',params:{player:'Test Player'}});
-  assert.equal(careerMessageRequiresUserInput(world.inbox[0]),true,'contract expiry must block');
+  addMessage(world,'Contratto in scadenza','Avviso facoltativo','transfer',{type:'contract.expired',params:{player:'Test Player'}});
+  assert.equal(careerMessageRequiresUserInput(world.inbox[0]),false,'event type alone must never imply a blocker');
+  addMessage(world,'Decisione obbligatoria','Serve una decisione','transfer',{type:'contract.expired',params:{player:'Required Player'},requiresUserInput:true});
+  assert.equal(careerMessageRequiresUserInput(world.inbox[0]),true,'explicit blocking metadata must stop simulation');
   assert.equal(world.inbox[0].requiresUserInput,true,'blocking flag must be persisted');
-  const legacy={...world.inbox[0]};delete legacy.requiresUserInput;
-  assert.equal(careerMessageRequiresUserInput(legacy),true,'legacy structured blocking mail must remain compatible');
+  const restored=JSON.parse(JSON.stringify(world.inbox[0]));
+  assert.equal(careerMessageRequiresUserInput(restored),true,'blocking metadata must survive save round-trips');
 }
 
 async function browserGate(){
