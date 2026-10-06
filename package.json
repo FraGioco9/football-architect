@@ -1,0 +1,14 @@
+{
+  "name": "football-architect",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Football Architect, simulatore calcistico offline per Windows 11.",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

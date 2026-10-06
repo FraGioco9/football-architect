@@ -1,0 +1,34 @@
+/* UX2-06: tactics workspace; scope all rules to the tactical page. */
+.tactics-center{display:grid;gap:var(--space-16,16px);min-width:0}
+.tactics-center-summary{border:1px solid var(--color-border,#304750);background:var(--color-surface,#172a34);border-radius:var(--radius-12,12px);padding:18px 20px;min-width:0}
+.tactics-summary-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tactics-summary-main>strong{font-size:15px;color:var(--color-text,#ecf6f2)}
+.tactics-ready{font-size:11px;font-weight:750;padding:5px 10px;border-radius:30px;border:1px solid #746c4a;color:#f8d99f;background:#463b2040}
+.tactics-ready.is-ready{border-color:#33886d;color:#9feaca;background:#185c4540}
+.tactics-center-summary dl{margin:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.tactics-center-summary dl>div{min-width:0;border-radius:8px;background:rgba(8,22,30,.35);padding:10px 11px}
+.tactics-center-summary dt{font-size:10px;color:var(--color-muted,#9eb5c0);margin-bottom:5px;line-height:1.3}
+.tactics-center-summary dd{font-size:17px;font-weight:800;margin:0;color:var(--color-text,#eefcf5);overflow-wrap:anywhere}
+.tactics-center-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;min-width:0}
+.tactics-center-tab{min-width:0;display:flex;align-items:center;gap:12px;padding:15px 12px;text-align:left;color:var(--color-muted,#9fb6bf);border:1px solid var(--color-border,#314954);border-radius:10px;background:var(--color-surface,#172833);cursor:pointer;font:inherit}
+.tactics-center-tab strong{display:block;font-size:12px;color:inherit;line-height:1.25}
+.tactics-center-tab small{display:block;font-size:10px;line-height:1.4;margin-top:4px;opacity:.88}
+.tactics-tab-index{font-size:17px;font-weight:850;color:var(--color-accent,#59cda2);opacity:.7}
+.tactics-center-tab:hover{border-color:var(--color-accent,#42bb90);background:#22453e}
+.tactics-center-tab.is-active{border-color:var(--color-accent,#42bb90);background:#1b4b3d;color:#e2fff0}
+.tactics-center-tab:focus-visible{outline:3px solid #a4f0c8;outline-offset:3px}
+.tactics-center-panel{min-width:0;display:grid;gap:var(--space-16,16px)}
+.tactics-center-panel>.panel,.tactics-center-panel>.sim03-panel,.tactics-center-panel>.sim04-panel,.tactics-center-panel>.sim02-official{min-width:0;margin:0}
+.tactics-center-panel .tactics-layout{min-width:0}
+.tactics-center-panel .tactics-right{min-width:0}
+.tactics-center-panel .formation-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tactics-center-panel .sim03-layout,.tactics-center-panel .sim02-official-grid,.tactics-center-panel .sim04-sheet-grid{min-width:0}
+.tactics-center-placeholder{padding:25px;line-height:1.5}
+@media(max-width:1200px){.tactics-center-summary dl{grid-template-columns:repeat(3,minmax(0,1fr))}.tactics-center-panel .tactics-layout{grid-template-columns:minmax(0,1fr)}.tactics-center-panel .tactics-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.tactics-center-panel .tactics-right>.panel:nth-child(2){grid-column:auto;grid-row:auto}}
+@media(max-width:760px){.tactics-center-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tactics-center-panel .tactics-right{grid-template-columns:minmax(0,1fr)}.tactics-center-summary{padding:14px}.tactics-center-tab{padding:12px}.tactics-center-panel .tactics-layout{display:grid;grid-template-columns:minmax(0,1fr)}}
+@media(max-width:410px){.tactics-center-summary dl{grid-template-columns:repeat(2,minmax(0,1fr))}.tactics-center-tab{gap:8px}.tactics-center-tab small{font-size:9px}.tactics-tab-index{font-size:14px}.tactics-center-panel .tactics-pitch{padding-left:6px;padding-right:6px}}
+@media(prefers-reduced-motion:reduce){.tactics-center-tab{transition:none}}
+@media(forced-colors:active){.tactics-center-tab.is-active{outline:2px solid Highlight;outline-offset:-2px}.tactics-ready{border:1px solid CanvasText}}
+/* On compact desktops the original header action overflows; the same action
+   remains available inside the game navigation without changing its handler. */
+@media (min-width:761px) and (max-width:1120px){body:has(.tactics-center) .topbar .continue-top{display:none}}
