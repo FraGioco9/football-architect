@@ -1,0 +1,35 @@
+name: B-PC03 diagnostic extract
+
+on:
+  push:
+    branches:
+      - fix/bpc03-new-career-transition
+    paths:
+      - .github/workflows/bpc03-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct certified ZIP
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem ./release-b64/zip-*.part | Sort-Object Name
+          $builder = New-Object System.Text.StringBuilder
+          foreach ($part in $parts) { [void]$builder.Append((Get-Content $part.FullName -Raw)) }
+          $bytes = [Convert]::FromBase64String($builder.ToString())
+          [IO.File]::WriteAllBytes("./Football-Architect-2.0.0.zip", $bytes)
+          $actual=(Get-FileHash ./Football-Architect-2.0.0.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne "686f3abaea01807b04d1811da093f6b017eb372f1abb57e6788e6d52bc78d74c") { throw "Unexpected ZIP hash $actual" }
+          Expand-Archive -LiteralPath ./Football-Architect-2.0.0.zip -DestinationPath ./extracted -Force
+      - name: Upload extracted app for diagnosis
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpc03-extracted-app
+          path: extracted/football-architect
+          if-no-files-found: error
+          retention-days: 2
