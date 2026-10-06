@@ -16,7 +16,7 @@ function testBlockingMessageContract(){
 }
 
 async function browserGate(){
-  const browser=await chromium.launch({headless:true});
+  const browser=await chromium.launch({headless:true,channel:'chrome'});
   const page=await browser.newPage({viewport:{width:1440,height:1000}});
   const errors=[];
   page.on('pageerror',error=>errors.push('pageerror: '+error.message));
