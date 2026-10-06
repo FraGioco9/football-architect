@@ -86,6 +86,46 @@ jobs:
             console.log('CAL17_COUNTRY_PASS',league.id,{start,first,weekends:weekends.length,midweeks:midweeks.length,kickoffs:[...kickoffs]});
           }
 
+          // Competition calendar: process two complete seasons day by day.
+          {
+            const w=makeWorld(171700,'IT');startCareer(w,1,'Competition Calendar');
+            const runSeason=()=>{
+              let guard=0;
+              while(w.round<w.fixtures.length&&guard<500){
+                if(w.advancedV1?.boardV1){w.advancedV1.boardV1.trust=100;w.advancedV1.boardV1.warnings=0;w.advancedV1.boardV1.status='active';}
+                if(w.advancedV1?.managerV1)w.advancedV1.managerV1.status='active';
+                advanceDay(w,{calendarConfirmationToken:calendarToken(w,1)});
+                guard++;
+              }
+              assert(w.round===w.fixtures.length,'daily season did not finish',{season:w.season,guard,round:w.round});
+              assert(validateSave(w),'daily competition season save invalid',{season:w.season});
+            };
+            runSeason();
+            const cup1=w.advancedV1.cupsV1.cups.find(c=>c.countryId==='IT');
+            assert(cup1?.championId,'national cup did not finish',{season:w.season});
+            const leagueDates1=new Set(w.fixtures.map(r=>r.date)),cupDates1=cup1.rounds.map(r=>r.date);
+            assert(cupDates1.every(isCareerDate),'national cup dates missing',{cupDates1});
+            assert(cupDates1.every(date=>!leagueDates1.has(date)&&[2,3,4].includes(dow(date))),'national cup collision/non-midweek',{cupDates1});
+            assert(cup1.rounds.every(r=>r.matches.every(m=>m.date===r.date&&isCareerKickoff(m.kickoff)&&m.result)),'national cup fixtures incomplete');
+
+            newSeason(w);
+            const edition=w.advancedV1.continentalV1.edition;
+            assert(edition&&edition.groupRounds.every(r=>isCareerDate(r.date)),'continental edition not date-aware');
+            const nationalSlots=new Set(w.advancedV1.cupsV1.cups[0].calendar);
+            assert(edition.days.every(day=>!nationalSlots.has(day)),'national/continental logical slot collision',{national:[...nationalSlots],continental:edition.days});
+            runSeason();
+
+            const cup2=w.advancedV1.cupsV1.cups.find(c=>c.countryId==='IT');
+            const ed=w.advancedV1.continentalV1.edition;
+            assert(cup2?.championId&&ed?.championKey,'season two cups did not finish',{cup:cup2?.championId,continental:ed?.championKey});
+            const leagueDates2=new Set(w.fixtures.map(r=>r.date)),cupDates2=new Set(cup2.rounds.map(r=>r.date)),continentalStages=[...ed.groupRounds,...ed.knockout],continentalDates=continentalStages.map(r=>r.date);
+            assert([...cupDates2].every(date=>!leagueDates2.has(date)),'season two national cup collided with league');
+            assert(continentalDates.every(date=>isCareerDate(date)&&!leagueDates2.has(date)&&!cupDates2.has(date)&&[2,3,4].includes(dow(date))),'continental date collision/non-midweek',{continentalDates,cupDates:[...cupDates2]});
+            assert(continentalStages.every(r=>r.matches.every(m=>m.date===r.date&&isCareerKickoff(m.kickoff)&&m.result)),'continental fixtures incomplete');
+            assert(validateSave(w),'two-season competition calendar save invalid');
+            console.log('CAL17_COMPETITIONS_PASS',{national:[...cupDates2],continental:continentalDates});
+          }
+
           // Rollover: complete one country and verify a fresh preseason and new realistic season.
           {
             const w=makeWorld(171717,'IT');startCareer(w,1,'Rollover');
