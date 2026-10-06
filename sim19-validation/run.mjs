@@ -28,6 +28,9 @@ async function browserGate(){
     await page.locator('#manager-name').fill('SIM19 Test');
     await page.locator('[data-action="start-career"]').click();
     await page.locator('[data-action="advance"]').first().waitFor({state:'visible'});
+    // The start-career click commits its new slot after rendering the dashboard.
+    // Give that durable commit a brief window before testing the next action.
+    await page.waitForTimeout(500);
 
     const initialDate=(await page.locator('.top-round strong').textContent())?.trim();
     await page.locator('.continue-top[data-action="advance"]').click();
