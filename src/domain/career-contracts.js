@@ -22,12 +22,17 @@ function contractFromPlayer(w,p){
  const annualWage=Math.max(0,Math.round(p.wage||0)*52);
  return makeContract({playerId:p.id,clubId:w.clubId,terms:makeTerms({startSeason:w.season,years,annualWage,promisedRole:'rotation'})});
 }
-function notify(w,type,player,extra={}){
- const labels={enabled:'Contratti attivati',renewed:'Rinnovo contrattuale',expired:'Contratto in scadenza',promise:'Promessa di impiego'};
- const text=type==='enabled'?('Gestione contratti attiva.'):type==='renewed'?`${player.name}: accordo registrato.`:type==='expired'?`${player.name}: il contratto richiede una decisione.`:`${player.name}: verifica del ruolo promesso.`;
- // QOL02 stores the message alongside its canonical event data; legacy message
- // remains readable by older clients without asserting unregistered types.
- addMessage(w,labels[type]||'Contratti',text,'transfer',{type:'contract.'+type,params:type==='enabled'?{}:{player:player?.name||'—',...extra}});
+function notify(w,type,player,extra={},inputRequest=null){
+ const labels={enabled:'Contratti attivati',renewed:'Rinnovo contrattuale',expired:'Contratto in scadenza',promise:'Promessa di impiego',counter:'Controproposta contrattuale'};
+ const text=type==='enabled'?('Gestione contratti attiva.'):type==='renewed'?`${player.name}: accordo registrato.`:type==='expired'?`${player.name}: contratto in scadenza, valuta il rinnovo.`:type==='counter'?`${player.name}: controproposta ricevuta, serve una tua decisione.`:`${player.name}: verifica del ruolo promesso.`;
+ // QOL02 stores the message alongside its canonical event data. A blocking
+ // request is explicit metadata and never inferred from the human-readable text.
+ addMessage(w,labels[type]||'Contratti',text,'transfer',{
+  type:'contract.'+type,
+  params:type==='enabled'?{}:{player:player?.name||'—',...extra},
+  requiresUserInput:Boolean(inputRequest),
+  inputRequest
+ });
 }
 export function enableCareerContracts(w){
  if(!w.clubId||w.advancedV1?.enabled!==true)fail('REQUIRES_ADVANCED');
@@ -115,7 +120,7 @@ export function respondCareerRenewal(w,{offerId,expectedRevision,decision='auto'
  let outcome=decision;if(decision==='auto')outcome=assessed.interestScore>=68?'accept':assessed.interestScore<=32?'reject':'counter';
  if(!['accept','reject','counter'].includes(outcome))fail('DECISION');
  if(outcome==='accept'){applyDeal(w,p,o);}else if(outcome==='reject'){o.status='rejected';o.history.push({by:'player',action:'reject',season:w.season,round:w.round});}
- else{const increase=Math.min(1_000_000_000,Math.max(5200,Math.round(o.terms.annualWage*1.08/52)*52));o.terms=makeTerms({...o.terms,annualWage:increase});o.status='awaiting_club';o.history.push({by:'player',action:'counter',season:w.season,round:w.round});}
+ else{const increase=Math.min(1_000_000_000,Math.max(5200,Math.round(o.terms.annualWage*1.08/52)*52));o.terms=makeTerms({...o.terms,annualWage:increase});o.status='awaiting_club';o.history.push({by:'player',action:'counter',season:w.season,round:w.round});notify(w,'counter',p,{}, {type:'contract-counter',id:o.id});}
  s.revision++;return {status:o.status,assessment:assessed};
 }
 export function decideCareerCounter(w,{offerId,expectedRevision,decision='reject'}={}){
