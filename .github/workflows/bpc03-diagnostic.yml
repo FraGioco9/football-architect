@@ -205,15 +205,11 @@ jobs:
           $roundtripHash=(Get-FileHash ./roundtrip.zip -Algorithm SHA256).Hash.ToLower()
           if($roundtripHash -ne $hash){throw "release-b64 roundtrip mismatch"}
 
-      - name: Align future RST-01 immutable hash and document delta
+      - name: Document B-PC03 delta
         shell: pwsh
         env:
           NEW_HASH: ${{ steps.package.outputs.hash }}
         run: |
-          $wfPath="./.github/workflows/rst01-windows.yml"
-          $raw=Get-Content $wfPath -Raw
-          $raw=$raw.Replace("686f3abaea01807b04d1811da093f6b017eb372f1abb57e6788e6d52bc78d74c",$env:NEW_HASH)
-          Set-Content -Path $wfPath -Value $raw -NoNewline -Encoding utf8
           New-Item -ItemType Directory -Force ./docs/bpc03 | Out-Null
           $doc=@"
           # B-PC03 — immediate transition after new career creation
@@ -236,14 +232,13 @@ jobs:
           "@
           Set-Content -Path ./docs/bpc03/README.md -Value $doc -Encoding utf8
           Remove-Item ./rst01-runner/.bpc03-targeted.mjs -Force
-          git rm .github/workflows/bpc03-diagnostic.yml
 
       - name: Commit isolated fix after green targeted gate
         shell: pwsh
         run: |
           git config user.name "FraGioco9"
           git config user.email "giocolifrancesco@gmail.com"
-          git add -A
+          git add release-b64 rst01-runner/adapters/a-b.mjs docs/bpc03
           git status --short
           git commit -m "B-PC03: render dashboard immediately after career creation"
           git push origin HEAD:fix/bpc03-new-career-transition
