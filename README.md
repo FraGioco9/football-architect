@@ -20,7 +20,6 @@ Poi apri:
 http://127.0.0.1:2000
 ```
 
-In alternativa puoi eseguire `avvia-windows.bat`.
 
 Non servono Docker, build, concatenazione di file base64 o `npm install`.
 
