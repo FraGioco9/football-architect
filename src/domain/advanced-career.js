@@ -212,10 +212,22 @@ export function simulateAdvancedMatch(w,m){
   let matchday=null;
   if(sim04){
     const rules=w.advancedV1.matchdayV1.rules[matchKind(m)];
-    const sheets=sidesPlans.map(({side,bench})=>createMatchSheet({teamId:side.teamId,
-      players:clubPlayers(w,side.teamId).map(p=>({...p,position:toAddonPosition(p.position),unavailable:p.injury>0||!medicalAvailability(p.medicalV1).eligible})),
-      starters:side.ids,bench:bench.map(p=>p.id),unavailable:clubPlayers(w,side.teamId).filter(p=>p.injury>0||!medicalAvailability(p.medicalV1).eligible).map(p=>p.id),
-      formation:side.rolePlan.assignments.map(x=>x.position),rules}));
+    const sheets=sidesPlans.map(({side,bench})=>{
+      // A club can legitimately reach matchday with every natural goalkeeper
+      // unavailable after the pre-match training/medical ticks. Keep the
+      // authoritative player position unchanged, but project the footballer
+      // assigned to the GK slot as an emergency goalkeeper for SIM04 only.
+      const goalkeeperSlot=side.rolePlan.assignments.find(x=>x.position==='GK');
+      const emergencyGoalkeeperId=goalkeeperSlot&&playerById(w,goalkeeperSlot.playerId)?.position!=='POR'
+        ?goalkeeperSlot.playerId:null;
+      return createMatchSheet({teamId:side.teamId,
+        players:clubPlayers(w,side.teamId).map(p=>({...p,
+          position:p.id===emergencyGoalkeeperId?'GK':toAddonPosition(p.position),
+          unavailable:p.injury>0||!medicalAvailability(p.medicalV1).eligible})),
+        starters:side.ids,bench:bench.map(p=>p.id),
+        unavailable:clubPlayers(w,side.teamId).filter(p=>p.injury>0||!medicalAvailability(p.medicalV1).eligible).map(p=>p.id),
+        formation:side.rolePlan.assignments.map(x=>x.position),rules});
+    });
     matchday=createMatchday({matchId:m.id,home:sheets[0],away:sheets[1],rules});
   }
   const sim02=careerTacticsEnabled(w) && (m.home===w.clubId||m.away===w.clubId);
