@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { addMessage, careerMessageRequiresUserInput } from '../src/domain/history.js';
+import {makeWorld} from '../src/data.js';
+import {startCareer} from '../src/engine.js';
+import {clubPlayers} from '../src/domain/selectors.js';
+import {addMessage,careerMessageRequiresUserInput,firstCareerInputMessage} from '../src/domain/history.js';
+import {syncCareerContracts,proposeCareerRenewal,respondCareerRenewal,decideCareerCounter} from '../src/domain/career-contracts.js';
 
 function testBlockingMessageContract(){
   const world={season:1,round:0,currentDate:'2026-07-01',inbox:[],unread:0};
@@ -13,6 +17,36 @@ function testBlockingMessageContract(){
   assert.equal(world.inbox[0].requiresUserInput,true,'blocking flag must be persisted');
   const restored=JSON.parse(JSON.stringify(world.inbox[0]));
   assert.equal(careerMessageRequiresUserInput(restored),true,'blocking metadata must survive save round-trips');
+}
+
+function testRealBlockingProducer(){
+  const world=makeWorld(190019);
+  startCareer(world,1,'SIM19 Blocking');
+  syncCareerContracts(world);
+  const player=clubPlayers(world,world.clubId)[0];
+  const state=world.advancedV1.contractsV1;
+  const offerId=proposeCareerRenewal(world,{
+    playerId:player.id,
+    expectedRevision:state.revision,
+    years:2,
+    annualWage:Math.max(5200,Math.round(player.wage))*52,
+    signingBonus:0,
+    appearanceBonus:0,
+    goalBonus:0,
+    promisedRole:'rotation',
+    releaseFee:null
+  });
+  const response=respondCareerRenewal(world,{offerId,expectedRevision:state.revision,decision:'counter'});
+  assert.equal(response.status,'awaiting_club','forced player counter must require a club decision');
+  const blocker=firstCareerInputMessage(world);
+  assert.ok(blocker,'counteroffer must create a blocking inbox message');
+  assert.equal(blocker.inputRequest?.type,'contract-counter');
+  assert.equal(blocker.inputRequest?.id,offerId);
+  assert.equal(careerMessageRequiresUserInput(blocker,world),true,'live counteroffer message must block Continue');
+  const restored=JSON.parse(JSON.stringify(world));
+  assert.equal(firstCareerInputMessage(restored)?.inputRequest?.id,offerId,'blocking request must survive save round-trip');
+  decideCareerCounter(world,{offerId,expectedRevision:state.revision,decision:'reject'});
+  assert.equal(firstCareerInputMessage(world),null,'resolved counteroffer must stop blocking without deleting mail history');
 }
 
 async function browserGate(){
@@ -70,6 +104,13 @@ async function browserGate(){
     await page.waitForTimeout(350);
     assert.equal((await page.locator('.top-round strong').textContent())?.trim(),stoppedDate,'manual Stop must leave the date stable');
 
+    await page.reload({waitUntil:'networkidle'});
+    await page.locator('[data-action="menu-continue"]').waitFor({state:'visible'});
+    await page.locator('[data-action="menu-continue"]').click();
+    await page.locator('.top-round strong').waitFor({state:'visible'});
+    assert.equal((await page.locator('.top-round strong').textContent())?.trim(),stoppedDate,'reload must resume from the last committed continuous-simulation date');
+    await page.waitForTimeout(300);
+
     await page.locator('.continue-top[data-action="advance"]').click();
     await page.locator('.continue-top[data-action="stop-advance"]').waitFor({state:'visible'});
     await page.locator('[data-action="nav"][data-page="calendar"]').first().click();
@@ -86,5 +127,6 @@ async function browserGate(){
 }
 
 testBlockingMessageContract();
+testRealBlockingProducer();
 await browserGate();
 console.log('SIM19 VALIDATION PASS');
