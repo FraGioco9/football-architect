@@ -30,7 +30,7 @@ jobs:
           import {previewCalendarAdvance} from './src/domain/career-calendar.js';
           import {LEAGUES} from './src/leagues.js';
           import {
-            CAREER_CALENDAR_VERSION,isCareerDate,isCareerKickoff,daysBetweenISO,addDaysISO
+            CAREER_CALENDAR_VERSION,isCareerDate,isCareerKickoff,daysBetweenISO,addDaysISO,rescheduleLeagueRound
           } from './src/domain/career-date.js';
 
           const assert=(ok,msg,data={})=>{if(!ok)throw new Error(msg+' '+JSON.stringify(data));};
@@ -84,6 +84,37 @@ jobs:
             }
             assert(validateSave(a),'save invalid after mixed weekend/midweek run',{country:league.id});
             console.log('CAL17_COUNTRY_PASS',league.id,{start,first,weekends:weekends.length,midweeks:midweeks.length,kickoffs:[...kickoffs]});
+          }
+
+          // Future postponement/recovery model: persist history and preserve a valid calendar.
+          {
+            const w=makeWorld(171650,'IT');startCareer(w,1,'Postponement');
+            let moved=null;
+            for(let roundNumber=5;roundNumber<w.fixtures.length-2&&!moved;roundNumber++){
+              const original=w.fixtures[roundNumber-1].date;
+              for(let delta=1;delta<=4&&!moved;delta++){
+                const candidate=addDaysISO(original,delta);
+                try{moved=rescheduleLeagueRound(w,roundNumber,{date:candidate,reason:'weather'});}
+                catch(error){if(!String(error?.message||error).startsWith('CAREER_RESCHEDULE_'))throw error;}
+              }
+            }
+            assert(moved,'no safe future reschedule slot found');
+            assert(moved.rescheduleHistory?.length===1,'reschedule history missing',{moved});
+            const history=moved.rescheduleHistory[0];
+            assert(history.reason==='weather'&&history.fromDate!==history.toDate&&history.toDate===moved.date,'reschedule history invalid',{history});
+            assert(moved.matches.every(m=>m.date===moved.date&&m.datetime===m.date+'T'+m.kickoff+':00'),'rescheduled match metadata invalid');
+            assert(validateSave(w),'rescheduled save invalid');
+            let collisionDate=null;
+            const cup=w.advancedV1.cupsV1.cups.find(c=>c.countryId==='IT');
+            collisionDate=cup?.rounds.find(r=>isCareerDate(r.date))?.date??null;
+            if(collisionDate){
+              const target=w.fixtures.find(r=>r.round>w.round+1&&r.matches.every(m=>!m.result)&&r.date!==collisionDate);
+              if(target){
+                let blocked=false;try{rescheduleLeagueRound(w,target.round,{date:collisionDate,reason:'collision-test'});}catch(error){blocked=String(error?.message||error)==='CAREER_RESCHEDULE_COMPETITION_COLLISION';}
+                assert(blocked,'competition collision was not rejected',{target:target.round,collisionDate});
+              }
+            }
+            console.log('CAL17_RESCHEDULE_PASS',history);
           }
 
           // Competition calendar: process two complete seasons day by day.
@@ -172,6 +203,7 @@ jobs:
           const context=await chromium.launchPersistentContext(profile,{executablePath:exe,headless:true,viewport:{width:1440,height:950},args:['--no-sandbox','--disable-dev-shm-usage']});
           try{
             const page=context.pages()[0]||await context.newPage(),errors=[];
+            page.on('dialog',dialog=>dialog.accept());
             page.on('pageerror',e=>errors.push(String(e?.message||e)));
             page.on('console',m=>{if(m.type()==='error'&&!/favicon|404/i.test(m.text()))errors.push(m.text());});
             await page.goto('http://127.0.0.1:2000',{waitUntil:'domcontentloaded'});
@@ -191,6 +223,34 @@ jobs:
             const cal=await page.locator('body').innerText();
             assert(cal.includes('WEEKEND')||cal.includes('MIDWEEK'),'calendar slot label missing');
             assert(/\b\d{2}:\d{2}\b/.test(cal),'kickoff time missing from calendar');
+            const prep=page.locator('.match-scheduled-at').first();
+            assert(await prep.count()===1,'match preparation schedule missing');
+            assert(/\b\d{2}:\d{2}\b/.test(await prep.innerText()),'match preparation kickoff missing');
+            await page.locator('[data-action="preview-match"]:visible').first().click();
+            await page.locator('.match-preview-page').waitFor({state:'visible',timeout:10000});
+            const previewSchedule=await page.locator('.match-preview-schedule').innerText();
+            assert(/\b\d{2}:\d{2}\b/.test(previewSchedule),'preview kickoff missing',{previewSchedule});
+            await page.locator('[data-action="preview-exit"]:visible').click();
+            await page.locator('.calendar-top').waitFor({state:'visible',timeout:10000});
+
+            let reportFound=false;
+            for(let i=0;i<80&&!reportFound;i++){
+              const half=page.locator('[data-action="sim04-half-continue"]:visible');
+              if(await half.count()){
+                await half.click();await page.waitForTimeout(100);
+              }else{
+                const advance=page.locator('[data-action="advance"]:visible').first();
+                if(!await advance.count())throw new Error('Continue control unavailable before first official match');
+                await advance.click();await page.waitForTimeout(60);
+              }
+              const report=page.locator('.match-report-schedule:visible');
+              if(await report.count()){
+                const reportText=await report.innerText();
+                assert(/\b\d{2}:\d{2}\b/.test(reportText),'official match report kickoff missing',{reportText});
+                reportFound=true;
+              }
+            }
+            assert(reportFound,'official match report was not reached');
             assert(errors.length===0,'browser errors',{errors});
             console.log('CAL17_BROWSER_PASS');
           }finally{await context.close();}
