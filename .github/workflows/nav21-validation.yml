@@ -1,0 +1,43 @@
+name: NAV21 temporary validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/router.js src/main.js src/ui.js server.mjs; do
+            node --input-type=module --check < "$file"
+          done
+      - name: Install browser test dependency
+        working-directory: nav21-validation
+        run: |
+          npm init -y
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start Football Architect
+        shell: bash
+        run: |
+          node server.mjs > nav21-server.log 2>&1 &
+          echo $! > nav21-server.pid
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:2000/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat nav21-server.log
+          exit 1
+      - name: Route, server and browser gate
+        working-directory: nav21-validation
+        run: node run.mjs
