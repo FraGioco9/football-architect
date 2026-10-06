@@ -92,11 +92,25 @@ jobs:
             const oldSeason=w.season;
             newSeason(w);
             ok(w.season===oldSeason+1&&w.round===0,'season rollover failed');
-            ok(w.seasonStartDate===finalDate,'new season start date not anchored to current date',{finalDate,seasonStart:w.seasonStartDate});
-            ok(w.fixtures[0].date===addDaysISO(finalDate,7),'new season first fixture date wrong',{first:w.fixtures[0].date,finalDate});
+            ok(w.seasonStartDate===addDaysISO(finalDate,21),'new season start date did not include offseason',{finalDate,seasonStart:w.seasonStartDate});
+            ok(w.fixtures[0].date===addDaysISO(finalDate,28),'new season first fixture date wrong',{first:w.fixtures[0].date,finalDate});
             ok(validateSave(w),'new season dated save invalid');
           }
 
+
+          {
+            const w=makeWorld(260130,'IT');
+            startCareer(w,1,'Advanced Rollover');
+            enableAdvancedCareer(w);
+            for(let guard=0;w.round<w.fixtures.length&&guard<400;guard++)advanceDay(w);
+            const finalDate=w.currentDate,finalDay=w.careerDay,finalClock=w.advancedV1.clockDay;
+            newSeason(w);
+            ok(w.currentDate===addDaysISO(finalDate,21),'advanced offseason real date mismatch',{finalDate,currentDate:w.currentDate});
+            ok(w.careerDay===finalDay+21,'advanced offseason careerDay mismatch',{finalDay,careerDay:w.careerDay});
+            ok(w.advancedV1.clockDay===finalClock+21&&w.advancedV1.clockDay===w.careerDay,'advanced offseason clock mismatch',{clock:w.advancedV1.clockDay,careerDay:w.careerDay});
+            ok(w.fixtures[0].date===addDaysISO(finalDate,28),'advanced next fixture date wrong',{first:w.fixtures[0].date});
+            ok(validateSave(w),'advanced rollover dated save invalid');
+          }
 
           {
             const w=makeWorld(260129,'IT');
