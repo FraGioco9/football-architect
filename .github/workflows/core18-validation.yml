@@ -1,5 +1,5 @@
 name: CORE-18 full-system validation
-# final rerun after slot-aware SIM04 substitutions
+# final rerun after slot-aware SIM04 substitutions and opt-in UI removal
 
 on:
   push:
@@ -20,10 +20,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Syntax
+      - name: Syntax and no manual opt-in UI
         run: |
           find src -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
           node --check server.mjs
+          if grep -E 'data-action="(personality-enable|board-enable|manager-enable)"' src/ui.js; then
+            echo "Legacy manual activation control is still exposed"
+            exit 1
+          fi
       - name: Bootstrap and migration gate
         run: |
           cat > .core18-bootstrap.mjs <<'EOF'
