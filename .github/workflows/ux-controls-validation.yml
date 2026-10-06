@@ -100,7 +100,19 @@ jobs:
               page.on('pageerror',e=>errors.push(String(e?.message||e)));
               page.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource: the server responded with a status of 404/i.test(m.text()))errors.push(m.text());});
               await page.goto(baseURL,{waitUntil:'domcontentloaded'});
-              await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:15000});
+              try{
+                await page.locator('.fa-main-menu').waitFor({state:'visible',timeout:15000});
+              }catch(error){
+                const diagnostic=await page.evaluate(()=>({
+                  title:document.title,
+                  readyState:document.readyState,
+                  bodyText:(document.body?.innerText||'').slice(0,4000),
+                  bodyHtml:(document.body?.innerHTML||'').slice(0,8000),
+                  appHtml:(document.querySelector('#app')?.innerHTML||'').slice(0,8000)
+                })).catch(e=>({evaluateError:String(e?.message||e)}));
+                console.log('BOOT_DIAGNOSTIC '+JSON.stringify({browser:browserName,errors,diagnostic}));
+                throw error;
+              }
 
               const native=page.locator('.language-switch select').first();
               const custom=page.locator('.language-switch .fa-select-trigger').first();
