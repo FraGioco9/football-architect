@@ -482,16 +482,16 @@ async function runContinuousAdvance(){
   try{
     const existingBlocker=firstCareerInputMessage(world);
     if(existingBlocker){
-      ui.continuing=false;ui.continuationBlocker={type:'mail',id:existingBlocker.id};ui.page='inbox';ui.openMail=existingBlocker.id;ui.modal=null;
-      render();
+      ui.continuing=false;ui.continuationBlocker={type:'mail',id:existingBlocker.id};ui.openMail=existingBlocker.id;ui.modal=null;
+      navigate('inbox',{replace:true});
       toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
       return;
     }
     await runCheckpointed('before-day',()=>null);
     const checkpointBlocker=firstCareerInputMessage(world);
     if(checkpointBlocker){
-      ui.continuing=false;ui.continuationBlocker={type:'mail',id:checkpointBlocker.id};ui.page='inbox';ui.openMail=checkpointBlocker.id;ui.modal=null;
-      void queueVaultSync();render();
+      ui.continuing=false;ui.continuationBlocker={type:'mail',id:checkpointBlocker.id};ui.openMail=checkpointBlocker.id;ui.modal=null;
+      void queueVaultSync();navigate('inbox',{replace:true});
       toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
       return;
     }
