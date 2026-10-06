@@ -1,0 +1,42 @@
+name: UX16 visual review capture
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Chrome and Edge
+        working-directory: ux16-visual-review
+        run: |
+          npm init -y
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chrome msedge
+      - name: Start Football Architect
+        shell: bash
+        run: |
+          node server.mjs > ux16-visual-server.log 2>&1 &
+          echo $! > ux16-visual-server.pid
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:2000/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat ux16-visual-server.log
+          exit 1
+      - name: Capture review screenshots
+        working-directory: ux16-visual-review
+        run: node run.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ux16-visual-review
+          path: ux16-visual-review/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 2
