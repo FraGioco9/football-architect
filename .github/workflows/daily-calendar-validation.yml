@@ -1,0 +1,98 @@
+name: Daily calendar validation
+
+on:
+  push:
+    branches:
+      - ux/fixed-controls-dropdowns
+    paths:
+      - .github/workflows/daily-calendar-validation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Syntax
+        shell: pwsh
+        run: |
+          Get-ChildItem ./src -Recurse -Include *.js,*.mjs | ForEach-Object { node --check $_.FullName }
+          node --check ./server.mjs
+      - name: Domain calendar gate
+        shell: pwsh
+        run: |
+          @'
+          import {makeWorld} from './src/data.js';
+          import {startCareer,advanceDay,newSeason} from './src/domain/career.js';
+          import {enableAdvancedCareer} from './src/domain/advanced-career.js';
+          import {enableCareerTraining} from './src/domain/career-training.js';
+          import {validateSave} from './src/domain/save-validation.js';
+          import {addDaysISO,isCareerDate} from './src/domain/career-date.js';
+
+          const ok=(v,m,d={})=>{if(!v)throw new Error(m+' '+JSON.stringify(d));};
+
+          {
+            const w=makeWorld(260126,'IT');
+            startCareer(w,1,'Daily Basic');
+            ok(isCareerDate(w.currentDate),'missing currentDate');
+            ok(w.fixtures.every((r,i)=>isCareerDate(r.date)&&r.matches.every(m=>m.date===r.date)),'fixture dates missing');
+            const start=w.currentDate,first=w.fixtures[0].date;
+            let clicks=0;
+            while(w.round===0&&clicks<14){
+              const before=w.currentDate;
+              const result=advanceDay(w);
+              clicks++;
+              ok(w.currentDate===addDaysISO(before,1),'continue did not advance one date',{before,after:w.currentDate});
+              if(w.currentDate<first)ok(w.round===0&&!result.match,'match played too early',{date:w.currentDate,first});
+            }
+            ok(w.currentDate===first,'first match not reached on scheduled date',{date:w.currentDate,first});
+            ok(w.round===1&&w.fixtures[0].matches.every(m=>m.result),'matchday not simulated on its date');
+            ok(w.careerDay===clicks,'careerDay mismatch',{careerDay:w.careerDay,clicks});
+            ok(validateSave(w),'dated basic save invalid');
+          }
+
+          {
+            const w=makeWorld(260127,'IT');
+            startCareer(w,1,'Daily Advanced');
+            enableAdvancedCareer(w);
+            enableCareerTraining(w);
+            const start=w.currentDate;
+            for(let i=0;i<7;i++){
+              const before=w.currentDate;
+              advanceDay(w);
+              ok(w.currentDate===addDaysISO(before,1),'advanced date skipped',{i,before,after:w.currentDate});
+              ok(w.advancedV1.clockDay===w.careerDay,'advanced clock desync',{i,clock:w.advancedV1.clockDay,careerDay:w.careerDay});
+              ok(w.players.every(p=>p.medicalV1.lastDay===w.advancedV1.clockDay),'medical clock desync',{i});
+            }
+            ok(w.currentDate===addDaysISO(start,7),'advanced seven-day date mismatch');
+            ok(w.advancedV1.trainingV1.lastDay===7,'training did not process daily');
+            ok(w.advancedV1.trainingV1.reports.length===1,'weekly training report missing');
+            ok(w.round===1,'advanced first fixture not played on day 7');
+            ok(validateSave(w),'dated advanced save invalid');
+          }
+
+          {
+            const w=makeWorld(260128,'IT');
+            startCareer(w,1,'Rollover');
+            let guard=0;
+            while(w.round<w.fixtures.length&&guard<400){advanceDay(w);guard++;}
+            ok(w.round===38,'season did not finish',{round:w.round,guard});
+            const finalDate=w.currentDate;
+            const oldSeason=w.season;
+            newSeason(w);
+            ok(w.season===oldSeason+1&&w.round===0,'season rollover failed');
+            ok(w.seasonStartDate===finalDate,'new season start date not anchored to current date',{finalDate,seasonStart:w.seasonStartDate});
+            ok(w.fixtures[0].date===addDaysISO(finalDate,7),'new season first fixture date wrong',{first:w.fixtures[0].date,finalDate});
+            ok(validateSave(w),'new season dated save invalid');
+          }
+
+          console.log('DAILY_CALENDAR_PASS');
+          '@ | Set-Content ./.daily-calendar-test.mjs -Encoding utf8
+          node ./.daily-calendar-test.mjs
+          Remove-Item ./.daily-calendar-test.mjs -Force
