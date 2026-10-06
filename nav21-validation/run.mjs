@@ -57,11 +57,13 @@ async function cleanBrowserGate(browser){
   assert.equal(new URL(page.url()).pathname,'/settings');
   assert.match(await page.locator('body').innerText(),/Impostazioni|Settings/i);
 
+  assert.equal(errors.length,0,'valid clean-browser routes must have no errors: '+errors.join(' | '));
+  errors.length=0;
   response=await page.goto(base+'/definitely-not-a-route',{waitUntil:'networkidle'});
   assert.equal(response.status(),404);
   assert.equal(new URL(page.url()).pathname,'/definitely-not-a-route');
   assert.match(await page.locator('h1').innerText(),/Pagina non trovata|Page not found/i);
-  assert.equal(errors.length,0,'clean browser errors: '+errors.join(' | '));
+  assert.equal(errors.filter(error=>!/Failed to load resource: the server responded with a status of 404/.test(error)).length,0,'unknown-route app errors: '+errors.join(' | '));
   await context.close();
 }
 
