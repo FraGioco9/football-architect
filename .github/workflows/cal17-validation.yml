@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - cal/issue-17-realistic-calendar
-    paths:
-      - .github/workflows/cal17-validation.yml
 
 permissions:
   contents: read
