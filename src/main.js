@@ -227,6 +227,16 @@ function save(){
     return false;
   }
 }
+async function migrateActiveCareerSystems(){
+  ensureCareerDates(world);
+  if(!world.clubId)return {changed:false,enabled:[]};
+  const migration=ensureOfficialCareerSystems(world);
+  if(!migration.changed)return migration;
+  if(!officialCareerSystemsReady(world))throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_INCOMPLETE');
+  if(!save())throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_SAVE_FAILED');
+  await primary.commit();
+  return migration;
+}
 function updateFieldShell(input){
   const shell=input.closest('.field-shell');
   if(shell)shell.dataset.hasValue=input.value.length?'true':'false';
@@ -595,7 +605,7 @@ async function handleVaultRestore(id){
     const result=await restoreSlotFromVault(careerStorage,careerVault,id,validateSave);
     ui.modal=null;
     if(readCareerCatalog(careerStorage).activeSlotId===id&&result.restored){
-      world=result.career;blockedSaveError=null;emergencyWorldRaw=null;resetCareerUi('careers');
+      world=result.career;blockedSaveError=null;emergencyWorldRaw=null;await migrateActiveCareerSystems();resetCareerUi('careers');
       try{persistCareer(careerStorage,result.career,validateSave);}
       catch(err){ui.storageWarning='Copia di compatibilità non aggiornata: lo slot recuperato è al sicuro. '+(err?.message||'');}
     }
@@ -789,7 +799,7 @@ root.addEventListener('click',async ev=>{
       case 'career-load':{
         if(!saveBeforeSlotChange())break;
         const selected=switchCareerSlot(careerStorage,id,validateSave);
-        world=selected.career;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi();
+        world=selected.career;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi();
         render();window.scrollTo(0,0);
         if(selected.mirrorError)reportError(readableStorageError(selected.mirrorError));
         break;
@@ -831,7 +841,7 @@ root.addEventListener('click',async ev=>{
           mode:ui.importMode,targetSlotId:ui.importTarget||null,expectedCatalogRaw:ui.importCatalogRaw,
         });
         ui.importPreview=null;ui.importCatalogRaw=null;ui.modal=null;
-        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi('careers');}
+        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
         toast(ui.language==='en'?`${result.count} careers imported.`:`${result.count} carriere importate.`);
         if(result.mirrorError)reportError(readableStorageError(result.mirrorError));
         break;
@@ -849,7 +859,7 @@ root.addEventListener('click',async ev=>{
       case 'career-import-backup-confirm':{
         const result=restoreImportBackup(careerStorage,id,field,validateSave);
         ui.modal=null;
-        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi('careers');}
+        if(result.activeCareer){world=result.activeCareer;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
         toast(ui.language==='en'?'Previous career restored.':'Copia precedente ripristinata.');
         if(result.mirrorError)reportError(readableStorageError(result.mirrorError));
         break;
@@ -867,7 +877,7 @@ root.addEventListener('click',async ev=>{
       case 'career-checkpoint-confirm':{
         if(!saveBeforeSlotChange())break;
         const restored=restoreCareerCheckpoint(careerStorage,id,field,validateSave);
-        world=restored.career;blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi();
+        world=restored.career;blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi();
         toast(ui.language==='en'?'Checkpoint restored.':'Checkpoint ripristinato.');window.scrollTo(0,0);
         if(restored.mirrorError)reportError(readableStorageError(restored.mirrorError));
         break;
@@ -903,7 +913,7 @@ root.addEventListener('click',async ev=>{
         const deleted=deleteCareerSlot(careerStorage,id,validateSave);
         ui.modal=null;
         try{discardStoredMatchPreview(careerStorage,id);}catch(err){reportError(err.message);}
-        if(deleted.activeDeleted){world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;resetCareerUi('careers');}
+        if(deleted.activeDeleted){world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
         render();
         if(deleted.cleanupError||deleted.mirrorError)reportError(readableStorageError(deleted.cleanupError||deleted.mirrorError));
         break;
