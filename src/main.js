@@ -34,6 +34,7 @@ import {createControlHints} from './controls-system.js';
 import {createDialogCoordinator} from './dialog-system.js';
 import {createFeedbackCenter} from './feedback-system.js';
 import {ensureCareerDates,fixtureIsDue,nextFixtureDate,addDaysISO,formatCareerDate} from './domain/career-date.js';
+import {ensureOfficialCareerSystems,officialCareerSystemsReady} from './domain/career-official.js';
 import {MARKET_VIEWS,marketCostPreview} from './market-view-model.js';
 import {displayCareerMoney} from './domain/career-locale.js';
 import {preferredLanguage, saveLanguage, translateUi, translate, pageTitle, GAME_NAME} from './i18n.js';
@@ -78,6 +79,7 @@ const careerVault=createIndexedDbVault();
 let pendingNewCatalogSlot=false;
 let world=load();
 ensureCareerDates(world);
+const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
 let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null};
@@ -97,6 +99,11 @@ function restorePendingPreview({open=true}={}){
   }catch(err){ui.previewRecoveryError=err;}
 }
 const feedback=createFeedbackCenter(document,{language:()=>ui.language});
+if(officialSystemMigration.changed&&!blockedSaveError){
+  if(!officialCareerSystemsReady(world))throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_INCOMPLETE');
+  if(!save())throw new Error('CORE_OFFICIAL_SYSTEM_MIGRATION_SAVE_FAILED');
+  await primary.commit();
+}
 restorePendingPreview({open:false});
 let searchTimer;
 let qol03Trail=[];
