@@ -16,6 +16,7 @@ const cupName={IT:['Coppa delle Torri','Towers Cup'],ENG:['Coppa delle Contee','
 const PRIZES=[120000,250000,450000,800000,1500000]; // EUR, per advancing side (first round through final)
 const shuffle=(list,seed)=>{const result=[...list],random=randomFactory(seed);for(let i=result.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}return result;};
 const nearestPower=n=>2**Math.floor(Math.log2(n));
+const legacySlots=(total,stages)=>Array.from({length:stages},(_,i)=>Math.max(1,Math.min(total-1,Math.round(total*(i+1)/(stages+1)))));
 const slots=(w,stages)=>competitionGapSlots(w.fixtures,stages,{seed:w.seed,season:w.season,label:'national-cup'});
 function scheduleCupMatches(w,country,index,leagueRound,matches){
  const date=competitionDateForGap(w.fixtures,leagueRound,{seed:w.seed,season:w.season,label:`cup-${country}`,index});
@@ -129,7 +130,8 @@ export function cupHonours(w,country){return cupsEnabled(w)?state(w).history.map
 function goodCup(c,w,season){const league=careerWorldLeague(w,c.countryId),clubs=new Set(season===w.season?league?.clubs.map(x=>x.id):c.participants);if(!clubs||!Number.isSafeInteger(c.season)||c.season!==season||!Array.isArray(c.participants)||c.participants.length<8||c.participants.length>20||new Set(c.participants).size!==c.participants.length||c.participants.some(x=>!clubs.has(x))||!Array.isArray(c.calendar)||!Array.isArray(c.rounds)||c.rounds.length>5||c.rounds.length<1||!Array.isArray(c.awards)||!Array.isArray(c.scorers))return false;
  const dateAware=isCareerDate(c.rounds[0]?.date);
  const stages=(Math.log2(nearestPower(c.participants.length))|0)+(c.participants.length>nearestPower(c.participants.length)?1:0);
- if(c.calendar.length!==stages||c.calendar.some((r,i)=>!Number.isSafeInteger(r)||r<1||r>=w.fixtures.length||(season===w.season&&r!==slots(w,stages)[i])))return false;
+ const expectedSlots=dateAware?slots(w,stages):legacySlots(w.fixtures.length,stages);
+ if(c.calendar.length!==stages||c.calendar.some((r,i)=>!Number.isSafeInteger(r)||r<1||r>=w.fixtures.length||(season===w.season&&r!==expectedSlots[i])))return false;
  const seen=new Set();for(const [ix,r] of c.rounds.entries()){
   if(r.index!==ix+1||r.leagueRound!==c.calendar[ix]||(dateAware&&!isCareerDate(r.date))||(!dateAware&&r.date!==undefined)||!Array.isArray(r.matches)||!Array.isArray(r.byes)||!Array.isArray(r.draw))return false;
   if(ix===0&&r.matches.length!==(c.participants.length-nearestPower(c.participants.length)||c.participants.length/2))return false;
