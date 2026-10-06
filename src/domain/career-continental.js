@@ -221,7 +221,11 @@ export function continentalEdition(w){return continentalEnabled(w)?current(w).ed
 function validateEdition(w,ed,archived=false){
  if(!ed||!validInt(ed.season)||!Array.isArray(ed.entrants)||ed.entrants.length!==32||new Set(ed.entrants.map(x=>x.clubKey)).size!==32||!Array.isArray(ed.groups)||ed.groups.length!==8||!Array.isArray(ed.days)||ed.days.length!==10||!Array.isArray(ed.groupRounds)||ed.groupRounds.length!==6||!Array.isArray(ed.knockout)||ed.knockout.length>4||!Array.isArray(ed.awards)||!Array.isArray(ed.scorers)||!Array.isArray(ed.rankings)||!validInt(ed.revision))return false;
  const dateAware=isCareerDate(ed.groupRounds[0]?.date);
- if(!archived){const expected=dateAware?continentalDays(w.fixtures,{seed:w.seed,season:w.season}):continentalDays(w.fixtures.length);if(ed.days.join()!==expected.join())return false;}
+ if(!archived&&!dateAware){const expected=continentalDays(w.fixtures.length);if(ed.days.join()!==expected.join())return false;}
+ if(dateAware){
+  if(new Set(ed.days).size!==ed.days.length||ed.days.some(day=>!Number.isSafeInteger(day)||day<1||day>=w.fixtures.length))return false;
+  if(!archived){const leagueDates=new Set(w.fixtures.map(r=>r.date));if([...ed.groupRounds,...ed.knockout].some(r=>leagueDates.has(r.date)))return false;}
+ }
  const keys=new Set(ed.entrants.map(x=>x.clubKey)),counts=new Map(countryIds.map(c=>[c,0]));
  for(const e of ed.entrants){const parsed=splitKey(e.clubKey);if(!parsed||parsed.country!==e.countryId||!validInt(e.domesticRank)||e.domesticRank<1||e.domesticRank>20||!['league','cup'].includes(e.qualification))return false;counts.set(e.countryId,counts.get(e.countryId)+1);}if([...counts.values()].some(x=>x!==4))return false;
  const grouped=ed.groups.flatMap(g=>g.clubs);if(new Set(grouped).size!==32||grouped.some(k=>!keys.has(k))||ed.groups.some((g,i)=>g.id!==String.fromCharCode(65+i)||g.clubs?.length!==4||new Set(g.clubs.map(k=>splitKey(k)?.country)).size!==4))return false;
