@@ -26,7 +26,7 @@ import {advanceManagerCareerRound,settleManagerCareerSeason,openManagerCareerSea
 import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCareerPrize,closeCareerFinanceSeason,openCareerFinanceSeason} from './career-finance.js';
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
-import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates} from './career-date.js';
+import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,addDaysISO} from './career-date.js';
 
 export function startCareer(w,clubId,manager){
   ensureCareerDates(w);
@@ -191,14 +191,20 @@ function newSeasonMutating(w){
   settleCareerMarketSeason(w);
   w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);
   if(divisionPlan){openCareerDivisionsSeason(w,divisionPlan);w.fixtures=createFixtures(w.teams.map(c=>c.id),w.season);}
-  openNextSeasonDates(w);
   const rand=randomFactory(seasonSeed(w.seed,w.season));
   for(const p of w.players){
     if(!youthRollover)p.age++;p.contract=Math.max(1,p.contract-1);p.fitness=95;p.injury=0;p.morale=clamp(p.morale+12,55,95);
     p.apps=0;if(p.minutesPlayed!==undefined)p.minutesPlayed=0;p.goals=0;p.assists=0;p.yellow=0;p.cleanSheets=0;p.form=6.8;
     if(!developed&&p.age>30&&rand()<.3)p.ovr=Math.max(48,p.ovr-1);
   }
-  if(hasAdvancedCareer(w))settleAdvancedSeason(w);
+  if(hasAdvancedCareer(w)){
+    settleAdvancedSeason(w);
+    w.currentDate=addDaysISO(w.currentDate,21);w.careerDay+=21;
+    if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');
+  }else{
+    w.currentDate=addDaysISO(w.currentDate,21);w.careerDay+=21;
+  }
+  openNextSeasonDates(w);
   settleCareerPersonalitySeason(w);
   if(hasCareerWorld(w))syncCareerWorldClock(w);
   openBoardSeason(w);
