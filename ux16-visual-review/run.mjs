@@ -40,11 +40,13 @@ async function snap(channel,name){
     await page.screenshot({path:`screenshots/${name}-05-dashboard-it-open.png`,fullPage:false});
     await page.locator('[data-language-listbox="top"] [data-value="en"]').click();
     await page.waitForFunction(()=>document.documentElement.lang==='en');
+    console.log(name,'language after dashboard switch',await page.evaluate(()=>({lang:document.documentElement.lang,stored:localStorage.getItem('football-architect:language')})));
     await page.locator('[data-language-picker="top"] [role="combobox"]').click();
     await page.screenshot({path:`screenshots/${name}-06-dashboard-en-open.png`,fullPage:false});
     await page.keyboard.press('Escape');
 
     await page.goto(base+'/settings',{waitUntil:'networkidle'});
+    console.log(name,'language after settings reload',await page.evaluate(()=>({lang:document.documentElement.lang,stored:localStorage.getItem('football-architect:language')})));
     await page.locator('[data-language-picker="settings"] [role="combobox"]').click();
     await page.screenshot({path:`screenshots/${name}-07-settings-en-open.png`,fullPage:false});
     await page.keyboard.press('Escape');
