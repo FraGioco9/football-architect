@@ -6,7 +6,7 @@ import {makeCareerMessageEvent} from './career-locale.js';
 export function addMessage(w,subject,text,kind='info',event=null){
   // New message identifiers are deterministic across replays. Existing saved IDs remain untouched.
   const id=`msg-${w.season}-${w.round}-${w.inbox.length}-q02`;
-  const message={id,season:w.season,round:w.round,subject,text,kind,read:false};
+  const message={id,season:w.season,round:w.round,date:w.currentDate??null,subject,text,kind,read:false};
   if(event)message.localeEvent=makeCareerMessageEvent(id,event.type,event.params,w.round);
   w.inbox.unshift(message);
   w.unread=w.inbox.filter(m=>!m.read).length;
