@@ -223,7 +223,7 @@ function fixtureListRow(w,m,played,lang='it'){
 function careerContractsPanel(w,ui){
  const en=ui.language==='en',tr=(it,eng)=>en?eng:it;
  if(!hasAdvancedCareer(w))return '';
- if(!contractsEnabled(w))return panel(tr('Contratti strutturati','Structured player contracts'),'',`<p>${tr('Facoltativo, collegato agli stipendi e al mercato esistenti. Effettua prima un backup.','Optional; linked to existing wages and transfer market. Back up your save first.')}</p>${actionButton(tr('Attiva PLY05','Enable PLY05'),'contracts-enable','btn btn-primary')}`);
+ if(!contractsEnabled(w))return panel(tr('Contratti strutturati','Structured player contracts'),'',`<p role="alert">${tr('I contratti fanno parte di ogni carriera. Ricarica il salvataggio per completare la migrazione automatica.','Contracts are part of every career. Reload the save to complete automatic migration.')}</p>`);
  const data=careerContractView(w),players=data.contracts;
  const options=players.map(p=>({value:String(p.playerId),label:p.name}));
  const offers=data.offers.filter(o=>['awaiting_player','awaiting_club'].includes(o.status));
@@ -268,7 +268,7 @@ function pitchHtml(w,ui){return `<div class="tactics-pitch"><div class="pitch-su
 function sim04TacticsPanel(w,ui,halftime=false){
  if(!hasAdvancedCareer(w))return '';
  const en=ui.language==='en',tr=(it,enText)=>en?enText:it;
- if(!substitutionsEnabled(w))return `<section class="panel sim04-panel" aria-label="SIM04"><h3>${tr('Distinta e cambi','Team sheet and substitutions')}</h3><p>${tr('Attiva le sostituzioni ufficiali per le prossime partite. I risultati precedenti non cambieranno.','Enable official substitutions for future matches. Previous results stay unchanged.')}</p><button type="button" class="btn btn-primary" data-action="sim04-enable">${tr('Attiva SIM04','Enable SIM04')}</button></section>`;
+ if(!substitutionsEnabled(w))return `<section class="panel sim04-panel" aria-label="SIM04"><h3>${tr('Distinta e cambi','Team sheet and substitutions')}</h3><p role="alert">${tr('Il sistema sostituzioni è incluso nella carriera. Ricarica il salvataggio per completare la migrazione automatica.','The substitution system is included in every career. Reload the save to complete automatic migration.')}</p></section>`;
  const next=expectedNextMatch(w),s=w.advancedV1.matchdayV1;
  const starters=w.lineup.map(id=>playerById(w,id)).filter(Boolean);
  const bench=careerMatchdayBench(w,w.clubId,w.lineup);
@@ -355,7 +355,7 @@ function sparkline(values,width=550,height=140){if(!values.length)return `<div c
 function financeAccountsPanel(w,ui){
  const en=ui.language==='en',label=(it,english)=>en?english:it,accounts=en?FINANCE_ACCOUNTS_EN:FINANCE_ACCOUNTS;
  if(!w.advancedV1?.enabled)return '';
- if(!financeEnabled(w))return panel(label('Contabilità societaria · MGT02','Company accounts · MGT02'),'',`<p>${label('Attiva il piano dei conti, i budget e i rendiconti dalla situazione economica attuale. Nessun movimento precedente sarà inventato o duplicato.','Enable the chart of accounts, budgets and statements from the current finances. No historical transactions will be invented or duplicated.')}</p>${actionButton(label('Attiva MGT02','Enable MGT02'),'finance-enable','btn btn-primary')}`);
+ if(!financeEnabled(w))return panel(label('Contabilità societaria · MGT02','Company accounts · MGT02'),'',`<p role="alert">${label('La contabilità societaria è inclusa nella carriera. Ricarica il salvataggio per completare la migrazione automatica.','Company accounts are included in every career. Reload the save to complete automatic migration.')}</p>`);
  const s=w.advancedV1.financeV1,r=financeSeasonReport(w),forecast=careerFinanceForecast(w),f=n=>money(n,w,ui);
  const rows=(items,positive)=>Object.entries(items).map(([k,v])=>`<div class="budget-line"><span>${esc(accounts[k]||k)}</span><strong class="${positive?'plus-money':'minus-money'}">${positive?'+':'−'} ${f(v)}</strong></div>`).join('')||`<div class="budget-line">${label('Nessun movimento','No entries')}</div>`;
  const recent=s.entries.slice(-20).reverse().map(e=>`<tr><td>S${e.season} G${e.round}</td><td>${esc(accounts[e.debit]||e.debit)}</td><td>${esc(accounts[e.credit]||e.credit)}</td><td>${f(e.amountEUR)}</td></tr>`).join('');
@@ -371,8 +371,7 @@ function financeAccountsPanel(w,ui){
 function careerFacilitiesPanel(w,ui){
  const en=ui.language==='en',tr=(it,english)=>en?english:it;
  if(!w.advancedV1?.enabled)return '';
- if(!facilityEnabled(w))return financeEnabled(w)?panel(tr('Staff e infrastrutture · MGT03','Staff and facilities · MGT03'),'',
- `<p>${tr('Assumi collaboratori, assegna deleghe e costruisci strutture con spese registrate in MGT02.','Hire staff, delegate work and develop facilities using the existing MGT02 accounts.')}</p>${w.advancedV1.trainingV1&&w.advancedV1.youthV1?actionButton(tr('Attiva MGT03','Enable MGT03'),'facility-enable','btn btn-primary'):`<p class="note">${tr('Attiva prima gli allenamenti MGT04 e il vivaio PLY06.','Enable MGT04 training and PLY06 academy first.')}</p>`}`):'';
+ if(!facilityEnabled(w))return panel(tr('Staff e infrastrutture · MGT03','Staff and facilities · MGT03'),'',`<p role="alert">${tr('Staff e strutture sono inclusi nella carriera. Ricarica il salvataggio per completare la migrazione automatica.','Staff and facilities are included in every career. Reload the save to complete automatic migration.')}</p>`);
  const s=w.advancedV1.facilitiesV1,impact=facilityImpact(w),format=n=>money(n,w,ui);
  const names={assistant:tr('Viceallenatore','Assistant coach'),fitness:tr('Preparatore','Fitness coach'),medical:tr('Medico','Physician'),scouting:tr('Osservatore','Scout'),director:tr('Direttore sportivo','Sporting director')};
  const buildings={training:tr('Centro allenamento','Training center'),academy:tr('Vivaio','Youth academy'),medical:tr('Centro medico','Medical center'),stadium:tr('Stadio','Stadium')};
