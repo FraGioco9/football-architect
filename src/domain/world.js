@@ -4,6 +4,7 @@ import {syntheticName} from '../names.js';
 import {clamp} from './rules.js';
 import {randomFactory,worldSeed} from './rng.js';
 import {createFixtures} from './fixtures.js';
+import {ensureCareerDates} from './career-date.js';
 
 export function makeWorld(seed=260126,countryId='IT'){
   const league=leagueById(countryId);
@@ -26,5 +27,6 @@ export function makeWorld(seed=260126,countryId='IT'){
   }
   const teams=clubs.map(c=>({...c,balance:Math.round((13500000+(c.reputation-65)*1300000)/100000)*100000,transferBudget:Math.round((7000000+(c.reputation-65)*690000)/100000)*100000,history:[]}));
   const fixtures=createFixtures(clubs.map(c=>c.id));
-  return {version:1,seed,countryId:league.id,country:league.country.it,countryEn:league.country.en,countryFlag:league.flag,competition:league.competition,season:1,round:0,teams,players,fixtures,clubId:null,manager:'Allenatore',formation:'4-3-3',lineup:[],tactic:'Equilibrata',pressing:'Normale',tempo:'Normale',width:'Bilanciata',training:'Equilibrato',inbox:[],unread:0,watchlist:[],transfers:[],financeHistory:[],lastMatchId:null,startedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const world={version:1,seed,countryId:league.id,country:league.country.it,countryEn:league.country.en,countryFlag:league.flag,competition:league.competition,season:1,round:0,teams,players,fixtures,clubId:null,manager:'Allenatore',formation:'4-3-3',lineup:[],tactic:'Equilibrata',pressing:'Normale',tempo:'Normale',width:'Bilanciata',training:'Equilibrato',inbox:[],unread:0,watchlist:[],transfers:[],financeHistory:[],lastMatchId:null,startedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  return ensureCareerDates(world);
 }
