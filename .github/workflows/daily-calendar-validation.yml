@@ -122,9 +122,11 @@ jobs:
           await page.locator('[data-action="start-career"]').click();
           await page.locator('.dashboard-hero').waitFor({state:'visible',timeout:15000});
           const before=await page.locator('.top-round').getAttribute('data-current-date');
+          const errors=[];page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});page.on('pageerror',e=>errors.push(String(e)));
           await page.locator('.continue-top').click();
-          await page.waitForFunction(previous=>document.querySelector('.top-round')?.getAttribute('data-current-date')!==previous,before);
+          await page.waitForTimeout(2500);
           const after=await page.locator('.top-round').getAttribute('data-current-date');
+          if(after===before){const text=(await page.locator('body').innerText()).slice(-2500);throw new Error('Continue did not change date '+JSON.stringify({before,after,errors,text}));}
           const add=(value,n)=>{const [y,m,d]=value.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10);};
           if(after!==add(before,1))throw new Error(`Continue skipped date: ${before} -> ${after}`);
           if(await page.locator('.fa-main-menu').count())throw new Error('Returned to main menu after Continue');
