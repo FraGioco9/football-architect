@@ -22,7 +22,7 @@ import {careerStatisticsEnabled,recordCareerStatistics,validateCareerStatistics}
 import {FORMATIONS,clamp} from './rules.js';
 import {substitutionsEnabled,validateCareerMatchday,careerMatchdayBench,matchKind} from './career-matchday.js';
 import {createMatchSheet,createMatchday,advanceMatchday,applySubstitution,finishMatchday,matchAppearances} from '../addons/domain/matchday.mjs';
-import {hasCareerTraining,validateCareerTraining,settleCareerTrainingWeek,recordCareerMinutes,syncCareerTrainingRole} from './career-training.js';
+import {hasCareerTraining,validateCareerTraining,settleCareerTrainingDay,recordCareerMinutes,syncCareerTrainingRole} from './career-training.js';
 import {validateCareerYouth} from './career-youth.js';
 import {formationSlots} from './lineups.js';
 import {clubPlayers,playerById} from './selectors.js';
@@ -47,11 +47,11 @@ export function enableAdvancedCareer(w){
   if(w.advancedV1!==undefined)invalid('UNKNOWN_MODE');
   const prepared=w.players.map(p=>{
     const attr=copyPlayerWithAttributes({...p,position:toAddonPosition(p.position)},{seed:w.seed,countryId:w.countryId}).attributeProfile;
-    const med=initialMedical({...p,unavailable:p.injury>0},{day:0});
+    const med=initialMedical({...p,unavailable:p.injury>0},{day:Number.isSafeInteger(w.careerDay)?w.careerDay:0});
     return {attributeProfile:attr,medicalV1:med};
   });
   // Allocate first, mutate only after every player and tactic has validated.
-  const state={schemaVersion:ADVANCED_SCHEMA,enabled:true,clockDay:0,style:'balanced',tactics:structuredClone(BUILT_IN_STYLES.balanced),roles:{},legacyInjuryRounds:Object.fromEntries(w.players.filter(p=>p.injury>0).map(p=>[p.id,p.injury])),matchCount:0};
+  const state={schemaVersion:ADVANCED_SCHEMA,enabled:true,clockDay:Number.isSafeInteger(w.careerDay)?w.careerDay:0,style:'balanced',tactics:structuredClone(BUILT_IN_STYLES.balanced),roles:{},legacyInjuryRounds:Object.fromEntries(w.players.filter(p=>p.injury>0).map(p=>[p.id,p.injury])),matchCount:0};
   for(let i=0;i<w.players.length;i++)Object.assign(w.players[i],prepared[i]);
   w.advancedV1=state;
   return w;
@@ -95,23 +95,21 @@ export function validateAdvancedCareer(w){
   }catch{return false;}
   return validateCareerStatistics(w)&&validateCareerCoaches(w)&&validateCareerRoles(w)&&validateCareerTactics(w)&&validateCareerMatchday(w)&&validateCareerContracts(w)&&validateCareerPersonality(w)&&validateCareerTraining(w)&&validateCareerYouth(w)&&validateCareerWorld(w)&&validateCareerMarket(w)&&validateCareerCalendar(w)&&validateCareerScouting(w)&&validateCareerAIMarket(w)&&validateCareerCups(w)&&validateCareerContinental(w)&&validateCareerDivisions(w)&&validateCareerBoard(w)&&validateManagerCareer(w)&&validateCareerFinance(w)&&validateCareerFacilities(w);
 }
-/** Advance the medical clock once before all fixtures in the round. */
-export function prepareAdvancedRound(w){
+/** Advance medical/training state by exactly one real calendar day. */
+export function advanceAdvancedDay(w){
   if(!active(w))invalid('INACTIVE');
-  const day=w.advancedV1.clockDay+7;
+  const day=w.advancedV1.clockDay+1;
   if(hasCareerTraining(w)){
-    // One authoritative daily recovery path: MGT04 owns the managed club's
-    // seven calendar days, PLY04's aggregate recovery applies only to rivals.
     const updates=w.players.filter(p=>p.clubId!==w.clubId).map(p=>({id:p.id,
       med:recoverMedical(readMedical(p),{day,rest:65,training:24,recovery:p.attributeProfile.values.recovery??50})}));
     w.advancedV1.clockDay=day;
-    settleCareerTrainingWeek(w,day);
+    settleCareerTrainingDay(w,day);
     for(const {id,med} of updates){const p=playerById(w,id);
       p.medicalV1=trimMedicalForSave(med);
       p.fitness=Math.round(med.freshness);
       p.injury=w.advancedV1.legacyInjuryRounds[String(p.id)]??(med.injury?.stage==='recovering'?Math.max(1,Math.ceil(med.injury.daysRemaining/7)):0);
     }
-    return;
+    return day;
   }
   const updates=w.players.map(p=>recoverMedical(readMedical(p),{day,rest:65,training:24,recovery:p.attributeProfile.values.recovery??50}));
   w.advancedV1.clockDay=day;
@@ -119,6 +117,13 @@ export function prepareAdvancedRound(w){
     const p=w.players[i],med=updates[i];p.medicalV1=trimMedicalForSave(med);
     p.fitness=Math.round(med.freshness);p.injury=w.advancedV1.legacyInjuryRounds[String(p.id)]??(med.injury?.stage==='recovering'?Math.max(1,Math.ceil(med.injury.daysRemaining/7)):0);
   }
+  return day;
+}
+
+/** Compatibility path for callers that still advance a whole match week. */
+export function prepareAdvancedRound(w,{days=7}={}){
+  if(!active(w)||!Number.isSafeInteger(days)||days<0||days>31)invalid('DAY_SPAN');
+  for(let i=0;i<days;i++)advanceAdvancedDay(w);
 }
 export function settleAdvancedLegacyAbsences(w){
  if(!active(w))return;
