@@ -188,14 +188,28 @@ export function createControlHints(root,doc=globalThis.document){
     tip.style.maxWidth=`${maxWidth}px`;
     const w=tip.offsetWidth,h=tip.offsetHeight;
     const left=Math.max(10,Math.min(vw-10-w,bounds.left+(bounds.width-w)/2));
-    const below=bounds.bottom+OFFSET+h<=vh-10;
-    const top=below?bounds.bottom+OFFSET:Math.max(10,bounds.top-h-OFFSET);
+    const fitsAbove=bounds.top-h-OFFSET>=10;
+    const fitsBelow=bounds.bottom+OFFSET+h<=vh-10;
+    const top=fitsAbove
+      ? bounds.top-h-OFFSET
+      : fitsBelow
+        ? bounds.bottom+OFFSET
+        : Math.max(10,Math.min(vh-10-h,bounds.top-h-OFFSET));
     tip.style.left=`${left}px`;tip.style.top=`${top}px`;
   }
   function show(el){
     const label=el?.getAttribute('data-fa-tooltip');
     if(!label||!el.isConnected)return;
-    active=el;tip.textContent=label;tip.hidden=false;position();
+    const scrollState=[];
+    for(let node=el.parentElement;node;node=node.parentElement){
+      if(node.scrollHeight>node.clientHeight||node.scrollWidth>node.clientWidth)scrollState.push([node,node.scrollTop,node.scrollLeft]);
+    }
+    const documentScroller=doc.scrollingElement;
+    if(documentScroller&&!scrollState.some(([node])=>node===documentScroller))scrollState.push([documentScroller,documentScroller.scrollTop,documentScroller.scrollLeft]);
+    active=el;
+    tip.style.left='0px';tip.style.top='0px';
+    tip.textContent=label;tip.hidden=false;position();
+    for(const [node,top,left] of scrollState){node.scrollTop=top;node.scrollLeft=left;}
   }
   function trigger(target){return target?.closest?.('[data-fa-tooltip]')||null;}
   function pointerover(event){if(event.pointerType==='touch')return;const el=trigger(event.target);if(el!==active){if(el)show(el);else hide();}}
