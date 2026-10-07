@@ -185,7 +185,7 @@ const renderNavigation=(w,ui)=>{
     const inboxBadge=item.id==='inbox'&&w.unread
       ?`<span class="nav-count ${requiredInput?'nav-count-required':''}" aria-label="${requiredInput?(en?'Decision required':'Decisione richiesta'):`${w.unread} ${en?'unread':'non letti'}`}">${w.unread}</span>`
       :'';
-    return `<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''} title="${esc(item[locale])}">${icon(item.icon,17)}<span>${esc(item[locale])}</span>${inboxBadge}</button>`;
+    return `<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''}>${icon(item.icon,17)}<span>${esc(item[locale])}</span>${inboxBadge}</button>`;
   }).join('');
   const groups=NAV_GROUPS.map(group=>`<section class="nav-group" aria-labelledby="nav-group-${group.id}"><h2 class="nav-group-title" id="nav-group-${group.id}">${esc(group[locale])}</h2><div class="nav-group-items">${links(group)}</div></section>`).join('');
   return `<nav class="navigation" aria-label="${en?'Main navigation':'Navigazione principale'}">${groups}</nav>`;
