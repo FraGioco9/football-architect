@@ -636,7 +636,7 @@ function matchRatings(w,m,lang='it'){
  const minuteText=(values,fallback)=>values.length?values.map(v=>`${v}′`).join(', '):fallback;
  const eventBadges=p=>{
   const badges=[],id=String(p.playerId);
-  const badge=(klass,symbol,label)=>`<span class="match-rating-event ${klass}" title="${esc(label)}" aria-label="${esc(label)}">${symbol}</span>`;
+  const badge=(klass,symbol,label)=>`<span class="match-rating-event ${klass}" data-fa-tooltip="${esc(label)}" aria-label="${esc(label)}">${symbol}</span>`;
   const goalMinutes=(m.result?.goals??[]).filter(g=>String(g.scorerId)===id).map(g=>Number(g.minute)).filter(Number.isFinite);
   if(goalMinutes.length){
     const label=`${tr('Gol','Goal')}: ${minuteText(goalMinutes,'—')}`;
