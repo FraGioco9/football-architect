@@ -355,16 +355,19 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .match-ratings-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--color-border)}
 .match-rating-team{padding:12px 14px}
 .match-rating-team+ .match-rating-team{border-left:1px solid var(--color-border)}
-.match-rating-team h4{margin:0 0 8px;font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.match-rating-team h4{margin:0 0 8px;display:flex;align-items:center;gap:7px;font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.match-rating-team h4>small{font-size:9px;color:var(--color-text);font-weight:800;letter-spacing:.02em}
 .match-rating-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px}
 .match-rating-row>span{min-width:0;display:flex;align-items:center;gap:7px;font-size:10px}
-.match-rating-row>span>b{display:grid;place-items:center;width:18px;height:18px;border-radius:999px;background:var(--color-surface-raised);color:var(--color-text-secondary);font-size:8px}
+.match-rating-position{display:grid;place-items:center;min-width:30px;height:20px;padding:0 5px;border-radius:var(--radius-5);background:var(--color-surface-raised);color:var(--color-text-secondary);font-size:8px;font-weight:900}
 .match-rating-row>span>small{color:var(--color-text-secondary);font-size:8px}
 .match-rating-result{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-shrink:0}
 .match-rating-result>strong{min-width:28px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
 .match-rating-event{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-surface-raised);font-size:9px;line-height:1;white-space:nowrap}
 .match-rating-event.is-entered{color:var(--color-success,#54d19b);border-color:color-mix(in srgb,var(--color-success,#54d19b) 45%,var(--color-border));font-weight:900}
+.match-rating-event.is-entered svg{transform:rotate(-90deg)}
 .match-rating-event.is-exited{color:var(--color-danger,#e06c75);border-color:color-mix(in srgb,var(--color-danger,#e06c75) 45%,var(--color-border));font-weight:900}
+.match-rating-event.is-exited svg{transform:rotate(90deg)}
 
 .match-report-simple-details{display:grid}
 .match-report-simple-details>h3{margin:0;padding:12px 15px;border-bottom:1px solid var(--color-border);font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em}
