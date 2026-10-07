@@ -55,5 +55,5 @@ export function officialMatchTimeline(world,fixture,lang='it'){
 }
 
 export function halftimeIntro(lang='it'){
-  return `<div class="match-center-half-label" role="note"><strong>${say(lang,'DECISIONI INTERVALLO','HALF-TIME DECISIONS')}</strong><p>${say(lang,'Scegli eventuali cambi SIM04 e modifiche tattiche SIM02, poi conferma per simulare il secondo tempo ufficiale. Chiudendo questa finestra non avanzi la giornata.','Choose SIM04 substitutions and SIM02 tactical changes, then confirm to play the official second half. Closing this dialog does not advance the matchday.')}</p></div>`;
+  return `<div class="match-center-half-label" role="note"><strong>${say(lang,'DECISIONI INTERVALLO','HALF-TIME DECISIONS')}</strong><p>${say(lang,'Scegli eventuali sostituzioni e modifiche tattiche, poi conferma per giocare il secondo tempo. Chiudendo questa finestra non avanzi la giornata.','Choose any substitutions and tactical changes, then confirm to play the second half. Closing this dialog does not advance the matchday.')}</p></div>`;
 }
