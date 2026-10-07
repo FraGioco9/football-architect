@@ -15,7 +15,7 @@ import {formatCareerDate,formatCareerDateTime,fixtureIsDue} from './domain/caree
 import {esc, statusTag as tag, sectionHead, panel, actionButton, tableColumns, numberCell, emptyTableRow, metricCard, emptyState, dialogFrame, matchDialogFrame} from './ui-components.js';
 export {esc, tableColumns, numberCell, emptyTableRow} from './ui-components.js';
 import {LEAGUES} from './leagues.js';
-import {advancedPage,playerProjection} from './addons/advanced-ui.js';
+import {advancedPage} from './addons/advanced-ui.js';
 import {careerTrainingPanel} from './addons/career-training-ui.js';
 import {careerYouthPanel} from './addons/career-youth-ui.js';
 import {careerWorldPanel} from './addons/career-world-ui.js';
@@ -42,7 +42,7 @@ import {renderCareerCoachPanel} from './addons/ui/career-coaches-ui.mjs';
 import {substitutionsEnabled,expectedNextMatch,careerMatchdayBench} from './domain/career-matchday.js';
 import {personalityEnabled,personalityPlayerView,lockerRoomView} from './domain/career-personality.js';
 import {contractsEnabled,careerContractView} from './domain/career-contracts.js';
-import {renderPlayerProfile,renderPlayerComparison} from './addons/ui/player-profile.mjs';
+import {renderPlayerComparison} from './addons/ui/player-profile.mjs';
 import {readPlayerAttributes} from './addons/domain/player-generator.mjs';
 import {rosterText,rosterIndicators,selectByAvailability,playerAvailability} from './squad-view-model.js';
 import {safeColor,clubPalette,monogram,overallTier,conditionTier} from './visual-identity.js';
