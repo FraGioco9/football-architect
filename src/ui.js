@@ -619,13 +619,24 @@ function matchTimeline(w,m,lang='it'){
 function matchRatings(w,m,lang='it'){
  const tr=(it,en)=>lang==='en'?en:it,report=careerStatisticsReport(w,m);
  if(!report?.players?.length)return '';
- const rated=report.players.filter(p=>Number.isFinite(Number(p.rating))).map(p=>({...p,rating:Number(p.rating)}));
+ const participated=p=>p.minutes!==null&&p.minutes!==undefined?Number(p.minutes)>0:Number(p.touchesObserved)>0;
+ const rated=report.players.filter(p=>participated(p)&&Number.isFinite(Number(p.rating))).map(p=>({...p,rating:Number(p.rating)}));
  if(!rated.length)return '';
  const name=p=>esc(w.players.find(x=>String(x.id)===String(p.playerId))?.name||historicPlayerName(w,p.playerId)||'—');
+ const changes=m.result?.advancedV1?.matchday?.changes??[];
+ const substitutionIds=new Set(changes.flatMap(c=>[String(c.out),String(c.in)]));
+ const eventBadges=p=>{
+  const badges=[];
+  const goals=Number(p.goals)||0,yellows=Number(p.yellowCards)||0;
+  if(goals)badges.push(`<span class="match-rating-event" aria-label="${goals} ${goals===1?tr('gol','goal'):tr('gol','goals')}">⚽${goals>1?`×${goals}`:''}</span>`);
+  if(yellows)badges.push(`<span class="match-rating-event" aria-label="${yellows} ${yellows===1?tr('ammonizione','yellow card'):tr('ammonizioni','yellow cards')}">🟨${yellows>1?`×${yellows}`:''}</span>`);
+  if(substitutionIds.has(String(p.playerId)))badges.push(`<span class="match-rating-event" aria-label="${tr('Sostituzione','Substitution')}">↔</span>`);
+  return badges.join('');
+ };
  const home=rated.filter(p=>String(p.teamId)===String(m.home)).sort((a,b)=>b.rating-a.rating);
  const away=rated.filter(p=>String(p.teamId)===String(m.away)).sort((a,b)=>b.rating-a.rating);
  const best=[...rated].sort((a,b)=>b.rating-a.rating)[0];
- const teamBlock=(players,club)=>`<div class="match-rating-team"><h4>${esc(club?.short||club?.name||'—')}</h4>${players.map((p,i)=>`<div class="match-rating-row"><span><b>${i+1}</b>${name(p)}</span><strong>${p.rating.toFixed(1)}</strong></div>`).join('')||`<p class="muted">${tr('Nessun voto disponibile','No ratings available')}</p>`}</div>`;
+ const teamBlock=(players,club)=>`<div class="match-rating-team"><h4>${esc(club?.short||club?.name||'—')}</h4>${players.map((p,i)=>`<div class="match-rating-row"><span><b>${i+1}</b>${name(p)}</span><span class="match-rating-result">${eventBadges(p)}<strong>${p.rating.toFixed(1)}</strong></span></div>`).join('')||`<p class="muted">${tr('Nessun voto disponibile','No ratings available')}</p>`}</div>`;
  return `<section class="match-ratings" aria-labelledby="match-ratings-title"><div class="match-ratings-head"><div><span class="overline">${tr('PRESTAZIONI','PERFORMANCES')}</span><h3 id="match-ratings-title">${tr('Voti giocatori','Player ratings')}</h3></div><div class="match-ratings-best"><span>${tr('Migliore in campo','Player of the match')}</span><strong>${name(best)} · ${best.rating.toFixed(1)}</strong></div></div><div class="match-ratings-grid">${teamBlock(home,clubById(w,m.home))}${teamBlock(away,clubById(w,m.away))}</div></section>`;
 }
 function matchModal(w,m,lang='it'){
@@ -636,8 +647,19 @@ function matchModal(w,m,lang='it'){
  const pct=v=>Math.min(100,Math.max(0,Math.round(numeric(v))));
  const round=String(m.id).split('-')[1]||'—';
  const stadium=h?.stadium||'';
- const shots=numeric(r.shotsHome)+numeric(r.shotsAway),xgs=numeric(r.xgHome)+numeric(r.xgAway);
- const stat=(label,left,right,share)=>`<div class="match-report-stat"><strong>${esc(left)}</strong><div><span>${esc(label)}</span><div class="match-report-stat-bar"><i style="width:${pct(share)}%"></i><b style="width:${100-pct(share)}%"></b></div></div><strong>${esc(right)}</strong></div>`;
+ const report=careerStatisticsReport(w,m);
+ const known=v=>v!==null&&v!==undefined&&Number.isFinite(Number(v));
+ const val=(v,digits=0)=>known(v)?Number(v).toFixed(digits):'—';
+ const integer=v=>known(v)?String(Math.round(Number(v))):'—';
+ const percent=v=>known(v)?`${Number(v).toFixed(Number(v)%1?1:0)}%`:'—';
+ const detailedHome=report?.home,detailedAway=report?.away;
+ const possessionHome=known(report?.possessionPct?.home)?Number(report.possessionPct.home):(known(r.possessionHome)?Number(r.possessionHome):null);
+ const possessionAway=known(report?.possessionPct?.away)?Number(report.possessionPct.away):(possessionHome!==null?100-possessionHome:null);
+ const shotsHome=known(detailedHome?.shots)?detailedHome.shots:r.shotsHome,shotsAway=known(detailedAway?.shots)?detailedAway.shots:r.shotsAway;
+ const xgHome=known(detailedHome?.xg)?detailedHome.xg:r.xgHome,xgAway=known(detailedAway?.xg)?detailedAway.xg:r.xgAway;
+ const stat=(label,left,right,share=null)=>`<div class="match-report-stat"><strong>${esc(left)}</strong><div><span>${esc(label)}</span>${known(share)?`<div class="match-report-stat-bar"><i style="width:${pct(share)}%"></i><b style="width:${100-pct(share)}%"></b></div>`:''}</div><strong>${esc(right)}</strong></div>`;
+ const ratio=(left,right)=>known(left)&&known(right)&&Number(left)+Number(right)>0?Number(left)/(Number(left)+Number(right))*100:null;
+ const cards=(row)=>row?`${integer(row.yellowCards)} 🟨 · ${integer(row.redCards)} 🟥`:'—';
  const timeline=matchTimeline(w,m,lang);
  const ratings=matchRatings(w,m,lang);
  return `<article class="match-report-v2">
@@ -656,9 +678,14 @@ function matchModal(w,m,lang='it'){
   <section class="match-report-v2-section" aria-labelledby="match-report-stats-title">
     <h3 id="match-report-stats-title">${tr('Statistiche','Statistics')}</h3>
     <div class="match-report-stats">
-      ${stat(tr('Possesso','Possession'),numeric(r.possessionHome)+'%',(100-numeric(r.possessionHome))+'%',r.possessionHome)}
-      ${stat(tr('Tiri','Shots'),numeric(r.shotsHome),numeric(r.shotsAway),shots?numeric(r.shotsHome)/shots*100:50)}
-      ${stat('xG',numeric(r.xgHome).toFixed(2),numeric(r.xgAway).toFixed(2),xgs?numeric(r.xgHome)/xgs*100:50)}
+      ${stat(tr('Possesso','Possession'),percent(possessionHome),percent(possessionAway),possessionHome)}
+      ${stat(tr('Tiri','Shots'),integer(shotsHome),integer(shotsAway),ratio(shotsHome,shotsAway))}
+      ${stat(tr('Tiri in porta','Shots on target'),integer(detailedHome?.shotsOnTarget),integer(detailedAway?.shotsOnTarget),ratio(detailedHome?.shotsOnTarget,detailedAway?.shotsOnTarget))}
+      ${stat('xG',val(xgHome,2),val(xgAway,2),ratio(xgHome,xgAway))}
+      ${stat(tr('Precisione passaggi','Pass accuracy'),percent(detailedHome?.passAccuracyPct),percent(detailedAway?.passAccuracyPct),ratio(detailedHome?.passAccuracyPct,detailedAway?.passAccuracyPct))}
+      ${stat(tr('Falli','Fouls'),integer(detailedHome?.fouls),integer(detailedAway?.fouls),ratio(detailedHome?.fouls,detailedAway?.fouls))}
+      ${stat(tr('Cartellini','Cards'),cards(detailedHome),cards(detailedAway))}
+      ${stat(tr('Parate','Saves'),integer(detailedHome?.saves),integer(detailedAway?.saves),ratio(detailedHome?.saves,detailedAway?.saves))}
     </div>
   </section>
   ${timeline}
