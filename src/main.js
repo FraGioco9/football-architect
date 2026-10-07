@@ -299,8 +299,8 @@ function updateFieldShell(input){
 }
 function scheduleSearchRender(input){
   const id=input.id;
-  if(id!=='squad-search'&&id!=='market-search'&&id!=='scout-search')return;
-  ui[id==='squad-search'?'squadSearch':id==='scout-search'?'scoutSearch':'marketSearch']=input.value;
+  if(id!=='market-search'&&id!=='scout-search')return;
+  ui[id==='scout-search'?'scoutSearch':'marketSearch']=input.value;
   const focus={id,start:input.selectionStart,end:input.selectionEnd};
   clearTimeout(searchTimer);
   searchTimer=setTimeout(()=>{
@@ -316,7 +316,7 @@ function clearField(id){
   input.dispatchEvent(new Event('input',{bubbles:true}));
   if(id==='career-name'){input.removeAttribute('aria-invalid');const err=document.getElementById('career-name-error');if(err)err.hidden=true;}
   input.focus();
-  if(id==='squad-search'||id==='market-search'||id==='scout-search'){
+  if(id==='market-search'||id==='scout-search'){
     clearTimeout(searchTimer);
     render({focus:{id,start:0,end:0}});
   }
@@ -978,7 +978,7 @@ root.addEventListener('click',async ev=>{
         if(field==='contract-counter'){
           const offer=world.advancedV1?.contractsV1?.offers?.[String(id)];
           if(!offer||offer.status!=='awaiting_club'){toast(ui.language==='en'?'This request has already been resolved.':'Questa richiesta è già stata risolta.','info');render();break;}
-          ui.contractFocusId=String(id);ui.squadView='contract';ui.squadSort='contract';navigate('squad');break;
+          ui.contractFocusId=String(id);ui.squadView='contract';navigate('squad');break;
         }
         break;
       }
@@ -1331,16 +1331,19 @@ root.addEventListener('click',async ev=>{
       case 'pressing':world.pressing=field;refresh(`Pressing: ${field}.`);restoreRadioFocus();break;
       case 'tempo':world.tempo=field;refresh(`Ritmo: ${field}.`);restoreRadioFocus();break;
       case 'training':world.training=field;refresh(`Programma ${field} selezionato.`);break;
-      case 'squad-filter':ui.squadFilter=field;render();break;
-      case 'squad-availability':ui.squadAvailability=['all','available','injured','tired'].includes(field)?field:'all';render();break;
       case 'squad-view':{
         if(!['general','attributes','contract','market','stats','condition'].includes(field))break;
-        ui.squadView=field;ui.squadSort=field==='general'?'position':field==='attributes'?'position':field==='contract'?'contract':field==='market'?'value':field==='stats'?'apps':'fitness';
+        ui.squadView=field;
         render();
         root.querySelector(`[data-action="squad-view"][data-value="${field}"]`)?.focus({preventScroll:true});
         break;
       }
-      case 'squad-reset':ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadSort=ui.squadView==='general'?'position':ui.squadView==='attributes'?'position':ui.squadView==='contract'?'contract':ui.squadView==='market'?'value':ui.squadView==='stats'?'apps':'fitness';ui.qol03.rosterAttribute='ALL';ui.qol03.rosterMinimum=1;qol03Save();render();break;
+      case 'squad-attribute-group':{
+        if(!['technical','mental','physical','goalkeeper'].includes(field))break;
+        ui.squadAttributeGroup=field;render();
+        root.querySelector(`[data-action="squad-attribute-group"][data-value="${field}"]`)?.focus({preventScroll:true});
+        break;
+      }
       case 'ux206-tab':{
         if(!['formation','roles','strategy','matchday'].includes(field))break;
         ui.tacticsTab=field;render();
@@ -1542,18 +1545,18 @@ root.addEventListener('input',ev=>{
     const error=document.getElementById('career-name-error');if(error)error.hidden=true;
     return;
   }
-  if(el.id==='squad-search'||el.id==='market-search'||el.id==='scout-search'){
-    ui[el.id==='squad-search'?'squadSearch':el.id==='scout-search'?'scoutSearch':'marketSearch']=el.value;
+  if(el.id==='market-search'||el.id==='scout-search'){
+    ui[el.id==='scout-search'?'scoutSearch':'marketSearch']=el.value;
     if(!ev.isComposing&&!el.dataset.composing)scheduleSearchRender(el);
   }
 });
 root.addEventListener('compositionstart',ev=>{
-  if(ev.target?.matches?.('#squad-search,#market-search,#scout-search')){
+  if(ev.target?.matches?.('#market-search,#scout-search')){
     ev.target.dataset.composing='true';clearTimeout(searchTimer);
   }
 });
 root.addEventListener('compositionend',ev=>{
-  if(ev.target?.matches?.('#squad-search,#market-search,#scout-search')){
+  if(ev.target?.matches?.('#market-search,#scout-search')){
     delete ev.target.dataset.composing;scheduleSearchRender(ev.target);
   }
 });
@@ -1618,12 +1621,6 @@ root.addEventListener('change',async ev=>{
   if(el.matches('[data-inbox-select]')){const key=String(el.dataset.inboxSelect),selected=new Set((ui.inboxSelected||[]).map(String));if(el.checked)selected.add(key);else selected.delete(key);ui.inboxSelected=[...selected];syncInboxSelectionChrome();return;}
   if(el.matches('[data-inbox-select-all]')){const boxes=[...root.querySelectorAll('[data-inbox-select]')];ui.inboxSelected=el.checked?boxes.map(box=>String(box.dataset.inboxSelect)):[];for(const box of boxes)box.checked=el.checked;syncInboxSelectionChrome();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
-  if(el.id==='squad-role'){ui.squadFilter=el.value;render();return;}
-  if(el.id==='squad-availability'){ui.squadAvailability=['all','available','injured','tired'].includes(el.value)?el.value:'all';render();return;}
-  if(el.id==='squad-sort'){ui.squadSort=el.value;render();return;}
-  if(el.id==='squad-attribute-group'){ui.squadAttributeGroup=['technical','mental','physical','goalkeeper'].includes(el.value)?el.value:'technical';ui.qol03.rosterAttribute='ALL';ui.qol03.rosterMinimum=1;ui.squadSort='position';qol03Save();render();return;}
-  if(el.id==='ply01-attribute'){ui.qol03.rosterAttribute=el.value;ui.squadSort='attr:'+el.value;qol03Save();render();return;}
-  if(el.id==='ply01-minimum'){ui.qol03.rosterMinimum=Number(el.value);qol03Save();render();return;}
   if(el.id==='ply01-compare-player'){ui.comparePlayerId=el.value==='none'?null:Number(el.value);render();return;}
   if(el.id==='market-position'){ui.marketPosition=el.value;render();}
   if(el.id==='career-import-mode'){ui.importMode=el.value;ui.importTarget='';render();return;}
@@ -1637,20 +1634,6 @@ root.addEventListener('input',ev=>{
   if(out)out.textContent=`${el.value}${el.dataset.unit||''}`;
   el.style.setProperty('--range-position',`${Math.max(0,Math.min(100,(Number(el.value)-Number(el.min))/(Number(el.max)-Number(el.min))*100))}%`);
 });
-// Tables may scroll horizontally, but vertical wheel/trackpad input must keep scrolling the page.
-root.addEventListener('wheel',ev=>{
-  const table=ev.target.closest?.('.table-scroll');
-  if(!table||table.closest('.modal-layer')||document.body.classList.contains('dialog-open'))return;
-  if(Math.abs(ev.deltaY)<=Math.abs(ev.deltaX)||!ev.deltaY)return;
-  const scroller=document.scrollingElement||document.documentElement;
-  const max=Math.max(0,scroller.scrollHeight-scroller.clientHeight);
-  if(!max)return;
-  const scale=ev.deltaMode===1?16:ev.deltaMode===2?window.innerHeight:1;
-  const before=scroller.scrollTop;
-  scroller.scrollTop=Math.max(0,Math.min(max,before+ev.deltaY*scale));
-  if(scroller.scrollTop!==before)ev.preventDefault();
-},{passive:false});
-
 // Trap Tab in the mobile navigation drawer; Escape returns focus to the trigger.
 // UX2-01: remember expanded sections for the current session only.
 // This does not touch the authoritative world, IndexedDB or localStorage.
