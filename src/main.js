@@ -420,7 +420,6 @@ function qol03Enhance(){
  const en=ui.language==='en',main=root.querySelector('#main-content');if(!main)return;
  const crumbs=root.querySelector('.breadcrumb');
  if(crumbs){const back=document.createElement('button');back.type='button';back.className='qol03-back';back.dataset.action='qol03-back';back.textContent=en?'← Back':'← Indietro';back.setAttribute('aria-label',en?'Go to previous page':'Torna alla pagina precedente');crumbs.prepend(back);}
- const status=document.createElement('div');status.id='qol03-live';status.className='sr-only';status.setAttribute('role','status');status.setAttribute('aria-live','polite');main.prepend(status);
  if(ui.page==='dashboard'){
   const widgets=new Map([['kpis',main.querySelector('.kpi-grid')],['fixtures',main.querySelector('.dashboard-two:not(.dashboard-two-bottom)')],['results',main.querySelector('.dashboard-two-bottom')]]);
   const holder=document.createElement('div');holder.className='qol03-widgets';main.querySelector('.dashboard-hero')?.after(holder);
@@ -453,7 +452,6 @@ function qol03UpdateTable(id){
  pref.page=stats.page;const count=holder.querySelector('[data-qol03-count]');if(count)count.textContent=`${stats.visible} · ${stats.page+1}/${stats.pages}`;
  holder.querySelector('[data-action="qol03-table-prev"]').disabled=stats.page===0;
  holder.querySelector('[data-action="qol03-table-next"]').disabled=stats.page>=stats.pages-1;
- const live=root.querySelector('#qol03-live');if(live)live.textContent=`${stats.visible} ${ui.language==='en'?'rows':'righe'}`;
 }
 function toast(message,level='success'){
   feedback.notify(translate(message,ui.language),{level});
@@ -520,7 +518,6 @@ function selectInboxMessage(id){
 // On a failed autosave, re-read the authoritative slot rather than showing
 // potentially stale, uncommitted world data.
 async function runCheckpointed(kind,apply){
-  const live=root.querySelector('#qol03-live');if(live)live.textContent=ui.language==='en'?'Saving and validating…':'Salvataggio e verifica in corso…';
   const surface=root.querySelector('#main-content');
   const busy=document.createElement('div');busy.className='qol03-progress';busy.setAttribute('role','status');
   busy.innerHTML=`<span class="qol03-progress-bars" aria-hidden="true"><i></i><i></i></span><strong>${ui.language==='en'?'Processing — do not close the game':'Elaborazione in corso — non chiudere il gioco'}</strong>`;
@@ -567,7 +564,6 @@ async function runCheckpointed(kind,apply){
   } finally {
     busy.remove();
     if(surface?.isConnected)surface.removeAttribute('aria-busy');
-    const current=root.querySelector('#qol03-live');if(current)current.textContent='';
   }
 }
 async function commitContinuousAdvanceTick({calendarConfirmationToken=null}={}){
