@@ -1553,6 +1553,7 @@ body.navigation-drawer-open{overflow:auto}
     margin-left:58px;
   }
   .sidebar-header{
+    height:54px;
     min-height:54px;
     justify-content:center;
   }
