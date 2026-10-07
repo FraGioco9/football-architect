@@ -1634,6 +1634,20 @@ root.addEventListener('input',ev=>{
   if(out)out.textContent=`${el.value}${el.dataset.unit||''}`;
   el.style.setProperty('--range-position',`${Math.max(0,Math.min(100,(Number(el.value)-Number(el.min))/(Number(el.max)-Number(el.min))*100))}%`);
 });
+// Squad row hover must move with the content instead of appearing fixed during wheel scrolling.
+let rosterScrollVisualTimer=null;
+root.addEventListener('wheel',ev=>{
+  const shell=ev.target.closest?.('.roster-table-shell');
+  if(!shell)return;
+  shell.classList.add('is-scrolling');
+  clearTimeout(rosterScrollVisualTimer);
+  rosterScrollVisualTimer=setTimeout(()=>shell.isConnected&&shell.classList.remove('is-scrolling'),140);
+},{passive:true});
+root.addEventListener('pointermove',ev=>{
+  const shell=ev.target.closest?.('.roster-table-shell');
+  if(shell)shell.classList.remove('is-scrolling');
+},{passive:true});
+
 // Trap Tab in the mobile navigation drawer; Escape returns focus to the trigger.
 // UX2-01: remember expanded sections for the current session only.
 // This does not touch the authoritative world, IndexedDB or localStorage.
