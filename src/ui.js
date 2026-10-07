@@ -644,10 +644,10 @@ function matchRatings(w,m,lang='it'){
     badges.push(`<span class="match-rating-event" title="${esc(tr('Ammonizione','Yellow card'))}: ${esc(when)}" aria-label="${esc(tr('Ammonizione','Yellow card'))}: ${esc(when)}">🟨${yellowCount>1?`×${yellowCount}`:''}</span>`);
   }
   for(const c of changes.filter(c=>String(c.in)===id)){
-    badges.push(`<span class="match-rating-event is-entered" title="${esc(tr('Entrato','Came on'))}: ${esc(String(c.minute))}′" aria-label="${esc(tr('Entrato','Came on'))}: ${esc(String(c.minute))}′">${icon('up',11)}</span>`);
+    badges.push(`<span class="match-rating-event is-entered" title="${esc(tr('Entrato','Came on'))}: ${esc(String(c.minute))}′" aria-label="${esc(tr('Entrato','Came on'))}: ${esc(String(c.minute))}′">${icon('arrow',11)}</span>`);
   }
   for(const c of changes.filter(c=>String(c.out)===id)){
-    badges.push(`<span class="match-rating-event is-exited" title="${esc(tr('Uscito','Substituted off'))}: ${esc(String(c.minute))}′" aria-label="${esc(tr('Uscito','Substituted off'))}: ${esc(String(c.minute))}′">${icon('down',11)}</span>`);
+    badges.push(`<span class="match-rating-event is-exited" title="${esc(tr('Uscito','Substituted off'))}: ${esc(String(c.minute))}′" aria-label="${esc(tr('Uscito','Substituted off'))}: ${esc(String(c.minute))}′">${icon('arrow',11)}</span>`);
   }
   return badges.join('');
  };
