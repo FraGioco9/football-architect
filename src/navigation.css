@@ -70,7 +70,7 @@
   .nav-group{gap:1px}
   .nav-group-title{min-height:11px;line-height:11px}
   .nav-group-items{gap:1px}
-  .nav-group-items .nav-item{height:31px;min-height:31px}
+  .nav-group-items .nav-item{height:27px;min-height:27px}
 }
 
 @media(max-width:720px){
@@ -87,5 +87,5 @@
   }
   .nav-group:first-child .nav-group-title{border-top:0;margin-top:0}
   .nav-group-items{gap:1px}
-  .nav-group-items .nav-item{height:27px;min-height:27px}
+  .nav-group-items .nav-item{height:31px;min-height:31px}
 }
