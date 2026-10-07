@@ -258,18 +258,18 @@ export function dashboard(w,ui){
     const message=readCareerMessage(requiredInput,{lang:ui.language,countryId:w.countryId});
     nowBlock=`<section class="dashboard-now dashboard-now-input card-shell" aria-labelledby="dashboard-now-title">
       <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')}</span><h2 id="dashboard-now-title">${tr('Decisione richiesta','Decision required')}</h2><strong>${esc(message.subject)}</strong><p>${esc(message.text)}</p></div>
-      <div class="dashboard-now-actions"><button class="btn btn-primary" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${tr('Apri richiesta','Open request')} ${icon('arrow',17)}</button></div>
+      <div class="dashboard-now-actions"><button class="btn btn-outline" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${tr('Apri richiesta','Open request')} ${icon('arrow',17)}</button></div>
     </section>`;
   }else if(next){
     const home=clubById(w,next.home),away=clubById(w,next.away);
     nowBlock=`<section class="dashboard-now dashboard-now-match card-shell" aria-labelledby="dashboard-now-title">
       <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')} · ${esc(w.competition||'')}</span><h2 id="dashboard-now-title">${tr('Prossima partita','Next match')}</h2><div class="dashboard-now-matchup"><span>${badge(home,'md')}<b>${esc(home.name)}</b></span><strong>VS</strong><span>${badge(away,'md')}<b>${esc(away.name)}</b></span></div><p>${next.home===w.clubId?tr('Casa','Home'):tr('Trasferta','Away')} · ${esc(home.stadium)} · ${esc(home.city)} · ${formatCareerDateTime(next.date,next.kickoff,ui.language)}</p></div>
-      <div class="dashboard-now-actions">${ui.continuing?`<button class="btn btn-primary dashboard-now-stop" type="button" data-action="stop-advance">${tr('Interrompi','Stop')} ${icon('close',17)}</button>`:`<button class="btn btn-primary" type="button" data-action="advance">${tr('Continua','Continue')} ${icon('arrow',17)}</button>`}<button class="dashboard-now-secondary" type="button" data-action="preview-match" data-id="${esc(next.id)}">${w.advancedV1?.enabled?tr('Prepara partita','Prepare match'):ui.previewSaved?tr('Riprendi anteprima','Resume preview'):tr('Anteprima partita','Match preview')} ${icon('chevron',15)}</button></div>
+      <div class="dashboard-now-actions"><button class="dashboard-now-secondary" type="button" data-action="preview-match" data-id="${esc(next.id)}">${w.advancedV1?.enabled?tr('Prepara partita','Prepare match'):ui.previewSaved?tr('Riprendi anteprima','Resume preview'):tr('Anteprima partita','Match preview')} ${icon('chevron',15)}</button></div>
     </section>`;
   }else{
     nowBlock=`<section class="dashboard-now dashboard-now-season card-shell" aria-labelledby="dashboard-now-title">
       <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')}</span><h2 id="dashboard-now-title">${tr('Stagione conclusa','Season complete')}</h2><p>${tr('Posizione finale','Final position')}: <strong>${localizedStanding(standing.position,{lang:ui.language})}</strong>. ${tr('Prepara il prossimo ciclo sportivo.','Prepare the next sporting cycle.')}</p></div>
-      <div class="dashboard-now-actions"><button class="btn btn-primary" type="button" data-action="new-season">${tr('Avvia nuova stagione','Start new season')} ${icon('arrow',17)}</button></div>
+      <div class="dashboard-now-actions"><span class="muted small">${tr('Usa il comando in alto a destra per proseguire.','Use the top-right control to continue.')}</span></div>
     </section>`;
   }
 
