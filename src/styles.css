@@ -430,8 +430,11 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .inbox-select-all input{justify-self:center}
 .inbox-mail-row{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:stretch;border-bottom:1px solid var(--list-divider);background:var(--color-surface)}
 .inbox-mail-row:last-child{border-bottom:0}
-.inbox-mail-select{display:grid;place-items:center;cursor:pointer;background:transparent}
+.inbox-mail-row:hover{background:#1d313b}
+.inbox-mail-select{display:flex;align-items:center;justify-content:center;align-self:stretch;height:100%;cursor:pointer;background:transparent}
+.inbox-mail-select input{align-self:center}
 .inbox-workspace .mail-item{position:relative;min-height:78px;padding:14px 16px 14px 4px;gap:11px;border:0;border-radius:0!important;align-items:center;background:transparent;box-shadow:none}
+.inbox-mail-row:hover .mail-item{background:transparent}
 .inbox-mail-row.is-selected{background:#20363a;box-shadow:inset 3px 0 0 var(--color-accent)}
 .inbox-mail-row.mail-active-row{background:#20363a;box-shadow:inset 3px 0 0 var(--color-accent)}
 .inbox-mail-row.requires-input{background:color-mix(in srgb,var(--color-danger,#e36b6b) 8%,var(--color-surface));box-shadow:inset 3px 0 0 var(--color-danger,#e36b6b)}
