@@ -1,4 +1,4 @@
-import {readPrefs,writePrefs,moveWidget,applyTableView} from './qol03.js';
+import {readPrefs,writePrefs,moveWidget} from './qol03.js';
 import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
 import {view,inboxDetailHtml} from './ui.js';
@@ -108,7 +108,6 @@ let searchTimer;
 function qol03Scope(){return String(activePreviewSlot()||'local');}
 function qol03Load(){ui.qol03=readPrefs(window.localStorage,qol03Scope());return ui.qol03;}
 function qol03Save(){return writePrefs(window.localStorage,qol03Scope(),ui.qol03);}
-function qol03TablePref(id){return ui.qol03.tables[id]||(ui.qol03.tables[id]={query:'',sort:null,desc:false,page:0});}
 function stopContinuousAdvance({renderNow=false}={}){
   const wasRunning=Boolean(ui.continuing);
   continuousAdvanceToken++;
@@ -425,33 +424,6 @@ function qol03Enhance(){
   const holder=document.createElement('div');holder.className='qol03-widgets';main.querySelector('.dashboard-hero')?.after(holder);
   for(const key of ui.qol03.widgets){const el=widgets.get(key);if(!el)continue;el.hidden=ui.qol03.hidden.includes(key);el.dataset.qol03Widget=key;holder.append(el);}
  }
- for(const [i,table] of [...main.querySelectorAll('.data-table')].entries()){
-  const scroll=table.closest('.table-scroll');if(!scroll||!table.tBodies.length||!table.tBodies[0].rows.length)continue;
-  const id=ui.page+':'+i,pref=qol03TablePref(id);
-  const toolbar=document.createElement('div');toolbar.className='qol03-table-toolbar';toolbar.dataset.qol03Table=id;
-  const search=document.createElement('input');search.type='search';search.value=pref.query;search.dataset.qol03Search=id;search.placeholder=en?'Filter rows…':'Filtra righe…';search.setAttribute('aria-label',en?'Filter table rows':'Filtra le righe della tabella');toolbar.append(search);
-  const select=document.createElement('select');select.dataset.qol03Sort=id;select.setAttribute('aria-label',en?'Sort table by':'Ordina tabella per');
-  select.add(new Option(en?'Original order':'Ordine originale',''));
-  [...table.querySelectorAll('thead th')].forEach((th,j)=>{const name=th.textContent.trim();if(name)select.add(new Option(name,String(j)));});
-  select.value=pref.sort===null?'':String(pref.sort);toolbar.append(select);
-  const second=document.createElement('select');second.dataset.qol03Sort2=id;second.setAttribute('aria-label',en?'Second sort criterion':'Secondo criterio di ordinamento');
-  second.add(new Option(en?'Second sort':'Secondo ordinamento',''));
-  [...table.querySelectorAll('thead th')].forEach((th,j)=>{const name=th.textContent.trim();if(name)second.add(new Option(name,String(j)));});
-  second.value=pref.sort2===null?'':String(pref.sort2);toolbar.append(second);
-  const desc=document.createElement('button');desc.type='button';desc.className='btn btn-quiet';desc.dataset.action='qol03-sort-direction';desc.dataset.id=id;desc.setAttribute('aria-label',en?'Reverse order':'Inverti ordinamento');desc.textContent=pref.desc?'↓':'↑';toolbar.append(desc);
-  const prev=document.createElement('button');prev.type='button';prev.className='btn btn-quiet';prev.dataset.action='qol03-table-prev';prev.dataset.id=id;prev.textContent='‹';prev.setAttribute('aria-label',en?'Previous page':'Pagina precedente');toolbar.append(prev);
-  const count=document.createElement('span');count.className='qol03-table-count';count.dataset.qol03Count=id;toolbar.append(count);
-  const next=document.createElement('button');next.type='button';next.className='btn btn-quiet';next.dataset.action='qol03-table-next';next.dataset.id=id;next.textContent='›';next.setAttribute('aria-label',en?'Next page':'Pagina successiva');toolbar.append(next);
-  scroll.before(toolbar);qol03UpdateTable(id);
- }
-}
-function qol03UpdateTable(id){
- const holder=[...root.querySelectorAll('[data-qol03-table]')].find(e=>e.dataset.qol03Table===id);if(!holder)return;
- const table=holder.nextElementSibling?.querySelector('table');if(!table)return;
- const pref=qol03TablePref(id),stats=applyTableView(table,pref);if(!stats)return;
- pref.page=stats.page;const count=holder.querySelector('[data-qol03-count]');if(count)count.textContent=`${stats.visible} · ${stats.page+1}/${stats.pages}`;
- holder.querySelector('[data-action="qol03-table-prev"]').disabled=stats.page===0;
- holder.querySelector('[data-action="qol03-table-next"]').disabled=stats.page>=stats.pages-1;
 }
 function toast(message,level='success'){
   feedback.notify(translate(message,ui.language),{level});
@@ -1010,10 +982,6 @@ root.addEventListener('click',async ev=>{
         }
         break;
       }
-      case 'qol03-sort-direction':case 'qol03-table-prev':case 'qol03-table-next':{
-        const p=qol03TablePref(id);if(action==='qol03-sort-direction')p.desc=!p.desc;else p.page=Math.max(0,p.page+(action.endsWith('next')?1:-1));qol03UpdateTable(id);qol03Save();
-        if(action==='qol03-sort-direction')render();break;
-      }
       case 'clear-field':clearField(target.dataset.target);break;
       case 'language-toggle':{
         const context=String(field||'top');
@@ -1566,7 +1534,6 @@ root.addEventListener('click',async ev=>{
 });
 root.addEventListener('input',ev=>{
   const el=ev.target;
-  if(el?.matches?.('[data-qol03-search]')){const id=el.dataset.qol03Search,p=qol03TablePref(id);p.query=el.value.slice(0,100);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(!(el instanceof HTMLInputElement))return;
   updateFieldShell(el);
   if(el.id==='manager-name'){ui.managerDraft=el.value;ui.managerNameError=false;el.removeAttribute('aria-invalid');const error=document.getElementById('manager-name-error');if(error)error.hidden=true;return;}
@@ -1650,8 +1617,6 @@ root.addEventListener('change',async ev=>{
   if(el.matches('[data-qol03-widget]')){const key=el.dataset.qol03Widget;ui.qol03.hidden=el.checked?ui.qol03.hidden.filter(x=>x!==key):[...ui.qol03.hidden,key];qol03Save();render();return;}
   if(el.matches('[data-inbox-select]')){const key=String(el.dataset.inboxSelect),selected=new Set((ui.inboxSelected||[]).map(String));if(el.checked)selected.add(key);else selected.delete(key);ui.inboxSelected=[...selected];syncInboxSelectionChrome();return;}
   if(el.matches('[data-inbox-select-all]')){const boxes=[...root.querySelectorAll('[data-inbox-select]')];ui.inboxSelected=el.checked?boxes.map(box=>String(box.dataset.inboxSelect)):[];for(const box of boxes)box.checked=el.checked;syncInboxSelectionChrome();return;}
-  if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
-  if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
   if(el.id==='squad-role'){ui.squadFilter=el.value;render();return;}
   if(el.id==='squad-availability'){ui.squadAvailability=['all','available','injured','tired'].includes(el.value)?el.value:'all';render();return;}
