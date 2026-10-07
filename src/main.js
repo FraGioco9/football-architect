@@ -406,7 +406,7 @@ function render({focus}={}){
   if(ui.page==='squad'&&ui.contractFocusId){
     const offerId=String(ui.contractFocusId);ui.contractFocusId=null;
     requestAnimationFrame(()=>{
-      const offer=root.querySelector(`#contract-offer-${CSS.escape(offerId)}`);
+      const offer=document.getElementById(`contract-offer-${offerId}`);
       if(!offer)return;
       offer.scrollIntoView({block:'center',behavior:'auto'});
       (offer.querySelector('.btn-primary')||offer).focus({preventScroll:true});
