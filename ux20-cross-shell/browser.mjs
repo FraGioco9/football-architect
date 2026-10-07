@@ -43,6 +43,13 @@ try{
   check(await page.locator('#club-sidebar [data-action="menu-home"]').isVisible(),'mobile drawer must keep Main menu');
   check(await page.locator('#club-sidebar .nav-item.active').getAttribute('aria-current')==='page','active drawer item must retain aria-current');
 
+  const sidebarLanguage=page.locator('#club-sidebar [data-language-picker="sidebar"] [role="combobox"]');
+  await sidebarLanguage.click();
+  await page.locator('#club-sidebar [data-language-listbox="sidebar"] [data-value="en"]').click();
+  check((await page.locator('[data-nav-group="system"] summary').innerText()).includes('System'),'mobile drawer navigation must localize to English');
+  const localizedTopbarBox=await topbar.boundingBox();
+  check(Boolean(localizedTopbarBox&&localizedTopbarBox.height<=64),'English mobile topbar must remain one compact row');
+
   await page.keyboard.press('Escape');
   const menuFocused=await page.locator('[data-action="toggle-sidebar"]').evaluate(element=>document.activeElement===element);
   check(menuFocused,'Escape must close drawer and restore focus to its trigger');
