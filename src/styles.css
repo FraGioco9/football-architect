@@ -301,6 +301,7 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .modal-layer:has(.ds-dialog[data-dialog-kind="match"]){align-items:center;overflow:hidden;overscroll-behavior:none}
 .ds-dialog[data-dialog-kind="match"]{width:min(100%,780px);max-height:min(91dvh,950px);overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:none;scroll-behavior:auto;scrollbar-gutter:stable;scrollbar-width:thin}
 .ds-dialog[data-dialog-kind="match"]::-webkit-scrollbar{width:5px}
+.ds-dialog[data-dialog-kind="match"]::-webkit-scrollbar-track{margin-block:10px}
 .ds-dialog[data-dialog-kind="match"]::-webkit-scrollbar-thumb{border-width:1px}
 .ds-dialog[data-dialog-kind="match"] .modal-body{flex:0 0 auto;overflow:visible;overflow-anchor:none;scroll-behavior:auto;overscroll-behavior:none;scrollbar-gutter:auto}
 .match-report-v2{display:grid;gap:var(--space-18)}
