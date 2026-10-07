@@ -40,5 +40,7 @@ export function inlineNotice(message,{tone='info',label=''}={}){
   return `<div class="ds-notice ds-notice-${tone}" role="${tone==='error'?'alert':'status'}"${label?` aria-label="${esc(label)}"`:''}>${esc(message)}</div>`;
 }
 export function dialogFrame({type,title,body,wide=false,lang='it',closeIcon='×'}={}){
-  return `<div class="modal-layer" role="presentation" data-action="dismiss-modal"><section class="modal ds-dialog ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-dialog-kind="${esc(type)}" data-stop-close><header class="modal-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="modal-body">${body}</div></section></div>`;
+  const content=`<header class="modal-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="modal-body">${body}</div>`;
+  const framed=type==='match'?`<div class="match-dialog-scroll">${content}</div>`:content;
+  return `<div class="modal-layer" role="presentation" data-action="dismiss-modal"><section class="modal ds-dialog ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-dialog-kind="${esc(type)}" data-stop-close>${framed}</section></div>`;
 }
