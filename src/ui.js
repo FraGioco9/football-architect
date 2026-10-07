@@ -636,7 +636,7 @@ function matchRatings(w,m,lang='it'){
  const minuteText=(values,fallback)=>values.length?values.map(v=>`${v}′`).join(', '):fallback;
  const eventBadges=p=>{
   const badges=[],id=String(p.playerId);
-  const badge=(klass,symbol,label)=>`<span class="match-rating-event ${klass}" tabindex="0" data-tooltip="${esc(label)}" title="${esc(label)}" aria-label="${esc(label)}">${symbol}</span>`;
+  const badge=(klass,symbol,label)=>`<span class="match-rating-event ${klass}" title="${esc(label)}" aria-label="${esc(label)}">${symbol}</span>`;
   const goalMinutes=(m.result?.goals??[]).filter(g=>String(g.scorerId)===id).map(g=>Number(g.minute)).filter(Number.isFinite);
   if(goalMinutes.length){
     const label=`${tr('Gol','Goal')}: ${minuteText(goalMinutes,'—')}`;
@@ -700,6 +700,8 @@ function matchModal(w,m,lang='it'){
  const cards=row=>row?integer(cardTotal(row)):'—';
  const cardHome=cardTotal(detailedHome),cardAway=cardTotal(detailedAway);
  const cardShare=known(cardHome)&&known(cardAway)?(cardHome+cardAway===0?50:ratio(cardHome,cardAway)):null;
+ const saveHome=known(detailedHome?.saves)?Number(detailedHome.saves):null,saveAway=known(detailedAway?.saves)?Number(detailedAway.saves):null;
+ const saveShare=known(saveHome)&&known(saveAway)?(saveHome+saveAway===0?50:ratio(saveHome,saveAway)):null;
  const timeline=matchTimeline(w,m,lang);
  const ratings=matchRatings(w,m,lang);
  return `<article class="match-report-v2">
@@ -725,7 +727,7 @@ function matchModal(w,m,lang='it'){
       ${stat(tr('Precisione passaggi','Pass accuracy'),percent(detailedHome?.passAccuracyPct),percent(detailedAway?.passAccuracyPct),ratio(detailedHome?.passAccuracyPct,detailedAway?.passAccuracyPct))}
       ${stat(tr('Falli','Fouls'),integer(detailedHome?.fouls),integer(detailedAway?.fouls),ratio(detailedHome?.fouls,detailedAway?.fouls))}
       ${stat(tr('Cartellini','Cards'),cards(detailedHome),cards(detailedAway),cardShare)}
-      ${stat(tr('Parate','Saves'),integer(detailedHome?.saves),integer(detailedAway?.saves),ratio(detailedHome?.saves,detailedAway?.saves))}
+      ${stat(tr('Parate','Saves'),integer(saveHome),integer(saveAway),saveShare)}
     </div>
   </section>
   ${timeline}
