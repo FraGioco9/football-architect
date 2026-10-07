@@ -1329,11 +1329,11 @@ body.dialog-open { overflow: hidden; }
   margin-left:210px;
 }
 .sidebar-header{
-  min-height:50px;
+  min-height:56px;
   border-bottom:1px solid #1d2d37;
 }
 .sidebar-header .brand{
-  margin:8px 12px;
+  margin:11px 12px 9px;
   gap:8px;
   font-size:11px;
   letter-spacing:.08em;
@@ -1349,7 +1349,7 @@ body.dialog-open { overflow: hidden; }
   display:flex;
   flex-direction:column;
   gap:0;
-  padding:4px 8px 7px;
+  padding:7px 8px 7px;
 }
 .nav-group{
   border:0;
@@ -1357,7 +1357,7 @@ body.dialog-open { overflow: hidden; }
 }
 .nav-group-title{
   margin:0;
-  padding:2px 8px 1px;
+  padding:3px 8px 4px;
   color:#667d88;
   font-size:8px;
   font-weight:800;
@@ -1371,12 +1371,12 @@ body.dialog-open { overflow: hidden; }
   padding:0 0 1px;
 }
 .nav-item{
-  height:27px;
-  min-height:27px;
+  height:24px;
+  min-height:24px;
   gap:8px;
   padding:0 9px;
   border-radius:var(--radius-8);
-  font-size:10.5px;
+  font-size:10px;
 }
 .nav-item.active:before,
 .nav-item[aria-current="page"]:before{
@@ -1505,7 +1505,7 @@ body.navigation-drawer-open{overflow:auto}
   .sidebar-header .brand{margin-inline:10px}
   .navigation{padding-inline:6px}
   .nav-group-title{padding-inline:7px}
-  .nav-item{height:26px;min-height:26px;padding-inline:8px;gap:7px;font-size:10px}
+  .nav-item{height:23px;min-height:23px;padding-inline:8px;gap:7px;font-size:9.5px}
   .topbar{padding-inline:14px}
   .topbar-club{max-width:135px}
   .top-actions{gap:7px}
