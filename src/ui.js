@@ -2,7 +2,7 @@ import {CLUBS,FORMATIONS,POSITION_LABELS,POSITIONS,ROLE_GROUPS,clamp} from './da
 import {currency,compactMoney,clubById,playerById,clubPlayers,myClub,teamStrength,table,leagueScorers,latestResult,clubMatch,standingsSummary,formationSlots,findMatch} from './engine.js';
 
 import {translate} from './i18n.js';
-import {NAV_GROUPS,navigationLabels,isGroupExpanded} from './navigation-model.js';
+import {NAV_GROUPS,navigationLabels} from './navigation-model.js';
 import {renderHomeMenu} from './home-menu.js';
 import {dashboardFocus,dashboardSchedule} from './dashboard-model.js';
 import {clubPage} from './club-overview-ui.js';
@@ -10,7 +10,7 @@ import {displayCareerMoney,readCareerMessage,formatNumber as localizedNumber,for
 import {careerMessageRequiresUserInput} from './domain/history.js';
 import {matchPreviewPage} from './match-preview-ui.js';
 import {matchPreparation,officialMatchTimeline,halftimeIntro} from './match-experience.js';
-import {formatCareerDate,formatCareerDateTime} from './domain/career-date.js';
+import {formatCareerDate,formatCareerDateTime,fixtureIsDue} from './domain/career-date.js';
 import {esc, statusTag as tag, sectionHead, panel, actionButton, tableColumns, numberCell, emptyTableRow, metricCard, emptyState, dialogFrame} from './ui-components.js';
 export {esc, tableColumns, numberCell, emptyTableRow} from './ui-components.js';
 import {LEAGUES} from './leagues.js';
@@ -180,14 +180,56 @@ export function onboarding(w,ui){
 const skipToContent=lang=>`<a class="skip-link" href="#main-content">${lang==='en'?'Skip to main content':'Vai al contenuto'}</a>`;
 const renderNavigation=(w,ui)=>{
   const en=ui.language==='en',locale=en?'en':'it';
-  const links=group=>group.items.map(item=>`<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''}>${icon(item.icon,19)}<span>${esc(item[locale])}</span>${item.id==='inbox'&&w.unread?`<span class="nav-count">${w.unread}</span>`:''}</button>`).join('');
-  const groups=NAV_GROUPS.map(group=>`<details class="nav-group" data-nav-group="${group.id}" ${isGroupExpanded(group.id,ui.page,ui.navOpenGroups)?'open':''}><summary class="nav-group-toggle"><span>${esc(group[locale])}</span><span class="nav-group-count" aria-hidden="true">${group.items.length}</span>${icon('down',15)}</summary><div class="nav-group-items">${links(group)}</div></details>`).join('');
+  const requiredInput=(w.inbox||[]).find(message=>careerMessageRequiresUserInput(message,w))||null;
+  const links=group=>group.items.map(item=>{
+    const inboxBadge=item.id==='inbox'&&w.unread
+      ?`<span class="nav-count ${requiredInput?'nav-count-required':''}" aria-label="${requiredInput?(en?'Decision required':'Decisione richiesta'):`${w.unread} ${en?'unread':'non letti'}`}">${w.unread}</span>`
+      :'';
+    return `<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''}>${icon(item.icon,17)}<span>${esc(item[locale])}</span>${inboxBadge}</button>`;
+  }).join('');
+  const groups=NAV_GROUPS.map(group=>`<section class="nav-group" aria-labelledby="nav-group-${group.id}"><h2 class="nav-group-title" id="nav-group-${group.id}">${esc(group[locale])}</h2><div class="nav-group-items">${links(group)}</div></section>`).join('');
   return `<nav class="navigation" aria-label="${en?'Main navigation':'Navigazione principale'}">${groups}</nav>`;
 };
 export function shell(w,ui,body){
-  const team=myClub(w),day=w.fixtures[w.round],next=clubMatch(day,w.clubId),opponent=next?clubById(w,next.home===w.clubId?next.away:next.home):null;
+  const team=myClub(w),en=ui.language==='en';
   const canContinue=w.round<w.fixtures.length,preseason=w.round===0&&w.currentDate<w.firstMatchDate,continuing=Boolean(ui.continuing&&canContinue);
-  return `<div class="app-shell ${ui.sidebarOpen?'sidebar-open':''}">${skipToContent(ui.language)}<aside class="sidebar" id="club-sidebar" aria-label="${ui.language==='en'?'Club navigation':'Navigazione club'}"><div class="sidebar-header"><div class="brand"><span class="brand-icon">${icon('shield',23)}</span><span>FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span></div><button type="button" class="icon-button sidebar-dismiss" data-action="close-sidebar" aria-label="${ui.language==='en'?'Close menu':'Chiudi menu'}">${icon('close',20)}</button></div><div class="sidebar-scroll" tabindex="0" aria-label="${ui.language==='en'?'Club navigation':'Navigazione club'}"><div class="sidebar-season"><span class="overline">${ui.language==='en'?'ACTIVE CAREER':'CARRIERA ATTIVA'}</span><button type="button" class="club-side club-side-link" data-action="nav" data-page="club" aria-label="${ui.language==='en'?'Open club page':'Apri pagina Club'}">${badge(team,'md')}<span><strong>${esc(team.name)}</strong><small>${esc(w.manager)}</small></span></button><div class="side-competition">${esc(w.countryFlag||'')} ${esc(ui.language==='en'?(w.countryEn||w.country||''):(w.country||''))} · ${esc(w.competition||'Lega Aurora')}</div><div class="side-season-bottom"><span>${ui.language==='en'?'SEASON':'STAGIONE'} ${w.season}</span><span>${w.round} / ${w.fixtures.length}</span></div><div class="progress"><i style="width:${w.round/w.fixtures.length*100}%"></i></div></div>${renderNavigation(w,ui)}</div><div class="sidebar-foot"><button type="button" class="btn btn-quiet fa-home-sidebar" data-action="menu-home">${ui.language==='en'?'Main menu':'Menu principale'}</button><div class="foot-network"><span class="online-dot"></span> ${ui.language==='en'?'Local save active':'Salvataggio locale attivo'}</div><div class="foot-caption">UN MONDO. MILLE STORIE.</div></div></aside><div class="sidebar-scrim" data-action="close-sidebar" aria-hidden="true"></div><div class="main-area"><header class="topbar"><div class="top-left"><button class="icon-button menu-toggle" type="button" data-action="toggle-sidebar" aria-controls="club-sidebar" aria-expanded="${Boolean(ui.sidebarOpen)}" aria-label="${ui.language==='en'?(ui.sidebarOpen?'Close menu':'Open menu'):(ui.sidebarOpen?'Chiudi menu':'Apri menu')}">${icon('menu',20)}</button><nav class="breadcrumb" aria-label="${ui.language==='en'?'Breadcrumb':'Percorso di navigazione'}"><span class="breadcrumb-root">FOOTBALL ARCHITECT</span> <span class="breadcrumb-divider" aria-hidden="true">/</span> <b aria-current="page">${ui.page==='match-preview'?(ui.language==='en'?'Match preview':'Anteprima partita'):esc(navigationLabels(ui.page,ui.language)?.page||(ui.language==='en'?'Dashboard':'Scrivania'))}</b></nav></div><div class="top-actions"><button type="button" class="btn btn-quiet fa-home-top" data-action="menu-home">${ui.language==='en'?'Main menu':'Menu principale'}</button>${languagePicker(ui,'top')}<div class="top-round" data-current-date="${esc(w.currentDate)}"><span>${icon('calendar',16)}</span><div><strong>${formatCareerDate(w.currentDate,ui.language)}</strong><small>${canContinue?(preseason?(ui.language==='en'?`PRE-SEASON · Season ${w.season}`:`PRESTAGIONE · Stagione ${w.season}`):`${ui.language==='en'?'Season':'Stagione'} ${w.season} · ${ui.language==='en'?'MD':'G'} ${w.round+1}/${w.fixtures.length}`):(ui.language==='en'?'Season finished':'Campionato concluso')}</small></div></div><button class="notify-button ui-tooltip" type="button" data-action="nav" data-page="inbox" data-tooltip="${ui.language==='en'?'Inbox':'Posta'}" aria-label="${ui.language==='en'?'Inbox':'Posta'}">${icon('mail',19)}${w.unread?`<i></i>`:''}</button>${ui.page==='match-preview'?'':`<button class="btn ${continuing?'btn-danger':'btn-primary'} continue-top" data-action="${continuing?'stop-advance':canContinue?'advance':'new-season'}">${continuing?(ui.language==='en'?`Stop ${icon('close',18)}`:`Interrompi ${icon('close',18)}`):canContinue?`${ui.language==='en'?'Continue':'Continua'} ${icon('chevron',18)}`:`${ui.language==='en'?'New season':'Nuova stagione'} ${icon('arrow',17)}`}</button>`}</div></header><main id="main-content" class="content" tabindex="-1">${body}<div class="footer-line"><span>FOOTBALL ARCHITECT <i>·</i> UNIVERSO DI FANTASIA</span><span>Offline · Stagione ${w.season}</span></div></main></div>${ui.modal?modalContent(w,ui):''}</div>`;
+  const requiredInput=(w.inbox||[]).find(message=>careerMessageRequiresUserInput(message,w))||null;
+  const phase=canContinue
+    ?(preseason?(en?'Pre-season':'Prestagione'):`${en?'MD':'G'} ${w.round+1}`)
+    :(en?'Season finished':'Fine stagione');
+  const blocker=ui.continuationBlocker?.type||null;
+  const matchDue=canContinue&&fixtureIsDue(w);
+  const topbarPrimary=requiredInput
+    ?`<button class="btn btn-danger topbar-primary" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${icon('mail',16)}<span>${en?'Inbox':'Posta'}</span></button>`
+    :continuing
+      ?`<button class="btn btn-danger topbar-primary" type="button" data-action="stop-advance">${icon('close',16)}<span>${en?'Stop':'Interrompi'}</span></button>`
+      :blocker==='board'
+        ?`<button class="btn btn-primary topbar-primary" type="button" data-action="nav" data-page="board">${icon('shield',16)}<span>${en?'Board':'Dirigenza'}</span></button>`
+        :!canContinue
+          ?`<button class="btn btn-primary topbar-primary" type="button" data-action="new-season">${icon('arrow',16)}<span>${en?'New season':'Nuova stagione'}</span></button>`
+          :matchDue
+            ?`<button class="btn btn-primary topbar-primary" type="button" data-action="play-matchday">${icon('football',16)}<span>${en?'Match':'Partita'}</span></button>`
+            :`<button class="btn btn-primary topbar-primary" type="button" data-action="advance">${icon('chevron',16)}<span>${en?'Continue':'Continua'}</span></button>`;
+  return `<div class="app-shell">${skipToContent(ui.language)}
+    <aside class="sidebar" id="club-sidebar" aria-label="${en?'Club navigation':'Navigazione club'}">
+      <div class="sidebar-header"><div class="brand"><span class="brand-icon">${icon('shield',21)}</span><span>FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span></div></div>
+      <div class="sidebar-scroll" tabindex="0" aria-label="${en?'Club navigation':'Navigazione club'}">${renderNavigation(w,ui)}</div>
+    </aside>
+    <div class="main-area">
+      <header class="topbar">
+        <button type="button" class="topbar-club" data-action="nav" data-page="club" aria-label="${en?'Open managed club':'Apri squadra allenata'}">
+          ${badge(team,'xs')}<strong>${esc(team.name)}</strong>
+        </button>
+        <div class="top-actions">
+          <div class="topbar-state" data-current-date="${esc(w.currentDate)}">${icon('calendar',15)}<strong>${formatCareerDate(w.currentDate,ui.language)}</strong><span class="topbar-phase">· ${phase}</span></div>
+          <div class="topbar-language">${languagePicker(ui,'top')}</div>
+          ${topbarPrimary}
+        </div>
+      </header>
+      <main id="main-content" class="content" tabindex="-1">${body}<div class="footer-line"><span>FOOTBALL ARCHITECT <i>·</i> UNIVERSO DI FANTASIA</span><span>Offline · Stagione ${w.season}</span></div></main>
+    </div>
+    ${ui.modal?modalContent(w,ui):''}
+  </div>`;
 }
 export function dashboard(w,ui){
   const en=ui.language==='en',tr=(it,english)=>en?english:it;
@@ -216,18 +258,18 @@ export function dashboard(w,ui){
     const message=readCareerMessage(requiredInput,{lang:ui.language,countryId:w.countryId});
     nowBlock=`<section class="dashboard-now dashboard-now-input card-shell" aria-labelledby="dashboard-now-title">
       <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')}</span><h2 id="dashboard-now-title">${tr('Decisione richiesta','Decision required')}</h2><strong>${esc(message.subject)}</strong><p>${esc(message.text)}</p></div>
-      <div class="dashboard-now-actions"><button class="btn btn-primary" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${tr('Apri richiesta','Open request')} ${icon('arrow',17)}</button></div>
+      <div class="dashboard-now-actions"><button class="btn btn-outline" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${tr('Apri richiesta','Open request')} ${icon('arrow',17)}</button></div>
     </section>`;
   }else if(next){
     const home=clubById(w,next.home),away=clubById(w,next.away);
     nowBlock=`<section class="dashboard-now dashboard-now-match card-shell" aria-labelledby="dashboard-now-title">
       <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')} · ${esc(w.competition||'')}</span><h2 id="dashboard-now-title">${tr('Prossima partita','Next match')}</h2><div class="dashboard-now-matchup"><span>${badge(home,'md')}<b>${esc(home.name)}</b></span><strong>VS</strong><span>${badge(away,'md')}<b>${esc(away.name)}</b></span></div><p>${next.home===w.clubId?tr('Casa','Home'):tr('Trasferta','Away')} · ${esc(home.stadium)} · ${esc(home.city)} · ${formatCareerDateTime(next.date,next.kickoff,ui.language)}</p></div>
-      <div class="dashboard-now-actions">${ui.continuing?`<button class="btn btn-primary dashboard-now-stop" type="button" data-action="stop-advance">${tr('Interrompi','Stop')} ${icon('close',17)}</button>`:`<button class="btn btn-primary" type="button" data-action="advance">${tr('Continua','Continue')} ${icon('arrow',17)}</button>`}<button class="dashboard-now-secondary" type="button" data-action="preview-match" data-id="${esc(next.id)}">${w.advancedV1?.enabled?tr('Prepara partita','Prepare match'):ui.previewSaved?tr('Riprendi anteprima','Resume preview'):tr('Anteprima partita','Match preview')} ${icon('chevron',15)}</button></div>
+      <div class="dashboard-now-actions"><button class="dashboard-now-secondary" type="button" data-action="preview-match" data-id="${esc(next.id)}">${w.advancedV1?.enabled?tr('Prepara partita','Prepare match'):ui.previewSaved?tr('Riprendi anteprima','Resume preview'):tr('Anteprima partita','Match preview')} ${icon('chevron',15)}</button></div>
     </section>`;
   }else{
     nowBlock=`<section class="dashboard-now dashboard-now-season card-shell" aria-labelledby="dashboard-now-title">
       <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')}</span><h2 id="dashboard-now-title">${tr('Stagione conclusa','Season complete')}</h2><p>${tr('Posizione finale','Final position')}: <strong>${localizedStanding(standing.position,{lang:ui.language})}</strong>. ${tr('Prepara il prossimo ciclo sportivo.','Prepare the next sporting cycle.')}</p></div>
-      <div class="dashboard-now-actions"><button class="btn btn-primary" type="button" data-action="new-season">${tr('Avvia nuova stagione','Start new season')} ${icon('arrow',17)}</button></div>
+      <div class="dashboard-now-actions"><span class="muted small">${tr('Usa il comando in alto a destra per proseguire.','Use the top-right control to continue.')}</span></div>
     </section>`;
   }
 
