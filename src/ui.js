@@ -625,9 +625,8 @@ function matchRatings(w,m,lang='it'){
  const home=rated.filter(p=>String(p.teamId)===String(m.home)).sort((a,b)=>b.rating-a.rating);
  const away=rated.filter(p=>String(p.teamId)===String(m.away)).sort((a,b)=>b.rating-a.rating);
  const best=[...rated].sort((a,b)=>b.rating-a.rating)[0];
- const teamBlock=(players,club)=>`<div class="match-rating-team"><h4>${esc(club?.short||club?.name||'—')}</h4>${players.slice(0,3).map((p,i)=>`<div class="match-rating-row"><span><b>${i+1}</b>${name(p)}</span><strong>${p.rating.toFixed(1)}</strong></div>`).join('')||`<p class="muted">${tr('Nessun voto disponibile','No ratings available')}</p>`}</div>`;
- const all=[...rated].sort((a,b)=>String(a.teamId).localeCompare(String(b.teamId))||b.rating-a.rating);
- return `<section class="match-ratings" aria-labelledby="match-ratings-title"><div class="match-ratings-head"><div><span class="overline">${tr('PRESTAZIONI','PERFORMANCES')}</span><h3 id="match-ratings-title">${tr('Voti giocatori','Player ratings')}</h3></div><div class="match-ratings-best"><span>${tr('Migliore in campo','Player of the match')}</span><strong>${name(best)} · ${best.rating.toFixed(1)}</strong></div></div><div class="match-ratings-top">${teamBlock(home,clubById(w,m.home))}${teamBlock(away,clubById(w,m.away))}</div><details class="match-ratings-all"><summary>${tr('Mostra tutti i voti','Show all ratings')}</summary><div class="match-ratings-all-grid">${all.map(p=>`<div class="match-rating-row"><span>${name(p)}<small>${esc(clubById(w,p.teamId)?.short||'—')}</small></span><strong>${p.rating.toFixed(1)}</strong></div>`).join('')}</div></details></section>`;
+ const teamBlock=(players,club)=>`<div class="match-rating-team"><h4>${esc(club?.short||club?.name||'—')}</h4>${players.map((p,i)=>`<div class="match-rating-row"><span><b>${i+1}</b>${name(p)}</span><strong>${p.rating.toFixed(1)}</strong></div>`).join('')||`<p class="muted">${tr('Nessun voto disponibile','No ratings available')}</p>`}</div>`;
+ return `<section class="match-ratings" aria-labelledby="match-ratings-title"><div class="match-ratings-head"><div><span class="overline">${tr('PRESTAZIONI','PERFORMANCES')}</span><h3 id="match-ratings-title">${tr('Voti giocatori','Player ratings')}</h3></div><div class="match-ratings-best"><span>${tr('Migliore in campo','Player of the match')}</span><strong>${name(best)} · ${best.rating.toFixed(1)}</strong></div></div><div class="match-ratings-grid">${teamBlock(home,clubById(w,m.home))}${teamBlock(away,clubById(w,m.away))}</div></section>`;
 }
 function matchModal(w,m,lang='it'){
  const h=clubById(w,m.home),a=clubById(w,m.away),r=m.result;
@@ -655,7 +654,7 @@ function matchModal(w,m,lang='it'){
     </div>
   </header>
   <section class="match-report-v2-section" aria-labelledby="match-report-stats-title">
-    <h3 id="match-report-stats-title">${tr('Statistiche principali','Key statistics')}</h3>
+    <h3 id="match-report-stats-title">${tr('Statistiche','Statistics')}</h3>
     <div class="match-report-stats">
       ${stat(tr('Possesso','Possession'),numeric(r.possessionHome)+'%',(100-numeric(r.possessionHome))+'%',r.possessionHome)}
       ${stat(tr('Tiri','Shots'),numeric(r.shotsHome),numeric(r.shotsAway),shots?numeric(r.shotsHome)/shots*100:50)}
