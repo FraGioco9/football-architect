@@ -42,6 +42,6 @@ export function inlineNotice(message,{tone='info',label=''}={}){
 export function dialogFrame({type,title,body,wide=false,lang='it',closeIcon='×'}={}){
   const content=`<header class="modal-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="modal-body">${body}</div>`;
   const dialog=`<section class="modal ds-dialog ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-dialog-kind="${esc(type)}" data-stop-close>${content}</section>`;
-  const scrollbar=type==='match'?'<div class="match-scrollbar" data-match-scrollbar data-stop-close aria-hidden="true" hidden><div class="match-scrollbar-thumb"></div></div>':'';
+  const scrollbar=type==='match'?'<div class="match-scrollbar" data-match-scrollbar data-stop-close aria-hidden="true"><div class="match-scrollbar-thumb"></div></div>':'';
   return `<div class="modal-layer" role="presentation" data-action="dismiss-modal">${dialog}${scrollbar}</div>`;
 }
