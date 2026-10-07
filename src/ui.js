@@ -2,7 +2,7 @@ import {CLUBS,FORMATIONS,POSITION_LABELS,POSITIONS,ROLE_GROUPS,clamp} from './da
 import {currency,compactMoney,clubById,playerById,clubPlayers,myClub,teamStrength,table,leagueScorers,latestResult,clubMatch,standingsSummary,formationSlots,findMatch} from './engine.js';
 
 import {translate} from './i18n.js';
-import {NAV_GROUPS,navigationLabels,isGroupExpanded} from './navigation-model.js';
+import {NAV_GROUPS,navigationLabels} from './navigation-model.js';
 import {renderHomeMenu} from './home-menu.js';
 import {dashboardFocus,dashboardSchedule} from './dashboard-model.js';
 import {clubPage} from './club-overview-ui.js';
@@ -10,7 +10,7 @@ import {displayCareerMoney,readCareerMessage,formatNumber as localizedNumber,for
 import {careerMessageRequiresUserInput} from './domain/history.js';
 import {matchPreviewPage} from './match-preview-ui.js';
 import {matchPreparation,officialMatchTimeline,halftimeIntro} from './match-experience.js';
-import {formatCareerDate,formatCareerDateTime} from './domain/career-date.js';
+import {formatCareerDate,formatCareerDateTime,fixtureIsDue} from './domain/career-date.js';
 import {esc, statusTag as tag, sectionHead, panel, actionButton, tableColumns, numberCell, emptyTableRow, metricCard, emptyState, dialogFrame} from './ui-components.js';
 export {esc, tableColumns, numberCell, emptyTableRow} from './ui-components.js';
 import {LEAGUES} from './leagues.js';
@@ -185,9 +185,9 @@ const renderNavigation=(w,ui)=>{
     const inboxBadge=item.id==='inbox'&&w.unread
       ?`<span class="nav-count ${requiredInput?'nav-count-required':''}" aria-label="${requiredInput?(en?'Decision required':'Decisione richiesta'):`${w.unread} ${en?'unread':'non letti'}`}">${w.unread}</span>`
       :'';
-    return `<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''}>${icon(item.icon,19)}<span>${esc(item[locale])}</span>${inboxBadge}</button>`;
+    return `<button type="button" data-action="nav" data-page="${item.id}" class="nav-item ${ui.page===item.id?'active':''}" ${ui.page===item.id?'aria-current="page"':''} title="${esc(item[locale])}">${icon(item.icon,17)}<span>${esc(item[locale])}</span>${inboxBadge}</button>`;
   }).join('');
-  const groups=NAV_GROUPS.map(group=>`<details class="nav-group" data-nav-group="${group.id}" ${isGroupExpanded(group.id,ui.page,ui.navOpenGroups)?'open':''}><summary class="nav-group-toggle"><span>${esc(group[locale])}</span>${icon('down',15)}</summary><div class="nav-group-items">${links(group)}</div></details>`).join('');
+  const groups=NAV_GROUPS.map(group=>`<section class="nav-group" aria-labelledby="nav-group-${group.id}"><h2 class="nav-group-title" id="nav-group-${group.id}">${esc(group[locale])}</h2><div class="nav-group-items">${links(group)}</div></section>`).join('');
   return `<nav class="navigation" aria-label="${en?'Main navigation':'Navigazione principale'}">${groups}</nav>`;
 };
 export function shell(w,ui,body){
@@ -197,29 +197,33 @@ export function shell(w,ui,body){
   const phase=canContinue
     ?(preseason?(en?'Pre-season':'Prestagione'):`${en?'MD':'G'} ${w.round+1}`)
     :(en?'Season finished':'Fine stagione');
-  const mailControl=requiredInput
-    ?`<button class="notify-button topbar-decision" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}" aria-label="${en?'Decision required':'Decisione richiesta'}">${icon('mail',19)}<span class="topbar-decision-label">${en?'Decision required':'Decisione richiesta'}</span><span class="notify-count notify-count-required" aria-hidden="true">!</span></button>`
-    :`<button class="notify-button ui-tooltip" type="button" data-action="nav" data-page="inbox" data-tooltip="${en?'Inbox':'Posta'}" aria-label="${en?'Inbox':'Posta'}">${icon('mail',19)}${w.unread?`<span class="notify-count" aria-label="${w.unread} ${en?'unread':'non letti'}">${w.unread}</span>`:''}</button>`;
-  const showGlobalAdvance=ui.page!=='dashboard'&&ui.page!=='match-preview'&&!requiredInput;
-  return `<div class="app-shell ${ui.sidebarOpen?'sidebar-open':''}">${skipToContent(ui.language)}
+  const blocker=ui.continuationBlocker?.type||null;
+  const matchDue=canContinue&&fixtureIsDue(w);
+  const topbarPrimary=requiredInput
+    ?`<button class="btn btn-danger topbar-primary" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${icon('mail',16)}<span>${en?'Inbox':'Posta'}</span></button>`
+    :continuing
+      ?`<button class="btn btn-danger topbar-primary" type="button" data-action="stop-advance">${icon('close',16)}<span>${en?'Stop':'Interrompi'}</span></button>`
+      :blocker==='board'
+        ?`<button class="btn btn-primary topbar-primary" type="button" data-action="nav" data-page="board">${icon('shield',16)}<span>${en?'Board':'Dirigenza'}</span></button>`
+        :!canContinue
+          ?`<button class="btn btn-primary topbar-primary" type="button" data-action="new-season">${icon('arrow',16)}<span>${en?'New season':'Nuova stagione'}</span></button>`
+          :matchDue
+            ?`<button class="btn btn-primary topbar-primary" type="button" data-action="play-matchday">${icon('football',16)}<span>${en?'Match':'Partita'}</span></button>`
+            :`<button class="btn btn-primary topbar-primary" type="button" data-action="advance">${icon('chevron',16)}<span>${en?'Continue':'Continua'}</span></button>`;
+  return `<div class="app-shell">${skipToContent(ui.language)}
     <aside class="sidebar" id="club-sidebar" aria-label="${en?'Club navigation':'Navigazione club'}">
-      <div class="sidebar-header"><div class="brand"><span class="brand-icon">${icon('shield',23)}</span><span>FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span></div><button type="button" class="icon-button sidebar-dismiss" data-action="close-sidebar" aria-label="${en?'Close menu':'Chiudi menu'}">${icon('close',20)}</button></div>
-      <div class="sidebar-scroll" tabindex="0" aria-label="${en?'Club navigation':'Navigazione club'}">
-        <button type="button" class="sidebar-career club-side club-side-link" data-action="nav" data-page="club" aria-label="${en?'Open club page':'Apri pagina Club'}">${badge(team,'md')}<span><strong>${esc(team.name)}</strong><small>${esc(w.manager)}</small></span></button>
-        ${renderNavigation(w,ui)}
-        <div class="sidebar-mobile-language">${languagePicker(ui,'sidebar')}</div>
-      </div>
-      <div class="sidebar-foot"><button type="button" class="btn btn-quiet fa-home-sidebar" data-action="menu-home">${en?'Main menu':'Menu principale'}</button></div>
+      <div class="sidebar-header"><div class="brand"><span class="brand-icon">${icon('shield',21)}</span><span>FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span></div></div>
+      <div class="sidebar-scroll" tabindex="0" aria-label="${en?'Club navigation':'Navigazione club'}">${renderNavigation(w,ui)}</div>
     </aside>
-    <div class="sidebar-scrim" data-action="close-sidebar" aria-hidden="true"></div>
     <div class="main-area">
       <header class="topbar">
-        <div class="top-left"><button class="icon-button menu-toggle" type="button" data-action="toggle-sidebar" aria-controls="club-sidebar" aria-expanded="${Boolean(ui.sidebarOpen)}" aria-label="${en?(ui.sidebarOpen?'Close menu':'Open menu'):(ui.sidebarOpen?'Chiudi menu':'Apri menu')}">${icon('menu',20)}</button></div>
+        <button type="button" class="topbar-club" data-action="nav" data-page="club" aria-label="${en?'Open managed club':'Apri squadra allenata'}">
+          ${badge(team,'xs')}<strong>${esc(team.name)}</strong>
+        </button>
         <div class="top-actions">
+          <div class="topbar-state" data-current-date="${esc(w.currentDate)}">${icon('calendar',15)}<strong>${formatCareerDate(w.currentDate,ui.language)}</strong><span class="topbar-phase">· ${phase}</span></div>
           <div class="topbar-language">${languagePicker(ui,'top')}</div>
-          <div class="top-round" data-current-date="${esc(w.currentDate)}">${icon('calendar',16)}<strong>${formatCareerDate(w.currentDate,ui.language)} · ${phase}</strong></div>
-          ${mailControl}
-          ${showGlobalAdvance?`<button class="btn ${continuing?'btn-danger':'btn-primary'} continue-top" data-action="${continuing?'stop-advance':canContinue?'advance':'new-season'}">${continuing?(en?`Stop ${icon('close',18)}`:`Interrompi ${icon('close',18)}`):canContinue?`${en?'Continue':'Continua'} ${icon('chevron',18)}`:`${en?'New season':'Nuova stagione'} ${icon('arrow',17)}`}</button>`:''}
+          ${topbarPrimary}
         </div>
       </header>
       <main id="main-content" class="content" tabindex="-1">${body}<div class="footer-line"><span>FOOTBALL ARCHITECT <i>·</i> UNIVERSO DI FANTASIA</span><span>Offline · Stagione ${w.season}</span></div></main>
