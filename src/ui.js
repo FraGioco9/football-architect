@@ -581,8 +581,28 @@ function inboxInputAction(message,lang){
  if(request.type==='contract-counter')return `<button type="button" class="btn btn-danger inbox-primary-action" data-action="inbox-input-go" data-value="contract-counter" data-id="${esc(request.id)}">${en?'Review counteroffer':'Gestisci controproposta'}</button>`;
  return `<p class="inbox-action-unavailable" role="status">${en?'This request needs your decision, but its dedicated action is not available here yet.':'Questa richiesta richiede una decisione, ma l’azione dedicata non è ancora disponibile qui.'}</p>`;
 }
+export function inboxDetailHtml(w,ui,selected){
+ const en=ui.language==='en',tr=(it,english)=>en?english:it,prefs=ui.qol03||{mailArchived:[]};
+ if(!selected)return `<div class="inbox-detail-empty"><span aria-hidden="true">${icon('mail',24)}</span><strong>${tr('Seleziona un messaggio','Select a message')}</strong><p>${tr('Il contenuto comparirà qui senza spostare l’elenco.','Its content will appear here without moving the list.')}</p></div>`;
+ const requires=m=>careerMessageRequiresUserInput(m,w);
+ const message=readCareerMessage(selected,{lang:ui.language,countryId:w.countryId}),needsAction=requires(selected),archived=prefs.mailArchived?.includes(String(selected.id));
+ const operational=inboxInputAction(selected,ui.language);
+ const related=!selected.inputRequest&&mailDestination(selected.kind)!=='inbox'
+  ?`<button type="button" class="btn btn-quiet" data-action="qol03-mail-go" data-page="${mailDestination(selected.kind)}" data-id="${esc(selected.id)}">${mailActionLabel(selected.kind,ui.language)}</button>`:'';
+ return `<div class="inbox-detail ${needsAction?'requires-input':''}">
+  <button type="button" class="btn btn-quiet inbox-mobile-back" data-action="inbox-back">← ${tr('Torna ai messaggi','Back to messages')}</button>
+  <div class="inbox-detail-meta"><span>${esc(inboxMessageCategory(selected.kind,ui.language))}</span><time>${selected.date?formatCareerDate(selected.date,ui.language):`S${selected.season} · G${selected.round}`}</time></div>
+  ${needsAction?`<div class="inbox-required-banner" role="status"><span class="inbox-required-icon" aria-hidden="true">!</span><strong>${tr('Azione richiesta','Action required')}</strong><span>${tr('La simulazione resta in attesa finché questa richiesta non viene risolta.','Simulation remains paused until this request is resolved.')}</span></div>`:''}
+  <h2>${esc(message.subject)}</h2>
+  <p class="inbox-detail-text">${esc(message.text)}</p>
+  <div class="inbox-detail-footer">
+   ${needsAction?`<p class="inbox-archive-note">${tr('Potrai archiviare il messaggio dopo aver risolto la richiesta.','You can archive this message after resolving the request.')}</p>`:''}
+   <div class="inbox-detail-actions">${operational||related}<button type="button" class="btn btn-quiet" data-action="qol03-mail-archive" data-id="${esc(selected.id)}" ${needsAction?'disabled aria-disabled="true"':''}>${archived?tr('Ripristina','Restore'):tr('Archivia','Archive')}</button></div>
+  </div>
+ </div>`;
+}
 export function inbox(w,ui){
- const en=ui.language==='en',tr=(it,english)=>en?english:it,prefs=ui.qol03||{mailFilter:'all',mailArchived:[],mailNotes:{}};
+ const en=ui.language==='en',tr=(it,english)=>en?english:it,prefs=ui.qol03||{mailFilter:'all',mailArchived:[]};
  const requires=m=>careerMessageRequiresUserInput(m,w);
  const todoCount=(w.inbox||[]).filter(m=>requires(m)&&!prefs.mailArchived?.includes(String(m.id))).length;
  const messages=filterMails(w.inbox,prefs,requires);
@@ -595,28 +615,11 @@ export function inbox(w,ui){
    <span class="mail-date">${m.date?formatCareerDate(m.date,ui.language):`S${m.season} · G${m.round}`}${!m.read?'<i aria-label="'+tr('Non letto','Unread')+'"></i>':''}</span>
   </button>`;
  }).join(''):`<div class="empty-state">${prefs.mailFilter==='todo'?tr('Nessuna azione richiesta.','No action required.'):prefs.mailFilter==='unread'?tr('Nessun messaggio non letto.','No unread messages.'):prefs.mailFilter==='archived'?tr('Archivio vuoto.','Archive is empty.'):tr('Nessun messaggio ricevuto.','No messages received.')}</div>`;
- let detail=`<div class="inbox-detail-empty"><span aria-hidden="true">${icon('mail',24)}</span><strong>${tr('Seleziona un messaggio','Select a message')}</strong><p>${tr('Il contenuto comparirà qui senza spostare l’elenco.','Its content will appear here without moving the list.')}</p></div>`;
- if(selected){
-  const message=readCareerMessage(selected,{lang:ui.language,countryId:w.countryId}),needsAction=requires(selected),archived=prefs.mailArchived?.includes(String(selected.id));
-  const operational=inboxInputAction(selected,ui.language);
-  const related=!selected.inputRequest&&mailDestination(selected.kind)!=='inbox'
-   ?`<button type="button" class="btn btn-quiet" data-action="qol03-mail-go" data-page="${mailDestination(selected.kind)}" data-id="${esc(selected.id)}">${mailActionLabel(selected.kind,ui.language)}</button>`:'';
-  detail=`<div class="inbox-detail ${needsAction?'requires-input':''}">
-   <button type="button" class="btn btn-quiet inbox-mobile-back" data-action="inbox-back">← ${tr('Torna ai messaggi','Back to messages')}</button>
-   <div class="inbox-detail-meta"><span>${esc(inboxMessageCategory(selected.kind,ui.language))}</span><time>${selected.date?formatCareerDate(selected.date,ui.language):`S${selected.season} · G${selected.round}`}</time></div>
-   ${needsAction?`<div class="inbox-required-banner" role="status"><span class="inbox-required-icon" aria-hidden="true">!</span><strong>${tr('Azione richiesta','Action required')}</strong><span>${tr('La simulazione resta in attesa finché questa richiesta non viene risolta.','Simulation remains paused until this request is resolved.')}</span></div>`:''}
-   <h2>${esc(message.subject)}</h2>
-   <p class="inbox-detail-text">${esc(message.text)}</p>
-   <div class="inbox-detail-actions">${operational||related}<button type="button" class="btn btn-quiet" data-action="qol03-mail-archive" data-id="${esc(selected.id)}" ${needsAction?'disabled aria-disabled="true"':''}>${archived?tr('Ripristina','Restore'):tr('Archivia','Archive')}</button></div>
-   ${needsAction?`<p class="inbox-archive-note">${tr('Potrai archiviare il messaggio dopo aver risolto la richiesta.','You can archive this message after resolving the request.')}</p>`:''}
-   <details class="inbox-note-details"><summary>${tr('Nota privata','Private note')}</summary><label class="qol03-note"><span>${tr('Promemoria personale, non inviato','Personal reminder, not sent')}</span><textarea data-qol03-mail-note="${esc(selected.id)}" rows="3" maxlength="500" placeholder="${tr('Scrivi un promemoria…','Write a reminder…')}">${esc(prefs.mailNotes?.[String(selected.id)]||'')}</textarea></label></details>
-  </div>`;
- }
  return `${sectionHead('COMUNICAZIONI',tr('Posta in arrivo','Inbox'),'',w.unread?actionButton(`${icon('check',16)} ${tr('Segna tutto come letto','Mark all as read')}`,'mark-all','btn btn-quiet'):'')}
   ${inboxControls(prefs,ui.language,todoCount)}
   <section class="inbox-workspace ${selected?'has-selection':''}" aria-label="${tr('Posta in arrivo','Inbox')}">
-   <div class="inbox-list-pane"><div class="mail-header"><b>${prefs.mailFilter==='archived'?tr('ARCHIVIO','ARCHIVE'):tr('MESSAGGI','MESSAGES')}</b><span>${tr(`${w.unread} non letti`,`${w.unread} unread`)}</span></div><div class="inbox-message-list">${list}</div></div>
-   <div class="inbox-detail-pane">${detail}</div>
+   <div class="inbox-list-pane"><div class="mail-header"><b>${prefs.mailFilter==='archived'?tr('ARCHIVIO','ARCHIVE'):tr('MESSAGGI','MESSAGES')}</b><span data-inbox-unread-count>${tr(`${w.unread} non letti`,`${w.unread} unread`)}</span></div><div class="inbox-message-list">${list}</div></div>
+   <div class="inbox-detail-pane">${inboxDetailHtml(w,ui,selected)}</div>
   </section>`;
 }
 
