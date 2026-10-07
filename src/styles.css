@@ -221,6 +221,10 @@
 }
 .calendar-toolbar>div:first-child{display:grid;gap:4px}
 .calendar-toolbar>div:first-child>strong{font-size:14px}
+.calendar-toolbar-controls{display:flex;align-items:flex-end;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.calendar-season-select{display:grid;gap:4px;color:var(--color-text-secondary);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.calendar-season-select select{min-width:158px;height:32px;padding:0 30px 0 9px;border:1px solid var(--color-border);border-radius:var(--radius-8);background:var(--color-surface-raised);color:var(--color-text);font-size:10px}
+.calendar-history-note{margin:-4px 0 var(--space-12);padding:9px 12px;border:1px solid var(--color-border);border-radius:var(--radius-8);background:var(--color-surface);color:var(--color-text-secondary);font-size:10px;line-height:1.5}
 .calendar-filters{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 .calendar-filters .chip{width:auto;min-width:0;max-width:none;height:32px;padding-inline:11px}
 .calendar-timeline{overflow:hidden}
@@ -265,6 +269,9 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .calendar-today strong{font-size:10px}
 @media(max-width:760px){
   .calendar-toolbar{align-items:flex-start;flex-direction:column}
+  .calendar-toolbar-controls{width:100%;align-items:flex-start;justify-content:flex-start;flex-direction:column}
+  .calendar-season-select{width:100%}
+  .calendar-season-select select{width:100%}
   .calendar-filters{justify-content:flex-start}
   .calendar-timeline-row{grid-template-columns:1fr auto;gap:6px 10px;padding:11px 12px}
   .calendar-timeline-date{grid-column:1/-1}
