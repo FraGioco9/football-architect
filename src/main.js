@@ -1340,13 +1340,23 @@ root.addEventListener('click',async ev=>{
       }
       case 'squad-filters-apply':{
         const value=id=>document.getElementById(id)?.value??'';
-        const numberValue=id=>{const raw=String(value(id)).trim();if(raw==='')return '';const n=Number(raw);return Number.isFinite(n)?n:'';};
+        const numberValue=id=>{
+          const input=document.getElementById(id),raw=String(input?.value??'').trim();
+          if(raw==='')return '';
+          let n=Number(raw);if(!Number.isFinite(n))return '';
+          const min=Number(input?.dataset.min),max=Number(input?.dataset.max);
+          if(Number.isFinite(min))n=Math.max(min,n);
+          if(Number.isFinite(max))n=Math.min(max,n);
+          return n;
+        };
         ui.squadSearch=String(value('squad-filter-search')).trim();
         ui.squadFilter=value('squad-filter-role')||'ALL';
         ui.squadAvailability=value('squad-filter-availability')||'all';
         ui.squadContractFilter=value('squad-filter-contract')||'all';
         ui.squadAgeMin=numberValue('squad-filter-age-min');ui.squadAgeMax=numberValue('squad-filter-age-max');
+        if(ui.squadAgeMin!==''&&ui.squadAgeMax!==''&&ui.squadAgeMin>ui.squadAgeMax)[ui.squadAgeMin,ui.squadAgeMax]=[ui.squadAgeMax,ui.squadAgeMin];
         ui.squadOvrMin=numberValue('squad-filter-ovr-min');ui.squadOvrMax=numberValue('squad-filter-ovr-max');
+        if(ui.squadOvrMin!==''&&ui.squadOvrMax!==''&&ui.squadOvrMin>ui.squadOvrMax)[ui.squadOvrMin,ui.squadOvrMax]=[ui.squadOvrMax,ui.squadOvrMin];
         ui.squadFitnessMin=numberValue('squad-filter-fitness-min');ui.squadMoraleMin=numberValue('squad-filter-morale-min');
         ui.squadValueMin=numberValue('squad-filter-value-min');ui.squadWageMax=numberValue('squad-filter-wage-max');
         ui.squadFilterAttribute=value('squad-filter-attribute')||'ALL';ui.squadFilterAttributeMin=numberValue('squad-filter-attribute-min');
