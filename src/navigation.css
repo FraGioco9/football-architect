@@ -62,7 +62,7 @@
   .nav-group{gap:2px}
   .nav-group-title{min-height:12px;line-height:12px;padding-inline:7px}
   .nav-group-items{gap:1px}
-  .nav-group-items .nav-item{height:35px;min-height:35px}
+  .nav-group-items .nav-item{height:33px;min-height:33px}
 }
 
 @media(max-height:680px) and (min-width:721px){
@@ -87,5 +87,5 @@
   }
   .nav-group:first-child .nav-group-title{border-top:0;margin-top:0}
   .nav-group-items{gap:1px}
-  .nav-group-items .nav-item{height:33px;min-height:33px}
+  .nav-group-items .nav-item{height:35px;min-height:35px}
 }
