@@ -310,14 +310,31 @@
 .career-card-top .tag{flex-shrink:0}
 .career-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-10);color:var(--color-text-secondary);font-size:var(--type-caption);line-height:var(--leading-description)}
 .career-meta b{font-weight:650;color:var(--color-text);overflow-wrap:anywhere}
+.career-head-actions{display:flex;align-items:center;gap:var(--space-10);flex-wrap:wrap}
 .career-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto}
 .career-actions .btn{padding:9px var(--space-12)}
+.career-more-panel{display:flex;gap:7px;flex-wrap:wrap;padding:var(--space-10);border:1px solid var(--color-border);border-radius:var(--radius-8);background:var(--color-inset-faint)}
+.career-more-panel[hidden]{display:none}
+.career-more-panel .btn{padding:8px var(--space-10)}
+.career-security{margin-top:var(--space-20);border:1px solid var(--color-border);border-radius:var(--radius-12);background:var(--color-surface)}
+.career-security>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:var(--space-12);padding:var(--space-14) var(--space-16);font-weight:650;color:var(--color-text);list-style:none}
+.career-security>summary>span:first-child{display:inline-flex;align-items:center;gap:var(--space-8);min-width:0}
+.career-security>summary>span:first-child svg{display:block;flex:0 0 auto}
+.career-security>summary::-webkit-details-marker{display:none}
+.career-security>summary:focus-visible{outline:2px solid var(--color-accent);outline-offset:3px}
+.career-security-chevron{transition:transform .15s ease}
+.career-security[open] .career-security-chevron{transform:rotate(180deg)}
+.career-security-body{display:grid;gap:var(--space-14);padding:0 var(--space-16) var(--space-16);border-top:1px solid var(--color-border)}
+.career-security-body .feedback-inline{padding-top:var(--space-14)}
+.career-security-body .career-note{margin:0}
+.career-security-actions{display:flex;gap:var(--space-10);flex-wrap:wrap}
+.career-storage-alert{margin:0 0 var(--space-16)}
 .career-warning{border:1px solid var(--color-danger);border-radius:7px;padding:var(--space-10);color:var(--color-danger);font-size:12px;margin:0}
 .career-note{margin:25px 0 0;color:var(--color-text-secondary);font-size:12px}
 .career-empty{grid-column:1/-1;padding:30px}
 .career-empty p{margin:var(--space-10) 0 0;color:var(--color-text-secondary)}
-@media(max-width:760px){.career-grid{grid-template-columns:1fr}.career-hub-top{flex-wrap:wrap}.career-hub-main{padding-top:22px}.career-card{padding:17px}}
-@media(max-width:430px){.career-meta{grid-template-columns:1fr}.career-actions .btn{flex:1 1 45%}.career-hub-top .brand{font-size:12px}}
+@media(max-width:760px){.career-grid{grid-template-columns:1fr}.career-hub-top{flex-wrap:wrap}.career-hub-main{padding-top:22px}.career-card{padding:17px}.career-head-actions{width:100%}}
+@media(max-width:430px){.career-meta{grid-template-columns:1fr}.career-actions .btn,.career-more-panel .btn,.career-security-actions .btn,.career-head-actions .btn{flex:1 1 100%}.career-hub-top .brand{font-size:12px}}
 .career-dialog{max-width:500px}.career-dialog .text-field{width:100%;margin:9px 0 13px}.career-dialog-actions{display:flex;justify-content:flex-end;gap:var(--space-10);padding:var(--space-14) 22px var(--space-20);border-top:1px solid var(--color-border)}
 .onboarding-top{gap:var(--space-12)}
 @media(max-width:760px){.onboarding-top{flex-wrap:wrap}.onboarding-top .brand{margin-right:auto}.onboarding-top .offline-pill{max-width:100%}}
@@ -330,7 +347,6 @@
 @media(max-width:520px){.career-checkpoint-row{align-items:stretch;flex-direction:column}.career-checkpoint-row button{align-self:flex-start}}
 
 /* QOL01.05: portable backups & inspected imports, consistent with existing UI */
-.career-transfer-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-10);margin:0 0 var(--space-20)}
 .career-import-dialog{max-width:620px;width:calc(100% - 26px)}
 .career-import-dialog .modal-body{max-height:min(65vh,580px);overflow-y:auto;overflow-x:hidden}
 .career-import-list{display:grid;gap:var(--space-8);margin:var(--space-14) 0 var(--space-18);max-height:230px;overflow-y:auto;overflow-x:hidden}
@@ -339,7 +355,7 @@
 .career-import-dialog .input-label{display:block;margin:var(--space-12) 0 7px}
 .career-import-dialog select.text-field{display:block;width:100%;min-width:0;margin:0 0 var(--space-10);background:var(--color-surface);color:var(--color-text)}
 .career-import-dialog .career-warning{margin:var(--space-14) 0 0}
-@media(max-width:520px){.career-transfer-toolbar .btn{flex:1 1 100%}.career-import-dialog .career-dialog-actions{flex-wrap:wrap}.career-import-dialog .career-dialog-actions .btn{flex:1}}
+@media(max-width:520px){.career-import-dialog .career-dialog-actions{flex-wrap:wrap}.career-import-dialog .career-dialog-actions .btn{flex:1}}
 
 /* QOL01.06 — persistent, keyboard-accessible storage warning */
 .storage-warning{position:sticky;top:0;z-index:var(--layer-storage-warning);display:flex;align-items:center;justify-content:space-between;gap:var(--space-12);background:var(--bg,#101820);margin:0;padding:var(--space-12) var(--space-18);box-shadow:0 3px 12px #0005}
@@ -1062,7 +1078,7 @@ body.dialog-open { overflow: hidden; }
 :where(.page-head h1,.panel-head h2,.modal-header h2,.career-card h2,
   .career-meta b,.selected-city,.selected-competition) { overflow-wrap:anywhere; }
 @media (max-width: 540px) {
-  .career-actions .btn, .career-transfer-toolbar .btn { white-space:normal; }
+  .career-actions .btn, .career-more-panel .btn, .career-security-actions .btn, .career-head-actions .btn { white-space:normal; }
   .onboard-heading { flex-wrap:wrap;gap:6px; }
 }
 /* One rule covers loading rings, decorative transitions, and infinite animations.
