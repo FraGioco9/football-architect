@@ -1378,8 +1378,8 @@ body.dialog-open { overflow: hidden; }
   padding:0;
 }
 .nav-item{
-  height:26px;
-  min-height:26px;
+  height:32px;
+  min-height:32px;
   gap:8px;
   padding:0 9px;
   border-radius:var(--radius-8);
@@ -1514,7 +1514,7 @@ body.navigation-drawer-open{overflow:auto}
   .nav-group{gap:2px}
   .nav-group-title{min-height:12px;line-height:12px;padding-inline:7px}
   .nav-group-items{gap:1px}
-  .nav-item{height:25px;min-height:25px;padding-inline:8px;gap:7px;font-size:10px}
+  .nav-item{height:31px;min-height:31px;padding-inline:8px;gap:7px;font-size:10px}
   .topbar{padding-inline:14px}
   .topbar-club{max-width:135px}
   .top-actions{gap:7px}
@@ -1576,8 +1576,8 @@ body.navigation-drawer-open{overflow:auto}
   .nav-group-items{gap:1px;padding-bottom:0}
   .nav-item{
     width:44px;
-    height:27px;
-    min-height:27px;
+    height:33px;
+    min-height:33px;
     justify-content:center;
     gap:0;
     padding:0;
