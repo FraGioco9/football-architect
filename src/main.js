@@ -510,7 +510,7 @@ function selectInboxMessage(id){
     row.classList.toggle('mail-active',active);
     row.closest('.inbox-mail-row')?.classList.toggle('mail-active-row',active);
     if(active)row.setAttribute('aria-current','true');else row.removeAttribute('aria-current');
-    if(active&&wasUnread){row.classList.remove('unread');row.querySelector('.mail-date i')?.remove();}
+    if(active&&wasUnread){row.classList.remove('unread');row.closest('.inbox-mail-row')?.classList.remove('unread-row');row.querySelector('.mail-date i')?.remove();}
   });
   detail.innerHTML=inboxDetailHtml(world,ui,message);
   syncInboxUnreadChrome();
