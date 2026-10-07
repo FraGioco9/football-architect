@@ -930,37 +930,74 @@ function matchModal(w,m,lang='it'){
 function pickerModal(w,ui){const index=ui.modal.index,slot=FORMATIONS[w.formation][index],list=clubPlayers(w,w.clubId).filter(p=>!p.injury&&(!w.advancedV1?.enabled||!p.medicalV1||medicalAvailability(p.medicalV1).canStart)).sort((a,b)=>(b.position===slot.p?100:0)+b.ovr-((a.position===slot.p?100:0)+a.ovr));return `<p class="modal-explainer">Scegli il calciatore per il ruolo <b>${esc(POSITION_LABELS[slot.p])}</b>. Un giocatore già schierato verrà scambiato di posizione.</p><div class="picker-list">${list.map(p=>`<button data-action="assign" data-id="${p.id}" data-index="${index}" class="picker-player">${avatar(p,'sm')}<span><b>${esc(p.name)}</b><small>${p.position} · ${p.age} anni ${w.lineup.includes(p.id)?'· Titolare':''}</small></span>${rating(p.ovr)}${p.position===slot.p?tag('Naturale','green'):''}${icon('chevron',17)}</button>`).join('')}</div>${actionButton(`${icon('minus',16)} Lascia vuoto`,'clear-slot','btn btn-outline','data-index="'+index+'"')}`;}
 function squadFiltersModal(w,ui){
  const en=ui.language==='en',tx=(it,english)=>en?english:it,lang=en?'en':'it';
- const num=(id,label,value,min=0,max='',step=1)=>`<label class="squad-filter-field" for="${id}"><span>${esc(label)}</span><input id="${id}" class="text-field" type="number" inputmode="numeric" value="${esc(value??'')}" min="${min}"${max!==''?` max="${max}"`:''} step="${step}"></label>`;
- const options=(items,value)=>selectControl({id:items.id,value,options:items.options});
- const role={id:'squad-filter-role',options:[
-  {value:'ALL',label:tx('Tutti','All')},{value:'Portieri',label:tx('Portieri','Goalkeepers')},{value:'Difensori',label:tx('Difensori','Defenders')},{value:'Centrocampisti',label:tx('Centrocampisti','Midfielders')},{value:'Attaccanti',label:tx('Attaccanti','Forwards')}
- ]};
- const availability={id:'squad-filter-availability',options:[
-  {value:'all',label:tx('Tutti','All')},{value:'available',label:tx('Disponibili','Available')},{value:'tired',label:tx('Da recuperare','Needs recovery')},{value:'injured',label:tx('Infortunati','Injured')}
- ]};
- const contract={id:'squad-filter-contract',options:[
-  {value:'all',label:tx('Tutti','All')},{value:'expiring',label:tx('In scadenza','Expiring')},{value:'longterm',label:tx('Più di una stagione','More than one season')}
- ]};
- const attrOptions=[{value:'ALL',label:tx('Qualsiasi attributo','Any attribute')},...ATTRIBUTE_DEFINITIONS.map(a=>({value:a.key,label:a.label[lang]}))];
+ const textNumber=(id,label,value,{placeholder='—',prefix='',suffix='',min='',max=''}={})=>`<label class="squad-filter-field" for="${id}">
+   <span>${esc(label)}</span>
+   <span class="squad-filter-number-shell">${prefix?`<span class="squad-filter-affix" aria-hidden="true">${esc(prefix)}</span>`:''}<input id="${id}" class="text-field squad-filter-number" type="text" inputmode="numeric" pattern="[0-9]*" value="${esc(value??'')}" placeholder="${esc(placeholder)}"${min!==''?` data-min="${min}"`:''}${max!==''?` data-max="${max}"`:''}>${suffix?`<span class="squad-filter-affix" aria-hidden="true">${esc(suffix)}</span>`:''}</span>
+  </label>`;
+ const selectField=(id,label,value,options,extra='')=>`<div class="squad-filter-field ${extra}"><label for="${id}">${esc(label)}</label>${selectControl({id,value,options,className:'squad-filter-select'})}</div>`;
+ const roleOptions=[
+  {value:'ALL',label:tx('Tutti i ruoli','All positions')},{value:'Portieri',label:tx('Portieri','Goalkeepers')},{value:'Difensori',label:tx('Difensori','Defenders')},{value:'Centrocampisti',label:tx('Centrocampisti','Midfielders')},{value:'Attaccanti',label:tx('Attaccanti','Forwards')}
+ ];
+ const availabilityOptions=[
+  {value:'all',label:tx('Qualsiasi stato','Any status')},{value:'available',label:tx('Disponibili','Available')},{value:'tired',label:tx('Da recuperare','Needs recovery')},{value:'injured',label:tx('Infortunati','Injured')}
+ ];
+ const contractOptions=[
+  {value:'all',label:tx('Qualsiasi contratto','Any contract')},{value:'expiring',label:tx('In scadenza','Expiring')},{value:'longterm',label:tx('Più di una stagione','More than one season')}
+ ];
+ const attrOptions=[{value:'ALL',label:tx('Nessun filtro attributo','No attribute filter')},...ATTRIBUTE_DEFINITIONS.map(a=>({value:a.key,label:a.label[lang]}))];
  return `<div class="squad-filter-dialog">
-   <label class="squad-filter-field squad-filter-search" for="squad-filter-search"><span>${tx('Calciatore','Player')}</span>${clearableField({id:'squad-filter-search',label:tx('Cerca calciatore','Search player'),value:ui.squadSearch||'',placeholder:tx('Nome calciatore...','Player name...'),search:true})}</label>
-   <div class="squad-filter-field"><label for="squad-filter-role">${tx('Ruolo','Position')}</label>${options(role,ui.squadFilter||'ALL')}</div>
-   <div class="squad-filter-field"><label for="squad-filter-availability">${tx('Disponibilità','Availability')}</label>${options(availability,ui.squadAvailability||'all')}</div>
-   <div class="squad-filter-field"><label for="squad-filter-contract">${tx('Contratto','Contract')}</label>${options(contract,ui.squadContractFilter||'all')}</div>
-   ${num('squad-filter-age-min',tx('Età minima','Minimum age'),ui.squadAgeMin,15,60)}
-   ${num('squad-filter-age-max',tx('Età massima','Maximum age'),ui.squadAgeMax,15,60)}
-   ${num('squad-filter-ovr-min','OVR min',ui.squadOvrMin,0,100)}
-   ${num('squad-filter-ovr-max','OVR max',ui.squadOvrMax,0,100)}
-   ${num('squad-filter-fitness-min',tx('Fitness minimo','Minimum fitness'),ui.squadFitnessMin,0,100)}
-   ${num('squad-filter-morale-min',tx('Morale minimo','Minimum morale'),ui.squadMoraleMin,0,100)}
-   ${num('squad-filter-value-min',tx('Valore minimo €','Minimum value €'),ui.squadValueMin,0,'',1000)}
-   ${num('squad-filter-wage-max',tx('Ingaggio massimo €/sett.','Maximum wage €/wk'),ui.squadWageMax,0,'',100)}
-   <div class="squad-filter-field squad-filter-attribute"><label for="squad-filter-attribute">${tx('Attributo','Attribute')}</label>${selectControl({id:'squad-filter-attribute',value:ui.squadFilterAttribute||'ALL',options:attrOptions})}</div>
-   ${num('squad-filter-attribute-min',tx('Valore attributo minimo','Minimum attribute value'),ui.squadFilterAttributeMin,1,100)}
+   <section class="squad-filter-section squad-filter-section-player" aria-labelledby="squad-filter-player-title">
+    <div class="squad-filter-section-head"><div><span class="eyebrow">${tx('GIOCATORE','PLAYER')}</span><h3 id="squad-filter-player-title">${tx('Identità e disponibilità','Identity and availability')}</h3></div></div>
+    <div class="squad-filter-section-grid">
+     <div class="squad-filter-field squad-filter-search"><label for="squad-filter-search">${tx('Nome','Name')}</label>${clearableField({id:'squad-filter-search',label:tx('Cerca calciatore','Search player'),value:ui.squadSearch||'',placeholder:tx('Cerca per nome...','Search by name...'),search:true})}</div>
+     ${selectField('squad-filter-role',tx('Ruolo','Position'),ui.squadFilter||'ALL',roleOptions)}
+     ${selectField('squad-filter-availability',tx('Disponibilità','Availability'),ui.squadAvailability||'all',availabilityOptions)}
+    </div>
+   </section>
+
+   <section class="squad-filter-section" aria-labelledby="squad-filter-performance-title">
+    <div class="squad-filter-section-head"><div><span class="eyebrow">${tx('PRESTAZIONI','PERFORMANCE')}</span><h3 id="squad-filter-performance-title">${tx('Età, qualità e condizione','Age, quality and condition')}</h3></div></div>
+    <div class="squad-filter-section-grid squad-filter-section-grid-compact">
+     <div class="squad-filter-range">
+      <span class="squad-filter-range-label">${tx('Età','Age')}</span>
+      <div class="squad-filter-range-pair">
+       ${textNumber('squad-filter-age-min',tx('Da','From'),ui.squadAgeMin,{min:15,max:60})}
+       ${textNumber('squad-filter-age-max',tx('A','To'),ui.squadAgeMax,{min:15,max:60})}
+      </div>
+     </div>
+     <div class="squad-filter-range">
+      <span class="squad-filter-range-label">OVR</span>
+      <div class="squad-filter-range-pair">
+       ${textNumber('squad-filter-ovr-min',tx('Min','Min'),ui.squadOvrMin,{min:0,max:100})}
+       ${textNumber('squad-filter-ovr-max',tx('Max','Max'),ui.squadOvrMax,{min:0,max:100})}
+      </div>
+     </div>
+     ${textNumber('squad-filter-fitness-min',tx('Fitness minimo','Minimum fitness'),ui.squadFitnessMin,{suffix:'%',min:0,max:100})}
+     ${textNumber('squad-filter-morale-min',tx('Morale minimo','Minimum morale'),ui.squadMoraleMin,{suffix:'%',min:0,max:100})}
+    </div>
+   </section>
+
+   <section class="squad-filter-section" aria-labelledby="squad-filter-contract-title">
+    <div class="squad-filter-section-head"><div><span class="eyebrow">${tx('CONTRATTO E MERCATO','CONTRACT & MARKET')}</span><h3 id="squad-filter-contract-title">${tx('Situazione economica','Financial status')}</h3></div></div>
+    <div class="squad-filter-section-grid">
+     ${selectField('squad-filter-contract',tx('Contratto','Contract'),ui.squadContractFilter||'all',contractOptions)}
+     ${textNumber('squad-filter-value-min',tx('Valore minimo','Minimum value'),ui.squadValueMin,{prefix:'€'})}
+     ${textNumber('squad-filter-wage-max',tx('Ingaggio massimo','Maximum wage'),ui.squadWageMax,{prefix:'€',suffix:tx('/ sett.','/ wk')})}
+    </div>
+   </section>
+
+   <section class="squad-filter-section" aria-labelledby="squad-filter-attributes-title">
+    <div class="squad-filter-section-head"><div><span class="eyebrow">${tx('ATTRIBUTI','ATTRIBUTES')}</span><h3 id="squad-filter-attributes-title">${tx('Soglia su un attributo specifico','Threshold on a specific attribute')}</h3></div></div>
+    <div class="squad-filter-section-grid squad-filter-attributes-grid">
+     ${selectField('squad-filter-attribute',tx('Attributo','Attribute'),ui.squadFilterAttribute||'ALL',attrOptions,'squad-filter-attribute')}
+     ${textNumber('squad-filter-attribute-min',tx('Valore minimo','Minimum value'),ui.squadFilterAttributeMin,{min:1,max:100})}
+    </div>
+    <p class="squad-filter-help">${tx('Il valore minimo viene applicato solo quando selezioni un attributo.','The minimum value is applied only when an attribute is selected.')}</p>
+   </section>
   </div>
   <div class="modal-footer squad-filter-actions">
     <button type="button" class="btn btn-outline" data-action="squad-filters-clear">${tx('Azzera','Clear')}</button>
-    <button type="button" class="btn btn-primary" data-action="squad-filters-apply">${tx('Applica','Apply')}</button>
+    <button type="button" class="btn btn-primary" data-action="squad-filters-apply">${tx('Applica filtri','Apply filters')}</button>
   </div>`;
 }
 function modalContent(w,ui){const m=ui.modal;let title='',inner='',wide=false;
