@@ -29,7 +29,7 @@ import {createControlHints} from './controls-system.js';
 import {createDialogCoordinator} from './dialog-system.js';
 import {createFeedbackCenter} from './feedback-system.js';
 import {ensureCareerDates,fixtureIsDue,nextFixtureDate,addDaysISO,formatCareerDate} from './domain/career-date.js';
-import {firstCareerInputMessage} from './domain/history.js';
+import {firstCareerInputMessage,careerMessageRequiresUserInput} from './domain/history.js';
 import {ensureOfficialCareerSystems,officialCareerSystemsReady} from './domain/career-official.js';
 import {MARKET_VIEWS,marketCostPreview} from './market-view-model.js';
 import {displayCareerMoney} from './domain/career-locale.js';
@@ -81,7 +81,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -402,6 +402,15 @@ function render({focus}={}){
   if(ui.page==='calendar'&&ui.calendarAutoFocus){
     ui.calendarAutoFocus=false;
     requestAnimationFrame(()=>root.querySelector('#calendar-current-anchor')?.scrollIntoView({block:'center'}));
+  }
+  if(ui.page==='squad'&&ui.contractFocusId){
+    const offerId=String(ui.contractFocusId);ui.contractFocusId=null;
+    requestAnimationFrame(()=>{
+      const offer=root.querySelector(`#contract-offer-${CSS.escape(offerId)}`);
+      if(!offer)return;
+      offer.scrollIntoView({block:'center',behavior:'auto'});
+      (offer.querySelector('.btn-primary')||offer).focus({preventScroll:true});
+    });
   }
 }
 
@@ -952,10 +961,25 @@ root.addEventListener('click',async ev=>{
     switch(action){
       case 'qol03-back':qol03Back();break;
       case 'qol03-widget-up':case 'qol03-widget-down':ui.qol03=moveWidget(ui.qol03,id,action.endsWith('up')?-1:1);qol03Save();render();break;
+      case 'qol03-mail-filter':{
+        ui.qol03.mailFilter=['all','todo','unread','archived'].includes(field)?field:'all';ui.openMail=null;qol03Save();render();break;
+      }
       case 'qol03-mail-archive':{
-        const key=String(id);ui.qol03.mailArchived=ui.qol03.mailArchived.includes(key)?ui.qol03.mailArchived.filter(x=>x!==key):[...ui.qol03.mailArchived,key];qol03Save();render();break;
+        const key=String(id),message=world.inbox.find(m=>String(m.id)===key),archived=ui.qol03.mailArchived.includes(key);
+        if(message&&careerMessageRequiresUserInput(message,world)&&!archived){toast(ui.language==='en'?'Resolve this request before archiving it.':'Risolvi questa richiesta prima di archiviarla.','info');break;}
+        ui.qol03.mailArchived=archived?ui.qol03.mailArchived.filter(x=>x!==key):[...ui.qol03.mailArchived,key];
+        ui.openMail=null;qol03Save();render();break;
       }
       case 'qol03-mail-go':navigate(target.dataset.page||'inbox');focusPage();break;
+      case 'inbox-back':ui.openMail=null;render();break;
+      case 'inbox-input-go':{
+        if(field==='contract-counter'){
+          const offer=world.advancedV1?.contractsV1?.offers?.[String(id)];
+          if(!offer||offer.status!=='awaiting_club'){toast(ui.language==='en'?'This request has already been resolved.':'Questa richiesta è già stata risolta.','info');render();break;}
+          ui.contractFocusId=String(id);navigate('squad');break;
+        }
+        break;
+      }
       case 'qol03-sort-direction':case 'qol03-table-prev':case 'qol03-table-next':{
         const p=qol03TablePref(id);if(action==='qol03-sort-direction')p.desc=!p.desc;else p.page=Math.max(0,p.page+(action.endsWith('next')?1:-1));qol03UpdateTable(id);qol03Save();
         if(action==='qol03-sort-direction')render();break;
@@ -1452,9 +1476,9 @@ root.addEventListener('click',async ev=>{
         navigate('inbox');focusPage();break;
       }
       case 'read-mail':{
-        const msg=world.inbox.find(m=>m.id===id);if(!msg)break;
+        const msg=world.inbox.find(m=>String(m.id)===String(id));if(!msg)break;
         msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;
-        ui.openMail=ui.openMail===id?null:id;refresh();break;
+        ui.openMail=String(id);refresh();break;
       }
       case 'export-blocked-save':{
         let keys=[STORAGE_KEY,PREVIOUS_CAREER_STORAGE_KEY,LEGACY_CAREER_STORAGE_KEY];
@@ -1591,7 +1615,6 @@ root.addEventListener('change',async ev=>{
 
   const el=ev.target;
   if(el.matches('[data-qol03-widget]')){const key=el.dataset.qol03Widget;ui.qol03.hidden=el.checked?ui.qol03.hidden.filter(x=>x!==key):[...ui.qol03.hidden,key];qol03Save();render();return;}
-  if(el.id==='qol03-mail-filter'){ui.qol03.mailFilter=el.value;qol03Save();render();return;}
   if(el.matches('[data-qol03-mail-note]')){ui.qol03.mailNotes[el.dataset.qol03MailNote]=el.value.slice(0,500);qol03Save();return;}
   if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
