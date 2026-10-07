@@ -32,16 +32,16 @@ const endings={
 export function syntheticName(rand,homeCountry,used){
   // Local identity predominates, with a small number of foreign signings.
   const codes=Object.keys(given),nationalityCode=rand()<.83?homeCountry:codes[Math.floor(rand()*codes.length)];
-  let fullName='';
+  let firstName='',lastName='',fullName='';
   for(let attempt=0;attempt<150;attempt++){
-    const first=given[nationalityCode][Math.floor(rand()*given[nationalityCode].length)];
+    firstName=given[nationalityCode][Math.floor(rand()*given[nationalityCode].length)];
     const stem=stems[nationalityCode][Math.floor(rand()*stems[nationalityCode].length)];
     const end=endings[nationalityCode][Math.floor(rand()*endings[nationalityCode].length)];
-    const surname=stem+end;
-    fullName=`${first} ${surname}`;
+    lastName=stem+end;
+    fullName=`${firstName} ${lastName}`;
     if(!used.has(fullName))break;
   }
   used.add(fullName);
   const nation={IT:'Italia',ENG:'Inghilterra',ES:'Spagna',DE:'Germania',FR:'Francia',PT:'Portogallo',NL:'Paesi Bassi',BR:'Brasile'}[nationalityCode];
-  return {name:fullName,nationality:nation};
+  return {name:fullName,firstName,lastName,nationality:nation,nationalityCode};
 }
