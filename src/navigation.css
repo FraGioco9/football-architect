@@ -36,8 +36,8 @@
 }
 .nav-group-items .nav-item{
   width:100%;
-  height:30px;
-  min-height:30px;
+  height:32px;
+  min-height:32px;
   flex-shrink:0;
   transform:none;
   transition:
@@ -62,7 +62,7 @@
   .nav-group{gap:2px}
   .nav-group-title{min-height:12px;line-height:12px;padding-inline:7px}
   .nav-group-items{gap:1px}
-  .nav-group-items .nav-item{height:29px;min-height:29px}
+  .nav-group-items .nav-item{height:33px;min-height:33px}
 }
 
 @media(max-height:680px) and (min-width:721px){
