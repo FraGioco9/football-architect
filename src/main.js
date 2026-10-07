@@ -491,7 +491,7 @@ function syncInboxSelectionChrome(){
   const selected=new Set((ui.inboxSelected||[]).map(String));
   const boxes=[...root.querySelectorAll('[data-inbox-select]')];
   let visibleSelected=0;
-  for(const box of boxes){box.checked=selected.has(String(box.dataset.inboxSelect));if(box.checked)visibleSelected++;}
+  for(const box of boxes){box.checked=selected.has(String(box.dataset.inboxSelect));box.closest('.inbox-mail-row')?.classList.toggle('is-selected',box.checked);if(box.checked)visibleSelected++;}
   const all=root.querySelector('[data-inbox-select-all]');
   if(all){all.checked=boxes.length>0&&visibleSelected===boxes.length;all.indeterminate=visibleSelected>0&&visibleSelected<boxes.length;}
   const count=root.querySelector('[data-inbox-selected-count]');
