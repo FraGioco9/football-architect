@@ -1,0 +1,36 @@
+name: UX20 01A validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dashboard model contract
+        run: node ux20-01a-validation/model.mjs
+      - name: Install browser
+        working-directory: ux20-01a-validation
+        run: |
+          npm init -y
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start Football Architect
+        run: |
+          node server.mjs > ux20-01a-server.log 2>&1 &
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:2000/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat ux20-01a-server.log
+          exit 1
+      - name: Dashboard browser contract
+        working-directory: ux20-01a-validation
+        run: node browser.mjs
