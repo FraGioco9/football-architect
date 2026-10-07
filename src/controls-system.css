@@ -16,7 +16,7 @@
 /* Root gutter is reserved even if opening a dialog disables root scrolling.
    Browsers with overlay scrollbars do not waste physical space. */
 html { scrollbar-gutter: stable; overflow-y: auto; }
-:root:has(body:is(.dialog-open,.navigation-drawer-open)) {
+:root:has(body.navigation-drawer-open) {
   overflow-y: hidden;
   scrollbar-gutter: stable;
 }
