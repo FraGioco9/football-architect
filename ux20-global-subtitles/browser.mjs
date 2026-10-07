@@ -48,13 +48,18 @@ try{
   if(await preview.count()){
     await preview.click();
     await page.waitForURL(/\/match\/.*\/preview/);
+    await page.locator('.match-preview-heading').waitFor({state:'visible'});
     check(await page.locator('.match-preview-heading .match-preview-schedule').count()===1,'match preview schedule metadata must remain');
     await assertNo('.match-preview-heading > div > p:not(.match-preview-schedule)','Match Preview descriptive subtitle must be removed');
   }else failures.push('fixture must expose a match preview action');
 
-  // 404 custom header.
+  check(runtimeErrors.length===0,'browser runtime errors before intentional 404: '+runtimeErrors.join(' | '));
+  runtimeErrors.length=0;
+
+  // 404 custom header. The HTTP 404 itself is intentional and not a runtime regression.
   await page.goto(base+'/route-that-does-not-exist',{waitUntil:'networkidle'});
   await assertNo('.fa-menu-intro h1 + p','404 subtitle must be removed');
+  runtimeErrors.length=0;
 
   // English should not reintroduce subtitles and mobile should not overflow.
   await page.goto(base+'/',{waitUntil:'networkidle'});
