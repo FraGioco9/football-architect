@@ -15,14 +15,14 @@ export const NAV_GROUPS = Object.freeze([
     {id:'youth',icon:'users',it:'Vivaio',en:'Academy'}]},
   {id:'competitions',it:'Competizioni',en:'Competitions',items:[
     {id:'league',icon:'trophy',it:'Campionato',en:'League'},
-    {id:'world',icon:'globe',it:'Mondo',en:'World'},
-    {id:'advanced',icon:'chart',it:'Analisi avanzata',en:'Advanced analysis'}]},
+    {id:'world',icon:'globe',it:'Mondo',en:'World'}]},
   {id:'management',it:'Gestione',en:'Management',items:[
     {id:'market',icon:'transfer',it:'Mercato',en:'Transfer market'},
     {id:'finance',icon:'wallet',it:'Finanze',en:'Finances'},
     {id:'board',icon:'shield',it:'Dirigenza',en:'Board'},
     {id:'manager',icon:'users',it:'Allenatore',en:'Manager'}]},
   {id:'system',it:'Sistema',en:'System',items:[
+    {id:'advanced',icon:'chart',it:'Analisi avanzata',en:'Advanced analysis'},
     {id:'settings',icon:'settings',it:'Impostazioni',en:'Settings'},
     {id:'careers',icon:'save',it:'Carriere',en:'Careers'}]}
 ]);
