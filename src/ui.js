@@ -8,6 +8,7 @@ import {dashboardFocus,dashboardSchedule} from './dashboard-model.js';
 import {clubPage} from './club-overview-ui.js';
 import {displayCareerMoney,readCareerMessage,formatNumber as localizedNumber,formatStanding as localizedStanding,currencyOfCareer,FX_POLICY_VERSION,displayCareerTimestamp} from './domain/career-locale.js';
 import {careerMessageRequiresUserInput} from './domain/history.js';
+import {officialArchive,officialHistorySeasons} from './domain/career-history.js';
 import {matchPreviewPage} from './match-preview-ui.js';
 import {matchPreparation,officialMatchTimeline,halftimeIntro} from './match-experience.js';
 import {formatCareerDate,formatCareerDateTime,fixtureIsDue} from './domain/career-date.js';
@@ -389,6 +390,15 @@ function calendarLeagueEntries(w,ui){
    return {key:`league:${m.id}`,id:m.id,kind:'league',competition,date:m.date,kickoff:m.kickoff,home,opponent:opponent?.name||'—',venue,result:m.result,report:Boolean(m.result),preview:!m.result,played:Boolean(m.result)};
   }));
 }
+function calendarHistoricalLeagueEntries(w,ui,season){
+ const archive=officialArchive(w,w.countryId,season),details=archive?.details;
+ if(!details||details.version<2||!Array.isArray(details.matches))return [];
+ const names=new Map((details.rows||archive.table||[]).map(row=>[row.clubId??row.id,row.name]));
+ return details.matches.filter(m=>m.home===w.clubId||m.away===w.clubId).map((m,index)=>{
+  const home=m.home===w.clubId;
+  return {key:`league-history:${season}:${index}`,id:null,kind:'league',competition:w.competition||'Lega Aurora',date:m.date,kickoff:m.kickoff||'',home,opponent:names.get(home?m.away:m.home)||'—',venue:'',result:{homeGoals:m.homeGoals,awayGoals:m.awayGoals},report:false,preview:false,played:true,historical:true};
+ });
+}
 function calendarCupEntries(w,ui){
  if(!cupsEnabled(w))return [];
  const cup=cupForCountry(w,w.countryId);if(!cup||w.advancedV1.cupsV1.deferred)return [];
@@ -399,6 +409,20 @@ function calendarCupEntries(w,ui){
    return {key:`cup:${m.id}`,id:m.id,kind:'cup',competition:ui.language==='en'?'National cup':'Coppa nazionale',date:m.date||round.date,kickoff:m.kickoff||'',home,opponent:opponent?.name||'—',venue,result:m.result,report:false,preview:false,played:Boolean(m.result)};
   }));
 }
+function historicalCupForSeason(w,season){
+ const history=w?.advancedV1?.cupsV1?.history;
+ return Array.isArray(history)?history.find(item=>item.season===season)?.cups?.find(c=>c.countryId===w.countryId)??null:null;
+}
+function calendarHistoricalCupEntries(w,ui,season){
+ const cup=historicalCupForSeason(w,season);if(!cup)return [];
+ const league=careerWorldLeague(w,w.countryId),names=new Map((league?.clubs||w.teams||[]).map(c=>[c.id,c.name]));
+ return cup.rounds.flatMap(round=>round.matches
+  .filter(m=>m.home===w.clubId||m.away===w.clubId)
+  .map((m,index)=>{
+   const home=m.home===w.clubId;
+   return {key:`cup-history:${season}:${m.id||index}`,id:null,kind:'cup',competition:ui.language==='en'?'National cup':'Coppa nazionale',date:m.date||round.date,kickoff:m.kickoff||'',home,opponent:names.get(home?m.away:m.home)||'—',venue:'',result:m.result,report:false,preview:false,played:Boolean(m.result),historical:true};
+  }));
+}
 function continentalClubParts(key){
  const match=/^(IT|ENG|ES|DE|FR|NL|PT|BR):club:(\d+)$/.exec(String(key||''));
  return match?{country:match[1],id:Number(match[2])}:null;
@@ -407,17 +431,25 @@ function continentalClubLabel(w,key){
  const parsed=continentalClubParts(key);if(!parsed)return String(key||'—');
  return careerWorldLeague(w,parsed.country)?.clubs.find(c=>c.id===parsed.id)?.name||String(key);
 }
-function calendarContinentalEntries(w,ui){
- if(!continentalEnabled(w))return [];
- const edition=continentalEdition(w);if(!edition)return [];
+function continentalEntriesFromEdition(w,ui,edition,{historical=false}={}){
+ if(!edition)return [];
  const managed=`${w.countryId}:club:${w.clubId}`;
- return [...edition.groupRounds,...edition.knockout].flatMap(round=>round.matches
+ return [...(edition.groupRounds||[]),...(edition.knockout||[])].flatMap(round=>round.matches
   .filter(m=>m.home===managed||m.away===managed)
-  .map(m=>{
+  .map((m,index)=>{
    const home=m.home===managed,opponent=continentalClubLabel(w,home?m.away:m.home),host=continentalClubParts(m.home);
    const venue=round.venue||(host?.country===w.countryId?clubById(w,host.id)?.stadium:'')||'';
-   return {key:`continental:${m.id}`,id:m.id,kind:'continental',competition:ui.language==='en'?'Continental cup':'Coppa continentale',date:m.date||round.date,kickoff:m.kickoff||'',home,opponent,venue,result:m.result,report:false,preview:false,played:Boolean(m.result)};
+   return {key:`continental:${edition.season}:${m.id||index}`,id:historical?null:m.id,kind:'continental',competition:ui.language==='en'?'Continental cup':'Coppa continentale',date:m.date||round.date,kickoff:m.kickoff||'',home,opponent,venue:historical?'':venue,result:m.result,report:false,preview:false,played:Boolean(m.result),historical};
   }));
+}
+function calendarContinentalEntries(w,ui){
+ if(!continentalEnabled(w))return [];
+ return continentalEntriesFromEdition(w,ui,continentalEdition(w));
+}
+function calendarHistoricalContinentalEntries(w,ui,season){
+ const history=w?.advancedV1?.continentalV1?.history;
+ const edition=Array.isArray(history)?history.find(item=>item.season===season):null;
+ return continentalEntriesFromEdition(w,ui,edition,{historical:true});
 }
 function calendarResult(entry){
  const r=entry.result;if(!r)return '';
@@ -430,17 +462,22 @@ function calendarTimelineRow(w,ui,entry,isNext){
  const meta=`${formatCareerDate(entry.date,ui.language)} · ${esc(entry.kickoff||'—')} · ${location}`;
  const content=`<span class="calendar-timeline-date">${meta}</span><span class="calendar-timeline-main"><strong>${esc(entry.opponent)}</strong><small>${esc(entry.competition)}${entry.venue?` · ${esc(entry.venue)}`:''}</small></span><span class="calendar-timeline-status ${entry.played?'is-played':'is-upcoming'}">${esc(status)}</span>`;
  if(entry.report)return `<button type="button" class="calendar-timeline-row ${isNext?'is-next':''}" data-action="match" data-id="${esc(entry.id)}">${content}${icon('chevron',16)}</button>`;
- return `<div class="calendar-timeline-row ${isNext?'is-next':''}" data-calendar-entry="${esc(entry.key)}">${content}${isNext&&entry.kind==='league'? `<button type="button" class="text-link calendar-preview-link" data-action="preview-match" data-id="${esc(entry.id)}">${en?'Match preview':'Anteprima partita'}</button>`:'<span></span>'}</div>`;
+ return `<div class="calendar-timeline-row ${isNext?'is-next':''}" data-calendar-entry="${esc(entry.key)}">${content}${isNext&&entry.kind==='league'&&!entry.historical? `<button type="button" class="text-link calendar-preview-link" data-action="preview-match" data-id="${esc(entry.id)}">${en?'Match preview':'Anteprima partita'}</button>`:'<span></span>'}</div>`;
 }
 export function calendar(w,ui){
- const en=ui.language==='en',all=[...calendarLeagueEntries(w,ui),...calendarCupEntries(w,ui),...calendarContinentalEntries(w,ui)]
+ const en=ui.language==='en',seasons=[w.season,...officialHistorySeasons(w).slice().reverse().filter(season=>season!==w.season)];
+ const requested=Number(ui.calendarSeason),selectedSeason=seasons.includes(requested)?requested:w.season,current=selectedSeason===w.season;
+ const league=current?calendarLeagueEntries(w,ui):calendarHistoricalLeagueEntries(w,ui,selectedSeason);
+ const cups=current?calendarCupEntries(w,ui):calendarHistoricalCupEntries(w,ui,selectedSeason);
+ const continental=current?calendarContinentalEntries(w,ui):calendarHistoricalContinentalEntries(w,ui,selectedSeason);
+ const all=[...league,...cups,...continental]
   .filter(e=>e.date)
   .sort((a,b)=>(`${a.date}T${a.kickoff||'00:00'}`).localeCompare(`${b.date}T${b.kickoff||'00:00'}`)||a.key.localeCompare(b.key));
  const available=new Set(all.map(e=>e.kind)),selected=available.has(ui.calendarCompetition)?ui.calendarCompetition:'all';
  const visible=selected==='all'?all:all.filter(e=>e.kind===selected);
- const next=all.find(e=>!e.played&&e.date>=w.currentDate)||all.find(e=>!e.played)||null;
- const split=visible.findIndex(e=>!e.played&&e.date>=w.currentDate);
- const before=split<0?visible:visible.slice(0,split),after=split<0?[]:visible.slice(split);
+ const next=current?(all.find(e=>!e.played&&e.date>=w.currentDate)||all.find(e=>!e.played)||null):null;
+ const split=current?visible.findIndex(e=>!e.played&&e.date>=w.currentDate):-1;
+ const before=current&&split>=0?visible.slice(0,split):visible,after=current&&split>=0?visible.slice(split):[];
  const filterDefs=[
   ['all',en?'All':'Tutte'],
   ['league',en?'League':'Campionato'],
@@ -448,12 +485,17 @@ export function calendar(w,ui){
   ['continental',en?'Continental cup':'Coppa continentale']
  ].filter(([key])=>key==='all'||available.has(key));
  const filters=`<div class="calendar-filters" role="group" aria-label="${en?'Filter by competition':'Filtra per competizione'}">${filterDefs.map(([key,label])=>`<button type="button" class="chip ${selected===key?'chip-active':''}" data-action="calendar-filter" data-value="${key}" aria-pressed="${selected===key}">${label}</button>`).join('')}</div>`;
+ const seasonSelector=seasons.length>1?`<label class="calendar-season-select"><span>${en?'Season':'Stagione'}</span><select data-calendar-season aria-label="${en?'Select season':'Seleziona stagione'}">${seasons.map(season=>`<option value="${season}" ${season===selectedSeason?'selected':''}>${season===w.season?(en?`Season ${season} · current`:`Stagione ${season} · corrente`):(en?`Season ${season}`:`Stagione ${season}`)}</option>`).join('')}</select></label>`:'';
  const rows=items=>items.map(e=>calendarTimelineRow(w,ui,e,next?.key===e.key)).join('');
- const today=`<div id="calendar-current-anchor" class="calendar-today" tabindex="-1"><span>${en?'Today':'Oggi'}</span><strong>${formatCareerDate(w.currentDate,ui.language)}</strong></div>`;
+ const today=current?`<div id="calendar-current-anchor" class="calendar-today" tabindex="-1"><span>${en?'Today':'Oggi'}</span><strong>${formatCareerDate(w.currentDate,ui.language)}</strong></div>`:'';
+ const archive= current?null:officialArchive(w,w.countryId,selectedSeason);
+ const legacyLeague=current||archive?.details?.version>=2?'':`<p class="calendar-history-note" role="note">${en?'League fixture detail was not stored by this legacy season; available cup fixtures are still shown.':'Il dettaglio delle partite di campionato non era archiviato in questa stagione legacy; vengono comunque mostrate le gare di coppa disponibili.'}</p>`;
+ const readOnly=current?'':`<p class="calendar-history-note">${en?'Archived season · read only':'Stagione archiviata · sola lettura'}</p>`;
  const timeline=visible.length
   ?`<section class="panel calendar-timeline" aria-label="${en?'Club match calendar':'Calendario partite della squadra'}">${rows(before)}${today}${rows(after)}</section>`
-  :`<div class="empty-state">${en?'No matches for this competition.':'Nessuna partita per questa competizione.'}</div>`;
- return `${sectionHead(en?'SEASON':'STAGIONE',en?'Calendar':'Calendario','',tag(`${en?'SEASON':'STAGIONE'} ${w.season}`,'blue'))}<div class="calendar-toolbar"><div><span class="overline">${en?'CURRENT DATE':'DATA CORRENTE'}</span><strong>${formatCareerDate(w.currentDate,ui.language)}</strong></div>${filters}</div>${timeline}`;
+  :`<div class="empty-state">${en?'No archived matches are available for this season and filter.':'Nessuna partita archiviata disponibile per questa stagione e questo filtro.'}</div>`;
+ const context=current?`<div><span class="overline">${en?'CURRENT DATE':'DATA CORRENTE'}</span><strong>${formatCareerDate(w.currentDate,ui.language)}</strong></div>`:`<div><span class="overline">${en?'ARCHIVE':'ARCHIVIO'}</span><strong>${en?'Completed season':'Stagione conclusa'} ${selectedSeason}</strong></div>`;
+ return `${sectionHead(en?'SEASON':'STAGIONE',en?'Calendar':'Calendario','',tag(`${en?'SEASON':'STAGIONE'} ${selectedSeason}`,'blue'))}<div class="calendar-toolbar">${context}<div class="calendar-toolbar-controls">${seasonSelector}${filters}</div></div>${readOnly}${legacyLeague}${timeline}`;
 }
 export function league(w,ui){const rows=table(w),scorers=leagueScorers(w).slice(0,9);
  return `${sectionHead('COMPETIZIONE',esc(w.competition||'Lega Aurora'),`${w.teams.length} club. Un solo campione. Classifica e protagonisti della stagione.`,tag(`STAGIONE ${w.season}`,'blue'))}
