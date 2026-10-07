@@ -770,13 +770,148 @@ export function settings(w,ui){return `${sectionHead('PREFERENZE','Impostazioni 
  ${panel('Gestione dati','Esporta una copia o importa una carriera esistente.',`<div class="settings-actions"><button class="settings-action" data-action="open-careers">${icon('save',22)}<span><strong>Gestisci carriere</strong><small>Carica, duplica, rinomina o elimina uno slot.</small></span>${icon('chevron',17)}</button><button class="settings-action" data-action="export-emergency">${icon('shield',22)}<span><strong>Esporta emergenza</strong><small>Recupera copie locali, IndexedDB e carriera in memoria.</small></span>${icon('chevron',17)}</button><button class="settings-action" data-action="export">${icon('download',22)}<span><strong>Esporta carriera</strong><small>Scarica un file JSON del salvataggio.</small></span>${icon('chevron',17)}</button><button class="settings-action" data-action="import">${icon('upload',22)}<span><strong>Importa carriera</strong><small>Ripristina un salvataggio precedentemente esportato.</small></span>${icon('chevron',17)}</button><input type="file" id="import-file" accept=".json,application/json" hidden /><button class="settings-action" data-action="open-careers">${icon('plus',22)}<span><strong>Nuova carriera</strong><small>Inizia senza eliminare i salvataggi esistenti.</small></span>${icon('chevron',17)}</button></div>`)}</div>
  ${panel('Informazioni sul gioco','Progetto originale, eseguibile in locale',`<div class="about-grid"><div>${icon('shield',22)}<strong>Universo immaginario</strong><p>Paesi e città sono reali; competizioni, squadre, stemmi e calciatori sono immaginari. Nessuna licenza sportiva reale.</p></div><div>${icon('save',22)}<strong>100% offline</strong><p>Nessuna registrazione, server esterno, CDN o dipendenza da servizi online. Salvataggio automatico nel browser.</p></div><div>${icon('football',22)}<strong>Simulazione gestionale</strong><p>${w.fixtures.length} giornate, risultati, tattiche, crescita, infortuni, contratti, bilanci, mercato e stagioni successive.</p></div></div>`)}`;
 }
-function playerModal(w,p,ui){const lang=ui.language,pt=rosterText(lang),mine=p.clubId===w.clubId,team=clubById(w,p.clubId),fee=Math.round(p.value*1.1/50000)*50000;
- const report=scoutingEnabled(w)?scoutingEstimate(w,p.globalId??`${w.countryId}:${p.id}`):null;const range=v=>v?`${v.min}–${v.max}`:'—';
- const own=mine?clubPlayers(w,w.clubId):[];
- const other=own.find(x=>x.id===ui.comparePlayerId&&x.id!==p.id);
- const selector=mine?`<section class="ply01-compare-picker"><label for="ply01-compare-player">${lang==='en'?'Compare with':'Confronta con'}</label>${selectControl({id:'ply01-compare-player',value:other?String(other.id):'none',options:[{value:'none',label:lang==='en'?'Choose a teammate':'Scegli un compagno'},...own.filter(x=>x.id!==p.id).map(x=>({value:String(x.id),label:`${x.name} · ${x.position}`}))]})}</section>${other?renderPlayerComparison(p,other,{lang,seed:w.seed,countryId:w.countryId,attributes:['ballControl','shortPassing','finishing','tackling','marking','vision','decisions','teamwork','pace','stamina','strength','reflexes']}):''}`:'';
- const scoutAttributes=!mine&&scoutingEnabled(w)?`<section class="ply01-scout-estimate" aria-label="${lang==='en'?'Scout knowledge':'Conoscenza osservatori'}"><h3>${lang==='en'?'Scouting attribute estimates':'Stime attributi degli osservatori'}</h3>${report?.attributes?`<div class="ply01-scout-intervals">${Object.entries(report.attributes).map(([key,v])=>{const a=ATTRIBUTE_DEFINITIONS.find(d=>d.key===key);return a&&v?`<div><span>${esc(a.label[lang==='en'?'en':'it'])}</span><strong>${range(v)}</strong></div>`:'';}).join('')}</div>`:`<p>${lang==='en'?'Detailed estimates are not available. Assign scouting coverage and build a report.':'Le stime dettagliate non sono disponibili. Assegna osservatori e sviluppa un rapporto.'}</p>`}</section>`:'';
- return `<div class="modal-player-top"><div class="modal-person">${avatar(p,'xl')}<div><span class="eyebrow">${pt.profile}</span><h2>${esc(p.name)}</h2><p>${esc(p.nationality)} · ${p.age} ${lang==='en'?'years':'anni'} · ${lang==='en'?'Foot':'Piede'} ${esc(p.foot.toLowerCase())}</p><span class="modal-club">${badge(team,'xs')} ${esc(team.name)}</span></div></div><div class="modal-ovr">${scoutingEnabled(w)&&!mine?range(report?.overall):rating(p.ovr)}<span>${lang==='en'?'OVERALL<br>RATING':'VALUTAZIONE<br>GENERALE'}</span></div></div><section class="roster-profile-overview" aria-label="${pt.overview}"><div class="profile-data"><div><span>${lang==='en'?'POSITION':'RUOLO'}</span><strong>${esc(POSITION_LABELS[p.position])}</strong></div><div><span>${lang==='en'?'POTENTIAL':'POTENZIALE'}</span><strong>${scoutingEnabled(w)&&!mine?range(report?.potential):p.potential}</strong></div><div><span>${lang==='en'?'MARKET VALUE':'VALORE DI MERCATO'}</span><strong>${scoutingEnabled(w)&&!mine?(report?.valueEUR?`${displayCareerMoney(report.valueEUR.min,{countryId:w.countryId,lang})}–${displayCareerMoney(report.valueEUR.max,{countryId:w.countryId,lang})}`:'—'):displayCareerMoney(p.value,{countryId:w.countryId,lang})}</strong></div><div><span>${lang==='en'?'WAGE / WEEK':'INGAGGIO / SETTIMANA'}</span><strong>${displayCareerMoney(p.wage,{countryId:w.countryId,lang})}</strong></div><div><span>${lang==='en'?'CONTRACT':'CONTRATTO'}</span><strong>${p.contract} ${lang==='en'?(p.contract===1?'year':'years'):(p.contract===1?'anno':'anni')}</strong></div><div><span>${lang==='en'?'AVAILABILITY':'DISPONIBILITÀ'}</span><strong>${p.injury?`${p.injury} ${pt.days}`:pt.fit}</strong></div></div><div class="profile-stat-strip"><div><b>${p.apps}</b><span>${lang==='en'?'APPS':'PRESENZE'}</span></div>${p.minutesPlayed!==undefined?`<div><b>${Math.round(p.minutesPlayed)}</b><span>${lang==='en'?'MINUTES':'MINUTI'}</span></div>`:''}<div><b>${p.goals}</b><span>${lang==='en'?'GOALS':'GOL'}</span></div><div><b>${p.assists}</b><span>ASSIST</span></div><div><b>${p.fitness}%</b><span>${lang==='en'?'FITNESS':'FORMA FISICA'}</span></div></div><div class="roster-profile-indicators" role="group" aria-label="${pt.condition}"><span>${pt.fitness}: <strong>${Number.isFinite(Number(p.fitness))?Math.round(Number(p.fitness)):0}%</strong></span><span>${pt.morale}: <strong>${Number.isFinite(Number(p.morale))?Math.round(Number(p.morale)):0}/100</strong></span><span>${p.injury?`${pt.recovery}: ${esc(p.injury)} ${pt.days}`:pt.fit}</span><span>${lang==='en'?'Contract':'Contratto'}: <strong>${p.contract} ${lang==='en'?'years':'anni'}</strong></span></div></section><div class="modal-actions">${actionButton(`${icon('star',17)} ${w.watchlist.includes(p.id)?(lang==='en'?'Remove from watchlist':'Rimuovi osservato'):(lang==='en'?'Watch player':'Segui calciatore')}`,'watch','btn btn-outline',`data-id="${p.id}"`)}${marketEnabled(w)?actionButton(mine?(lang==='en'?'Negotiate sale':'Tratta cessione'):(lang==='en'?'Negotiate':'Avvia trattativa'),'market-offer-player','btn btn-primary',`data-id="${w.countryId}:${p.id}"`):(mine?actionButton(`Cedi · ${displayCareerMoney(p.value*.82,{countryId:w.countryId,lang})}`,'sell','btn btn-danger',`data-id="${p.id}"`):actionButton(`Acquista · ${displayCareerMoney(fee,{countryId:w.countryId,lang})} ${icon('arrow',17)}`,'buy','btn btn-primary',`data-id="${p.id}"`))}</div>${personalityEnabled(w)?`<section class="ply02-profile" aria-label="${lang==='en'?'Personality overview':'Panoramica personalità'}"><h3>${lang==='en'?'Personality and relationships':'Personalità e relazioni'}</h3>${(()=>{const v=personalityPlayerView(w,p,{lang,report});return `<div class="ply02-facts">${v.owned?`<div><span>${lang==='en'?'Morale':'Morale'}</span><strong>${Math.round(v.morale)}/100</strong></div><div><span>${lang==='en'?'Coach relationship':'Rapporto allenatore'}</span><strong>${Math.round(v.coachRelationship)}/100</strong></div>`:''}</div><div class="ply02-traits">${v.traits.map(t=>`<div><span>${esc(t.label)}</span><strong>${t.visibility==='hidden'?'—':t.visibility==='estimated'?`${t.range[0]}–${t.range[1]}`:esc(t.description||'—')}</strong></div>`).join('')}</div>${v.owned&&v.history.length?`<details><summary>${lang==='en'?'Recent changes':'Variazioni recenti'}</summary>${v.history.map(x=>`<p>${esc(x.type)}: ${x.delta>0?'+':''}${x.delta} (${esc(x.drivers.join(', '))})</p>`).join('')}</details>`:''}`;})()}</section>`:''}${mine?`<details class="roster-profile-section" open><summary>${pt.attributes}</summary><div class="ply01-player-details">${renderPlayerProfile(p,{lang,seed:w.seed,countryId:w.countryId})}${selector}</div></details>`:scoutAttributes}${!scoutingEnabled(w)&&mine?playerProjection(w,p,lang):''}`;
+function playerPage(w,p,ui){
+ const lang=ui.language,en=lang==='en',tx=(it,english)=>en?english:it,mine=p.clubId===w.clubId,team=clubById(w,p.clubId);
+ const report=scoutingEnabled(w)?scoutingEstimate(w,p.globalId??`${w.countryId}:${p.id}`):null;
+ const interval=value=>value&&Number.isFinite(Number(value.min))&&Number.isFinite(Number(value.max))?`${value.min}–${value.max}`:'—';
+ const official=value=>value===undefined||value===null||value===''?'—':value;
+ const exactAttributes=mine?readPlayerAttributes(p,{seed:w.seed,countryId:w.countryId}).values:null;
+ const tabs=['attributes','performance','personality','development'];
+ const tab=tabs.includes(ui.playerTab)?ui.playerTab:'attributes';
+ const isKeeper=['POR','GK'].includes(String(p.position));
+ const groups=['technical','mental','physical',...(isKeeper?['goalkeeper']:[])];
+ const group=groups.includes(ui.playerAttributeGroup)?ui.playerAttributeGroup:'technical';
+ const groupLabels={technical:tx('Tecnici','Technical'),mental:tx('Mentali','Mental'),physical:tx('Fisici','Physical'),goalkeeper:tx('Portiere','Goalkeeper')};
+ const attrs=ATTRIBUTE_DEFINITIONS.filter(a=>a.group===group);
+ const attrValue=a=>{
+   if(mine)return exactAttributes?.[a.key]??null;
+   const estimate=report?.attributes?.[a.key];
+   return estimate?interval(estimate):null;
+ };
+ const ranked=attrs.map(a=>{
+   const raw=mine?Number(exactAttributes?.[a.key]):report?.attributes?.[a.key]?(Number(report.attributes[a.key].min)+Number(report.attributes[a.key].max))/2:NaN;
+   return {a,score:Number.isFinite(raw)?raw:null};
+ }).filter(x=>x.score!==null);
+ const strongest=[...ranked].sort((a,b)=>b.score-a.score).slice(0,3);
+ const weakest=[...ranked].sort((a,b)=>a.score-b.score).slice(0,3);
+ const valueText=scoutingEnabled(w)&&!mine
+   ?(report?.valueEUR?`${displayCareerMoney(report.valueEUR.min,{countryId:w.countryId,lang})}–${displayCareerMoney(report.valueEUR.max,{countryId:w.countryId,lang})}`:'—')
+   :displayCareerMoney(p.value,{countryId:w.countryId,lang});
+ const ovrText=scoutingEnabled(w)&&!mine?interval(report?.overall):rating(p.ovr);
+ const potentialText=scoutingEnabled(w)&&!mine?interval(report?.potential):official(p.potential);
+ const availability=playerAvailability(p);
+ const availabilityText=availability==='injured'
+   ?(Number(p.injury)>0?tx(`Infortunato · ${p.injury} gg`,`Injured · ${p.injury}d`):tx('Infortunato','Injured'))
+   :availability==='tired'?tx('Da recuperare','Needs recovery'):tx('Disponibile','Available');
+
+ const contractView=mine&&contractsEnabled(w)?careerContractView(w):null;
+ const contract=contractView?.contracts?.find(c=>String(c.playerId)===String(p.id))??null;
+ const contractOffer=contractView?.offers?.find(o=>String(o.playerId)===String(p.id)&&['awaiting_player','awaiting_club'].includes(o.status))??null;
+ const terms=contract?.terms??null;
+ const contractText=terms?.endSeason
+   ?tx(`Fino alla stagione ${terms.endSeason}`,`Until season ${terms.endSeason}`)
+   :Number.isFinite(Number(p.contract))
+      ?tx(`${p.contract} ${Number(p.contract)===1?'stagione':'stagioni'}`,`${p.contract} ${Number(p.contract)===1?'season':'seasons'}`)
+      :'—';
+ const weeklyWage=Number.isFinite(Number(terms?.annualWage))?Math.round(Number(terms.annualWage)/52):Number(p.wage);
+ const roleText=({starter:tx('Titolare','Starter'),rotation:tx('Rotazione','Rotation'),prospect:tx('Prospetto','Prospect'),leader:'Leader'})[terms?.promisedRole]??'—';
+ const clause=Number.isFinite(Number(terms?.clauses?.releaseFee))?displayCareerMoney(Number(terms.clauses.releaseFee),{countryId:w.countryId,lang}):'—';
+ const offerText=contractOffer?(contractOffer.status==='awaiting_club'?tx('Controproposta in attesa','Counteroffer pending'):tx('Offerta in attesa del giocatore','Awaiting player')):'—';
+
+ const stat=value=>Number.isFinite(Number(value))?Number(value):null;
+ const personality=personalityEnabled(w)?personalityPlayerView(w,p,{lang,report}):null;
+ const development=mine&&p.developmentV1&&typeof p.developmentV1==='object'?p.developmentV1:null;
+ const history=Array.isArray(development?.history)?development.history:[];
+ const lastDevelopment=history.at(-1)??null;
+ const age=Number(p.age)||0;
+ const developmentPhase=isKeeper
+   ?(age<21?tx('Crescita rapida','Rapid growth'):age<27?tx('Sviluppo','Development'):age<32?tx('Maturità','Maturity'):tx('Esperienza','Experience'))
+   :(age<19?tx('Crescita rapida','Rapid growth'):age<25?tx('Sviluppo','Development'):age<29?tx('Picco','Peak'):age<33?tx('Maturità','Maturity'):tx('Esperienza','Experience'));
+ const programLabel={balanced:tx('Bilanciato','Balanced'),role:tx('Ruolo','Role'),technical:tx('Tecnico','Technical'),physical:tx('Fisico','Physical'),mental:tx('Mentale','Mental'),goalkeeper:tx('Portiere','Goalkeeper')};
+
+ const compareTarget=mine?clubPlayers(w,w.clubId).find(x=>x.id===ui.comparePlayerId&&x.id!==p.id):null;
+ const comparePicker=mine?`<div class="player-page-compare">
+   <label for="ply01-compare-player">${tx('Confronta con','Compare with')}</label>
+   ${selectControl({id:'ply01-compare-player',value:compareTarget?String(compareTarget.id):'none',options:[{value:'none',label:tx('Nessun confronto','No comparison')},...clubPlayers(w,w.clubId).filter(x=>x.id!==p.id).sort((a,b)=>a.name.localeCompare(b.name)).map(x=>({value:String(x.id),label:`${x.name} · ${x.position}`}))]})}
+  </div>`:''; 
+ const compare=compareTarget?renderPlayerComparison(p,compareTarget,{lang,seed:w.seed,countryId:w.countryId,attributes:attrs.map(a=>a.key)}):'';
+
+ const attributeContent=`<div class="player-page-attribute-groups" role="group" aria-label="${tx('Gruppo attributi','Attribute group')}">
+   ${groups.map(key=>`<button type="button" class="chip ${group===key?'chip-active':''}" aria-pressed="${group===key}" data-action="player-attribute-group" data-value="${key}">${groupLabels[key]}</button>`).join('')}
+  </div>
+  <div class="player-page-attribute-layout">
+   <section class="player-page-card"><h2>${groupLabels[group]}</h2><div class="player-page-attributes">
+    ${attrs.map(a=>`<div class="player-page-attribute"><span>${esc(a.label[en?'en':'it'])}</span><strong>${attrValue(a)??'—'}</strong></div>`).join('')}
+   </div></section>
+   <aside class="player-page-insights">
+    <section class="player-page-card"><h2>${tx('Punti di forza','Strengths')}</h2>${strongest.length?`<ol>${strongest.map(x=>`<li><span>${esc(x.a.label[en?'en':'it'])}</span><strong>${attrValue(x.a)??'—'}</strong></li>`).join('')}</ol>`:`<p class="muted">—</p>`}</section>
+    <section class="player-page-card"><h2>${tx('Da migliorare','Areas to improve')}</h2>${weakest.length?`<ol>${weakest.map(x=>`<li><span>${esc(x.a.label[en?'en':'it'])}</span><strong>${attrValue(x.a)??'—'}</strong></li>`).join('')}</ol>`:`<p class="muted">—</p>`}</section>
+   </aside>
+  </div>
+  ${comparePicker}${compare}`;
+
+ const performanceRows=[
+   [tx('Presenze','Appearances'),stat(p.apps)],
+   [tx('Minuti','Minutes'),stat(p.minutesPlayed)],
+   [tx('Gol','Goals'),stat(p.goals)],
+   ['Assist',stat(p.assists)],
+   [tx('Ammonizioni','Yellow cards'),stat(p.yellow)],
+   [tx('Clean sheet','Clean sheets'),stat(p.cleanSheets)]
+ ];
+ const performanceContent=`<section class="player-page-card"><h2>${tx('Stagione corrente','Current season')}</h2><div class="player-page-stat-grid">${performanceRows.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${value===null?'—':value}</strong></div>`).join('')}</div></section>
+  <section class="player-page-card"><h2>${tx('Storico','History')}</h2>${Array.isArray(p.history)&&p.history.length?`<div class="player-page-history-list">${p.history.slice(-8).reverse().map(row=>`<div><span>${esc(String(row.season??row.year??'—'))}</span><strong>${esc(String(row.club??row.clubName??team?.name??'—'))}</strong><small>${row.apps!==undefined?`${row.apps} ${tx('pres.','apps')}`:''}${row.goals!==undefined?` · ${row.goals} ${tx('gol','goals')}`:''}</small></div>`).join('')}</div>`:`<p class="muted">${tx('Nessuno storico stagionale affidabile disponibile.','No reliable season history is available.')}</p>`}</section>`;
+
+ const personalityContent=!personality
+  ?`<section class="player-page-card"><p class="muted">${tx('Dati di personalità non disponibili.','Personality data is not available.')}</p></section>`
+  :`<div class="player-page-personality-grid">
+    ${personality.owned?`<section class="player-page-card"><h2>${tx('Relazione e morale','Relationship and morale')}</h2><div class="player-page-facts"><div><span>${tx('Morale','Morale')}</span><strong>${Math.round(personality.morale)}/100</strong></div><div><span>${tx('Rapporto allenatore','Coach relationship')}</span><strong>${Math.round(personality.coachRelationship)}/100</strong></div>${Number.isFinite(Number(personality.influence))?`<div><span>${tx('Influenza','Influence')}</span><strong>${Math.round(personality.influence)}/100</strong></div>`:''}</div></section>`:''}
+    <section class="player-page-card"><h2>${tx('Tratti','Traits')}</h2><div class="player-page-traits">${(personality.traits||[]).map(t=>`<div><span>${esc(t.label)}</span><strong>${t.visibility==='hidden'?'—':t.visibility==='estimated'?`${t.range?.[0]??'—'}–${t.range?.[1]??'—'}`:esc(t.description||'—')}</strong></div>`).join('')||'<p class="muted">—</p>'}</div></section>
+    ${personality.owned&&Array.isArray(personality.history)&&personality.history.length?`<section class="player-page-card player-page-card-wide"><h2>${tx('Variazioni recenti','Recent changes')}</h2><div class="player-page-change-list">${personality.history.slice(-8).reverse().map(row=>`<div><span>${esc(row.type)}</span><strong>${row.delta>0?'+':''}${row.delta}</strong><small>${esc((row.drivers||[]).join(', ')||'—')}</small></div>`).join('')}</div></section>`:''}
+   </div>`;
+
+ const developmentChanges=Array.isArray(lastDevelopment?.changes)?lastDevelopment.changes:[];
+ const medical=p.medicalV1&&typeof p.medicalV1==='object'?p.medicalV1:null;
+ const developmentContent=mine
+  ?`<div class="player-page-development-grid">
+    <section class="player-page-card"><h2>${tx('Sviluppo attuale','Current development')}</h2><div class="player-page-facts">
+     <div><span>${tx('Potenziale','Potential')}</span><strong>${official(development?.potential??p.potential)}</strong></div>
+     <div><span>${tx('Fase','Phase')}</span><strong>${developmentPhase}</strong></div>
+     <div><span>${tx('Programma','Program')}</span><strong>${programLabel[lastDevelopment?.program]??'—'}</strong></div>
+     <div><span>${tx('Ultima variazione OVR','Latest OVR change')}</span><strong>${lastDevelopment&&Number.isFinite(Number(lastDevelopment.delta))?`${Number(lastDevelopment.delta)>0?'+':''}${lastDevelopment.delta}`:'—'}</strong></div>
+    </div></section>
+    <section class="player-page-card"><h2>${tx('Ultima stagione registrata','Latest recorded season')}</h2>${lastDevelopment?`<div class="player-page-facts">
+      <div><span>${tx('Stagione','Season')}</span><strong>${official(lastDevelopment.season)}</strong></div>
+      <div><span>${tx('Minuti','Minutes')}</span><strong>${official(lastDevelopment.minutes)}</strong></div>
+      <div><span>${tx('Forma','Form')}</span><strong>${Number.isFinite(Number(lastDevelopment.form))?Math.round(Number(lastDevelopment.form)):'—'}</strong></div>
+      <div><span>${tx('Carico','Workload')}</span><strong>${Number.isFinite(Number(lastDevelopment.workload))?Math.round(Number(lastDevelopment.workload)):'—'}</strong></div>
+     </div>`:`<p class="muted">${tx('Lo storico sviluppo inizierà dopo la prima stagione registrata.','Development history will appear after the first recorded season.')}</p>`}</section>
+    ${developmentChanges.length?`<section class="player-page-card player-page-card-wide"><h2>${tx('Attributi modificati','Attribute changes')}</h2><div class="player-page-change-list">${developmentChanges.slice(0,12).map(change=>{const def=ATTRIBUTE_DEFINITIONS.find(a=>a.key===change.attribute);return `<div><span>${esc(def?.label?.[en?'en':'it']??change.attribute)}</span><strong>${change.delta>0?'+':''}${change.delta}</strong><small>${change.from} → ${change.to}</small></div>`;}).join('')}</div></section>`:''}
+    ${medical?`<section class="player-page-card player-page-card-wide"><h2>${tx('Condizione medica','Medical condition')}</h2><div class="player-page-facts"><div><span>${tx('Freschezza','Freshness')}</span><strong>${Number.isFinite(Number(medical.freshness))?Math.round(Number(medical.freshness))+'/100':'—'}</strong></div><div><span>${tx('Fatica','Fatigue')}</span><strong>${Number.isFinite(Number(medical.fatigue))?Math.round(Number(medical.fatigue))+'/100':'—'}</strong></div><div><span>${tx('Recupero','Recovery')}</span><strong>${esc(medical.recoveryStatus||'—')}</strong></div><div><span>${tx('Giorni restanti','Days remaining')}</span><strong>${official(medical.injury?.daysRemaining)}</strong></div></div></section>`:''}
+   </div>`
+  :`<section class="player-page-card"><h2>${tx('Sviluppo','Development')}</h2><div class="player-page-facts"><div><span>${tx('Potenziale stimato','Estimated potential')}</span><strong>${potentialText}</strong></div></div><p class="muted">${tx('Lo storico di sviluppo interno non è disponibile per giocatori esterni.','Private development history is not available for external players.')}</p></section>`;
+
+ const tabLabels={attributes:tx('Attributi','Attributes'),performance:tx('Prestazioni','Performance'),personality:tx('Personalità','Personality'),development:tx('Sviluppo','Development')};
+ const contents={attributes:attributeContent,performance:performanceContent,personality:personalityContent,development:developmentContent};
+ const actionPrimary=marketEnabled(w)
+   ?actionButton(mine?tx('Tratta cessione','Negotiate sale'):tx('Avvia trattativa','Start negotiation'),'market-offer-player','btn btn-primary',`data-id="${w.countryId}:${p.id}"`)
+   :(mine?actionButton(tx('Cedi','Sell'),'sell','btn btn-danger',`data-id="${p.id}"`):actionButton(tx('Acquista','Buy'),'buy','btn btn-primary',`data-id="${p.id}"`));
+ const watchAction=!mine?actionButton(`${icon('star',16)} ${w.watchlist.includes(p.id)?tx('Rimuovi dagli osservati','Remove from watchlist'):tx('Segui calciatore','Watch player')}`,'watch','btn btn-outline',`data-id="${p.id}"`):'';
+
+ return `<article class="player-page" data-player-id="${p.id}">
+   <header class="player-page-hero">
+    <div class="player-page-identity">${avatar(p,'xl')}<div><span class="eyebrow">${tx('GIOCATORE','PLAYER')}</span><h1>${esc(p.name)}</h1><p>${esc(team?.name||'—')} · ${esc(p.nationality||'—')} · ${p.age} ${tx('anni','years')} · ${tx('Piede','Foot')} ${esc(String(p.foot||'—').toLowerCase())}</p><div class="player-page-position">${tag(POSITION_LABELS[p.position]||p.position,'muted')}</div></div></div>
+    <div class="player-page-ratings"><div><span>OVR</span><strong>${ovrText}</strong></div><div><span>${tx('POTENZIALE','POTENTIAL')}</span><strong>${potentialText}</strong></div></div>
+   </header>
+   <section class="player-page-summary" aria-label="${tx('Stato giocatore','Player status')}">
+    <div><span>${tx('DISPONIBILITÀ','AVAILABILITY')}</span><strong>${esc(availabilityText)}</strong></div>
+    <div><span>${tx('CONTRATTO','CONTRACT')}</span><strong>${esc(contractText)}</strong>${mine&&terms?`<small>${tx('Ruolo promesso','Promised role')}: ${esc(roleText)} · ${tx('Clausola','Clause')}: ${esc(clause)}${contractOffer?` · ${esc(offerText)}`:''}</small>`:''}</div>
+    <div><span>${tx('INGAGGIO','WAGE')}</span><strong>${Number.isFinite(weeklyWage)?displayCareerMoney(weeklyWage,{countryId:w.countryId,lang}):'—'}</strong><small>${tx('a settimana','per week')}</small></div>
+    <div><span>${tx('VALORE','VALUE')}</span><strong>${valueText}</strong></div>
+   </section>
+   <nav class="player-page-tabs" role="tablist" aria-label="${tx('Sezioni profilo','Profile sections')}">${tabs.map(key=>`<button id="player-tab-${key}" type="button" role="tab" class="chip ${tab===key?'chip-active':''}" aria-selected="${tab===key}" aria-controls="player-panel-${key}" tabindex="${tab===key?'0':'-1'}" data-action="player-tab" data-value="${key}">${tabLabels[key]}</button>`).join('')}</nav>
+   <section id="player-panel-${tab}" class="player-page-panel" role="tabpanel" aria-labelledby="player-tab-${tab}">${contents[tab]}</section>
+   <footer class="player-page-actions">${watchAction}${actionPrimary}</footer>
+  </article>`;
 }
 function matchTimeline(w,m,lang='it'){
  const tr=(it,en)=>lang==='en'?en:it,r=m.result,a=r?.advancedV1;
@@ -1002,7 +1137,6 @@ function squadFiltersModal(w,ui){
 }
 function modalContent(w,ui){const m=ui.modal;let title='',inner='',wide=false;
  if(m.type==='squad-filters'){title=ui.language==='en'?'Squad filters':'Filtri rosa';inner=squadFiltersModal(w,ui);wide=true;}
- else if(m.type==='player'){const p=playerById(w,m.id);if(!p)return '';title=ui.language==='en'?'Player profile':'Profilo calciatore';inner=playerModal(w,p,ui);wide=true;}
  else if(m.type==='market-offer'){title=ui.language==='en'?'Transfer offer':'Offerta di trasferimento';inner=marketOfferModal(w,ui);wide=true;}
  else if(m.type==='market-deal'){title=ui.language==='en'?'Negotiation dossier':'Dossier trattativa';inner=marketDealModal(w,ui);wide=true;}
  else if(m.type==='match'){const game=findMatch(w,m.id);if(!game)return '';title=ui.language==='en'?'Match report':'Resoconto partita';inner=matchModal(w,game,ui.language);wide=true;}
@@ -1150,4 +1284,4 @@ function notFoundPage(ui){
  const en=ui.language==='en',path=esc(ui.routeNotFoundPath||'/');
  return `<div class="fa-menu-page"><main class="fa-menu-main" id="main-content" tabindex="-1"><div class="fa-menu-intro"><span class="overline">404</span><h1>${en?'Page not found':'Pagina non trovata'}</h1></div><section class="fa-menu-panel"><div class="fa-menu-actions"><button class="btn btn-primary" data-action="menu-home">${en?'Main menu':'Menu principale'}</button><button class="btn btn-outline" data-action="open-careers">${en?'Careers':'Carriere'}</button></div></section></main></div>`;
 }
-export function view(w,ui){if(ui.page==='not-found')return notFoundPage(ui);if(ui.page==='home'||ui.page==='home-settings')return renderHomeMenu(w,ui,{languagePicker:languagePicker(ui,'home')});if(ui.page==='careers')return careerHub(w,ui);if(ui.page==='new-career'||!w.clubId)return onboarding(w,ui);let body;switch(ui.page){case 'club':body=clubPage(w,ui);break;case 'squad':body=squad(w,ui);break;case 'tactics':body=tactics(w,ui);break;case 'calendar':body=calendar(w,ui);break;case 'league':body=league(w,ui);break;case 'market':body=market(w,ui);break;case 'world':body=careerWorldPanel(w,ui);break;case 'training':body=training(w,ui);break;case 'youth':body=`${sectionHead('VIVAIO',ui.language==='en'?'Youth Academy':'Accademia',ui.language==='en'?'Develop your future first team.':'Prepara la prossima generazione.')}${careerYouthPanel(w,ui.language)}`;break;case 'finance':body=finance(w,ui);break;case 'board':body=careerBoardPanel(w,ui);break;case 'manager':body=careerManagerPanel(w,ui);break;case 'inbox':body=inbox(w,ui);break;case 'settings':body=settings(w,ui);break;case 'advanced':body=advancedPage(w,ui);break;case 'match-preview':body=matchPreviewPage(w,ui.matchPreview,ui.language);break;default:body=dashboard(w,ui);}return shell(w,ui,body);}
+export function view(w,ui){if(ui.page==='not-found')return notFoundPage(ui);if(ui.page==='home'||ui.page==='home-settings')return renderHomeMenu(w,ui,{languagePicker:languagePicker(ui,'home')});if(ui.page==='careers')return careerHub(w,ui);if(ui.page==='new-career'||!w.clubId)return onboarding(w,ui);if(ui.routeKind==='player'){const p=playerById(w,ui.routePlayerId);return p?shell(w,ui,playerPage(w,p,ui)):notFoundPage(ui);}let body;switch(ui.page){case 'club':body=clubPage(w,ui);break;case 'squad':body=squad(w,ui);break;case 'tactics':body=tactics(w,ui);break;case 'calendar':body=calendar(w,ui);break;case 'league':body=league(w,ui);break;case 'market':body=market(w,ui);break;case 'world':body=careerWorldPanel(w,ui);break;case 'training':body=training(w,ui);break;case 'youth':body=`${sectionHead('VIVAIO',ui.language==='en'?'Youth Academy':'Accademia',ui.language==='en'?'Develop your future first team.':'Prepara la prossima generazione.')}${careerYouthPanel(w,ui.language)}`;break;case 'finance':body=finance(w,ui);break;case 'board':body=careerBoardPanel(w,ui);break;case 'manager':body=careerManagerPanel(w,ui);break;case 'inbox':body=inbox(w,ui);break;case 'settings':body=settings(w,ui);break;case 'advanced':body=advancedPage(w,ui);break;case 'match-preview':body=matchPreviewPage(w,ui.matchPreview,ui.language);break;default:body=dashboard(w,ui);}return shell(w,ui,body);}
