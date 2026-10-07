@@ -969,22 +969,13 @@ input.form-control[type="number"], input.form-control[type="date"] { font-varian
 .data-table tbody tr.my-standing td { border-bottom-color: #35594c; }
 .data-table .table-empty-row td { height: auto; padding: 0; text-align: center; }
 .data-table .table-empty-row .empty-state { min-width: 0; padding: 28px 22px; white-space: normal; }
-.table-scroll--bounded {
-  max-height: none;
-  overflow-x: auto;
-  overflow-y: visible;
-}
-.table-scroll--bounded .data-table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
 /* Keep list behaviors and semantic buttons intact while sharing focus language. */
 :where(.fixture-row,.development-row,.scorer-row,.fixture-game,.mail-item,.picker-player):focus-visible {
   outline: 2px solid var(--list-focus); outline-offset: -2px; position: relative; z-index: var(--layer-list-focus);
 }
 :where(.fixture-row,.development-row,.mail-item):not(:last-child) { border-bottom-color: var(--list-divider); }
 @media (prefers-reduced-motion: reduce) {
-  .table-scroll, .table-scroll--bounded { scroll-behavior: auto; }
+  .table-scroll { scroll-behavior: auto; }
 }
 
 /* QOL05.10 — shared navigation and responsive header; match current visual theme. */
