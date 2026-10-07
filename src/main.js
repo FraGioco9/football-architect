@@ -476,7 +476,7 @@ function refresh(message='') {if(save()){render();if(message)toast(message);}}
 let inboxReadSaveTimer=null;
 function scheduleInboxReadSave(){
   if(inboxReadSaveTimer!==null)clearTimeout(inboxReadSaveTimer);
-  inboxReadSaveTimer=setTimeout(()=>{inboxReadSaveTimer=null;save();},120);
+  inboxReadSaveTimer=setTimeout(()=>{inboxReadSaveTimer=null;save();},500);
 }
 function syncInboxUnreadChrome(){
   const en=ui.language==='en';
@@ -501,8 +501,6 @@ function selectInboxMessage(id){
     if(active&&wasUnread){row.classList.remove('unread');row.querySelector('.mail-date i')?.remove();}
   });
   detail.innerHTML=inboxDetailHtml(world,ui,message);
-  enhanceDesignSystem(detail,ui.language);
-  controlHints.enhance();
   syncInboxUnreadChrome();
   return true;
 }
