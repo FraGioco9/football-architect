@@ -1736,6 +1736,16 @@ render();
 if(ui.routeKind==='match-preview'&&ui.page==='match-preview')startPreviewTimer();
 queueVaultSync();
 
+// UX #20 05A: keyboard navigation for squad table views.
+root.addEventListener('keydown',ev=>{
+ const button=ev.target.closest?.('[role="tab"][data-action="squad-view"]');
+ if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(ev.key))return;
+ const tabs=[...root.querySelectorAll('[role="tab"][data-action="squad-view"]')];
+ const index=tabs.indexOf(button);if(index<0)return;
+ const next=ev.key==='Home'?0:ev.key==='End'?tabs.length-1:(index+(ev.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+ ev.preventDefault();tabs[next]?.click();
+});
+
 // UX2-06: keyboard navigation for the four non-persistent tactical panels.
 root.addEventListener('keydown',ev=>{
  const button=ev.target.closest?.('[role="tab"][data-action="ux206-tab"]');
