@@ -600,17 +600,46 @@ function matchModal(w,m,lang='it'){
  if(!r)return `<p class="empty-state">${tr('Partita non ancora disputata.','Match not yet played.')}</p>`;
  const numeric=v=>Number.isFinite(Number(v))?Number(v):0;
  const pct=v=>Math.min(100,Math.max(0,Math.round(numeric(v))));
- const row=(label,left,right,percent)=>`<div class="matchstat"><strong>${esc(left)}</strong><div><span>${esc(label)}</span><div class="stat-bars"><i style="width:${pct(percent)}%"></i><b style="width:${100-pct(percent)}%"></b></div></div><strong>${esc(right)}</strong></div>`;
+ const round=String(m.id).split('-')[1]||'—';
+ const stadium=h?.stadium||'';
  const shots=numeric(r.shotsHome)+numeric(r.shotsAway),xgs=numeric(r.xgHome)+numeric(r.xgAway);
- return `<div class="match-center-mode is-official" role="note"><strong>${tr('PARTITA UFFICIALE · RISULTATO FINALE','OFFICIAL MATCH · FINAL RESULT')}</strong><p>${tr('Questo è il risultato registrato della giornata di carriera.','This is the recorded result of the career matchday.')}</p></div>
-  <div class="match-report-head"><div>${badge(h,'lg')}<b>${esc(h?.name||'—')}</b></div><div class="match-report-center"><span>${esc(w.competition||'Lega Aurora').toUpperCase()} · ${tr('GIORNATA','MATCHDAY')} ${esc(String(m.id).split('-')[1]||'—')}</span><small class="match-report-schedule">${formatCareerDateTime(m.date,m.kickoff,lang)}</small><strong>${r.homeGoals} <i>:</i> ${r.awayGoals}</strong><small>${tr('FINALE','FULL TIME')}</small></div><div>${badge(a,'lg')}<b>${esc(a?.name||'—')}</b></div></div>
-  <div class="match-report-body"><h3>${tr('Statistiche','Match statistics')}</h3>
-   ${row(tr('Possesso','Possession'),numeric(r.possessionHome)+'%',(100-numeric(r.possessionHome))+'%',r.possessionHome)}
-   ${row(tr('Tiri totali','Total shots'),numeric(r.shotsHome),numeric(r.shotsAway),shots?numeric(r.shotsHome)/shots*100:50)}
-   ${row('Expected goals',numeric(r.xgHome).toFixed(2),numeric(r.xgAway).toFixed(2),xgs?numeric(r.xgHome)/xgs*100:50)}
-   <h3>${tr('Marcatori','Goalscorers')}</h3>
-   ${(r.goals??[]).length?r.goals.map(g=>`<div class="goal-entry"><b>${g.minute}'</b>${icon('football',15)}<span>${esc(historicPlayerName(w,g.scorerId))}</span>${tag(g.side==='home'?h.short:a.short,g.side==='home'?'blue':'muted')}</div>`).join(''):`<div class="no-goals">${tr('Nessun gol segnato.','No goals scored.')}</div>`}
-  </div>${officialMatchTimeline(w,m,lang)}${advancedMatchReport(w,m,lang)}${renderCareerStatisticsMatch(w,m,lang)}`;
+ const stat=(label,left,right,share)=>`<div class="match-report-stat"><strong>${esc(left)}</strong><div><span>${esc(label)}</span><div class="match-report-stat-bar"><i style="width:${pct(share)}%"></i><b style="width:${100-pct(share)}%"></b></div></div><strong>${esc(right)}</strong></div>`;
+ const goals=(r.goals??[]).slice().sort((x,y)=>numeric(x.minute)-numeric(y.minute));
+ const goalRows=goals.length?goals.map(g=>{
+   const side=g.side==='home'?h:a;
+   return `<li><time>${numeric(g.minute)}′</time><span class="match-report-goal-icon">${icon('football',15)}</span><strong>${esc(historicPlayerName(w,g.scorerId))}</strong><small>${esc(side?.short||side?.name||'—')}</small></li>`;
+ }).join(''):`<li class="match-report-no-goals">${tr('Nessun gol segnato.','No goals scored.')}</li>`;
+ const timeline=officialMatchTimeline(w,m,lang);
+ const advanced=advancedMatchReport(w,m,lang);
+ const analytics=renderCareerStatisticsMatch(w,m,lang);
+ const details=[timeline,advanced,analytics].filter(Boolean).join('');
+ return `<article class="match-report-v2">
+  <header class="match-report-v2-head">
+    <div class="match-report-v2-meta">
+      <span>${esc(w.competition||'Lega Aurora')} · ${tr('Giornata','Matchday')} ${esc(round)}</span>
+      <strong>${formatCareerDateTime(m.date,m.kickoff,lang)}</strong>
+      ${stadium?`<small>${esc(stadium)}</small>`:''}
+    </div>
+    <div class="match-report-v2-scoreboard">
+      <div class="match-report-v2-team">${badge(h,'lg')}<strong>${esc(h?.name||'—')}</strong><small>${tr('Casa','Home')}</small></div>
+      <div class="match-report-v2-score"><span>${tr('Finale','Full time')}</span><strong>${numeric(r.homeGoals)} <i>–</i> ${numeric(r.awayGoals)}</strong></div>
+      <div class="match-report-v2-team">${badge(a,'lg')}<strong>${esc(a?.name||'—')}</strong><small>${tr('Trasferta','Away')}</small></div>
+    </div>
+  </header>
+  <section class="match-report-v2-section" aria-labelledby="match-report-stats-title">
+    <h3 id="match-report-stats-title">${tr('Statistiche principali','Key statistics')}</h3>
+    <div class="match-report-stats">
+      ${stat(tr('Possesso','Possession'),numeric(r.possessionHome)+'%',(100-numeric(r.possessionHome))+'%',r.possessionHome)}
+      ${stat(tr('Tiri','Shots'),numeric(r.shotsHome),numeric(r.shotsAway),shots?numeric(r.shotsHome)/shots*100:50)}
+      ${stat('xG',numeric(r.xgHome).toFixed(2),numeric(r.xgAway).toFixed(2),xgs?numeric(r.xgHome)/xgs*100:50)}
+    </div>
+  </section>
+  <section class="match-report-v2-section" aria-labelledby="match-report-goals-title">
+    <h3 id="match-report-goals-title">${tr('Gol','Goals')}</h3>
+    <ol class="match-report-goals">${goalRows}</ol>
+  </section>
+  ${details?`<details class="match-report-v2-details"><summary>${tr('Dettagli partita','Match details')}</summary><div class="match-report-v2-details-body">${details}</div></details>`:''}
+ </article>`;
 }
 function pickerModal(w,ui){const index=ui.modal.index,slot=FORMATIONS[w.formation][index],list=clubPlayers(w,w.clubId).filter(p=>!p.injury&&(!w.advancedV1?.enabled||!p.medicalV1||medicalAvailability(p.medicalV1).canStart)).sort((a,b)=>(b.position===slot.p?100:0)+b.ovr-((a.position===slot.p?100:0)+a.ovr));return `<p class="modal-explainer">Scegli il calciatore per il ruolo <b>${esc(POSITION_LABELS[slot.p])}</b>. Un giocatore già schierato verrà scambiato di posizione.</p><div class="picker-list">${list.map(p=>`<button data-action="assign" data-id="${p.id}" data-index="${index}" class="picker-player">${avatar(p,'sm')}<span><b>${esc(p.name)}</b><small>${p.position} · ${p.age} anni ${w.lineup.includes(p.id)?'· Titolare':''}</small></span>${rating(p.ovr)}${p.position===slot.p?tag('Naturale','green'):''}${icon('chevron',17)}</button>`).join('')}</div>${actionButton(`${icon('minus',16)} Lascia vuoto`,'clear-slot','btn btn-outline','data-index="'+index+'"')}`;}
 function modalContent(w,ui){const m=ui.modal;let title='',inner='',wide=false;
