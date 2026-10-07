@@ -418,16 +418,23 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 /* UX #20 03A — operational inbox: chronological list + stable detail pane. */
 .inbox-filterbar{display:flex;align-items:center;justify-content:space-between;gap:var(--space-12);margin-bottom:var(--space-14);flex-wrap:wrap}
 .inbox-filter-primary{display:flex;align-items:center;gap:var(--space-6);flex-wrap:wrap}
-.inbox-workspace{display:grid;grid-template-columns:minmax(290px,370px) minmax(0,1fr);min-height:520px;max-height:min(72vh,760px);overflow:hidden;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-12)}
-.inbox-list-pane{min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--color-border)}
-.inbox-message-list{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.inbox-workspace{display:grid;grid-template-columns:minmax(290px,370px) minmax(0,1fr);height:clamp(440px,72vh,760px);min-height:0;overflow:hidden;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-12)}
+.inbox-list-pane{min-width:0;min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--color-border)}
+.inbox-message-list{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .inbox-detail-pane{min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;background:var(--color-surface-raised)}
-.inbox-workspace .mail-header{flex:0 0 auto}
+.inbox-workspace .mail-header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .inbox-workspace .mail-header span{color:var(--color-text-secondary);font-weight:700;letter-spacing:0;text-transform:none}
-.inbox-workspace .mail-item{position:relative;min-height:78px;padding:14px 16px;gap:11px;border-bottom:1px solid var(--list-divider);align-items:center}
-.inbox-workspace .mail-item.mail-active{background:#20363a;box-shadow:inset 3px 0 0 var(--color-accent)}
-.inbox-workspace .mail-item.requires-input{background:color-mix(in srgb,var(--color-danger,#e36b6b) 8%,transparent);box-shadow:inset 3px 0 0 var(--color-danger,#e36b6b)}
-.inbox-workspace .mail-item.requires-input.mail-active{background:color-mix(in srgb,var(--color-danger,#e36b6b) 13%,transparent);box-shadow:inset 4px 0 0 var(--color-danger,#e36b6b)}
+.inbox-header-main{display:flex;align-items:center;gap:9px;min-width:0}
+.inbox-select-all{display:inline-flex;align-items:center;gap:9px;cursor:pointer}
+.inbox-select-all input,.inbox-mail-select input{width:15px;height:15px;margin:0;accent-color:var(--color-accent);cursor:pointer}
+.inbox-mail-row{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:stretch;border-bottom:1px solid var(--list-divider);background:var(--color-surface)}
+.inbox-mail-row:last-child{border-bottom:0}
+.inbox-mail-select{display:grid;place-items:center;cursor:pointer;background:transparent}
+.inbox-workspace .mail-item{position:relative;min-height:78px;padding:14px 16px 14px 4px;gap:11px;border:0;border-radius:0!important;align-items:center;background:transparent;box-shadow:none}
+.inbox-mail-row.mail-active-row{background:#20363a;box-shadow:inset 3px 0 0 var(--color-accent)}
+.inbox-mail-row.requires-input{background:color-mix(in srgb,var(--color-danger,#e36b6b) 8%,var(--color-surface));box-shadow:inset 3px 0 0 var(--color-danger,#e36b6b)}
+.inbox-mail-row.requires-input.mail-active-row{background:color-mix(in srgb,var(--color-danger,#e36b6b) 13%,#20363a);box-shadow:inset 4px 0 0 var(--color-danger,#e36b6b)}
+.inbox-workspace .mail-item.mail-active,.inbox-workspace .mail-item.requires-input,.inbox-workspace .mail-item.requires-input.mail-active{background:transparent;box-shadow:none}
 .mail-kind-alert{background:color-mix(in srgb,var(--color-danger,#e36b6b) 18%,transparent);color:var(--color-danger,#ff8580);font-size:22px;font-weight:900}
 .mail-action-required{display:block;color:var(--color-danger,#ff8580);font-size:9px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}
 .inbox-detail{padding:24px;min-height:100%;display:flex;flex-direction:column}
@@ -448,7 +455,7 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .ply05-offer.is-inbox-target{outline:2px solid var(--color-danger,#e36b6b);outline-offset:2px;background:color-mix(in srgb,var(--color-danger,#e36b6b) 8%,transparent)}
 @media(max-width:760px){
  .inbox-filterbar{align-items:stretch}.inbox-filter-primary{width:100%}.inbox-filter-primary .chip{flex:1 1 auto}
- .inbox-workspace{display:block;max-height:none;min-height:0}
+ .inbox-workspace{display:block;height:auto;max-height:none;min-height:0}
  .inbox-list-pane,.inbox-detail-pane{border:0;max-height:none;overflow:visible}
  .inbox-workspace:not(.has-selection) .inbox-detail-pane{display:none}
  .inbox-workspace.has-selection .inbox-list-pane{display:none}
