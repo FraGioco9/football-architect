@@ -415,7 +415,7 @@ export function squad(w,ui){
  });
  const totals=rosterIndicators(members);
  const viewLabels={general:tx('Generale','General'),attributes:tx('Attributi','Attributes'),contract:tx('Contratto','Contract'),market:tx('Mercato','Market'),stats:tx('Statistiche','Statistics'),condition:tx('Condizione','Condition')};
- const tabs=`<div class="roster-view-tabs" role="tablist" aria-label="${tx('Vista rosa','Squad view')}">${views.map(key=>`<button type="button" role="tab" class="chip ${view===key?'chip-active':''}" aria-selected="${view===key}" data-action="squad-view" data-value="${key}">${esc(viewLabels[key])}</button>`).join('')}</div>`;
+ const tabs=`<div class="roster-view-tabs" role="tablist" aria-label="${tx('Vista rosa','Squad view')}">${views.map(key=>`<button id="squad-view-${key}" type="button" role="tab" class="chip ${view===key?'chip-active':''}" aria-selected="${view===key}" aria-controls="squad-view-panel" tabindex="${view===key?'0':'-1'}" data-action="squad-view" data-value="${key}">${esc(viewLabels[key])}</button>`).join('')}</div>`;
  const summary=`<section class="roster-summary" aria-label="${tx('Riepilogo rosa','Squad summary')}">
    <span><strong>${members.length}</strong> ${tx('giocatori','players')}</span>
    <span><strong>${totals.available}</strong> ${tr.available.toLowerCase()}</span>
@@ -464,7 +464,7 @@ export function squad(w,ui){
  return `${sectionHead(tx('PRIMA SQUADRA','FIRST TEAM'),tx('Rosa','Squad'),'')}
   ${summary}
   ${tabs}
-  <section class="panel card-shell roster-list-panel"><div class="roster-list-body">
+  <section id="squad-view-panel" class="panel card-shell roster-list-panel" role="tabpanel" aria-labelledby="squad-view-${view}"><div class="roster-list-body">
    ${commonToolbar}
    ${attributeToolbar}
    ${table}
