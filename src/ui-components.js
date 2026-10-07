@@ -7,7 +7,7 @@ export const esc=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 
 export const statusTag=(s,variant='muted')=>`<span class="tag status-chip tag-${variant}">${s}</span>`;
 
-export const sectionHead=(eyebrow,title,subtitle='',actions='')=>`<div class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle?`<p class="muted">${subtitle}</p>`:''}</div>${actions?`<div class="head-actions">${actions}</div>`:''}</div>`;
+export const sectionHead=(eyebrow,title,_subtitle='',actions='')=>`<div class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1></div>${actions?`<div class="head-actions">${actions}</div>`:''}</div>`;
 
 export const panel=(title,subtitle,contents,extra='',classes='')=>`<section class="panel card-shell ${classes}"><header class="panel-head"><div><h2>${title}</h2>${subtitle?`<p>${subtitle}</p>`:''}</div>${extra}</header>${contents}</section>`;
 
