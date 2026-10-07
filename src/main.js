@@ -1637,6 +1637,20 @@ root.addEventListener('input',ev=>{
   if(out)out.textContent=`${el.value}${el.dataset.unit||''}`;
   el.style.setProperty('--range-position',`${Math.max(0,Math.min(100,(Number(el.value)-Number(el.min))/(Number(el.max)-Number(el.min))*100))}%`);
 });
+// Tables may scroll horizontally, but vertical wheel/trackpad input must keep scrolling the page.
+root.addEventListener('wheel',ev=>{
+  const table=ev.target.closest?.('.table-scroll');
+  if(!table||table.closest('.modal-layer')||document.body.classList.contains('dialog-open'))return;
+  if(Math.abs(ev.deltaY)<=Math.abs(ev.deltaX)||!ev.deltaY)return;
+  const scroller=document.scrollingElement||document.documentElement;
+  const max=Math.max(0,scroller.scrollHeight-scroller.clientHeight);
+  if(!max)return;
+  const scale=ev.deltaMode===1?16:ev.deltaMode===2?window.innerHeight:1;
+  const before=scroller.scrollTop;
+  scroller.scrollTop=Math.max(0,Math.min(max,before+ev.deltaY*scale));
+  if(scroller.scrollTop!==before)ev.preventDefault();
+},{passive:false});
+
 // Trap Tab in the mobile navigation drawer; Escape returns focus to the trigger.
 // UX2-01: remember expanded sections for the current session only.
 // This does not touch the authoritative world, IndexedDB or localStorage.
