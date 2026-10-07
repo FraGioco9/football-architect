@@ -19,6 +19,9 @@ try{
   // Main menu custom header.
   await page.goto(base+'/',{waitUntil:'networkidle'});
   await assertNo('.fa-menu-intro h1 + p','main menu subtitle must be removed');
+  await page.locator('[data-action="menu-settings"]').click();
+  await assertNo('.fa-menu-intro h1 + p','main menu Settings subtitle must be removed');
+  await page.locator('[data-action="menu-home"]').click();
 
   // New career custom header.
   await page.locator('[data-action="menu-new"]').click();
