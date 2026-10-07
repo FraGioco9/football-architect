@@ -40,8 +40,9 @@ export function inlineNotice(message,{tone='info',label=''}={}){
   return `<div class="ds-notice ds-notice-${tone}" role="${tone==='error'?'alert':'status'}"${label?` aria-label="${esc(label)}"`:''}>${esc(message)}</div>`;
 }
 export function dialogFrame({type,title,body,wide=false,lang='it',closeIcon='×'}={}){
-  const content=`<header class="modal-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="modal-body">${body}</div>`;
-  const dialog=`<section class="modal ds-dialog ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-dialog-kind="${esc(type)}" data-stop-close>${content}</section>`;
-  const scrollbar=type==='match'?'<div class="match-scrollbar" data-match-scrollbar data-stop-close aria-hidden="true"><div class="match-scrollbar-thumb"></div></div>':'';
-  return `<div class="modal-layer" role="presentation" data-action="dismiss-modal">${dialog}${scrollbar}</div>`;
+  return `<div class="modal-layer" role="presentation" data-action="dismiss-modal"><section class="modal ds-dialog ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-dialog-kind="${esc(type)}" data-stop-close><header class="modal-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="modal-body">${body}</div></section></div>`;
+}
+
+export function matchDialogFrame({title,body,lang='it',closeIcon='×'}={}){
+  return `<div class="modal-layer match-report-layer" role="presentation" data-action="dismiss-modal"><section class="match-report-dialog" role="dialog" aria-modal="true" aria-labelledby="match-report-dialog-title" tabindex="-1" data-dialog-kind="match" data-stop-close><header class="match-report-dialog-header"><h2 id="match-report-dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="match-report-dialog-scroll" tabindex="0"><div class="match-report-dialog-body">${body}</div></div></section></div>`;
 }
