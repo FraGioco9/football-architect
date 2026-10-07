@@ -930,7 +930,7 @@ input.form-control[type="number"], input.form-control[type="date"] { font-varian
 }
 /* Keep side-scrolling strips and tables natural; do not clamp their vertical sizes.
    Modal title and sidebar brand/footer remain outside the scrolling surfaces. */
-.table-scroll { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+.table-scroll { overscroll-behavior-x: auto; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
 .round-pills { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
 .picker-list,.career-checkpoint-list,.career-import-list { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 
