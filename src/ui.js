@@ -366,7 +366,11 @@ export function squad(w,ui){
    if(years<=1)return tx('1 stagione · in scadenza','1 season · expiring');
    return tx(`${years} stagioni`,`${years} seasons`);
  };
- const promisedRole=p=>contractRecord(p)?.terms?.promisedRole||'—';
+ const promisedRole=p=>{
+   const role=contractRecord(p)?.terms?.promisedRole;
+   if(!role)return '—';
+   return ({starter:tx('Titolare','Starter'),rotation:tx('Rotazione','Rotation'),prospect:tx('Giovane','Prospect'),leader:tx('Leader','Leader')})[role]||role;
+ };
  const releaseClause=p=>{
    const n=contractRecord(p)?.terms?.clauses?.releaseFee??p.releaseClauseEUR;
    return Number.isFinite(Number(n))?money(Number(n),w,ui):'—';
@@ -421,7 +425,7 @@ export function squad(w,ui){
   </section>`;
  const roleOptions=[['ALL',tr.all],['Portieri',en?'Goalkeepers':'Portieri'],['Difensori',en?'Defenders':'Difensori'],['Centrocampisti',en?'Midfielders':'Centrocampisti'],['Attaccanti',en?'Forwards':'Attaccanti']];
  const availabilityOptions=[['all',tr.all],['available',tr.available],['tired',tr.tired],['injured',tr.injured]];
- const activeFilters=Boolean(ui.squadSearch)||ui.squadFilter!=='ALL'||(ui.squadAvailability&&ui.squadAvailability!=='all')||sortKey!==sortOptions[0][0]||(view==='attributes'&&((ui.qol03.rosterMinimum||1)>1||ui.qol03.rosterAttribute!==(groupDefs[0]?.key||'ALL')));
+ const activeFilters=Boolean(ui.squadSearch)||ui.squadFilter!=='ALL'||(ui.squadAvailability&&ui.squadAvailability!=='all')||sortKey!==sortOptions[0][0]||(view==='attributes'&&((ui.qol03.rosterMinimum||1)>1||(selectedAttribute?.key||'')!==(groupDefs[0]?.key||'')));
  const commonToolbar=`<div class="roster-toolbar">
    <div class="roster-filter-field roster-search-field">${clearableField({id:'squad-search',label:tx('Cerca calciatore','Search player'),value:ui.squadSearch,placeholder:tx('Cerca un calciatore...','Search a player...'),search:true})}</div>
    <div class="roster-filter-field"><label for="squad-role">${tx('Ruolo','Position')}</label>${selectControl({id:'squad-role',value:ui.squadFilter,options:roleOptions.map(([value,label])=>({value,label}))})}</div>
@@ -457,7 +461,7 @@ export function squad(w,ui){
  }
  const list=filtered.map(p=>`<tr data-action="player" data-id="${p.id}" tabindex="0" aria-label="${esc(en?'Open player '+p.name:'Apri calciatore '+p.name)}"><td><div class="player-cell">${avatar(p,'sm')}<div><strong>${esc(p.name)}</strong><small>${esc(p.nationality)}</small></div></div></td>${rowCells(p)}</tr>`).join('');
  const table=`<div class="table-scroll roster-scroll ${tableClass} ${filtered.length>18?'table-scroll--bounded':''}" role="region" tabindex="0" aria-label="${tx('Tabella rosa','Squad table')}"><table class="data-table roster-table">${tableColumns(heads)}<tbody>${list||emptyTableRow(tr.noResults,heads.length)}</tbody></table></div><div class="table-foot" role="status">${tr.count} ${filtered.length} ${tr.of} ${members.length}</div>`;
- return `${sectionHead(tr.eyebrow,tr.title,'')}
+ return `${sectionHead(tx('PRIMA SQUADRA','FIRST TEAM'),tx('Rosa','Squad'),'')}
   ${summary}
   ${tabs}
   <section class="panel card-shell roster-list-panel"><div class="roster-list-body">
