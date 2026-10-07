@@ -1,17 +1,13 @@
 // UX2-02: presentation-only, read-only operational priorities.
 // All links use existing page IDs / router actions. No persistence or gameplay changes.
-export function dashboardFocus({players=[],unread=0,hasNext=false,seasonFinished=false}={}){
+export function dashboardFocus({players=[],requiredInput=null}={}){
   const squad=Array.isArray(players)?players:[];
   const injuries=squad.filter(p=>Number(p?.injury)>0).length;
-  const fatigued=squad.filter(p=>Number.isFinite(Number(p?.fitness))&&Number(p.fitness)<65).length;
-  const parsedUnread=Number(unread);
-  const mail=Number.isFinite(parsedUnread)?Math.max(0,Math.trunc(parsedUnread)):0;
+  const fatigued=squad.filter(p=>Number(p?.injury)<=0&&Number.isFinite(Number(p?.fitness))&&Number(p.fitness)<65).length;
   const actions=[];
+  if(requiredInput)actions.push({kind:'input',count:null,message:requiredInput,page:'inbox',level:'urgent'});
   if(injuries)actions.push({kind:'injuries',count:injuries,page:'squad',level:'warning'});
   if(fatigued)actions.push({kind:'fitness',count:fatigued,page:'squad',level:'warning'});
-  if(mail)actions.push({kind:'inbox',count:mail,page:'inbox',level:'info'});
-  if(hasNext)actions.push({kind:'preparation',count:null,page:'tactics',level:'normal'});
-  else if(seasonFinished)actions.push({kind:'season',count:null,action:'new-season',level:'normal'});
   return actions;
 }
 

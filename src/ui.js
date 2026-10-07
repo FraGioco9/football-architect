@@ -29,7 +29,7 @@ import {careerMarketPanel,marketOfferModal,marketDealModal} from './addons/caree
 import {marketEnabled} from './domain/career-market.js';
 import {scoutingEnabled,scoutingEstimate} from './domain/career-scouting.js';
 import {historicPlayerName} from './domain/career-youth.js';
-import {dashboardControls,inboxControls,filterMails,mailDestination,mailActionLabel} from './qol03.js';
+import {inboxControls,filterMails,mailDestination,mailActionLabel} from './qol03.js';
 import {medicalAvailability} from './addons/domain/player-medical.mjs';
 import {ATTRIBUTE_DEFINITIONS} from './addons/domain/player-attributes.mjs';
 import {hasAdvancedCareer} from './domain/advanced-career.js';
@@ -192,41 +192,61 @@ export function shell(w,ui,body){
 export function dashboard(w,ui){
   const en=ui.language==='en',tr=(it,english)=>en?english:it;
   const team=myClub(w),players=clubPlayers(w,w.clubId),standing=standingsSummary(w);
-  const {next,upcoming,recent,completed}=dashboardSchedule({fixtures:w.fixtures,round:w.round,clubId:w.clubId});
+  const {next}=dashboardSchedule({fixtures:w.fixtures,round:w.round,clubId:w.clubId});
   const form=standing.rows.find(r=>r.id===w.clubId)?.form||[];
-  const best=[...players].sort((a,b)=>b.goals-a.goals||b.ovr-a.ovr)[0];
-  const priorities=dashboardFocus({players,unread:w.unread,hasNext:!!next,seasonFinished:completed});
-  const nextActions=priorities.map(item=>{
-    const details={
-      injuries:[tr('Giocatori infortunati','Injured players'),tr('Controlla le disponibilità','Review availability'),'activity'],
-      fitness:[tr('Condizione da gestire','Fitness needs attention'),tr('Controlla il recupero','Review recovery'),'activity'],
-      inbox:[tr('Messaggi non letti','Unread messages'),tr('Apri la posta','Open inbox'),'mail'],
-      preparation:[tr('Prepara la prossima gara','Prepare next fixture'),tr('Formazione e strategia','Lineup and strategy'),'tactics'],
-      season:[tr('Pianifica la nuova stagione','Plan the new season'),tr('Campionato concluso','League completed'),'calendar']
-    };
-    const [title,subtitle,iconName]=details[item.kind];
-    const attributes=item.action?`data-action="${item.action}"`:`data-action="nav" data-page="${item.page}"`;
-    const badgeCount=item.count!==null?`<span class="dashboard-task-count" aria-label="${item.count}">${item.count}</span>`:'';
-    return `<button type="button" class="dashboard-task dashboard-task-${item.level}" ${attributes} aria-label="${esc(title)}${item.count!==null?`: ${item.count}`:''}"><span class="dashboard-task-icon" aria-hidden="true">${icon(iconName,18)}</span><span class="dashboard-task-copy"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></span>${badgeCount}${icon('chevron',16)}</button>`;
+  const requiredInput=(w.inbox||[]).find(message=>careerMessageRequiresUserInput(message,w))||null;
+  const priorities=dashboardFocus({players,requiredInput});
+  const secondaryPriorities=priorities.filter(item=>item.kind!=='input').slice(0,3);
+  const injured=players.filter(p=>Number(p?.injury)>0).length;
+  const fatigued=players.filter(p=>Number(p?.injury)<=0&&Number.isFinite(Number(p?.fitness))&&Number(p.fitness)<65).length;
+  const available=Math.max(0,players.length-injured-fatigued);
+  const seasonState=w.round===0&&w.currentDate<w.firstMatchDate?tr('PRESTAGIONE','PRE-SEASON'):next?`${tr('GIORNATA','MATCHDAY')} ${w.round+1}`:tr('FINE STAGIONE','SEASON COMPLETE');
+
+  const priorityDetails={
+    injuries:[tr('Infortuni da gestire','Injuries need attention'),tr('Apri la rosa e verifica le indisponibilità.','Open the squad and review unavailable players.'),'activity'],
+    fitness:[tr('Condizione critica','Fitness needs attention'),tr('Controlla recupero e carichi prima dei prossimi impegni.','Review recovery and workload before the next fixtures.'),'heart']
+  };
+  const priorityRows=secondaryPriorities.map(item=>{
+    const [title,subtitle,iconName]=priorityDetails[item.kind];
+    return `<button type="button" class="dashboard-task dashboard-task-${item.level}" data-action="nav" data-page="${item.page}"><span class="dashboard-task-icon" aria-hidden="true">${icon(iconName,18)}</span><span class="dashboard-task-copy"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></span><span class="dashboard-task-count" aria-label="${item.count}">${item.count}</span>${icon('chevron',16)}</button>`;
   }).join('');
-  const fixtureLink=(m,played)=>fixtureListRow(w,m,played,ui.language);
-  const kpi=`<div class="kpi-grid metric-grid">
-    ${metricCard({label:tr('POSIZIONE IN CLASSIFICA','LEAGUE POSITION'),icon:icon('trophy',17),value:`${standing.position}<span class="ordinal">° <small>${tr('su','of')} ${w.teams.length}</small></span>`,ariaLabel:localizedStanding(standing.position,{lang:ui.language}),detail:`${tag(`${localizedNumber(standing.points,{lang:ui.language})} ${tr('punti','points')}`,'green')} <span>${tr('dopo','after')} ${w.round} ${tr('giornate','rounds')}</span>`})}
-    ${metricCard({label:tr('VALUTAZIONE ROSA','SQUAD RATING'),icon:icon('users',17),value:`${Math.round(teamStrength(w,w.clubId))}<span class="kpi-suffix">OVR</span>`,detail:`${tag(`${players.length} ${tr('calciatori','players')}`)} <span>${tr('Prima squadra','First team')}</span>`})}
-    ${metricCard({label:tr('BUDGET MERCATO','TRANSFER BUDGET'),icon:icon('wallet',17),value:money(team.transferBudget,w,ui),valueClass:'kpi-money',detail:`${tag(tr('Disponibile','Available'),'blue')} <span>${tr('Per rinforzare la rosa','To strengthen the squad')}</span>`})}
-    ${metricCard({label:tr('ULTIME 5 PARTITE','LAST 5 GAMES'),icon:icon('activity',17),value:formDots(form,ui.language),valueClass:'kpi-form',detail:`<span>${tr('La forma della tua squadra','Your team form')}</span>`})}
-  </div>`;
-  const leaguePanel=panel(tr('Classifica','Standings'),tr('La lotta per le prime posizioni','The race for the top places'),table(w).slice(0,6).map((r,i)=>`<div class="mini-standing ${r.id===w.clubId?'mini-me':''}"><span class="mini-pos">${i+1}</span>${badge(clubById(w,r.id),'xs')}<span class="mini-name">${esc(clubById(w,r.id).name)}</span><span class="mini-played">${r.p} ${tr('PG','P')}</span><strong>${r.pts}</strong></div>`).join(''),actionButton(`${tr('Classifica completa','Full standings')} ${icon('arrow',15)}`,'nav','text-link','data-page="league"'));
-  const calendarPanel=panel(tr('Calendario della squadra','Team fixtures'),tr('Le prossime sfide da affrontare','Your upcoming opponents'),`<div class="fixture-list">${upcoming.length?upcoming.map(m=>fixtureLink(m,false)).join(''):emptyState(tr('Il campionato è terminato.','The season has finished.'))}</div>`,actionButton(`${tr('Vedi calendario','View calendar')} ${icon('arrow',15)}`,'nav','text-link','data-page="calendar"'));
-  const resultsPanel=panel(tr('Ultimi risultati','Latest results'),tr('Il percorso nelle giornate disputate','Recent performances'),recent.length?recent.map(m=>fixtureLink(m,true)).join(''):emptyState(tr('Nessuna partita giocata. La tua avventura deve ancora iniziare.','No matches played yet.')));
-  const trainingPanel=panel(tr('Dal centro sportivo','From the training ground'),tr('Aggiornamenti, talento e spogliatoio','Players, team news and training'),`<div class="insight-card"><div class="insight-icon">${icon('star',21)}</div><div><span>${tr('OSSERVATO SPECIALE','PLAYER TO WATCH')}</span><strong>${esc(best?.name||'—')}</strong><p>${best?`${best.goals} ${tr('gol','goals')} · ${best.ovr} OVR`:tr('Nessun calciatore in rosa','No players in the squad')}</p></div>${best?actionButton(icon('chevron',18),'player','small-icon-btn',`data-id="${best.id}" aria-label="${esc(tr('Apri calciatore','Open player'))}"`):''}</div><div class="insight-card"><div class="insight-icon">${icon('mail',21)}</div><div><span>${tr('MESSAGGI DELLA SOCIETÀ','CLUB MESSAGES')}</span><strong>${Math.max(0,Number(w.unread)||0)} ${tr('da leggere','unread')}</strong><p>${esc(w.inbox?.[0]?readCareerMessage(w.inbox[0],{lang:ui.language,countryId:w.countryId}).subject:tr('Nessuna comunicazione','No messages'))}</p></div>${actionButton(icon('chevron',18),'nav','small-icon-btn',`data-page="inbox" aria-label="${tr('Apri posta','Open inbox')}"`)}</div><div class="insight-card"><div class="insight-icon">${icon('activity',21)}</div><div><span>${tr('PROGRAMMA ALLENAMENTO','TRAINING PLAN')}</span><strong>${esc(w.training)}</strong><p>${tr('Focus attuale del gruppo squadra','Current team focus')}</p></div>${actionButton(icon('chevron',18),'nav','small-icon-btn',`data-page="training" aria-label="${tr('Apri allenamento','Open training')}"`)}</div>`);
-  return `${sectionHead(tr('CENTRO DI CONTROLLO','CONTROL CENTRE'),`${tr('Bentornato','Welcome back')}, ${esc(String(w.manager||'').split(' ')[0])}.`,tr('Le decisioni che contano, in un unico posto.','Your most important decisions, in one place.'),`<span class="current-season">${icon('clock',16)} ${formatCareerDate(w.currentDate,ui.language)} · ${w.round===0&&w.currentDate<w.firstMatchDate?tr('PRESTAGIONE','PRE-SEASON'):next?`${tr('Giornata','Matchday')} ${w.round+1}`:tr('Campionato concluso','League completed')}</span>`)}
-  <section class="dashboard-hero" aria-label="${next?tr('Prossima partita','Next match'):tr('Fine campionato','End of season')}"><div class="hero-shine"></div><div class="hero-left"><div class="hero-overline">${next?tr('PROSSIMA PARTITA','NEXT MATCH'):tr('FINE CAMPIONATO','END OF SEASON')} <span class="hero-dot"></span> ${next?esc(w.competition||'Lega Aurora').toUpperCase():tr('STAGIONE COMPLETATA','SEASON COMPLETED')}</div>${next?`<div class="matchup"><div class="match-team">${badge(clubById(w,next.home),'lg')}<strong>${esc(clubById(w,next.home).name)}</strong></div><div class="versus"><span>${tr('G','MD')}${w.round+1}</span><b>VS</b><small>${next.home===w.clubId?tr('IN CASA','HOME'):tr('IN TRASFERTA','AWAY')}</small></div><div class="match-team">${badge(clubById(w,next.away),'lg')}<strong>${esc(clubById(w,next.away).name)}</strong></div></div><div class="hero-bottom"><div>${icon('flag',16)} ${esc(clubById(w,next.home).stadium)} · ${esc(clubById(w,next.home).city)} · ${formatCareerDateTime(next.date,next.kickoff,ui.language)}</div>${ui.continuing?actionButton(`${tr('Interrompi','Stop')} ${icon('close',17)}`,'stop-advance','btn btn-danger'):actionButton(`${tr('Continua','Continue')} ${icon('arrow',17)}`,'advance','btn btn-light')}<button class="btn btn-outline match-preview-hero-link" type="button" data-action="preview-match" data-id="${esc(next.id)}">${w.advancedV1?.enabled?tr('Prepara tattiche avanzate','Prepare advanced tactics'):ui.previewSaved?tr('Riprendi anteprima partita','Resume match preview'):tr('Guarda anteprima partita','Watch match preview')}</button></div>`:`<h2 class="end-league-headline">${tr('La stagione è nei libri di storia.','This season is history.')}</h2><p>${tr('Hai chiuso al','You finished in')} ${standing.position}° ${tr('posto. È il momento di progettare il futuro.','place. Time to plan ahead.')}</p>${actionButton(`${tr('Avvia nuova stagione','Start a new season')} ${icon('arrow',17)}`,'new-season','btn btn-light')}`}</div><div class="hero-right" aria-hidden="true"><div class="pitch-diagram"><div class="pitch-hline"></div><div class="pitch-circle"></div><div class="pitch-box-top"></div><div class="pitch-box-bottom"></div>${['15,20','46,17','78,20','26,40','60,43','84,62','33,72','65,70'].map(x=>{const [a,b]=x.split(',');return `<i style="left:${a}%;top:${b}%"></i>`;}).join('')}</div></div></section>
-  <section class="dashboard-priorities card-shell" aria-label="${tr('Da gestire','Needs attention')}"><div class="dashboard-priorities-heading"><div><span class="eyebrow">${tr('PRIORITÀ','PRIORITIES')}</span><h2>${tr('Da gestire','Needs attention')}</h2><p>${tr('Situazioni attuali e collegamenti alle azioni rilevanti.','Current issues and direct links to the right actions.')}</p></div>${priorities.length?`<span class="dashboard-priorities-total">${priorities.length} ${tr('azioni','actions')}</span>`:''}</div><div class="dashboard-priorities-grid">${nextActions||emptyState(tr('Nessuna azione urgente al momento.','Nothing urgent right now.'))}</div></section>
-  ${dashboardControls(ui.qol03||{widgets:['kpis','fixtures','results'],hidden:[]},ui.language)}
-  ${kpi}
-  <div class="dashboard-two">${calendarPanel}${leaguePanel}</div>
-  <div class="dashboard-two dashboard-two-bottom">${resultsPanel}${trainingPanel}</div>`;
+
+  let nowBlock='';
+  if(requiredInput){
+    const message=readCareerMessage(requiredInput,{lang:ui.language,countryId:w.countryId});
+    nowBlock=`<section class="dashboard-now dashboard-now-input card-shell" aria-labelledby="dashboard-now-title">
+      <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')}</span><h2 id="dashboard-now-title">${tr('Decisione richiesta','Decision required')}</h2><strong>${esc(message.subject)}</strong><p>${esc(message.text)}</p></div>
+      <div class="dashboard-now-actions"><button class="btn btn-primary" type="button" data-action="dashboard-open-input" data-id="${esc(requiredInput.id)}">${tr('Apri richiesta','Open request')} ${icon('arrow',17)}</button></div>
+    </section>`;
+  }else if(next){
+    const home=clubById(w,next.home),away=clubById(w,next.away);
+    nowBlock=`<section class="dashboard-now dashboard-now-match card-shell" aria-labelledby="dashboard-now-title">
+      <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')} · ${esc(w.competition||'')}</span><h2 id="dashboard-now-title">${tr('Prossima partita','Next match')}</h2><div class="dashboard-now-matchup"><span>${badge(home,'md')}<b>${esc(home.name)}</b></span><strong>VS</strong><span>${badge(away,'md')}<b>${esc(away.name)}</b></span></div><p>${next.home===w.clubId?tr('Casa','Home'):tr('Trasferta','Away')} · ${esc(home.stadium)} · ${esc(home.city)} · ${formatCareerDateTime(next.date,next.kickoff,ui.language)}</p></div>
+      <div class="dashboard-now-actions">${ui.continuing?`<button class="btn btn-primary dashboard-now-stop" type="button" data-action="stop-advance">${tr('Interrompi','Stop')} ${icon('close',17)}</button>`:`<button class="btn btn-primary" type="button" data-action="advance">${tr('Continua','Continue')} ${icon('arrow',17)}</button>`}<button class="dashboard-now-secondary" type="button" data-action="preview-match" data-id="${esc(next.id)}">${w.advancedV1?.enabled?tr('Prepara partita','Prepare match'):ui.previewSaved?tr('Riprendi anteprima','Resume preview'):tr('Anteprima partita','Match preview')} ${icon('chevron',15)}</button></div>
+    </section>`;
+  }else{
+    nowBlock=`<section class="dashboard-now dashboard-now-season card-shell" aria-labelledby="dashboard-now-title">
+      <div class="dashboard-now-copy"><span class="eyebrow">${tr('ADESSO','NOW')}</span><h2 id="dashboard-now-title">${tr('Stagione conclusa','Season complete')}</h2><p>${tr('Posizione finale','Final position')}: <strong>${localizedStanding(standing.position,{lang:ui.language})}</strong>. ${tr('Prepara il prossimo ciclo sportivo.','Prepare the next sporting cycle.')}</p></div>
+      <div class="dashboard-now-actions"><button class="btn btn-primary" type="button" data-action="new-season">${tr('Avvia nuova stagione','Start new season')} ${icon('arrow',17)}</button></div>
+    </section>`;
+  }
+
+  const prioritiesBlock=secondaryPriorities.length
+    ?`<section class="dashboard-priorities card-shell" aria-labelledby="dashboard-priorities-title"><div class="dashboard-priorities-heading"><div><span class="eyebrow">${tr('PRIORITÀ','PRIORITIES')}</span><h2 id="dashboard-priorities-title">${tr('Da gestire','Needs attention')}</h2></div><span class="dashboard-priorities-total">${secondaryPriorities.length}</span></div><div class="dashboard-priorities-grid">${priorityRows}</div></section>`
+    :`<div class="dashboard-clear" role="status">${icon('check',17)} <span>${tr('Nessuna azione urgente','Nothing urgent right now')}</span></div>`;
+
+  const summary=`<section class="dashboard-summary card-shell" aria-label="${tr('Riepilogo squadra','Squad summary')}">
+    <div class="dashboard-summary-item"><span>${tr('POSIZIONE','POSITION')}</span><strong>${localizedStanding(standing.position,{lang:ui.language})}</strong><small>${localizedNumber(standing.points,{lang:ui.language})} ${tr('pt','pts')}</small></div>
+    <div class="dashboard-summary-item"><span>${tr('FORMA','FORM')}</span><strong class="dashboard-summary-form">${formDots(form,ui.language)}</strong><small>${tr('Ultime 5','Last 5')}</small></div>
+    <div class="dashboard-summary-item"><span>OVR</span><strong>${Math.round(teamStrength(w,w.clubId))}</strong><small>${players.length} ${tr('giocatori','players')}</small></div>
+    <div class="dashboard-summary-item dashboard-summary-availability"><span>${tr('DISPONIBILITÀ','AVAILABILITY')}</span><strong>${available} / ${fatigued} / ${injured}</strong><small>${tr('Disponibili · Affaticati · Infortunati','Available · Tired · Injured')}</small></div>
+  </section>`;
+
+  return `${sectionHead(tr('CENTRO DI CONTROLLO','CONTROL CENTRE'),`${tr('Bentornato','Welcome back')}, ${esc(String(w.manager||'').split(' ')[0])}.`,tr('Le decisioni che contano, senza duplicare le pagine operative.','The decisions that matter, without duplicating operational pages.'))}
+  <div class="dashboard-context"><div><strong>${esc(team.name)}</strong><span>${esc(w.manager||'')}</span></div><span class="current-season">${icon('clock',16)} ${formatCareerDate(w.currentDate,ui.language)} · ${seasonState}</span></div>
+  ${nowBlock}
+  ${prioritiesBlock}
+  ${summary}`;
 }
 function fixtureListRow(w,m,played,lang='it'){
   const en=lang==='en',mine=m.home===w.clubId,other=clubById(w,mine?m.away:m.home),round=Number(String(m.id).split('-')[1]);
