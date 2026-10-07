@@ -1,7 +1,7 @@
 import {readPrefs,writePrefs,moveWidget,applyTableView} from './qol03.js';
 import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
-import {view} from './ui.js';
+import {view,inboxDetailHtml} from './ui.js';
 import {generateMatchActions} from './domain/match-actions.js';
 import {hasAdvancedCareer,setAdvancedStyle,editAdvancedTactic,setAdvancedPlayerRole,previewAdvancedHalf} from './domain/advanced-career.js';
 import {substitutionsEnabled,planCareerSubstitution,cancelCareerSubstitution,setCareerMatchdayRules,expectedNextMatch} from './domain/career-matchday.js';
@@ -81,7 +81,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -403,6 +403,16 @@ function render({focus}={}){
     ui.calendarAutoFocus=false;
     requestAnimationFrame(()=>root.querySelector('#calendar-current-anchor')?.scrollIntoView({block:'center'}));
   }
+  if(ui.page==='squad'&&ui.contractFocusId){
+    const offerId=String(ui.contractFocusId);ui.contractFocusId=null;
+    requestAnimationFrame(()=>{
+      const offer=document.getElementById(`contract-offer-${offerId}`);
+      if(!offer)return;
+      offer.scrollIntoView({block:'center',behavior:'auto'});
+      (offer.querySelector('.btn-primary')||offer).focus({preventScroll:true});
+    });
+  }
+  if(ui.page==='inbox')syncInboxSelectionChrome();
 }
 
 function qol03Enhance(){
@@ -464,6 +474,48 @@ async function changeOfficialTraining(modify){
   }catch(error){world=before;primary.rollback();render();throw error;}
 }
 function refresh(message='') {if(save()){render();if(message)toast(message);}}
+let inboxReadSaveTimer=null;
+function scheduleInboxReadSave(){
+  if(inboxReadSaveTimer!==null)clearTimeout(inboxReadSaveTimer);
+  inboxReadSaveTimer=setTimeout(()=>{inboxReadSaveTimer=null;save();},500);
+}
+function syncInboxUnreadChrome(){
+  const en=ui.language==='en';
+  root.querySelector('[data-inbox-unread-count]')?.replaceChildren(document.createTextNode(en?`${world.unread} unread`:`${world.unread} non letti`));
+  const nav=root.querySelector('.nav-item[data-page="inbox"]');
+  const badge=nav?.querySelector('.nav-count');
+  if(world.unread<=0){badge?.remove();}
+  else if(badge){badge.textContent=String(world.unread);}
+}
+function syncInboxSelectionChrome(){
+  const selected=new Set((ui.inboxSelected||[]).map(String));
+  const boxes=[...root.querySelectorAll('[data-inbox-select]')];
+  let visibleSelected=0;
+  for(const box of boxes){box.checked=selected.has(String(box.dataset.inboxSelect));box.closest('.inbox-mail-row')?.classList.toggle('is-selected',box.checked);if(box.checked)visibleSelected++;}
+  const all=root.querySelector('[data-inbox-select-all]');
+  if(all){all.checked=boxes.length>0&&visibleSelected===boxes.length;all.indeterminate=visibleSelected>0&&visibleSelected<boxes.length;}
+  const count=root.querySelector('[data-inbox-selected-count]');
+  if(count){count.hidden=visibleSelected===0;count.textContent=ui.language==='en'?`${visibleSelected} selected`:`${visibleSelected} selezionate`;}
+}
+function selectInboxMessage(id){
+  const message=world.inbox.find(m=>String(m.id)===String(id));if(!message)return false;
+  const wasUnread=!message.read;
+  if(wasUnread){message.read=true;world.unread=world.inbox.filter(m=>!m.read).length;scheduleInboxReadSave();}
+  ui.openMail=String(id);
+  const workspace=root.querySelector('.inbox-workspace'),detail=root.querySelector('.inbox-detail-pane');
+  if(!workspace||!detail)return false;
+  workspace.classList.add('has-selection');
+  root.querySelectorAll('.inbox-message-list .mail-item').forEach(row=>{
+    const active=String(row.dataset.id)===String(id);
+    row.classList.toggle('mail-active',active);
+    row.closest('.inbox-mail-row')?.classList.toggle('mail-active-row',active);
+    if(active)row.setAttribute('aria-current','true');else row.removeAttribute('aria-current');
+    if(active&&wasUnread){row.classList.remove('unread');row.closest('.inbox-mail-row')?.classList.remove('unread-row');row.querySelector('.mail-date i')?.remove();}
+  });
+  detail.innerHTML=inboxDetailHtml(world,ui,message);
+  syncInboxUnreadChrome();
+  return true;
+}
 // The checkpoint must be verified before a match, transfer or season change.
 // On a failed autosave, re-read the authoritative slot rather than showing
 // potentially stale, uncommitted world data.
@@ -952,10 +1004,16 @@ root.addEventListener('click',async ev=>{
     switch(action){
       case 'qol03-back':qol03Back();break;
       case 'qol03-widget-up':case 'qol03-widget-down':ui.qol03=moveWidget(ui.qol03,id,action.endsWith('up')?-1:1);qol03Save();render();break;
-      case 'qol03-mail-archive':{
-        const key=String(id);ui.qol03.mailArchived=ui.qol03.mailArchived.includes(key)?ui.qol03.mailArchived.filter(x=>x!==key):[...ui.qol03.mailArchived,key];qol03Save();render();break;
-      }
       case 'qol03-mail-go':navigate(target.dataset.page||'inbox');focusPage();break;
+      case 'inbox-back':ui.openMail=null;render();break;
+      case 'inbox-input-go':{
+        if(field==='contract-counter'){
+          const offer=world.advancedV1?.contractsV1?.offers?.[String(id)];
+          if(!offer||offer.status!=='awaiting_club'){toast(ui.language==='en'?'This request has already been resolved.':'Questa richiesta è già stata risolta.','info');render();break;}
+          ui.contractFocusId=String(id);navigate('squad');break;
+        }
+        break;
+      }
       case 'qol03-sort-direction':case 'qol03-table-prev':case 'qol03-table-next':{
         const p=qol03TablePref(id);if(action==='qol03-sort-direction')p.desc=!p.desc;else p.page=Math.max(0,p.page+(action.endsWith('next')?1:-1));qol03UpdateTable(id);qol03Save();
         if(action==='qol03-sort-direction')render();break;
@@ -1451,11 +1509,7 @@ root.addEventListener('click',async ev=>{
         msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;ui.openMail=id;
         navigate('inbox');focusPage();break;
       }
-      case 'read-mail':{
-        const msg=world.inbox.find(m=>m.id===id);if(!msg)break;
-        msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;
-        ui.openMail=ui.openMail===id?null:id;refresh();break;
-      }
+      case 'read-mail':selectInboxMessage(id);break;
       case 'export-blocked-save':{
         let keys=[STORAGE_KEY,PREVIOUS_CAREER_STORAGE_KEY,LEGACY_CAREER_STORAGE_KEY];
         try{const catalog=readCareerCatalog(careerStorage);const active=catalog.slots.find(s=>s.id===catalog.activeSlotId);if(active)keys=[active.storageKey,...keys];}catch{}
@@ -1591,8 +1645,8 @@ root.addEventListener('change',async ev=>{
 
   const el=ev.target;
   if(el.matches('[data-qol03-widget]')){const key=el.dataset.qol03Widget;ui.qol03.hidden=el.checked?ui.qol03.hidden.filter(x=>x!==key):[...ui.qol03.hidden,key];qol03Save();render();return;}
-  if(el.id==='qol03-mail-filter'){ui.qol03.mailFilter=el.value;qol03Save();render();return;}
-  if(el.matches('[data-qol03-mail-note]')){ui.qol03.mailNotes[el.dataset.qol03MailNote]=el.value.slice(0,500);qol03Save();return;}
+  if(el.matches('[data-inbox-select]')){const key=String(el.dataset.inboxSelect),selected=new Set((ui.inboxSelected||[]).map(String));if(el.checked)selected.add(key);else selected.delete(key);ui.inboxSelected=[...selected];syncInboxSelectionChrome();return;}
+  if(el.matches('[data-inbox-select-all]')){const boxes=[...root.querySelectorAll('[data-inbox-select]')];ui.inboxSelected=el.checked?boxes.map(box=>String(box.dataset.inboxSelect)):[];for(const box of boxes)box.checked=el.checked;syncInboxSelectionChrome();return;}
   if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
