@@ -1376,7 +1376,7 @@ root.addEventListener('click',async ev=>{
         root.querySelector(`[data-action="squad-view"][data-value="${field}"]`)?.focus({preventScroll:true});
         break;
       }
-      case 'squad-reset':ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadSort=ui.squadView==='general'?'position':ui.squadView==='attributes'?'position':ui.squadView==='contract'?'contract':ui.squadView==='market'?'value':ui.squadView==='stats'?'apps':'fitness';ui.qol03.rosterMinimum=1;qol03Save();render();break;
+      case 'squad-reset':ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadSort=ui.squadView==='general'?'position':ui.squadView==='attributes'?'position':ui.squadView==='contract'?'contract':ui.squadView==='market'?'value':ui.squadView==='stats'?'apps':'fitness';ui.qol03.rosterAttribute='ALL';ui.qol03.rosterMinimum=1;qol03Save();render();break;
       case 'ux206-tab':{
         if(!['formation','roles','strategy','matchday'].includes(field))break;
         ui.tacticsTab=field;render();
@@ -1660,7 +1660,7 @@ root.addEventListener('change',async ev=>{
   if(el.id==='squad-role'){ui.squadFilter=el.value;render();return;}
   if(el.id==='squad-availability'){ui.squadAvailability=['all','available','injured','tired'].includes(el.value)?el.value:'all';render();return;}
   if(el.id==='squad-sort'){ui.squadSort=el.value;render();return;}
-  if(el.id==='squad-attribute-group'){ui.squadAttributeGroup=['technical','mental','physical','goalkeeper'].includes(el.value)?el.value:'technical';ui.qol03.rosterMinimum=1;qol03Save();render();return;}
+  if(el.id==='squad-attribute-group'){ui.squadAttributeGroup=['technical','mental','physical','goalkeeper'].includes(el.value)?el.value:'technical';ui.qol03.rosterAttribute='ALL';ui.qol03.rosterMinimum=1;ui.squadSort='position';qol03Save();render();return;}
   if(el.id==='ply01-attribute'){ui.qol03.rosterAttribute=el.value;ui.squadSort='attr:'+el.value;qol03Save();render();return;}
   if(el.id==='ply01-minimum'){ui.qol03.rosterMinimum=Number(el.value);qol03Save();render();return;}
   if(el.id==='ply01-compare-player'){ui.comparePlayerId=el.value==='none'?null:Number(el.value);render();return;}
