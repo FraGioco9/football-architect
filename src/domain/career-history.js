@@ -5,12 +5,13 @@
 import {getLeagueClubs,LEAGUES} from '../leagues.js';
 import {hashYouth} from '../addons/domain/player-youth.mjs';
 import {LEAGUES as WORLD_LEAGUES} from '../leagues.js';
+import {isCareerDate,isCareerKickoff} from './career-date.js';
 
 const fail=code=>{throw Error(`CAREER_HISTORY_${code}`);};
 const validInt=n=>Number.isSafeInteger(n)&&n>=0;
 const hasWorld=w=>w?.advancedV1?.enabled===true&&w.advancedV1?.worldV1?.schemaVersion===1;
 const key=(a,b)=>[String(a),String(b)].sort((x,y)=>Number(x)-Number(y)).join(':');
-export const OFFICIAL_HISTORY_VERSION=1;
+export const OFFICIAL_HISTORY_VERSION=2;
 
 export function buildOfficialLeagueArchive(w,league,ranking){
  const clubs=league.locked?w.teams:league.clubs;
@@ -27,7 +28,7 @@ export function buildOfficialLeagueArchive(w,league,ranking){
   else leaderboard.set(id,{id,name:p.name,clubId:p.clubId||p.historicalClubId,goals:p.goals,apps:p.apps});
  }
  const leaders=[...leaderboard.values()].sort((a,b)=>b.goals-a.goals||a.id.localeCompare(b.id)).slice(0,24);
- const matches=rounds.flatMap(r=>r.matches.map(m=>({round:r.round,home:m.home,away:m.away,homeGoals:m.result.homeGoals,awayGoals:m.result.awayGoals})));
+ const matches=rounds.flatMap(r=>r.matches.map(m=>({round:r.round,date:m.date??r.date??null,kickoff:m.kickoff??null,home:m.home,away:m.away,homeGoals:m.result.homeGoals,awayGoals:m.result.awayGoals})));
  const scored=matches.reduce((n,m)=>n+m.homeGoals+m.awayGoals,0);
  const biggest=matches.slice().sort((a,b)=>Math.abs(b.homeGoals-b.awayGoals)-Math.abs(a.homeGoals-a.awayGoals)||a.round-b.round||a.home-b.home)[0];
  const position=new Map(rows.map(r=>[r.clubId,r.rank]));
@@ -48,7 +49,7 @@ export function buildOfficialLeagueArchive(w,league,ranking){
  const top=leaders[0]?.goals??0;
  const data={version:OFFICIAL_HISTORY_VERSION,countryId:league.countryId,rows,leaders,
   awards:{championId:rows[0]?.clubId??null,topScorerIds:top?leaders.filter(p=>p.goals===top).map(p=>p.id):[]},
-  summary:{matches:matches.length,goals:scored,biggestWin:biggest?{...biggest}:null},rivalries:compactRivalries};
+  summary:{matches:matches.length,goals:scored,biggestWin:biggest?{...biggest}:null},rivalries:compactRivalries,matches};
  return {...data,digest:hashYouth(JSON.stringify(data))};
 }
 
@@ -56,7 +57,7 @@ export function buildOfficialLeagueArchive(w,league,ranking){
  * Reject truncated/tampered WRD05 snapshots, but accept un-enriched WRD01 saves.
  */
 export function validateOfficialLeagueArchive(details,legacy,countryId){
- if(!details||details.version!==1||details.countryId!==countryId||!validInt(details.digest)||!Array.isArray(details.rows)||!Array.isArray(details.leaders)||!Array.isArray(details.rivalries)||!details.summary||!details.awards)return false;
+ if(!details||![1,2].includes(details.version)||details.countryId!==countryId||!validInt(details.digest)||!Array.isArray(details.rows)||!Array.isArray(details.leaders)||!Array.isArray(details.rivalries)||!details.summary||!details.awards)return false;
  const {digest,...raw}=details;if(hashYouth(JSON.stringify(raw))!==digest)return false;
  const ids=new Set();
  if(details.rows.length!==legacy.table?.length)return false;
@@ -67,9 +68,19 @@ export function validateOfficialLeagueArchive(details,legacy,countryId){
  if(!validInt(details.summary.matches)||!validInt(details.summary.goals)||details.leaders.length>24||details.rivalries.length>14)return false;
  for(const p of details.leaders)if(typeof p.id!=='string'||!WORLD_LEAGUES.some(league=>p.id.startsWith(league.id+':'))||!ids.has(p.clubId)||typeof p.name!=='string'||![p.goals,p.apps].every(validInt))return false;
  for(const r of details.rivalries)if(!ids.has(r.a)||!ids.has(r.b)||r.a===r.b||!['city','sporting'].includes(r.kind)||![r.meetings,r.winsA,r.winsB,r.draws,r.goalsA,r.goalsB].every(validInt)||r.meetings!==r.winsA+r.winsB+r.draws)return false;
+ if(details.version===2){
+  if(!Array.isArray(details.matches)||details.matches.length!==details.summary.matches)return false;
+  let goals=0;
+  for(const m of details.matches){
+   if(!validInt(m.round)||m.round<1||!ids.has(m.home)||!ids.has(m.away)||m.home===m.away||!validInt(m.homeGoals)||!validInt(m.awayGoals))return false;
+   if(m.date!==null&&!isCareerDate(m.date))return false;
+   if(m.kickoff!==null&&!isCareerKickoff(m.kickoff))return false;
+   goals+=m.homeGoals+m.awayGoals;
+  }
+  if(goals!==details.summary.goals)return false;
+ }
  return true;
 }
-
 export function officialArchive(w,country=w?.countryId,season=null){
  if(!hasWorld(w))return null;
  const world=w.advancedV1.worldV1;
