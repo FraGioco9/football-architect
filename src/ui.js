@@ -12,7 +12,7 @@ import {officialArchive,officialHistorySeasons} from './domain/career-history.js
 import {matchPreviewPage} from './match-preview-ui.js';
 import {matchPreparation,halftimeIntro} from './match-experience.js';
 import {formatCareerDate,formatCareerDateTime,fixtureIsDue} from './domain/career-date.js';
-import {esc, statusTag as tag, sectionHead, panel, actionButton, tableColumns, numberCell, emptyTableRow, metricCard, emptyState, dialogFrame} from './ui-components.js';
+import {esc, statusTag as tag, sectionHead, panel, actionButton, tableColumns, numberCell, emptyTableRow, metricCard, emptyState, dialogFrame, matchDialogFrame} from './ui-components.js';
 export {esc, tableColumns, numberCell, emptyTableRow} from './ui-components.js';
 import {LEAGUES} from './leagues.js';
 import {advancedPage,playerProjection} from './addons/advanced-ui.js';
@@ -747,6 +747,7 @@ function modalContent(w,ui){const m=ui.modal;let title='',inner='',wide=false;
  }
  else if(m.type==='slot'){title=ui.language==='en'?'Select player':'Seleziona calciatore';inner=pickerModal(w,ui);}
  else if(m.type==='preview-discard-confirm'){title=ui.language==='en'?'Discard saved preview?':'Eliminare l’anteprima salvata?';inner=`<p>${ui.language==='en'?'The saved match commentary and playback position will be deleted. Your career and match results will not change.':'La cronaca della partita e il punto di riproduzione salvato verranno eliminati. La carriera e i risultati non cambieranno.'}</p><div class="modal-footer"><button class="btn btn-quiet" type="button" data-action="close-modal">${ui.language==='en'?'Cancel':'Annulla'}</button><button class="btn btn-danger" type="button" data-action="preview-discard-confirm">${ui.language==='en'?'Discard preview':'Elimina anteprima'}</button></div>`;}
+ if(m.type==='match')return matchDialogFrame({title,body:inner,lang:ui.language,closeIcon:icon('close',19)});
  return dialogFrame({type:m.type,title,body:inner,wide,lang:ui.language,closeIcon:icon('close',19)});
 }
 export function careerHub(w,ui){
