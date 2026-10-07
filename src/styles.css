@@ -1349,7 +1349,7 @@ body.dialog-open { overflow: hidden; }
   display:flex;
   flex-direction:column;
   gap:0;
-  padding:14px 8px 7px;
+  padding:22px 8px 7px;
 }
 .nav-group{
   border:0;
@@ -1371,8 +1371,8 @@ body.dialog-open { overflow: hidden; }
   padding:0 0 1px;
 }
 .nav-item{
-  height:21px;
-  min-height:21px;
+  height:19px;
+  min-height:19px;
   gap:8px;
   padding:0 9px;
   border-radius:var(--radius-8);
@@ -1505,7 +1505,7 @@ body.navigation-drawer-open{overflow:auto}
   .sidebar-header .brand{margin-inline:10px}
   .navigation{padding-inline:6px}
   .nav-group-title{padding-inline:7px}
-  .nav-item{height:20px;min-height:20px;padding-inline:8px;gap:7px;font-size:9.5px}
+  .nav-item{height:18px;min-height:18px;padding-inline:8px;gap:7px;font-size:9px}
   .topbar{padding-inline:14px}
   .topbar-club{max-width:135px}
   .top-actions{gap:7px}
