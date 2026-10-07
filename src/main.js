@@ -1,4 +1,4 @@
-import {readPrefs,writePrefs,moveWidget,applyTableView} from './qol03.js';
+import {readPrefs,writePrefs,moveWidget} from './qol03.js';
 import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
 import {view,inboxDetailHtml} from './ui.js';
@@ -81,7 +81,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadSortDir:'asc',squadSortCustom:false,squadView:'general',squadAttributeGroup:'technical',squadContractFilter:'all',squadAgeMin:'',squadAgeMax:'',squadOvrMin:'',squadOvrMax:'',squadFitnessMin:'',squadMoraleMin:'',squadValueMin:'',squadWageMax:'',squadFilterAttribute:'ALL',squadFilterAttributeMin:'',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -108,7 +108,6 @@ let searchTimer;
 function qol03Scope(){return String(activePreviewSlot()||'local');}
 function qol03Load(){ui.qol03=readPrefs(window.localStorage,qol03Scope());return ui.qol03;}
 function qol03Save(){return writePrefs(window.localStorage,qol03Scope(),ui.qol03);}
-function qol03TablePref(id){return ui.qol03.tables[id]||(ui.qol03.tables[id]={query:'',sort:null,desc:false,page:0});}
 function stopContinuousAdvance({renderNow=false}={}){
   const wasRunning=Boolean(ui.continuing);
   continuousAdvanceToken++;
@@ -300,8 +299,8 @@ function updateFieldShell(input){
 }
 function scheduleSearchRender(input){
   const id=input.id;
-  if(id!=='squad-search'&&id!=='market-search'&&id!=='scout-search')return;
-  ui[id==='squad-search'?'squadSearch':id==='scout-search'?'scoutSearch':'marketSearch']=input.value;
+  if(id!=='market-search'&&id!=='scout-search')return;
+  ui[id==='scout-search'?'scoutSearch':'marketSearch']=input.value;
   const focus={id,start:input.selectionStart,end:input.selectionEnd};
   clearTimeout(searchTimer);
   searchTimer=setTimeout(()=>{
@@ -317,7 +316,7 @@ function clearField(id){
   input.dispatchEvent(new Event('input',{bubbles:true}));
   if(id==='career-name'){input.removeAttribute('aria-invalid');const err=document.getElementById('career-name-error');if(err)err.hidden=true;}
   input.focus();
-  if(id==='squad-search'||id==='market-search'||id==='scout-search'){
+  if(id==='market-search'||id==='scout-search'){
     clearTimeout(searchTimer);
     render({focus:{id,start:0,end:0}});
   }
@@ -420,40 +419,11 @@ function qol03Enhance(){
  const en=ui.language==='en',main=root.querySelector('#main-content');if(!main)return;
  const crumbs=root.querySelector('.breadcrumb');
  if(crumbs){const back=document.createElement('button');back.type='button';back.className='qol03-back';back.dataset.action='qol03-back';back.textContent=en?'← Back':'← Indietro';back.setAttribute('aria-label',en?'Go to previous page':'Torna alla pagina precedente');crumbs.prepend(back);}
- const status=document.createElement('div');status.id='qol03-live';status.className='sr-only';status.setAttribute('role','status');status.setAttribute('aria-live','polite');main.prepend(status);
  if(ui.page==='dashboard'){
   const widgets=new Map([['kpis',main.querySelector('.kpi-grid')],['fixtures',main.querySelector('.dashboard-two:not(.dashboard-two-bottom)')],['results',main.querySelector('.dashboard-two-bottom')]]);
   const holder=document.createElement('div');holder.className='qol03-widgets';main.querySelector('.dashboard-hero')?.after(holder);
   for(const key of ui.qol03.widgets){const el=widgets.get(key);if(!el)continue;el.hidden=ui.qol03.hidden.includes(key);el.dataset.qol03Widget=key;holder.append(el);}
  }
- for(const [i,table] of [...main.querySelectorAll('.data-table')].entries()){
-  const scroll=table.closest('.table-scroll');if(!scroll||!table.tBodies.length||!table.tBodies[0].rows.length)continue;
-  const id=ui.page+':'+i,pref=qol03TablePref(id);
-  const toolbar=document.createElement('div');toolbar.className='qol03-table-toolbar';toolbar.dataset.qol03Table=id;
-  const search=document.createElement('input');search.type='search';search.value=pref.query;search.dataset.qol03Search=id;search.placeholder=en?'Filter rows…':'Filtra righe…';search.setAttribute('aria-label',en?'Filter table rows':'Filtra le righe della tabella');toolbar.append(search);
-  const select=document.createElement('select');select.dataset.qol03Sort=id;select.setAttribute('aria-label',en?'Sort table by':'Ordina tabella per');
-  select.add(new Option(en?'Original order':'Ordine originale',''));
-  [...table.querySelectorAll('thead th')].forEach((th,j)=>{const name=th.textContent.trim();if(name)select.add(new Option(name,String(j)));});
-  select.value=pref.sort===null?'':String(pref.sort);toolbar.append(select);
-  const second=document.createElement('select');second.dataset.qol03Sort2=id;second.setAttribute('aria-label',en?'Second sort criterion':'Secondo criterio di ordinamento');
-  second.add(new Option(en?'Second sort':'Secondo ordinamento',''));
-  [...table.querySelectorAll('thead th')].forEach((th,j)=>{const name=th.textContent.trim();if(name)second.add(new Option(name,String(j)));});
-  second.value=pref.sort2===null?'':String(pref.sort2);toolbar.append(second);
-  const desc=document.createElement('button');desc.type='button';desc.className='btn btn-quiet';desc.dataset.action='qol03-sort-direction';desc.dataset.id=id;desc.setAttribute('aria-label',en?'Reverse order':'Inverti ordinamento');desc.textContent=pref.desc?'↓':'↑';toolbar.append(desc);
-  const prev=document.createElement('button');prev.type='button';prev.className='btn btn-quiet';prev.dataset.action='qol03-table-prev';prev.dataset.id=id;prev.textContent='‹';prev.setAttribute('aria-label',en?'Previous page':'Pagina precedente');toolbar.append(prev);
-  const count=document.createElement('span');count.className='qol03-table-count';count.dataset.qol03Count=id;toolbar.append(count);
-  const next=document.createElement('button');next.type='button';next.className='btn btn-quiet';next.dataset.action='qol03-table-next';next.dataset.id=id;next.textContent='›';next.setAttribute('aria-label',en?'Next page':'Pagina successiva');toolbar.append(next);
-  scroll.before(toolbar);qol03UpdateTable(id);
- }
-}
-function qol03UpdateTable(id){
- const holder=[...root.querySelectorAll('[data-qol03-table]')].find(e=>e.dataset.qol03Table===id);if(!holder)return;
- const table=holder.nextElementSibling?.querySelector('table');if(!table)return;
- const pref=qol03TablePref(id),stats=applyTableView(table,pref);if(!stats)return;
- pref.page=stats.page;const count=holder.querySelector('[data-qol03-count]');if(count)count.textContent=`${stats.visible} · ${stats.page+1}/${stats.pages}`;
- holder.querySelector('[data-action="qol03-table-prev"]').disabled=stats.page===0;
- holder.querySelector('[data-action="qol03-table-next"]').disabled=stats.page>=stats.pages-1;
- const live=root.querySelector('#qol03-live');if(live)live.textContent=`${stats.visible} ${ui.language==='en'?'rows':'righe'}`;
 }
 function toast(message,level='success'){
   feedback.notify(translate(message,ui.language),{level});
@@ -520,7 +490,6 @@ function selectInboxMessage(id){
 // On a failed autosave, re-read the authoritative slot rather than showing
 // potentially stale, uncommitted world data.
 async function runCheckpointed(kind,apply){
-  const live=root.querySelector('#qol03-live');if(live)live.textContent=ui.language==='en'?'Saving and validating…':'Salvataggio e verifica in corso…';
   const surface=root.querySelector('#main-content');
   const busy=document.createElement('div');busy.className='qol03-progress';busy.setAttribute('role','status');
   busy.innerHTML=`<span class="qol03-progress-bars" aria-hidden="true"><i></i><i></i></span><strong>${ui.language==='en'?'Processing — do not close the game':'Elaborazione in corso — non chiudere il gioco'}</strong>`;
@@ -567,7 +536,6 @@ async function runCheckpointed(kind,apply){
   } finally {
     busy.remove();
     if(surface?.isConnected)surface.removeAttribute('aria-busy');
-    const current=root.querySelector('#qol03-live');if(current)current.textContent='';
   }
 }
 async function commitContinuousAdvanceTick({calendarConfirmationToken=null}={}){
@@ -1010,13 +978,9 @@ root.addEventListener('click',async ev=>{
         if(field==='contract-counter'){
           const offer=world.advancedV1?.contractsV1?.offers?.[String(id)];
           if(!offer||offer.status!=='awaiting_club'){toast(ui.language==='en'?'This request has already been resolved.':'Questa richiesta è già stata risolta.','info');render();break;}
-          ui.contractFocusId=String(id);navigate('squad');break;
+          ui.contractFocusId=String(id);ui.squadView='contract';navigate('squad');break;
         }
         break;
-      }
-      case 'qol03-sort-direction':case 'qol03-table-prev':case 'qol03-table-next':{
-        const p=qol03TablePref(id);if(action==='qol03-sort-direction')p.desc=!p.desc;else p.page=Math.max(0,p.page+(action.endsWith('next')?1:-1));qol03UpdateTable(id);qol03Save();
-        if(action==='qol03-sort-direction')render();break;
       }
       case 'clear-field':clearField(target.dataset.target);break;
       case 'language-toggle':{
@@ -1367,9 +1331,68 @@ root.addEventListener('click',async ev=>{
       case 'pressing':world.pressing=field;refresh(`Pressing: ${field}.`);restoreRadioFocus();break;
       case 'tempo':world.tempo=field;refresh(`Ritmo: ${field}.`);restoreRadioFocus();break;
       case 'training':world.training=field;refresh(`Programma ${field} selezionato.`);break;
-      case 'squad-filter':ui.squadFilter=field;render();break;
-      case 'squad-availability':ui.squadAvailability=['all','available','injured','tired'].includes(field)?field:'all';render();break;
-      case 'squad-reset':ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadSort='Ruolo';ui.qol03.rosterAttribute='ALL';ui.qol03.rosterMinimum=1;qol03Save();render();break;
+      case 'squad-filters':ui.modal={type:'squad-filters'};render();break;
+      case 'squad-filters-clear':{
+        ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadContractFilter='all';
+        ui.squadAgeMin='';ui.squadAgeMax='';ui.squadOvrMin='';ui.squadOvrMax='';ui.squadFitnessMin='';ui.squadMoraleMin='';
+        ui.squadValueMin='';ui.squadWageMax='';ui.squadFilterAttribute='ALL';ui.squadFilterAttributeMin='';
+        render();break;
+      }
+      case 'squad-filters-apply':{
+        const value=id=>document.getElementById(id)?.value??'';
+        const numberValue=id=>{
+          const input=document.getElementById(id),raw=String(input?.value??'').trim();
+          if(raw==='')return '';
+          let n=Number(raw);if(!Number.isFinite(n))return '';
+          const min=Number(input?.dataset.min),max=Number(input?.dataset.max);
+          if(Number.isFinite(min))n=Math.max(min,n);
+          if(Number.isFinite(max))n=Math.min(max,n);
+          return n;
+        };
+        ui.squadSearch=String(value('squad-filter-search')).trim();
+        ui.squadFilter=value('squad-filter-role')||'ALL';
+        ui.squadAvailability=value('squad-filter-availability')||'all';
+        ui.squadContractFilter=value('squad-filter-contract')||'all';
+        ui.squadAgeMin=numberValue('squad-filter-age-min');ui.squadAgeMax=numberValue('squad-filter-age-max');
+        if(ui.squadAgeMin!==''&&ui.squadAgeMax!==''&&ui.squadAgeMin>ui.squadAgeMax)[ui.squadAgeMin,ui.squadAgeMax]=[ui.squadAgeMax,ui.squadAgeMin];
+        ui.squadOvrMin=numberValue('squad-filter-ovr-min');ui.squadOvrMax=numberValue('squad-filter-ovr-max');
+        if(ui.squadOvrMin!==''&&ui.squadOvrMax!==''&&ui.squadOvrMin>ui.squadOvrMax)[ui.squadOvrMin,ui.squadOvrMax]=[ui.squadOvrMax,ui.squadOvrMin];
+        ui.squadFitnessMin=numberValue('squad-filter-fitness-min');ui.squadMoraleMin=numberValue('squad-filter-morale-min');
+        ui.squadValueMin=numberValue('squad-filter-value-min');ui.squadWageMax=numberValue('squad-filter-wage-max');
+        ui.squadFilterAttribute=value('squad-filter-attribute')||'ALL';ui.squadFilterAttributeMin=numberValue('squad-filter-attribute-min');
+        ui.modal=null;render();break;
+      }
+      case 'squad-sort-column':{
+        const key=String(field||'');if(!key)break;
+        if(ui.squadSort!==key){
+          ui.squadSort=key;ui.squadSortDir='asc';ui.squadSortCustom=true;
+        }else if(!ui.squadSortCustom){
+          // First explicit click on the default Role order keeps ASC, but starts the 3-step cycle.
+          ui.squadSortDir='asc';ui.squadSortCustom=true;
+        }else if(ui.squadSortDir==='asc'){
+          ui.squadSortDir='desc';
+        }else{
+          // Third click: return to the default squad order, Role ascending.
+          ui.squadSort='position';ui.squadSortDir='asc';ui.squadSortCustom=false;
+        }
+        const focusKey=ui.squadSortCustom?key:'position';
+        render();
+        root.querySelector(`[data-action="squad-sort-column"][data-value="${CSS.escape(focusKey)}"]`)?.focus({preventScroll:true});
+        break;
+      }
+      case 'squad-view':{
+        if(!['general','attributes','contract','market','stats','condition'].includes(field))break;
+        ui.squadView=field;
+        render();
+        root.querySelector(`[data-action="squad-view"][data-value="${field}"]`)?.focus({preventScroll:true});
+        break;
+      }
+      case 'squad-attribute-group':{
+        if(!['technical','mental','physical','goalkeeper'].includes(field))break;
+        ui.squadAttributeGroup=field;render();
+        root.querySelector(`[data-action="squad-attribute-group"][data-value="${field}"]`)?.focus({preventScroll:true});
+        break;
+      }
       case 'ux206-tab':{
         if(!['formation','roles','strategy','matchday'].includes(field))break;
         ui.tacticsTab=field;render();
@@ -1563,7 +1586,6 @@ root.addEventListener('click',async ev=>{
 });
 root.addEventListener('input',ev=>{
   const el=ev.target;
-  if(el?.matches?.('[data-qol03-search]')){const id=el.dataset.qol03Search,p=qol03TablePref(id);p.query=el.value.slice(0,100);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(!(el instanceof HTMLInputElement))return;
   updateFieldShell(el);
   if(el.id==='manager-name'){ui.managerDraft=el.value;ui.managerNameError=false;el.removeAttribute('aria-invalid');const error=document.getElementById('manager-name-error');if(error)error.hidden=true;return;}
@@ -1572,18 +1594,18 @@ root.addEventListener('input',ev=>{
     const error=document.getElementById('career-name-error');if(error)error.hidden=true;
     return;
   }
-  if(el.id==='squad-search'||el.id==='market-search'||el.id==='scout-search'){
-    ui[el.id==='squad-search'?'squadSearch':el.id==='scout-search'?'scoutSearch':'marketSearch']=el.value;
+  if(el.id==='market-search'||el.id==='scout-search'){
+    ui[el.id==='scout-search'?'scoutSearch':'marketSearch']=el.value;
     if(!ev.isComposing&&!el.dataset.composing)scheduleSearchRender(el);
   }
 });
 root.addEventListener('compositionstart',ev=>{
-  if(ev.target?.matches?.('#squad-search,#market-search,#scout-search')){
+  if(ev.target?.matches?.('#market-search,#scout-search')){
     ev.target.dataset.composing='true';clearTimeout(searchTimer);
   }
 });
 root.addEventListener('compositionend',ev=>{
-  if(ev.target?.matches?.('#squad-search,#market-search,#scout-search')){
+  if(ev.target?.matches?.('#market-search,#scout-search')){
     delete ev.target.dataset.composing;scheduleSearchRender(ev.target);
   }
 });
@@ -1647,12 +1669,7 @@ root.addEventListener('change',async ev=>{
   if(el.matches('[data-qol03-widget]')){const key=el.dataset.qol03Widget;ui.qol03.hidden=el.checked?ui.qol03.hidden.filter(x=>x!==key):[...ui.qol03.hidden,key];qol03Save();render();return;}
   if(el.matches('[data-inbox-select]')){const key=String(el.dataset.inboxSelect),selected=new Set((ui.inboxSelected||[]).map(String));if(el.checked)selected.add(key);else selected.delete(key);ui.inboxSelected=[...selected];syncInboxSelectionChrome();return;}
   if(el.matches('[data-inbox-select-all]')){const boxes=[...root.querySelectorAll('[data-inbox-select]')];ui.inboxSelected=el.checked?boxes.map(box=>String(box.dataset.inboxSelect)):[];for(const box of boxes)box.checked=el.checked;syncInboxSelectionChrome();return;}
-  if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
-  if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
-  if(el.id==='squad-sort'){ui.squadSort=el.value;render();}
-  if(el.id==='ply01-attribute'){ui.qol03.rosterAttribute=el.value;qol03Save();render();return;}
-  if(el.id==='ply01-minimum'){ui.qol03.rosterMinimum=Number(el.value);qol03Save();render();return;}
   if(el.id==='ply01-compare-player'){ui.comparePlayerId=el.value==='none'?null:Number(el.value);render();return;}
   if(el.id==='market-position'){ui.marketPosition=el.value;render();}
   if(el.id==='career-import-mode'){ui.importMode=el.value;ui.importTarget='';render();return;}
@@ -1666,6 +1683,20 @@ root.addEventListener('input',ev=>{
   if(out)out.textContent=`${el.value}${el.dataset.unit||''}`;
   el.style.setProperty('--range-position',`${Math.max(0,Math.min(100,(Number(el.value)-Number(el.min))/(Number(el.max)-Number(el.min))*100))}%`);
 });
+// Squad row hover must move with the content instead of appearing fixed during wheel scrolling.
+let rosterScrollVisualTimer=null;
+root.addEventListener('wheel',ev=>{
+  const shell=ev.target.closest?.('.roster-table-shell');
+  if(!shell)return;
+  shell.classList.add('is-scrolling');
+  clearTimeout(rosterScrollVisualTimer);
+  rosterScrollVisualTimer=setTimeout(()=>shell.isConnected&&shell.classList.remove('is-scrolling'),140);
+},{passive:true});
+root.addEventListener('pointermove',ev=>{
+  const shell=ev.target.closest?.('.roster-table-shell');
+  if(shell)shell.classList.remove('is-scrolling');
+},{passive:true});
+
 // Trap Tab in the mobile navigation drawer; Escape returns focus to the trigger.
 // UX2-01: remember expanded sections for the current session only.
 // This does not touch the authoritative world, IndexedDB or localStorage.
@@ -1725,6 +1756,16 @@ window.history.replaceState({footballArchitectRoute:window.location.pathname},''
 render();
 if(ui.routeKind==='match-preview'&&ui.page==='match-preview')startPreviewTimer();
 queueVaultSync();
+
+// UX #20 05A: keyboard navigation for squad table views.
+root.addEventListener('keydown',ev=>{
+ const button=ev.target.closest?.('[role="tab"][data-action="squad-view"]');
+ if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(ev.key))return;
+ const tabs=[...root.querySelectorAll('[role="tab"][data-action="squad-view"]')];
+ const index=tabs.indexOf(button);if(index<0)return;
+ const next=ev.key==='Home'?0:ev.key==='End'?tabs.length-1:(index+(ev.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+ ev.preventDefault();tabs[next]?.click();
+});
 
 // UX2-06: keyboard navigation for the four non-persistent tactical panels.
 root.addEventListener('keydown',ev=>{

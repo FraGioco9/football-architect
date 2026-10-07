@@ -50,28 +50,3 @@ export function inboxControls(prefs,lang='it',todoCount=0){
 }
 export function mailActionLabel(kind,lang='it'){const en=lang==='en';return ({transfer:en?'Negotiate':'Tratta',scouting:en?'Scout':'Osserva',board:en?'Review contract':'Esamina rinnovo',match:en?'View match':'Consulta partita',training:en?'Review training':'Consulta allenamento',medical:en?'Review player':'Consulta calciatore',finance:en?'Review finances':'Consulta finanze'})[kind]||(en?'Open related page':'Apri sezione collegata');}
 export function mailDestination(kind){if(kind==='transfer')return 'market';if(kind==='training')return 'training';if(kind==='medical')return 'squad';if(kind==='match')return 'calendar';if(kind==='scouting')return 'market';if(kind==='finance')return 'finance';if(kind==='board')return 'board';return 'inbox';}
-export function tableCompare(a,b){
- const parse=s=>String(s??'').trim().replace(/\s+/g,' '),num=s=>{const cleaned=parse(s).replace(/[^\d,.+\-]/g,'');const n=Number(cleaned.replace(/\./g,'').replace(',','.'));return cleaned&&Number.isFinite(n)?n:null;};
- const an=num(a),bn=num(b);if(an!==null&&bn!==null)return an-bn;
- return parse(a).localeCompare(parse(b),undefined,{numeric:true,sensitivity:'base'});
-}
-// A stable, light-weight DOM enhancement: never re-render a focused search field.
-export function applyTableView(table,pref){
- const body=table.tBodies[0];if(!body)return 0;
- const rows=[...body.rows];if(!rows.length)return 0;
- rows.forEach((row,i)=>{if(row.dataset.qol03Original===undefined)row.dataset.qol03Original=String(i);});
- const searchable=String(pref?.query||'').toLocaleLowerCase();
- let sorted=rows.map(row=>({row,i:Number(row.dataset.qol03Original)}));
- if(pref?.sort===null)sorted.sort((a,b)=>a.i-b.i);
- if(pref?.sort!==null&&Number.isInteger(pref?.sort))sorted.sort((a,b)=>{
-  const comp=tableCompare(a.row.cells[pref.sort]?.textContent,b.row.cells[pref.sort]?.textContent);
-  const secondary=pref.sort2!==null&&Number.isInteger(pref.sort2)?tableCompare(a.row.cells[pref.sort2]?.textContent,b.row.cells[pref.sort2]?.textContent):0;
-  return (pref.desc?-comp:comp)||secondary||(a.i-b.i);
- });
- let visible=0;const page=Math.max(0,Number(pref?.page)||0),pageSize=20;
- for(const {row} of sorted){body.appendChild(row);const match=!searchable||row.textContent.toLocaleLowerCase().includes(searchable);row.dataset.qol03Match=match?'true':'false';if(match)visible++;}
- const safePage=Math.min(page,Math.max(0,Math.ceil(visible/pageSize)-1));let seen=0;
- for(const {row} of sorted){const match=row.dataset.qol03Match==='true';row.hidden=!match||(seen<safePage*pageSize||seen>=(safePage+1)*pageSize);if(match)seen++;}
- for(const [i,head] of [...table.querySelectorAll('thead th')].entries())head.setAttribute('aria-sort',i===pref?.sort?(pref.desc?'descending':'ascending'):'none');
- return {visible,page:safePage,pages:Math.max(1,Math.ceil(visible/pageSize))};
-}

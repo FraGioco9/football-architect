@@ -29,6 +29,11 @@ export function createDialogCoordinator(root,doc,close){
     return {hadDialog:!!dialog,focus,kind:activeDialog};
   }
   function afterRender(before){
+    // Clear only the inert state previously applied by this coordinator.
+    for(const node of root.querySelectorAll('[data-dialog-inert="true"]')){
+      node.inert=false;
+      delete node.dataset.dialogInert;
+    }
     const layer=root.querySelector('.modal-layer');
     const dialog=layer?.querySelector('[role="dialog"]');
     // Render completely replaces the subtree, so inactive siblings must be marked again.
@@ -39,7 +44,10 @@ export function createDialogCoordinator(root,doc,close){
       opener=null;activeDialog=null;return;
     }
     for(const sibling of layer.parentElement.children){
-      if(sibling!==layer && !sibling.matches?.('[role="status"],[role="alert"]'))sibling.inert=true;
+      if(sibling!==layer && !sibling.matches?.('[role="status"],[role="alert"]')){
+        sibling.inert=true;
+        sibling.dataset.dialogInert='true';
+      }
     }
     const kind=dialog.getAttribute('data-dialog-kind')||'generic';
     const remembered=before.hadDialog&&before.kind===kind?resolve(dialog,before.focus):null;

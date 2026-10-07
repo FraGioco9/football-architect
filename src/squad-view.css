@@ -1,25 +1,77 @@
-/* UX2-04 — Squad layout, names sticky only inside scroll region. */
-.roster-highlights{min-width:0;margin-block-end:14px}
-.roster-highlights .squad-stats{margin-bottom:0}
-.roster-availability{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 15px;border:1px solid var(--color-border);border-top:0;border-radius:0 0 10px 10px;background:var(--color-surface);color:var(--color-text-secondary);font-size:12px}
-.roster-availability span{white-space:nowrap}.roster-availability b{color:var(--color-text)}
-.roster-availability-good b{color:var(--color-accent)}.roster-availability-warning b{color:var(--color-warning)}.roster-availability-danger b{color:var(--color-danger)}
-.roster-toolbar{display:grid;gap:12px;padding-bottom:15px;min-width:0}
-.roster-toolbar .table-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-width:0}
-.roster-quick-filter{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:8px 0;border-top:1px solid var(--color-border);min-width:0}
-.roster-quick-filter>strong{font-size:11px;color:var(--color-text-secondary);margin-inline-end:4px}
-.roster-toolbar .ply01-roster-filters{display:flex;align-items:center;flex-wrap:wrap;gap:9px;min-width:0}
-.roster-toolbar .ply01-roster-filters label{font-size:11px;white-space:normal}
-.roster-reset{margin-inline-start:auto}
-.roster-scroll{max-width:100%;min-width:0;overflow-x:auto;scrollbar-gutter:stable;isolation:isolate}
-.roster-table{width:100%;min-width:890px}
-.roster-table thead th:first-child,.roster-table tbody td:first-child{position:sticky;inset-inline-start:0;z-index:1;box-shadow:1px 0 0 var(--color-border)}
-.roster-table thead th:first-child{z-index:3;background:var(--color-surface-raised)}
-.roster-table tbody td:first-child{background:var(--color-surface)}
-.roster-table tbody tr:hover td:first-child,.roster-table tbody tr:focus-visible td:first-child{background:var(--color-surface-active)}
-.roster-table tbody tr:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
-.roster-table .player-cell{min-width:166px;max-width:255px}
-.roster-table .player-cell>div{min-width:0}.roster-table .player-cell strong{overflow-wrap:anywhere}
+/* UX #20 05A — rebuilt squad table with contextual views and native page scrolling. */
+.roster-summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text-secondary);font-size:11px}
+.roster-summary span{white-space:nowrap}.roster-summary strong{color:var(--color-text);font-size:12px}
+.roster-view-bar{display:flex;align-items:flex-start;gap:8px;max-width:100%;margin-bottom:2px}
+.roster-filter-button{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center}
+.roster-filter-button.has-filters{border-color:var(--color-accent);color:var(--color-accent)}
+.roster-filter-count{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--color-accent);color:var(--color-on-accent);font-size:9px;font-weight:800}
+.roster-view-tabs{display:flex;align-items:center;gap:7px;max-width:100%;overflow-x:auto;scrollbar-width:thin;padding:0 0 10px;margin-bottom:2px}
+.roster-view-tabs>.chip{flex:0 0 auto}
+.roster-attribute-tabs{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:0 0 12px}
+.roster-attribute-tabs>.chip{flex:0 0 auto}
+.roster-list-panel{min-width:0;overflow:visible}
+.roster-list-body{padding:16px 18px 18px;min-width:0}
+.roster-table-shell{max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:auto;touch-action:auto;-webkit-overflow-scrolling:touch}
+.roster-table-v2{width:100%;border-collapse:collapse;border-spacing:0;font-size:var(--type-table);font-variant-numeric:tabular-nums;text-align:left;white-space:nowrap}
+.roster-table-v2 thead{background:var(--table-head-bg)}
+.roster-table-v2 th{height:42px;padding:10px 13px;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border-strong);color:var(--table-head-text);font-size:var(--type-table-head);font-weight:var(--weight-heading);letter-spacing:var(--tracking-table-head)}
+.roster-sort-button{width:100%;min-width:0;display:inline-flex;align-items:baseline;justify-content:flex-start;gap:5px;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;line-height:1;text-align:inherit;cursor:pointer}
+.roster-table-v2 th.cell-numeric .roster-sort-button{justify-content:flex-end}
+.roster-sort-button:hover,.roster-sort-button:focus-visible{color:var(--color-text)}
+.roster-sort-button:focus-visible{outline:2px solid var(--color-accent);outline-offset:4px;border-radius:4px}
+.roster-sort-button.is-active{color:var(--color-accent)}
+.roster-sort-icon{flex:0 0 auto;display:inline-block;font-size:10px;line-height:1;vertical-align:baseline;transform:translateY(-.02em)}
+.roster-table-v2 td{height:54px;padding:8px 13px;border-bottom:1px solid var(--table-divider);color:#b9cad2;background:transparent}
+.roster-table-v2 th:first-child,.roster-table-v2 td:first-child{padding-left:18px}
+.roster-table-v2 th:last-child,.roster-table-v2 td:last-child{padding-right:18px}
+.roster-table-v2 tbody tr{background:transparent}
+.roster-table-v2 tbody tr[data-action]{cursor:pointer}
+.roster-table-v2 tbody tr[data-action]:hover>td{background:var(--table-row-hover)}
+.roster-table-shell.is-scrolling .roster-table-v2 tbody tr[data-action]:hover>td{background:transparent}
+.roster-table-v2 tbody tr:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+.roster-table-v2 tbody tr:focus-visible>td{background:var(--color-surface-active)}
+.roster-table-v2 td strong,.roster-table-v2 td b{color:var(--color-text)}
+.roster-table-v2 .cell-numeric{text-align:right;font-variant-numeric:tabular-nums}
+.roster-table-v2 .player-cell{min-width:166px;max-width:255px}
+.roster-table-v2 .player-cell>div{min-width:0}
+.roster-table-v2 .player-cell strong{overflow-wrap:anywhere}
+.roster-view-general .roster-table-v2{min-width:760px}
+.roster-view-contract .roster-table-v2{min-width:980px}
+.roster-view-market .roster-table-v2{min-width:870px}
+.roster-view-stats .roster-table-v2{min-width:720px}
+.roster-view-condition .roster-table-v2{min-width:820px}
+.roster-view-attributes .roster-table-v2{min-width:1180px}
+.roster-state{display:inline-flex;align-items:center;min-height:24px;padding:4px 7px;border:1px solid var(--color-border);border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}
+.roster-state-available{color:var(--color-accent)}
+.roster-state-tired{color:var(--color-warning)}
+.roster-state-injured{color:var(--color-danger)}
+.squad-filter-dialog{display:grid;gap:12px}
+.squad-filter-section{min-width:0;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface-raised)}
+.squad-filter-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.squad-filter-section-head .eyebrow{display:block;margin-bottom:4px;color:var(--color-text-subtle)}
+.squad-filter-section-head h3{margin:0;color:var(--color-text);font-size:13px;line-height:1.3}
+.squad-filter-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.squad-filter-section-player .squad-filter-section-grid{grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(150px,.75fr))}
+.squad-filter-section-grid-compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+.squad-filter-field{display:flex;flex-direction:column;gap:7px;min-width:0;color:var(--color-text-secondary);font-size:10px;font-weight:700}
+.squad-filter-field>span,.squad-filter-field>label{color:var(--color-text-secondary);font-size:10px;font-weight:700}
+.squad-filter-field input,.squad-filter-field select{width:100%;min-width:0}
+.squad-filter-search{min-width:0}
+.squad-filter-search .field-shell{width:100%}
+.squad-filter-range{display:grid;gap:7px;min-width:0}
+.squad-filter-range-label{color:var(--color-text-secondary);font-size:10px;font-weight:700}
+.squad-filter-range-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.squad-filter-number-shell{display:flex;align-items:center;min-width:0;height:var(--select-height);border:1px solid var(--field-border);border-radius:var(--radius-8);background:var(--field-bg);transition:border-color var(--motion-base),box-shadow var(--motion-base)}
+.squad-filter-number-shell:hover{border-color:var(--field-hover-border)}
+.squad-filter-number-shell:focus-within{border-color:var(--field-focus);box-shadow:0 0 0 3px var(--field-focus-ring)}
+.squad-filter-number-shell .squad-filter-number{min-width:0;height:100%;padding:0 10px;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;outline:0!important;text-align:left;font-variant-numeric:tabular-nums}
+.squad-filter-number::placeholder{color:var(--color-text-subtle)}
+.squad-filter-affix{flex:0 0 auto;padding:0 0 0 10px;color:var(--color-text-subtle);font-size:10px;font-weight:750;white-space:nowrap}
+.squad-filter-number+.squad-filter-affix{padding:0 10px 0 2px}
+.squad-filter-attributes-grid{grid-template-columns:minmax(0,1.5fr) minmax(130px,.5fr)}
+.squad-filter-help{margin:9px 0 0;color:var(--color-text-subtle);font-size:10px;line-height:1.45}
+.squad-filter-actions{position:sticky;bottom:calc(var(--dialog-padding) * -1);z-index:2;margin:16px calc(var(--dialog-padding) * -1) calc(var(--dialog-padding) * -1);padding:12px var(--dialog-padding);background:linear-gradient(to bottom,rgba(19,33,43,.92),var(--dialog-surface) 28%);backdrop-filter:blur(8px)}
+.squad-filter-actions .btn{min-width:120px}
 .roster-profile-overview{min-width:0}.roster-profile-indicators{display:flex;gap:8px;flex-wrap:wrap;padding:10px 0}
 .roster-profile-indicators span{background:var(--color-surface-raised);border:1px solid var(--color-border);border-radius:8px;color:var(--color-text-secondary);padding:8px 10px;font-size:11px}
 .roster-profile-indicators strong{color:var(--color-text)}
@@ -28,14 +80,27 @@
 .roster-profile-section>summary:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
 .roster-profile-section>.ply01-player-details{padding:12px;min-width:0}
 .roster-profile-section .fa-profile-compare{max-width:100%;overflow-x:auto;scrollbar-gutter:stable}
-@media (max-width:760px){.roster-toolbar .table-controls{align-items:stretch}.roster-toolbar .table-controls>.field-shell{flex:1 1 100%}.roster-table{min-width:810px}.roster-table .player-cell{min-width:145px;max-width:185px}.roster-availability{gap:8px}.roster-profile-section>.ply01-player-details{padding:8px}}
-@media (max-width:480px){.roster-highlights .squad-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.roster-quick-filter .chip{font-size:11px}.roster-toolbar .ply01-roster-filters select{max-width:100%}.roster-reset{margin-inline-start:0;width:100%}}
-@media (forced-colors:active){.roster-table thead th:first-child,.roster-table tbody td:first-child{border-inline-end:1px solid CanvasText}}
-/* Preserve the primary Continue action on mid-sized screens. The Home action
-   remains available in the sidebar as in the UX2-03 Club page. */
-@media (min-width:761px) and (max-width:1150px){.app-shell:has(.roster-highlights) .top-actions>.fa-home-top{display:none}}
-
-/* Label/control pairs remain together on narrow screens. */
-.roster-filter-field{display:flex;flex-direction:column;gap:6px;flex:1 1 168px;min-width:0}
-.roster-filter-field select{width:100%;min-width:0}
-@media (max-width:480px){.roster-filter-field{flex-basis:100%}}
+@media(max-width:760px){
+ .roster-list-body{padding:14px}
+ .roster-table-v2{min-width:700px}
+ .roster-view-general .roster-table-v2{min-width:700px}
+ .roster-view-stats .roster-table-v2{min-width:650px}
+ .roster-table-v2 .player-cell{min-width:145px;max-width:185px}
+ .roster-profile-section>.ply01-player-details{padding:8px}
+}
+@media(max-width:480px){
+ .roster-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .roster-summary span{white-space:normal}
+ .roster-view-bar{align-items:stretch;flex-direction:column}
+ .roster-filter-button{align-self:flex-start}
+ .roster-view-tabs{width:100%;margin-inline:-2px;padding-inline:2px}
+ .roster-list-body{padding:12px}
+ .squad-filter-section-grid,.squad-filter-section-player .squad-filter-section-grid,.squad-filter-section-grid-compact,.squad-filter-attributes-grid{grid-template-columns:1fr}
+ .squad-filter-range-pair{grid-template-columns:1fr 1fr}
+ .squad-filter-actions{flex-direction:column}
+ .squad-filter-actions .btn{width:100%}
+}
+@media(forced-colors:active){
+ .roster-state{border:1px solid CanvasText}
+ .roster-table-v2 tbody tr:focus-visible{outline-color:Highlight}
+}
