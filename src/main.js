@@ -81,7 +81,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -399,6 +399,10 @@ function render({focus}={}){
   document.title=ui.page==='not-found'?(ui.language==='en'?'Page not found':'Pagina non trovata')+' · '+GAME_NAME:ui.page==='new-career'?(ui.language==='en'?'New career':'Nuova carriera')+' · '+GAME_NAME:['home','home-settings'].includes(ui.page)?(ui.language==='en'?'Main menu':'Menu principale')+' · '+GAME_NAME:ui.page==='match-preview'?(ui.language==='en'?'Match preview':'Anteprima partita')+' · '+GAME_NAME:ui.page==='careers'?pageTitle('careers',ui.language):world.clubId?pageTitle(ui.page,ui.language):GAME_NAME;
   if(focus){const input=document.getElementById(focus.id);if(input){input.focus();try{input.setSelectionRange(focus.start,focus.end);}catch{}}}
   window.scrollTo(0,y);
+  if(ui.page==='calendar'&&ui.calendarAutoFocus){
+    ui.calendarAutoFocus=false;
+    requestAnimationFrame(()=>root.querySelector('#calendar-current-anchor')?.scrollIntoView({block:'center'}));
+  }
 }
 
 function qol03Enhance(){
@@ -667,7 +671,10 @@ function applyRoute(route,{replace=false,fromHistory=false,renderNow=true}={}){
     if(route.page==='home')ui.page='home';
     else if(route.page==='settings'&&!world.clubId)ui.page='home-settings';
     else ui.page=route.page;
-    if(ui.page==='calendar'&&!ui.calendarRound)ui.calendarRound=Math.min(world.fixtures.length,world.round+1);
+    if(ui.page==='calendar'){
+      if(!ui.calendarRound)ui.calendarRound=Math.min(world.fixtures.length,world.round+1);
+      ui.calendarAutoFocus=true;
+    }
   }else if(route.kind==='new-career'){
     if(!newCareerDraft)createNewCareerDraft();
     ui.matchPreview=null;ui.modal=null;ui.page='new-career';
@@ -1318,6 +1325,7 @@ root.addEventListener('click',async ev=>{
         root.querySelector('#market-search')?.focus({preventScroll:true});break;
       }
       case 'toggle-watchlist-filter':ui.marketOnlyWatched=!ui.marketOnlyWatched;render();break;
+      case 'calendar-filter':ui.calendarCompetition=field||'all';render();break;
       case 'round':ui.calendarRound=Number(field);render();break;
       case 'calendar-prev':ui.calendarRound=Math.max(1,(ui.calendarRound||world.round+1)-1);render();break;
       case 'calendar-next':ui.calendarRound=Math.min(world.fixtures.length,(ui.calendarRound||world.round+1)+1);render();break;
