@@ -31,7 +31,7 @@ import {marketEnabled} from './domain/career-market.js';
 import {scoutingEnabled,scoutingEstimate} from './domain/career-scouting.js';
 import {historicPlayerName} from './domain/career-youth.js';
 import {careerStatisticsReport} from './domain/career-statistics.js';
-import {inboxControls,filterMails,mailDestination,mailActionLabel} from './qol03.js';
+import {mailDestination,mailActionLabel} from './qol03.js';
 import {medicalAvailability} from './addons/domain/player-medical.mjs';
 import {ATTRIBUTE_DEFINITIONS} from './addons/domain/player-attributes.mjs';
 import {hasAdvancedCareer} from './domain/advanced-career.js';
@@ -582,10 +582,10 @@ function inboxInputAction(message,lang){
  return `<p class="inbox-action-unavailable" role="status">${en?'This request needs your decision, but its dedicated action is not available here yet.':'Questa richiesta richiede una decisione, ma l’azione dedicata non è ancora disponibile qui.'}</p>`;
 }
 export function inboxDetailHtml(w,ui,selected){
- const en=ui.language==='en',tr=(it,english)=>en?english:it,prefs=ui.qol03||{mailArchived:[]};
+ const en=ui.language==='en',tr=(it,english)=>en?english:it;
  if(!selected)return `<div class="inbox-detail-empty"><span aria-hidden="true">${icon('mail',24)}</span><strong>${tr('Seleziona un messaggio','Select a message')}</strong><p>${tr('Il contenuto comparirà qui senza spostare l’elenco.','Its content will appear here without moving the list.')}</p></div>`;
  const requires=m=>careerMessageRequiresUserInput(m,w);
- const message=readCareerMessage(selected,{lang:ui.language,countryId:w.countryId}),needsAction=requires(selected),archived=prefs.mailArchived?.includes(String(selected.id));
+ const message=readCareerMessage(selected,{lang:ui.language,countryId:w.countryId}),needsAction=requires(selected);
  const operational=inboxInputAction(selected,ui.language);
  const related=!selected.inputRequest&&mailDestination(selected.kind)!=='inbox'
   ?`<button type="button" class="btn btn-quiet" data-action="qol03-mail-go" data-page="${mailDestination(selected.kind)}" data-id="${esc(selected.id)}">${mailActionLabel(selected.kind,ui.language)}</button>`:'';
@@ -596,29 +596,29 @@ export function inboxDetailHtml(w,ui,selected){
   <h2>${esc(message.subject)}</h2>
   <p class="inbox-detail-text">${esc(message.text)}</p>
   <div class="inbox-detail-footer">
-   ${needsAction?`<p class="inbox-archive-note">${tr('Potrai archiviare il messaggio dopo aver risolto la richiesta.','You can archive this message after resolving the request.')}</p>`:''}
-   <div class="inbox-detail-actions">${operational||related}<button type="button" class="btn btn-quiet" data-action="qol03-mail-archive" data-id="${esc(selected.id)}" ${needsAction?'disabled aria-disabled="true"':''}>${archived?tr('Ripristina','Restore'):tr('Archivia','Archive')}</button></div>
+   <div class="inbox-detail-actions">${operational||related}</div>
   </div>
  </div>`;
 }
 export function inbox(w,ui){
- const en=ui.language==='en',tr=(it,english)=>en?english:it,prefs=ui.qol03||{mailFilter:'all',mailArchived:[]};
+ const en=ui.language==='en',tr=(it,english)=>en?english:it,selectedIds=new Set((ui.inboxSelected||[]).map(String));
  const requires=m=>careerMessageRequiresUserInput(m,w);
- const todoCount=(w.inbox||[]).filter(m=>requires(m)&&!prefs.mailArchived?.includes(String(m.id))).length;
- const messages=filterMails(w.inbox,prefs,requires);
+ const messages=[...(w.inbox||[])];
  const selected=messages.find(m=>String(m.id)===String(ui.openMail||''))||null;
  const list=messages.length?messages.map(m=>{
-  const message=readCareerMessage(m,{lang:ui.language,countryId:w.countryId}),needsAction=requires(m),active=selected&&String(selected.id)===String(m.id);
-  return `<button type="button" class="mail-item ${!m.read?'unread':''} ${needsAction?'requires-input':''} ${active?'mail-active':''}" data-action="read-mail" data-id="${esc(m.id)}" ${active?'aria-current="true"':''}>
-   <span class="mail-kind ${needsAction?'mail-kind-alert':''}">${inboxMessageIcon(m,needsAction)}</span>
-   <span class="mail-text"><b>${esc(message.subject)}</b><small>${esc(message.text)}</small>${needsAction?`<span class="mail-action-required">${tr('Azione richiesta','Action required')}</span>`:''}</span>
-   <span class="mail-date">${m.date?formatCareerDate(m.date,ui.language):`S${m.season} · G${m.round}`}${!m.read?'<i aria-label="'+tr('Non letto','Unread')+'"></i>':''}</span>
-  </button>`;
- }).join(''):`<div class="empty-state">${prefs.mailFilter==='todo'?tr('Nessuna azione richiesta.','No action required.'):prefs.mailFilter==='unread'?tr('Nessun messaggio non letto.','No unread messages.'):prefs.mailFilter==='archived'?tr('Archivio vuoto.','Archive is empty.'):tr('Nessun messaggio ricevuto.','No messages received.')}</div>`;
+  const message=readCareerMessage(m,{lang:ui.language,countryId:w.countryId}),needsAction=requires(m),active=selected&&String(selected.id)===String(m.id),checked=selectedIds.has(String(m.id));
+  return `<div class="inbox-mail-row ${needsAction?'requires-input':''} ${active?'mail-active-row':''}">
+   <label class="inbox-mail-select"><input type="checkbox" data-inbox-select="${esc(m.id)}" ${checked?'checked':''} aria-label="${tr('Seleziona','Select')}: ${esc(message.subject)}"><span aria-hidden="true"></span></label>
+   <button type="button" class="mail-item ${!m.read?'unread':''} ${needsAction?'requires-input':''} ${active?'mail-active':''}" data-action="read-mail" data-id="${esc(m.id)}" ${active?'aria-current="true"':''}>
+    <span class="mail-kind ${needsAction?'mail-kind-alert':''}">${inboxMessageIcon(m,needsAction)}</span>
+    <span class="mail-text"><b>${esc(message.subject)}</b><small>${esc(message.text)}</small>${needsAction?`<span class="mail-action-required">${tr('Azione richiesta','Action required')}</span>`:''}</span>
+    <span class="mail-date">${m.date?formatCareerDate(m.date,ui.language):`S${m.season} · G${m.round}`}${!m.read?'<i aria-label="'+tr('Non letto','Unread')+'"></i>':''}</span>
+   </button>
+  </div>`;
+ }).join(''):`<div class="empty-state">${tr('Nessun messaggio ricevuto.','No messages received.')}</div>`;
  return `${sectionHead('COMUNICAZIONI',tr('Posta in arrivo','Inbox'),'',w.unread?actionButton(`${icon('check',16)} ${tr('Segna tutto come letto','Mark all as read')}`,'mark-all','btn btn-quiet'):'')}
-  ${inboxControls(prefs,ui.language,todoCount)}
   <section class="inbox-workspace ${selected?'has-selection':''}" aria-label="${tr('Posta in arrivo','Inbox')}">
-   <div class="inbox-list-pane"><div class="mail-header"><b>${prefs.mailFilter==='archived'?tr('ARCHIVIO','ARCHIVE'):tr('MESSAGGI','MESSAGES')}</b><span data-inbox-unread-count>${tr(`${w.unread} non letti`,`${w.unread} unread`)}</span></div><div class="inbox-message-list">${list}</div></div>
+   <div class="inbox-list-pane"><div class="mail-header"><div class="inbox-header-main"><label class="inbox-select-all"><input type="checkbox" data-inbox-select-all aria-label="${tr('Seleziona tutti i messaggi','Select all messages')}"><b>${tr('MESSAGGI','MESSAGES')}</b></label><span data-inbox-selected-count hidden></span></div><span data-inbox-unread-count>${tr(`${w.unread} non letti`,`${w.unread} unread`)}</span></div><div class="inbox-message-list">${list}</div></div>
    <div class="inbox-detail-pane">${inboxDetailHtml(w,ui,selected)}</div>
   </section>`;
 }
