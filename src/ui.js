@@ -470,7 +470,7 @@ export function squad(w,ui){
  });
  const header=`<thead><tr>${heads.map(h=>{
    const active=h.key===sortKey,aria=active?sortDir==='asc'?'ascending':'descending':'none';
-   return `<th scope="col" aria-sort="${aria}"${h.numeric?' class="cell-numeric"':''}><button type="button" class="roster-sort-button ${active?'is-active':''}" data-action="squad-sort-column" data-value="${esc(h.key)}"><span>${esc(h.text)}</span><span class="roster-sort-icon" aria-hidden="true">${active?(sortDir==='asc'?'↑':'↓'):'↕'}</span></button></th>`;
+   return `<th scope="col" aria-sort="${aria}"${h.numeric?' class="cell-numeric"':''}><button type="button" class="roster-sort-button ${active?'is-active':''}" data-action="squad-sort-column" data-value="${esc(h.key)}"><span>${esc(h.text)}</span>${active?`<span class="roster-sort-icon" aria-hidden="true">${sortDir==='asc'?'↑':'↓'}</span>`:''}</button></th>`;
   }).join('')}</tr></thead>`;
  const list=players.map(p=>`<tr data-action="player" data-id="${p.id}" tabindex="0" aria-label="${esc(en?'Open player '+p.name:'Apri calciatore '+p.name)}"><td><div class="player-cell">${avatar(p,'sm')}<div><strong>${esc(p.name)}</strong><small>${esc(p.nationality)}</small></div></div></td>${rowCells(p)}</tr>`).join('');
  const table=`<div class="roster-table-shell ${tableClass}" role="region" tabindex="0" aria-label="${tx('Tabella rosa','Squad table')}"><table class="roster-table-v2">${header}<tbody>${list||emptyTableRow(tx('Nessun calciatore corrisponde ai filtri.','No players match the filters.'),heads.length)}</tbody></table></div>`;
