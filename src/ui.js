@@ -336,7 +336,6 @@ export function squad(w,ui){
    if(!attributesByPlayer.has(id))attributesByPlayer.set(id,readPlayerAttributes(p,{seed:w.seed,countryId:w.countryId}).values);
    return attributesByPlayer.get(id);
  };
- const players=[...members].sort((a,b)=>POSITIONS.indexOf(a.position)-POSITIONS.indexOf(b.position)||b.ovr-a.ovr||a.name.localeCompare(b.name));
  const availabilityLabel=p=>{
    const state=playerAvailability(p);
    if(state==='injured'){
@@ -345,6 +344,7 @@ export function squad(w,ui){
    }
    return state==='tired'?tx('Da recuperare','Needs recovery'):tx('Disponibile','Available');
  };
+ const availabilityRank={available:0,tired:1,injured:2};
  const contractRecord=p=>contractsByPlayer.get(String(p.id));
  const contractYears=p=>{
    const c=contractRecord(p),end=Number(c?.terms?.endSeason);
@@ -362,19 +362,49 @@ export function squad(w,ui){
    if(!role)return '—';
    return ({starter:tx('Titolare','Starter'),rotation:tx('Rotazione','Rotation'),prospect:tx('Giovane','Prospect'),leader:tx('Leader','Leader')})[role]||role;
  };
- const releaseClause=p=>{
+ const releaseClauseValue=p=>{
    const n=contractRecord(p)?.terms?.clauses?.releaseFee??p.releaseClauseEUR;
-   return Number.isFinite(Number(n))?money(Number(n),w,ui):'—';
+   return Number.isFinite(Number(n))?Number(n):null;
  };
+ const releaseClause=p=>releaseClauseValue(p)===null?'—':money(releaseClauseValue(p),w,ui);
  const offerState=p=>{
    const o=offersByPlayer.get(String(p.id));
    if(!o)return '—';
    return o.status==='awaiting_club'?tx('Controproposta','Counteroffer'):tx('In attesa giocatore','Awaiting player');
  };
  const stat=(p,key)=>Number.isFinite(Number(p[key]))?Number(p[key]):null;
+ const numberFilter=(value,min,max)=>((min===''||min===null||value>=Number(min))&&(max===''||max===null||value<=Number(max)));
+ const search=String(ui.squadSearch||'').trim().toLocaleLowerCase(en?'en':'it');
+ let players=members.filter(p=>{
+   if(search&&!p.name.toLocaleLowerCase(en?'en':'it').includes(search))return false;
+   if((ui.squadFilter||'ALL')!=='ALL'&&ROLE_GROUPS[p.position]!==ui.squadFilter)return false;
+   if((ui.squadAvailability||'all')!=='all'&&playerAvailability(p)!==ui.squadAvailability)return false;
+   if(!numberFilter(Number(p.age)||0,ui.squadAgeMin??'',ui.squadAgeMax??''))return false;
+   if(!numberFilter(Number(p.ovr)||0,ui.squadOvrMin??'',ui.squadOvrMax??''))return false;
+   if(ui.squadFitnessMin!==''&&ui.squadFitnessMin!==null&&(Number(p.fitness)||0)<Number(ui.squadFitnessMin))return false;
+   if(ui.squadMoraleMin!==''&&ui.squadMoraleMin!==null&&(Number(p.morale)||0)<Number(ui.squadMoraleMin))return false;
+   if(ui.squadValueMin!==''&&ui.squadValueMin!==null&&(Number(p.value)||0)<Number(ui.squadValueMin))return false;
+   if(ui.squadWageMax!==''&&ui.squadWageMax!==null&&(Number(p.wage)||0)>Number(ui.squadWageMax))return false;
+   const years=contractYears(p);
+   if(ui.squadContractFilter==='expiring'&&!(years!==null&&years<=1))return false;
+   if(ui.squadContractFilter==='longterm'&&!(years!==null&&years>1))return false;
+   if(ui.squadFilterAttribute&&ui.squadFilterAttribute!=='ALL'){
+     const threshold=ui.squadFilterAttributeMin===''||ui.squadFilterAttributeMin===null?1:Number(ui.squadFilterAttributeMin);
+     if((attributes(p)[ui.squadFilterAttribute]??0)<threshold)return false;
+   }
+   return true;
+ });
  const totals=rosterIndicators(members);
+ const activeFilterCount=[
+   Boolean(search),(ui.squadFilter||'ALL')!=='ALL',(ui.squadAvailability||'all')!=='all',(ui.squadContractFilter||'all')!=='all',
+   ui.squadAgeMin!=='',ui.squadAgeMax!=='',ui.squadOvrMin!=='',ui.squadOvrMax!=='',ui.squadFitnessMin!=='',ui.squadMoraleMin!=='',
+   ui.squadValueMin!=='',ui.squadWageMax!=='',(ui.squadFilterAttribute||'ALL')!=='ALL'
+ ].filter(Boolean).length;
  const viewLabels={general:tx('Generale','General'),attributes:tx('Attributi','Attributes'),contract:tx('Contratto','Contract'),market:tx('Mercato','Market'),stats:tx('Statistiche','Statistics'),condition:tx('Condizione','Condition')};
- const tabs=`<div class="roster-view-tabs" role="tablist" aria-label="${tx('Vista rosa','Squad view')}">${views.map(key=>`<button id="squad-view-${key}" type="button" role="tab" class="chip ${view===key?'chip-active':''}" aria-selected="${view===key}" aria-controls="squad-view-panel" tabindex="${view===key?'0':'-1'}" data-action="squad-view" data-value="${key}">${esc(viewLabels[key])}</button>`).join('')}</div>`;
+ const viewBar=`<div class="roster-view-bar">
+   <button type="button" class="btn btn-quiet roster-filter-button ${activeFilterCount?'has-filters':''}" data-action="squad-filters" aria-label="${tx('Apri filtri rosa','Open squad filters')}">${icon('filter',15)} ${tx('Filtri','Filters')}${activeFilterCount?` <span class="roster-filter-count">${activeFilterCount}</span>`:''}</button>
+   <div class="roster-view-tabs" role="tablist" aria-label="${tx('Vista rosa','Squad view')}">${views.map(key=>`<button id="squad-view-${key}" type="button" role="tab" class="chip ${view===key?'chip-active':''}" aria-selected="${view===key}" aria-controls="squad-view-panel" tabindex="${view===key?'0':'-1'}" data-action="squad-view" data-value="${key}">${esc(viewLabels[key])}</button>`).join('')}</div>
+  </div>`;
  const summary=`<section class="roster-summary" aria-label="${tx('Riepilogo rosa','Squad summary')}">
    <span><strong>${members.length}</strong> ${tx('giocatori','players')}</span>
    <span><strong>${totals.available}</strong> ${tr.available.toLowerCase()}</span>
@@ -383,37 +413,70 @@ export function squad(w,ui){
    <span><strong>${totals.expiring}</strong> ${tr.contractAlert.toLowerCase()}</span>
   </section>`;
  const attributeTabs=view==='attributes'?`<div class="roster-attribute-tabs" role="group" aria-label="${tx('Gruppo attributi','Attribute group')}">${[
-   ['technical',tx('Tecnici','Technical')],
-   ['mental',tx('Mentali','Mental')],
-   ['physical',tx('Fisici','Physical')],
-   ['goalkeeper',tx('Portiere','Goalkeeper')]
+   ['technical',tx('Tecnici','Technical')],['mental',tx('Mentali','Mental')],['physical',tx('Fisici','Physical')],['goalkeeper',tx('Portiere','Goalkeeper')]
  ].map(([key,label])=>`<button type="button" class="chip ${attributeGroup===key?'chip-active':''}" aria-pressed="${attributeGroup===key}" data-action="squad-attribute-group" data-value="${key}">${esc(label)}</button>`).join('')}</div>`:''; 
- const commonHeads=[{text:tr.name},{text:tr.position}];
+ const commonHeads=[{key:'name',text:tr.name},{key:'position',text:tr.position}];
  let heads=[],rowCells=()=>'',tableClass=`roster-view-${view}`;
  if(view==='general'){
-   heads=[...commonHeads,{text:tr.availability},{text:en?'AGE':'ETÀ',numeric:true},{text:'OVR',numeric:true},{text:tx('CONTRATTO','CONTRACT')},{text:tr.fitness}];
+   heads=[...commonHeads,{key:'availability',text:tr.availability},{key:'age',text:en?'AGE':'ETÀ',numeric:true},{key:'ovr',text:'OVR',numeric:true},{key:'contract',text:tx('CONTRATTO','CONTRACT')},{key:'fitness',text:tr.fitness,numeric:true}];
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td><td><span class="roster-state roster-state-${playerAvailability(p)}">${esc(availabilityLabel(p))}</span></td>${numberCell(p.age)}${numberCell(rating(p.ovr))}<td>${esc(contractLabel(p))}</td><td><div class="bar-cell">${pct(p.fitness)}<small>${p.fitness}%</small></div></td>`;
  }else if(view==='attributes'){
-   heads=[...commonHeads,{text:'OVR',numeric:true},...groupDefs.map(a=>({text:a.label[lang],numeric:true}))];
+   heads=[...commonHeads,{key:'ovr',text:'OVR',numeric:true},...groupDefs.map(a=>({key:`attr:${a.key}`,text:a.label[lang],numeric:true}))];
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td>${numberCell(rating(p.ovr))}${groupDefs.map(a=>numberCell(attributes(p)[a.key]??'—')).join('')}`;
  }else if(view==='contract'){
-   heads=[...commonHeads,{text:en?'AGE':'ETÀ',numeric:true},{text:tx('SCADENZA','EXPIRY')},{text:tx('INGAGGIO','WAGE'),numeric:true},{text:tx('RUOLO PROMESSO','PROMISED ROLE')},{text:tx('CLAUSOLA','CLAUSE'),numeric:true},{text:tx('STATO','STATUS')}];
+   heads=[...commonHeads,{key:'age',text:en?'AGE':'ETÀ',numeric:true},{key:'contract',text:tx('SCADENZA','EXPIRY')},{key:'wage',text:tx('INGAGGIO','WAGE'),numeric:true},{key:'promisedRole',text:tx('RUOLO PROMESSO','PROMISED ROLE')},{key:'releaseClause',text:tx('CLAUSOLA','CLAUSE'),numeric:true},{key:'offerState',text:tx('STATO','STATUS')}];
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td>${numberCell(p.age)}<td>${esc(contractLabel(p))}</td>${numberCell(money(p.wage,w,ui),'nowrap')}<td>${esc(promisedRole(p))}</td>${numberCell(releaseClause(p),'nowrap')}<td>${esc(offerState(p))}</td>`;
  }else if(view==='market'){
-   heads=[...commonHeads,{text:en?'AGE':'ETÀ',numeric:true},{text:'OVR',numeric:true},{text:tr.value,numeric:true},{text:tx('INGAGGIO','WAGE'),numeric:true},{text:tx('CONTRATTO','CONTRACT')}];
+   heads=[...commonHeads,{key:'age',text:en?'AGE':'ETÀ',numeric:true},{key:'ovr',text:'OVR',numeric:true},{key:'value',text:tr.value,numeric:true},{key:'wage',text:tx('INGAGGIO','WAGE'),numeric:true},{key:'contract',text:tx('CONTRATTO','CONTRACT')}];
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td>${numberCell(p.age)}${numberCell(rating(p.ovr))}${numberCell(money(p.value,w,ui),'nowrap')}${numberCell(money(p.wage,w,ui),'nowrap')}<td>${esc(contractLabel(p))}</td>`;
  }else if(view==='stats'){
-   heads=[...commonHeads,{text:tr.games,numeric:true},{text:tx('MINUTI','MINUTES'),numeric:true},{text:tr.goals,numeric:true},{text:'ASSIST',numeric:true}];
+   heads=[...commonHeads,{key:'apps',text:tr.games,numeric:true},{key:'minutes',text:tx('MINUTI','MINUTES'),numeric:true},{key:'goals',text:tr.goals,numeric:true},{key:'assists',text:'ASSIST',numeric:true}];
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td>${numberCell(stat(p,'apps')??'—')}${numberCell(stat(p,'minutesPlayed')??'—')}${numberCell(stat(p,'goals')??'—')}${numberCell(stat(p,'assists')??'—')}`;
  }else{
-   heads=[...commonHeads,{text:tr.availability},{text:tr.fitness},{text:tr.morale},{text:tx('INFORTUNIO / RECUPERO','INJURY / RECOVERY')}];
+   heads=[...commonHeads,{key:'availability',text:tr.availability},{key:'fitness',text:tr.fitness,numeric:true},{key:'morale',text:tr.morale,numeric:true},{key:'injury',text:tx('INFORTUNIO / RECUPERO','INJURY / RECOVERY'),numeric:true}];
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td><td><span class="roster-state roster-state-${playerAvailability(p)}">${esc(availabilityLabel(p))}</span></td><td><div class="bar-cell">${pct(p.fitness)}<small>${p.fitness}%</small></div></td><td>${Number.isFinite(Number(p.morale))?`${Math.round(Number(p.morale))}/100`:'—'}</td><td>${p.injury?esc(availabilityLabel(p)):'—'}</td>`;
  }
+ const validSortKeys=new Set(heads.map(h=>h.key));
+ const sortKey=validSortKeys.has(ui.squadSort)?ui.squadSort:'name';
+ const sortDir=ui.squadSortDir==='desc'?'desc':'asc';
+ const sortValue=(p,key)=>{
+   if(key==='name')return p.name.toLocaleLowerCase(en?'en':'it');
+   if(key==='position')return POSITIONS.indexOf(p.position);
+   if(key==='availability')return availabilityRank[playerAvailability(p)]??9;
+   if(key==='age')return Number(p.age)||0;
+   if(key==='ovr')return Number(p.ovr)||0;
+   if(key==='contract')return contractYears(p);
+   if(key==='fitness')return Number(p.fitness)||0;
+   if(key==='morale')return Number.isFinite(Number(p.morale))?Number(p.morale):null;
+   if(key==='injury')return Number(p.injury)||0;
+   if(key==='wage')return Number(p.wage)||0;
+   if(key==='value')return Number(p.value)||0;
+   if(key==='promisedRole')return promisedRole(p);
+   if(key==='releaseClause')return releaseClauseValue(p);
+   if(key==='offerState')return offerState(p);
+   if(key==='apps')return stat(p,'apps');
+   if(key==='minutes')return stat(p,'minutesPlayed');
+   if(key==='goals')return stat(p,'goals');
+   if(key==='assists')return stat(p,'assists');
+   if(key.startsWith('attr:'))return attributes(p)[key.slice(5)]??null;
+   return null;
+ };
+ players=[...players].sort((a,b)=>{
+   const av=sortValue(a,sortKey),bv=sortValue(b,sortKey);
+   if(av===null||av===undefined)return bv===null||bv===undefined?0:1;
+   if(bv===null||bv===undefined)return -1;
+   const cmp=typeof av==='string'?String(av).localeCompare(String(bv),en?'en':'it',{numeric:true,sensitivity:'base'}):av-bv;
+   return (sortDir==='desc'?-cmp:cmp)||a.name.localeCompare(b.name,en?'en':'it');
+ });
+ const header=`<thead><tr>${heads.map(h=>{
+   const active=h.key===sortKey,aria=active?sortDir==='asc'?'ascending':'descending':'none';
+   return `<th scope="col" aria-sort="${aria}"${h.numeric?' class="cell-numeric"':''}><button type="button" class="roster-sort-button ${active?'is-active':''}" data-action="squad-sort-column" data-value="${esc(h.key)}"><span>${esc(h.text)}</span><span class="roster-sort-icon" aria-hidden="true">${active?(sortDir==='asc'?'↑':'↓'):'↕'}</span></button></th>`;
+  }).join('')}</tr></thead>`;
  const list=players.map(p=>`<tr data-action="player" data-id="${p.id}" tabindex="0" aria-label="${esc(en?'Open player '+p.name:'Apri calciatore '+p.name)}"><td><div class="player-cell">${avatar(p,'sm')}<div><strong>${esc(p.name)}</strong><small>${esc(p.nationality)}</small></div></div></td>${rowCells(p)}</tr>`).join('');
- const table=`<div class="roster-table-shell ${tableClass}" role="region" tabindex="0" aria-label="${tx('Tabella rosa','Squad table')}"><table class="roster-table-v2">${tableColumns(heads)}<tbody>${list||emptyTableRow(tr.noResults,heads.length)}</tbody></table></div>`;
+ const table=`<div class="roster-table-shell ${tableClass}" role="region" tabindex="0" aria-label="${tx('Tabella rosa','Squad table')}"><table class="roster-table-v2">${header}<tbody>${list||emptyTableRow(tx('Nessun calciatore corrisponde ai filtri.','No players match the filters.'),heads.length)}</tbody></table></div>`;
  return `${sectionHead(tx('PRIMA SQUADRA','FIRST TEAM'),tx('Rosa','Squad'),'')}
   ${summary}
-  ${tabs}
+  ${viewBar}
   <section id="squad-view-panel" class="panel card-shell roster-list-panel" role="tabpanel" aria-labelledby="squad-view-${view}"><div class="roster-list-body">
    ${attributeTabs}
    ${table}
@@ -865,8 +928,44 @@ function matchModal(w,m,lang='it'){
  </article>`;
 }
 function pickerModal(w,ui){const index=ui.modal.index,slot=FORMATIONS[w.formation][index],list=clubPlayers(w,w.clubId).filter(p=>!p.injury&&(!w.advancedV1?.enabled||!p.medicalV1||medicalAvailability(p.medicalV1).canStart)).sort((a,b)=>(b.position===slot.p?100:0)+b.ovr-((a.position===slot.p?100:0)+a.ovr));return `<p class="modal-explainer">Scegli il calciatore per il ruolo <b>${esc(POSITION_LABELS[slot.p])}</b>. Un giocatore già schierato verrà scambiato di posizione.</p><div class="picker-list">${list.map(p=>`<button data-action="assign" data-id="${p.id}" data-index="${index}" class="picker-player">${avatar(p,'sm')}<span><b>${esc(p.name)}</b><small>${p.position} · ${p.age} anni ${w.lineup.includes(p.id)?'· Titolare':''}</small></span>${rating(p.ovr)}${p.position===slot.p?tag('Naturale','green'):''}${icon('chevron',17)}</button>`).join('')}</div>${actionButton(`${icon('minus',16)} Lascia vuoto`,'clear-slot','btn btn-outline','data-index="'+index+'"')}`;}
+function squadFiltersModal(w,ui){
+ const en=ui.language==='en',tx=(it,english)=>en?english:it,lang=en?'en':'it';
+ const num=(id,label,value,min=0,max='',step=1)=>`<label class="squad-filter-field" for="${id}"><span>${esc(label)}</span><input id="${id}" class="text-field" type="number" inputmode="numeric" value="${esc(value??'')}" min="${min}"${max!==''?` max="${max}"`:''} step="${step}"></label>`;
+ const options=(items,value)=>selectControl({id:items.id,value,options:items.options});
+ const role={id:'squad-filter-role',options:[
+  {value:'ALL',label:tx('Tutti','All')},{value:'Portieri',label:tx('Portieri','Goalkeepers')},{value:'Difensori',label:tx('Difensori','Defenders')},{value:'Centrocampisti',label:tx('Centrocampisti','Midfielders')},{value:'Attaccanti',label:tx('Attaccanti','Forwards')}
+ ]};
+ const availability={id:'squad-filter-availability',options:[
+  {value:'all',label:tx('Tutti','All')},{value:'available',label:tx('Disponibili','Available')},{value:'tired',label:tx('Da recuperare','Needs recovery')},{value:'injured',label:tx('Infortunati','Injured')}
+ ]};
+ const contract={id:'squad-filter-contract',options:[
+  {value:'all',label:tx('Tutti','All')},{value:'expiring',label:tx('In scadenza','Expiring')},{value:'longterm',label:tx('Più di una stagione','More than one season')}
+ ]};
+ const attrOptions=[{value:'ALL',label:tx('Qualsiasi attributo','Any attribute')},...ATTRIBUTE_DEFINITIONS.map(a=>({value:a.key,label:a.label[lang]}))];
+ return `<div class="squad-filter-dialog">
+   <label class="squad-filter-field squad-filter-search" for="squad-filter-search"><span>${tx('Calciatore','Player')}</span>${clearableField({id:'squad-filter-search',label:tx('Cerca calciatore','Search player'),value:ui.squadSearch||'',placeholder:tx('Nome calciatore...','Player name...'),search:true})}</label>
+   <div class="squad-filter-field"><label for="squad-filter-role">${tx('Ruolo','Position')}</label>${options(role,ui.squadFilter||'ALL')}</div>
+   <div class="squad-filter-field"><label for="squad-filter-availability">${tx('Disponibilità','Availability')}</label>${options(availability,ui.squadAvailability||'all')}</div>
+   <div class="squad-filter-field"><label for="squad-filter-contract">${tx('Contratto','Contract')}</label>${options(contract,ui.squadContractFilter||'all')}</div>
+   ${num('squad-filter-age-min',tx('Età minima','Minimum age'),ui.squadAgeMin,15,60)}
+   ${num('squad-filter-age-max',tx('Età massima','Maximum age'),ui.squadAgeMax,15,60)}
+   ${num('squad-filter-ovr-min','OVR min',ui.squadOvrMin,0,100)}
+   ${num('squad-filter-ovr-max','OVR max',ui.squadOvrMax,0,100)}
+   ${num('squad-filter-fitness-min',tx('Fitness minimo','Minimum fitness'),ui.squadFitnessMin,0,100)}
+   ${num('squad-filter-morale-min',tx('Morale minimo','Minimum morale'),ui.squadMoraleMin,0,100)}
+   ${num('squad-filter-value-min',tx('Valore minimo €','Minimum value €'),ui.squadValueMin,0,'',1000)}
+   ${num('squad-filter-wage-max',tx('Ingaggio massimo €/sett.','Maximum wage €/wk'),ui.squadWageMax,0,'',100)}
+   <div class="squad-filter-field squad-filter-attribute"><label for="squad-filter-attribute">${tx('Attributo','Attribute')}</label>${selectControl({id:'squad-filter-attribute',value:ui.squadFilterAttribute||'ALL',options:attrOptions})}</div>
+   ${num('squad-filter-attribute-min',tx('Valore attributo minimo','Minimum attribute value'),ui.squadFilterAttributeMin,1,100)}
+  </div>
+  <div class="modal-footer squad-filter-actions">
+    <button type="button" class="btn btn-outline" data-action="squad-filters-clear">${tx('Azzera','Clear')}</button>
+    <button type="button" class="btn btn-primary" data-action="squad-filters-apply">${tx('Applica','Apply')}</button>
+  </div>`;
+}
 function modalContent(w,ui){const m=ui.modal;let title='',inner='',wide=false;
- if(m.type==='player'){const p=playerById(w,m.id);if(!p)return '';title=ui.language==='en'?'Player profile':'Profilo calciatore';inner=playerModal(w,p,ui);wide=true;}
+ if(m.type==='squad-filters'){title=ui.language==='en'?'Squad filters':'Filtri rosa';inner=squadFiltersModal(w,ui);wide=true;}
+ else if(m.type==='player'){const p=playerById(w,m.id);if(!p)return '';title=ui.language==='en'?'Player profile':'Profilo calciatore';inner=playerModal(w,p,ui);wide=true;}
  else if(m.type==='market-offer'){title=ui.language==='en'?'Transfer offer':'Offerta di trasferimento';inner=marketOfferModal(w,ui);wide=true;}
  else if(m.type==='market-deal'){title=ui.language==='en'?'Negotiation dossier':'Dossier trattativa';inner=marketDealModal(w,ui);wide=true;}
  else if(m.type==='match'){const game=findMatch(w,m.id);if(!game)return '';title=ui.language==='en'?'Match report':'Resoconto partita';inner=matchModal(w,game,ui.language);wide=true;}
