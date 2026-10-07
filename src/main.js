@@ -81,7 +81,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadView:'general',squadAttributeGroup:'technical',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadSortDir:'asc',squadView:'general',squadAttributeGroup:'technical',squadContractFilter:'all',squadAgeMin:'',squadAgeMax:'',squadOvrMin:'',squadOvrMax:'',squadFitnessMin:'',squadMoraleMin:'',squadValueMin:'',squadWageMax:'',squadFilterAttribute:'ALL',squadFilterAttributeMin:'',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -1331,6 +1331,35 @@ root.addEventListener('click',async ev=>{
       case 'pressing':world.pressing=field;refresh(`Pressing: ${field}.`);restoreRadioFocus();break;
       case 'tempo':world.tempo=field;refresh(`Ritmo: ${field}.`);restoreRadioFocus();break;
       case 'training':world.training=field;refresh(`Programma ${field} selezionato.`);break;
+      case 'squad-filters':ui.modal={type:'squad-filters'};render();break;
+      case 'squad-filters-clear':{
+        ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadContractFilter='all';
+        ui.squadAgeMin='';ui.squadAgeMax='';ui.squadOvrMin='';ui.squadOvrMax='';ui.squadFitnessMin='';ui.squadMoraleMin='';
+        ui.squadValueMin='';ui.squadWageMax='';ui.squadFilterAttribute='ALL';ui.squadFilterAttributeMin='';
+        render();break;
+      }
+      case 'squad-filters-apply':{
+        const value=id=>document.getElementById(id)?.value??'';
+        const numberValue=id=>{const raw=String(value(id)).trim();if(raw==='')return '';const n=Number(raw);return Number.isFinite(n)?n:'';};
+        ui.squadSearch=String(value('squad-filter-search')).trim();
+        ui.squadFilter=value('squad-filter-role')||'ALL';
+        ui.squadAvailability=value('squad-filter-availability')||'all';
+        ui.squadContractFilter=value('squad-filter-contract')||'all';
+        ui.squadAgeMin=numberValue('squad-filter-age-min');ui.squadAgeMax=numberValue('squad-filter-age-max');
+        ui.squadOvrMin=numberValue('squad-filter-ovr-min');ui.squadOvrMax=numberValue('squad-filter-ovr-max');
+        ui.squadFitnessMin=numberValue('squad-filter-fitness-min');ui.squadMoraleMin=numberValue('squad-filter-morale-min');
+        ui.squadValueMin=numberValue('squad-filter-value-min');ui.squadWageMax=numberValue('squad-filter-wage-max');
+        ui.squadFilterAttribute=value('squad-filter-attribute')||'ALL';ui.squadFilterAttributeMin=numberValue('squad-filter-attribute-min');
+        ui.modal=null;render();break;
+      }
+      case 'squad-sort-column':{
+        const key=String(field||'');if(!key)break;
+        if(ui.squadSort===key)ui.squadSortDir=ui.squadSortDir==='desc'?'asc':'desc';
+        else{ui.squadSort=key;ui.squadSortDir='asc';}
+        render();
+        root.querySelector(`[data-action="squad-sort-column"][data-value="${CSS.escape(key)}"]`)?.focus({preventScroll:true});
+        break;
+      }
       case 'squad-view':{
         if(!['general','attributes','contract','market','stats','condition'].includes(field))break;
         ui.squadView=field;
