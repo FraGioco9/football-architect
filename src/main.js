@@ -450,7 +450,7 @@ function toast(message,level='success'){
 }
 function reportError(message){toast(message,'error');}
 async function changeOfficialTraining(modify){
-  if(!hasAdvancedCareer(world))throw new Error('Attiva prima il motore avanzato.');
+  if(!hasAdvancedCareer(world))throw new Error('Questa funzione non è ancora disponibile in questo salvataggio.');
   const before=world,updated=structuredClone(world);
   try{
     modify(updated);world=updated;
@@ -1536,7 +1536,7 @@ root.addEventListener('change',async ev=>{
   if(selected.matches('[data-adv-preset],[data-adv-phase],[data-adv-role],[data-adv-duty],[data-sim03-role],[data-sim03-duty]')){
     if(actionBusy)return;actionBusy=true;
     try{
-      if(!hasAdvancedCareer(world))throw new Error('Attiva prima il motore avanzato.');
+      if(!hasAdvancedCareer(world))throw new Error('Questa funzione non è ancora disponibile in questo salvataggio.');
       const original=world;world=structuredClone(world);
       try {
       if(selected.matches('[data-sim03-role],[data-sim03-duty]')){
