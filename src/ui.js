@@ -42,7 +42,7 @@ import {renderCareerCoachPanel} from './addons/ui/career-coaches-ui.mjs';
 import {substitutionsEnabled,expectedNextMatch,careerMatchdayBench} from './domain/career-matchday.js';
 import {personalityEnabled,personalityPlayerView,lockerRoomView} from './domain/career-personality.js';
 import {contractsEnabled,careerContractView} from './domain/career-contracts.js';
-import {filterSquadByAttribute,renderPlayerProfile,renderPlayerComparison} from './addons/ui/player-profile.mjs';
+import {renderPlayerProfile,renderPlayerComparison} from './addons/ui/player-profile.mjs';
 import {readPlayerAttributes} from './addons/domain/player-generator.mjs';
 import {rosterText,rosterIndicators,selectByAvailability,playerAvailability} from './squad-view-model.js';
 import {safeColor,clubPalette,monogram,overallTier,conditionTier} from './visual-identity.js';
