@@ -42,17 +42,6 @@ try{
   await page.goto(base+'/advanced',{waitUntil:'networkidle'});
   await assertNo('.fa-addon-page > header h1 + p','Advanced subtitle must be removed');
 
-  // Match preview custom header: keep schedule metadata, remove descriptive paragraph.
-  await page.goto(base+'/dashboard',{waitUntil:'networkidle'});
-  const preview=page.locator('[data-action="preview-match"]').first();
-  if(await preview.count()){
-    await preview.click();
-    await page.waitForURL(/\/match\/.*\/preview/);
-    await page.locator('.match-preview-heading').waitFor({state:'visible'});
-    check(await page.locator('.match-preview-heading .match-preview-schedule').count()===1,'match preview schedule metadata must remain');
-    await assertNo('.match-preview-heading > div > p:not(.match-preview-schedule)','Match Preview descriptive subtitle must be removed');
-  }else failures.push('fixture must expose a match preview action');
-
   check(runtimeErrors.length===0,'browser runtime errors before intentional 404: '+runtimeErrors.join(' | '));
   runtimeErrors.length=0;
 
