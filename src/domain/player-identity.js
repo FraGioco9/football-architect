@@ -91,12 +91,14 @@ function cityPool(countryCode){
  if(!cities.length)throw new Error('PLAYER_IDENTITY_CITY_POOL');
  return cities;
 }
-function physicalProfile(position,roll){
+function physicalProfile(position,age,roll){
  const family=legacyPositionFamily[String(position??'').toUpperCase()]??'mid';
  const config=physical[family];
- const height=clamp(Math.round(config.height+gaussianish(roll)*config.spread),160,204);
+ const youthHeightAdjustment=age<18?-(18-age)*.8:0;
+ const height=clamp(Math.round(config.height+youthHeightAdjustment+gaussianish(roll)*config.spread),160,204);
  // Weight remains a raw physical measurement, not a synthetic body-type class.
- const base=height-105+config.weightBias;
+ const ageAdjustment=age<20?-2:age>30?1:0;
+ const base=height-105+config.weightBias+ageAdjustment;
  const weight=clamp(Math.round(base+gaussianish(roll)*5),54,108);
  return {heightCm:height,weightKg:weight};
 }
@@ -133,7 +135,7 @@ export function createPlayerIdentity({
  const bornIn=birthplaceCountry(primary,secondary,home,roll);
  const cities=cityPool(bornIn);
  const birthDate=birthDateForAge(age,referenceDate,roll);
- const {heightCm,weightKg}=physicalProfile(position,roll);
+ const {heightCm,weightKg}=physicalProfile(position,age,roll);
  const foot=preferredFoot(position,roll);
  const identity={
    schemaVersion:PLAYER_IDENTITY_VERSION,
