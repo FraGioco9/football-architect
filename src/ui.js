@@ -460,7 +460,7 @@ export function squad(w,ui){
  return `${sectionHead(tr.eyebrow,tr.title,'')}
   ${summary}
   ${tabs}
-  <section class="panel card-shell roster-list-panel"><div class="club-overview-panel-body">
+  <section class="panel card-shell roster-list-panel"><div class="roster-list-body">
    ${commonToolbar}
    ${attributeToolbar}
    ${table}
