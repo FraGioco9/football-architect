@@ -314,7 +314,7 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .match-report-v2-score>span{display:block;margin-bottom:6px;color:var(--color-text-secondary);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .match-report-v2-score>strong{display:block;font-size:42px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.05em}
 .match-report-v2-score i{font-style:normal;color:var(--color-text-secondary);padding:0 5px}
-.match-report-v2-section{border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface);overflow:hidden}
+.match-report-v2-section{border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface);overflow:clip}
 .match-report-v2-section>h3{margin:0;padding:12px 15px;border-bottom:1px solid var(--color-border);font-size:11px}
 .match-report-stats{padding:4px 15px 8px}
 .match-report-stat{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;align-items:center;gap:10px;min-height:46px}
@@ -332,11 +332,11 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .match-report-goals strong{font-size:11px}
 .match-report-goals small{font-size:9px;color:var(--color-text-secondary);font-weight:800}
 .match-report-goals .match-report-no-goals{display:block;padding:16px;text-align:center;color:var(--color-text-secondary);font-size:10px}
-.match-report-v2-details{border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface);overflow:hidden}
+.match-report-v2-details{border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface);overflow:clip}
 .match-report-v2-details>summary{cursor:pointer;padding:13px 15px;font-size:11px;font-weight:800}
 .match-report-v2-details[open]>summary{border-bottom:1px solid var(--color-border)}
 .match-report-v2-details-body{padding:0}
-.match-report-timeline,.match-ratings{border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface);overflow:hidden}
+.match-report-timeline,.match-ratings{border:1px solid var(--color-border);border-radius:var(--radius-10);background:var(--color-surface);overflow:clip}
 .match-report-timeline>h3{margin:0;padding:12px 15px;border-bottom:1px solid var(--color-border);font-size:11px}
 .match-report-timeline-list{list-style:none;margin:0;padding:0}
 .match-report-timeline-list li{display:grid;grid-template-columns:42px 24px minmax(0,1fr);align-items:center;gap:8px;min-height:46px;padding:9px 14px;border-bottom:1px solid var(--color-border)}
