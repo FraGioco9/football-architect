@@ -11,7 +11,7 @@ function validPlayerIdentities(data){
     for(const player of data.players){
       if(player.identity===undefined||player.identity===null)continue; // legacy player
       if(typeof player.globalId!=='string'||!player.globalId.trim())return false;
-      validatePlayerIdentity(player.identity,{referenceDate:data.currentDate,expectedAge:player.age});
+      validatePlayerIdentity(player.identity,{referenceDate:data.currentDate});
       if(player.name!==player.identity.displayName)return false;
       if(player.shirtNumber!==player.identity.shirtNumber)return false;
       const expectedFoot=player.identity.preferredFoot==='left'?'Sinistro':'Destro';
