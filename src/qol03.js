@@ -50,4 +50,3 @@ export function inboxControls(prefs,lang='it',todoCount=0){
 }
 export function mailActionLabel(kind,lang='it'){const en=lang==='en';return ({transfer:en?'Negotiate':'Tratta',scouting:en?'Scout':'Osserva',board:en?'Review contract':'Esamina rinnovo',match:en?'View match':'Consulta partita',training:en?'Review training':'Consulta allenamento',medical:en?'Review player':'Consulta calciatore',finance:en?'Review finances':'Consulta finanze'})[kind]||(en?'Open related page':'Apri sezione collegata');}
 export function mailDestination(kind){if(kind==='transfer')return 'market';if(kind==='training')return 'training';if(kind==='medical')return 'squad';if(kind==='match')return 'calendar';if(kind==='scouting')return 'market';if(kind==='finance')return 'finance';if(kind==='board')return 'board';return 'inbox';}
-export 
