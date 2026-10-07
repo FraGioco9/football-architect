@@ -81,7 +81,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'Ruolo',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadView:'general',squadAttributeGroup:'technical',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -1010,7 +1010,7 @@ root.addEventListener('click',async ev=>{
         if(field==='contract-counter'){
           const offer=world.advancedV1?.contractsV1?.offers?.[String(id)];
           if(!offer||offer.status!=='awaiting_club'){toast(ui.language==='en'?'This request has already been resolved.':'Questa richiesta è già stata risolta.','info');render();break;}
-          ui.contractFocusId=String(id);navigate('squad');break;
+          ui.contractFocusId=String(id);ui.squadView='contract';ui.squadSort='contract';navigate('squad');break;
         }
         break;
       }
@@ -1369,7 +1369,14 @@ root.addEventListener('click',async ev=>{
       case 'training':world.training=field;refresh(`Programma ${field} selezionato.`);break;
       case 'squad-filter':ui.squadFilter=field;render();break;
       case 'squad-availability':ui.squadAvailability=['all','available','injured','tired'].includes(field)?field:'all';render();break;
-      case 'squad-reset':ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadSort='Ruolo';ui.qol03.rosterAttribute='ALL';ui.qol03.rosterMinimum=1;qol03Save();render();break;
+      case 'squad-view':{
+        if(!['general','attributes','contract','market','stats','condition'].includes(field))break;
+        ui.squadView=field;ui.squadSort=field==='general'?'position':field==='attributes'?'position':field==='contract'?'contract':field==='market'?'value':field==='stats'?'apps':'fitness';
+        render();
+        root.querySelector(`[data-action="squad-view"][data-value="${field}"]`)?.focus({preventScroll:true});
+        break;
+      }
+      case 'squad-reset':ui.squadSearch='';ui.squadFilter='ALL';ui.squadAvailability='all';ui.squadSort=ui.squadView==='general'?'position':ui.squadView==='attributes'?'position':ui.squadView==='contract'?'contract':ui.squadView==='market'?'value':ui.squadView==='stats'?'apps':'fitness';ui.qol03.rosterMinimum=1;qol03Save();render();break;
       case 'ux206-tab':{
         if(!['formation','roles','strategy','matchday'].includes(field))break;
         ui.tacticsTab=field;render();
@@ -1650,8 +1657,11 @@ root.addEventListener('change',async ev=>{
   if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
-  if(el.id==='squad-sort'){ui.squadSort=el.value;render();}
-  if(el.id==='ply01-attribute'){ui.qol03.rosterAttribute=el.value;qol03Save();render();return;}
+  if(el.id==='squad-role'){ui.squadFilter=el.value;render();return;}
+  if(el.id==='squad-availability'){ui.squadAvailability=['all','available','injured','tired'].includes(el.value)?el.value:'all';render();return;}
+  if(el.id==='squad-sort'){ui.squadSort=el.value;render();return;}
+  if(el.id==='squad-attribute-group'){ui.squadAttributeGroup=['technical','mental','physical','goalkeeper'].includes(el.value)?el.value:'technical';ui.qol03.rosterMinimum=1;qol03Save();render();return;}
+  if(el.id==='ply01-attribute'){ui.qol03.rosterAttribute=el.value;ui.squadSort='attr:'+el.value;qol03Save();render();return;}
   if(el.id==='ply01-minimum'){ui.qol03.rosterMinimum=Number(el.value);qol03Save();render();return;}
   if(el.id==='ply01-compare-player'){ui.comparePlayerId=el.value==='none'?null:Number(el.value);render();return;}
   if(el.id==='market-position'){ui.marketPosition=el.value;render();}
