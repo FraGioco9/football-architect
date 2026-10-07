@@ -129,8 +129,7 @@ function stepEvents(s,step,homeT,awayT,fitness){
     events.push(make('foul',defense,{...(actor?{playerId:actor.playerId}: {})}));
     if(s.analyticsMode&&actor){
       const cardRoll=randomAt(s.seed^0x71c4ad55,step)();
-      if(cardRoll<0.014)events.push(make('red_card',defense,{playerId:actor.playerId}));
-      else if(cardRoll<0.205)events.push(make('yellow_card',defense,{playerId:actor.playerId}));
+      if(cardRoll<0.205)events.push(make('yellow_card',defense,{playerId:actor.playerId}));
     }
   }
   return {events,fitness:fitness.map((f,i)=>Number(clamp(f-powers[i].staminaCost,0,100).toFixed(4)))};
