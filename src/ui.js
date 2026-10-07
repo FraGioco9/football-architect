@@ -624,13 +624,15 @@ function matchRatings(w,m,lang='it'){
  if(!rated.length)return '';
  const name=p=>esc(w.players.find(x=>String(x.id)===String(p.playerId))?.name||historicPlayerName(w,p.playerId)||'—');
  const changes=m.result?.advancedV1?.matchday?.changes??[];
- const substitutionIds=new Set(changes.flatMap(c=>[String(c.out),String(c.in)]));
+ const enteredIds=new Set(changes.map(c=>String(c.in)));
+ const exitedIds=new Set(changes.map(c=>String(c.out)));
  const eventBadges=p=>{
   const badges=[];
-  const goals=Number(p.goals)||0,yellows=Number(p.yellowCards)||0;
+  const id=String(p.playerId),goals=Number(p.goals)||0,yellows=Number(p.yellowCards)||0;
   if(goals)badges.push(`<span class="match-rating-event" aria-label="${goals} ${goals===1?tr('gol','goal'):tr('gol','goals')}">⚽${goals>1?`×${goals}`:''}</span>`);
   if(yellows)badges.push(`<span class="match-rating-event" aria-label="${yellows} ${yellows===1?tr('ammonizione','yellow card'):tr('ammonizioni','yellow cards')}">🟨${yellows>1?`×${yellows}`:''}</span>`);
-  if(substitutionIds.has(String(p.playerId)))badges.push(`<span class="match-rating-event" aria-label="${tr('Sostituzione','Substitution')}">↔</span>`);
+  if(enteredIds.has(id))badges.push(`<span class="match-rating-event is-entered" aria-label="${tr('Entrato','Came on')}">↑</span>`);
+  if(exitedIds.has(id))badges.push(`<span class="match-rating-event is-exited" aria-label="${tr('Uscito','Substituted off')}">↓</span>`);
   return badges.join('');
  };
  const home=rated.filter(p=>String(p.teamId)===String(m.home)).sort((a,b)=>b.rating-a.rating);
