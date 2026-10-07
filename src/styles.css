@@ -969,16 +969,14 @@ input.form-control[type="number"], input.form-control[type="date"] { font-varian
 .data-table tbody tr.my-standing td { border-bottom-color: #35594c; }
 .data-table .table-empty-row td { height: auto; padding: 0; text-align: center; }
 .data-table .table-empty-row .empty-state { min-width: 0; padding: 28px 22px; white-space: normal; }
-@media (min-width: 768px) {
-  .table-scroll--bounded { max-height: min(70vh, var(--table-max-height)); overflow-x: auto; overflow-y: auto; }
-  .table-scroll--bounded .data-table { border-collapse: separate; border-spacing: 0; }
-  .table-scroll--bounded .data-table thead th {
-    position: sticky; top: 0; z-index: var(--layer-table-head); background: var(--table-head-bg);
-    box-shadow: 0 1px 0 var(--color-border-strong);
-  }
+.table-scroll--bounded {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
 }
-@media (max-width: 767px) {
-  .table-scroll--bounded { max-height: none; overflow-x: auto; overflow-y: hidden; }
+.table-scroll--bounded .data-table {
+  border-collapse: separate;
+  border-spacing: 0;
 }
 /* Keep list behaviors and semantic buttons intact while sharing focus language. */
 :where(.fixture-row,.development-row,.scorer-row,.fixture-game,.mail-item,.picker-player):focus-visible {
