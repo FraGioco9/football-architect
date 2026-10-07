@@ -9,7 +9,7 @@ const names={it:{balanced:'Equilibrata',possession:'Possesso',highPress:'Pressin
 export function renderCareerTacticsPanel(w,lang='it',{halftime=false,compareId=null}={}){
   const en=lang==='en',tx=(it,english)=>en?english:it;
   if(!w.advancedV1?.enabled)return '';
-  if(!careerTacticsEnabled(w))return `<section class="panel sim02-official" aria-label="${tx('Strategie tattiche','Tactical strategies')}"><h3>${tx('Strategie tattiche','Tactical strategies')}</h3><p>${tx('Attiva preset salvabili e cambi tattici durante la partita. I risultati precedenti restano invariati. Esporta prima un backup JSON.','Enable saved presets and in-match tactical changes. Past results stay unchanged. Export a JSON backup first.')}</p><button type="button" class="btn btn-primary" data-action="sim02-enable">${tx('Attiva strategie tattiche','Enable tactical strategies')}</button></section>`;
+  if(!careerTacticsEnabled(w))return `<section class="panel sim02-official" aria-label="${tx('Strategie tattiche','Tactical strategies')}"><h3>${tx('Strategie tattiche','Tactical strategies')}</h3><p>${tx('Configura preset salvabili e cambi tattici per le prossime partite. I risultati precedenti restano invariati.','Configure saved presets and in-match tactical changes for upcoming matches. Past results stay unchanged.')}</p><button type="button" class="btn btn-primary" data-action="sim02-enable">${tx('Configura strategie','Configure strategies')}</button></section>`;
   const s=w.advancedV1.tacticPlannerV1,book=s.book,next=expectedNextMatch(w);
   const available=[...Object.keys(BUILT_IN_STYLES).map(id=>({id,name:names[en?'en':'it'][id]})),...book.presets.map(p=>({id:p.id,name:p.name}))];
   const options=available.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
