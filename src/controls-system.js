@@ -200,16 +200,9 @@ export function createControlHints(root,doc=globalThis.document){
   function show(el){
     const label=el?.getAttribute('data-fa-tooltip');
     if(!label||!el.isConnected)return;
-    const scrollState=[];
-    for(let node=el.parentElement;node;node=node.parentElement){
-      if(node.scrollHeight>node.clientHeight||node.scrollWidth>node.clientWidth)scrollState.push([node,node.scrollTop,node.scrollLeft]);
-    }
-    const documentScroller=doc.scrollingElement;
-    if(documentScroller&&!scrollState.some(([node])=>node===documentScroller))scrollState.push([documentScroller,documentScroller.scrollTop,documentScroller.scrollLeft]);
     active=el;
     tip.style.left='0px';tip.style.top='0px';
     tip.textContent=label;tip.hidden=false;position();
-    for(const [node,top,left] of scrollState){node.scrollTop=top;node.scrollLeft=left;}
   }
   function trigger(target){return target?.closest?.('[data-fa-tooltip]')||null;}
   function pointerover(event){if(event.pointerType==='touch')return;const el=trigger(event.target);if(el!==active){if(el)show(el);else hide();}}
@@ -252,7 +245,7 @@ export function createControlHints(root,doc=globalThis.document){
       if(summary)summary.setAttribute('aria-expanded',String(menu.open));
     }
   }
-  function scroll(){if(active)position();if(openSelect)positionCustomSelect(openSelect);}
+  function scroll(){if(active)hide();if(openSelect)positionCustomSelect(openSelect);}
   // Event listeners stay stable across render() / innerHTML replacement.
   root.addEventListener('pointerover',pointerover);
   root.addEventListener('pointerout',pointerout);
