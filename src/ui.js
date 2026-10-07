@@ -410,7 +410,7 @@ export function squad(w,ui){
    rowCells=p=>`<td>${tag(p.position,p.position==='POR'?'blue':'muted')}</td><td><span class="roster-state roster-state-${playerAvailability(p)}">${esc(availabilityLabel(p))}</span></td><td><div class="bar-cell">${pct(p.fitness)}<small>${p.fitness}%</small></div></td><td>${Number.isFinite(Number(p.morale))?`${Math.round(Number(p.morale))}/100`:'—'}</td><td>${p.injury?esc(availabilityLabel(p)):'—'}</td>`;
  }
  const list=players.map(p=>`<tr data-action="player" data-id="${p.id}" tabindex="0" aria-label="${esc(en?'Open player '+p.name:'Apri calciatore '+p.name)}"><td><div class="player-cell">${avatar(p,'sm')}<div><strong>${esc(p.name)}</strong><small>${esc(p.nationality)}</small></div></div></td>${rowCells(p)}</tr>`).join('');
- const table=`<div class="table-scroll roster-scroll ${tableClass}" role="region" tabindex="0" aria-label="${tx('Tabella rosa','Squad table')}"><table class="data-table roster-table">${tableColumns(heads)}<tbody>${list||emptyTableRow(tr.noResults,heads.length)}</tbody></table></div>`;
+ const table=`<div class="roster-table-shell ${tableClass}" role="region" tabindex="0" aria-label="${tx('Tabella rosa','Squad table')}"><table class="roster-table-v2">${tableColumns(heads)}<tbody>${list||emptyTableRow(tr.noResults,heads.length)}</tbody></table></div>`;
  return `${sectionHead(tx('PRIMA SQUADRA','FIRST TEAM'),tx('Rosa','Squad'),'')}
   ${summary}
   ${tabs}
