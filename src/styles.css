@@ -363,6 +363,8 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .match-rating-result{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-shrink:0}
 .match-rating-result>strong{min-width:28px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
 .match-rating-event{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-surface-raised);font-size:9px;line-height:1;white-space:nowrap}
+.match-rating-event.is-entered{color:var(--color-success,#54d19b);border-color:color-mix(in srgb,var(--color-success,#54d19b) 45%,var(--color-border));font-weight:900}
+.match-rating-event.is-exited{color:var(--color-danger,#e06c75);border-color:color-mix(in srgb,var(--color-danger,#e06c75) 45%,var(--color-border));font-weight:900}
 
 .match-report-simple-details{display:grid}
 .match-report-simple-details>h3{margin:0;padding:12px 15px;border-bottom:1px solid var(--color-border);font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em}
