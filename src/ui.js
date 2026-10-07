@@ -30,6 +30,7 @@ import {careerMarketPanel,marketOfferModal,marketDealModal} from './addons/caree
 import {marketEnabled} from './domain/career-market.js';
 import {scoutingEnabled,scoutingEstimate} from './domain/career-scouting.js';
 import {historicPlayerName} from './domain/career-youth.js';
+import {careerStatisticsReport} from './domain/career-statistics.js';
 import {inboxControls,filterMails,mailDestination,mailActionLabel} from './qol03.js';
 import {medicalAvailability} from './addons/domain/player-medical.mjs';
 import {ATTRIBUTE_DEFINITIONS} from './addons/domain/player-attributes.mjs';
@@ -584,25 +585,49 @@ function playerModal(w,p,ui){const lang=ui.language,pt=rosterText(lang),mine=p.c
  const scoutAttributes=!mine&&scoutingEnabled(w)?`<section class="ply01-scout-estimate" aria-label="${lang==='en'?'Scout knowledge':'Conoscenza osservatori'}"><h3>${lang==='en'?'Scouting attribute estimates':'Stime attributi degli osservatori'}</h3>${report?.attributes?`<div class="ply01-scout-intervals">${Object.entries(report.attributes).map(([key,v])=>{const a=ATTRIBUTE_DEFINITIONS.find(d=>d.key===key);return a&&v?`<div><span>${esc(a.label[lang==='en'?'en':'it'])}</span><strong>${range(v)}</strong></div>`:'';}).join('')}</div>`:`<p>${lang==='en'?'Detailed estimates are not available. Assign scouting coverage and build a report.':'Le stime dettagliate non sono disponibili. Assegna osservatori e sviluppa un rapporto.'}</p>`}</section>`:'';
  return `<div class="modal-player-top"><div class="modal-person">${avatar(p,'xl')}<div><span class="eyebrow">${pt.profile}</span><h2>${esc(p.name)}</h2><p>${esc(p.nationality)} · ${p.age} ${lang==='en'?'years':'anni'} · ${lang==='en'?'Foot':'Piede'} ${esc(p.foot.toLowerCase())}</p><span class="modal-club">${badge(team,'xs')} ${esc(team.name)}</span></div></div><div class="modal-ovr">${scoutingEnabled(w)&&!mine?range(report?.overall):rating(p.ovr)}<span>${lang==='en'?'OVERALL<br>RATING':'VALUTAZIONE<br>GENERALE'}</span></div></div><section class="roster-profile-overview" aria-label="${pt.overview}"><div class="profile-data"><div><span>${lang==='en'?'POSITION':'RUOLO'}</span><strong>${esc(POSITION_LABELS[p.position])}</strong></div><div><span>${lang==='en'?'POTENTIAL':'POTENZIALE'}</span><strong>${scoutingEnabled(w)&&!mine?range(report?.potential):p.potential}</strong></div><div><span>${lang==='en'?'MARKET VALUE':'VALORE DI MERCATO'}</span><strong>${scoutingEnabled(w)&&!mine?(report?.valueEUR?`${displayCareerMoney(report.valueEUR.min,{countryId:w.countryId,lang})}–${displayCareerMoney(report.valueEUR.max,{countryId:w.countryId,lang})}`:'—'):displayCareerMoney(p.value,{countryId:w.countryId,lang})}</strong></div><div><span>${lang==='en'?'WAGE / WEEK':'INGAGGIO / SETTIMANA'}</span><strong>${displayCareerMoney(p.wage,{countryId:w.countryId,lang})}</strong></div><div><span>${lang==='en'?'CONTRACT':'CONTRATTO'}</span><strong>${p.contract} ${lang==='en'?(p.contract===1?'year':'years'):(p.contract===1?'anno':'anni')}</strong></div><div><span>${lang==='en'?'AVAILABILITY':'DISPONIBILITÀ'}</span><strong>${p.injury?`${p.injury} ${pt.days}`:pt.fit}</strong></div></div><div class="profile-stat-strip"><div><b>${p.apps}</b><span>${lang==='en'?'APPS':'PRESENZE'}</span></div>${p.minutesPlayed!==undefined?`<div><b>${Math.round(p.minutesPlayed)}</b><span>${lang==='en'?'MINUTES':'MINUTI'}</span></div>`:''}<div><b>${p.goals}</b><span>${lang==='en'?'GOALS':'GOL'}</span></div><div><b>${p.assists}</b><span>ASSIST</span></div><div><b>${p.fitness}%</b><span>${lang==='en'?'FITNESS':'FORMA FISICA'}</span></div></div><div class="roster-profile-indicators" role="group" aria-label="${pt.condition}"><span>${pt.fitness}: <strong>${Number.isFinite(Number(p.fitness))?Math.round(Number(p.fitness)):0}%</strong></span><span>${pt.morale}: <strong>${Number.isFinite(Number(p.morale))?Math.round(Number(p.morale)):0}/100</strong></span><span>${p.injury?`${pt.recovery}: ${esc(p.injury)} ${pt.days}`:pt.fit}</span><span>${lang==='en'?'Contract':'Contratto'}: <strong>${p.contract} ${lang==='en'?'years':'anni'}</strong></span></div></section><div class="modal-actions">${actionButton(`${icon('star',17)} ${w.watchlist.includes(p.id)?(lang==='en'?'Remove from watchlist':'Rimuovi osservato'):(lang==='en'?'Watch player':'Segui calciatore')}`,'watch','btn btn-outline',`data-id="${p.id}"`)}${marketEnabled(w)?actionButton(mine?(lang==='en'?'Negotiate sale':'Tratta cessione'):(lang==='en'?'Negotiate':'Avvia trattativa'),'market-offer-player','btn btn-primary',`data-id="${w.countryId}:${p.id}"`):(mine?actionButton(`Cedi · ${displayCareerMoney(p.value*.82,{countryId:w.countryId,lang})}`,'sell','btn btn-danger',`data-id="${p.id}"`):actionButton(`Acquista · ${displayCareerMoney(fee,{countryId:w.countryId,lang})} ${icon('arrow',17)}`,'buy','btn btn-primary',`data-id="${p.id}"`))}</div>${personalityEnabled(w)?`<section class="ply02-profile" aria-label="${lang==='en'?'Personality overview':'Panoramica personalità'}"><h3>${lang==='en'?'Personality and relationships':'Personalità e relazioni'}</h3>${(()=>{const v=personalityPlayerView(w,p,{lang,report});return `<div class="ply02-facts">${v.owned?`<div><span>${lang==='en'?'Morale':'Morale'}</span><strong>${Math.round(v.morale)}/100</strong></div><div><span>${lang==='en'?'Coach relationship':'Rapporto allenatore'}</span><strong>${Math.round(v.coachRelationship)}/100</strong></div>`:''}</div><div class="ply02-traits">${v.traits.map(t=>`<div><span>${esc(t.label)}</span><strong>${t.visibility==='hidden'?'—':t.visibility==='estimated'?`${t.range[0]}–${t.range[1]}`:esc(t.description||'—')}</strong></div>`).join('')}</div>${v.owned&&v.history.length?`<details><summary>${lang==='en'?'Recent changes':'Variazioni recenti'}</summary>${v.history.map(x=>`<p>${esc(x.type)}: ${x.delta>0?'+':''}${x.delta} (${esc(x.drivers.join(', '))})</p>`).join('')}</details>`:''}`;})()}</section>`:''}${mine?`<details class="roster-profile-section" open><summary>${pt.attributes}</summary><div class="ply01-player-details">${renderPlayerProfile(p,{lang,seed:w.seed,countryId:w.countryId})}${selector}</div></details>`:scoutAttributes}${!scoutingEnabled(w)&&mine?playerProjection(w,p,lang):''}`;
 }
-function simplifiedMatchDetails(w,m,lang='it'){
+function matchTimeline(w,m,lang='it'){
  const tr=(it,en)=>lang==='en'?en:it,r=m.result,a=r?.advancedV1;
  if(!r)return '';
- const minute=v=>Number.isFinite(Number(v))?Math.max(1,Math.round(Number(v))):null;
- const teamName=side=>esc((side==='home'?clubById(w,m.home):clubById(w,m.away))?.short||'—');
+ const numeric=v=>Number.isFinite(Number(v))?Number(v):null;
+ const minuteFromSecond=v=>numeric(v)===null?null:Math.floor(Number(v)/60)+1;
+ const teamShort=side=>esc((side==='home'?clubById(w,m.home):clubById(w,m.away))?.short||'—');
  const items=[];
+ for(const g of r.goals??[])items.push({minute:numeric(g.minute),order:1,kind:'goal',icon:'⚽',label:tr('Gol','Goal'),text:`${esc(historicPlayerName(w,g.scorerId))} · ${teamShort(g.side)}`});
+ for(const e of a?.events??[]){
+  if(!['yellow_card','red_card'].includes(e.type))continue;
+  const side=e.side==='home'||e.side==='away'?e.side:(e.teamId===m.home?'home':e.teamId===m.away?'away':null);
+  const player=w.players.find(p=>String(p.id)===String(e.playerId));
+  const yellow=e.type==='yellow_card';
+  items.push({minute:minuteFromSecond(e.second),order:yellow?2:3,kind:e.type,icon:yellow?'🟨':'🟥',label:yellow?tr('Ammonizione','Yellow card'):tr('Espulsione','Red card'),text:`${esc(player?.name||'—')}${side?` · ${teamShort(side)}`:''}`});
+ }
  for(const c of a?.matchday?.changes??[]){
   const side=c.teamId===m.home?'home':c.teamId===m.away?'away':null;
-  items.push({minute:minute(c.minute),icon:'↔',label:tr('Sostituzione','Substitution'),text:`${esc(historicPlayerName(w,c.out))} → ${esc(historicPlayerName(w,c.in))}${side?` · ${teamName(side)}`:''}`});
+  items.push({minute:numeric(c.minute),order:4,kind:'substitution',icon:'↔',label:tr('Sostituzione','Substitution'),text:`${esc(historicPlayerName(w,c.out))} → ${esc(historicPlayerName(w,c.in))}${side?` · ${teamShort(side)}`:''}`});
  }
  for(const injury of a?.injuries??[]){
   const player=w.players.find(p=>String(p.id)===String(injury.playerId));
   const side=player?.clubId===m.home?'home':player?.clubId===m.away?'away':null;
-  const duration=Number(injury.durationDays);
-  items.push({minute:minute(injury.minute),icon:'✚',label:tr('Infortunio','Injury'),text:`${esc(player?.name||'—')}${side?` · ${teamName(side)}`:''}${Number.isFinite(duration)&&duration>0?` · ${duration} ${tr('giorni','days')}`:''}`});
+  const duration=numeric(injury.durationDays);
+  items.push({minute:numeric(injury.minute)??minuteFromSecond(injury.second),order:5,kind:'injury',icon:'✚',label:tr('Infortunio','Injury'),text:`${esc(player?.name||'—')}${side?` · ${teamShort(side)}`:''}${duration&&duration>0?` · ${duration} ${tr('giorni','days')}`:''}`});
  }
- items.sort((x,y)=>(x.minute??999)-(y.minute??999));
- if(!items.length)return '';
- return `<section class="match-report-simple-details" aria-label="${tr('Eventi aggiuntivi','Additional events')}"><h3>${tr('Eventi aggiuntivi','Additional events')}</h3><ol class="match-report-detail-list">${items.map(item=>`<li><time>${item.minute?`${item.minute}′`:'—'}</time><span class="match-report-detail-icon" aria-hidden="true">${item.icon}</span><span><strong>${item.label}</strong><small>${item.text}</small></span></li>`).join('')}</ol></section>`;
+ items.push({minute:45,order:90,kind:'half',icon:'Ⅱ',label:tr('Intervallo','Half-time'),text:tr('Fine primo tempo','End of first half')});
+ const fullMinute=numeric(a?.matchday?.finalSecond)?Math.max(90,Math.ceil(Number(a.matchday.finalSecond)/60)):90;
+ items.push({minute:fullMinute,order:99,kind:'full',icon:'■',label:tr('Finale','Full time'),text:`${Number(r.homeGoals)||0} – ${Number(r.awayGoals)||0}`});
+ items.sort((x,y)=>(x.minute??999)-(y.minute??999)||x.order-y.order);
+ return `<section class="match-report-timeline" aria-labelledby="match-report-timeline-title"><h3 id="match-report-timeline-title">${tr('Timeline','Timeline')}</h3><ol class="match-report-timeline-list">${items.map(item=>`<li class="is-${item.kind}"><time>${item.minute?`${item.minute}′`:'—'}</time><span class="match-report-timeline-icon" aria-hidden="true">${item.icon}</span><span><strong>${item.label}</strong><small>${item.text}</small></span></li>`).join('')}</ol></section>`;
+}
+function matchRatings(w,m,lang='it'){
+ const tr=(it,en)=>lang==='en'?en:it,report=careerStatisticsReport(w,m);
+ if(!report?.players?.length)return '';
+ const rated=report.players.filter(p=>Number.isFinite(Number(p.rating))).map(p=>({...p,rating:Number(p.rating)}));
+ if(!rated.length)return '';
+ const name=p=>esc(w.players.find(x=>String(x.id)===String(p.playerId))?.name||historicPlayerName(w,p.playerId)||'—');
+ const home=rated.filter(p=>String(p.teamId)===String(m.home)).sort((a,b)=>b.rating-a.rating);
+ const away=rated.filter(p=>String(p.teamId)===String(m.away)).sort((a,b)=>b.rating-a.rating);
+ const best=[...rated].sort((a,b)=>b.rating-a.rating)[0];
+ const teamBlock=(players,club)=>`<div class="match-rating-team"><h4>${esc(club?.short||club?.name||'—')}</h4>${players.slice(0,3).map((p,i)=>`<div class="match-rating-row"><span><b>${i+1}</b>${name(p)}</span><strong>${p.rating.toFixed(1)}</strong></div>`).join('')||`<p class="muted">${tr('Nessun voto disponibile','No ratings available')}</p>`}</div>`;
+ const all=[...rated].sort((a,b)=>String(a.teamId).localeCompare(String(b.teamId))||b.rating-a.rating);
+ return `<section class="match-ratings" aria-labelledby="match-ratings-title"><div class="match-ratings-head"><div><span class="overline">${tr('PRESTAZIONI','PERFORMANCES')}</span><h3 id="match-ratings-title">${tr('Voti giocatori','Player ratings')}</h3></div><div class="match-ratings-best"><span>${tr('Migliore in campo','Player of the match')}</span><strong>${name(best)} · ${best.rating.toFixed(1)}</strong></div></div><div class="match-ratings-top">${teamBlock(home,clubById(w,m.home))}${teamBlock(away,clubById(w,m.away))}</div><details class="match-ratings-all"><summary>${tr('Mostra tutti i voti','Show all ratings')}</summary><div class="match-ratings-all-grid">${all.map(p=>`<div class="match-rating-row"><span>${name(p)}<small>${esc(clubById(w,p.teamId)?.short||'—')}</small></span><strong>${p.rating.toFixed(1)}</strong></div>`).join('')}</div></details></section>`;
 }
 function matchModal(w,m,lang='it'){
  const h=clubById(w,m.home),a=clubById(w,m.away),r=m.result;
@@ -614,12 +639,8 @@ function matchModal(w,m,lang='it'){
  const stadium=h?.stadium||'';
  const shots=numeric(r.shotsHome)+numeric(r.shotsAway),xgs=numeric(r.xgHome)+numeric(r.xgAway);
  const stat=(label,left,right,share)=>`<div class="match-report-stat"><strong>${esc(left)}</strong><div><span>${esc(label)}</span><div class="match-report-stat-bar"><i style="width:${pct(share)}%"></i><b style="width:${100-pct(share)}%"></b></div></div><strong>${esc(right)}</strong></div>`;
- const goals=(r.goals??[]).slice().sort((x,y)=>numeric(x.minute)-numeric(y.minute));
- const goalRows=goals.length?goals.map(g=>{
-   const side=g.side==='home'?h:a;
-   return `<li><time>${numeric(g.minute)}′</time><span class="match-report-goal-icon">${icon('football',15)}</span><strong>${esc(historicPlayerName(w,g.scorerId))}</strong><small>${esc(side?.short||side?.name||'—')}</small></li>`;
- }).join(''):`<li class="match-report-no-goals">${tr('Nessun gol segnato.','No goals scored.')}</li>`;
- const details=simplifiedMatchDetails(w,m,lang);
+ const timeline=matchTimeline(w,m,lang);
+ const ratings=matchRatings(w,m,lang);
  return `<article class="match-report-v2">
   <header class="match-report-v2-head">
     <div class="match-report-v2-meta">
@@ -641,11 +662,8 @@ function matchModal(w,m,lang='it'){
       ${stat('xG',numeric(r.xgHome).toFixed(2),numeric(r.xgAway).toFixed(2),xgs?numeric(r.xgHome)/xgs*100:50)}
     </div>
   </section>
-  <section class="match-report-v2-section" aria-labelledby="match-report-goals-title">
-    <h3 id="match-report-goals-title">${tr('Gol','Goals')}</h3>
-    <ol class="match-report-goals">${goalRows}</ol>
-  </section>
-  ${details?`<details class="match-report-v2-details"><summary>${tr('Dettagli partita','Match details')}</summary><div class="match-report-v2-details-body">${details}</div></details>`:''}
+  ${timeline}
+  ${ratings}
  </article>`;
 }
 function pickerModal(w,ui){const index=ui.modal.index,slot=FORMATIONS[w.formation][index],list=clubPlayers(w,w.clubId).filter(p=>!p.injury&&(!w.advancedV1?.enabled||!p.medicalV1||medicalAvailability(p.medicalV1).canStart)).sort((a,b)=>(b.position===slot.p?100:0)+b.ovr-((a.position===slot.p?100:0)+a.ovr));return `<p class="modal-explainer">Scegli il calciatore per il ruolo <b>${esc(POSITION_LABELS[slot.p])}</b>. Un giocatore già schierato verrà scambiato di posizione.</p><div class="picker-list">${list.map(p=>`<button data-action="assign" data-id="${p.id}" data-index="${index}" class="picker-player">${avatar(p,'sm')}<span><b>${esc(p.name)}</b><small>${p.position} · ${p.age} anni ${w.lineup.includes(p.id)?'· Titolare':''}</small></span>${rating(p.ovr)}${p.position===slot.p?tag('Naturale','green'):''}${icon('chevron',17)}</button>`).join('')}</div>${actionButton(`${icon('minus',16)} Lascia vuoto`,'clear-slot','btn btn-outline','data-index="'+index+'"')}`;}
