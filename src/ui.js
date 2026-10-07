@@ -620,26 +620,56 @@ function matchRatings(w,m,lang='it'){
  const tr=(it,en)=>lang==='en'?en:it,report=careerStatisticsReport(w,m);
  if(!report?.players?.length)return '';
  const participated=p=>p.minutes!==null&&p.minutes!==undefined?Number(p.minutes)>0:Number(p.touchesObserved)>0;
- const rated=report.players.filter(p=>participated(p)&&Number.isFinite(Number(p.rating))).map(p=>({...p,rating:Number(p.rating)}));
- if(!rated.length)return '';
- const name=p=>esc(w.players.find(x=>String(x.id)===String(p.playerId))?.name||historicPlayerName(w,p.playerId)||'—');
+ const participants=report.players.filter(participated);
+ if(!participants.length)return '';
  const changes=m.result?.advancedV1?.matchday?.changes??[];
- const enteredIds=new Set(changes.map(c=>String(c.in)));
- const exitedIds=new Set(changes.map(c=>String(c.out)));
+ const cards=m.result?.advancedV1?.cards??[];
+ const formations=m.result?.advancedV1?.formations??{};
+ const positionOrder=['GK','RB','RWB','CB','LB','LWB','CDM','CM','CAM','RM','LM','RW','LW','CF','ST'];
+ const positionLabel=position=>{
+  const it={GK:'POR',RB:'TD',RWB:'TD',CB:'DC',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',CAM:'COC',RM:'AD',LM:'AS',RW:'AD',LW:'AS',CF:'ATT',ST:'ATT'};
+  return lang==='en'?String(position||'—'):it[position]||String(position||'—');
+ };
+ const name=p=>esc(w.players.find(x=>String(x.id)===String(p.playerId))?.name||historicPlayerName(w,p.playerId)||'—');
+ const positionRank=p=>{const i=positionOrder.indexOf(String(p.position||''));return i<0?999:i;};
+ const minuteText=(values,fallback)=>values.length?values.map(v=>`${v}′`).join(', '):fallback;
  const eventBadges=p=>{
-  const badges=[];
-  const id=String(p.playerId),goals=Number(p.goals)||0,yellows=Number(p.yellowCards)||0;
-  if(goals)badges.push(`<span class="match-rating-event" aria-label="${goals} ${goals===1?tr('gol','goal'):tr('gol','goals')}">⚽${goals>1?`×${goals}`:''}</span>`);
-  if(yellows)badges.push(`<span class="match-rating-event" aria-label="${yellows} ${yellows===1?tr('ammonizione','yellow card'):tr('ammonizioni','yellow cards')}">🟨${yellows>1?`×${yellows}`:''}</span>`);
-  if(enteredIds.has(id))badges.push(`<span class="match-rating-event is-entered" aria-label="${tr('Entrato','Came on')}">↑</span>`);
-  if(exitedIds.has(id))badges.push(`<span class="match-rating-event is-exited" aria-label="${tr('Uscito','Substituted off')}">↓</span>`);
+  const badges=[],id=String(p.playerId);
+  const goalMinutes=(m.result?.goals??[]).filter(g=>String(g.scorerId)===id).map(g=>Number(g.minute)).filter(Number.isFinite);
+  if(goalMinutes.length)badges.push(`<span class="match-rating-event" title="${esc(tr('Gol','Goal'))}: ${esc(minuteText(goalMinutes,'—'))}" aria-label="${esc(tr('Gol','Goal'))}: ${esc(minuteText(goalMinutes,'—'))}">⚽${goalMinutes.length>1?`×${goalMinutes.length}`:''}</span>`);
+  const yellowCount=Number(p.yellowCards)||0;
+  if(yellowCount){
+    const yellowMinutes=cards.filter(c=>c.type==='yellow_card'&&String(c.playerId)===id).map(c=>Number(c.minute)).filter(Number.isFinite);
+    const when=minuteText(yellowMinutes,tr('minuto non disponibile','minute unavailable'));
+    badges.push(`<span class="match-rating-event" title="${esc(tr('Ammonizione','Yellow card'))}: ${esc(when)}" aria-label="${esc(tr('Ammonizione','Yellow card'))}: ${esc(when)}">🟨${yellowCount>1?`×${yellowCount}`:''}</span>`);
+  }
+  for(const c of changes.filter(c=>String(c.in)===id)){
+    badges.push(`<span class="match-rating-event is-entered" title="${esc(tr('Entrato','Came on'))}: ${esc(String(c.minute))}′" aria-label="${esc(tr('Entrato','Came on'))}: ${esc(String(c.minute))}′">${icon('up',11)}</span>`);
+  }
+  for(const c of changes.filter(c=>String(c.out)===id)){
+    badges.push(`<span class="match-rating-event is-exited" title="${esc(tr('Uscito','Substituted off'))}: ${esc(String(c.minute))}′" aria-label="${esc(tr('Uscito','Substituted off'))}: ${esc(String(c.minute))}′">${icon('down',11)}</span>`);
+  }
   return badges.join('');
  };
- const home=rated.filter(p=>String(p.teamId)===String(m.home)).sort((a,b)=>b.rating-a.rating);
- const away=rated.filter(p=>String(p.teamId)===String(m.away)).sort((a,b)=>b.rating-a.rating);
- const best=[...rated].sort((a,b)=>b.rating-a.rating)[0];
- const teamBlock=(players,club)=>`<div class="match-rating-team"><h4>${esc(club?.short||club?.name||'—')}</h4>${players.map((p,i)=>`<div class="match-rating-row"><span><b>${i+1}</b>${name(p)}</span><span class="match-rating-result">${eventBadges(p)}<strong>${p.rating.toFixed(1)}</strong></span></div>`).join('')||`<p class="muted">${tr('Nessun voto disponibile','No ratings available')}</p>`}</div>`;
- return `<section class="match-ratings" aria-labelledby="match-ratings-title"><div class="match-ratings-head"><div><span class="overline">${tr('PRESTAZIONI','PERFORMANCES')}</span><h3 id="match-ratings-title">${tr('Voti giocatori','Player ratings')}</h3></div><div class="match-ratings-best"><span>${tr('Migliore in campo','Player of the match')}</span><strong>${name(best)} · ${best.rating.toFixed(1)}</strong></div></div><div class="match-ratings-grid">${teamBlock(home,clubById(w,m.home))}${teamBlock(away,clubById(w,m.away))}</div></section>`;
+ const orderTeam=(players,teamId)=>{
+   const byId=new Map(players.map(p=>[String(p.playerId),p])),incoming=new Set(),next=new Map();
+   for(const c of changes.filter(c=>String(c.teamId)===String(teamId))){
+     const out=String(c.out),inn=String(c.in);
+     if(byId.has(out)&&byId.has(inn)){next.set(out,inn);incoming.add(inn);}
+   }
+   const roots=players.filter(p=>!incoming.has(String(p.playerId))).sort((a,b)=>positionRank(a)-positionRank(b)||name(a).localeCompare(name(b)));
+   const ordered=[],seen=new Set();
+   const pushChain=p=>{let cur=p;while(cur&&!seen.has(String(cur.playerId))){const id=String(cur.playerId);ordered.push(cur);seen.add(id);cur=byId.get(next.get(id));}};
+   roots.forEach(pushChain);
+   players.filter(p=>!seen.has(String(p.playerId))).sort((a,b)=>positionRank(a)-positionRank(b)||name(a).localeCompare(name(b))).forEach(pushChain);
+   return ordered;
+ };
+ const home=orderTeam(participants.filter(p=>String(p.teamId)===String(m.home)),m.home);
+ const away=orderTeam(participants.filter(p=>String(p.teamId)===String(m.away)),m.away);
+ const rated=participants.filter(p=>Number.isFinite(Number(p.rating)));
+ const best=[...rated].sort((a,b)=>Number(b.rating)-Number(a.rating))[0]??null;
+ const teamBlock=(players,club,side)=>`<div class="match-rating-team"><h4><span>${esc(club?.short||club?.name||'—')}</span><small>${esc(formations[side]||'—')}</small></h4>${players.map(p=>`<div class="match-rating-row"><span><b class="match-rating-position">${esc(positionLabel(p.position))}</b>${name(p)}</span><span class="match-rating-result">${eventBadges(p)}<strong>${Number.isFinite(Number(p.rating))?Number(p.rating).toFixed(1):'—'}</strong></span></div>`).join('')||`<p class="muted">${tr('Nessun giocatore utilizzato','No players used')}</p>`}</div>`;
+ return `<section class="match-ratings" aria-labelledby="match-ratings-title"><div class="match-ratings-head"><div><span class="overline">${tr('PRESTAZIONI','PERFORMANCES')}</span><h3 id="match-ratings-title">${tr('Voti giocatori','Player ratings')}</h3></div>${best?`<div class="match-ratings-best"><span>${tr('Migliore in campo','Player of the match')}</span><strong>${name(best)} · ${Number(best.rating).toFixed(1)}</strong></div>`:''}</div><div class="match-ratings-grid">${teamBlock(home,clubById(w,m.home),'home')}${teamBlock(away,clubById(w,m.away),'away')}</div></section>`;
 }
 function matchModal(w,m,lang='it'){
  const h=clubById(w,m.home),a=clubById(w,m.away),r=m.result;
@@ -661,7 +691,7 @@ function matchModal(w,m,lang='it'){
  const xgHome=known(detailedHome?.xg)?detailedHome.xg:r.xgHome,xgAway=known(detailedAway?.xg)?detailedAway.xg:r.xgAway;
  const stat=(label,left,right,share=null)=>`<div class="match-report-stat"><strong>${esc(left)}</strong><div><span>${esc(label)}</span>${known(share)?`<div class="match-report-stat-bar"><i style="width:${pct(share)}%"></i><b style="width:${100-pct(share)}%"></b></div>`:''}</div><strong>${esc(right)}</strong></div>`;
  const ratio=(left,right)=>known(left)&&known(right)&&Number(left)+Number(right)>0?Number(left)/(Number(left)+Number(right))*100:null;
- const cards=(row)=>row?`${integer(row.yellowCards)} 🟨 · ${integer(row.redCards)} 🟥`:'—';
+ const cards=(row)=>row?integer((Number(row.yellowCards)||0)+(Number(row.redCards)||0)):'—';
  const timeline=matchTimeline(w,m,lang);
  const ratings=matchRatings(w,m,lang);
  return `<article class="match-report-v2">
@@ -680,13 +710,13 @@ function matchModal(w,m,lang='it'){
   <section class="match-report-v2-section" aria-labelledby="match-report-stats-title">
     <h3 id="match-report-stats-title">${tr('Statistiche','Statistics')}</h3>
     <div class="match-report-stats">
+      ${stat('xG',val(xgHome,2),val(xgAway,2),ratio(xgHome,xgAway))}
       ${stat(tr('Possesso','Possession'),percent(possessionHome),percent(possessionAway),possessionHome)}
       ${stat(tr('Tiri','Shots'),integer(shotsHome),integer(shotsAway),ratio(shotsHome,shotsAway))}
       ${stat(tr('Tiri in porta','Shots on target'),integer(detailedHome?.shotsOnTarget),integer(detailedAway?.shotsOnTarget),ratio(detailedHome?.shotsOnTarget,detailedAway?.shotsOnTarget))}
-      ${stat('xG',val(xgHome,2),val(xgAway,2),ratio(xgHome,xgAway))}
       ${stat(tr('Precisione passaggi','Pass accuracy'),percent(detailedHome?.passAccuracyPct),percent(detailedAway?.passAccuracyPct),ratio(detailedHome?.passAccuracyPct,detailedAway?.passAccuracyPct))}
       ${stat(tr('Falli','Fouls'),integer(detailedHome?.fouls),integer(detailedAway?.fouls),ratio(detailedHome?.fouls,detailedAway?.fouls))}
-      ${stat(tr('Cartellini','Cards'),cards(detailedHome),cards(detailedAway))}
+      ${stat(tr('Cartellini','Cards'),cards(detailedHome),cards(detailedAway),ratio((Number(detailedHome?.yellowCards)||0)+(Number(detailedHome?.redCards)||0),(Number(detailedAway?.yellowCards)||0)+(Number(detailedAway?.redCards)||0)))}
       ${stat(tr('Parate','Saves'),integer(detailedHome?.saves),integer(detailedAway?.saves),ratio(detailedHome?.saves,detailedAway?.saves))}
     </div>
   </section>
