@@ -1378,8 +1378,8 @@ body.dialog-open { overflow: hidden; }
   padding:0;
 }
 .nav-item{
-  height:23px;
-  min-height:23px;
+  height:26px;
+  min-height:26px;
   gap:8px;
   padding:0 9px;
   border-radius:var(--radius-8);
@@ -1514,7 +1514,7 @@ body.navigation-drawer-open{overflow:auto}
   .nav-group{gap:2px}
   .nav-group-title{min-height:12px;line-height:12px;padding-inline:7px}
   .nav-group-items{gap:1px}
-  .nav-item{height:22px;min-height:22px;padding-inline:8px;gap:7px;font-size:10px}
+  .nav-item{height:25px;min-height:25px;padding-inline:8px;gap:7px;font-size:10px}
   .topbar{padding-inline:14px}
   .topbar-club{max-width:135px}
   .top-actions{gap:7px}
@@ -1532,7 +1532,7 @@ body.navigation-drawer-open{overflow:auto}
   .nav-group{gap:1px}
   .nav-group-title{min-height:11px;line-height:11px}
   .nav-group-items{gap:1px}
-  .nav-item{height:21px;min-height:21px}
+  .nav-item{height:23px;min-height:23px}
 }
 
 @media(max-width:820px){
@@ -1576,8 +1576,8 @@ body.navigation-drawer-open{overflow:auto}
   .nav-group-items{gap:1px;padding-bottom:0}
   .nav-item{
     width:44px;
-    height:25px;
-    min-height:25px;
+    height:27px;
+    min-height:27px;
     justify-content:center;
     gap:0;
     padding:0;
