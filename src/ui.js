@@ -590,7 +590,6 @@ function simplifiedMatchDetails(w,m,lang='it'){
  const minute=v=>Number.isFinite(Number(v))?Math.max(1,Math.round(Number(v))):null;
  const teamName=side=>esc((side==='home'?clubById(w,m.home):clubById(w,m.away))?.short||'—');
  const items=[];
- for(const g of r.goals??[])items.push({minute:minute(g.minute),icon:'⚽',label:tr('Gol','Goal'),text:`${esc(historicPlayerName(w,g.scorerId))} · ${teamName(g.side)}`});
  for(const c of a?.matchday?.changes??[]){
   const side=c.teamId===m.home?'home':c.teamId===m.away?'away':null;
   items.push({minute:minute(c.minute),icon:'↔',label:tr('Sostituzione','Substitution'),text:`${esc(historicPlayerName(w,c.out))} → ${esc(historicPlayerName(w,c.in))}${side?` · ${teamName(side)}`:''}`});
@@ -603,7 +602,7 @@ function simplifiedMatchDetails(w,m,lang='it'){
  }
  items.sort((x,y)=>(x.minute??999)-(y.minute??999));
  if(!items.length)return '';
- return `<section class="match-report-simple-details" aria-label="${tr('Cronologia essenziale','Key match events')}"><h3>${tr('Cronologia essenziale','Key match events')}</h3><ol class="match-report-detail-list">${items.map(item=>`<li><time>${item.minute?`${item.minute}′`:'—'}</time><span class="match-report-detail-icon" aria-hidden="true">${item.icon}</span><span><strong>${item.label}</strong><small>${item.text}</small></span></li>`).join('')}</ol></section>`;
+ return `<section class="match-report-simple-details" aria-label="${tr('Eventi aggiuntivi','Additional events')}"><h3>${tr('Eventi aggiuntivi','Additional events')}</h3><ol class="match-report-detail-list">${items.map(item=>`<li><time>${item.minute?`${item.minute}′`:'—'}</time><span class="match-report-detail-icon" aria-hidden="true">${item.icon}</span><span><strong>${item.label}</strong><small>${item.text}</small></span></li>`).join('')}</ol></section>`;
 }
 function matchModal(w,m,lang='it'){
  const h=clubById(w,m.home),a=clubById(w,m.away),r=m.result;
