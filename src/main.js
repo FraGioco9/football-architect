@@ -1434,6 +1434,11 @@ root.addEventListener('click',async ev=>{
         await runCheckpointed('before-transfer',()=>sellPlayer(world,Number(id)));ui.modal=null;toast(`${p.name} ceduto con successo.`);break;
       }
       case 'mark-all':world.inbox.forEach(m=>m.read=true);world.unread=0;refresh('Tutti i messaggi sono stati letti.');break;
+      case 'dashboard-open-input':{
+        const msg=firstCareerInputMessage(world);if(!msg||msg.id!==id)break;
+        msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;ui.openMail=id;
+        navigate('inbox');focusPage();break;
+      }
       case 'read-mail':{
         const msg=world.inbox.find(m=>m.id===id);if(!msg)break;
         msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;
