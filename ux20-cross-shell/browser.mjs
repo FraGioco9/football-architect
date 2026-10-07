@@ -44,7 +44,8 @@ try{
   check(await page.locator('#club-sidebar .nav-item.active').getAttribute('aria-current')==='page','active drawer item must retain aria-current');
 
   await page.keyboard.press('Escape');
-  check(await page.locator('[data-action="toggle-sidebar"]').isFocused(),'Escape must close drawer and restore focus to its trigger');
+  const menuFocused=await page.locator('[data-action="toggle-sidebar"]').evaluate(element=>document.activeElement===element);
+  check(menuFocused,'Escape must close drawer and restore focus to its trigger');
 
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth);
   check(!overflow,'shell must not overflow horizontally at 390px');
