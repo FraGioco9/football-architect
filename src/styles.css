@@ -363,9 +363,7 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .match-rating-row>span>small{color:var(--color-text-secondary);font-size:8px}
 .match-rating-result{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-shrink:0}
 .match-rating-result>strong{min-width:28px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
-.match-rating-event{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-surface-raised);font-size:9px;line-height:1;white-space:nowrap;cursor:help}
-.match-rating-event::after{content:attr(data-tooltip);position:absolute;right:0;bottom:calc(100% + 7px);z-index:var(--layer-tooltip,1000);width:max-content;max-width:220px;padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-6);background:#09151d;color:var(--color-text);box-shadow:0 8px 24px #0008;font-size:9px;font-weight:700;line-height:1.3;white-space:normal;opacity:0;pointer-events:none;transform:translateY(3px);transition:opacity 100ms ease,transform 100ms ease}
-.match-rating-event:hover::after,.match-rating-event:focus-visible::after{opacity:1;transform:translateY(0)}
+.match-rating-event{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-surface-raised);font-size:9px;line-height:1;white-space:nowrap;cursor:help}
 .match-rating-event.is-entered{min-width:20px;color:var(--color-success,#54d19b);border-color:color-mix(in srgb,var(--color-success,#54d19b) 50%,var(--color-border));background:color-mix(in srgb,var(--color-success,#54d19b) 10%,var(--color-surface-raised));font-size:14px;font-weight:950}
 .match-rating-event.is-exited{min-width:20px;color:var(--color-danger,#e06c75);border-color:color-mix(in srgb,var(--color-danger,#e06c75) 50%,var(--color-border));background:color-mix(in srgb,var(--color-danger,#e06c75) 10%,var(--color-surface-raised));font-size:14px;font-weight:950}
 
