@@ -141,11 +141,13 @@ const getSeed=(w,m)=>scopedSeed(w.seed,'advanced-match',w.season,w.countryId,m.i
  * multiply on-device checkpoint space across a 38-round season. */
 function matchHighlights(events,limit=6){
   const goals=events.filter(e=>e.type==='goal');
+  const cards=events.filter(e=>e.type==='yellow_card'||e.type==='red_card');
+  const essential=[...goals,...cards];
   const shots=events.filter(e=>e.type==='shot')
     .sort((a,b)=>(b.xg??0)-(a.xg??0)||a.second-b.second);
-  const space=Math.max(0,limit-goals.length),shotCount=Math.ceil(space*0.65);
-  const choices=goals.length>=limit?goals:[...goals,...shots.slice(0,shotCount),
-    ...events.filter(e=>e.type==='recovery').slice(0,space-shotCount)];
+  const space=Math.max(0,limit-essential.length),shotCount=Math.ceil(space*0.65);
+  const choices=essential.length>=limit?essential:[...essential,...shots.slice(0,shotCount),
+    ...events.filter(e=>e.type==='recovery').slice(0,Math.max(0,space-shotCount))];
   return choices.sort((a,b)=>a.second-b.second);
 }
 function trimMedicalForSave(record){
@@ -335,6 +337,8 @@ export function simulateAdvancedMatch(w,m){
   const isMyMatch=m.home===w.clubId||m.away===w.clubId;
   const advancedV1={schemaVersion:1,seed,injuries:medicalChanges,substitutions:changes,...(tacticalChanges.length?{tacticalChanges}:{}),
     ...(sim05?{coachPreparation:sides.map(s=>s.coachPreparation).filter(Boolean),coachDecisions}:{}),
+    formations:{home:sides[0].formation,away:sides[1].formation},
+    cards:session.events.filter(e=>e.type==='yellow_card'||e.type==='red_card').map(e=>({type:e.type,teamId:e.teamId,playerId:e.playerId??null,minute:Math.floor(e.second/60)+1})),
     events:isMyMatch?matchHighlights(session.events):[],...(sim04?{matchday:{schemaVersion:1,changes,minutes:sides.map(side=>({teamId:side.teamId,players:matchAppearances(matchday,side.teamId)})),rules:matchday.rules}}:{})};
   if(isMyMatch){advancedV1.homeTactics=session.initialTeams[0].tactics;advancedV1.awayTactics=session.initialTeams[1].tactics;}
   const result={homeGoals:summary.home.goals,awayGoals:summary.away.goals,goals,xgHome:+summary.home.xg.toFixed(2),xgAway:+summary.away.xg.toFixed(2),possessionHome:summary.possessionPct.home,shotsHome:summary.home.shots,shotsAway:summary.away.shots,advancedV1};
