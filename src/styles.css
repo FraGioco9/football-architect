@@ -1345,38 +1345,45 @@ body.dialog-open { overflow: hidden; }
 }
 .sidebar-header .brand small{font-size:7px;margin-top:3px}
 .sidebar-dismiss,.sidebar-scrim,.sidebar-foot,.sidebar-career,.sidebar-mobile-language,.menu-toggle{display:none!important}
+.sidebar-scroll{
+  overflow-y:hidden;
+  overflow-x:hidden;
+}
 .navigation{
   display:flex;
   flex-direction:column;
-  gap:0;
-  padding:22px 8px 7px;
+  gap:4px;
+  padding:18px 9px 10px;
 }
 .nav-group{
+  display:grid;
+  gap:3px;
   border:0;
   margin:0;
 }
 .nav-group-title{
+  min-height:13px;
   margin:0;
-  padding:1px 8px 1px;
+  padding:0 8px;
   color:#667d88;
   font-size:8px;
   font-weight:800;
   letter-spacing:.11em;
-  line-height:1;
+  line-height:13px;
   text-transform:uppercase;
 }
 .nav-group-items{
   display:grid;
-  gap:0;
+  gap:2px;
   padding:0;
 }
 .nav-item{
-  height:19px;
-  min-height:19px;
+  height:26px;
+  min-height:26px;
   gap:8px;
   padding:0 9px;
   border-radius:var(--radius-8);
-  font-size:10px;
+  font-size:10.5px;
 }
 .nav-item.active:before,
 .nav-item[aria-current="page"]:before{
@@ -1503,9 +1510,11 @@ body.navigation-drawer-open{overflow:auto}
     margin-left:180px;
   }
   .sidebar-header .brand{margin-inline:10px}
-  .navigation{padding-inline:6px}
-  .nav-group-title{padding-inline:7px}
-  .nav-item{height:18px;min-height:18px;padding-inline:8px;gap:7px;font-size:9px}
+  .navigation{padding:16px 7px 9px;gap:3px}
+  .nav-group{gap:2px}
+  .nav-group-title{min-height:12px;line-height:12px;padding-inline:7px}
+  .nav-group-items{gap:1px}
+  .nav-item{height:25px;min-height:25px;padding-inline:8px;gap:7px;font-size:10px}
   .topbar{padding-inline:14px}
   .topbar-club{max-width:135px}
   .top-actions{gap:7px}
@@ -1516,6 +1525,14 @@ body.navigation-drawer-open{overflow:auto}
     max-width:148px;
     flex-basis:148px;
   }
+}
+
+@media(max-height:680px) and (min-width:721px){
+  .navigation{padding-top:12px;gap:2px}
+  .nav-group{gap:1px}
+  .nav-group-title{min-height:11px;line-height:11px}
+  .nav-group-items{gap:1px}
+  .nav-item{height:23px;min-height:23px}
 }
 
 @media(max-width:820px){
@@ -1544,21 +1561,23 @@ body.navigation-drawer-open{overflow:auto}
   }
   .sidebar-header .brand>span:last-child{display:none}
   .sidebar-header .brand-icon{width:31px;height:33px}
-  .navigation{padding:7px 7px 12px;gap:1px}
+  .navigation{padding:10px 7px 8px;gap:2px}
+  .nav-group{gap:1px}
   .nav-group-title{
-    height:8px;
-    margin:1px 4px 1px;
+    height:5px;
+    min-height:5px;
+    margin:1px 4px;
     padding:0;
     border-top:1px solid #263944;
     font-size:0;
     line-height:0;
   }
   .nav-group:first-child .nav-group-title{border-top:0;margin-top:0}
-  .nav-group-items{gap:0;padding-bottom:0}
+  .nav-group-items{gap:1px;padding-bottom:0}
   .nav-item{
     width:44px;
-    height:36px;
-    min-height:36px;
+    height:27px;
+    min-height:27px;
     justify-content:center;
     gap:0;
     padding:0;
