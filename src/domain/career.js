@@ -28,6 +28,7 @@ import {financeEnabled,reconcileCareerFinance,settleCareerFinanceRound,postCaree
 import {facilityEnabled,facilityImpact,advanceCareerFacilitiesRound,openCareerFacilitiesSeason} from './career-facilities.js';
 import {calendarEnabled,previewCalendarAdvance,processCareerCalendarRound,settleCareerCalendarRound,beforeCareerCalendarSeason,afterCareerCalendarSeason,releaseCareerFreeAgent} from './career-calendar.js';
 import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,nextSeasonCalendarPlan,addDaysISO,daysBetweenISO,formatCareerDateTime} from './career-date.js';
+import {playerAgeOnDate} from './player-identity.js';
 import {ensureOfficialCareerSystems} from './career-official.js';
 
 export function startCareer(w,clubId,manager){
@@ -211,7 +212,9 @@ function newSeasonMutating(w){
   syncCareerCoachesWorld(w);
   const rand=randomFactory(seasonSeed(w.seed,w.season));
   for(const p of w.players){
-    if(!youthRollover)p.age++;p.contract=Math.max(1,p.contract-1);p.fitness=95;p.injury=0;p.morale=clamp(p.morale+12,55,95);
+    if(p.identity?.birthDate)p.age=playerAgeOnDate(p.identity.birthDate,nextCalendar.seasonStartDate);
+    else if(!youthRollover)p.age++;
+    p.contract=Math.max(1,p.contract-1);p.fitness=95;p.injury=0;p.morale=clamp(p.morale+12,55,95);
     p.apps=0;if(p.minutesPlayed!==undefined)p.minutesPlayed=0;p.goals=0;p.assists=0;p.yellow=0;p.cleanSheets=0;p.form=6.8;
     if(!developed&&p.age>30&&rand()<.3)p.ovr=Math.max(48,p.ovr-1);
   }
