@@ -448,7 +448,11 @@ function qol03UpdateTable(id){
 function toast(message,level='success'){
   feedback.notify(translate(message,ui.language),{level});
 }
-function reportError(message){toast(message,'error');}
+function reportError(message){
+  const raw=String(message??'');
+  const internal=/^(?:SIM|WRD|MGT|PLY|QOL|MKT|ARC|DATA|INT|OPS|CAREER_[A-Z0-9_]*|CAREER[A-Z0-9_]*)[A-Z0-9_:-]*$/i.test(raw);
+  toast(internal?(ui.language==='en'?'Unable to complete this operation.':'Impossibile completare questa operazione.'):raw,'error');
+}
 async function changeOfficialTraining(modify){
   if(!hasAdvancedCareer(world))throw new Error('Questa funzione non è ancora disponibile in questo salvataggio.');
   const before=world,updated=structuredClone(world);

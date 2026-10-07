@@ -8,7 +8,7 @@ import {esc} from '../../ui-components.js';
 const tr=(language,it,en)=>language==='en'?en:it;
 export function renderCareerRolesPitch(world,language='it',{slot=0}={}){
  if(!world.advancedV1?.enabled)return '';
- if(!careerRolesEnabled(world))return `<section class="panel sim03-panel" aria-label="${tr(language,'Ruoli individuali','Individual roles')}"><h3>${tr(language,'Ruoli individuali','Individual roles')}</h3><p>${tr(language,'Personalizza ruolo e compito per posizione, utilizzando familiarità e attributi verificati. Le carriere precedenti restano inalterate fino all’attivazione.','Set role and duty by position, using verified attributes and positional familiarity. Previous careers remain unchanged until activation.')}</p><button type="button" class="btn btn-primary" data-action="sim03-enable">${tr(language,'Attiva ruoli individuali','Enable individual roles')}</button></section>`;
+ if(!careerRolesEnabled(world))return `<section class="panel sim03-panel" aria-label="${tr(language,'Ruoli individuali','Individual roles')}"><h3>${tr(language,'Ruoli individuali','Individual roles')}</h3><p>${tr(language,'Personalizza ruolo e compito per posizione usando familiarità e attributi disponibili.','Set role and duty by position using available attributes and positional familiarity.')}</p><button type="button" class="btn btn-primary" data-action="sim03-enable">${tr(language,'Configura ruoli individuali','Configure individual roles')}</button></section>`;
  const index=Number.isSafeInteger(slot)&&slot>=0&&slot<11?slot:0;
  const slots=FORMATIONS[world.formation];
  const player=world.players.find(p=>p.id===world.lineup[index]);
@@ -19,7 +19,7 @@ export function renderCareerRolesPitch(world,language='it',{slot=0}={}){
  const field=slots.map((s,i)=>{
    const p=world.players.find(x=>x.id===world.lineup[i]),r=careerSlotRole(world,i),pos=toAddonPosition(s.p);
    const role=ROLE_BY_ID[r.role];
-   return `<button type="button" class="sim03-position${i===index?' is-selected':''}" data-action="sim03-slot" data-index="${i}" aria-pressed="${i===index}" aria-label="${tr(language,'Seleziona slot','Select slot')} ${i+1}: ${esc(p?.name??pos)} — ${esc(role?.label?.[language==='en'?'en':'it']??r.role)}" style="left:${s.x}%;top:${s.y}%"><strong>${esc(p?.name?.split(' ').at(-1)??pos)}</strong><small>${esc(role?.label?.[language==='en'?'en':'it']??r.role)}</small></button>`;
+   return `<button type="button" class="sim03-position${i===index?' is-selected':''}" data-action="sim03-slot" data-index="${i}" aria-pressed="${i===index}" aria-label="${tr(language,'Seleziona posizione','Select position')} ${i+1}: ${esc(p?.name??pos)} — ${esc(role?.label?.[language==='en'?'en':'it']??r.role)}" style="left:${s.x}%;top:${s.y}%"><strong>${esc(p?.name?.split(' ').at(-1)??pos)}</strong><small>${esc(role?.label?.[language==='en'?'en':'it']??r.role)}</small></button>`;
  }).join('');
  return `<section class="panel sim03-panel" aria-label="${tr(language,'Ruoli individuali','Individual roles')}"><h3>${tr(language,'Editor ruoli e compiti — campo','Pitch role and duty editor')}</h3><p class="note">${tr(language,'Modulo','Formation')} ${esc(world.formation)} · ${tr(language,'Seleziona una posizione sul campo (anche con Tab) per personalizzarla.','Choose a position on the pitch (including with Tab) to customize it.')}</p>
  <div class="sim03-layout"><div class="sim03-pitch" role="group" aria-label="${tr(language,'Posizioni sul campo','Pitch positions')}"><div class="sim03-pitch-line"></div><div class="sim03-center-circle"></div>${field}</div>
