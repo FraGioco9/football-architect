@@ -188,14 +188,21 @@ export function createControlHints(root,doc=globalThis.document){
     tip.style.maxWidth=`${maxWidth}px`;
     const w=tip.offsetWidth,h=tip.offsetHeight;
     const left=Math.max(10,Math.min(vw-10-w,bounds.left+(bounds.width-w)/2));
-    const below=bounds.bottom+OFFSET+h<=vh-10;
-    const top=below?bounds.bottom+OFFSET:Math.max(10,bounds.top-h-OFFSET);
+    const fitsAbove=bounds.top-h-OFFSET>=10;
+    const fitsBelow=bounds.bottom+OFFSET+h<=vh-10;
+    const top=fitsAbove
+      ? bounds.top-h-OFFSET
+      : fitsBelow
+        ? bounds.bottom+OFFSET
+        : Math.max(10,Math.min(vh-10-h,bounds.top-h-OFFSET));
     tip.style.left=`${left}px`;tip.style.top=`${top}px`;
   }
   function show(el){
     const label=el?.getAttribute('data-fa-tooltip');
     if(!label||!el.isConnected)return;
-    active=el;tip.textContent=label;tip.hidden=false;position();
+    active=el;
+    tip.style.left='0px';tip.style.top='0px';
+    tip.textContent=label;tip.hidden=false;position();
   }
   function trigger(target){return target?.closest?.('[data-fa-tooltip]')||null;}
   function pointerover(event){if(event.pointerType==='touch')return;const el=trigger(event.target);if(el!==active){if(el)show(el);else hide();}}
@@ -238,7 +245,7 @@ export function createControlHints(root,doc=globalThis.document){
       if(summary)summary.setAttribute('aria-expanded',String(menu.open));
     }
   }
-  function scroll(){if(active)position();if(openSelect)positionCustomSelect(openSelect);}
+  function scroll(){if(active)hide();if(openSelect)positionCustomSelect(openSelect);}
   // Event listeners stay stable across render() / innerHTML replacement.
   root.addEventListener('pointerover',pointerover);
   root.addEventListener('pointerout',pointerout);

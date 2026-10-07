@@ -90,7 +90,10 @@ function stepEvents(s,step,homeT,awayT,fitness){
   if(teams[attack].rolePlan){
     const from=chooseActor(rnd,teams[attack],'pass');
     const to=chooseActor(rnd,teams[attack],'pass',from.playerId);
-    events.push(make('pass',attack,{playerId:from.playerId,targetPlayerId:to.playerId,role:from.role,duty:from.duty}));
+    const passQuality=clamp(0.78+0.10*(teams[attack].strength-teams[defense].strength)/35
+      +0.025*(profiles[attack]?.passing??0)-0.035*powers[defense].pressing-0.035*scaled(powers[attack].direct),0.58,0.96);
+    const completed=randomAt(s.seed^0x51a7c0de,step)()<passQuality;
+    events.push(make('pass',attack,{playerId:from.playerId,targetPlayerId:to.playerId,completed,role:from.role,duty:from.duty}));
   }
   const fatigueDisadvantage=(fitness[defense]-fitness[attack])*0.0012;
   // A compact defense attacked with a fast/direct counter does not behave like a
@@ -111,13 +114,24 @@ function stepEvents(s,step,homeT,awayT,fitness){
       +0.005*(profiles[attack]?.shooting??0)-0.005*(profiles[defense]?.cover??0),0.012,0.45).toFixed(4));
     const goal=rnd()<xg;
     const actor=teams[attack].rolePlan?chooseActor(rnd,teams[attack],'shot'):null;
+    const onTarget=s.analyticsMode?(goal||randomAt(s.seed^0x7a11a7cc,step)()<clamp(0.24+xg*1.35,0.2,0.75)):undefined;
     events.push(make(goal?'goal':'shot',attack,{xg,counterattack:counter||runBehind>0.12,
-      ...(s.analyticsMode?{onTarget:goal||randomAt(s.seed^0x7a11a7cc,step)()<clamp(0.24+xg*1.35,0.2,0.75)}:{}),
+      ...(s.analyticsMode?{onTarget}:{}),
       ...(actor?{playerId:actor.playerId,role:actor.role,duty:actor.duty}:{})}));
+    if(s.analyticsMode&&!goal&&onTarget&&teams[defense].rolePlan){
+      const keeper=teams[defense].rolePlan.assignments.find(a=>a.position==='GK');
+      events.push(make('save',defense,{opponentTeamId:teams[attack].id,...(keeper?{playerId:keeper.playerId,role:keeper.role,duty:keeper.duty}:{})}));
+    }
   }
   const foulChance=clamp(0.118+def.pressing*0.037+scaled(teams[defense].tactics.outOfPossession.intensity)*0.032,0.045,0.25);
-  if(rnd()<foulChance){const actor=s.analyticsMode&&teams[defense].rolePlan?chooseActor(randomAt(s.seed^0x667acc31,step),teams[defense],'recover'):null;
-    events.push(make('foul',defense,{...(actor?{playerId:actor.playerId}: {})}));}
+  if(rnd()<foulChance){
+    const actor=s.analyticsMode&&teams[defense].rolePlan?chooseActor(randomAt(s.seed^0x667acc31,step),teams[defense],'recover'):null;
+    events.push(make('foul',defense,{...(actor?{playerId:actor.playerId}: {})}));
+    if(s.analyticsMode&&actor){
+      const cardRoll=randomAt(s.seed^0x71c4ad55,step)();
+      if(cardRoll<0.205)events.push(make('yellow_card',defense,{playerId:actor.playerId}));
+    }
+  }
   return {events,fitness:fitness.map((f,i)=>Number(clamp(f-powers[i].staminaCost,0,100).toFixed(4)))};
 }
 function applyStep(state){

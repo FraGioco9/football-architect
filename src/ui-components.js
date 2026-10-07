@@ -42,3 +42,7 @@ export function inlineNotice(message,{tone='info',label=''}={}){
 export function dialogFrame({type,title,body,wide=false,lang='it',closeIcon='×'}={}){
   return `<div class="modal-layer" role="presentation" data-action="dismiss-modal"><section class="modal ds-dialog ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-dialog-kind="${esc(type)}" data-stop-close><header class="modal-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="modal-body">${body}</div></section></div>`;
 }
+
+export function matchDialogFrame({title,body,lang='it',closeIcon='×'}={}){
+  return `<div class="modal-layer match-report-layer" role="presentation" data-action="dismiss-modal"><section class="match-report-dialog" role="dialog" aria-modal="true" aria-labelledby="match-report-dialog-title" tabindex="-1" data-dialog-kind="match" data-stop-close><header class="match-report-dialog-header"><h2 id="match-report-dialog-title">${title}</h2><button class="icon-button" type="button" data-action="close-modal" aria-label="${lang==='en'?'Close':'Chiudi'}">${closeIcon}</button></header><div class="match-report-dialog-scroll" tabindex="0"><div class="match-report-dialog-body">${body}</div></div></section></div>`;
+}

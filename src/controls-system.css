@@ -16,7 +16,7 @@
 /* Root gutter is reserved even if opening a dialog disables root scrolling.
    Browsers with overlay scrollbars do not waste physical space. */
 html { scrollbar-gutter: stable; overflow-y: auto; }
-:root:has(body:is(.dialog-open,.navigation-drawer-open)) {
+:root:has(body.navigation-drawer-open) {
   overflow-y: hidden;
   scrollbar-gutter: stable;
 }
@@ -120,7 +120,7 @@ html { scrollbar-gutter: stable; overflow-y: auto; }
 :where(.ds-menu,[role="menu"]) [aria-disabled="true"] { opacity: .48; cursor: not-allowed; }
 /* Tooltips live in a fixed-position portal, so scrolling parents cannot clip them. */
 .fa-control-tooltip {
-  position: fixed; inset: auto; z-index: 99999; pointer-events: none;
+  position: fixed; top: 0; left: 0; right: auto; bottom: auto; z-index: 99999; pointer-events: none;
   min-width: 0; max-width: min(300px, calc(100vw - 20px));
   padding: 8px 11px; border: 1px solid var(--ux-menu-border);
   border-radius: 9px; background: var(--ux-menu-surface);

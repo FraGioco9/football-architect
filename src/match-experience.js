@@ -30,7 +30,7 @@ export function matchPreparation(world,fixture,lang='it',{advanced=false,preview
     <div class="match-center-preparation-actions"><button type="button" class="btn btn-outline" data-action="nav" data-page="tactics">${tr('Apri centro tattico','Open tactics centre')}</button>
       <button type="button" class="btn btn-secondary" data-action="preview-match" data-id="${esc(fixture.id)}">${advanced?tr('Prepara tattiche avanzate','Prepare advanced tactics'):previewSaved?tr('Riprendi anteprima non ufficiale','Resume unofficial preview'):tr('Anteprima non ufficiale','Unofficial preview')}</button>
       <button type="button" class="btn btn-primary" data-action="play-matchday">${tr('Gioca giornata ufficiale','Play official matchday')}</button></div>
-    <p class="match-center-disclaimer">${tr('L’anteprima non modifica calendario o risultati. Giocare la giornata avanza invece la carriera ufficiale.','The preview does not change fixtures or results. Playing the matchday advances your official career.')}</p>
+    <p class="match-center-disclaimer">${tr('L’anteprima non modifica calendario o risultati. Giocare la giornata fa avanzare la carriera.','The preview does not change fixtures or results. Playing the matchday advances the career.')}</p>
   </section>`;
 }
 
@@ -55,5 +55,5 @@ export function officialMatchTimeline(world,fixture,lang='it'){
 }
 
 export function halftimeIntro(lang='it'){
-  return `<div class="match-center-half-label" role="note"><strong>${say(lang,'DECISIONI INTERVALLO','HALF-TIME DECISIONS')}</strong><p>${say(lang,'Scegli eventuali cambi SIM04 e modifiche tattiche SIM02, poi conferma per simulare il secondo tempo ufficiale. Chiudendo questa finestra non avanzi la giornata.','Choose SIM04 substitutions and SIM02 tactical changes, then confirm to play the official second half. Closing this dialog does not advance the matchday.')}</p></div>`;
+  return `<div class="match-center-half-label" role="note"><strong>${say(lang,'DECISIONI INTERVALLO','HALF-TIME DECISIONS')}</strong><p>${say(lang,'Scegli eventuali sostituzioni e modifiche tattiche, poi conferma per giocare il secondo tempo. Chiudendo questa finestra non avanzi la giornata.','Choose any substitutions and tactical changes, then confirm to play the second half. Closing this dialog does not advance the matchday.')}</p></div>`;
 }
