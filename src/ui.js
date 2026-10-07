@@ -402,7 +402,7 @@ export function squad(w,ui){
  ].filter(Boolean).length;
  const viewLabels={general:tx('Generale','General'),attributes:tx('Attributi','Attributes'),contract:tx('Contratto','Contract'),market:tx('Mercato','Market'),stats:tx('Statistiche','Statistics'),condition:tx('Condizione','Condition')};
  const viewBar=`<div class="roster-view-bar">
-   <button type="button" class="btn btn-quiet roster-filter-button ${activeFilterCount?'has-filters':''}" data-action="squad-filters" aria-label="${tx('Apri filtri rosa','Open squad filters')}">${icon('filter',15)} ${tx('Filtri','Filters')}${activeFilterCount?` <span class="roster-filter-count">${activeFilterCount}</span>`:''}</button>
+   <button type="button" class="chip roster-filter-button ${activeFilterCount?'has-filters':''}" data-action="squad-filters" aria-label="${tx('Apri filtri rosa','Open squad filters')}">${icon('filter',15)} ${tx('Filtri','Filters')}${activeFilterCount?` <span class="roster-filter-count">${activeFilterCount}</span>`:''}</button>
    <div class="roster-view-tabs" role="tablist" aria-label="${tx('Vista rosa','Squad view')}">${views.map(key=>`<button id="squad-view-${key}" type="button" role="tab" class="chip ${view===key?'chip-active':''}" aria-selected="${view===key}" aria-controls="squad-view-panel" tabindex="${view===key?'0':'-1'}" data-action="squad-view" data-value="${key}">${esc(viewLabels[key])}</button>`).join('')}</div>
   </div>`;
  const summary=`<section class="roster-summary" aria-label="${tx('Riepilogo rosa','Squad summary')}">
