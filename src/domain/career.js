@@ -31,8 +31,14 @@ import {ensureCareerDates,advanceCareerDate,fixtureIsDue,openNextSeasonDates,nex
 import {playerAgeOnDate} from './player-identity.js';
 import {ensureOfficialCareerSystems} from './career-official.js';
 
+function syncIdentityAges(w){
+  if(!w?.currentDate||!Array.isArray(w.players))return;
+  for(const player of w.players)if(player.identity?.birthDate)player.age=playerAgeOnDate(player.identity.birthDate,w.currentDate);
+}
+
 export function startCareer(w,clubId,manager){
   ensureCareerDates(w);
+  syncIdentityAges(w);
   if(!clubById(w,clubId))throw new Error('Club non valido.');
   const managerName=typeof manager==='string'?manager.trim():'';
   if(!managerName)throw new Error('Nome allenatore obbligatorio.');
@@ -62,6 +68,7 @@ function advanceDayMutating(w,{calendarConfirmationToken=null,simulateDueMatch=t
   const calendarPreview=calendarEnabled(w)?previewCalendarAdvance(w,{toDay:w.advancedV1.clockDay+1}):null;
   if(calendarPreview)processCareerCalendarRound(w,{confirmationToken:calendarConfirmationToken,preview:calendarPreview});
   advanceCareerDate(w);
+  syncIdentityAges(w);
   if(hasAdvancedCareer(w)){
     advanceAdvancedDay(w);
     if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');
@@ -114,6 +121,7 @@ function simulateRoundMutating(w,{calendarConfirmationToken=null,advanceDays=7,c
   const recovering=enhanced?[]:w.players.filter(p=>p.injury>0).map(p=>p.id);
   if(advanceDays>0){
     for(let day=0;day<advanceDays;day++)advanceCareerDate(w);
+    syncIdentityAges(w);
     if(enhanced){prepareAdvancedRound(w,{days:advanceDays});if(w.advancedV1.clockDay!==w.careerDay)throw new Error('CAREER_DATE_CLOCK_DESYNC');}
   }
   if(!enhanced)for(const p of w.players)p.fitness=clamp(p.fitness+12,0,100);
