@@ -607,7 +607,7 @@ export function inbox(w,ui){
  const selected=messages.find(m=>String(m.id)===String(ui.openMail||''))||null;
  const list=messages.length?messages.map(m=>{
   const message=readCareerMessage(m,{lang:ui.language,countryId:w.countryId}),needsAction=requires(m),active=selected&&String(selected.id)===String(m.id),checked=selectedIds.has(String(m.id));
-  return `<div class="inbox-mail-row ${needsAction?'requires-input':''} ${active?'mail-active-row':''} ${checked?'is-selected':''}">
+  return `<div class="inbox-mail-row ${!m.read?'unread-row':''} ${needsAction?'requires-input':''} ${active?'mail-active-row':''} ${checked?'is-selected':''}">
    <label class="inbox-mail-select"><input type="checkbox" data-inbox-select="${esc(m.id)}" ${checked?'checked':''} aria-label="${tr('Seleziona','Select')}: ${esc(message.subject)}"><span aria-hidden="true"></span></label>
    <button type="button" class="mail-item ${!m.read?'unread':''} ${needsAction?'requires-input':''} ${active?'mail-active':''}" data-action="read-mail" data-id="${esc(m.id)}" ${active?'aria-current="true"':''}>
     <span class="mail-kind ${needsAction?'mail-kind-alert':''}">${inboxMessageIcon(m,needsAction)}</span>
