@@ -1329,18 +1329,18 @@ body.dialog-open { overflow: hidden; }
   margin-left:210px;
 }
 .sidebar-header{
-  min-height:58px;
+  min-height:50px;
   border-bottom:1px solid #1d2d37;
 }
 .sidebar-header .brand{
-  margin:13px 12px;
+  margin:8px 12px;
   gap:8px;
   font-size:11px;
   letter-spacing:.08em;
 }
 .sidebar-header .brand-icon{
-  width:31px;
-  height:33px;
+  width:28px;
+  height:30px;
   border-radius:var(--radius-8);
 }
 .sidebar-header .brand small{font-size:7px;margin-top:3px}
@@ -1348,8 +1348,8 @@ body.dialog-open { overflow: hidden; }
 .navigation{
   display:flex;
   flex-direction:column;
-  gap:2px;
-  padding:6px 8px 10px;
+  gap:0;
+  padding:4px 8px 7px;
 }
 .nav-group{
   border:0;
@@ -1357,7 +1357,7 @@ body.dialog-open { overflow: hidden; }
 }
 .nav-group-title{
   margin:0;
-  padding:4px 8px 2px;
+  padding:2px 8px 1px;
   color:#667d88;
   font-size:8px;
   font-weight:800;
@@ -1371,12 +1371,12 @@ body.dialog-open { overflow: hidden; }
   padding:0 0 1px;
 }
 .nav-item{
-  height:30px;
-  min-height:30px;
-  gap:9px;
+  height:27px;
+  min-height:27px;
+  gap:8px;
   padding:0 9px;
-  border-radius:var(--radius-7);
-  font-size:11px;
+  border-radius:var(--radius-8);
+  font-size:10.5px;
 }
 .nav-item.active:before,
 .nav-item[aria-current="page"]:before{
@@ -1393,16 +1393,18 @@ body.navigation-drawer-open{overflow:auto}
 :where(
   .nav-item.active,
   .nav-item[aria-current="page"],
+  button[aria-pressed="true"],
   [role="tab"][aria-selected="true"],
-  .chip[aria-pressed="true"],
+  [role="option"][aria-selected="true"],
   .chip-active,
-  .round-pill[aria-pressed="true"],
   .round-pill.current,
   .league-pick-option.active,
   .formation-choice.selected,
   .training-choice.training-selected,
   .selection-segment.seg-active,
-  .mail-item.mail-active
+  .mail-item.mail-active,
+  .language-option.is-selected,
+  .language-combobox[aria-expanded="true"]
 ){
   border-radius:var(--radius-8)!important;
 }
@@ -1471,6 +1473,11 @@ body.navigation-drawer-open{overflow:auto}
   flex:0 0 148px;
 }
 .topbar-language .language-combobox{overflow:visible}
+.language-option.is-selected,
+.language-option[aria-selected="true"]{
+  border-radius:var(--radius-8)!important;
+  box-shadow:inset 0 0 0 1px var(--navigation-selected-border);
+}
 .topbar-language .language-current span{
   display:inline;
   overflow:visible;
@@ -1498,7 +1505,7 @@ body.navigation-drawer-open{overflow:auto}
   .sidebar-header .brand{margin-inline:10px}
   .navigation{padding-inline:6px}
   .nav-group-title{padding-inline:7px}
-  .nav-item{padding-inline:8px;gap:7px;font-size:10px}
+  .nav-item{height:26px;min-height:26px;padding-inline:8px;gap:7px;font-size:10px}
   .topbar{padding-inline:14px}
   .topbar-club{max-width:135px}
   .top-actions{gap:7px}
