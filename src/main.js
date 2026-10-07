@@ -1,7 +1,7 @@
 import {readPrefs,writePrefs,moveWidget,applyTableView} from './qol03.js';
 import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
-import {view} from './ui.js';
+import {view,inboxDetailHtml} from './ui.js';
 import {generateMatchActions} from './domain/match-actions.js';
 import {hasAdvancedCareer,setAdvancedStyle,editAdvancedTactic,setAdvancedPlayerRole,previewAdvancedHalf} from './domain/advanced-career.js';
 import {substitutionsEnabled,planCareerSubstitution,cancelCareerSubstitution,setCareerMatchdayRules,expectedNextMatch} from './domain/career-matchday.js';
@@ -473,6 +473,39 @@ async function changeOfficialTraining(modify){
   }catch(error){world=before;primary.rollback();render();throw error;}
 }
 function refresh(message='') {if(save()){render();if(message)toast(message);}}
+let inboxReadSaveTimer=null;
+function scheduleInboxReadSave(){
+  if(inboxReadSaveTimer!==null)clearTimeout(inboxReadSaveTimer);
+  inboxReadSaveTimer=setTimeout(()=>{inboxReadSaveTimer=null;save();},120);
+}
+function syncInboxUnreadChrome(){
+  const en=ui.language==='en';
+  root.querySelector('[data-inbox-unread-count]')?.replaceChildren(document.createTextNode(en?`${world.unread} unread`:`${world.unread} non letti`));
+  const nav=root.querySelector('.nav-item[data-page="inbox"]');
+  const badge=nav?.querySelector('.nav-count');
+  if(world.unread<=0){badge?.remove();}
+  else if(badge){badge.textContent=String(world.unread);}
+}
+function selectInboxMessage(id){
+  const message=world.inbox.find(m=>String(m.id)===String(id));if(!message)return false;
+  const wasUnread=!message.read;
+  if(wasUnread){message.read=true;world.unread=world.inbox.filter(m=>!m.read).length;scheduleInboxReadSave();}
+  ui.openMail=String(id);
+  const workspace=root.querySelector('.inbox-workspace'),detail=root.querySelector('.inbox-detail-pane');
+  if(!workspace||!detail)return false;
+  workspace.classList.add('has-selection');
+  root.querySelectorAll('.inbox-message-list .mail-item').forEach(row=>{
+    const active=String(row.dataset.id)===String(id);
+    row.classList.toggle('mail-active',active);
+    if(active)row.setAttribute('aria-current','true');else row.removeAttribute('aria-current');
+    if(active&&wasUnread){row.classList.remove('unread');row.querySelector('.mail-date i')?.remove();}
+  });
+  detail.innerHTML=inboxDetailHtml(world,ui,message);
+  enhanceDesignSystem(detail,ui.language);
+  controlHints.enhance();
+  syncInboxUnreadChrome();
+  return true;
+}
 // The checkpoint must be verified before a match, transfer or season change.
 // On a failed autosave, re-read the authoritative slot rather than showing
 // potentially stale, uncommitted world data.
@@ -1475,11 +1508,7 @@ root.addEventListener('click',async ev=>{
         msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;ui.openMail=id;
         navigate('inbox');focusPage();break;
       }
-      case 'read-mail':{
-        const msg=world.inbox.find(m=>String(m.id)===String(id));if(!msg)break;
-        msg.read=true;world.unread=world.inbox.filter(m=>!m.read).length;
-        ui.openMail=String(id);refresh();break;
-      }
+      case 'read-mail':selectInboxMessage(id);break;
       case 'export-blocked-save':{
         let keys=[STORAGE_KEY,PREVIOUS_CAREER_STORAGE_KEY,LEGACY_CAREER_STORAGE_KEY];
         try{const catalog=readCareerCatalog(careerStorage);const active=catalog.slots.find(s=>s.id===catalog.activeSlotId);if(active)keys=[active.storageKey,...keys];}catch{}
@@ -1615,7 +1644,6 @@ root.addEventListener('change',async ev=>{
 
   const el=ev.target;
   if(el.matches('[data-qol03-widget]')){const key=el.dataset.qol03Widget;ui.qol03.hidden=el.checked?ui.qol03.hidden.filter(x=>x!==key):[...ui.qol03.hidden,key];qol03Save();render();return;}
-  if(el.matches('[data-qol03-mail-note]')){ui.qol03.mailNotes[el.dataset.qol03MailNote]=el.value.slice(0,500);qol03Save();return;}
   if(el.matches('[data-qol03-sort2]')){const id=el.dataset.qol03Sort2,p=qol03TablePref(id);p.sort2=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-qol03-sort]')){const id=el.dataset.qol03Sort,p=qol03TablePref(id);p.sort=el.value===''?null:Number(el.value);p.page=0;qol03UpdateTable(id);qol03Save();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
