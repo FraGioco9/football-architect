@@ -431,6 +431,12 @@ button.calendar-timeline-row:hover{background:var(--color-button-muted-bg)}
 .inbox-mail-row{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:stretch;border-bottom:1px solid var(--list-divider);background:var(--color-surface)}
 .inbox-mail-row:last-child{border-bottom:0}
 .inbox-mail-row:hover{background:#1d313b}
+.inbox-mail-row.unread-row{background:color-mix(in srgb,var(--color-accent) 10%,var(--color-surface))}
+.inbox-mail-row.unread-row:hover{background:color-mix(in srgb,var(--color-accent) 15%,#1d313b)}
+.inbox-mail-row.unread-row .mail-text b{color:var(--color-text);font-weight:850}
+.inbox-mail-row.unread-row .mail-text small{color:#b6c7cd}
+.inbox-mail-row.unread-row .mail-date{color:#9bb7c0;font-weight:750}
+.inbox-mail-row.unread-row .mail-date i{width:9px;height:9px;box-shadow:0 0 0 3px color-mix(in srgb,var(--color-accent) 20%,transparent)}
 .inbox-mail-select{display:flex;align-items:center;justify-content:center;align-self:stretch;height:100%;cursor:pointer;background:transparent}
 .inbox-mail-select input{align-self:center}
 .inbox-workspace .mail-item{position:relative;min-height:78px;padding:14px 16px 14px 4px;gap:11px;border:0;border-radius:0!important;align-items:center;background:transparent;box-shadow:none}
