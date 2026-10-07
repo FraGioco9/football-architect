@@ -1357,18 +1357,18 @@ body.dialog-open { overflow: hidden; }
 }
 .nav-group-title{
   margin:0;
-  padding:3px 8px 4px;
+  padding:1px 8px 1px;
   color:#667d88;
   font-size:8px;
   font-weight:800;
   letter-spacing:.11em;
-  line-height:1.1;
+  line-height:1;
   text-transform:uppercase;
 }
 .nav-group-items{
   display:grid;
   gap:0;
-  padding:0 0 1px;
+  padding:0;
 }
 .nav-item{
   height:19px;
@@ -1547,14 +1547,14 @@ body.navigation-drawer-open{overflow:auto}
   .navigation{padding:7px 7px 12px;gap:1px}
   .nav-group-title{
     height:8px;
-    margin:3px 4px 2px;
+    margin:1px 4px 1px;
     padding:0;
     border-top:1px solid #263944;
     font-size:0;
     line-height:0;
   }
   .nav-group:first-child .nav-group-title{border-top:0;margin-top:0}
-  .nav-group-items{gap:1px;padding-bottom:2px}
+  .nav-group-items{gap:0;padding-bottom:0}
   .nav-item{
     width:44px;
     height:36px;
