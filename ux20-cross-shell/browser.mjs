@@ -46,7 +46,7 @@ try{
   const sidebarLanguage=page.locator('#club-sidebar [data-language-picker="sidebar"] [role="combobox"]');
   await sidebarLanguage.click();
   await page.locator('#club-sidebar [data-language-listbox="sidebar"] [data-value="en"]').click();
-  check((await page.locator('[data-nav-group="system"] summary').innerText()).includes('System'),'mobile drawer navigation must localize to English');
+  check((await page.locator('[data-nav-group="system"] summary').innerText()).toLowerCase().includes('system'),'mobile drawer navigation must localize to English');
   const localizedTopbarBox=await topbar.boundingBox();
   check(Boolean(localizedTopbarBox&&localizedTopbarBox.height<=64),'English mobile topbar must remain one compact row');
 
