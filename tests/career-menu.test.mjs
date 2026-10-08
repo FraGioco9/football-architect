@@ -221,4 +221,5 @@ test('all eight countries and 160 teams remain available without game fixtures',
  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.doesNotMatch(main,/simulateMatch|fixtureIsDue|playMatch|matchEngine/);
  assert.match(main,/async function begin\(\)\{\r?\n if\(busy\|\|/);
+ assert.match(main.replace(/\r?\n/g,'\r\n'),/async function begin\(\)\{\r?\n if\(busy\|\|/); // Windows CRLF regression
 });
