@@ -18,7 +18,7 @@ const paths={
  trash:'<path d="M3 6h18M8 6V4h8v2m-11 0 1 15h12l1-15M10 10v7M14 10v7"/>',
  pencil:'<path d="m4 20 5-.8L20 8a2 2 0 0 0-4-4L5 15Z"/>',
  'alert-triangle':'<path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5M12 17h.01"/>',
- refresh-cw:'<path d="M20 11a8 8 0 0 0-14.6-4M4 4v4h4M4 13a8 8 0 0 0 14.6 4M20 20v-4h-4"/>',
+ 'refresh-cw':'<path d="M20 11a8 8 0 0 0-14.6-4M4 4v4h4M4 13a8 8 0 0 0 14.6 4M20 20v-4h-4"/>',
  x:'<path d="M18 6 6 18M6 6l12 12"/>',
 };
 export function icon(name,size=18){
