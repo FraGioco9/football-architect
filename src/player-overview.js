@@ -38,7 +38,6 @@ export function renderPlayerOverviewPage(w,ui){
  const lang=ui.language,en=lang==='en',id=ui.routePlayerId;
  const tab=PLAYER_PROFILE_TABS.some(item=>item.id===ui.playerTab)?ui.playerTab:'overview';
  const tabLabel=item=>esc(item[en?'en':'it']);
- const placeholder=(it,enText)=>`<div class="plyr051-empty"><p>${locale(lang,it,enText)}</p></div>`;
 
  const player=w.players.find(p=>p.id===id);
  if(!player)return `<div class="plyr051-page"><h1>${locale(lang,'Calciatore non disponibile','Player unavailable')}</h1><button type="button" class="btn btn-outline" data-action="player-back">${locale(lang,'Torna alla rosa','Back to squad')}</button></div>`;
