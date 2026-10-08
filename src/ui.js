@@ -811,9 +811,9 @@ function matchRatings(w,m,lang='it'){
  const changes=m.result?.advancedV1?.matchday?.changes??[];
  const cards=m.result?.advancedV1?.cards??[];
  const formations=m.result?.advancedV1?.formations??{};
- const positionOrder=['GK','RB','RWB','CB','LB','LWB','CDM','CM','CAM','RM','LM','RW','LW','CF','ST'];
+ const positionOrder=['GK','RB','RWB','CB','LB','LWB','CDM','CM','CAM','RM','LM','RW','LW','ST'];
  const positionLabel=position=>{
-  const it={GK:'POR',RB:'TD',RWB:'TD',CB:'DC',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',CAM:'COC',RM:'AD',LM:'AS',RW:'AD',LW:'AS',CF:'ATT',ST:'ATT'};
+  const it={GK:'POR',RB:'TD',RWB:'TD',CB:'DC',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',CAM:'COC',RM:'AD',LM:'AS',RW:'AD',LW:'AS',ST:'ATT'};
   return lang==='en'?String(position||'—'):it[position]||String(position||'—');
  };
  const name=p=>esc(w.players.find(x=>String(x.id)===String(p.playerId))?.name||historicPlayerName(w,p.playerId)||'—');
