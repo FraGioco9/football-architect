@@ -4,7 +4,6 @@
  * gains already accrued by MGT04. No browser/storage dependencies.
  */
 import {clubPlayers} from './selectors.js';
-import {personalityTrainingMultiplier} from './career-personality.js';
 import {toAddonPosition} from '../addons/career-bridge.mjs';
 import {createTrainingWeek,validateTrainingWeek,setTrainingSession,setIndividualTraining,delegateTrainingWeek} from '../addons/domain/training-plan.mjs';
 import {createTrainingRoster,validateTrainingRoster} from '../addons/domain/training-roster.mjs';
@@ -201,7 +200,7 @@ export function settleCareerTrainingSeason(w){
   const yearly=simulateDevelopmentSeason(d,norm(p),{season:w.season,minutes:Math.min(6000,s.minutes),
    // MGT03 training staff reduce *excessive* effective workload rather than
    // fabricating minutes or adding a second PLY03 growth pass.
-   workload:Math.max(0,Math.min(100,(s.trainingDays?Math.max(0,Math.min(100,s.workloadSum/s.trainingDays)-(facilityImpact(w)?.trainingBonus??0)*1.5):55)*personalityTrainingMultiplier(w,p))),
+   workload:Math.max(0,Math.min(100,(s.trainingDays?Math.max(0,Math.min(100,s.workloadSum/s.trainingDays)-(facilityImpact(w)?.trainingBonus??0)*1.5):55))),
    form:s.appearances?Math.min(100,s.formSum/s.appearances*10):50,program:currentProgram});
   const merged={};const changes=[];
   for(const key of Object.keys(now)){

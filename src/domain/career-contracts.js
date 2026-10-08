@@ -121,7 +121,7 @@ export function respondCareerRenewal(w,{offerId,expectedRevision,decision='auto'
  if(!['accept','reject','counter'].includes(outcome))fail('DECISION');
  if(outcome==='accept'){applyDeal(w,p,o);}else if(outcome==='reject'){o.status='rejected';o.history.push({by:'player',action:'reject',season:w.season,round:w.round});}
  else{const increase=Math.min(1_000_000_000,Math.max(5200,Math.round(o.terms.annualWage*1.08/52)*52));o.terms=makeTerms({...o.terms,annualWage:increase});o.status='awaiting_club';o.history.push({by:'player',action:'counter',season:w.season,round:w.round});notify(w,'counter',p,{}, {type:'contract-counter',id:o.id});}
- s.revision++;return {status:o.status,assessment:assessed};
+ s.revision++;const {interestScore:privateScore,...safeAssessment}=assessed;return {status:o.status,assessment:safeAssessment};
 }
 export function decideCareerCounter(w,{offerId,expectedRevision,decision='reject'}={}){
  if(!contractsEnabled(w))fail('NOT_ENABLED');const s=state(w);if(s.revision!==expectedRevision)fail('STALE_REVISION');const o=s.offers[offerId];if(!o||o.status!=='awaiting_club'||!['accept','reject'].includes(decision))fail('OFFER_STATUS');

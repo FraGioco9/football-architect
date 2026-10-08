@@ -1,22 +1,27 @@
-/** PLY02.02: deterministic, explainable, opt-in projections for four systems.
+/** PLY02.02: deterministic, bounded official projections shared by user and AI systems.
  * No official morale/contract/training/fixture writes.
  */
 import {validatePersonality,clamp} from './player-personality.mjs';
 const number=(v,name,min,max)=>{if(!Number.isFinite(v)||v<min||v>max)throw new Error(`PLY02_${name}`);return v;};
 const round=(v)=>Math.round(v*1000)/1000;
 export const PERSONALITY_EVENTS=Object.freeze(['win','loss','bench','played','coach_praise','coach_criticism','training','contract_offer','transfer_rejected','coach_change','contract_promise']);
-export function evaluatePersonalityEffects(profile,{morale=50,playingTime=50,clubLevel=50,offeredRaise=0}={}){
+export function evaluatePersonalityEffects(profile,{morale=50,playingTime=50,clubLevel=50,offeredRaise=0,international=false}={}){
  validatePersonality(profile);
- number(morale,'MORALE',0,100);number(playingTime,'PLAYING_TIME',0,100);number(clubLevel,'CLUB_LEVEL',0,100);number(offeredRaise,'RAISE',-100,300);
+ number(morale,'MORALE',0,100);number(playingTime,'PLAYING_TIME',0,100);number(clubLevel,'CLUB_LEVEL',0,100);number(offeredRaise,'RAISE',-100,300);if(typeof international!=='boolean')throw Error('PLY02_INTERNATIONAL');
  const {professionalism:p,ambition:a,loyalty:l,determination:d,temperament:t,adaptability:ad}=profile.traits;
  const factors={
   consistency:round(clamp(1+(d-50)*0.0016+(p-50)*0.0014-(t-50)*0.0005,0.82,1.18)),
-  training:round(clamp(1+(p-50)*0.0018+(d-50)*0.0012,0.85,1.15)),
+  training:round(clamp(1+(p-50)*0.0018+(d-50)*0.0012,0.97,1.03)),
   moraleResilience:round(clamp(1+(d-50)*0.0018+(ad-50)*0.0015-(t-50)*0.0006,0.85,1.15)),
   adaptation:round(clamp(1+(ad-50)*0.002,0.90,1.10)),
  };
- const contractInterest=round(clamp(50+(l-50)*0.22-(a-50)*0.16+(morale-50)*0.14+(playingTime-50)*0.08+(clubLevel-50)*0.1+offeredRaise*0.09,0,100));
- return {factors,contractInterest,explanation:{consistency:['determination','professionalism','temperament'],training:['professionalism','determination'],moraleResilience:['determination','adaptability','temperament'],adaptation:['adaptability'],contractInterest:['loyalty','ambition','morale','playingTime','clubLevel','offeredRaise']}};
+ const contractInterest=round(clamp(50+(l-50)*0.22-(a-50)*0.16+(morale-50)*0.14+(playingTime-50)*0.08+(clubLevel-50)*0.1+offeredRaise*0.09+(international?(ad-50)*0.07:0),0,100));
+ return {factors,contractInterest,explanation:{consistency:['determination','professionalism','temperament'],training:['professionalism','determination'],moraleResilience:['determination','adaptability','temperament'],adaptation:['adaptability'],contractInterest:['loyalty','ambition','morale','playingTime','clubLevel','offeredRaise','adaptability']}};
+}
+/** Identical capped modifier for managed, AI and foreign-league matches. */
+export function matchPerformanceFactor(profile,{morale=50}={}){
+ const effects=evaluatePersonalityEffects(profile,{morale});
+ return round(clamp(1+(morale-50)*.00020+(effects.factors.consistency-1)*.08,.98,1.02));
 }
 /** Reasoned morale response in -8..8 per trigger; no global RNG, no side effects. */
 export function eventResponse(profile,type,{importance=1}={}){

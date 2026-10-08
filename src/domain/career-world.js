@@ -11,6 +11,7 @@ import {table} from './standings.js';
 import {randomFactory,scopedSeed} from './rng.js';
 import {generatePlayerAttributes} from '../addons/domain/player-generator.mjs';
 import {readPersonality,generatePersonality,validatePersonality} from '../addons/domain/player-personality.mjs';
+import {matchPerformanceFactor} from '../addons/domain/player-personality-effects.mjs';
 import {ATTRIBUTE_KEYS} from '../addons/domain/player-attributes.mjs';
 import {toAddonPosition} from '../addons/career-bridge.mjs';
 import {hashYouth,youthName} from '../addons/domain/player-youth.mjs';
@@ -77,7 +78,7 @@ function poisson(rand,mean){let t=1,n=-1,stop=Math.exp(-mean);do{n++;t*=Math.max
 function simulateFixture(universe,league,m){
  const rand=randomFactory(scopedSeed(universe.seed,'world-fixture',league.countryId,universe.season,m.id));
  const home=league.players.filter(p=>p.clubId===m.home),away=league.players.filter(p=>p.clubId===m.away);
- const strength=ps=>ps.reduce((sum,p)=>sum+p.ovr,0)/Math.max(1,ps.length);
+ const strength=ps=>ps.length?ps.reduce((sum,p)=>sum+p.ovr*matchPerformanceFactor(readPersonality(p,{seed:universe.seed,countryId:league.countryId}),{morale:50}),0)/ps.length:0;
  const diff=strength(home)-strength(away);
  const xgHome=cap(1.45+diff*.06,.25,3.7),xgAway=cap(1.10-diff*.06,.25,3.7);
  const homeGoals=poisson(rand,xgHome),awayGoals=poisson(rand,xgAway),goals=[];

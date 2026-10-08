@@ -138,7 +138,11 @@ export function answerMarketClub(w,{revision,dealId,side,decision,counterQuote=n
 function bestPersonal(w,d,terms){
  const found=playerInfo(w,d.playerId),wanted=marketValuation(w,d.playerId,d.buyerKey).weeklyWageEUR;
  if(d.offer.type==='loan')return terms.annualWage===playerInfo(w,d.playerId).player.wage*52;
- if(personalityEnabled(w)&&personalityContractInterest(w,found.player,{offeredRaise:Math.max(-100,Math.min(300,Math.round((terms.annualWage/52/Math.max(1,found.player.wage??3000)-1)*100)))})<30)return false;
+ const buyer=clubInfo(w,d.buyerKey),international=found.clubKey.split(':')[0]!==buyer.country;
+ const increase=Math.max(-100,Math.min(300,Math.round((terms.annualWage/52/Math.max(1,found.player.wage??3000)-1)*100)));
+ if(personalityEnabled(w)&&personalityContractInterest(w,found.player,{
+  offeredRaise:increase,clubLevel:buyer.club.reputation??50,international
+ })<35)return false;
  const role=terms.promisedRole;
  return terms.annualWage/52>=wanted*(role==='leader'?.85:role==='starter'?.94:1);
 }

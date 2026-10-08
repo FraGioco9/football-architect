@@ -7,6 +7,7 @@ import {calendarEnabled,windowStatus,budgetReservations,releaseCareerFreeAgent,s
 import {scoutingEnabled} from './career-scouting.js';
 import {randomFactory,scopedSeed} from './rng.js';
 import {addMessage} from './history.js';
+import {personalityContractInterest} from './career-personality.js';
 
 const error=s=>{throw Error(`MKT04_${s}`);};
 const integer=(n,a=0,b=1e9)=>Number.isSafeInteger(n)&&n>=a&&n<=b;
@@ -85,7 +86,7 @@ export function planCareerAIOffers(w){
   const alternatives=clubs.filter(x=>x.key!==key&&x.key!==managedKey(w)&&list(w,x.key).length>21);
   if(!alternatives.length)continue;
   const seller=alternatives[Math.floor(rnd()*alternatives.length)],selling=list(w,seller.key),sellerCounts=posCounts(selling);
-  const candidates=selling.filter(p=>p.position===wanted&&sellerCounts[p.position]>(p.position==='POR'?2:1)&&!market.loans[playerId(w,p,seller.countryId)]&&!proposed.has(playerId(w,p,seller.countryId))&&!Object.values(market.deals).some(d=>d.playerId===playerId(w,p,seller.countryId)&&!['completed','rejected','expired'].includes(d.status))&&!Object.values(w.advancedV1.calendarV1.pending).some(b=>b.playerId===playerId(w,p,seller.countryId)));
+  const candidates=selling.filter(p=>p.position===wanted&&sellerCounts[p.position]>(p.position==='POR'?2:1)&&personalityContractInterest(w,p,{clubLevel:c.reputation,international:seller.countryId!==country})>=35&&!market.loans[playerId(w,p,seller.countryId)]&&!proposed.has(playerId(w,p,seller.countryId))&&!Object.values(market.deals).some(d=>d.playerId===playerId(w,p,seller.countryId)&&!['completed','rejected','expired'].includes(d.status))&&!Object.values(w.advancedV1.calendarV1.pending).some(b=>b.playerId===playerId(w,p,seller.countryId)));
   if(!candidates.length)continue;
   candidates.sort((a,b)=>Math.abs(a.ovr-(c.reputation+strategy.ambition/35))-Math.abs(b.ovr-(c.reputation+strategy.ambition/35))||a.age-b.age||String(a.id).localeCompare(String(b.id)));
   const target=candidates[Math.floor(rnd()*Math.min(strategy.risk>=45?3:2,candidates.length))],id=playerId(w,target,seller.countryId);
@@ -146,7 +147,10 @@ function renewAIContracts(w){
  for(let i=0;i<keys.length&&total<3;i++){
   const key=keys[(from+i)%keys.length],roster=list(w,key),club=s.clubs[key],account=money(w,key);
   if(roster.length<18||account.balance<600000||club.movesThisSeason>=3)continue;
-  const player=roster.filter(p=>p.contract<=1&&p.age<=30&&p.ovr>=60).sort((a,b)=>b.ovr-a.ovr||a.age-b.age)[0];
+  const level=marketClubs(w).find(c=>c.key===key)?.reputation??50;
+  const player=roster.filter(p=>p.contract<=1&&p.age<=30&&p.ovr>=60
+   &&personalityContractInterest(w,p,{offeredRaise:5,clubLevel:level})>=35)
+   .sort((a,b)=>b.ovr-a.ovr||a.age-b.age)[0];
   if(!player)continue;
   const cap=Math.max(600000,marketClubs(w).find(c=>c.key===key).reputation*16000);
   const wage=Math.round(player.wage*(1.05+club.risk/1000)/100)*100;
