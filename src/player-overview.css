@@ -86,3 +86,25 @@
 @media(max-width:900px){.plyr053-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.plyr053-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.plyr053-filters label{flex:1 1 170px;min-width:0}}
 @media(max-width:380px){.plyr053-stats{grid-template-columns:minmax(0,1fr)}}
+
+/* REC-04 — official contract details and contextual operations. */
+.plyr054-contract{display:grid;gap:16px;min-width:0}
+.plyr054-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.plyr054-card{min-width:0;border:1px solid var(--border-color,var(--color-border,#354150));border-radius:12px;background:var(--color-surface-raised,#1e2732);padding:18px}
+.plyr054-card h3{font-size:16px;margin:0 0 14px}
+.plyr054-details{margin:0;display:grid;gap:0}
+.plyr054-detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start;gap:12px;padding:9px 0;border-bottom:1px solid var(--border-color,var(--color-border,#354150))}
+.plyr054-detail:last-child{border-bottom:0}
+.plyr054-detail dt{color:var(--color-text-muted,var(--text-muted,#98a6b5));font-size:13px}
+.plyr054-detail dd{margin:0;text-align:right;overflow-wrap:anywhere;font-size:13px;font-variant-numeric:tabular-nums;font-weight:600}
+.plyr054-note,.plyr054-private{font-size:13px;line-height:1.6;color:var(--color-text-muted,var(--text-muted,#98a6b5))}
+.plyr054-private{padding:16px 18px;border:1px solid var(--border-color,var(--color-border,#354150));border-radius:12px}
+.plyr054-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;align-items:center;margin-top:2px;padding:14px 0 4px;border-top:1px solid var(--border-color,var(--color-border,#354150))}
+.plyr054-actions>.plyr054-note{margin:0}
+.plyr054-action{appearance:none;border:1px solid var(--border-color,var(--color-border,#354150));background:var(--color-surface-raised,#1e2732);border-radius:10px;padding:10px 16px;min-height:44px;font:inherit;color:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.plyr054-action:hover{filter:brightness(1.08)}
+.plyr054-action.is-primary{background:var(--color-accent,var(--accent,#67b5dc));border-color:var(--color-accent,var(--accent,#67b5dc));color:var(--color-on-accent,#111827)}
+.plyr054-action.is-danger{border-color:var(--color-danger,#bf6060)}
+.plyr054-action:focus-visible{outline:2px solid var(--color-accent,#67b5dc);outline-offset:3px}
+@media(max-width:780px){.plyr054-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){.plyr054-card{padding:14px}.plyr054-actions{justify-content:stretch}.plyr054-action{flex:1 1 100%;width:100%}.plyr054-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
