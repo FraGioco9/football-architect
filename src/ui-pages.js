@@ -3,6 +3,7 @@ import {seasonLabel} from './simulation.js';
 import {bestCareer} from './career-store.js';
 import {icon} from './icons.js';
 import {languagePicker} from './language-picker.js';
+import {renderFeedback} from './feedback.js';
 export const esc=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export const tr=(lang,it,en)=>lang==='en'?en:it;
 const fmtDate=(value,lang,clock=false)=>{
@@ -14,19 +15,19 @@ const club=(country,id)=>getLeagueClubs(country).find(x=>x.id===id);
 const crest=c=>c?`<span class="crest" style="--club1:${esc(c.colors[0])};--club2:${esc(c.colors[1])}">${esc(c.short)}</span>`:'<span class="crest unknown">?</span>';
 const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
-export function layout(inner,lang,message='',languageOpen=false){
+export function layout(inner,lang,message=null,languageOpen=false){
  return `<div class="shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
  <header class="top"><a class="brand" href="/" data-action="home"><span class="brand-symbol">${icon('shield',22)}</span><span>FOOTBALL <b>ARCHITECT</b><small>BUILD YOUR LEGACY</small></span></a>
  <div class="header-actions">${languagePicker(lang,languageOpen)}</div></header>
- <main id="content">${message?`<p class="notice" role="status">${esc(message)}</p>`:''}${inner}</main>
+ <main id="content" class="fa-page-main">${renderFeedback(message,lang)}${inner}</main>
  <footer>FOOTBALL ARCHITECT · ${tr(lang,'OFFLINE · GIOCATORE SINGOLO','OFFLINE · SINGLE PLAYER')}</footer></div>`;
 }
 const option=(action,symbol,title,desc)=>`<button class="menu-option" type="button" data-action="${action}">
  <span class="option-icon" aria-hidden="true">${icon(symbol,21)}</span><span class="option-copy"><strong>${esc(title)}</strong><small>${esc(desc)}</small></span><span class="menu-chevron">${icon('chevron-right',18)}</span></button>`;
 export function homePage(catalog,lang){
  const active=bestCareer(catalog),meta=active?.meta,team=meta&&club(meta.countryId,meta.clubId);
- return `<section class="hero"><span class="kicker">${tr(lang,'IL TUO MONDO CALCISTICO','YOUR FOOTBALL WORLD')}</span>
- <h1>${tr(lang,'Benvenuto in Football Architect','Welcome to Football Architect')}</h1><p>${tr(lang,'Ogni carriera è una storia diversa. Scegli una squadra e costruisci il tuo percorso.','Every career tells a different story. Choose a club and build your journey.')}</p></section>
+ return `<section class="hero fa-page-heading"><span class="kicker">${tr(lang,'IL TUO MONDO CALCISTICO','YOUR FOOTBALL WORLD')}</span>
+ <h1 class="fa-page-title">${tr(lang,'Benvenuto in Football Architect','Welcome to Football Architect')}</h1><p>${tr(lang,'Ogni carriera è una storia diversa. Scegli una squadra e costruisci il tuo percorso.','Every career tells a different story. Choose a club and build your journey.')}</p></section>
  <div class="menu-stack">${active?`<section class="panel active-career" aria-label="${tr(lang,'Ultima carriera','Last career')}"><span class="kicker active-label">${icon('clock',15)} ${tr(lang,'ULTIMA CARRIERA','LAST CAREER')}</span>
  <div class="active-details">${crest(team)}<div><h2>${esc(team?.name??'—')}</h2><p>${meta.careerName&&meta.careerName!==team?.name?esc(meta.careerName)+' · ':''}${esc(meta.managerName)} · ${tr(lang,'Stagione','Season')} ${esc(seasonLabel(active.state.date))}</p>
  <p>${esc(fmtDate(active.state.date,lang))} · ${tr(lang,'Salvata','Saved')} ${esc(fmtDate(meta.updatedAt,lang,true))}</p></div></div>
@@ -46,8 +47,8 @@ export function managerPage(draft,lang){
  return `<div class="onboarding restored-onboarding">
  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
  <div class="onboard-wrap">
-  <div class="onboard-header"><span class="pretitle">${tr(lang,'NUOVA CARRIERA','NEW CAREER')}</span>
-   <h1>${tr(lang,'Costruisci la tua carriera','Build your career')}</h1>
+  <div class="onboard-header fa-page-heading"><span class="pretitle">${tr(lang,'NUOVA CARRIERA','NEW CAREER')}</span>
+   <h1 class="fa-page-title">${tr(lang,'Costruisci la tua carriera','Build your career')}</h1>
    <div class="onboard-intro-row"><p>${tr(lang,'Scegli una nazione, una squadra e il tuo allenatore.','Choose a country, a club and your manager.')}</p>
    <button class="btn ghost" type="button" data-action="cancel-setup">${icon('arrow-left',16)} ${tr(lang,'Annulla','Cancel')}</button></div></div>
   <section class="league-pick" aria-labelledby="league-pick-title">
@@ -91,10 +92,10 @@ export function managerPage(draft,lang){
       <div><span>${tr(lang,'STADIO','STADIUM')}</span><strong>${(chosen.capacity/1000).toFixed(1)}k</strong></div>
       <div><span>${tr(lang,'CITTÀ','CITY')}</span><strong class="selected-stat-city">${esc(chosen.city)}</strong></div>
     </div>
-    <form id="manager-form" class="onboard-manager-form">
+    <form id="manager-form" class="onboard-manager-form" novalidate>
      <label class="input-label" for="manager-name">${tr(lang,'3 · NOME ALLENATORE','3 · MANAGER NAME')}</label>
      <input class="text-field" id="manager-name" name="managerName" maxlength="80" required autocomplete="off"
-      value="${esc(draft.managerName)}" placeholder="${tr(lang,'Inserisci il nome dell’allenatore','Enter manager name')}">
+      value="${esc(draft.managerName)}" aria-invalid="false" aria-describedby="manager-name-error" placeholder="${tr(lang,'Inserisci il nome dell’allenatore','Enter manager name')}">
      <p id="manager-name-error" class="field-error" role="alert" hidden>${tr(lang,'Inserisci il nome dell’allenatore per iniziare.','Enter the manager name to start.')}</p>
      <button class="btn primary begin-button" type="submit">${tr(lang,'Inizia carriera','Start career')} ${icon('chevron-right',18)}</button>
     </form>
@@ -135,9 +136,9 @@ export function careersPage(catalog,lang){
   </article>`;
  }).join('');
  return `<div class="restored-careers">
-  <header class="career-hub-heading">
+  <header class="career-hub-heading fa-page-heading">
    <span class="pretitle">${tr(lang,'SALVATAGGI LOCALI','LOCAL SAVES')}</span>
-   <div class="restored-section-head"><div><h1>${tr(lang,'Le tue carriere','Your careers')}</h1><p>${tr(lang,'Apri una carriera o creane una nuova.','Open a career or create a new one.')}</p></div>
+   <div class="restored-section-head"><div><h1 class="fa-page-title">${tr(lang,'Le tue carriere','Your careers')}</h1><p>${tr(lang,'Apri una carriera o creane una nuova.','Open a career or create a new one.')}</p></div>
    <div class="career-head-actions">${button('new',tr(lang,'Nuova carriera','New career'),'primary')} ${button('import',tr(lang,'Importa','Import'),'ghost')}</div></div>
    <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
   </header>
@@ -150,8 +151,8 @@ export function settingsPage(lang){
  const option=(action,iconName,title,desc)=>`<button class="settings-action" type="button" data-action="${action}">
   ${icon(iconName,22)}<span><strong>${esc(title)}</strong><small>${esc(desc)}</small></span>${icon('chevron-right',17)}</button>`;
  return `<div class="restored-settings">
-  <header class="career-hub-heading"><span class="pretitle">${tr(lang,'PREFERENZE','PREFERENCES')}</span>
-   <h1>${tr(lang,'Impostazioni e salvataggi','Settings and saves')}</h1><p>${tr(lang,'Le tue carriere esistono soltanto su questo computer, senza account e senza servizi esterni.','Your careers are stored on this computer, without accounts or external services.')}</p></header>
+  <header class="career-hub-heading fa-page-heading"><span class="pretitle">${tr(lang,'PREFERENZE','PREFERENCES')}</span>
+   <h1 class="fa-page-title">${tr(lang,'Impostazioni e salvataggi','Settings and saves')}</h1><p>${tr(lang,'Le tue carriere esistono soltanto su questo computer, senza account e senza servizi esterni.','Your careers are stored on this computer, without accounts or external services.')}</p></header>
   <div class="settings-grid">
    <section class="settings-panel panel"><h2>${tr(lang,'Lingua','Language')}</h2>
     <div class="settings-language"><div class="setting-fact"><span>${tr(lang,'LINGUA ATTUALE','CURRENT LANGUAGE')}</span><b>${lang==='en'?'English':'Italiano'}</b></div>
@@ -180,8 +181,8 @@ export function settingsPage(lang){
 
 export function simulationPage(meta,state,lang,playing){
  const c=club(meta.countryId,meta.clubId),l=leagueById(meta.countryId);
- return `<section class="heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
- <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1>${esc(c?.name??'—')}</h1>
+ return `<section class="heading fa-page-heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
+ <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1 class="fa-page-title">${esc(c?.name??'—')}</h1>
  <p>${esc(meta.managerName)} · ${esc(l.flag)} ${esc(l.country[lang])}</p></section>
  <div class="metrics"><section class="panel"><span class="kicker">${tr(lang,'DATA DI GIOCO','GAME DATE')}</span><h2>${esc(fmtDate(state.date,lang))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'STAGIONE','SEASON')}</span><h2>${esc(seasonLabel(state.date))}</h2></section>
