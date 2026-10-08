@@ -82,7 +82,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,routePlayerId:null,playerTab:'overview',playerAttributeGroup:'technical',playerStatsSeason:null,playerStatsCompetition:'all',language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadSortDir:'asc',squadSortCustom:false,squadView:'general',squadAttributeGroup:'technical',squadContractFilter:'all',squadAgeMin:'',squadAgeMax:'',squadOvrMin:'',squadOvrMax:'',squadFitnessMin:'',squadMoraleMin:'',squadValueMin:'',squadWageMax:'',squadFilterAttribute:'ALL',squadFilterAttributeMin:'',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,routePlayerId:null,playerTab:'overview',playerAttributeGroup:'technical',playerStatsSeason:null,playerStatsCompetition:'all',language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadSortDir:'asc',squadSortCustom:false,squadView:'general',squadAttributeGroup:'technical',squadContractFilter:'all',squadAgeMin:'',squadAgeMax:'',squadOvrMin:'',squadOvrMax:'',squadFitnessMin:'',squadMoraleMin:'',squadValueMin:'',squadWageMax:'',squadFilterAttribute:'ALL',squadFilterAttributeMin:'',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null,contractSelectedPlayerId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -1060,6 +1060,9 @@ root.addEventListener('click',async ev=>{
         await runCheckpointed('before-transfer',()=>respondCareerRenewal(world,{offerId:id,expectedRevision:world.advancedV1.contractsV1.revision,decision:'auto'}));render();break;
       }
       case 'contracts-decide-counter':{
+        if(ui.routeKind==='player'&&!confirmAction(ui.language==='en'
+          ?(field==='accept'?'Accept this contract counteroffer?':'Reject this contract counteroffer?')
+          :(field==='accept'?'Accettare questa controproposta contrattuale?':'Rifiutare questa controproposta contrattuale?')))break;
         await runCheckpointed('before-transfer',()=>decideCareerCounter(world,{offerId:id,expectedRevision:world.advancedV1.contractsV1.revision,decision:field==='accept'?'accept':'reject'}));render();break;
       }
       case 'sim03-slot':ui.sim03Slot=Number(index);render();break;
@@ -1357,6 +1360,19 @@ root.addEventListener('click',async ev=>{
       }
       case 'player':openPlayerRoute(Number(id));break;
       case 'player-back':navigate(ui.routeReturnPage||'squad');break;
+      case 'player-open-renewal':{
+        if(ui.routeKind!=='player'||['dismissed','retired'].includes(boardStatus(world)))break;
+        const p=world.players.find(x=>x.id===Number(id)&&x.clubId===world.clubId);
+        if(!p||!contractsEnabled(world))break;
+        ui.squadView='contract';ui.contractSelectedPlayerId=p.id;
+        navigate('squad');
+        requestAnimationFrame(()=>root.querySelector('#ply05-player')?.focus({preventScroll:true}));
+        break;
+      }
+      case 'player-open-market':{
+        if(ui.routeKind!=='player'||['dismissed','retired'].includes(boardStatus(world)))break;
+        ui.marketTab='negotiations';navigate('market');break;
+      }
       case 'player-tab':{
         if(ui.routeKind!=='player'||!PLAYER_PROFILE_TABS.some(tab=>tab.id===field))break;
         ui.playerTab=field;render();
@@ -1372,8 +1388,8 @@ root.addEventListener('click',async ev=>{
       }
       case 'match':ui.modal={type:'match',id};render();break;
       case 'slot':ui.modal={type:'slot',index};render();break;
-      case 'close-modal':if(!closeRoutedResource())closeModalUi();break;
-      case 'dismiss-modal':if(!ev.target.closest('[data-stop-close]')){if(!closeRoutedResource())closeModalUi();}break;
+      case 'close-modal':if(ui.modal)closeModalUi();else if(!closeRoutedResource())closeModalUi();break;
+      case 'dismiss-modal':if(!ev.target.closest('[data-stop-close]')){if(ui.modal)closeModalUi();else if(!closeRoutedResource())closeModalUi();}break;
       case 'formation':changeFormation(world,field);syncCareerTrainingFormation(world);refresh(`Modulo ${field} applicato.`);break;
       case 'auto-lineup':autoLineup(world);refresh('Miglior undici disponibile selezionato.');break;
       case 'assign':assignPlayer(world,index,Number(id));ui.modal=null;refresh('Formazione aggiornata.');break;
@@ -1730,6 +1746,11 @@ root.addEventListener('change',async ev=>{
   if(el.matches('[data-inbox-select-all]')){const boxes=[...root.querySelectorAll('[data-inbox-select]')];ui.inboxSelected=el.checked?boxes.map(box=>String(box.dataset.inboxSelect)):[];for(const box of boxes)box.checked=el.checked;syncInboxSelectionChrome();return;}
   if(el.matches('[data-watchlist-only]')){ui.marketOnlyWatched=el.checked;render();return;}
   if(el.id==='ply01-compare-player'){ui.comparePlayerId=el.value==='none'?null:Number(el.value);render();return;}
+  if(el.id==='ply05-player'){
+    const pid=Number(el.value),p=world.players.find(x=>x.id===pid&&x.clubId===world.clubId);
+    if(p){ui.contractSelectedPlayerId=pid;const wage=root.querySelector('#ply05-weekly');if(wage)wage.value=String(p.wage??0);}
+    return;
+  }
   if(el.id==='market-position'){ui.marketPosition=el.value;render();}
   if(el.id==='career-import-mode'){ui.importMode=el.value;ui.importTarget='';render();return;}
   if(el.id==='career-import-target'){ui.importTarget=el.value;return;}
