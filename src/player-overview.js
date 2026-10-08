@@ -70,6 +70,7 @@ export function renderPlayerOverviewPage(w,ui){
  const performancePanel=tab==='performance'?renderPlayerPerformancePanel(w,player,ui):'';
  const careerPanel=tab==='career'?renderPlayerCareerPanel(w,player,ui)+renderRecordedDevelopment(w,player,lang):'';
  const contractPanel=tab==='contract'?renderPlayerContractPanel(w,player,ui):'';
+ const overviewExtras=tab==='overview'?(renderRelatedPositions(w,player,lang)+renderObservedMedical(w,player,lang)+renderObservedRelations(w,player,lang)):'';
  const scoutNote=!owned?`<p class="plyr051-note" role="status">${locale(lang,
    'Le valutazioni e il valore sono mostrati solo come stime quando esiste un rapporto di scouting. I dati non conosciuti restano nascosti.',
    'Ratings and value appear as estimates only when a scouting report exists. Unknown data remain hidden.')}</p>`:'';
@@ -124,9 +125,7 @@ export function renderPlayerOverviewPage(w,ui){
        info(locale(lang,'Valore di mercato','Market value'),valuation)+
        info(locale(lang,'Durata residua','Time remaining'),term)+
        info(locale(lang,'Ingaggio settimanale','Weekly wage'),wages))}
-     ${renderRelatedPositions(w,player,lang)}
-     ${renderObservedMedical(w,player,lang)}
-     ${renderObservedRelations(w,player,lang)}
+     ${overviewExtras}
    </div>
    </section>
    ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${item.id==='attributes'?attributePanel:item.id==='performance'?performancePanel:item.id==='career'?careerPanel:contractPanel}</section>`).join('')}
