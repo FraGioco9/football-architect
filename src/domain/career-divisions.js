@@ -8,6 +8,7 @@ import {createFixtures} from './fixtures.js';
 import {randomFactory,scopedSeed} from './rng.js';
 import {hashYouth,youthName} from '../addons/domain/player-youth.mjs';
 import {generatePlayerAttributes,copyPlayerWithAttributes} from '../addons/domain/player-generator.mjs';
+import {ATTRIBUTE_KEYS,createAttributes} from '../addons/domain/player-attributes.mjs';
 import {initialMedical} from '../addons/domain/player-medical.mjs';
 import {initialDevelopment} from '../addons/domain/player-development.mjs';
 import {toAddonPosition} from '../addons/career-bridge.mjs';
@@ -29,9 +30,11 @@ function newLeague(w,config){
  const players=[];let nextId=100001;
  for(const club of clubs)for(const position of positionCycle){
   const serial=nextId++,id=`${country}:${serial}`,rand=randomFactory(scopedSeed(w.seed,'wrd02-player',country,serial));
-  const age=17+Math.floor(rand()*16),ovr=cap(Math.round(club.reputation-6+(rand()-.5)*17),38,78),potential=cap(ovr+Math.round(rand()*17),ovr,90);
+  const age=17+Math.floor(rand()*16),generationLevel=cap(Math.round(club.reputation-6+(rand()-.5)*17),38,78);
+  const generated=generatePlayerAttributes({id,position:toAddonPosition(position),age,generationLevel,nationality:country},{seed:w.seed,countryId:country});
+  const ovr=generated.generatedOvr,potential=cap(ovr+Math.round(rand()*17),ovr,90);
   const p={id,name:youthName(country,w.seed,club.id,w.season,serial),clubId:club.id,position,age,ovr,potential,contract:2+Math.floor(rand()*4),wage:Math.round(900+ovr*48),nationality:country,apps:0,goals:0};
-  p.attributes=generatePlayerAttributes({...p,position:toAddonPosition(position)},{seed:w.seed,countryId:country}).values;
+  p.attributes=structuredClone(generated.attributeProfile.values);
   players.push(p);
  }
  return {countryId:country,name:`${config.competition} · ${country} Divisione Due`,season:w.season,round:0,clubs,players,fixtures:createFixtures(clubs.map(c=>c.id),w.season),nextId,retired:0};
@@ -101,7 +104,7 @@ export function captureDivisionSeason(w){if(!divisionsEnabled(w))return null;
 }
 const toForeign=(p,country)=>({id:p.globalId??(typeof p.id==='string'?p.id:`${country}:${p.id}`),name:p.name,clubId:p.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,wage:p.wage,contract:p.contract,apps:0,goals:0,nationality:p.nationality,attributes:p.attributes??p.attributeProfile?.values});
 function toManaged(w,p){const id=Math.max(0,...w.players.map(x=>x.id),w.advancedV1?.youthV1?.nextPlayerId??0)+1,raw={...p,id,globalId:p.id,foot:'Destro',fitness:95,morale:75,form:6.8,value:Math.round(p.ovr**3*3/1000)*1000,injury:0,apps:0,goals:0,assists:0,yellow:0,cleanSheets:0,history:[]};
- delete raw.attributes;raw.attributeProfile=copyPlayerWithAttributes({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:w.countryId}).attributeProfile;
+ raw.attributeProfile=p.attributes?createAttributes(p.attributes,{origin:'division-v2'}):copyPlayerWithAttributes({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:w.countryId}).attributeProfile;delete raw.attributes;
  raw.medicalV1=initialMedical(raw,{day:w.advancedV1.clockDay});
  if(w.advancedV1.trainingV1)raw.developmentV1=initialDevelopment({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:w.countryId,startSeason:w.season});
  return raw;}
@@ -213,8 +216,10 @@ export function openCareerDivisionsSeason(w,plan){if(!divisionsEnabled(w))return
     p.ovr=cap(p.ovr+(p.age<=24&&p.ovr<p.potential&&r()<.48?1:p.age>31&&r()<.36?-1:0),35,95);p.contract=Math.max(1,p.contract-1);p.apps=0;p.goals=0;refreshed.push(p);}
    for(const club of lower.clubs){const roster=refreshed.filter(p=>p.clubId===club.id);for(let i=roster.length;i<23;i++){
      const serial=lower.nextId++,id=`${country}:${serial}`,rnd=randomFactory(scopedSeed(w.seed,'wrd02-youth',country,w.season,serial));
-     const position=i<2?'POR':positionCycle[serial%positionCycle.length],age=17+Math.floor(rnd()*5),ovr=cap(Math.round(club.reputation-8+rnd()*16),38,78),potential=cap(ovr+Math.floor(rnd()*18),ovr,92);
-     const p={id,name:youthName(country,w.seed,club.id,w.season,serial),clubId:club.id,position,age,ovr,potential,wage:1200+ovr*48,contract:3,apps:0,goals:0,nationality:country};p.attributes=generatePlayerAttributes({...p,position:toAddonPosition(position)},{seed:w.seed,countryId:country}).values;refreshed.push(p);
+     const position=i<2?'POR':positionCycle[serial%positionCycle.length],age=17+Math.floor(rnd()*5),generationLevel=cap(Math.round(club.reputation-8+rnd()*16),38,78);
+     const generated=generatePlayerAttributes({id,position:toAddonPosition(position),age,generationLevel,nationality:country},{seed:w.seed,countryId:country});
+     const ovr=generated.generatedOvr,potential=cap(ovr+Math.floor(rnd()*18),ovr,92);
+     const p={id,name:youthName(country,w.seed,club.id,w.season,serial),clubId:club.id,position,age,ovr,potential,wage:1200+ovr*48,contract:3,apps:0,goals:0,nationality:country};p.attributes=structuredClone(generated.attributeProfile.values);refreshed.push(p);
    }}lower.players=refreshed;
   }
   record.lower=lower;
@@ -243,7 +248,7 @@ export function validateCareerDivisions(w){const s=state(w);if(s===undefined)ret
   if(l.managed){if(country!==w.countryId||s.managedTier!==2||top.locked||w.teams.length!==20||w.players.length<360||w.fixtures.length!==38)return false;continue;}
   if(l.clubs.length!==20||l.fixtures.length!==38||!Array.isArray(l.players))return false;
   const topIds=new Set(top.clubs.map(c=>c.id)),lowerIds=new Set(l.clubs.map(c=>c.id));if(topIds.size!==20||lowerIds.size!==20||[...topIds].some(x=>lowerIds.has(x)))return false;
-  if(l.players.length<20*18||l.players.length>20*32||new Set(l.players.map(p=>p.id)).size!==l.players.length||l.players.some(p=>!lowerIds.has(p.clubId)||typeof p.id!=='string'||p.attributes&&Object.keys(p.attributes).length!==40))return false;
+  if(l.players.length<20*18||l.players.length>20*32||new Set(l.players.map(p=>p.id)).size!==l.players.length||l.players.some(p=>!lowerIds.has(p.clubId)||typeof p.id!=='string'||p.attributes&&Object.keys(p.attributes).length!==ATTRIBUTE_KEYS.length))return false;
   for(const [i,day] of l.fixtures.entries()){if(day.round!==i+1||day.matches.length!==10)return false;for(const m of day.matches){if(!lowerIds.has(m.home)||!lowerIds.has(m.away)||Boolean(m.result)!==(i<l.round))return false;if(m.result&&(!Number.isSafeInteger(m.result.homeGoals)||!Number.isSafeInteger(m.result.awayGoals)||m.result.digest!==goalsDigest(m)))return false;}}
   for(const h of rec.history){if(!Number.isSafeInteger(h.season)||h.season>=w.season||new Set(h.promoted).size!==3||new Set(h.relegated).size!==3||h.playoff?.matches?.length!==3||h.top?.length!==20||h.bottom?.length!==20)return false;}
  }

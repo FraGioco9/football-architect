@@ -36,10 +36,11 @@ export function youthName(country,seed,clubId,season,serial){const names=NAMES[c
 function createProspect({id:playerId,countryId,clubId,season,seed,serial,emergency=false,position}={}){
  const role=canonicalPosition(position??mix[(serial+season+Math.floor(drawYouth(seed,clubId,season,serial,'pos')*4))%mix.length]);
  const age=emergency?17+Math.floor(drawYouth(seed,serial,'age')*3):15+Math.floor(drawYouth(seed,serial,'age')*4);
- const potential=cap(Math.round(54+drawYouth(seed,serial,'potential')*39),50,94);
- const ovr=cap(Math.round((emergency?40:32)+drawYouth(seed,serial,'ovr')*19+Math.max(0,age-16)*1.5),25,emergency?65:62);
- const player={id:playerId,clubId:String(clubId),nationality:countryKey(countryId),name:youthName(countryId,seed,clubId,season,serial),position:role,age,ovr,potential,origin:'PLY06-v1',bornSeason:season,preferredFoot:drawYouth(seed,serial,'foot')<0.18?'left':'right',careerStats:{apps:0,starts:0,minutes:0,goals:0,assists:0}};
- player.attributeProfile=generatePlayerAttributes(player,{seed,countryId:player.nationality});
+ const generationLevel=cap(Math.round((emergency?40:32)+drawYouth(seed,serial,'level')*19+Math.max(0,age-16)*1.5),25,emergency?65:62);
+ const player={id:playerId,clubId:String(clubId),nationality:countryKey(countryId),name:youthName(countryId,seed,clubId,season,serial),position:role,age,origin:'PLY06-v2',bornSeason:season,preferredFoot:drawYouth(seed,serial,'foot')<0.18?'left':'right',careerStats:{apps:0,starts:0,minutes:0,goals:0,assists:0}};
+ const generated=generatePlayerAttributes({...player,generationLevel},{seed,countryId:player.nationality});
+ player.attributeProfile=generated.attributeProfile;player.ovr=generated.generatedOvr;
+ player.potential=cap(Math.round(Math.max(player.ovr,54+drawYouth(seed,serial,'potential')*39)),player.ovr,94);
  player.personalityProfile=readPersonality(player,{seed,countryId:player.nationality});
  return player;
 }
@@ -115,7 +116,7 @@ export function promoteProspect(world,{clubId,playerId,season=world.season,expec
 }
 /** PLY06.04; existing legacy player OVR is untouched unless explicitly projected as a youth. */
 export function developProspect(player,{season,seed=0,academyQuality=3,minutes=0,program='balanced'}={}){
- if(!object(player)||player.origin!=='PLY06-v1')err('NOT_YOUTH');int(academyQuality,1,5,'QUALITY');int(minutes,0,6000,'MINUTES');int(season,1,500,'SEASON');
+ if(!object(player)||player.origin!=='PLY06-v2')err('NOT_YOUTH');int(academyQuality,1,5,'QUALITY');int(minutes,0,6000,'MINUTES');int(season,1,500,'SEASON');
  const d=player.developmentV1?clone(player.developmentV1):initialDevelopment(player,{seed,startSeason:season,countryId:player.nationality});
  if(d.lastSeason===season)return clone(player);
  if(d.lastSeason!==season-1)err('DEVELOPMENT_SEASON');

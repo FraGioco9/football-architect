@@ -9,7 +9,7 @@ export function initialPlayerDynamics(player,{seed=0,countryId=''}={}){
  const id=String(player.id??'');if(!id)throw new Error('PLY02_PLAYER_ID');
  const attributes=readPlayerAttributes(player,{seed,countryId});
  const personality=readPersonality(player,{seed,countryId});
- const leading=attributes.values.leadership;
+ const leading=personality.traits.leadership??personality.traits.determination;
  const influence=clamp(Math.round(0.55*leading+0.25*personality.traits.determination+0.2*score(player.age??24,15,45)/45*100),1,100);
  return {schemaVersion:1,playerId:id,revision:0,morale:score(player.morale??50),coachRelationship:50,influence,history:[],processedIds:[]};
 }

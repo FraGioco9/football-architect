@@ -8,6 +8,7 @@ const relegatedLeague=(w,country)=>w.advancedV1?.divisionsV1?.countries?.[countr
 import {makeQuote} from '../addons/domain/transfer-market.mjs';
 import {makeTerms,validateTerms} from '../addons/domain/player-contract.mjs';
 import {copyPlayerWithAttributes} from '../addons/domain/player-generator.mjs';
+import {ATTRIBUTE_KEYS,createAttributes} from '../addons/domain/player-attributes.mjs';
 import {initialMedical} from '../addons/domain/player-medical.mjs';
 import {initialDevelopment} from '../addons/domain/player-development.mjs';
 import {toAddonPosition} from '../addons/career-bridge.mjs';
@@ -171,7 +172,7 @@ function transferPlayer(w,globalId,destKey,loan=false){
   else{
    if(!loan){p.historicalClubId=p.clubId;p.clubId=0;p.departedTo=destKey;}else{p.historicalClubId=p.clubId;p.clubId=0;p.departedTo=destKey;}
    const external={id:globalId,name:p.name,clubId:dest.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,contract:p.contract,apps:0,goals:0,nationality:p.nationality,wage:p.wage,attributes:{...p.attributeProfile?.values}};
-   if(Object.keys(external.attributes).length!==40)fail('PLAYER_ATTRIBUTES');dest.league.players.push(external);
+   if(Object.keys(external.attributes).length!==ATTRIBUTE_KEYS.length)fail('PLAYER_ATTRIBUTES');dest.league.players.push(external);
   }
  }else{
   // Preserve seasonal scoring already completed in the country of origin.
@@ -187,8 +188,9 @@ function transferPlayer(w,globalId,destKey,loan=false){
    if(local){local.clubId=dest.clubId;local.departedTo=undefined;local.age=p.age;local.ovr=p.ovr;local.contract=p.contract;}
    else{
     const id=Math.max(maxId(w),w.advancedV1.youthV1?.nextPlayerId??1),raw={...p,id,globalId,clubId:dest.clubId,foot:'Destro',fitness:95,morale:75,form:6.8,value:Math.round(p.ovr**3*3/1000)*1000,wage:p.wage??3000,injury:0,apps:0,assists:0,yellow:0,cleanSheets:0,history:[]};
+    const externalAttributes=raw.attributes?createAttributes(raw.attributes,{origin:'market-v2'}):null;
     delete raw.attributes;delete raw.goals;raw.goals=0;
-    raw.attributeProfile=copyPlayerWithAttributes({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:dest.country}).attributeProfile;
+    raw.attributeProfile=externalAttributes??copyPlayerWithAttributes({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:dest.country}).attributeProfile;
     raw.medicalV1=initialMedical({...raw,unavailable:false},{day:w.advancedV1.clockDay});
     if(w.advancedV1.trainingV1)raw.developmentV1=initialDevelopment({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:w.countryId,startSeason:w.season});
     w.players.push(raw);

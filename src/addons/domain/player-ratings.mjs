@@ -1,63 +1,66 @@
-/** PLY01.03 — positional suitability, explicitly derived; never overwrites legacy OVR. */
+/** PLY-REBUILD PLYR-04 — positional ratings derived from attribute schema v2. */
 import {validateAttributes,clampAttribute} from './player-attributes.mjs';
+
 const posKeys=['GK','RB','LB','CB','RWB','LWB','CDM','CM','RM','LM','CAM','RW','LW','CF','ST'];
-export const POSITIONS = Object.freeze(posKeys);
-const aliases={G:'GK',POR:'GK',GOALKEEPER:'GK',TD:'RB',TS:'LB',DC:'CB',DFC:'CB',DCB:'CB',D:'CB',DEF:'CB',DF:'CB',RBK:'RB',LBK:'LB',MED:'CDM',CC:'CM',COC:'CAM',AD:'RW',AS:'LW',DM:'CDM',DMC:'CDM',MC:'CM',MID:'CM',M:'CM',AM:'CAM',AMC:'CAM',ACM:'CAM',ATT:'ST',F:'ST',FW:'ST',STRIKER:'ST',FC:'CF',RF:'RW',LF:'LW',RWB:'RWB',LWB:'LWB',RWM:'RM',LWM:'LM'};
-export function canonicalPosition(pos) {
+export const POSITIONS=Object.freeze(posKeys);
+const aliases={G:'GK',POR:'GK',GOALKEEPER:'GK',TD:'RB',TS:'LB',DC:'CB',DFC:'CB',DCB:'CB',D:'CB',DEF:'CB',DF:'CB',RBK:'RB',LBK:'LB',MED:'CDM',CC:'CM',COC:'CAM',AD:'RW',AS:'LW',DM:'CDM',DMC:'CDM',MC:'CM',MID:'CM',M:'CM',AM:'CAM',AMC:'CAM',ACM:'CAM',ATT:'ST',F:'ST',FW:'ST',STRIKER:'ST',FC:'CF',RF:'RW',LF:'LW',RWM:'RM',LWM:'LM'};
+export function canonicalPosition(pos){
  const key=String(pos??'').trim().toUpperCase().replace(/[^A-Z]/g,'');
  const normalized=aliases[key]??key;
- if(!POSITIONS.includes(normalized)) throw new Error(`PLY01_UNKNOWN_POSITION:${key}`);
+ if(!POSITIONS.includes(normalized))throw new Error(`PLY04_UNKNOWN_POSITION:${key}`);
  return normalized;
 }
-const specs = {
- GK:{reflexes:18,keeperPositioning:17,handling:14,diving:14,oneOnOne:12,rushingOut:10,distribution:8,concentration:4,decisions:3},
- CB:{marking:18,tackling:17,defensivePositioning:15,anticipation:13,strength:11,heading:9,jumping:6,decisions:6,shortPassing:5},
- LB:{marking:14,tackling:13,defensivePositioning:13,pace:12,stamina:11,crossing:9,acceleration:9,shortPassing:8,anticipation:6,workRate:5},
- RB:{marking:14,tackling:13,defensivePositioning:13,pace:12,stamina:11,crossing:9,acceleration:9,shortPassing:8,anticipation:6,workRate:5},
- LWB:{pace:15,stamina:14,crossing:14,acceleration:12,workRate:10,marking:9,tackling:8,shortPassing:9,dribbling:9},
- RWB:{pace:15,stamina:14,crossing:14,acceleration:12,workRate:10,marking:9,tackling:8,shortPassing:9,dribbling:9},
- CDM:{defensivePositioning:15,tackling:14,anticipation:13,shortPassing:13,decisions:11,marking:10,teamwork:9,stamina:8,longPassing:7},
- CM:{shortPassing:18,vision:14,decisions:13,firstTouch:12,teamwork:10,stamina:10,technique:9,longPassing:8,workRate:6},
- LM:{crossing:15,pace:14,stamina:12,shortPassing:12,dribbling:11,acceleration:11,workRate:10,firstTouch:8,teamwork:7},
- RM:{crossing:15,pace:14,stamina:12,shortPassing:12,dribbling:11,acceleration:11,workRate:10,firstTouch:8,teamwork:7},
- CAM:{vision:17,technique:16,shortPassing:15,decisions:14,firstTouch:12,offBall:12,dribbling:8,composure:6},
- LW:{dribbling:17,pace:16,acceleration:15,firstTouch:12,crossing:12,finishing:10,agility:10,offBall:8},
- RW:{dribbling:17,pace:16,acceleration:15,firstTouch:12,crossing:12,finishing:10,agility:10,offBall:8},
- CF:{offBall:17,finishing:16,firstTouch:15,vision:12,decisions:12,technique:10,composure:10,shortPassing:8},
- ST:{finishing:22,offBall:18,composure:14,firstTouch:11,heading:10,acceleration:9,strength:8,anticipation:8},
+
+/* Weights sum to 100 for every position. These are rating weights only;
+ * match-event formulas are intentionally deferred.
+ */
+const specs={
+ GK:{reflexes:17,keeperPositioning:15,handling:13,diving:12,aerialReach:10,commandArea:8,rushingOut:7,oneOnOne:9,concentration:4,decisions:3,passing:2},
+ CB:{marking:16,tackling:15,defensivePositioning:14,anticipation:11,strength:9,heading:8,jumping:6,bravery:5,decisions:5,passing:5,concentration:6},
+ LB:{marking:12,tackling:11,defensivePositioning:11,pace:11,stamina:10,crossing:10,acceleration:8,passing:8,anticipation:6,workRate:7,ballControl:6},
+ RB:{marking:12,tackling:11,defensivePositioning:11,pace:11,stamina:10,crossing:10,acceleration:8,passing:8,anticipation:6,workRate:7,ballControl:6},
+ LWB:{pace:13,stamina:13,crossing:13,acceleration:11,workRate:10,marking:8,tackling:7,passing:8,dribbling:7,ballControl:5,offBall:5},
+ RWB:{pace:13,stamina:13,crossing:13,acceleration:11,workRate:10,marking:8,tackling:7,passing:8,dribbling:7,ballControl:5,offBall:5},
+ CDM:{defensivePositioning:14,tackling:13,anticipation:11,passing:12,decisions:10,marking:9,teamwork:8,stamina:7,concentration:6,strength:5,workRate:5},
+ CM:{passing:17,vision:13,decisions:12,ballControl:11,teamwork:9,stamina:8,anticipation:6,workRate:6,composure:5,offBall:5,dribbling:4,defensivePositioning:4},
+ LM:{crossing:13,pace:12,stamina:11,passing:11,dribbling:10,acceleration:10,workRate:9,ballControl:8,teamwork:6,offBall:5,vision:5},
+ RM:{crossing:13,pace:12,stamina:11,passing:11,dribbling:10,acceleration:10,workRate:9,ballControl:8,teamwork:6,offBall:5,vision:5},
+ CAM:{vision:15,passing:14,decisions:12,ballControl:12,offBall:11,dribbling:9,composure:8,finishing:6,longShots:5,agility:4,teamwork:4},
+ LW:{dribbling:15,pace:14,acceleration:13,ballControl:11,crossing:10,finishing:9,agility:8,offBall:7,composure:5,passing:5,vision:3},
+ RW:{dribbling:15,pace:14,acceleration:13,ballControl:11,crossing:10,finishing:9,agility:8,offBall:7,composure:5,passing:5,vision:3},
+ CF:{offBall:15,finishing:14,ballControl:13,vision:9,decisions:9,composure:9,passing:8,dribbling:6,heading:5,strength:4,anticipation:4,bravery:4},
+ ST:{finishing:19,offBall:16,composure:12,ballControl:9,heading:8,acceleration:8,strength:7,anticipation:7,pace:5,bravery:4,decisions:5},
 };
 export const POSITION_WEIGHTS=Object.freeze(Object.fromEntries(Object.entries(specs).map(([p,v])=>[p,Object.freeze({...v})])));
+
 const related=[['RB','LB','RWB','LWB'],['RM','LM','RW','LW'],['ST','CF','CAM'],['CDM','CM','CAM'],['CB','CDM','RB','LB']];
-export function familiarityPenalty(natural, target) {
+export function familiarityPenalty(natural,target){
  natural=canonicalPosition(natural);target=canonicalPosition(target);
  if(natural===target)return 0;
- if((natural==='GK')!==(target==='GK')) return 58;
- if (related.some(g=>g.includes(natural)&&g.includes(target))) return (natural[0]===target[0]&&natural.endsWith('B')!==target.endsWith('B'))?7:5;
- if (['LB','LWB'].includes(natural)&&['RB','RWB'].includes(target)||['RB','RWB'].includes(natural)&&['LB','LWB'].includes(target)) return 9;
- if (['LM','LW'].includes(natural)&&['RM','RW'].includes(target)||['RM','RW'].includes(natural)&&['LM','LW'].includes(target)) return 8;
+ if((natural==='GK')!==(target==='GK'))return 58;
+ if(related.some(g=>g.includes(natural)&&g.includes(target)))return (natural[0]===target[0]&&natural.endsWith('B')!==target.endsWith('B'))?7:5;
+ if((['LB','LWB'].includes(natural)&&['RB','RWB'].includes(target))||(['RB','RWB'].includes(natural)&&['LB','LWB'].includes(target)))return 9;
+ if((['LM','LW'].includes(natural)&&['RM','RW'].includes(target))||(['RM','RW'].includes(natural)&&['LM','LW'].includes(target)))return 8;
  return 16;
 }
-/** Stable weighted rating (no familiarity). */
-export function rawPositionRating(values,position) {
- const p=canonicalPosition(position), w=POSITION_WEIGHTS[p], scores='values' in (values??{})?values.values:values;
- if(!scores||typeof scores!=='object')throw new Error('PLY01_INVALID_VALUES');
- return Object.entries(w).reduce((sum,[key,weight])=>{
-   if(!Number.isInteger(scores[key])||scores[key]<1||scores[key]>100)throw new Error('PLY01_INVALID_VALUES');
-   return sum+scores[key]*weight;
+export function rawPositionRating(values,position){
+ const p=canonicalPosition(position),weights=POSITION_WEIGHTS[p],scores='values' in (values??{})?values.values:values;
+ if(!scores||typeof scores!=='object')throw new Error('PLY04_INVALID_VALUES');
+ return Object.entries(weights).reduce((sum,[key,weight])=>{
+  if(!Number.isInteger(scores[key])||scores[key]<1||scores[key]>100)throw new Error('PLY04_INVALID_VALUES');
+  return sum+scores[key]*weight;
  },0)/100;
 }
-export function positionalRating(attributes,target,natural=target) {
+export function positionalRating(attributes,target,natural=target){
  validateAttributes(attributes);
- const p=canonicalPosition(target), home=canonicalPosition(natural);
- return clampAttribute(rawPositionRating(attributes,p)-familiarityPenalty(home,p));
+ return clampAttribute(rawPositionRating(attributes,canonicalPosition(target))-familiarityPenalty(natural,target));
 }
 export function allPositionRatings(attributes,natural){
  validateAttributes(attributes);return Object.fromEntries(POSITIONS.map(p=>[p,positionalRating(attributes,p,natural)]));
 }
-export function ratePlayer(player,attributes,requestedPosition=player?.position) {
- if(!player||typeof player!=='object')throw new Error('PLY01_PLAYER_REQUIRED');
+export function ratePlayer(player,attributes,requestedPosition=player?.position){
+ if(!player||typeof player!=='object')throw new Error('PLY04_PLAYER_REQUIRED');
  validateAttributes(attributes);
  const natural=canonicalPosition(player.position),position=canonicalPosition(requestedPosition);
- const legacyOvr=Number.isFinite(player.ovr)?player.ovr:Number.isFinite(player.overall)?player.overall:null;
- return {legacyOvr,naturalPosition:natural,requestedPosition:position,derivedOvr:positionalRating(attributes,position,natural),allPositions:allPositionRatings(attributes,natural)};
+ return {naturalPosition:natural,requestedPosition:position,derivedOvr:positionalRating(attributes,position,natural),allPositions:allPositionRatings(attributes,natural)};
 }

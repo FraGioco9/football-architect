@@ -58,7 +58,8 @@ function medicalTraining(before,{day,session,intensity,player,clubId,seed,goal})
  const rest=session.kind==='rest'?100:session.kind==='recovery'?95:session.kind==='match'?40:goal==='fitness'?65:40;
  const training=nontraining.has(session.kind)?0:intensity;
  // The match day is only marked in training; game load is settled by SIM04/PLY04.
- const state=recoverMedical(before,{day,rest,training,recovery:player.attributes.values.recovery});
+ const recovery=Math.round((player.attributes.values.stamina+player.attributes.values.workRate)/2);
+ const state=recoverMedical(before,{day,rest,training,recovery});
  const m=copy(state);
  if(improvementKinds.has(session.kind)&&medicalAvailability(m).eligible){
   const effort=session.intensity/100;

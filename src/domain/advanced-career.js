@@ -101,7 +101,7 @@ export function advanceAdvancedDay(w){
   const day=w.advancedV1.clockDay+1;
   if(hasCareerTraining(w)){
     const updates=w.players.filter(p=>p.clubId!==w.clubId).map(p=>({id:p.id,
-      med:recoverMedical(readMedical(p),{day,rest:65,training:24,recovery:p.attributeProfile.values.recovery??50})}));
+      med:recoverMedical(readMedical(p),{day,rest:65,training:24,recovery:Math.round(((p.attributeProfile.values.stamina??50)+(p.attributeProfile.values.workRate??50))/2)})}));
     w.advancedV1.clockDay=day;
     settleCareerTrainingDay(w,day);
     for(const {id,med} of updates){const p=playerById(w,id);
@@ -111,7 +111,7 @@ export function advanceAdvancedDay(w){
     }
     return day;
   }
-  const updates=w.players.map(p=>recoverMedical(readMedical(p),{day,rest:65,training:24,recovery:p.attributeProfile.values.recovery??50}));
+  const updates=w.players.map(p=>recoverMedical(readMedical(p),{day,rest:65,training:24,recovery:Math.round(((p.attributeProfile.values.stamina??50)+(p.attributeProfile.values.workRate??50))/2)}));
   w.advancedV1.clockDay=day;
   for(let i=0;i<w.players.length;i++){
     const p=w.players[i],med=updates[i];p.medicalV1=trimMedicalForSave(med);
@@ -371,7 +371,7 @@ export function simulateAdvancedMatch(w,m){
       const p=playerById(w,id),secs=activeSeconds.get(id)??(sim04?0:5400);
       if(secs===0)continue;
       const current=readMedical(p);
-      const status=medicalMatchLoad(current,{matchId:m.id,day,seconds:secs,pressing:avgPressing(side.teamId,sim04?(matchday.teams.find(t=>t.teamId===side.teamId)?.minutesLedger.find(s=>s.playerId===id)?.from??0):0,sim04?(matchday.teams.find(t=>t.teamId===side.teamId)?.minutesLedger.find(s=>s.playerId===id)?.to??5400):5400),position:toAddonPosition(p.position),age:p.age,stamina:p.attributeProfile.values.stamina??50,recovery:p.attributeProfile.values.recovery??50,injuredThisMatch:medicalChanges.some(x=>x.playerId===id)});
+      const status=medicalMatchLoad(current,{matchId:m.id,day,seconds:secs,pressing:avgPressing(side.teamId,sim04?(matchday.teams.find(t=>t.teamId===side.teamId)?.minutesLedger.find(s=>s.playerId===id)?.from??0):0,sim04?(matchday.teams.find(t=>t.teamId===side.teamId)?.minutesLedger.find(s=>s.playerId===id)?.to??5400):5400),position:toAddonPosition(p.position),age:p.age,stamina:p.attributeProfile.values.stamina??50,recovery:Math.round(((p.attributeProfile.values.stamina??50)+(p.attributeProfile.values.workRate??50))/2),injuredThisMatch:medicalChanges.some(x=>x.playerId===id)});
       p.medicalV1=trimMedicalForSave(status);p.fitness=Math.round(status.freshness);
       p.injury=status.injury?.stage==='recovering'?Math.max(1,Math.ceil(status.injury.daysRemaining/7)):0;
       if(sim04)p.minutesPlayed=Math.round(((p.minutesPlayed??0)+secs/60)*100)/100;
@@ -392,7 +392,7 @@ export function settleAdvancedSeason(w,{days=21}={}){
   if(!Number.isSafeInteger(days)||days<0||days>180)invalid('SEASON_BREAK_DAYS');
   clearCareerTacticPlans(w);
   const day=w.advancedV1.clockDay+days;
-  for(const p of w.players){p.medicalV1=trimMedicalForSave(recoverMedical(p.medicalV1,{day,rest:90,training:5,recovery:p.attributeProfile.values.recovery??50}));p.injury=p.medicalV1.injury?.stage==='recovering'?Math.max(1,Math.ceil(p.medicalV1.injury.daysRemaining/7)):0;p.fitness=Math.round(p.medicalV1.freshness);}
+  for(const p of w.players){p.medicalV1=trimMedicalForSave(recoverMedical(p.medicalV1,{day,rest:90,training:5,recovery:Math.round(((p.attributeProfile.values.stamina??50)+(p.attributeProfile.values.workRate??50))/2)}));p.injury=p.medicalV1.injury?.stage==='recovering'?Math.max(1,Math.ceil(p.medicalV1.injury.daysRemaining/7)):0;p.fitness=Math.round(p.medicalV1.freshness);}
   w.advancedV1.clockDay=day;
   for(const id of Object.keys(w.advancedV1.legacyInjuryRounds)){const p=playerById(w,Number(id));p.medicalV1=trimMedicalForSave(resolveLegacyAbsence(p.medicalV1,{day,cleared:true}));p.injury=0;}
   w.advancedV1.legacyInjuryRounds={};
