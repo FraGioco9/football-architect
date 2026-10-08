@@ -2,6 +2,7 @@ import {readPrefs,writePrefs,moveWidget} from './qol03.js';
 import {makeWorld,FORMATIONS} from './data.js';
 import {leagueById} from './leagues.js';
 import {view,inboxDetailHtml} from './ui.js';
+import {PLAYER_PROFILE_TABS} from './player-overview.js';
 import {generateMatchActions} from './domain/match-actions.js';
 import {hasAdvancedCareer,setAdvancedStyle,editAdvancedTactic,setAdvancedPlayerRole,previewAdvancedHalf} from './domain/advanced-career.js';
 import {substitutionsEnabled,planCareerSubstitution,cancelCareerSubstitution,setCareerMatchdayRules,expectedNextMatch} from './domain/career-matchday.js';
@@ -81,7 +82,7 @@ ensureCareerDates(world);
 const officialSystemMigration=world.clubId?ensureOfficialCareerSystems(world):{changed:false,enabled:[],status:null};
 // The startup v1->slot migration is not complete until this commit succeeds.
 await primary.commit();
-let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,routePlayerId:null,language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadSortDir:'asc',squadSortCustom:false,squadView:'general',squadAttributeGroup:'technical',squadContractFilter:'all',squadAgeMin:'',squadAgeMax:'',squadOvrMin:'',squadOvrMax:'',squadFitnessMin:'',squadMoraleMin:'',squadValueMin:'',squadWageMax:'',squadFilterAttribute:'ALL',squadFilterAttributeMin:'',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
+let ui={matchPreview:null,previewRecoveryError:null,previewSaved:false,continuing:false,continuationBlocker:null,languageMenu:null,pendingRoute:null,routeKind:'page',routePath:'/',routeReturnPage:null,routeNotFoundPath:null,routeMatchId:null,routePlayerId:null,playerTab:'overview',language:preferredLanguage(),page:'home',chosenClub:1,managerDraft:'',managerNameError:false,squadSearch:'',squadFilter:'ALL',squadAvailability:'all',squadSort:'position',squadSortDir:'asc',squadSortCustom:false,squadView:'general',squadAttributeGroup:'technical',squadContractFilter:'all',squadAgeMin:'',squadAgeMax:'',squadOvrMin:'',squadOvrMax:'',squadFitnessMin:'',squadMoraleMin:'',squadValueMin:'',squadWageMax:'',squadFilterAttribute:'ALL',squadFilterAttributeMin:'',squadAttribute:'ALL',squadMinimum:1,comparePlayerId:null,marketSearch:'',marketPosition:'ALL',marketCountry:'ALL',marketOnlyWatched:false,marketTab:'explore',tacticsTab:'formation',scoutSearch:'',scoutCountry:'ALL',scoutPosition:'ALL',scoutShortlistOnly:false,advancedTab:'players',worldCountry:null,worldClub:null,worldPlayer:null,worldHistorySeason:null,advancedPlayerId:null,calendarRound:null,calendarSeason:null,calendarCompetition:'all',calendarAutoFocus:false,sidebarOpen:false,navOpenGroups:{},modal:null,openMail:null,inboxSelected:[],careers:null,checkpoints:[],importPreview:null,importMode:'add',importTarget:'',importCatalogRaw:null,importBackups:[],vaultState:'pending',vaultIds:[],storageWarning:null,storageEstimate:null,careerMoreId:null,contractFocusId:null};
 // Each slot owns its own optional, immutable replay. The career JSON is never
 // changed by a preview. Restoring always starts in pause mode.
 function activePreviewSlot(){return readCareerCatalog(careerStorage).activeSlotId;}
@@ -724,7 +725,7 @@ function applyRoute(route,{replace=false,fromHistory=false,renderNow=true}={}){
       applyRoute({kind:'not-found',path:route.path},{replace:true,fromHistory,renderNow});return;
     }
     ui.routeReturnPage=isNavigationPage(ui.page)&&ui.page!=='careers'?ui.page:(ui.routeReturnPage||'squad');
-    ui.routePlayerId=route.playerId;ui.page='player';ui.comparePlayerId=null;ui.modal=null;ui.matchPreview=null;
+    ui.routePlayerId=route.playerId;ui.page='player';ui.playerTab='overview';ui.comparePlayerId=null;ui.modal=null;ui.matchPreview=null;
   }else if(route.kind==='match-preview'){
     ui.routeReturnPage=isNavigationPage(ui.page)&&ui.page!=='careers'?ui.page:'calendar';
     const fixture=fixtureByRouteId(route.matchId);
@@ -1356,6 +1357,12 @@ root.addEventListener('click',async ev=>{
       }
       case 'player':openPlayerRoute(Number(id));break;
       case 'player-back':navigate(ui.routeReturnPage||'squad');break;
+      case 'player-tab':{
+        if(ui.routeKind!=='player'||!PLAYER_PROFILE_TABS.some(tab=>tab.id===field))break;
+        ui.playerTab=field;render();
+        root.querySelector(`[data-action="player-tab"][data-value="${field}"]`)?.focus({preventScroll:true});
+        break;
+      }
       case 'match':ui.modal={type:'match',id};render();break;
       case 'slot':ui.modal={type:'slot',index};render();break;
       case 'close-modal':if(!closeRoutedResource())closeModalUi();break;
@@ -1802,6 +1809,17 @@ root.addEventListener('keydown',ev=>{
  const index=tabs.indexOf(button);if(index<0)return;
  const next=ev.key==='Home'?0:ev.key==='End'?tabs.length-1:(index+(ev.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
  ev.preventDefault();tabs[next]?.click();
+});
+
+// REC-01 / UX #20 06A: keyboard-operable roving tabs for the standalone player page.
+root.addEventListener('keydown',ev=>{
+ const button=ev.target.closest?.('[role="tab"][data-action="player-tab"]');
+ if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(ev.key))return;
+ const tabs=[...root.querySelectorAll('[role="tab"][data-action="player-tab"]')];
+ const index=tabs.indexOf(button);if(index<0||!tabs.length)return;
+ const next=ev.key==='Home'?0:ev.key==='End'?tabs.length-1:(index+(ev.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+ ev.preventDefault();
+ tabs[next]?.click();
 });
 
 // UX2-06: keyboard navigation for the four non-persistent tactical panels.
