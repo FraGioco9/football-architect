@@ -43,6 +43,9 @@ jobs:
       - name: Test personality v2 domain and player generation
         run: node --test tests/plyr-06-1-personality-v2.test.mjs
 
+      - name: Test PLYR-06.2 morale, events and leadership
+        run: node --test tests/plyr-06-2-dynamics.test.mjs
+
       - name: Smoke test local HTTP routes
         run: |
           node server.mjs &

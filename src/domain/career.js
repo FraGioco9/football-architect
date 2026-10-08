@@ -163,8 +163,9 @@ function simulateRoundMutating(w,{calendarConfirmationToken=null,advanceDays=7,c
   w.lastMatchId=match.id;
   const outcome=ours>theirs?'Vittoria':ours===theirs?'Pareggio':'Sconfitta';
   addMessage(w,`${outcome} contro ${opponent}`,`Giornata ${week.round}: ${fullName(w,match.home)} ${result.homeGoals}–${result.awayGoals} ${fullName(w,match.away)}. ${ours>theirs?'La squadra ha conquistato tre punti.':ours===theirs?'Un punto aggiunto alla classifica.':'Ora il gruppo deve reagire.'}`,'match',{type:'match.official',params:{round:week.round,home:fullName(w,match.home),away:fullName(w,match.away),homeGoals:result.homeGoals,awayGoals:result.awayGoals,outcome:ours>theirs?'win':ours===theirs?'draw':'loss'}});
-  settleCareerPersonalityRound(w,{result:ours>theirs?'win':ours<theirs?'loss':'draw',playedIds:w.lineup.filter(Boolean)});
+  settleCareerPersonalityRound(w,{result:ours>theirs?'win':ours<theirs?'loss':'draw',playedIds:w.lineup.filter(Boolean),matchId:match.id});
   if(contractsEnabled(w))settleCareerContractsRound(w,{matchId:match.id,startedIds:w.lineup});
+  if(personalityEnabled(w))syncCareerPersonality(w);
   recordBoardRound(w,{result,ours,theirs});
   advanceManagerCareerRound(w);
   const injuries=clubPlayers(w,w.clubId).filter(p=>p.injury>0);
