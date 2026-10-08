@@ -182,7 +182,7 @@ export function alignCareerYouthMedical(w){
 }
 export function careerYouthSummary(w){
  if(!active(w))return null;const y=own(w),academy=y.academy[String(w.clubId)]??[];
- return {season:w.season,academyProgram:y.academyProgram,academy:structuredClone(academy).sort((a,b)=>b.potential-a.potential||b.ovr-a.ovr),
+ return {season:w.season,academyProgram:y.academyProgram,academy:structuredClone(academy).sort((a,b)=>a.age-b.age||String(a.name).localeCompare(String(b.name))||String(a.id).localeCompare(String(b.id))),
   retired:y.retired.filter(p=>String(p.clubId)===String(w.clubId)).slice(-14).reverse(),
   allRetired:y.retired.length,totalAcademy:academyMembers(y).length,
   events:y.events.filter(e=>String(e.clubId)===String(w.clubId)).slice(-12).reverse(),
