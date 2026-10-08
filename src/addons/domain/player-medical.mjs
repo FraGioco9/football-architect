@@ -98,7 +98,7 @@ export function medicalMatchLoad(state,{matchId,day,seconds,pressing=50,position
  if(seconds>0&&avail.status==='unavailable'&&!(injuredThisMatch&&state.injury?.matchId!==null&&String(state.injury.matchId)===String(matchId)))fail('PLAYED_UNAVAILABLE');
  if(seconds>avail.minutesLimit*60&&!(injuredThisMatch&&state.injury?.matchId!==null&&String(state.injury.matchId)===String(matchId)))fail('MINUTES_LIMIT');
  const pos=positionKey(position);
- const roleFactor=pos==='GK'?0.58:['ST','CF','RW','LW','RM','LM','RWB','LWB'].includes(pos)?1.12:1;
+ const roleFactor=pos==='GK'?0.58:['ST','RW','LW','RM','LM','RWB','LWB'].includes(pos)?1.12:1;
  const endurance=clamp(1.25-(stamina-50)*0.004-(recovery-50)*0.002,0.82,1.45);
  const ageFactor=age<=28?1:Math.min(1.22,1+(age-28)*0.013);
  const load=round(clamp(seconds/5400*(8+14*pressing/100)*roleFactor*endurance*ageFactor,0,100));
