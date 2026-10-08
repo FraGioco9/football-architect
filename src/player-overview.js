@@ -17,7 +17,7 @@ const country=(code,lang)=>{
 };
 const foot=(value,lang)=>({left:locale(lang,'Sinistro','Left'),right:locale(lang,'Destro','Right'),both:locale(lang,'Entrambi','Both')}[String(value||'').toLowerCase()]??'—');
 const date=(value,lang)=>{
- if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(value||'')))return '—';
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return '—';
  const d=new Date(value+'T00:00:00Z');
  return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat(lang==='en'?'en-GB':'it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(d);
 };
