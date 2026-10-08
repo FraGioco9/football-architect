@@ -1,23 +1,23 @@
 import {LEAGUES,getLeagueClubs} from './leagues.js';
 import {createSession,advanceSession} from './simulation.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
-import {layout,homePage,managerPage,teamsPage,careersPage,settingsPage,simulationPage,tr,esc} from './ui-pages.js';
+import {layout,homePage,managerPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
+import {feedback,fromError,inlineManagerError,renderBlockingError} from './feedback.js';
 
 const app=document.getElementById('app');
 const ROUTES=new Set(['/','/new-career','/new-career/team','/careers','/settings','/simulation']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 let draft={managerName:'',countryId:'IT',clubId:1,query:''};
-let timer=null,busy=false,sequence=0,notice='',languageMenuOpen=false;
-const locale=()=>lang;
+let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(url){stop();languageMenuOpen=false;notice='';history.pushState({},'',url);void render();}
-function fail(error){stop();notice=tr(lang,'Operazione non completata: ','Operation failed: ')+(error?.message??String(error));void render();}
+function navigate(url){stop();languageMenuOpen=false;feedbackState=null;history.pushState({},'',url);void render();}
+function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
  const ticket=++sequence;
- if(!db){app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Impossibile aprire i salvataggi','Cannot open save storage')}</h1><p>${tr(lang,'IndexedDB non disponibile: i salvataggi non verranno sostituiti o cancellati.','IndexedDB is unavailable: existing saves will not be changed or deleted.')}</p></section>` ,lang,notice,languageMenuOpen);return;}
+ if(!db){app.innerHTML=layout(renderBlockingError(storageFailure??new Error('INDEXEDDB_UNAVAILABLE'),lang),lang,null,languageMenuOpen);return;}
  let page=path();
  try{
   if(page!=='/simulation')await refreshCatalog();
@@ -37,14 +37,13 @@ async function render(){
   else if(page==='/settings')inner=settingsPage(lang);
   else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null);
   else inner=homePage(catalog,lang);
-  app.innerHTML=layout(inner,lang,notice,languageMenuOpen);
+  app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen);
   document.documentElement.lang=lang;
   document.title=tr(lang,'Football Architect','Football Architect');
  }catch(e){
   if(ticket!==sequence)return;
   stop();
-  app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Errore di caricamento','Loading error')}</h1><p>${esc(e.message)}</p>
-  <button class="btn secondary" data-action="home">${tr(lang,'Torna al menu','Back to menu')}</button></section>`,lang,'',languageMenuOpen);
+  app.innerHTML=layout(renderBlockingError(e,lang),lang,null,languageMenuOpen);
  }
 }
 async function advance(days){
@@ -97,6 +96,14 @@ async function setLanguage(value){
 }
 async function handle(action,element){
  switch(action){
+  case 'feedback-dismiss':feedbackState=null;await render();break;
+  case 'retry-storage':{
+   if(!db){
+    try{db=await openCareerDatabase();storageFailure=null;}
+    catch(e){storageFailure=e;db=null;}
+   }
+   feedbackState=null;await render();break;
+  }
   case 'language-toggle':await toggleLanguageMenu(!languageMenuOpen,'combo');break;
   case 'language-option':await setLanguage(element.dataset.value);break;
   case 'language-focus':await toggleLanguageMenu(true,'option');break;
@@ -121,9 +128,10 @@ async function handle(action,element){
    const name=prompt(tr(lang,'Nome carriera','Career name'),entry.meta.careerName??entry.meta.managerName);
    if(name===null)return;
    const trimmed=name.trim();
-   if(!trimmed||trimmed.length>80){notice=tr(lang,'Nome non valido','Invalid name');await render();return;}
+   if(!trimmed||trimmed.length>80){feedbackState=feedback('error','CAREER_NAME_INVALID');await render();return;}
    const meta=await renameCareer(db,entry.id,trimmed);
    if(loaded?.meta.id===entry.id)loaded={...loaded,meta};
+   feedbackState=feedback('success','RENAME_OK');
    await render();break;
   }
   case 'export':{
@@ -137,7 +145,7 @@ async function handle(action,element){
    if(!confirm(tr(lang,'Eliminare definitivamente questa carriera?','Permanently delete this career?')))return;
    await deleteCareer(db,id);
    if(loaded?.meta.id===id){stop();loaded=null;}
-   await render();break;
+   feedbackState=feedback('success','DELETE_OK');await render();break;
   }
   case 'import':document.getElementById('import-file')?.click();break;
   case 'day':stop();await advance(1);break;
@@ -183,31 +191,40 @@ document.addEventListener('keydown',event=>{
   event.preventDefault();void toggleLanguageMenu(false,event.shiftKey?'combo':'next');
  }
 });
+function validateManager(field){
+ const issue=inlineManagerError(String(field.value??''),lang);
+ const message=document.getElementById('manager-name-error');
+ field.setAttribute('aria-invalid',issue?'true':'false');
+ if(message){message.hidden=!issue;message.textContent=issue?.description??'';}
+ return !issue;
+}
 document.addEventListener('submit',event=>{
  if(event.target.id!=='manager-form')return;
  event.preventDefault();
  const field=event.target.elements.namedItem('managerName');
- const name=String(field?.value??'').trim();
- if(!name||name.length>80){field?.focus();return;}
- draft.managerName=name;void begin().catch(fail);
+ if(!field||!validateManager(field)){field?.focus();return;}
+ draft.managerName=field.value.trim();
+ void begin().catch(fail);
 });
 document.addEventListener('input',event=>{
- if(event.target.id==='manager-name')draft.managerName=event.target.value;
+ if(event.target.id!=='manager-name')return;
+ draft.managerName=event.target.value;
+ if(event.target.getAttribute('aria-invalid')==='true')validateManager(event.target);
 });
 document.addEventListener('change',event=>{
  if(event.target.id==='import-file')void (async()=>{
-  const file=event.target.files?.[0];if(!file)return;
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;
   if(file.size>2_000_000)throw Error('IMPORT_TOO_LARGE');
   const data=parseCareerImport(await file.text());
   await createCareer(db,data);
-  notice=tr(lang,'Carriera importata','Career imported');
+  feedbackState=feedback('success','IMPORT_OK');
   await render();
  })().catch(fail);
 });
 window.addEventListener('popstate',()=>{stop();void render();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();void render();}});
 async function boot(){
- try{db=await openCareerDatabase();await render();}
- catch(e){notice=e.message;await render();}
+ try{db=await openCareerDatabase();storageFailure=null;await render();}
+ catch(e){db=null;storageFailure=e;await render();}
 }
 void boot();
