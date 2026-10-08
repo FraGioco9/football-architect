@@ -5,9 +5,11 @@ import path from 'node:path';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT??2000);
-const routes=new Set(['/','/teams','/simulation']);
+const routes=new Set(['/','/new-career','/new-career/team','/careers','/settings','/simulation']);
 const files=new Map([
  ['/src/main.js','text/javascript; charset=utf-8'],
+ ['/src/career-store.js','text/javascript; charset=utf-8'],
+ ['/src/ui-pages.js','text/javascript; charset=utf-8'],
  ['/src/simulation.js','text/javascript; charset=utf-8'],
  ['/src/leagues.js','text/javascript; charset=utf-8'],
  ['/src/styles.css','text/css; charset=utf-8'],
