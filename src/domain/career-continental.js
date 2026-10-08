@@ -144,7 +144,7 @@ function play(w,m,knockout,managedSimulator){
   const mine=w.players.filter(p=>p.clubId===w.clubId&&p.medicalV1&&medicalAvailability(p.medicalV1).eligible&&medicalAvailability(p.medicalV1).minutesLimit>=90)
     .sort((a,b)=>b.ovr-a.ovr).slice(0,11);
   for(const p of mine){
-   const medical=medicalMatchLoad(p.medicalV1,{matchId:m.id,day:w.advancedV1.clockDay,seconds:5400,pressing:55,position:toAddonPosition(p.position),age:p.age,stamina:p.attributeProfile.values.stamina??50,recovery:p.attributeProfile.values.recovery??50});
+   const medical=medicalMatchLoad(p.medicalV1,{matchId:m.id,day:w.advancedV1.clockDay,seconds:5400,pressing:55,position:toAddonPosition(p.position),age:p.age,stamina:p.attributeProfile.values.stamina??50,recovery:Math.round(((p.attributeProfile.values.stamina??50)+(p.attributeProfile.values.workRate??50))/2)});
    medical.events=medical.events.slice(-1);medical.processedMatchIds=medical.processedMatchIds.slice(-2);
    p.medicalV1=medical;p.fitness=Math.round(medical.freshness);
   }

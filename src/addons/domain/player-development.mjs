@@ -11,8 +11,8 @@ import {evaluatePersonalityEffects} from './player-personality-effects.mjs';
 export const DEVELOPMENT_SCHEMA_VERSION=1;
 export const DEVELOPMENT_PROGRAMS=Object.freeze(['balanced','role','technical','physical','mental','goalkeeper']);
 const groups=Object.fromEntries(ATTRIBUTE_DEFINITIONS.map(x=>[x.key,x.group]));
-const declineKeys=new Set(['acceleration','pace','agility','stamina','recovery','jumping','strength','balance']);
-const compensatingKeys=new Set(['decisions','anticipation','composure','vision','concentration','teamwork','technique','shortPassing','longPassing','keeperPositioning']);
+const declineKeys=new Set(['acceleration','pace','agility','stamina','jumping','strength','balance']);
+const compensatingKeys=new Set(['decisions','anticipation','composure','vision','concentration','teamwork','ballControl','passing','keeperPositioning']);
 const err=code=>{throw new Error(`PLY03_${code}`)};
 const obj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
 const finite=(x,min,max,name)=>{if(typeof x!=='number'||!Number.isFinite(x)||x<min||x>max)err(name);return x;};
@@ -42,7 +42,7 @@ export function validateDevelopment(state){
   int(h.season,1,500,'HISTORY_SEASON');if(h.season<=previous||h.season>state.lastSeason)err('HISTORY_ORDER');previous=h.season;
   int(h.age,15,110,'HISTORY_AGE');finite(h.rating,1,100,'HISTORY_RATING');finite(h.delta,-100,100,'HISTORY_DELTA');
   finite(h.form,0,100,'HISTORY_FORM');int(h.minutes,0,6000,'HISTORY_MINUTES');
-  if(!DEVELOPMENT_PROGRAMS.includes(h.program)||!Array.isArray(h.changes)||h.changes.length>40||!Array.isArray(h.reasons))err('HISTORY_RECORD');
+  if(!DEVELOPMENT_PROGRAMS.includes(h.program)||!Array.isArray(h.changes)||h.changes.length>ATTRIBUTE_KEYS.length||!Array.isArray(h.reasons))err('HISTORY_RECORD');
   if(h.changes.some(c=>!obj(c)||!ATTRIBUTE_KEYS.includes(c.attribute)||!Number.isInteger(c.from)||c.from<1||c.from>100||!Number.isInteger(c.to)||c.to<1||c.to>100||c.from===c.to))err('HISTORY_CHANGES');
   if(!Array.isArray(h.focusAttributes)||h.focusAttributes.length>5||new Set(h.focusAttributes).size!==h.focusAttributes.length||h.focusAttributes.some(k=>!ATTRIBUTE_KEYS.includes(k)))err('HISTORY_FOCUS');
   finite(h.workload,0,100,'HISTORY_WORKLOAD');
@@ -143,7 +143,7 @@ export function simulateDevelopmentSeason(state,player,options={}){
    const startAge=key==='strength'?35:key==='balance'?33:key==='jumping'?31:29;
    if(age>=startAge){
     const old=age-startAge+1;
-    const sensitivity=['pace','acceleration','stamina','recovery'].includes(key)?1.0:key==='agility'?0.82:key==='strength'?0.38:0.62;
+    const sensitivity=['pace','acceleration','stamina'].includes(key)?1.0:key==='agility'?0.82:key==='strength'?0.38:0.62;
     const expectedDecline=limit((0.28+old*0.15)*sensitivity*(isGk?0.77:1),0,5.2);
     const loss=Math.floor(expectedDecline)+(rDecline<expectedDecline%1?1:0);
     delta-=loss;
@@ -155,7 +155,7 @@ export function simulateDevelopmentSeason(state,player,options={}){
    if(draw(`PLY03/experience|${state.seed}|${state.playerId}|${season}|${key}`)<chance)delta+=1;
   }
   // Aging eventually affects all active abilities but not at the same rate.
-  if(age>=40&&group!=='goalkeeper'&&group!=='physical'&&key!=='leadership'&&rDecline<limit((age-39)*0.025,0,0.75))delta-=1;
+  if(age>=40&&group!=='goalkeeper'&&group!=='physical'&&rDecline<limit((age-39)*0.025,0,0.75))delta-=1;
   const value=clampAttribute(start+limit(delta,-6,4));
   values[key]=value;
   if(value!==start)changes.push({attribute:key,from:start,to:value,delta:value-start});

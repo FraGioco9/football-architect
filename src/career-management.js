@@ -89,21 +89,31 @@ export function createFreshCareerSlot(storage,career,validate,options={}){
 }
 export function deleteCareerSlot(storage,id,validate){
   const before=storage.getItem(CAREER_CATALOG_KEY),catalog=readCareerCatalog(storage),record=entry(catalog,id);
-  const {raw}=parseSlot(storage,record,validate);
+  // Deletion is an explicit recovery action: a corrupt/obsolete slot must be
+  // removable without first passing the current save validator.
+  const raw=storage.getItem(record.storageKey);
+  let currentValid=false;
+  if(raw!==null){
+    try{parseSlot(storage,record,validate);currentValid=true;}catch{}
+  }
   const remaining=catalog.slots.filter(s=>s.id!==id);
   const activeDeleted=catalog.activeSlotId===id;
-  const replacement=activeDeleted?(remaining.find(s=>s.status==='ok')||remaining.find(s=>{
-    try{parseSlot(storage,s,validate);return true;}catch{return false;}
-  })||null):null;
-  if(activeDeleted&&remaining.length>0&&!replacement)error('invalid_slot','Le altre carriere non sono caricabili: nessun dato è stato eliminato.');
-  if(activeDeleted)protectFlatMirror(storage);
-  // A verified, dedicated backup is created before any deletion and retained.
-  const backupKey=backupRawCareer(storage,raw,'before-delete-slot');
+  let replacement=null;
+  if(activeDeleted){
+    replacement=remaining.find(candidate=>{
+      try{parseSlot(storage,candidate,validate);return true;}catch{return false;}
+    })||null;
+  }
+  // Preserve exact original bytes when they exist, even when the save itself
+  // is invalid. This backup is intentionally raw/unverified.
+  let backupKey=null;
+  if(typeof raw==='string'&&raw.length>0)backupKey=backupRawCareer(storage,raw,currentValid?'before-delete-slot':'before-delete-invalid-slot');
+  if(activeDeleted&&currentValid)protectFlatMirror(storage);
   const nextActiveId=activeDeleted?(replacement?.id||null):catalog.activeSlotId;
   checkUnchanged(storage,before);
   writeCareerCatalog(storage,{...catalog,activeSlotId:nextActiveId,slots:remaining});
-  // Catalogue commit comes first. If cleanup is interrupted, orphaned data
-  // are harmless and the deleted ID is no longer selectable.
+  // Catalogue commit comes first. If cleanup is interrupted, orphaned bytes
+  // are harmless because the deleted ID is no longer selectable.
   let cleanupError=null;
   try{
     storage.removeItem(record.storageKey);
@@ -117,5 +127,5 @@ export function deleteCareerSlot(storage,id,validate){
       catch(err){mirrorError=err;}
     }
   }
-  return {activeDeleted,nextActiveSlotId:nextActiveId,nextCareer,backupKey,cleanupError,mirrorError};
+  return {activeDeleted,nextActiveSlotId:nextActiveId,nextCareer,backupKey,cleanupError,mirrorError,deletedWasValid:currentValid};
 }

@@ -358,6 +358,8 @@ function render({focus}={}){
   }
   if(blockedSaveError&&ui.page!=='careers'){
     const english=ui.language==='en';
+    let blockedActive=null;
+    try{const catalog=readCareerCatalog(careerStorage);blockedActive=catalog.slots.find(slot=>slot.id===catalog.activeSlotId)||null;}catch{}
     root.innerHTML=`<main style="max-width:680px;margin:12vh auto;padding:24px"><div class="panel" style="padding:30px">
       <h1>${english?'Career storage needs attention':'Salvataggio carriera da verificare'}</h1>
       <p>${english?'The active career could not be safely loaded or migrated. No original save has been deleted. Export your original JSON before taking further action.':'La carriera attiva non può essere caricata o migrata in sicurezza. Nessun salvataggio originale è stato eliminato. Esporta il JSON prima di procedere.'}</p>
@@ -365,6 +367,7 @@ function render({focus}={}){
       <button class="btn btn-quiet" data-action="export-emergency">${english?'Emergency export (JSON)':'Esporta emergenza (JSON)'}</button>
       <button class="btn btn-primary" data-action="export-blocked-save">${english?'Download available original JSON':'Scarica JSON originale disponibile'}</button>
       <button class="btn btn-quiet" data-action="open-careers">${english?'Manage careers':'Gestisci carriere'}</button>
+      ${blockedActive?`<button class="btn btn-danger" data-action="delete-blocked-career" data-id="${blockedActive.id}">${english?'Delete corrupt career':'Elimina carriera corrotta'}</button>`:''}
     </div></main>`;
     document.documentElement.lang=ui.language;
     document.title=GAME_NAME;
@@ -1251,16 +1254,35 @@ root.addEventListener('click',async ev=>{
       }
       case 'career-delete':{
         const current=readCareerCatalog(careerStorage).slots.find(s=>s.id===id);if(!current)break;
-        ui.modal={type:'career-delete',id,name:current.name};render();break;
+        const status=listCareerSlots(careerStorage,validateSave).slots.find(slot=>slot.id===id)?.status||'invalid_slot';
+        ui.modal={type:'career-delete',id,name:current.name,invalid:status!=='ok'};render();break;
       }
       case 'career-delete-confirm':{
         const catalog=readCareerCatalog(careerStorage);
-        if(catalog.activeSlotId===id&&!saveBeforeSlotChange())break;
+        const status=listCareerSlots(careerStorage,validateSave).slots.find(slot=>slot.id===id)?.status||'invalid_slot';
+        if(catalog.activeSlotId===id&&status==='ok'&&!saveBeforeSlotChange())break;
         const deleted=deleteCareerSlot(careerStorage,id,validateSave);
         ui.modal=null;
         try{discardStoredMatchPreview(careerStorage,id);}catch(err){reportError(err.message);}
-        if(deleted.activeDeleted){world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;await migrateActiveCareerSystems();resetCareerUi('careers');}
+        if(deleted.activeDeleted){
+          world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;
+          if(deleted.nextCareer)await migrateActiveCareerSystems();
+          resetCareerUi('careers');
+        }
         render();
+        if(deleted.cleanupError||deleted.mirrorError)reportError(readableStorageError(deleted.cleanupError||deleted.mirrorError));
+        break;
+      }
+      case 'delete-blocked-career':{
+        const catalog=readCareerCatalog(careerStorage),current=catalog.slots.find(slot=>slot.id===id);
+        if(!current)throw new Error(ui.language==='en'?'Career slot not found.':'Carriera non trovata.');
+        if(!confirmAction(ui.language==='en'?`Permanently delete the corrupt career “${current.name}”? Any original raw bytes still available will be retained in a local recovery copy.`:`Eliminare definitivamente la carriera corrotta «${current.name}»? Gli eventuali byte originali ancora disponibili verranno conservati in una copia locale di recupero.`))break;
+        const deleted=deleteCareerSlot(careerStorage,id,validateSave);
+        try{discardStoredMatchPreview(careerStorage,id);}catch(err){reportError(err.message);}
+        world=deleted.nextCareer||makeWorld();blockedSaveError=null;pendingNewCatalogSlot=false;
+        if(deleted.nextCareer)await migrateActiveCareerSystems();
+        resetCareerUi('careers');render();
+        toast(ui.language==='en'?'Corrupt career deleted.':'Carriera corrotta eliminata.');
         if(deleted.cleanupError||deleted.mirrorError)reportError(readableStorageError(deleted.cleanupError||deleted.mirrorError));
         break;
       }

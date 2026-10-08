@@ -18,7 +18,7 @@ export function validateTrainingRoster(roster){
   if(canonicalPosition(p.position)!==p.position)fail('PLAYER_POSITION');checkInt(p.age,15,110,'AGE');
   checkNum(p.baselineOvr,1,100,'OVR');checkNum(p.potential,1,100,'POTENTIAL');checkNum(p.trainingFactor,0.8,1.2,'TRAINING_FACTOR');
   validateAttributes(p.attributes);validateMedical(p.medical);if(p.medical.playerId!==key)fail('MEDICAL_PLAYER');
-  if(!obj(p.carry)||Object.keys(p.carry).length>40)fail('CARRY');
+  if(!obj(p.carry)||Object.keys(p.carry).length>ATTRIBUTE_KEYS.length)fail('CARRY');
   for(const [a,val] of Object.entries(p.carry))if(!ATTRIBUTE_KEYS.includes(a)||!Number.isFinite(val)||val<0||val>=1)fail('CARRY_VALUE');
   if(!obj(p.familiarity)||!obj(p.familiarity.formations)||!obj(p.familiarity.roles))fail('FAMILIARITY');
   if(Object.keys(p.familiarity.formations).length>12||Object.keys(p.familiarity.roles).length>30)fail('FAMILIARITY_SIZE');
