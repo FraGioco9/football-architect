@@ -270,3 +270,56 @@ test('only live route modules are published by the offline server',()=>{
  assert.ok(server.includes("'/src/language-picker.js'"));
  assert.ok(!server.includes("'/src/legacy.js'"));
 });
+
+
+test('new career and its club step share one title and a consistent accessible back button',()=>{
+ const draft={managerName:'Ada Coach',countryId:'IT',clubId:2,query:''};
+ const first=managerPage(draft,'it'),second=teamsPage(draft,'it');
+ for(const html of [first,second]){
+  assert.match(html,/<header class="page-header">/);
+  assert.match(html,/<h1 class="page-title">Nuova carriera<\/h1>/);
+  assert.equal((html.match(/<h1\b/g)||[]).length,1);
+  assert.match(html,/class="page-back"/);
+  assert.match(html,/class="page-title-icon"/);
+  assert.match(html,/class="page-step"/);
+  assert.match(html,/<section class="page-panel panel"/);
+ }
+ assert.match(first,/data-action="home" aria-label="Torna al menu"/);
+ assert.match(first,/Passaggio 1 di 2/);
+ assert.match(first,/id="manager-form"/);
+ assert.match(second,/data-action="setup-back" aria-label="Torna all&#39;allenatore"/);
+ assert.match(second,/Passaggio 2 di 2/);
+ assert.match(second,/data-action="country"/);
+ assert.match(second,/data-action="start-career"/);
+ assert.doesNotMatch(second,/<h1[^>]*>Scegli una squadra<\/h1>/);
+});
+test('saved careers and settings reuse the same page header, not the old loose back link',()=>{
+ const catalog={rows:[],activeId:null};
+ for(const html of [careersPage(catalog,'it'),settingsPage('it')]){
+  assert.match(html,/<header class="page-header">/);
+  assert.match(html,/class="page-back"/);
+  assert.match(html,/data-action="home" aria-label="Torna al menu"/);
+  assert.equal((html.match(/<h1\b/g)||[]).length,1);
+  assert.doesNotMatch(html,/<button class="back"/);
+ }
+ assert.match(careersPage(catalog,'en'),/<h1 class="page-title">My careers<\/h1>/);
+ assert.match(settingsPage('en'),/<h1 class="page-title">Settings<\/h1>/);
+ assert.match(careersPage(catalog,'it'),/data-action="import"/);
+ assert.match(careersPage(catalog,'it'),/data-action="new"/);
+ assert.match(settingsPage('it'),/data-action="language-focus"/);
+ assert.match(settingsPage('it'),/data-action="careers"/);
+});
+test('page heading and back control remain visually coherent at 320 and 390px',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(sheet,/\.page-header-nav/);
+ assert.match(sheet,/\.page-title-row/);
+ assert.match(sheet,/\.page-back:hover/);
+ assert.match(sheet,/\.page-title-icon/);
+ assert.match(sheet,/\.page-panel-actions/);
+ assert.match(sheet,/@media\(max-width:580px\)/);
+ assert.match(sheet,/@media\(max-width:350px\)/);
+ const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(main,/case 'language-focus'/);
+ assert.match(main,/case 'setup-back'/);
+ assert.match(main,/case 'home'/);
+});

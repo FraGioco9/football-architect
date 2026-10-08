@@ -99,6 +99,7 @@ async function handle(action,element){
  switch(action){
   case 'language-toggle':await toggleLanguageMenu(!languageMenuOpen,'combo');break;
   case 'language-option':await setLanguage(element.dataset.value);break;
+  case 'language-focus':await toggleLanguageMenu(true,'option');break;
   case 'home':navigate('/');break;
   case 'new':draft={managerName:'',countryId:'IT',clubId:null,query:''};navigate('/new-career');break;
   case 'careers':navigate('/careers');break;
