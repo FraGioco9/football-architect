@@ -25,7 +25,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 
 IndexedDB `football-architect-careers-v1`, schema 1, stores `careers`, `snapshots`, `preferences`. Scritture di metadati e snapshot nella medesima transazione. La lingua rimane una preferenza globale localStorage.
 
-Le vecchie sessioni `football-architect:minimal:v1` restano intatte e si possono **recuperare esplicitamente** in Le mie carriere, una sola volta per archivio. Non viene cancellato né migrato automaticamente alcun IndexedDB storico.
+La voce «Recupera simulazione precedente» non è più disponibile. Le sessioni minimali e gli archivi IndexedDB storici restano intatti, ma non vengono aperti né migrati automaticamente.
 
 In caso di errore di scrittura la simulazione si interrompe e segnala il problema. Le carriere danneggiate sono elencate in modo isolato.
 

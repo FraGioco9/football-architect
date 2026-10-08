@@ -1,4 +1,4 @@
-import {createSession,validSession,readSession} from './simulation.js';
+import {createSession,validSession} from './simulation.js';
 import {getLeagueClubs} from './leagues.js';
 
 export const CAREER_DB='football-architect-careers-v1';
@@ -164,10 +164,4 @@ export function parseCareerImport(text){
  const state=checkEntry(payload.meta,{raw:payload.snapshotRaw});
  if(!state)throw error('IMPORT_INVALID');
  return {managerName:payload.meta.managerName,careerName:payload.meta.careerName??null,countryId:state.countryId,clubId:state.clubId,session:state};
-}
-export function readLegacyMinimal(storage){
- return readSession(storage);
-}
-export function hasImportedLegacy(catalog){
- return catalog.rows.some(r=>r.meta?.source==='minimal-v1');
 }

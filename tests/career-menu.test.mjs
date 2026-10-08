@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,SAVE_KEY} from '../src/simulation.js';
-import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport,readLegacyMinimal,hasImportedLegacy} from '../src/career-store.js';
+import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
 import {layout,homePage,managerPage,teamsPage,careersPage,settingsPage,simulationPage} from '../src/ui-pages.js';
 
 class FakeDB{
@@ -169,15 +169,15 @@ test('import rejects corrupt payload and private extra state',async()=>{
   JSON.stringify({...e,snapshotRaw:JSON.stringify({...a.state,fixtures:[]})})
  ])assert.throws(()=>parseCareerImport(payload),/IMPORT_INVALID/);
 });
-test('legacy minimal session is imported explicitly and never deleted or duplicated',async()=>{
+test('previous session stays untouched and is not offered for recovery',async()=>{
  const db=await setup(),legacy=createSession('IT',3,'2026-10-08');
- const backing=new Map([[SAVE_KEY,JSON.stringify(legacy)]]);
- const storage={getItem:key=>backing.get(key)??null,setItem:(key,val)=>backing.set(key,val)};
- assert.deepEqual(readLegacyMinimal(storage),legacy);
- assert.equal(hasImportedLegacy(await readCatalog(db)),false);
- await createCareer(db,{...form('Legacy','IT',3),session:legacy,source:'minimal-v1'});
- assert.equal(hasImportedLegacy(await readCatalog(db)),true);
- assert.equal(backing.get(SAVE_KEY),JSON.stringify(legacy));
+ const storage=new Map([[SAVE_KEY,JSON.stringify(legacy)]]);
+ await createCareer(db,form('Current','IT',3));
+ assert.equal(storage.get(SAVE_KEY),JSON.stringify(legacy));
+ assert.equal((await readCatalog(db)).rows.length,1);
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.doesNotMatch(controller,/readLegacyMinimal|hasImportedLegacy|case 'legacy'/);
+ assert.doesNotMatch(careersPage(await readCatalog(db),'it'),/Recupera simulazione precedente|data-action="legacy"/);
 });
 test('menu card shows only an existing valid career; corrupt active falls back',async()=>{
  const db=await setup();let c=await readCatalog(db);

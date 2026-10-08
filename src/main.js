@@ -1,23 +1,23 @@
 import {LEAGUES,getLeagueClubs} from './leagues.js';
 import {createSession,advanceSession} from './simulation.js';
-import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport,readLegacyMinimal,hasImportedLegacy} from './career-store.js';
+import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
 import {layout,homePage,managerPage,teamsPage,clubList,careersPage,settingsPage,simulationPage,tr,esc} from './ui-pages.js';
 
 const app=document.getElementById('app');
 const ROUTES=new Set(['/','/new-career','/new-career/team','/careers','/settings','/simulation']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 let draft={managerName:'',countryId:'IT',clubId:null,query:''};
-let timer=null,busy=false,sequence=0,notice='';
+let timer=null,busy=false,sequence=0,notice='',languageMenuOpen=false;
 const locale=()=>lang;
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(url){stop();notice='';history.pushState({},'',url);void render();}
+function navigate(url){stop();languageMenuOpen=false;notice='';history.pushState({},'',url);void render();}
 function fail(error){stop();notice=tr(lang,'Operazione non completata: ','Operation failed: ')+(error?.message??String(error));void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
  const ticket=++sequence;
- if(!db){app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Impossibile aprire i salvataggi','Cannot open save storage')}</h1><p>${tr(lang,'IndexedDB non disponibile: i salvataggi non verranno sostituiti o cancellati.','IndexedDB is unavailable: existing saves will not be changed or deleted.')}</p></section>` ,lang,notice);return;}
+ if(!db){app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Impossibile aprire i salvataggi','Cannot open save storage')}</h1><p>${tr(lang,'IndexedDB non disponibile: i salvataggi non verranno sostituiti o cancellati.','IndexedDB is unavailable: existing saves will not be changed or deleted.')}</p></section>` ,lang,notice,languageMenuOpen);return;}
  let page=path();
  try{
   if(page!=='/simulation')await refreshCatalog();
@@ -33,18 +33,18 @@ async function render(){
   let inner;
   if(page==='/new-career')inner=managerPage(draft,lang);
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
-  else if(page==='/careers')inner=careersPage(catalog,lang,Boolean(readLegacyMinimal(localStorage))&&!hasImportedLegacy(catalog));
+  else if(page==='/careers')inner=careersPage(catalog,lang);
   else if(page==='/settings')inner=settingsPage(lang);
   else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null);
   else inner=homePage(catalog,lang);
-  app.innerHTML=layout(inner,lang,notice);
+  app.innerHTML=layout(inner,lang,notice,languageMenuOpen);
   document.documentElement.lang=lang;
   document.title=tr(lang,'Football Architect','Football Architect');
  }catch(e){
   if(ticket!==sequence)return;
   stop();
   app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Errore di caricamento','Loading error')}</h1><p>${esc(e.message)}</p>
-  <button class="btn secondary" data-action="home">${tr(lang,'Torna al menu','Back to menu')}</button></section>`,lang);
+  <button class="btn secondary" data-action="home">${tr(lang,'Torna al menu','Back to menu')}</button></section>`,lang,'',languageMenuOpen);
  }
 }
 async function advance(days){
@@ -74,8 +74,31 @@ function download(name,object){
  link.href=href;link.download=name;document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(href),1000);
 }
+async function toggleLanguageMenu(open,focus){
+ languageMenuOpen=open;
+ await render();
+ const combo=app.querySelector('[data-action="language-toggle"]');
+ if(focus==='combo')combo?.focus({preventScroll:true});
+ if(focus==='option'){
+  const options=[...app.querySelectorAll('[data-action="language-option"]')];
+  (options.find(o=>o.getAttribute('aria-selected')==='true')??options[0])?.focus({preventScroll:true});
+ }
+ if(focus==='next'){
+  const controls=[...app.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled])')];
+  controls[controls.indexOf(combo)+1]?.focus({preventScroll:true});
+ }
+}
+async function setLanguage(value){
+ if(!['it','en'].includes(value))return;
+ lang=value;languageMenuOpen=false;
+ try{localStorage.setItem('football-architect:minimal:lang',lang);}catch{}
+ await render();
+ app.querySelector('[data-action="language-toggle"]')?.focus({preventScroll:true});
+}
 async function handle(action,element){
  switch(action){
+  case 'language-toggle':await toggleLanguageMenu(!languageMenuOpen,'combo');break;
+  case 'language-option':await setLanguage(element.dataset.value);break;
   case 'home':navigate('/');break;
   case 'new':draft={managerName:'',countryId:'IT',clubId:null,query:''};navigate('/new-career');break;
   case 'careers':navigate('/careers');break;
@@ -116,17 +139,6 @@ async function handle(action,element){
    await render();break;
   }
   case 'import':document.getElementById('import-file')?.click();break;
-  case 'legacy':{
-   await refreshCatalog();
-   if(hasImportedLegacy(catalog))return;
-   const s=readLegacyMinimal(localStorage);if(!s)return;
-   const name=prompt(tr(lang,'Nome allenatore per la simulazione precedente','Manager name for previous simulation'),'');
-   if(name===null)return;
-   if(!name.trim()||name.trim().length>80){notice=tr(lang,'Nome non valido','Invalid name');await render();return;}
-   await createCareer(db,{managerName:name.trim(),countryId:s.countryId,clubId:s.clubId,session:s,source:'minimal-v1'});
-   notice=tr(lang,'Simulazione precedente importata. I dati originali rimangono intatti.','Previous simulation imported. Original data remains untouched.');
-   await render();break;
-  }
   case 'day':stop();await advance(1);break;
   case 'week':stop();await advance(7);break;
   case 'month':stop();await advance(30);break;
@@ -139,10 +151,36 @@ async function handle(action,element){
  }
 }
 document.addEventListener('click',event=>{
- const el=event.target.closest('[data-action]');if(!el||!app.contains(el))return;
+ const el=event.target.closest('[data-action]');
+ if(languageMenuOpen&&!event.target.closest('[data-language-picker]')){
+  languageMenuOpen=false;
+  if(!el||!app.contains(el)){void render();return;}
+ }
+ if(!el||!app.contains(el))return;
  if(el.dataset.action==='home')event.preventDefault();
  if(busy)return;
  void handle(el.dataset.action,el).catch(fail);
+});
+document.addEventListener('keydown',event=>{
+ const combo=event.target.closest?.('[data-action="language-toggle"]');
+ if(combo){
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();void toggleLanguageMenu(true,'option');return;
+  }
+  if(event.key==='Escape'&&languageMenuOpen){event.preventDefault();void toggleLanguageMenu(false,'combo');return;}
+ }
+ const option=event.target.closest?.('[data-action="language-option"]');
+ if(!option)return;
+ const items=[...app.querySelectorAll('[data-action="language-option"]')],position=items.indexOf(option);
+ if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?items.length-1:(position+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;
+  items[next]?.focus({preventScroll:true});
+ }else if(event.key==='Escape'){
+  event.preventDefault();void toggleLanguageMenu(false,'combo');
+ }else if(event.key==='Tab'){
+  event.preventDefault();void toggleLanguageMenu(false,event.shiftKey?'combo':'next');
+ }
 });
 document.addEventListener('submit',event=>{
  if(event.target.id!=='manager-form')return;
@@ -158,11 +196,6 @@ document.addEventListener('input',event=>{
  const list=document.getElementById('clubs');if(list)list.innerHTML=clubList(draft,lang);
 });
 document.addEventListener('change',event=>{
- if(event.target.id==='language'){
-  lang=event.target.value==='en'?'en':'it';
-  try{localStorage.setItem('football-architect:minimal:lang',lang);}catch{}
-  void render();
- }
  if(event.target.id==='import-file')void (async()=>{
   const file=event.target.files?.[0];if(!file)return;
   if(file.size>2_000_000)throw Error('IMPORT_TOO_LARGE');
