@@ -63,9 +63,21 @@ export function managerPage(draft,lang){
    <section class="onboard-clubs" aria-labelledby="clubs-title">
     <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'2 · Scegli il club','2 · Choose your club')}</h2>
      <span>${clubs.length} ${tr(lang,'SOCIETÀ','CLUBS')}</span></div>
-    <div class="club-pick-grid" id="clubs">${clubs.map(c=>`<button type="button" class="club-pick ${c.id===chosen.id?'chosen':''}" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen.id}">
-     ${crest(c)}<span class="pick-detail"><strong>${esc(c.name)}</strong><small>${esc(c.city)} · ${esc(league.country[loc])}</small></span>
-     ${c.id===chosen.id?`<span class="picked-check">${icon('check',13)}</span>`:''}</button>`).join('')}</div>
+    <table class="club-table" id="clubs" aria-label="${tr(lang,'Squadre disponibili','Available clubs')}">
+     <thead><tr>
+      <th scope="col">${tr(lang,'Squadra','Club')}</th>
+      <th scope="col" class="club-table-city">${tr(lang,'Città','City')}</th>
+      <th scope="col" class="club-table-founded">${tr(lang,'Fondazione','Founded')}</th>
+      <th scope="col" class="club-table-status">${tr(lang,'Scelta','Selection')}</th>
+     </tr></thead>
+     <tbody>${clubs.map(c=>`<tr class="club-table-row ${c.id===chosen.id?'is-selected':''}" data-action="select" data-id="${c.id}">
+       <td><button type="button" class="club-table-select" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen.id}" aria-label="${tr(lang,'Seleziona','Select')} ${esc(c.name)}">
+        ${crest(c)}<span class="club-table-name"><strong>${esc(c.name)}</strong><small>${esc(c.city)}</small></span></button></td>
+       <td class="club-table-city">${esc(c.city)}</td>
+       <td class="club-table-founded">${c.founded}</td>
+       <td class="club-table-status"><span class="club-table-indicator" aria-hidden="true">${c.id===chosen.id?icon('check',16):icon('chevron-right',16)}</span></td>
+      </tr>`).join('')}</tbody>
+    </table>
    </section>
    <aside class="onboard-aside">
     <div class="selected-club-glow" style="--club-light:${esc(chosen.colors[0])}"></div>

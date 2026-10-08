@@ -283,7 +283,11 @@ test('the historic one-page onboarding contains country, club, and manager befor
  assert.match(markup,/class="league-pick-options"/);
  assert.equal((markup.match(/data-action="country"/g)||[]).length,8);
  assert.equal((markup.match(/data-action="select"/g)||[]).length,20);
- assert.match(markup,/class="club-pick-grid"/);
+ assert.match(markup,/<table class="club-table"/);
+ assert.match(markup,/<thead>/);
+ assert.match(markup,/<tbody>/);
+ assert.equal((markup.match(/class="club-table-row /g)||[]).length,20);
+ assert.equal((markup.match(/class="club-table-select"/g)||[]).length,20);
  assert.match(markup,/class="onboard-aside"/);
  assert.match(markup,/class="selected-stats"/);
  assert.match(markup,/id="manager-form"/);
@@ -329,7 +333,7 @@ test('historic settings restores the two-column panels and keeps live features o
 test('restored original CSS and single-page UI are responsive while match engine remains removed',()=>{
  const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
- for(const name of ['onboard-wrap','onboard-grid','club-pick-grid','career-grid','career-card','settings-grid','settings-action'])
+ for(const name of ['onboard-wrap','onboard-grid','club-table','career-grid','career-card','settings-grid','settings-action'])
   assert.ok(sheet.includes('.'+name),name);
  assert.match(sheet,/@media\(max-width:760px\)/);
  assert.match(sheet,/@media\(max-width:430px\)/);
@@ -358,11 +362,40 @@ test('every scrollbar uses the original site palette and a completely transparen
 test('the transparent-track contract covers page, club grid and future nested scroll regions',()=>{
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
- assert.match(css,/\.restored-onboarding \.club-pick-grid\{max-height:550px;overflow-y:auto;overscroll-behavior:contain\}/);
+ assert.match(css,/\.restored-onboarding \.club-table\{/);
  assert.match(css,/:where\(html,body,body \*\)::-webkit-scrollbar\{\s*width:var\(--scrollbar-width\);\s*height:var\(--scrollbar-width\);\s*background:transparent;/);
- assert.match(ui,/class="club-pick-grid"/);
+ assert.match(ui,/<table class="club-table"/);
  assert.match(ui,/class="career-grid"/);
  // The shared selectors target every descendant, without requiring classes
  // or making new containers scrollable.
  assert.doesNotMatch(css.slice(css.lastIndexOf('/* QOL05.08')),/\boverflow(?:-[xy])?\s*:/);
+});
+
+test('new career club table keeps every club on the document without an internal scrollbar',()=>{
+ const draft={managerName:'QA',countryId:'IT',clubId:1,query:''};
+ const html=managerPage(draft,'it');
+ assert.match(html,/<table class="club-table" id="clubs"/);
+ assert.match(html,/<thead>[\s\S]*?<th scope="col">Squadra<\/th>/);
+ assert.match(html,/<tbody>/);
+ assert.equal((html.match(/<tr class="club-table-row /g)||[]).length,20);
+ assert.equal((html.match(/<button type="button" class="club-table-select"/g)||[]).length,20);
+ assert.equal((html.match(/aria-pressed="true" aria-label="Seleziona /g)||[]).length,1);
+ assert.match(html,/data-id="1" aria-pressed="true"/);
+ const en=managerPage({managerName:'QA',countryId:'ENG',clubId:3,query:''},'en');
+ assert.match(en,/<th scope="col">Club<\/th>/);
+ assert.equal((en.match(/<tr class="club-table-row /g)||[]).length,20);
+ assert.match(en,/aria-label="Select /);
+});
+test('club table hover is contained and the document provides the only scrollbar',()=>{
+ const style=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const tableRules=style.slice(style.lastIndexOf('/* New Career: all 20 clubs'));
+ assert.match(tableRules,/\.club-table\{\s*width:100%;\s*min-width:0;\s*table-layout:fixed;/);
+ assert.match(tableRules,/\.club-table-row:hover td/);
+ assert.match(tableRules,/\.club-table-row:focus-within td/);
+ assert.match(tableRules,/box-shadow:inset/);
+ assert.match(tableRules,/@media\(max-width:530px\)/);
+ assert.doesNotMatch(tableRules,/\b(?:max-height|overflow-y|overflow-x|scrollbar-width|transform):/);
+ assert.doesNotMatch(style,/\.restored-onboarding \.club-pick-grid\{max-height:/);
+ assert.match(style,/\.restored-onboarding \.onboard-clubs\{min-width:0;overflow:visible\}/);
+ assert.match(style,/--scrollbar-track:transparent;/);
 });
