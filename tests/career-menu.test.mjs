@@ -250,9 +250,11 @@ test('pre-reset language combobox and SVG icon set are consistent in IT and EN',
  assert.match(sheet,/\.fa-icon/);
 });
 test('language picker remains independent of career save state',()=>{
- const first=languagePicker('it',true),second=languagePicker('en',false);
+ const first=languagePicker('it',true),second=languagePicker('en',true),closed=languagePicker('en',false);
  assert.match(first,/data-value="en"/);
  assert.match(second,/data-value="it"/);
+ assert.match(closed,/aria-expanded="false"/);
+ assert.doesNotMatch(closed,/role="option"/);
  assert.match(first,/aria-selected="true"/);
  assert.match(icon('shield',18),/<svg/);
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
