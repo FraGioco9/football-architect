@@ -10,6 +10,7 @@ import {displayCareerMoney} from './domain/career-locale.js';
 import {renderPlayerAttributesPanel} from './player-attributes-panel.js';
 import {renderPlayerPerformancePanel,renderPlayerCareerPanel} from './player-career-panel.js';
 import {renderPlayerContractPanel,renderPlayerActions} from './player-contract-panel.js';
+import {renderObservedMedical,renderObservedRelations,renderRelatedPositions,renderRecordedDevelopment} from './player-observed-details.js';
 
 export const PLAYER_PROFILE_TABS=Object.freeze([
  {id:'overview',it:'Panoramica',en:'Overview'},
@@ -67,7 +68,7 @@ export function renderPlayerOverviewPage(w,ui){
  const wages=owned?money(player.wage,w,lang):'—';
  const attributePanel=tab==='attributes'?renderPlayerAttributesPanel(w,player,ui,{report}):'';
  const performancePanel=tab==='performance'?renderPlayerPerformancePanel(w,player,ui):'';
- const careerPanel=tab==='career'?renderPlayerCareerPanel(w,player,ui):'';
+ const careerPanel=tab==='career'?renderPlayerCareerPanel(w,player,ui)+renderRecordedDevelopment(w,player,lang):'';
  const contractPanel=tab==='contract'?renderPlayerContractPanel(w,player,ui):'';
  const scoutNote=!owned?`<p class="plyr051-note" role="status">${locale(lang,
    'Le valutazioni e il valore sono mostrati solo come stime quando esiste un rapporto di scouting. I dati non conosciuti restano nascosti.',
@@ -112,7 +113,7 @@ export function renderPlayerOverviewPage(w,ui){
        info(locale(lang,'Piede preferito','Preferred foot'),foot(identity.preferredFoot??player.foot,lang)))}
      ${card(locale(lang,'Posizione e squadra','Position and club'),
        info(locale(lang,'Posizione principale','Primary position'),pos)+
-       info(locale(lang,'Altre posizioni','Other positions'),locale(lang,'Non registrate','Not recorded'))+
+       info(locale(lang,'Posizioni secondarie registrate','Recorded secondary positions'),locale(lang,'Non registrate','Not recorded'))+
        info('Club',team?.name??locale(lang,'Svincolato','Free agent'))+
        info(locale(lang,'Numero di maglia','Shirt number'),shirt??'—'))}
      ${card(locale(lang,'Condizione','Condition'),
@@ -123,6 +124,9 @@ export function renderPlayerOverviewPage(w,ui){
        info(locale(lang,'Valore di mercato','Market value'),valuation)+
        info(locale(lang,'Durata residua','Time remaining'),term)+
        info(locale(lang,'Ingaggio settimanale','Weekly wage'),wages))}
+     ${renderRelatedPositions(w,player,lang)}
+     ${renderObservedMedical(w,player,lang)}
+     ${renderObservedRelations(w,player,lang)}
    </div>
    </section>
    ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${item.id==='attributes'?attributePanel:item.id==='performance'?performancePanel:item.id==='career'?careerPanel:contractPanel}</section>`).join('')}
