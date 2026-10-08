@@ -73,12 +73,11 @@ test('scout reports gain evidence only after real review; same day review cannot
  const w=make(),candidate=external(w);assert.ok(candidate);
  const absent=personalityPlayerView(w,candidate.player,{owned:false});
  assertSafe(absent);assert.ok(absent.traits.every(x=>x.visibility==='hidden'));
- const r=w.advancedV1.scoutingV1;
- refreshScoutingReport(w,{revision:r.revision,playerId:candidate.id});
- const first=structuredClone(r.reports[candidate.id].personalityEvidence);
+ refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId:candidate.id});
+ const first=structuredClone(w.advancedV1.scoutingV1.reports[candidate.id].personalityEvidence);
  assert.equal(Object.values(first).reduce((a,b)=>a+b,0),2);
- refreshScoutingReport(w,{revision:r.revision,playerId:candidate.id});
- assert.deepEqual(r.reports[candidate.id].personalityEvidence,first);
+ refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId:candidate.id});
+ assert.deepEqual(w.advancedV1.scoutingV1.reports[candidate.id].personalityEvidence,first);
  assertSafe(personalityPlayerView(w,candidate.player,{owned:false,lang:'it'}));
  assert.equal(validateCareerScouting(w),true);
  // Observer change must NOT inherit the other club's knowledge.
@@ -86,13 +85,13 @@ test('scout reports gain evidence only after real review; same day review cannot
  assert.ok(personalityPlayerView(w,candidate.player,{owned:false}).traits.every(t=>t.visibility==='hidden'));
  w.clubId=previous;
  assert.equal(validateCareerScouting(w),true);
- assert.deepEqual(r.reports[candidate.id].personalityEvidence,first);
+ assert.deepEqual(w.advancedV1.scoutingV1.reports[candidate.id].personalityEvidence,first);
 });
 test('progressive scout knowledge stays local, persists through JSON and never infers exact potential',()=>{
- const w=make(),c=external(w),s=w.advancedV1.scoutingV1;
+ const w=make(),c=external(w);
  for(let day=1;day<=12;day++){
   w.advancedV1.clockDay+=1;
-  refreshScoutingReport(w,{revision:s.revision,playerId:c.id});
+  refreshScoutingReport(w,{revision:w.advancedV1.scoutingV1.revision,playerId:c.id});
  }
  const observed=personalityPlayerView(w,c.player,{owned:false,lang:'it'});
  assertSafe(observed);
@@ -109,7 +108,7 @@ test('standalone five-tab Overview is qualitative, accessible, with no second re
   const html=renderPlayerOverviewPage(w,{...ui,language:lang});
   const expected=lang==='en'?'Personality and relationships':'Personalità e relazioni';
   assert.ok(html.includes(expected));
-  assert.equal((html.match(/class="plyr051-tab/g)||[]).length,5);
+  assert.equal((html.match(/class="plyr051-tab(?:\\s|\")/g)||[]).length,5);
   assert.equal((html.match(/class="plyr064-trait"/g)||[]).length,7);
   assert.ok(html.includes('role="list"')&&html.includes('role="listitem"'));
   assert.ok(!html.includes('Potenziale')&&!html.includes('Potential'));
