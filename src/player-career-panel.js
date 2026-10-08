@@ -123,7 +123,7 @@ function coverageNote(lang){
 }
 export function renderPlayerCareerPanel(w,player,ui,{records=null}={}){
  const lang=ui.language==='en'?'en':'it',data=records??readOfficialPlayerRecords(w,player);
- if(data.archiveInvalid)return blank(lang,'Archivio delle statistiche non verificabile. Lo storico delle partite non è mostrato.','Statistics archive cannot be verified. Match history is not displayed.');
+ const invalidNotice=data.archiveInvalid?blank(lang,'L’archivio SIM06 non è verificabile; eventuali registrazioni WRD05 e movimenti di mercato rimangono consultabili.','The SIM06 archive cannot be verified; valid WRD05 entries and market movements remain available.'):'';
  const keys=new Map();
  for(const row of data.performance){
    const key=`${row.season}|${row.competitionId}|${textId(row.teamId)}`;
@@ -146,7 +146,7 @@ export function renderPlayerCareerPanel(w,player,ui,{records=null}={}){
  </section>`:'';
  const movements=data.movements.length?`<section class="plyr053-block"><h3>${tr(lang,'Trasferimenti registrati','Recorded transfers')}</h3><ul class="plyr053-moves">${data.movements.map(x=>`<li><strong>${x.season}</strong><span>${esc(x.from||'—')} → ${esc(x.to||'—')}</span><small>${esc(x.type||'—')}</small></li>`).join('')}</ul></section>`:'';
  return `<div class="plyr053-career">
-  ${matches}${leaderboard}${movements}
+  ${invalidNotice}${matches}${leaderboard}${movements}
   ${!matches&&!leaderboard&&!movements?blank(lang,'Nessuno storico verificabile è disponibile. Le stagioni senza dati ufficiali restano vuote.','No verifiable career history is available. Seasons without official data remain empty.'):''}
  </div>`;
 }
