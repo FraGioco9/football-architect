@@ -5,7 +5,7 @@ import {assessRoleFit} from './player-role-fit.mjs';
 const bad=code=>{throw new Error(`SIM03_${code}`)};
 const validId=id=>(typeof id==='string'&&id.trim()!=='')||(Number.isSafeInteger(id)&&id>0);
 const clone=v=>structuredClone(v);
-function defaultDuty(position){const pos=canonicalPosition(position);return pos==='GK'||['CB','RB','LB','RWB','LWB','CDM'].includes(pos)?'defend':['ST','CF','RW','LW'].includes(pos)?'attack':'support';}
+function defaultDuty(position){const pos=canonicalPosition(position);return pos==='GK'||['CB','RB','LB','RWB','LWB','CDM'].includes(pos)?'defend':['ST','RW','LW'].includes(pos)?'attack':'support';}
 export function validateRolePlan(plan){
  if(!plan||typeof plan!=='object'||Array.isArray(plan)||plan.schemaVersion!==ROLE_SCHEMA)bad('PLAN_SCHEMA');
  if(typeof plan.formation!=='string'||plan.formation.trim().length===0)bad('FORMATION');
