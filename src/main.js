@@ -1371,7 +1371,8 @@ root.addEventListener('click',async ev=>{
       }
       case 'player-open-market':{
         if(ui.routeKind!=='player'||['dismissed','retired'].includes(boardStatus(world)))break;
-        ui.marketTab='negotiations';navigate('market');break;
+        const free=world.players.some(p=>p.id===Number(id)&&p.clubId===0);
+        ui.marketTab=free?'explore':'negotiations';navigate('market');break;
       }
       case 'player-tab':{
         if(ui.routeKind!=='player'||!PLAYER_PROFILE_TABS.some(tab=>tab.id===field))break;
