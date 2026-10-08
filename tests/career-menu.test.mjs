@@ -199,7 +199,7 @@ test('IT/EN menu and dedicated routes are available and accessible',()=>{
  assert.match(html,/New career/);assert.match(html,/My careers/);assert.match(html,/Settings/);
  assert.match(html,/Skip to content/);
  const draft={managerName:'Mario',countryId:'DE',clubId:1,query:''};
- assert.match(managerPage(draft,'en'),/Manager name/);
+ assert.match(managerPage(draft,'en'),/MANAGER NAME/);
  assert.match(teamsPage(draft,'en'),/Choose a club/);
  assert.match(settingsPage('en'),/Language/);
  assert.match(careersPage(empty,'en',false),/Import JSON/);
@@ -272,54 +272,69 @@ test('only live route modules are published by the offline server',()=>{
 });
 
 
-test('new career and its club step share one title and a consistent accessible back button',()=>{
- const draft={managerName:'Ada Coach',countryId:'IT',clubId:2,query:''};
- const first=managerPage(draft,'it'),second=teamsPage(draft,'it');
- for(const html of [first,second]){
-  assert.match(html,/<header class="page-header">/);
-  assert.match(html,/<h1 class="page-title">Nuova carriera<\/h1>/);
-  assert.equal((html.match(/<h1\b/g)||[]).length,1);
-  assert.match(html,/class="page-back"/);
-  assert.match(html,/class="page-title-icon"/);
-  assert.match(html,/class="page-step"/);
-  assert.match(html,/<section class="page-panel panel"/);
- }
- assert.match(first,/data-action="home" aria-label="Torna al menu"/);
- assert.match(first,/Passaggio 1 di 2/);
- assert.match(first,/id="manager-form"/);
- assert.match(second,/data-action="setup-back" aria-label="Torna all&#39;allenatore"/);
- assert.match(second,/Passaggio 2 di 2/);
- assert.match(second,/data-action="country"/);
- assert.match(second,/data-action="start-career"/);
- assert.doesNotMatch(second,/<h1[^>]*>Scegli una squadra<\/h1>/);
+
+test('the historic one-page onboarding contains country, club, and manager before any save',async()=>{
+ const db=await setup(),draft={managerName:'Ada Coach',countryId:'IT',clubId:2,query:''};
+ const markup=managerPage(draft,'it'),compat=teamsPage(draft,'it');
+ assert.match(markup,/class="onboarding restored-onboarding"/);
+ assert.match(markup,/class="onboard-header"/);
+ assert.match(markup,/Costruisci la tua carriera/);
+ assert.match(markup,/class="league-pick"/);
+ assert.match(markup,/class="league-pick-options"/);
+ assert.equal((markup.match(/data-action="country"/g)||[]).length,8);
+ assert.equal((markup.match(/data-action="select"/g)||[]).length,20);
+ assert.match(markup,/class="club-pick-grid"/);
+ assert.match(markup,/class="onboard-aside"/);
+ assert.match(markup,/class="selected-stats"/);
+ assert.match(markup,/id="manager-form"/);
+ assert.match(markup,/id="manager-name"/);
+ assert.match(markup,/Inizia carriera/);
+ assert.match(markup,/data-action="cancel-setup"/);
+ assert.equal((markup.match(/<h1\b/g)||[]).length,1);
+ assert.equal(compat,markup);
+ assert.equal((await readCatalog(db)).rows.length,0);
 });
-test('saved careers and settings reuse the same page header, not the old loose back link',()=>{
- const catalog={rows:[],activeId:null};
- for(const html of [careersPage(catalog,'it'),settingsPage('it')]){
-  assert.match(html,/<header class="page-header">/);
-  assert.match(html,/class="page-back"/);
-  assert.match(html,/data-action="home" aria-label="Torna al menu"/);
-  assert.equal((html.match(/<h1\b/g)||[]).length,1);
-  assert.doesNotMatch(html,/<button class="back"/);
- }
- assert.match(careersPage(catalog,'en'),/<h1 class="page-title">My careers<\/h1>/);
- assert.match(settingsPage('en'),/<h1 class="page-title">Settings<\/h1>/);
- assert.match(careersPage(catalog,'it'),/data-action="import"/);
- assert.match(careersPage(catalog,'it'),/data-action="new"/);
- assert.match(settingsPage('it'),/data-action="language-focus"/);
- assert.match(settingsPage('it'),/data-action="careers"/);
+test('historic career library uses its card grid and old-style actions with minimal saves',async()=>{
+ const db=await setup();await createCareer(db,form('Ada','IT',2));
+ const html=careersPage(await readCatalog(db),'it');
+ assert.match(html,/class="restored-careers"/);
+ assert.match(html,/class="career-grid"/);
+ assert.match(html,/class="career-card/);
+ assert.match(html,/class="career-meta"/);
+ assert.match(html,/class="career-actions"/);
+ assert.match(html,/class="career-more"/);
+ assert.match(html,/Le tue carriere/);
+ assert.match(html,/data-action="load"/);
+ assert.match(html,/data-action="rename"/);
+ assert.match(html,/data-action="export"/);
+ assert.match(html,/data-action="delete"/);
+ assert.doesNotMatch(html,/Recupera simulazione precedente|Checkpoint|Duplicazione/);
+ assert.match(careersPage({rows:[],activeId:null},'en'),/No saved careers/);
 });
-test('page heading and back control remain visually coherent at 320 and 390px',()=>{
+test('historic settings restores the two-column panels and keeps live features only',()=>{
+ const html=settingsPage('it');
+ assert.match(html,/class="restored-settings"/);
+ assert.match(html,/Impostazioni e salvataggi/);
+ assert.match(html,/class="settings-grid"/);
+ assert.match(html,/class="setting-fact"/);
+ assert.match(html,/class="settings-actions"/);
+ assert.match(html,/class="settings-action"/);
+ assert.match(html,/class="about-grid"/);
+ assert.match(html,/data-action="language-focus"/);
+ assert.match(html,/data-action="careers"/);
+ assert.match(html,/data-action="import"/);
+ assert.match(settingsPage('en'),/Settings and saves/);
+ assert.doesNotMatch(html,/Partite giocate|Personalità e spogliatoio|Risultati/);
+});
+test('restored original CSS and single-page UI are responsive while match engine remains removed',()=>{
  const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
- assert.match(sheet,/\.page-header-nav/);
- assert.match(sheet,/\.page-title-row/);
- assert.match(sheet,/\.page-back:hover/);
- assert.match(sheet,/\.page-title-icon/);
- assert.match(sheet,/\.page-panel-actions/);
- assert.match(sheet,/@media\(max-width:580px\)/);
- assert.match(sheet,/@media\(max-width:350px\)/);
- const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
- assert.match(main,/case 'language-focus'/);
- assert.match(main,/case 'setup-back'/);
- assert.match(main,/case 'home'/);
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ for(const name of ['onboard-wrap','onboard-grid','club-pick-grid','career-grid','career-card','settings-grid','settings-action'])
+  assert.ok(sheet.includes('.'+name),name);
+ assert.match(sheet,/@media\(max-width:760px\)/);
+ assert.match(sheet,/@media\(max-width:430px\)/);
+ assert.match(controller,/draft\.managerName=name;void begin\(\)\.catch\(fail\)/);
+ assert.match(controller,/case 'country':draft\.countryId=element\.dataset\.country;draft\.clubId=1/);
+ assert.doesNotMatch(controller,/navigate\('\/new-career\/team'\)/);
+ assert.doesNotMatch(controller,/simulateMatch|playMatch|matchEngine/);
 });
