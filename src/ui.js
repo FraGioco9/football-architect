@@ -28,7 +28,6 @@ import {continentalEnabled,continentalEdition} from './domain/career-continental
 import {careerWorldLeague} from './domain/career-world.js';
 import {careerMarketPanel,marketOfferModal,marketDealModal} from './addons/career-market-ui.js';
 import {marketEnabled} from './domain/career-market.js';
-import {scoutingEnabled} from './domain/career-scouting.js';
 import {historicPlayerName} from './domain/career-youth.js';
 import {careerStatisticsReport} from './domain/career-statistics.js';
 import {mailDestination,mailActionLabel} from './qol03.js';
