@@ -14,7 +14,7 @@ import {hasCareerTraining} from './career-training.js';
 const fail=code=>{throw Error(`CAREER_YOUTH_${code}`);};
 const country=w=>countryKey(w.countryId);
 const squadCap=32, academyCap=18, minimum=18;
-const nativePositions={GK:'POR',CB:'DC',RB:'TD',RWB:'TD',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',RM:'AD',LM:'AS',CAM:'COC',RW:'AD',LW:'AS',CF:'ATT',ST:'ATT'};
+const nativePositions={GK:'POR',CB:'DC',RB:'TD',RWB:'TD',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',RM:'AD',LM:'AS',CAM:'COC',RW:'AD',LW:'AS',ST:'ATT'};
 const finiteId=n=>Number.isSafeInteger(n)&&n>0;
 const active=w=>w?.advancedV1?.enabled===true&&w.advancedV1?.youthV1?.schemaVersion===1;
 export const hasCareerYouth=active;
