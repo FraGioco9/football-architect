@@ -8,6 +8,13 @@ import {identityCountryLabel} from './domain/player-identity.js';
 import {scoutingEnabled,scoutingEstimate} from './domain/career-scouting.js';
 import {displayCareerMoney} from './domain/career-locale.js';
 
+export const PLAYER_PROFILE_TABS=Object.freeze([
+ {id:'overview',it:'Panoramica',en:'Overview'},
+ {id:'attributes',it:'Attributi',en:'Attributes'},
+ {id:'performance',it:'Prestazioni',en:'Performance'},
+ {id:'career',it:'Carriera',en:'Career'},
+ {id:'contract',it:'Contratto',en:'Contract'}
+].map(tab=>Object.freeze(tab)));
 const locale=(lang,it,en)=>lang==='en'?en:it;
 const number=value=>Number.isFinite(value)?String(Math.round(value)):'—';
 const interval=value=>value&&Number.isFinite(value.min)&&Number.isFinite(value.max)?`${value.min}–${value.max}`:'—';
@@ -26,6 +33,15 @@ const info=(label,value)=>`<div class="plyr051-fact"><dt>${esc(label)}</dt><dd>$
 function card(title,content){return `<section class="plyr051-card"><h2>${esc(title)}</h2><dl class="plyr051-facts">${content}</dl></section>`;}
 export function renderPlayerOverviewPage(w,ui){
  const lang=ui.language,en=lang==='en',id=ui.routePlayerId;
+ const tab=PLAYER_PROFILE_TABS.some(item=>item.id===ui.playerTab)?ui.playerTab:'overview';
+ const tabLabel=item=>esc(item[en?'en':'it']);
+ const placeholder=(it,enText)=>`<div class="plyr051-empty"><p>${locale(lang,it,enText)}</p></div>`;
+ const deferredPanels={
+   attributes:placeholder('Gli attributi dettagliati saranno disponibili dopo il completamento di questa sezione.','Detailed attributes will be available when this section is completed.'),
+   performance:placeholder('Le statistiche verranno collegate ai dati ufficiali delle partite.','Performance statistics will be connected to the official match data.'),
+   career:placeholder('Lo storico verrà collegato agli archivi ufficiali della carriera.','Career history will be connected to the official career archives.'),
+   contract:placeholder('I dettagli saranno collegati al sistema ufficiale dei contratti.','Contract details will be connected to the official contracts system.')
+ };
  const player=w.players.find(p=>p.id===id);
  if(!player)return `<div class="plyr051-page"><h1>${locale(lang,'Calciatore non disponibile','Player unavailable')}</h1><button type="button" class="btn btn-outline" data-action="player-back">${locale(lang,'Torna alla rosa','Back to squad')}</button></div>`;
  const identity=player.identity??{},owned=player.clubId===w.clubId;
@@ -77,7 +93,10 @@ export function renderPlayerOverviewPage(w,ui){
      <div><span>${locale(lang,'Condizione','Fitness')}</span><strong>${esc(fitness)}</strong></div>
      <div><span>${locale(lang,'Contratto','Contract')}</span><strong>${esc(term)}</strong></div>
    </div>
-   <div class="plyr051-section-label" aria-current="page">${locale(lang,'Panoramica','Overview')}</div>
+   <nav class="plyr051-tabs" role="tablist" aria-label="${locale(lang,'Sezioni giocatore','Player sections')}">
+     ${PLAYER_PROFILE_TABS.map(item=>`<button type="button" role="tab" id="plyr051-tab-${item.id}" class="plyr051-tab${tab===item.id?' is-active':''}" aria-selected="${tab===item.id}" aria-controls="plyr051-panel-${item.id}" tabindex="${tab===item.id?'0':'-1'}" data-action="player-tab" data-value="${item.id}">${tabLabel(item)}</button>`).join('')}
+   </nav>
+   <section id="plyr051-panel-overview" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-overview" tabindex="0" ${tab==='overview'?'':'hidden'}>
    ${scoutNote}
    <div class="plyr051-grid">
      ${card(locale(lang,'Identità','Identity'),
@@ -104,5 +123,7 @@ export function renderPlayerOverviewPage(w,ui){
        info(locale(lang,'Durata residua','Time remaining'),term)+
        info(locale(lang,'Ingaggio settimanale','Weekly wage'),wages))}
    </div>
+   </section>
+   ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${deferredPanels[item.id]}</section>`).join('')}
  </div>`;
 }
