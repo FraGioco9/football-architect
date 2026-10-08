@@ -15,7 +15,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 ## Pagine
 
 - / — Menu iniziale con l'ultima carriera valida.
-- /new-career — Pagina originale pre-reset: scelta di nazione, club e nome allenatore nella stessa schermata. Non crea salvataggi fino a «Inizia carriera».
+- /new-career — Scelta nazione, **tabella completa dei 20 club** (nome, città e fondazione dove lo spazio lo consente), pannello laterale e nome allenatore nella stessa schermata. **La tabella non ha scrollbar né altezza massima**: tutti i club scorrono con la pagina. Il salvataggio nasce soltanto premendo «Inizia carriera».
 - /new-career/team — URL precedente mantenuto per compatibilità di navigazione: reindirizza alla pagina unica `/new-career`.
 - /careers — Layout originale a griglia di card, con salvataggi separati: carica, rinomina, esporta, importa JSON o elimina con conferma. I salvataggi corrotti sono esportabili/eliminabili ma non caricabili.
 - /settings — Pannelli originali di preferenze e gestione dati, con lingua IT/EN e operazioni disponibili per carriere locali.
@@ -35,6 +35,6 @@ In caso di errore di scrittura la simulazione si interrompe e segnala il problem
 node --test .\tests\minimal-core.test.mjs .\tests\career-menu.test.mjs
 ```
 
-Per la verifica Windows controlla: primo avvio, 3 carriere indipendenti, refresh e riapertura, import/export, corruzione di uno snapshot, salvataggi storici, lingua IT/EN, mobile 320/390px, nessuna partita.
+Per la verifica Windows controlla: primo avvio, 3 carriere indipendenti, refresh e riapertura, import/export, corruzione di uno snapshot, salvataggi storici, lingua IT/EN, mobile 320/390px, tabella completa senza scroll interno o overflow orizzontale, hover delle righe non tagliato, nessuna partita.
 
 Non eseguire deploy o merge senza autorizzazione esplicita.
