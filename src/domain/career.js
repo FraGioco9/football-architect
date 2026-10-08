@@ -33,7 +33,15 @@ import {ensureOfficialCareerSystems} from './career-official.js';
 
 function syncIdentityAges(w){
   if(!w?.currentDate||!Array.isArray(w.players))return;
-  for(const player of w.players)if(player.identity?.birthDate)player.age=playerAgeOnDate(player.identity.birthDate,w.currentDate);
+  for(const player of w.players)if(player.identity?.birthDate){
+    const age=playerAgeOnDate(player.identity.birthDate,w.currentDate);
+    player.age=age;
+    // PLYR-01 updates the visible age daily. PLY03 keeps the same age in
+    // the development snapshot, which is validated by MGT04 each training day.
+    // A birthday must not invalidate the first daily tick or advance a season.
+    if(player.developmentV1&&player.developmentV1.age!==age)
+      player.developmentV1.age=age;
+  }
 }
 
 export function startCareer(w,clubId,manager){

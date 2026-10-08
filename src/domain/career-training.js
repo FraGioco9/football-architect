@@ -145,7 +145,26 @@ export function settleCareerTrainingDay(w,day){
   t.week=plannedWeek(w,day+1);
   t.week.individuals=individuals;
  }else t.week=plan;
- if(!validateCareerTraining(w))bad('POST_DAY');
+ if(!validateCareerTraining(w)){
+  // Report which post-day invariant failed. Preserve the transaction rollback
+  // in advanceDay() and never silently accept invalid player development.
+  const invalidDevelopment=w.players.find(p=>{
+   try{return !p.developmentV1||!validateDevelopment(p.developmentV1)
+     ||p.developmentV1.playerId!==String(p.id)
+     ||p.developmentV1.age!==p.age
+     ||p.developmentV1.lastSeason!==w.season-1;}
+   catch{return true;}
+  });
+  const detail=invalidDevelopment
+   ?('player='+invalidDevelopment.id+', age='+invalidDevelopment.age
+     +', developmentAge='+invalidDevelopment.developmentV1?.age
+     +', developmentSeason='+invalidDevelopment.developmentV1?.lastSeason)
+   :('clockDay='+w.advancedV1.clockDay+', lastDay='+t.lastDay
+     +', weekStart='+t.week.weekStartDay+', processed='+t.week.processedDays.length
+     +', club='+t.clubId+', season='+t.season);
+  console.error('[Football Architect] training post-day validation failed',detail);
+  throw new Error('CAREER_TRAINING_POST_DAY: '+detail);
+ }
  return plan.logs.at(-1)??null;
 }
 
