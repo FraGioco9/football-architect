@@ -108,3 +108,16 @@
 .plyr054-action:focus-visible{outline:2px solid var(--color-accent,#67b5dc);outline-offset:3px}
 @media(max-width:780px){.plyr054-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:520px){.plyr054-card{padding:14px}.plyr054-actions{justify-content:stretch}.plyr054-action{flex:1 1 100%;width:100%}.plyr054-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+
+/* REC-06: observed medical/dynamic values and derived (not learned) position ratings. */
+.plyr056-card{min-width:0}
+.plyr056-note{font-size:12px;line-height:1.5;color:var(--color-text-muted,var(--text-muted,#98a6b5));margin:0 0 10px}
+.plyr056-history{display:grid;gap:10px;margin-top:18px}
+.plyr056-history h3{margin:0;font-size:14px}
+.plyr056-history ul{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.plyr056-history li{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,.8fr);gap:10px;padding:9px 0;border-bottom:1px solid var(--border-color,var(--color-border,#354150));font-size:12px;font-variant-numeric:tabular-nums}
+.plyr056-history li:last-child{border-bottom:0}
+.plyr056-history li span{min-width:0;overflow-wrap:anywhere}
+.plyr056-history li span:not(:first-child){text-align:right}
+.plyr056-development{min-width:0}
+@media(max-width:520px){.plyr056-history li{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.plyr056-history li span:first-child{grid-column:1/-1}.plyr056-history li span:nth-child(2){text-align:left}}
