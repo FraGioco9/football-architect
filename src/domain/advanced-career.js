@@ -310,7 +310,7 @@ export function simulateAdvancedMatch(w,m){
         const goals={home:0,away:0};
         for(const event of session.events)if(event.type==='goal')goals[event.side]++;
         const trailing=goals[ownSide]<goals[ownSide==='home'?'away':'home'];
-        const attack=starterRows.filter(x=>['ST','LW','RW','CAM','CF'].includes(x.assignment.position));
+        const attack=starterRows.filter(x=>['ST','LW','RW','CAM'].includes(x.assignment.position));
         const candidates=trailing&&attack.length?attack:starterRows;
         const tiredRow=[...candidates].sort((a,b)=>a.player.fitness-b.player.fitness||a.player.id-b.player.id)[0];
         if(tiredRow){
