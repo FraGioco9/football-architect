@@ -97,7 +97,7 @@ export function renderPlayerActions(w,player,ui){
      }else actions.push(action(lang,'player-open-renewal',tr(lang,'Proponi rinnovo','Propose renewal'),player.id,'primary'));
    }
    if(officialMarket)actions.push(action(lang,'player-open-market',tr(lang,'Apri trattative','Open negotiations'),'', 'secondary'));
-   else actions.push(action(lang,'sell',tr(lang,'Tratta cessione','Sell player'),player.id,'danger'));
+   else actions.push(action(lang,'sell',tr(lang,'Vendi giocatore','Sell player'),player.id,'danger'));
  }else{
    if(scoutingEnabled(w)&&scoutingPlayer(w,globalId)){
      const listed=w.advancedV1.scoutingV1.shortlist.includes(globalId);
@@ -109,7 +109,7 @@ export function renderPlayerActions(w,player,ui){
    }
    if(officialMarket){
      actions.push(player.clubId>0?action(lang,'market-offer-player',tr(lang,'Avvia trattativa','Start negotiation'),globalId,'primary'):
-       action(lang,'player-open-market',tr(lang,'Apri mercato svincolati','Open free agent market'),'', 'primary'));
+       action(lang,'player-open-market',tr(lang,'Apri mercato svincolati','Open free agent market'),player.id, 'primary'));
    }else if(player.clubId>0)actions.push(action(lang,'buy',tr(lang,'Acquista','Buy player'),player.id,'primary'));
  }
  return `<footer class="plyr054-actions" aria-label="${tr(lang,'Azioni giocatore','Player actions')}">${actions.join('')}</footer>`;
