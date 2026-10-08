@@ -58,11 +58,14 @@ async function advance(days){
  }catch(e){fail(e);}finally{busy=false;}
 }
 async function begin(){
- if(!draft.managerName.trim()||draft.managerName.trim().length>80||!LEAGUES.some(l=>l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
- const current=await createCareer(db,{managerName:draft.managerName,countryId:draft.countryId,clubId:draft.clubId});
- loaded=current;
- draft={managerName:'',countryId:'IT',clubId:null,query:''};
- navigate('/simulation');
+ if(busy||!draft.managerName.trim()||draft.managerName.trim().length>80||!LEAGUES.some(l=>l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
+ busy=true;
+ try{
+  const current=await createCareer(db,{managerName:draft.managerName,countryId:draft.countryId,clubId:draft.clubId});
+  loaded=current;
+  draft={managerName:'',countryId:'IT',clubId:null,query:''};
+  navigate('/simulation');
+ }finally{busy=false;}
 }
 async function load(id){stop();loaded=await selectCareer(db,id);navigate('/simulation');}
 function download(name,object){

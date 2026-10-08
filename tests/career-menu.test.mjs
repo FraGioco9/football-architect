@@ -220,4 +220,5 @@ test('all eight countries and 160 teams remain available without game fixtures',
  assert.equal(LEAGUES.reduce((n,l)=>n+getLeagueClubs(l.id).length,0),160);
  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.doesNotMatch(main,/simulateMatch|fixtureIsDue|playMatch|matchEngine/);
+ assert.match(main,/async function begin\(\)\{\n if\(busy\|\|/);
 });

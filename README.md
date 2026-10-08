@@ -32,7 +32,7 @@ In caso di errore di scrittura la simulazione si interrompe e segnala il problem
 ## Verifica
 
 ```powershell
-node --test .\tests\*.test.mjs
+node --test .\tests\minimal-core.test.mjs .\tests\career-menu.test.mjs
 ```
 
 Per la verifica Windows controlla: primo avvio, 3 carriere indipendenti, refresh e riapertura, import/export, corruzione di uno snapshot, salvataggi storici, lingua IT/EN, mobile 320/390px, nessuna partita.
