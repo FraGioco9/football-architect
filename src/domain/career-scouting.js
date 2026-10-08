@@ -129,7 +129,7 @@ export function validateCareerScouting(w){
    if(!playerIds.has(id)||!countries.includes(r.countryId)||!int(r.confidence,1,88)||!int(r.lastCheckedDay,0,w.advancedV1.clockDay))return false;
    if(r.personalityEvidence!==undefined){
     validateTraitEvidence(r.personalityEvidence);
-    if(typeof r.personalityObserver!=='string'||!r.personalityObserver.match(/^(IT|EN|ENG|ES|DE|FR|NL|PT|BR):club:\\d+$/))return false;
+    if(typeof r.personalityObserver!=='string'||!r.personalityObserver.match(/^(IT|EN|ENG|ES|DE|FR|NL|PT|BR):club:\d+$/))return false;
    }
   }
   return true;

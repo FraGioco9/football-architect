@@ -103,7 +103,7 @@ export function personalityPlayerView(w,p,{lang='it',owned=null}={}){
   const st=state(w).playerStates[String(p.id)];
   if(st?.traitEvidence){validateTraitEvidence(st.traitEvidence);evidence=st.traitEvidence;}
  }else{
-  const id=String(identity(p)),observer=`${w.countryId}:club:${w.clubId}`;
+  const id=String(p.globalId??(typeof p.id==='number'?`${w.countryId}:${p.id}`:p.id)),observer=`${w.countryId}:club:${w.clubId}`;
   const report=w.advancedV1?.scoutingV1?.reports?.[id];
   if(report?.personalityObserver===observer&&report.personalityEvidence){
    validateTraitEvidence(report.personalityEvidence);evidence=report.personalityEvidence;
