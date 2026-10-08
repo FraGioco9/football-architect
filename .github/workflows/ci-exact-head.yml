@@ -1,4 +1,4 @@
-name: CI Exact Head
+name: Minimal CI Exact Head
 
 on:
   pull_request:
@@ -17,52 +17,36 @@ jobs:
     name: validate-exact-head
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - name: Checkout exact PR HEAD
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
-
       - name: Verify checked-out commit
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-
-      - name: Check JavaScript syntax
+      - name: Check syntax
         run: |
           node --check server.mjs
-          find src -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -r -n1 node --check
-
-      - name: Test personality v2 domain and player generation
-        run: node --test tests/plyr-06-1-personality-v2.test.mjs
-
-      - name: Test PLYR-06.2 morale, events and leadership
-        run: node --test tests/plyr-06-2-dynamics.test.mjs
-
-      - name: Test PLYR-06.3 official integration
-        run: node --test tests/plyr-06-3-official-integration.test.mjs
-
-      - name: Test PLYR-06.4 qualitative scouting and private DTOs
-        run: node --test tests/plyr-06-4-private-scouting.test.mjs
-
-      - name: Smoke test local HTTP routes
+          find src -type f -name '*.js' -print0 | xargs -0 -r -n1 node --check
+      - name: Verify minimal three-screen simulation
+        run: node --test tests/minimal-core.test.mjs
+      - name: Verify HTTP routes and no match pages
         run: |
           node server.mjs &
-          SERVER_PID=$!
-          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
-          for attempt in $(seq 1 15); do
-            if curl -fsS http://127.0.0.1:2000/ -o /dev/null 2>/dev/null; then
-              break
-            fi
-            sleep 1
-          done
-          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/)" = 200
-          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/player/1)" = 200
-          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/not-a-real-route)" = 404
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:2000/ -o /dev/null 2>/dev/null && break; sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/teams)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/simulation)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/main.js)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/simulation.js)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/match/1)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/domain/career.js)" = 404

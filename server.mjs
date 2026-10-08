@@ -1,47 +1,30 @@
 import http from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import {readFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {isKnownAppRoutePath} from './src/router.js';
 
-const root = path.dirname(fileURLToPath(import.meta.url));
-const port = Number(process.env.PORT || 2000);
-const types = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon'};
-
-async function sendFile(res,pathname,status=200){
-  const content = await readFile(pathname);
-  res.writeHead(status,{'Content-Type':types[path.extname(pathname)]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
-  res.end(content);
-}
-
-const server = http.createServer(async(req,res)=>{
-  try {
-    const url = new URL(req.url, 'http://localhost');
-    let relative = decodeURIComponent(url.pathname);
-    if (relative === '/') relative = '/index.html';
-    const pathname = path.resolve(root, '.' + relative);
-    if (pathname !== root && !pathname.startsWith(root + path.sep)) {res.writeHead(403);res.end('Forbidden');return;}
-
-    let file=false;
-    try{file=(await stat(pathname)).isFile();}catch{}
-    if(file){await sendFile(res,pathname);return;}
-
-    if(req.method==='GET'||req.method==='HEAD'){
-      if(isKnownAppRoutePath(url.pathname)){
-        await sendFile(res,path.join(root,'index.html'));
-        return;
-      }
-      if(!path.extname(url.pathname)){
-        await sendFile(res,path.join(root,'index.html'),404);
-        return;
-      }
-    }
-
-    res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
-    res.end('Not found');
-  } catch (err) {
-    res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
-    res.end('Not found');
-  }
+const root=path.dirname(fileURLToPath(import.meta.url));
+const port=Number(process.env.PORT??2000);
+const routes=new Set(['/','/teams','/simulation']);
+const files=new Map([
+ ['/src/main.js','text/javascript; charset=utf-8'],
+ ['/src/simulation.js','text/javascript; charset=utf-8'],
+ ['/src/leagues.js','text/javascript; charset=utf-8'],
+ ['/src/styles.css','text/css; charset=utf-8'],
+ ['/assets/favicon.svg','image/svg+xml']
+]);
+const server=http.createServer(async(req,res)=>{
+ const method=req.method??'GET';
+ if(method!=='GET'&&method!=='HEAD'){res.writeHead(405,{Allow:'GET, HEAD'});res.end();return;}
+ let pathname;
+ try{pathname=new URL(req.url,'http://localhost').pathname;}catch{res.writeHead(400);res.end();return;}
+ const page=routes.has(pathname);
+ if(!page&&!files.has(pathname)){res.writeHead(404,{'Cache-Control':'no-store'});res.end('Not found');return;}
+ const file=page?'/index.html':pathname;
+ try{
+  const data=await readFile(path.join(root,file.slice(1)));
+  res.writeHead(200,{'Content-Type':page?'text/html; charset=utf-8':files.get(pathname),'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+  res.end(method==='HEAD'?undefined:data);
+ }catch{res.writeHead(404);res.end('Not found');}
 });
-server.listen(port, '127.0.0.1',()=>console.log(`Football Architect online su http://localhost:${port}`));
+server.listen(port,'127.0.0.1',()=>console.log('Football Architect: http://127.0.0.1:'+port));

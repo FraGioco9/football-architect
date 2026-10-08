@@ -1,12 +1,16 @@
-# Football Architect
+# Football Architect — base minimale
 
-Offline single-player football management simulation.
+Un prototipo **locale e offline** con tre pagine: menu iniziale, scelta della squadra e simulazione del trascorrere del tempo.
 
-## Avvio locale
+- Otto Paesi reali, 20 club originali e inventati per Paese.
+- Scelta della squadra, data reale di avvio, avanzamento di giorni/settimane/mesi e simulazione continua interrompibile.
+- **Non esistono incontri, calendari di partite, risultati, classifiche, motori partita o altri moduli manageriali.**
+- La singola sessione minimale viene conservata nel browser con la chiave `football-architect:minimal:v1`.
+- I vecchi salvataggi IndexedDB delle versioni precedenti **non vengono aperti, migrati, sovrascritti o cancellati**.
 
-Requisito: **Node.js 18+**. La build corrente è verificata con Node 20 e Node 24.
+## Avvio su Windows
 
-Su Windows:
+Node.js 20+ (nessuna dipendenza da installare):
 
 ```powershell
 git clone https://github.com/FraGioco9/football-architect.git
@@ -14,41 +18,12 @@ cd football-architect
 node .\server.mjs
 ```
 
-Poi apri:
+Apri http://127.0.0.1:2000.
 
-```text
-http://127.0.0.1:2000
+## Test
+
+```powershell
+node --test .\tests\minimal-core.test.mjs
 ```
 
-
-Non servono Docker, build, concatenazione di file base64 o `npm install`.
-
-
-## Calendario carriera
-
-La carriera usa date di calendario reali:
-
-- una nuova carriera parte dalla data corrente;
-- **Continua** avanza di un solo giorno per click;
-- le giornate di campionato hanno una data precisa e vengono simulate soltanto quando quella data viene raggiunta;
-- allenamento, recupero medico e scadenze collegate al calendario seguono il tempo della carriera;
-- le date sono salvate con la carriera e mostrate nell'interfaccia;
-- tra due stagioni è previsto un intervallo di 21 giorni, poi la prima giornata della nuova stagione è fissata 7 giorni dopo.
-
-## Modifiche e test locali
-
-Il gioco è direttamente nel repository:
-
-- `index.html`
-- `server.mjs`
-- `assets/`
-- `src/`
-
-Per provare una modifica:
-
-1. avvia `node .\server.mjs`;
-2. modifica i file in `src\`;
-3. aggiorna il browser;
-4. verifica il comportamento a `http://127.0.0.1:2000`.
-
-I salvataggi delle carriere sono nel profilo del browser tramite IndexedDB.
+Nessun deploy incluso. Nessuna roadmap o documentazione del vecchio gestionale inclusa nel codice.
