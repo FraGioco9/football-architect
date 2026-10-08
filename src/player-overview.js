@@ -9,6 +9,7 @@ import {scoutingEnabled,scoutingEstimate} from './domain/career-scouting.js';
 import {displayCareerMoney} from './domain/career-locale.js';
 import {renderPlayerAttributesPanel} from './player-attributes-panel.js';
 import {renderPlayerPerformancePanel,renderPlayerCareerPanel} from './player-career-panel.js';
+import {renderPlayerContractPanel,renderPlayerActions} from './player-contract-panel.js';
 
 export const PLAYER_PROFILE_TABS=Object.freeze([
  {id:'overview',it:'Panoramica',en:'Overview'},
@@ -38,9 +39,7 @@ export function renderPlayerOverviewPage(w,ui){
  const tab=PLAYER_PROFILE_TABS.some(item=>item.id===ui.playerTab)?ui.playerTab:'overview';
  const tabLabel=item=>esc(item[en?'en':'it']);
  const placeholder=(it,enText)=>`<div class="plyr051-empty"><p>${locale(lang,it,enText)}</p></div>`;
- const deferredPanels={
-   contract:placeholder('I dettagli saranno collegati al sistema ufficiale dei contratti.','Contract details will be connected to the official contracts system.')
- };
+
  const player=w.players.find(p=>p.id===id);
  if(!player)return `<div class="plyr051-page"><h1>${locale(lang,'Calciatore non disponibile','Player unavailable')}</h1><button type="button" class="btn btn-outline" data-action="player-back">${locale(lang,'Torna alla rosa','Back to squad')}</button></div>`;
  const identity=player.identity??{},owned=player.clubId===w.clubId;
@@ -70,6 +69,7 @@ export function renderPlayerOverviewPage(w,ui){
  const attributePanel=tab==='attributes'?renderPlayerAttributesPanel(w,player,ui,{report}):'';
  const performancePanel=tab==='performance'?renderPlayerPerformancePanel(w,player,ui):'';
  const careerPanel=tab==='career'?renderPlayerCareerPanel(w,player,ui):'';
+ const contractPanel=tab==='contract'?renderPlayerContractPanel(w,player,ui):'';
  const scoutNote=!owned?`<p class="plyr051-note" role="status">${locale(lang,
    'Le valutazioni e il valore sono mostrati solo come stime quando esiste un rapporto di scouting. I dati non conosciuti restano nascosti.',
    'Ratings and value appear as estimates only when a scouting report exists. Unknown data remain hidden.')}</p>`:'';
@@ -126,6 +126,7 @@ export function renderPlayerOverviewPage(w,ui){
        info(locale(lang,'Ingaggio settimanale','Weekly wage'),wages))}
    </div>
    </section>
-   ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${item.id==='attributes'?attributePanel:item.id==='performance'?performancePanel:item.id==='career'?careerPanel:deferredPanels[item.id]}</section>`).join('')}
+   ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${item.id==='attributes'?attributePanel:item.id==='performance'?performancePanel:item.id==='career'?careerPanel:contractPanel}</section>`).join('')}
+   ${renderPlayerActions(w,player,ui)}
  </div>`;
 }
