@@ -24,7 +24,7 @@ export function planAISubstitutions(state,{teamId,second=state.currentSecond,pha
   const minute=second/60;
   const isInjured = p => injuredPlayerIds.some(pid=>String(pid)===String(p.id));
   const estimatedFitness = p => Math.max(0,p.fitness-Math.max(0,minute)*0.18);
-  const isAttacker = p => ['RW','LW','RM','LM','CAM','CF','ST'].includes(p.position);
+  const isAttacker = p => ['RW','LW','RM','LM','CAM','ST'].includes(p.position);
   const threshold = scoreDifference<0 ? 82 : scoreDifference>0 ? 74 : 77;
   const exhausted=team.onField.map(pid=>team.players.find(p=>String(p.id)===String(pid)))
     .filter(p=>p.position!=='GK' || p.fitness<20 || isInjured(p))
