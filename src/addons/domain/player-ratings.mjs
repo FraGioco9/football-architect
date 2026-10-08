@@ -1,9 +1,9 @@
 /** PLY-REBUILD PLYR-04 — positional ratings derived from attribute schema v2. */
 import {validateAttributes,clampAttribute} from './player-attributes.mjs';
 
-const posKeys=['GK','RB','LB','CB','RWB','LWB','CDM','CM','RM','LM','CAM','RW','LW','CF','ST'];
+const posKeys=['GK','RB','LB','CB','RWB','LWB','CDM','CM','RM','LM','CAM','RW','LW','ST'];
 export const POSITIONS=Object.freeze(posKeys);
-const aliases={G:'GK',POR:'GK',GOALKEEPER:'GK',TD:'RB',TS:'LB',DC:'CB',DFC:'CB',DCB:'CB',D:'CB',DEF:'CB',DF:'CB',RBK:'RB',LBK:'LB',MED:'CDM',CC:'CM',COC:'CAM',AD:'RW',AS:'LW',DM:'CDM',DMC:'CDM',MC:'CM',MID:'CM',M:'CM',AM:'CAM',AMC:'CAM',ACM:'CAM',ATT:'ST',F:'ST',FW:'ST',STRIKER:'ST',FC:'CF',RF:'RW',LF:'LW',RWM:'RM',LWM:'LM'};
+const aliases={G:'GK',POR:'GK',GOALKEEPER:'GK',TD:'RB',TS:'LB',DC:'CB',DFC:'CB',DCB:'CB',D:'CB',DEF:'CB',DF:'CB',RBK:'RB',LBK:'LB',MED:'CDM',CC:'CM',COC:'CAM',AD:'RW',AS:'LW',DM:'CDM',DMC:'CDM',MC:'CM',MID:'CM',M:'CM',AM:'CAM',AMC:'CAM',ACM:'CAM',ATT:'ST',F:'ST',FW:'ST',STRIKER:'ST',RF:'RW',LF:'LW',RWM:'RM',LWM:'LM'};
 export function canonicalPosition(pos){
  const key=String(pos??'').trim().toUpperCase().replace(/[^A-Z]/g,'');
  const normalized=aliases[key]??key;
@@ -28,12 +28,11 @@ const specs={
  CAM:{vision:15,passing:14,decisions:12,ballControl:12,offBall:11,dribbling:9,composure:8,finishing:6,longShots:5,agility:4,teamwork:4},
  LW:{dribbling:15,pace:14,acceleration:13,ballControl:11,crossing:10,finishing:9,agility:8,offBall:7,composure:5,passing:5,vision:3},
  RW:{dribbling:15,pace:14,acceleration:13,ballControl:11,crossing:10,finishing:9,agility:8,offBall:7,composure:5,passing:5,vision:3},
- CF:{offBall:15,finishing:14,ballControl:13,vision:9,decisions:9,composure:9,passing:8,dribbling:6,heading:5,strength:4,anticipation:4,bravery:4},
  ST:{finishing:19,offBall:16,composure:12,ballControl:9,heading:8,acceleration:8,strength:7,anticipation:7,pace:5,bravery:4,decisions:5},
 };
 export const POSITION_WEIGHTS=Object.freeze(Object.fromEntries(Object.entries(specs).map(([p,v])=>[p,Object.freeze({...v})])));
 
-const related=[['RB','LB','RWB','LWB'],['RM','LM','RW','LW'],['ST','CF','CAM'],['CDM','CM','CAM'],['CB','CDM','RB','LB']];
+const related=[['RB','LB','RWB','LWB'],['RM','LM','RW','LW'],['ST','CAM'],['CDM','CM','CAM'],['CB','CDM','RB','LB']];
 export function familiarityPenalty(natural,target){
  natural=canonicalPosition(natural);target=canonicalPosition(target);
  if(natural===target)return 0;

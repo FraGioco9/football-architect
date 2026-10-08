@@ -5,7 +5,7 @@ import {availableRoles,defaultRole,validateRoleChoice} from '../addons/domain/pl
 import {assessRoleFit} from '../addons/domain/player-role-fit.mjs';
 import {suggestAiRolePlan} from '../addons/domain/player-role-plan.mjs';
 const fail=code=>{throw Error(`SIM03_${code}`)};
-const dutyFor=position=>position==='GK'||['CB','RB','LB','CDM'].includes(position)?'defend':['ST','CF','RW','LW'].includes(position)?'attack':'support';
+const dutyFor=position=>position==='GK'||['CB','RB','LB','CDM'].includes(position)?'defend':['ST','RW','LW'].includes(position)?'attack':'support';
 export const careerRolesEnabled=w=>w?.advancedV1?.roleEditorV1?.schemaVersion===1&&w.advancedV1.roleEditorV1.enabled===true;
 const state=w=>{if(!careerRolesEnabled(w))fail('INACTIVE');return w.advancedV1.roleEditorV1;};
 export const defaultSlot=(formation,index)=>{

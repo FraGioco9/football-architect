@@ -31,7 +31,7 @@ const NAMES={
 const alias={IT:'IT',ITA:'IT',ITALY:'IT',EN:'ENG',ENG:'ENG',GB:'ENG',UK:'ENG',ES:'ESP',ESP:'ESP',DE:'GER',GER:'GER',FR:'FRA',FRA:'FRA',NL:'NED',NED:'NED',PT:'POR',POR:'POR',BE:'BEL',BEL:'BEL',BELGIUM:'BEL',BR:'BR',BRA:'BR',BRAZIL:'BR'};
 export const YOUTH_COUNTRIES=Object.freeze(Object.keys(NAMES));
 export function countryKey(value){const v=String(value??'IT').trim().toUpperCase();if(!Object.hasOwn(alias,v))err('UNKNOWN_COUNTRY');return alias[v];}
-const mix=['GK','CB','CM','ST','RB','LW','CDM','CB','CAM','LB','RW','CM','ST','RWB','LM','CF'];
+const mix=['GK','CB','CM','ST','RB','LW','CDM','CB','CAM','LB','RW','CM','ST','RWB','LM'];
 export function youthName(country,seed,clubId,season,serial){const names=NAMES[countryKey(country)],i=drawYouth(seed,clubId,season,serial,'first'),j=drawYouth(seed,clubId,season,serial,'last');return `${names.first[Math.floor(i*names.first.length)]} ${names.last[Math.floor(j*names.last.length)]}`;}
 function createProspect({id:playerId,countryId,clubId,season,seed,serial,emergency=false,position}={}){
  const role=canonicalPosition(position??mix[(serial+season+Math.floor(drawYouth(seed,clubId,season,serial,'pos')*4))%mix.length]);

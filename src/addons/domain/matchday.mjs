@@ -24,7 +24,7 @@ export const FORMATIONS = Object.freeze({
   '41212': ['GK','RB','CB','CB','LB','CDM','RM','CAM','LM','ST','ST'],
   '4222': ['GK','RB','CB','CB','LB','CDM','CDM','CAM','CAM','ST','ST'],
 });
-const POS = new Set(['GK','RB','LB','CB','RWB','LWB','CDM','CM','RM','LM','CAM','RW','LW','CF','ST']);
+const POS = new Set(['GK','RB','LB','CB','RWB','LWB','CDM','CM','RM','LM','CAM','RW','LW','ST']);
 const assert = (ok, code) => { if (!ok) throw new Error(`MATCHDAY_${code}`); };
 const int = (v) => Number.isSafeInteger(v);
 const id = (v) => (typeof v === 'string' && v.trim().length > 0) || (int(v) && v > 0);

@@ -14,7 +14,7 @@ import {hasCareerTraining} from './career-training.js';
 const fail=code=>{throw Error(`CAREER_YOUTH_${code}`);};
 const country=w=>countryKey(w.countryId);
 const squadCap=32, academyCap=18, minimum=18;
-const nativePositions={GK:'POR',CB:'DC',RB:'TD',RWB:'TD',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',RM:'AD',LM:'AS',CAM:'COC',RW:'AD',LW:'AS',CF:'ATT',ST:'ATT'};
+const nativePositions={GK:'POR',CB:'DC',RB:'TD',RWB:'TD',LB:'TS',LWB:'TS',CDM:'MED',CM:'CC',RM:'AD',LM:'AS',CAM:'COC',RW:'AD',LW:'AS',ST:'ATT'};
 const finiteId=n=>Number.isSafeInteger(n)&&n>0;
 const active=w=>w?.advancedV1?.enabled===true&&w.advancedV1?.youthV1?.schemaVersion===1;
 export const hasCareerYouth=active;
@@ -182,7 +182,7 @@ export function alignCareerYouthMedical(w){
 }
 export function careerYouthSummary(w){
  if(!active(w))return null;const y=own(w),academy=y.academy[String(w.clubId)]??[];
- return {season:w.season,academyProgram:y.academyProgram,academy:structuredClone(academy).sort((a,b)=>b.potential-a.potential||b.ovr-a.ovr),
+ return {season:w.season,academyProgram:y.academyProgram,academy:structuredClone(academy).sort((a,b)=>a.age-b.age||String(a.name).localeCompare(String(b.name))||String(a.id).localeCompare(String(b.id))),
   retired:y.retired.filter(p=>String(p.clubId)===String(w.clubId)).slice(-14).reverse(),
   allRetired:y.retired.length,totalAcademy:academyMembers(y).length,
   events:y.events.filter(e=>String(e.clubId)===String(w.clubId)).slice(-12).reverse(),

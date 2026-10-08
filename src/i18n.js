@@ -260,7 +260,6 @@ Tutti i giocatori di questo campionato sono inventati.|Every player in this leag
 Tutti i ruoli|All positions
 CLUB ATTUALE|CURRENT CLUB
 POS.|POS.
-POT.|POT.
 VALORE|VALUE
 Dettagli|Details
 Nessun giocatore trovato con questi filtri.|No players match the current filters.
@@ -347,7 +346,6 @@ Simulazione gestionale|Management simulation
 SCHEDA CALCIATORE|PLAYER PROFILE
 VALUTAZIONE|OVERALL
 GENERALE|RATING
-POTENZIALE|POTENTIAL
 VALORE DI MERCATO|MARKET VALUE
 INGAGGIO / SETTIMANA|WAGE / WEEK
 CONTRATTO|CONTRACT
