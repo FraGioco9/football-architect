@@ -5,6 +5,8 @@ import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,SAVE_KEY} from '../src/simulation.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
 import {layout,homePage,managerPage,teamsPage,careersPage,settingsPage,simulationPage} from '../src/ui-pages.js';
+import {languagePicker} from '../src/language-picker.js';
+import {icon} from '../src/icons.js';
 
 class FakeDB{
  constructor(){this.data=new Map();this.objectStoreNames={contains:key=>this.data.has(key)};}
@@ -222,4 +224,47 @@ test('all eight countries and 160 teams remain available without game fixtures',
  assert.doesNotMatch(main,/simulateMatch|fixtureIsDue|playMatch|matchEngine/);
  assert.match(main,/async function begin\(\)\{\r?\n if\(busy\|\|/);
  assert.match(main.replace(/\r?\n/g,'\r\n'),/async function begin\(\)\{\r?\n if\(busy\|\|/); // Windows CRLF regression
+});
+
+test('pre-reset language combobox and SVG icon set are consistent in IT and EN',()=>{
+ const it=layout(homePage({rows:[],activeId:null},'it'),'it','',true);
+ const en=layout(homePage({rows:[],activeId:null},'en'),'en','',false);
+ assert.match(it,/class="language-picker language-picker-home"/);
+ assert.match(it,/class="language-combobox"/);
+ assert.match(it,/role="combobox"/);
+ assert.match(it,/aria-haspopup="listbox"/);
+ assert.match(it,/aria-expanded="true"/);
+ assert.match(it,/role="listbox"/);
+ assert.match(it,/Italiano/);
+ assert.match(it,/English/);
+ assert.match(en,/aria-expanded="false"/);
+ assert.doesNotMatch(en,/<select/);
+ assert.match(it,/data-action="new"[^>]*>[\s\S]*?<svg/);
+ assert.match(it,/data-action="settings"[^>]*>[\s\S]*?<svg/);
+ assert.match(it,/class="menu-chevron"><svg/);
+ assert.doesNotMatch(it,/<span class="option-icon"[^>]*>[+▤⚙]/);
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(sheet,/\.language-listbox/);
+ assert.match(sheet,/\.language-combobox:focus-visible/);
+ assert.match(sheet,/\.language-option\[aria-selected="true"\]/);
+ assert.match(sheet,/\.fa-icon/);
+});
+test('language picker remains independent of career save state',()=>{
+ const first=languagePicker('it',true),second=languagePicker('en',false);
+ assert.match(first,/data-value="en"/);
+ assert.match(second,/data-value="it"/);
+ assert.match(first,/aria-selected="true"/);
+ assert.match(icon('shield',18),/<svg/);
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(controller,/case 'language-toggle'/);
+ assert.match(controller,/case 'language-option'/);
+ assert.match(controller,/event\.key==='Escape'/);
+ assert.match(controller,/event\.key==='ArrowDown'/);
+ assert.doesNotMatch(controller,/case 'legacy'/);
+});
+test('only live route modules are published by the offline server',()=>{
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.ok(server.includes("'/src/icons.js'"));
+ assert.ok(server.includes("'/src/language-picker.js'"));
+ assert.ok(!server.includes("'/src/legacy.js'"));
 });
