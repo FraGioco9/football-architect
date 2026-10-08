@@ -59,3 +59,30 @@
 .plyr052-attributes button:focus-visible,.plyr052-select:focus-visible{outline:2px solid var(--color-accent,#67b5dc);outline-offset:3px}
 @media(max-width:800px){.plyr052-layout{grid-template-columns:minmax(0,1fr)}.plyr052-insights{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.plyr052-list,.plyr052-insight,.plyr052-changes,.plyr052-compare{padding:12px}.plyr052-insights{grid-template-columns:minmax(0,1fr)}.plyr052-row{grid-template-columns:minmax(100px,1.15fr) minmax(45px,1fr) 35px;gap:6px}.plyr052-row>span{font-size:12px}.plyr052-groups{gap:5px}.plyr052-group{padding:9px 11px;font-size:12px}}
+
+/* REC-03 — original sourced statistics and career history; never assume missing seasons. */
+.plyr053-performance,.plyr053-career{display:grid;gap:16px;min-width:0}
+.plyr053-filters{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.plyr053-filters label{display:grid;gap:7px;font-size:12px;color:var(--color-text-muted,var(--text-muted,#98a6b5))}
+.plyr053-filters select{min-height:42px;max-width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--border-color,var(--color-border,#354150));font:inherit;color:inherit;background:var(--color-surface,#273746)}
+.plyr053-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.plyr053-stat,.plyr053-block{min-width:0;border:1px solid var(--border-color,var(--color-border,#354150));border-radius:12px;padding:14px;background:var(--color-surface-raised,#1e2732)}
+.plyr053-stat{display:grid;gap:7px}
+.plyr053-stat span{font-size:12px;color:var(--color-text-muted,var(--text-muted,#98a6b5))}
+.plyr053-stat strong{font-size:17px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.plyr053-block{display:grid;gap:12px}
+.plyr053-block h3{margin:0;font-size:16px}
+.plyr053-scroll{overflow:auto;max-width:100%;scrollbar-gutter:stable}
+.plyr053-scroll table{border-collapse:collapse;width:100%;min-width:510px}
+.plyr053-scroll th,.plyr053-scroll td{font-size:12px;text-align:left;border-bottom:1px solid var(--border-color,var(--color-border,#354150));padding:10px 12px;white-space:nowrap}
+.plyr053-scroll th{color:var(--color-text-muted,var(--text-muted,#98a6b5));font-weight:600}
+.plyr053-scroll tr:last-child td{border-bottom:0}
+.plyr053-coverage,.plyr053-empty{font-size:12px;line-height:1.6;color:var(--color-text-muted,var(--text-muted,#98a6b5));margin:0}
+.plyr053-empty{border:1px solid var(--border-color,var(--color-border,#354150));padding:18px;border-radius:12px}
+.plyr053-moves{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plyr053-moves li{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px}
+.plyr053-moves li>span{overflow-wrap:anywhere}
+.plyr053-performance select:focus-visible,.plyr053-scroll:focus-visible{outline:2px solid var(--color-accent,#67b5dc);outline-offset:2px}
+@media(max-width:900px){.plyr053-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.plyr053-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.plyr053-filters label{flex:1 1 170px;min-width:0}}
+@media(max-width:380px){.plyr053-stats{grid-template-columns:minmax(0,1fr)}}
