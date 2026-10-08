@@ -38,131 +38,132 @@ export function homePage(catalog,lang){
  </section></div>`;
 }
 
-/** Shared page header: a stable title, a compact back control and a clear page context. */
-export function pageHeader({lang,iconName,titleIt,titleEn,backAction='home',backIt='Torna al menu',backEn='Back to menu',sectionIt='',sectionEn='',step=null}){
- const title=tr(lang,titleIt,titleEn),back=tr(lang,backIt,backEn);
- const context=sectionIt?tr(lang,sectionIt,sectionEn):'';
- return `<header class="page-header">
-  <div class="page-header-nav">
-   <button class="page-back" type="button" data-action="${backAction}" aria-label="${esc(back)}">${icon('arrow-left',17)}<span>${esc(back)}</span></button>
-   ${context?`<span class="page-header-context">${esc(context)}</span>`:''}
-  </div>
-  <div class="page-title-row">
-   <span class="page-title-icon" aria-hidden="true">${icon(iconName,25)}</span>
-   <h1 class="page-title">${esc(title)}</h1>
-   ${step!==null?`<span class="page-step" aria-label="${tr(lang,'Passaggio','Step')} ${step} ${tr(lang,'di','of')} 2">${step}<span aria-hidden="true">/</span>2</span>`:''}
-  </div>
- </header>`;
-}
 
+/* The original pre-reset onboarding layout, using current minimal team data. */
 export function managerPage(draft,lang){
- return `${pageHeader({lang,iconName:'plus-circle',titleIt:'Nuova carriera',titleEn:'New career',sectionIt:'ALLENATORE',sectionEn:'MANAGER',step:1})}
- <section class="page-panel panel" aria-labelledby="manager-section-title">
-  <div class="page-section-head">
-   <span class="page-section-icon" aria-hidden="true">${icon('shield',19)}</span>
-   <h2 id="manager-section-title">${tr(lang,'Allenatore','Manager')}</h2>
-  </div>
-  <p class="page-panel-description">${tr(lang,'Scegli il nome del tuo allenatore. La carriera verrà salvata soltanto dopo aver scelto la squadra.','Choose your manager name. The career will only be saved after you select a club.')}</p>
-  <form id="manager-form" class="page-form">
-   <label for="manager-name">${tr(lang,'Nome allenatore','Manager name')}</label>
-   <input id="manager-name" name="managerName" required maxlength="80" autocomplete="off" value="${esc(draft.managerName)}" placeholder="${tr(lang,'Nome e cognome','First and last name')}">
-   <div class="page-panel-actions">
-    ${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost')}
-    <button type="submit" class="btn primary"><span>${tr(lang,'Scegli la squadra','Choose club')}</span>${icon('chevron-right',17)}</button>
+ const league=leagueById(draft.countryId),clubs=getLeagueClubs(league.id);
+ const chosen=clubs.find(c=>c.id===draft.clubId)??clubs[0],loc=lang==='en'?'en':'it';
+ return `<div class="onboarding restored-onboarding">
+ <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
+ <div class="onboard-wrap">
+  <div class="onboard-header"><span class="pretitle">${tr(lang,'NUOVA CARRIERA','NEW CAREER')}</span>
+   <h1>${tr(lang,'Costruisci la tua carriera','Build your career')}</h1>
+   <div class="onboard-intro-row"><p>${tr(lang,'Scegli una nazione, una squadra e il tuo allenatore.','Choose a country, a club and your manager.')}</p>
+   <button class="btn ghost" type="button" data-action="cancel-setup">${icon('arrow-left',16)} ${tr(lang,'Annulla','Cancel')}</button></div></div>
+  <section class="league-pick" aria-labelledby="league-pick-title">
+   <div class="league-pick-head"><div><span class="eyebrow">${tr(lang,'1 · NAZIONE E CAMPIONATO','1 · COUNTRY AND LEAGUE')}</span>
+    <h2 id="league-pick-title">${tr(lang,'Scegli dove iniziare','Choose where to start')}</h2></div>
+    <span class="league-pick-count">${LEAGUES.length} ${tr(lang,'NAZIONI','COUNTRIES')}</span></div>
+   <div class="league-pick-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
+   ${LEAGUES.map(l=>`<button type="button" class="league-pick-option ${l.id===league.id?'active':''}" data-action="country" data-country="${l.id}" aria-pressed="${l.id===league.id}">
+    <span class="league-flag country-flag" aria-hidden="true">${esc(l.flag)}</span><span class="league-pick-text"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>${l.id===league.id?icon('check',15):''}</button>`).join('')}
    </div>
-  </form>
- </section>`;
-}
-
-export function clubList(draft,lang){
- const selected=club(draft.countryId,draft.clubId);
- const teams=getLeagueClubs(draft.countryId).filter(c=>(c.name+' '+c.city).toLocaleLowerCase().includes((draft.query??'').toLocaleLowerCase()));
- return teams.length?teams.map(c=>`<button type="button" class="club ${selected?.id===c.id?'selected':''}" data-action="select" data-id="${c.id}" aria-pressed="${selected?.id===c.id}">
- ${crest(c)}<span class="club-copy"><strong>${esc(c.name)}</strong><small>${esc(c.city)}</small></span><span aria-hidden="true">${icon(selected?.id===c.id?'check':'chevron-right',16)}</span></button>`).join(''):`<p class="muted">${tr(lang,'Nessuna squadra trovata','No clubs found')}</p>`;
-}
-export function teamsPage(draft,lang){
- const selected=club(draft.countryId,draft.clubId);
- return `${pageHeader({lang,iconName:'plus-circle',titleIt:'Nuova carriera',titleEn:'New career',backAction:'setup-back',backIt:"Torna all'allenatore",backEn:'Back to manager',sectionIt:'SQUADRA',sectionEn:'TEAM',step:2})}
- <section class="page-panel panel" aria-labelledby="club-section-title">
-  <div class="page-section-head">
-   <span class="page-section-icon" aria-hidden="true">${icon('shield',19)}</span>
-   <h2 id="club-section-title">${tr(lang,'Scegli una squadra','Choose a club')}</h2>
+  </section>
+  <div class="onboard-grid">
+   <section class="onboard-clubs" aria-labelledby="clubs-title">
+    <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'2 · Scegli il club','2 · Choose your club')}</h2>
+     <span>${clubs.length} ${tr(lang,'SOCIETÀ','CLUBS')}</span></div>
+    <div class="club-pick-grid" id="clubs">${clubs.map(c=>`<button type="button" class="club-pick ${c.id===chosen.id?'chosen':''}" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen.id}">
+     ${crest(c)}<span class="pick-detail"><strong>${esc(c.name)}</strong><small>${esc(c.city)} · ${esc(league.country[loc])}</small></span>
+     ${c.id===chosen.id?`<span class="picked-check">${icon('check',13)}</span>`:''}</button>`).join('')}</div>
+   </section>
+   <aside class="onboard-aside">
+    <div class="selected-club-glow" style="--club-light:${esc(chosen.colors[0])}"></div>
+    <div class="selected-pretitle">${tr(lang,'CLUB SELEZIONATO','SELECTED CLUB')}</div>
+    <div class="selected-crest">${crest(chosen)}</div>
+    <h2>${esc(chosen.name)}</h2>
+    <p class="selected-city">${esc(chosen.city)} · ${esc(league.country[loc])} · ${tr(lang,'Fondato nel','Founded')} ${chosen.founded}</p>
+    <p class="selected-competition">${esc(league.competition)}</p>
+    <div class="selected-stats">
+      <div><span>${tr(lang,'REPUTAZIONE','REPUTATION')}</span><strong>${chosen.reputation}<small>/100</small></strong></div>
+      <div><span>${tr(lang,'STADIO','STADIUM')}</span><strong>${(chosen.capacity/1000).toFixed(1)}k</strong></div>
+      <div><span>${tr(lang,'CITTÀ','CITY')}</span><strong class="selected-stat-city">${esc(chosen.city)}</strong></div>
+    </div>
+    <form id="manager-form" class="onboard-manager-form">
+     <label class="input-label" for="manager-name">${tr(lang,'3 · NOME ALLENATORE','3 · MANAGER NAME')}</label>
+     <input class="text-field" id="manager-name" name="managerName" maxlength="80" required autocomplete="off"
+      value="${esc(draft.managerName)}" placeholder="${tr(lang,'Inserisci il nome dell’allenatore','Enter manager name')}">
+     <p id="manager-name-error" class="field-error" role="alert" hidden>${tr(lang,'Inserisci il nome dell’allenatore per iniziare.','Enter the manager name to start.')}</p>
+     <button class="btn primary begin-button" type="submit">${tr(lang,'Inizia carriera','Start career')} ${icon('chevron-right',18)}</button>
+    </form>
+    <p class="hint">${tr(lang,'Il salvataggio verrà creato solo dopo la conferma.','The save will only be created after confirmation.')}</p>
+   </aside>
   </div>
-  <p class="page-panel-description">${esc(draft.managerName)} · ${tr(lang,'8 Paesi e 160 squadre inventate','8 countries and 160 fictional clubs')}</p>
-  <div class="countries" role="group" aria-label="${tr(lang,'Nazione','Country')}">
-   ${LEAGUES.map(l=>`<button type="button" data-action="country" data-country="${l.id}" aria-pressed="${l.id===draft.countryId}">${esc(l.flag)} ${esc(l.country[lang])}</button>`).join('')}
-  </div>
-  <label class="search-label" for="search">${tr(lang,'Cerca una squadra','Search clubs')}</label>
-  <input type="search" id="search" autocomplete="off" placeholder="${tr(lang,'Nome o città','Name or city')}" value="${esc(draft.query)}">
-  <div id="clubs" class="clubs" aria-live="polite">${clubList(draft,lang)}</div>
-  <div class="selection"><span>${selected?esc(selected.name):tr(lang,'Nessuna squadra selezionata','No club selected')}</span>
-   ${button('start-career',tr(lang,'Inizia carriera','Start career'),'primary',selected?'':'disabled')}
-  </div>
- </section>`;
+ </div></div>`;
 }
-
+export function teamsPage(draft,lang){return managerPage(draft,lang);}
+export function clubList(draft,lang){return managerPage(draft,lang);}
 export function careersPage(catalog,lang){
- const rows=catalog.rows;
- return `${pageHeader({lang,iconName:'folder-open',titleIt:'Le mie carriere',titleEn:'My careers',sectionIt:'SALVATAGGI',sectionEn:'SAVED CAREERS'})}
- <section class="page-panel panel" aria-labelledby="career-section-title">
-  <div class="page-section-head page-section-head-split">
-   <div class="page-section-label"><span class="page-section-icon" aria-hidden="true">${icon('folder-open',19)}</span>
-    <h2 id="career-section-title">${tr(lang,'Carriere salvate','Saved careers')}</h2>
-    <span class="page-count" aria-label="${tr(lang,'Carriere','Careers')}: ${rows.length}">${rows.length}</span>
+ const valid=catalog.rows;
+ const cards=valid.map(row=>{
+  const m=row.meta,team=m&&club(m.countryId,m.clubId),l=m&&leagueById(m.countryId);
+  const healthy=row.status==='ok',active=row.id===catalog.activeId,id=esc(row.id);
+  const title=esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'));
+  return `<article class="career-card ${active&&healthy?'career-active':''}" aria-label="${title}">
+   <div class="career-card-top">
+    <div><span class="overline">${esc(l?.flag??'')} ${esc(l?.country?.[lang]??'')}${l?' · '+esc(l.competition):''}</span>
+    <h2>${title}</h2></div>
+    <span class="tag status-chip ${!healthy?'tag-danger':active?'tag-green':'tag-muted'}">${!healthy?tr(lang,'Da verificare','Needs attention'):active?tr(lang,'Attiva','Active'):tr(lang,'Disponibile','Available')}</span>
    </div>
-   ${button('new',tr(lang,'Nuova carriera','New career'),'secondary')}
-  </div>
-  ${rows.length?`<div class="career-list">${rows.map(row=>{
-   const m=row.meta,team=m&&club(m.countryId,m.clubId),ok=row.status==='ok',id=esc(row.id);
-   return `<article class="career-row ${ok?'':'corrupt'}">${crest(team)}<div class="career-copy">
-    <strong>${esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'))}</strong><small>${esc(m?.managerName??'—')} · ${esc(team?.name??'—')} ${ok?'· '+esc(seasonLabel(row.state.date)):''}</small>
-    <small>${ok?tr(lang,'Data','Date')+' '+esc(fmtDate(row.state.date,lang))+' · '+tr(lang,'Salvata','Saved')+' '+esc(fmtDate(m.updatedAt,lang,true)):tr(lang,'Salvataggio danneggiato: caricamento disabilitato','Corrupt save: loading disabled')}</small>
+   <div class="career-meta">
+    <span>${tr(lang,'Club','Club')}: <b>${esc(team?.name??'—')}</b></span>
+    <span>${tr(lang,'Allenatore','Manager')}: <b>${esc(m?.managerName??'—')}</b></span>
+    <span>${tr(lang,'Stagione','Season')}: <b>${healthy?esc(seasonLabel(row.state.date)):'—'}</b></span>
+    <span>${tr(lang,'Data di gioco','Game date')}: <b>${healthy?esc(fmtDate(row.state.date,lang)):'—'}</b></span>
+    <span>${tr(lang,'Ultimo salvataggio','Last saved')}: <b>${esc(fmtDate(m?.updatedAt,lang,true))}</b></span>
    </div>
-   <div class="row-actions">${ok?button('load',tr(lang,'Carica','Load'),'secondary',`data-id="${id}"`):`<span class="corrupt-tag" role="img" aria-label="${tr(lang,'Danneggiata','Corrupt')}">${icon('alert-triangle',19)}</span>`}
-    ${ok?button('rename',tr(lang,'Rinomina','Rename'),'ghost',`data-id="${id}"`):''}
-    ${button('export',tr(lang,'Esporta','Export'),'ghost',`data-id="${id}"`)}
-    ${button('delete',tr(lang,'Elimina','Delete'),'danger',`data-id="${id}"`)}
-   </div></article>`;
-  }).join('')}</div>`:`<div class="page-empty-state">
-   <span class="page-empty-icon" aria-hidden="true">${icon('folder-open',28)}</span>
-   <p>${tr(lang,'Non hai ancora carriere. Crea una carriera per iniziare.','You have no saved careers yet. Create one to get started.')}</p>
-   ${button('new',tr(lang,'Nuova carriera','New career'),'primary')}
-  </div>`}
-  <div class="page-footer-actions">
-   ${button('import',tr(lang,'Importa JSON','Import JSON'),'ghost')}
-   <input id="import-file" type="file" accept="application/json,.json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
-  </div>
- </section>`;
+   ${healthy?'':`<p class="career-warning" role="status">${tr(lang,'Salvataggio danneggiato: caricamento disabilitato. Puoi esportare o eliminare questa carriera.','Corrupt save: loading disabled. You can export or delete this career.')}</p>`}
+   <div class="career-actions">
+     ${healthy?button('load',active?tr(lang,'Continua','Continue'):tr(lang,'Apri','Open'),'secondary',`data-id="${id}"`):''}
+     ${button('export',tr(lang,'Esporta','Export'),'ghost',`data-id="${id}"`)}
+     ${button('delete',tr(lang,'Elimina','Delete'),'danger',`data-id="${id}"`)}
+     ${healthy?`<details class="career-more"><summary>${tr(lang,'Altre azioni','More actions')} ${icon('chevron-down',15)}</summary>
+        <div class="career-more-panel">${button('rename',tr(lang,'Rinomina','Rename'),'ghost',`data-id="${id}"`)}</div></details>`:''}
+   </div>
+  </article>`;
+ }).join('');
+ return `<div class="restored-careers">
+  <header class="career-hub-heading">
+   <span class="pretitle">${tr(lang,'SALVATAGGI LOCALI','LOCAL SAVES')}</span>
+   <div class="restored-section-head"><div><h1>${tr(lang,'Le tue carriere','Your careers')}</h1><p>${tr(lang,'Apri una carriera o creane una nuova.','Open a career or create a new one.')}</p></div>
+   <div class="career-head-actions">${button('new',tr(lang,'Nuova carriera','New career'),'primary')} ${button('import',tr(lang,'Importa','Import'),'ghost')}</div></div>
+   <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
+  </header>
+  <div class="career-grid">${cards||`<div class="panel career-empty"><h2>${tr(lang,'Nessuna carriera salvata','No saved careers')}</h2>
+    <p>${tr(lang,'Crea la prima carriera per iniziare.','Create your first career to get started.')}</p></div>`}</div>
+ </div>`;
 }
-
 export function settingsPage(lang){
- return `${pageHeader({lang,iconName:'settings',titleIt:'Impostazioni',titleEn:'Settings',sectionIt:'PREFERENZE',sectionEn:'PREFERENCES'})}
- <section class="page-panel panel" aria-labelledby="settings-language-title">
-  <div class="page-section-head">
-   <span class="page-section-icon" aria-hidden="true">${icon('flag',19)}</span>
-   <h2 id="settings-language-title">${tr(lang,'Lingua','Language')}</h2>
+ const info=(title,detail)=>`<div class="setting-fact"><span>${esc(title)}</span><b>${esc(detail)}</b></div>`;
+ const option=(action,iconName,title,desc)=>`<button class="settings-action" type="button" data-action="${action}">
+  ${icon(iconName,22)}<span><strong>${esc(title)}</strong><small>${esc(desc)}</small></span>${icon('chevron-right',17)}</button>`;
+ return `<div class="restored-settings">
+  <header class="career-hub-heading"><span class="pretitle">${tr(lang,'PREFERENZE','PREFERENCES')}</span>
+   <h1>${tr(lang,'Impostazioni e salvataggi','Settings and saves')}</h1><p>${tr(lang,'Le tue carriere esistono soltanto su questo computer, senza account e senza servizi esterni.','Your careers are stored on this computer, without accounts or external services.')}</p></header>
+  <div class="settings-grid">
+   <section class="settings-panel panel"><h2>${tr(lang,'Lingua','Language')}</h2>
+    <div class="settings-language"><div class="setting-fact"><span>${tr(lang,'LINGUA ATTUALE','CURRENT LANGUAGE')}</span><b>${lang==='en'?'English':'Italiano'}</b></div>
+    <button class="btn secondary" data-action="language-focus" type="button">${icon('flag',17)} ${tr(lang,'Cambia lingua','Change language')}</button></div></section>
+   <section class="settings-panel panel"><h2>${tr(lang,'La tua carriera','Your career')}</h2>
+    ${info(tr(lang,'SALVATAGGI','SAVES'),tr(lang,'IndexedDB locale','Local IndexedDB'))}
+    ${info(tr(lang,'ACCOUNT','ACCOUNT'),tr(lang,'Non richiesto','Not required'))}
+    ${info(tr(lang,'CONNESSIONE','CONNECTION'),tr(lang,'Offline','Offline'))}</section>
+   <section class="settings-panel panel"><h2>${tr(lang,'Gestione dati','Data management')}</h2>
+    <p class="settings-panel-note">${tr(lang,'Esporta una copia o importa una carriera esistente.','Export a copy or import an existing career.')}</p>
+    <div class="settings-actions">
+      ${option('careers','folder-open',tr(lang,'Gestisci carriere','Manage careers'),tr(lang,'Carica, rinomina o elimina un salvataggio.','Load, rename or delete a save.'))}
+      ${option('new','plus-circle',tr(lang,'Nuova carriera','New career'),tr(lang,'Inizia senza cancellare quelle esistenti.','Start without deleting existing careers.'))}
+      ${option('import','upload',tr(lang,'Importa carriera','Import career'),tr(lang,'Importa un salvataggio JSON.','Import a JSON save.'))}
+      <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
+    </div></section>
+   <section class="settings-panel panel"><h2>${tr(lang,'Informazioni sul gioco','About the game')}</h2>
+    <div class="about-grid">
+      <div>${icon('shield',22)}<strong>${tr(lang,'Universo immaginario','Fictional universe')}</strong><p>${tr(lang,'Paesi e città reali; squadre e competizioni inventate.','Real countries and cities; invented clubs and leagues.')}</p></div>
+      <div>${icon('folder-open',22)}<strong>100% offline</strong><p>${tr(lang,'Nessun account, cloud o servizio esterno.','No accounts, cloud or external services.')}</p></div>
+      <div>${icon('calendar',22)}<strong>${tr(lang,'Simulazione calendario','Calendar simulation')}</strong><p>${tr(lang,'Avanzamento del tempo, senza partite.','Time advancement without matches.')}</p></div>
+    </div></section>
   </div>
-  <div class="settings-preference">
-   <div class="settings-preference-copy">
-    <strong>${tr(lang,'Lingua dell’interfaccia','Interface language')}</strong>
-    <p>${tr(lang,'La preferenza è globale e vale per tutte le carriere.','This preference applies to all careers.')}</p>
-   </div>
-   <div class="settings-preference-action">
-    <span class="settings-current-language">${lang==='en'?'EN · English':'IT · Italiano'}</span>
-    <button type="button" class="btn secondary" data-action="language-focus">${icon('settings',16)}<span>${tr(lang,'Cambia lingua','Change language')}</span></button>
-   </div>
-  </div>
- </section>
- <section class="page-panel panel page-panel-secondary" aria-labelledby="settings-storage-title">
-  <div class="page-section-head">
-   <span class="page-section-icon" aria-hidden="true">${icon('folder-open',19)}</span>
-   <h2 id="settings-storage-title">${tr(lang,'Salvataggi','Saved careers')}</h2>
-  </div>
-  <p class="page-panel-description">${tr(lang,'Le carriere sono salvate localmente tramite IndexedDB. Nessun account o cloud.','Careers are stored locally in IndexedDB. No account or cloud required.')}</p>
-  <div class="page-panel-actions">
-   ${button('careers',tr(lang,'Le mie carriere','My careers'),'ghost')}
-  </div>
- </section>`;
+ </div>`;
 }
 
 export function simulationPage(meta,state,lang,playing){
