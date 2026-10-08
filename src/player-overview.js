@@ -8,6 +8,7 @@ import {identityCountryLabel} from './domain/player-identity.js';
 import {scoutingEnabled,scoutingEstimate} from './domain/career-scouting.js';
 import {displayCareerMoney} from './domain/career-locale.js';
 import {renderPlayerAttributesPanel} from './player-attributes-panel.js';
+import {renderPlayerPerformancePanel,renderPlayerCareerPanel} from './player-career-panel.js';
 
 export const PLAYER_PROFILE_TABS=Object.freeze([
  {id:'overview',it:'Panoramica',en:'Overview'},
@@ -38,8 +39,6 @@ export function renderPlayerOverviewPage(w,ui){
  const tabLabel=item=>esc(item[en?'en':'it']);
  const placeholder=(it,enText)=>`<div class="plyr051-empty"><p>${locale(lang,it,enText)}</p></div>`;
  const deferredPanels={
-   performance:placeholder('Le statistiche verranno collegate ai dati ufficiali delle partite.','Performance statistics will be connected to the official match data.'),
-   career:placeholder('Lo storico verrà collegato agli archivi ufficiali della carriera.','Career history will be connected to the official career archives.'),
    contract:placeholder('I dettagli saranno collegati al sistema ufficiale dei contratti.','Contract details will be connected to the official contracts system.')
  };
  const player=w.players.find(p=>p.id===id);
@@ -69,6 +68,8 @@ export function renderPlayerOverviewPage(w,ui){
   ?`${number(player.contract)} ${locale(lang,player.contract===1?'anno':'anni',player.contract===1?'year':'years')}`:'—';
  const wages=owned?money(player.wage,w,lang):'—';
  const attributePanel=tab==='attributes'?renderPlayerAttributesPanel(w,player,ui,{report}):'';
+ const performancePanel=tab==='performance'?renderPlayerPerformancePanel(w,player,ui):'';
+ const careerPanel=tab==='career'?renderPlayerCareerPanel(w,player,ui):'';
  const scoutNote=!owned?`<p class="plyr051-note" role="status">${locale(lang,
    'Le valutazioni e il valore sono mostrati solo come stime quando esiste un rapporto di scouting. I dati non conosciuti restano nascosti.',
    'Ratings and value appear as estimates only when a scouting report exists. Unknown data remain hidden.')}</p>`:'';
@@ -125,6 +126,6 @@ export function renderPlayerOverviewPage(w,ui){
        info(locale(lang,'Ingaggio settimanale','Weekly wage'),wages))}
    </div>
    </section>
-   ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${item.id==='attributes'?attributePanel:deferredPanels[item.id]}</section>`).join('')}
+   ${PLAYER_PROFILE_TABS.filter(item=>item.id!=='overview').map(item=>`<section id="plyr051-panel-${item.id}" class="plyr051-panel" role="tabpanel" aria-labelledby="plyr051-tab-${item.id}" tabindex="0" ${tab===item.id?'':'hidden'}><h2>${tabLabel(item)}</h2>${item.id==='attributes'?attributePanel:item.id==='performance'?performancePanel:item.id==='career'?careerPanel:deferredPanels[item.id]}</section>`).join('')}
  </div>`;
 }
