@@ -81,7 +81,7 @@ export function marketPlayers(w,{countryId='ALL',search='',position='ALL',limit=
  const lower=String(search).trim().toLocaleLowerCase(),clubNames=new Map(marketClubs(w).map(c=>[c.key,c.name.toLocaleLowerCase()])),cands=[...w.players.filter(p=>p.clubId>0).map(p=>({id:playerKey(w,p),player:p,source:w.countryId})),
   ...w.advancedV1.worldV1.leagues.filter(l=>!l.locked).flatMap(l=>l.players.map(p=>({id:p.id,player:p,source:l.countryId})))];
  return cands.filter(({id,player:p,source})=>(countryId==='ALL'||source===countryId)&&(position==='ALL'||p.position===position)&&(!lower||p.name.toLocaleLowerCase().includes(lower)||id.toLocaleLowerCase().includes(lower)||clubNames.get(clubKey(source,p.clubId))?.includes(lower)))
- .sort((a,b)=>b.player.ovr-a.player.ovr||a.id.localeCompare(b.id)).slice(0,limit).map(x=>({id:x.id,name:x.player.name,position:x.player.position,ovr:x.player.ovr,age:x.player.age,countryId:x.source,clubKey:playerInfo(w,x.id).clubKey}));
+ .sort((a,b)=>a.player.name.localeCompare(b.player.name)||a.id.localeCompare(b.id)).slice(0,limit).map(x=>({id:x.id,name:x.player.name,position:x.player.position,ovr:x.player.ovr,age:x.player.age,countryId:x.source,clubKey:playerInfo(w,x.id).clubKey}));
 }
 export const marketExistingWageEUR=(w,globalId)=>playerInfo(w,globalId).player.wage*52;
 export function marketValuation(w,globalId,buyerKey=managedClubKey(w)){
