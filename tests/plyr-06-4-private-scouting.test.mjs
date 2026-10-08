@@ -108,7 +108,7 @@ test('standalone five-tab Overview is qualitative, accessible, with no second re
   const html=renderPlayerOverviewPage(w,{...ui,language:lang});
   const expected=lang==='en'?'Personality and relationships':'Personalità e relazioni';
   assert.ok(html.includes(expected));
-  assert.equal((html.match(/class="plyr051-tab(?:\\s|\")/g)||[]).length,5);
+  assert.equal((html.match(/role="tab" id="plyr051-tab-/g)||[]).length,5);
   assert.equal((html.match(/class="plyr064-trait"/g)||[]).length,7);
   assert.ok(html.includes('role="list"')&&html.includes('role="listitem"'));
   assert.ok(!html.includes('Potenziale')&&!html.includes('Potential'));
