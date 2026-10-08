@@ -8,7 +8,7 @@ import {careerRolesEnabled} from '../domain/career-roles.js';
 import {esc} from '../ui-components.js';
 import {LEAGUES,getLeagueClubs} from '../leagues.js';
 import {ATTRIBUTE_DEFINITIONS} from './domain/player-attributes.mjs';
-import {TRAITS} from './domain/player-personality.mjs';
+import {personalityPlayerView} from '../domain/career-personality.js';
 import {inspectCareerPlayer,currentSeasonStats,toAddonPosition} from './career-bridge.mjs';
 import {medicalAvailability} from './domain/player-medical.mjs';
 import {BUILT_IN_STYLES,TACTIC_FIELDS,STYLE_NAMES,tacticalConflicts} from './domain/team-tactics.mjs';
@@ -37,7 +37,8 @@ export function advancedPage(world,ui){
    <p class="fa-addon-hint">${world.advancedV1?.enabled?tr('Attributi persistenti: contribuiscono realmente alla simulazione delle nuove partite.','Persisted attributes: they affect subsequent official matches.'):tr('Proiezione informativa: i dati completi saranno disponibili nelle prossime partite.','Informational projection: full data will become available in future matches.')}</p>
    ${['technical','mental','physical','goalkeeper'].map(group=>`<h3>${tr(({technical:'Tecnica',mental:'Mentale',physical:'Fisica',goalkeeper:'Portiere'})[group],({technical:'Technical',mental:'Mental',physical:'Physical',goalkeeper:'Goalkeeper'})[group])}</h3><div class="fa-addon-attr-grid">${ATTRIBUTE_DEFINITIONS.filter(d=>d.group===group).map(d=>`<div><span>${label(d.label[lang])}</span><strong>${data.attributes.values[d.key]}</strong></div>`).join('')}</div>`).join('')}
    <h3>${tr('Ruoli suggeriti','Suggested roles')}</h3><p>${data.recommended.slice(0,5).map(r=>`${label(lang==='en'?r.labelEn:r.label)} (${r.overall})`).join(' · ')}</p>
-   <h3>${tr('Personalità proiettata','Projected personality')}</h3><div class="fa-addon-attr-grid">${TRAITS.map(t=>`<div><span>${label(t.label?.[lang]??t.key)}</span><strong>${data.personality.traits[t.key]}</strong></div>`).join('')}</div>
+   <h3>${tr('Personalità osservata','Observed personality')}</h3><div class="fa-addon-attr-grid">${(personalityPlayerView(world,player,{lang,owned:true})?.traits??[]).map(t=>
+    `<div><span>${label(t.label)}</span><strong>${label(t.description)}</strong></div>`).join('')}</div>
    </section>`;
  }else if(tab==='health'){
    const extended=world.advancedV1?.enabled===true;

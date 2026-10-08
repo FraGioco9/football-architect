@@ -5,10 +5,10 @@
 import {clubPlayers} from './selectors.js';
 import {toAddonPosition} from '../addons/career-bridge.mjs';
 import {addMessage} from './history.js';
-import {generatePersonality,readPersonality,validatePersonality,TRAITS,describeTrait} from '../addons/domain/player-personality.mjs';
+import {generatePersonality,readPersonality,validatePersonality,TRAITS} from '../addons/domain/player-personality.mjs';
 import {initialPlayerDynamics,applyPlayerEvent,validateDynamics,inspectLockerRoom,playerInfluence} from '../addons/domain/player-locker-room.mjs';
 import {evaluatePersonalityEffects,matchPerformanceFactor,PERSONALITY_EVENTS} from '../addons/domain/player-personality-effects.mjs';
-import {scoutPersonality} from '../addons/domain/player-personality-scouting.mjs';
+import {scoutPersonality,emptyTraitEvidence,advanceTraitEvidence,validateTraitEvidence} from '../addons/domain/player-personality-scouting.mjs';
 
 const fail=code=>{throw Error(`PLY02_${code}`);};
 const cap=(n,low,high)=>Math.max(low,Math.min(high,n));
@@ -25,8 +25,12 @@ function enroll(w,p){
  const s=state(w),id=String(p.id);
  if(!p.personalityProfile)p.personalityProfile=generatePersonality({...p,id:identity(p)},{seed:w.seed,countryId:origin(w,p)});
  let st=s.playerStates[id];
- if(!st){st=initialPlayerDynamics({...p,position:toAddonPosition(p.position)},{seed:w.seed,countryId:origin(w,p)});s.playerStates[id]=st;}
- else{
+ if(!st){
+  st={...initialPlayerDynamics({...p,position:toAddonPosition(p.position)},{seed:w.seed,countryId:origin(w,p)}),traitEvidence:emptyTraitEvidence()};
+  s.playerStates[id]=st;
+ }else{
+  if(!st.traitEvidence){st={...st,traitEvidence:emptyTraitEvidence(),revision:st.revision+1};s.playerStates[id]=st;}
+  else validateTraitEvidence(st.traitEvidence);
   const morale=exactMorale(p),influence=playerInfluence(p,stableProfile(w,p));
   if(st.morale!==morale||st.influence!==influence){st={...st,morale,influence,revision:st.revision+1};s.playerStates[id]=st;}
  }
@@ -46,11 +50,20 @@ export function enableCareerPersonality(w){
 export function syncCareerPersonality(w){
  if(!personalityEnabled(w))return false;
  const s=state(w),previousCoach=s.coachKey,nextCoach=coachKey(w);
+ const previousWeek=Math.floor(s.lastDay/7),currentWeek=Math.floor(w.advancedV1.clockDay/7);
  let changed=false;
  const managed=own(w),live=new Set(managed.map(p=>String(p.id)));
  for(const id of Object.keys(s.playerStates))if(!live.has(id)){delete s.playerStates[id];changed=true;}
  for(const p of managed){const key=String(p.id),before=s.playerStates[key],st=enroll(w,p);
   if(!before||before!==st)changed=true;
+  if(currentWeek>previousWeek){
+   let evidence=s.playerStates[key].traitEvidence;
+   for(let week=previousWeek+1;week<=currentWeek;week++){
+    evidence=advanceTraitEvidence(evidence,{observationId:`club-week:${w.countryId}:${w.clubId}:${identity(p)}:${week}`,count:2});
+   }
+   s.playerStates[key]={...s.playerStates[key],traitEvidence:evidence,revision:s.playerStates[key].revision+1};
+   changed=true;
+  }
   if(previousCoach!==nextCoach&&before){
    const reset=applyPlayerEvent(st,stableProfile(w,p),{id:`coach-change:${nextCoach}:${identity(p)}:${w.season}:${w.round}`,type:'coach_change'});
    s.playerStates[key]=reset;changed=changed||reset.revision!==st.revision;
@@ -71,23 +84,32 @@ export function validateCareerPersonality(w){
   if(Object.keys(s.playerStates).some(id=>!owned.has(id)))return false;
   for(const p of w.players)if(p.personalityProfile)validatePersonality(p.personalityProfile);
   for(const [id,st] of Object.entries(s.playerStates)){
-   validateDynamics(st);if(st.playerId!==id||st.morale!==exactMorale(owned.get(id)))return false;
+   validateDynamics(st);if(st.traitEvidence!==undefined)validateTraitEvidence(st.traitEvidence);
+   if(st.playerId!==id||st.morale!==exactMorale(owned.get(id)))return false;
   }
   for(const e of s.events)if(!e||!Number.isSafeInteger(e.season)||!Number.isSafeInteger(e.round)||typeof e.playerId!=='string'||typeof e.id!=='string'||typeof e.type!=='string'||!PERSONALITY_EVENTS.includes(e.type)||!Number.isFinite(e.delta))return false;
   return true;
  }catch{return false;}
 }
-export function personalityPlayerView(w,p,{lang='it',report=null,owned=null}={}){
+/** Allowlisted, read-only UI DTO. Evidence is per club/observer and per trait.
+ * The report must be recorded by this club; caller-controlled confidence is
+ * never a substitute for actual scouting evidence.
+ */
+export function personalityPlayerView(w,p,{lang='it',owned=null}={}){
  if(!personalityEnabled(w))return null;
- const en=lang==='en',mine=owned??(p.clubId===w.clubId);
- if(!mine){const knowledge=Number(report?.confidence??0);
-  return {...scoutPersonality(stableProfile(w,p),{knowledge:cap(Math.floor(knowledge),0,88),seed:w.seed,viewerId:String(p.globalId??p.id),lang}),owned:false};
+ const mine=owned??(p.clubId===w.clubId);
+ let evidence=emptyTraitEvidence();
+ if(mine){
+  const st=state(w).playerStates[String(p.id)];
+  if(st?.traitEvidence){validateTraitEvidence(st.traitEvidence);evidence=st.traitEvidence;}
+ }else{
+  const id=String(identity(p)),observer=`${w.countryId}:club:${w.clubId}`;
+  const report=w.advancedV1?.scoutingV1?.reports?.[id];
+  if(report?.personalityObserver===observer&&report.personalityEvidence){
+   validateTraitEvidence(report.personalityEvidence);evidence=report.personalityEvidence;
+  }
  }
- const profile=stableProfile(w,p),st=state(w).playerStates[String(p.id)];
- if(!st)return {owned:true,traits:[],morale:p.morale,coachRelationship:50};
- return {owned:true,morale:exactMorale(p),coachRelationship:st.coachRelationship,influence:st.influence,
-  traits:TRAITS.map(t=>({key:t.key,label:t.label[en?'en':'it'],visibility:['professionalism','determination'].includes(t.key)?'descriptive':'hidden',description:['professionalism','determination'].includes(t.key)?describeTrait(t.key,profile.traits[t.key],lang):null})),
-  history:st.history.slice(-6).map(x=>({type:x.type,delta:x.moraleDelta,drivers:x.drivers}))};
+ return {owned:mine,...scoutPersonality(stableProfile(w,p),{evidence,lang})};
 }
 /** Symmetric capped modifier on actual selected XI, never the underlying OVR. */
 export function personalityMatchMultiplier(w,teamId,playerIds=null){
@@ -121,6 +143,10 @@ export function recordCareerPersonalityEvent(w,{playerId,eventId,type,importance
  const s=state(w),key=String(p.id),before=s.playerStates[key];
  const after=applyPlayerEvent(before,stableProfile(w,p),{id:eventId,type,importance});
  if(after.revision===before.revision)return false;
+ if(['played','bench','training','coach_praise','coach_criticism'].includes(type)){
+  after.traitEvidence=advanceTraitEvidence(after.traitEvidence??emptyTraitEvidence(),
+   {observationId:`club-event:${eventId}:${type}`,count:type==='played'?2:1});
+ }
  s.playerStates[key]=after;p.morale=after.morale;
  s.events.push({id:eventId,season:w.season,round:w.round,playerId:key,type,delta:after.morale-before.morale});
  s.events=s.events.slice(-80);s.revision++;return true;
