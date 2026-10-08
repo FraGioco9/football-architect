@@ -193,7 +193,7 @@ export function previewAdvancedHalf(w,m){
  const candidate=structuredClone(w);prepareAdvancedRound(candidate);
  const home=top11(candidate,m.home,m.away),away=top11(candidate,m.away,m.home),seed=getSeed(candidate,m);
  const sides=[{teamId:m.home,...home},{teamId:m.away,...away}];
- const makeTeam=side=>({id:side.teamId,strength:effectivePower(candidate,side.ids)*personalityMatchMultiplier(candidate,side.teamId),tactics:side.teamId===candidate.clubId?candidate.advancedV1.tactics:(side.coachPreparation?BUILT_IN_STYLES[side.coachPreparation.style]:BUILT_IN_STYLES.balanced),rolePlan:side.rolePlan});
+ const makeTeam=side=>({id:side.teamId,strength:effectivePower(candidate,side.ids)*personalityMatchMultiplier(candidate,side.teamId,side.ids),tactics:side.teamId===candidate.clubId?candidate.advancedV1.tactics:(side.coachPreparation?BUILT_IN_STYLES[side.coachPreparation.style]:BUILT_IN_STYLES.balanced),rolePlan:side.rolePlan});
  const half=advanceTacticalSession(createTacticalSession({matchId:m.id,seed,home:makeTeam(sides[0]),away:makeTeam(sides[1]),analyticsMode:true}),90);
  return {matchId:m.id,round:w.round,home:m.home,away:m.away,
   homeGoals:half.events.filter(e=>e.type==='goal'&&e.side==='home').length,
@@ -205,7 +205,7 @@ export function simulateAdvancedMatch(w,m){
   if(!active(w)||m.result)invalid('MATCH');
   const home=top11(w,m.home,m.away),away=top11(w,m.away,m.home),seed=getSeed(w,m),day=w.advancedV1.clockDay;
   const sides=[{teamId:m.home,...home},{teamId:m.away,...away}];
-  const makeTeam=s=>({id:s.teamId,strength:effectivePower(w,s.ids)*personalityMatchMultiplier(w,s.teamId),tactics:s.teamId===w.clubId?w.advancedV1.tactics:(s.coachPreparation?BUILT_IN_STYLES[s.coachPreparation.style]:BUILT_IN_STYLES.balanced),rolePlan:s.rolePlan});
+  const makeTeam=s=>({id:s.teamId,strength:effectivePower(w,s.ids)*personalityMatchMultiplier(w,s.teamId,s.ids),tactics:s.teamId===w.clubId?w.advancedV1.tactics:(s.coachPreparation?BUILT_IN_STYLES[s.coachPreparation.style]:BUILT_IN_STYLES.balanced),rolePlan:s.rolePlan});
   let session=createTacticalSession({matchId:m.id,seed,home:makeTeam(sides[0]),away:makeTeam(sides[1]),analyticsMode:true});
   const sidesPlans=sides.map(side=>({side,bench:careerMatchdayBench(w,side.teamId,side.ids)}));
   let activeSeconds=new Map(sides.flatMap(s=>s.ids.map(id=>[id,5400])));

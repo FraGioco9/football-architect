@@ -46,6 +46,9 @@ jobs:
       - name: Test PLYR-06.2 morale, events and leadership
         run: node --test tests/plyr-06-2-dynamics.test.mjs
 
+      - name: Test PLYR-06.3 official integration
+        run: node --test tests/plyr-06-3-official-integration.test.mjs
+
       - name: Smoke test local HTTP routes
         run: |
           node server.mjs &

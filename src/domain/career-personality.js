@@ -7,7 +7,7 @@ import {toAddonPosition} from '../addons/career-bridge.mjs';
 import {addMessage} from './history.js';
 import {generatePersonality,readPersonality,validatePersonality,TRAITS,describeTrait} from '../addons/domain/player-personality.mjs';
 import {initialPlayerDynamics,applyPlayerEvent,validateDynamics,inspectLockerRoom,playerInfluence} from '../addons/domain/player-locker-room.mjs';
-import {evaluatePersonalityEffects,PERSONALITY_EVENTS} from '../addons/domain/player-personality-effects.mjs';
+import {evaluatePersonalityEffects,matchPerformanceFactor,PERSONALITY_EVENTS} from '../addons/domain/player-personality-effects.mjs';
 import {scoutPersonality} from '../addons/domain/player-personality-scouting.mjs';
 
 const fail=code=>{throw Error(`PLY02_${code}`);};
@@ -89,24 +89,28 @@ export function personalityPlayerView(w,p,{lang='it',report=null,owned=null}={})
   traits:TRAITS.map(t=>({key:t.key,label:t.label[en?'en':'it'],visibility:['professionalism','determination'].includes(t.key)?'descriptive':'hidden',description:['professionalism','determination'].includes(t.key)?describeTrait(t.key,profile.traits[t.key],lang):null})),
   history:st.history.slice(-6).map(x=>({type:x.type,delta:x.moraleDelta,drivers:x.drivers}))};
 }
-export function personalityMatchMultiplier(w,teamId){
- if(!personalityEnabled(w)||teamId!==w.clubId)return 1;
- const entries=own(w).filter(p=>w.lineup.includes(p.id));if(!entries.length)return 1;
- const average=entries.reduce((sum,p)=>{
-  const profile=stableProfile(w,p),consistency=evaluatePersonalityEffects(profile,{morale:exactMorale(p)}).factors.consistency;
-  return sum+(exactMorale(p)-50)*.00025+(consistency-1)*.12;
- },0)/entries.length;
- return cap(1+average,.97,1.03);
+/** Symmetric capped modifier on actual selected XI, never the underlying OVR. */
+export function personalityMatchMultiplier(w,teamId,playerIds=null){
+ if(!personalityEnabled(w))return 1;
+ const selected=playerIds??(teamId===w.clubId?w.lineup:null);
+ const ids=selected?new Set(selected.map(String)):null;
+ const entries=clubPlayers(w,teamId).filter(p=>!ids||ids.has(String(p.id)));
+ if(!entries.length)return 1;
+ const value=entries.reduce((sum,p)=>sum+matchPerformanceFactor(stableProfile(w,p),{morale:exactMorale(p)}),0)/entries.length;
+ return cap(Math.round(value*1000)/1000,.98,1.02);
 }
+/** Training factor is capped once in developmentContext, not multiplied into workload. */
 export function personalityTrainingMultiplier(w,p){
- if(!personalityEnabled(w)||p.clubId!==w.clubId)return 1;
- const f=evaluatePersonalityEffects(stableProfile(w,p),{morale:exactMorale(p)}).factors.training;
- return cap(1+(f-1)*.2,.97,1.03);
+ if(!personalityEnabled(w))return 1;
+ return evaluatePersonalityEffects(stableProfile(w,p),{morale:exactMorale(p)}).factors.training;
 }
 export function personalityBoardShift(w){if(!personalityEnabled(w))return 0;const cohesion=lockerRoomView(w).cohesion;return cohesion>=75?1:cohesion<=35?-1:0;}
-export function personalityContractInterest(w,p,{offeredRaise=0}={}){
+/** Shared PLY05/MKT01/MKT04 willingness evaluator, never sent directly to UI. */
+export function personalityContractInterest(w,p,{offeredRaise=0,playingTime=null,clubLevel=50,international=false}={}){
  if(!personalityEnabled(w))return null;
- return evaluatePersonalityEffects(stableProfile(w,p),{morale:exactMorale(p),offeredRaise}).contractInterest;
+ const participation=playingTime??cap(Math.round((p.apps??0)/Math.max(1,w.round)*100),0,100);
+ return evaluatePersonalityEffects(stableProfile(w,p),{morale:exactMorale(p),offeredRaise,
+  playingTime:participation,clubLevel:cap(Math.round(clubLevel),0,100),international}).contractInterest;
 }
 /** Apply a uniquely identified decision event exactly once; never leak a raw trait. */
 export function recordCareerPersonalityEvent(w,{playerId,eventId,type,importance=1}={}){
