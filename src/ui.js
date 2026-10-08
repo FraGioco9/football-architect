@@ -305,10 +305,11 @@ function careerContractsPanel(w,ui){
  if(!contractsEnabled(w))return panel(tr('Contratti strutturati','Structured player contracts'),'',`<p role="alert">${tr('I contratti fanno parte di ogni carriera. Ricarica il salvataggio per completare la migrazione automatica.','Contracts are part of every career. Reload the save to complete automatic migration.')}</p>`);
  const data=careerContractView(w),players=data.contracts;
  const options=players.map(p=>({value:String(p.playerId),label:p.name}));
+ const selected=players.find(p=>String(p.playerId)===String(ui.contractSelectedPlayerId))??players[0]??null;
  const offers=data.offers.filter(o=>['awaiting_player','awaiting_club'].includes(o.status));
  return panel(tr('Contratti e promesse','Contracts and promises'),tr('Rinnovi, clausole e gerarchie','Renewals, clauses and squad roles'),`
- <div class="ply05-form"><label for="ply05-player">${tr('Calciatore','Player')}</label>${selectControl({id:'ply05-player',options})}
- <label for="ply05-weekly">${tr('Ingaggio settimanale (EUR)','Weekly wage (EUR)')}</label><input id="ply05-weekly" class="input" type="number" min="0" max="19000000" step="1" value="${players[0]?.wage||0}" />
+ <div class="ply05-form"><label for="ply05-player">${tr('Calciatore','Player')}</label>${selectControl({id:'ply05-player',value:selected?String(selected.playerId):'',options})}
+ <label for="ply05-weekly">${tr('Ingaggio settimanale (EUR)','Weekly wage (EUR)')}</label><input id="ply05-weekly" class="input" type="number" min="0" max="19000000" step="1" value="${selected?.wage??0}" />
  <label for="ply05-years">${tr('Anni','Years')}</label>${selectControl({id:'ply05-years',value:'2',options:[1,2,3,4,5].map(n=>({value:String(n),label:String(n)}))})}
  <label for="ply05-signing">${tr('Bonus firma (EUR)','Signing bonus (EUR)')}</label><input id="ply05-signing" class="input" type="number" min="0" max="100000000" step="1000" value="0" />
  <label for="ply05-appearance">${tr('Bonus presenza (EUR)','Appearance bonus (EUR)')}</label><input id="ply05-appearance" class="input" type="number" min="0" max="100000000" step="100" value="0" />
