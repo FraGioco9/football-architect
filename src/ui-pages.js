@@ -37,14 +37,43 @@ export function homePage(catalog,lang){
  ${option('settings','settings',tr(lang,'Impostazioni','Settings'),tr(lang,'Lingua e preferenze','Language and preferences'))}
  </section></div>`;
 }
-export function managerPage(draft,lang){
- return `<section class="heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
- <span class="kicker">${tr(lang,'NUOVA CARRIERA · PASSAGGIO 1 DI 2','NEW CAREER · STEP 1 OF 2')}</span><h1>${tr(lang,'Il tuo allenatore','Your manager')}</h1>
- <p>${tr(lang,'Inserisci un nome prima di scegliere la squadra. La carriera verrà salvata solo dopo la conferma finale.','Enter your name before choosing a club. No save is made before final confirmation.')}</p></section>
- <form id="manager-form" class="panel form-card"><label for="manager-name">${tr(lang,'Nome allenatore','Manager name')}</label>
- <input id="manager-name" name="managerName" required maxlength="80" autocomplete="off" value="${esc(draft.managerName)}" placeholder="${tr(lang,'Nome e cognome','First and last name')}">
- <div class="actions">${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost')}<button type="submit" class="btn primary"><span>${tr(lang,'Scegli la squadra','Choose club')}</span>${icon('chevron-right',17)}</button></div></form>`;
+
+/** Shared page header: a stable title, a compact back control and a clear page context. */
+export function pageHeader({lang,iconName,titleIt,titleEn,backAction='home',backIt='Torna al menu',backEn='Back to menu',sectionIt='',sectionEn='',step=null}){
+ const title=tr(lang,titleIt,titleEn),back=tr(lang,backIt,backEn);
+ const context=sectionIt?tr(lang,sectionIt,sectionEn):'';
+ return `<header class="page-header">
+  <div class="page-header-nav">
+   <button class="page-back" type="button" data-action="${backAction}" aria-label="${esc(back)}">${icon('arrow-left',17)}<span>${esc(back)}</span></button>
+   ${context?`<span class="page-header-context">${esc(context)}</span>`:''}
+  </div>
+  <div class="page-title-row">
+   <span class="page-title-icon" aria-hidden="true">${icon(iconName,25)}</span>
+   <h1 class="page-title">${esc(title)}</h1>
+   ${step!==null?`<span class="page-step" aria-label="${tr(lang,'Passaggio','Step')} ${step} ${tr(lang,'di','of')} 2">${step}<span aria-hidden="true">/</span>2</span>`:''}
+  </div>
+ </header>`;
 }
+
+export function managerPage(draft,lang){
+ return `${pageHeader({lang,iconName:'plus-circle',titleIt:'Nuova carriera',titleEn:'New career',sectionIt:'ALLENATORE',sectionEn:'MANAGER',step:1})}
+ <section class="page-panel panel" aria-labelledby="manager-section-title">
+  <div class="page-section-head">
+   <span class="page-section-icon" aria-hidden="true">${icon('shield',19)}</span>
+   <h2 id="manager-section-title">${tr(lang,'Allenatore','Manager')}</h2>
+  </div>
+  <p class="page-panel-description">${tr(lang,'Scegli il nome del tuo allenatore. La carriera verrà salvata soltanto dopo aver scelto la squadra.','Choose your manager name. The career will only be saved after you select a club.')}</p>
+  <form id="manager-form" class="page-form">
+   <label for="manager-name">${tr(lang,'Nome allenatore','Manager name')}</label>
+   <input id="manager-name" name="managerName" required maxlength="80" autocomplete="off" value="${esc(draft.managerName)}" placeholder="${tr(lang,'Nome e cognome','First and last name')}">
+   <div class="page-panel-actions">
+    ${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost')}
+    <button type="submit" class="btn primary"><span>${tr(lang,'Scegli la squadra','Choose club')}</span>${icon('chevron-right',17)}</button>
+   </div>
+  </form>
+ </section>`;
+}
+
 export function clubList(draft,lang){
  const selected=club(draft.countryId,draft.clubId);
  const teams=getLeagueClubs(draft.countryId).filter(c=>(c.name+' '+c.city).toLocaleLowerCase().includes((draft.query??'').toLocaleLowerCase()));
@@ -53,45 +82,89 @@ export function clubList(draft,lang){
 }
 export function teamsPage(draft,lang){
  const selected=club(draft.countryId,draft.clubId);
- return `<section class="heading"><button class="back" type="button" data-action="setup-back">${icon('arrow-left',16)} ${tr(lang,'Allenatore','Manager')}</button>
- <span class="kicker">${tr(lang,'NUOVA CARRIERA · PASSAGGIO 2 DI 2','NEW CAREER · STEP 2 OF 2')}</span><h1>${tr(lang,'Scegli una squadra','Choose a club')}</h1>
- <p>${esc(draft.managerName)} · ${tr(lang,'8 Paesi e 160 squadre inventate','8 countries and 160 fictional clubs')}</p></section>
- <section class="panel"><div class="countries" role="group" aria-label="${tr(lang,'Nazione','Country')}">
- ${LEAGUES.map(l=>`<button type="button" data-action="country" data-country="${l.id}" aria-pressed="${l.id===draft.countryId}">${esc(l.flag)} ${esc(l.country[lang])}</button>`).join('')}</div>
- <label class="search-label" for="search">${tr(lang,'Cerca una squadra','Search clubs')}</label>
- <input type="search" id="search" autocomplete="off" placeholder="${tr(lang,'Nome o città','Name or city')}" value="${esc(draft.query)}">
- <div id="clubs" class="clubs" aria-live="polite">${clubList(draft,lang)}</div>
- <div class="selection"><span>${selected?esc(selected.name):tr(lang,'Nessuna squadra selezionata','No club selected')}</span>
- ${button('start-career',tr(lang,'Inizia carriera','Start career'),'primary',selected?'':'disabled')}</div></section>`;
-}
-export function careersPage(catalog,lang){
- const rows=catalog.rows;
- return `<section class="heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
- <span class="kicker">${tr(lang,'SALVATAGGI','SAVED CAREERS')}</span><h1>${tr(lang,'Le mie carriere','My careers')}</h1>
- <p>${tr(lang,'Ogni carriera è indipendente. Puoi esportare o eliminare anche un salvataggio danneggiato.','Each career is independent. You can export or delete damaged saves.')}</p></section>
- <section class="panel"><div class="list-top"><h2>${tr(lang,'Carriere','Careers')} (${rows.length})</h2>${button('new',tr(lang,'Nuova carriera','New career'),'secondary')}</div>
- ${rows.length?`<div class="career-list">${rows.map(row=>{
-  const m=row.meta,team=m&&club(m.countryId,m.clubId),ok=row.status==='ok',id=esc(row.id);
-  return `<article class="career-row ${ok?'':'corrupt'}">${crest(team)}<div class="career-copy">
-  <strong>${esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'))}</strong><small>${esc(m?.managerName??'—')} · ${esc(team?.name??'—')} ${ok?'· '+esc(seasonLabel(row.state.date)):''}</small>
-  <small>${ok?tr(lang,'Data','Date')+' '+esc(fmtDate(row.state.date,lang))+' · '+tr(lang,'Salvata','Saved')+' '+esc(fmtDate(m.updatedAt,lang,true)):tr(lang,'Salvataggio danneggiato: caricamento disabilitato','Corrupt save: loading disabled')}</small></div>
-  <div class="row-actions">${ok?button('load',tr(lang,'Carica','Load'),'secondary',`data-id="${id}"`):`<span class="corrupt-tag" role="img" aria-label="${tr(lang,'Danneggiata','Corrupt')}">${icon('alert-triangle',19)}</span>`}
-  ${ok?button('rename',tr(lang,'Rinomina','Rename'),'ghost',`data-id="${id}"`):''}
-  ${button('export',tr(lang,'Esporta','Export'),'ghost',`data-id="${id}"`)}
-  ${button('delete',tr(lang,'Elimina','Delete'),'danger',`data-id="${id}"`)}</div></article>`;
- }).join('')}</div>`:`<div class="empty-state"><p>${tr(lang,'Non hai ancora carriere.','You have no careers yet.')}</p></div>`}
- <div class="list-bottom">${button('import',tr(lang,'Importa JSON','Import JSON'),'ghost')}
-
- <input id="import-file" type="file" accept="application/json,.json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}"></div>
+ return `${pageHeader({lang,iconName:'plus-circle',titleIt:'Nuova carriera',titleEn:'New career',backAction:'setup-back',backIt:"Torna all'allenatore",backEn:'Back to manager',sectionIt:'SQUADRA',sectionEn:'TEAM',step:2})}
+ <section class="page-panel panel" aria-labelledby="club-section-title">
+  <div class="page-section-head">
+   <span class="page-section-icon" aria-hidden="true">${icon('shield',19)}</span>
+   <h2 id="club-section-title">${tr(lang,'Scegli una squadra','Choose a club')}</h2>
+  </div>
+  <p class="page-panel-description">${esc(draft.managerName)} · ${tr(lang,'8 Paesi e 160 squadre inventate','8 countries and 160 fictional clubs')}</p>
+  <div class="countries" role="group" aria-label="${tr(lang,'Nazione','Country')}">
+   ${LEAGUES.map(l=>`<button type="button" data-action="country" data-country="${l.id}" aria-pressed="${l.id===draft.countryId}">${esc(l.flag)} ${esc(l.country[lang])}</button>`).join('')}
+  </div>
+  <label class="search-label" for="search">${tr(lang,'Cerca una squadra','Search clubs')}</label>
+  <input type="search" id="search" autocomplete="off" placeholder="${tr(lang,'Nome o città','Name or city')}" value="${esc(draft.query)}">
+  <div id="clubs" class="clubs" aria-live="polite">${clubList(draft,lang)}</div>
+  <div class="selection"><span>${selected?esc(selected.name):tr(lang,'Nessuna squadra selezionata','No club selected')}</span>
+   ${button('start-career',tr(lang,'Inizia carriera','Start career'),'primary',selected?'':'disabled')}
+  </div>
  </section>`;
 }
-export function settingsPage(lang){
- return `<section class="heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
- <span class="kicker">${tr(lang,'PREFERENZE','PREFERENCES')}</span><h1>${tr(lang,'Impostazioni','Settings')}</h1></section>
- <section class="panel form-card"><h2>${tr(lang,'Lingua','Language')}</h2>
- <p>${tr(lang,'Cambia la lingua dal selettore in alto. La scelta è globale per tutte le carriere.','Change the language using the selector above. It applies to every career.')}</p>
- <p class="muted">${tr(lang,'Salvataggi: IndexedDB locale, nessun account o cloud.','Saves: local IndexedDB, no account or cloud.')}</p></section>`;
+
+export function careersPage(catalog,lang){
+ const rows=catalog.rows;
+ return `${pageHeader({lang,iconName:'folder-open',titleIt:'Le mie carriere',titleEn:'My careers',sectionIt:'SALVATAGGI',sectionEn:'SAVED CAREERS'})}
+ <section class="page-panel panel" aria-labelledby="career-section-title">
+  <div class="page-section-head page-section-head-split">
+   <div class="page-section-label"><span class="page-section-icon" aria-hidden="true">${icon('folder-open',19)}</span>
+    <h2 id="career-section-title">${tr(lang,'Carriere salvate','Saved careers')}</h2>
+    <span class="page-count" aria-label="${tr(lang,'Carriere','Careers')}: ${rows.length}">${rows.length}</span>
+   </div>
+   ${button('new',tr(lang,'Nuova carriera','New career'),'secondary')}
+  </div>
+  ${rows.length?`<div class="career-list">${rows.map(row=>{
+   const m=row.meta,team=m&&club(m.countryId,m.clubId),ok=row.status==='ok',id=esc(row.id);
+   return `<article class="career-row ${ok?'':'corrupt'}">${crest(team)}<div class="career-copy">
+    <strong>${esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'))}</strong><small>${esc(m?.managerName??'—')} · ${esc(team?.name??'—')} ${ok?'· '+esc(seasonLabel(row.state.date)):''}</small>
+    <small>${ok?tr(lang,'Data','Date')+' '+esc(fmtDate(row.state.date,lang))+' · '+tr(lang,'Salvata','Saved')+' '+esc(fmtDate(m.updatedAt,lang,true)):tr(lang,'Salvataggio danneggiato: caricamento disabilitato','Corrupt save: loading disabled')}</small>
+   </div>
+   <div class="row-actions">${ok?button('load',tr(lang,'Carica','Load'),'secondary',`data-id="${id}"`):`<span class="corrupt-tag" role="img" aria-label="${tr(lang,'Danneggiata','Corrupt')}">${icon('alert-triangle',19)}</span>`}
+    ${ok?button('rename',tr(lang,'Rinomina','Rename'),'ghost',`data-id="${id}"`):''}
+    ${button('export',tr(lang,'Esporta','Export'),'ghost',`data-id="${id}"`)}
+    ${button('delete',tr(lang,'Elimina','Delete'),'danger',`data-id="${id}"`)}
+   </div></article>`;
+  }).join('')}</div>`:`<div class="page-empty-state">
+   <span class="page-empty-icon" aria-hidden="true">${icon('folder-open',28)}</span>
+   <p>${tr(lang,'Non hai ancora carriere. Crea una carriera per iniziare.','You have no saved careers yet. Create one to get started.')}</p>
+   ${button('new',tr(lang,'Nuova carriera','New career'),'primary')}
+  </div>`}
+  <div class="page-footer-actions">
+   ${button('import',tr(lang,'Importa JSON','Import JSON'),'ghost')}
+   <input id="import-file" type="file" accept="application/json,.json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
+  </div>
+ </section>`;
 }
+
+export function settingsPage(lang){
+ return `${pageHeader({lang,iconName:'settings',titleIt:'Impostazioni',titleEn:'Settings',sectionIt:'PREFERENZE',sectionEn:'PREFERENCES'})}
+ <section class="page-panel panel" aria-labelledby="settings-language-title">
+  <div class="page-section-head">
+   <span class="page-section-icon" aria-hidden="true">${icon('flag',19)}</span>
+   <h2 id="settings-language-title">${tr(lang,'Lingua','Language')}</h2>
+  </div>
+  <div class="settings-preference">
+   <div class="settings-preference-copy">
+    <strong>${tr(lang,'Lingua dell’interfaccia','Interface language')}</strong>
+    <p>${tr(lang,'La preferenza è globale e vale per tutte le carriere.','This preference applies to all careers.')}</p>
+   </div>
+   <div class="settings-preference-action">
+    <span class="settings-current-language">${lang==='en'?'EN · English':'IT · Italiano'}</span>
+    <button type="button" class="btn secondary" data-action="language-focus">${icon('settings',16)}<span>${tr(lang,'Cambia lingua','Change language')}</span></button>
+   </div>
+  </div>
+ </section>
+ <section class="page-panel panel page-panel-secondary" aria-labelledby="settings-storage-title">
+  <div class="page-section-head">
+   <span class="page-section-icon" aria-hidden="true">${icon('folder-open',19)}</span>
+   <h2 id="settings-storage-title">${tr(lang,'Salvataggi','Saved careers')}</h2>
+  </div>
+  <p class="page-panel-description">${tr(lang,'Le carriere sono salvate localmente tramite IndexedDB. Nessun account o cloud.','Careers are stored locally in IndexedDB. No account or cloud required.')}</p>
+  <div class="page-panel-actions">
+   ${button('careers',tr(lang,'Le mie carriere','My careers'),'ghost')}
+  </div>
+ </section>`;
+}
+
 export function simulationPage(meta,state,lang,playing){
  const c=club(meta.countryId,meta.clubId),l=leagueById(meta.countryId);
  return `<section class="heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
