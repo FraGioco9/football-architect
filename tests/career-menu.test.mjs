@@ -73,7 +73,7 @@ test('IndexedDB schema has three isolated stores',async()=>{
 });
 test('manager/team setup creates no save until explicit createCareer',async()=>{
  const db=await setup(),draft={managerName:'Ada Manager',countryId:'IT',clubId:2,query:''};
- assert.match(managerPage(draft,'it'),/Nome allenatore/);
+ assert.match(managerPage(draft,'it'),/NOME ALLENATORE/);
  assert.match(teamsPage(draft,'it'),/Inizia carriera/);
  assert.equal((await readCatalog(db)).rows.length,0);
  await createCareer(db,form('Ada Manager','IT',2));
@@ -200,9 +200,9 @@ test('IT/EN menu and dedicated routes are available and accessible',()=>{
  assert.match(html,/Skip to content/);
  const draft={managerName:'Mario',countryId:'DE',clubId:1,query:''};
  assert.match(managerPage(draft,'en'),/MANAGER NAME/);
- assert.match(teamsPage(draft,'en'),/Choose a club/);
+ assert.match(teamsPage(draft,'en'),/Choose your club/);
  assert.match(settingsPage('en'),/Language/);
- assert.match(careersPage(empty,'en',false),/Import JSON/);
+ assert.match(careersPage(empty,'en'),/Import/);
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  for(const route of ['/new-career','/new-career/team','/careers','/settings','/simulation'])assert.ok(server.includes("'"+route+"'"));
 });
