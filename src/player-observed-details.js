@@ -8,7 +8,6 @@ import {validateDevelopment} from './addons/domain/player-development.mjs';
 import {readPlayerAttributes} from './addons/domain/player-generator.mjs';
 import {canonicalPosition,POSITIONS,familiarityPenalty,ratePlayer} from './addons/domain/player-ratings.mjs';
 import {personalityEnabled,validateCareerPersonality} from './domain/career-personality.js';
-import {POSITION_LABELS} from './data.js';
 import {esc} from './ui-components.js';
 
 const tr=(lang,it,en)=>lang==='en'?en:it;
