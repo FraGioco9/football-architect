@@ -171,7 +171,7 @@ function transferPlayer(w,globalId,destKey,loan=false){
   if(dest.managed){p.clubId=dest.clubId;}
   else{
    if(!loan){p.historicalClubId=p.clubId;p.clubId=0;p.departedTo=destKey;}else{p.historicalClubId=p.clubId;p.clubId=0;p.departedTo=destKey;}
-   const external={id:globalId,name:p.name,clubId:dest.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,contract:p.contract,apps:0,goals:0,nationality:p.nationality,wage:p.wage,attributes:{...p.attributeProfile?.values}};
+   const external={id:globalId,name:p.name,clubId:dest.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,contract:p.contract,apps:0,goals:0,nationality:p.nationality,wage:p.wage,attributes:{...p.attributeProfile?.values},personalityProfile:structuredClone(p.personalityProfile)};
    if(Object.keys(external.attributes).length!==ATTRIBUTE_KEYS.length)fail('PLAYER_ATTRIBUTES');dest.league.players.push(external);
   }
  }else{

@@ -40,6 +40,9 @@ jobs:
           node --check server.mjs
           find src -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -r -n1 node --check
 
+      - name: Test personality v2 domain and player generation
+        run: node --test tests/plyr-06-1-personality-v2.test.mjs
+
       - name: Smoke test local HTTP routes
         run: |
           node server.mjs &

@@ -10,6 +10,7 @@ import {createFixtures} from './fixtures.js';
 import {table} from './standings.js';
 import {randomFactory,scopedSeed} from './rng.js';
 import {generatePlayerAttributes} from '../addons/domain/player-generator.mjs';
+import {readPersonality,generatePersonality,validatePersonality} from '../addons/domain/player-personality.mjs';
 import {ATTRIBUTE_KEYS} from '../addons/domain/player-attributes.mjs';
 import {toAddonPosition} from '../addons/career-bridge.mjs';
 import {hashYouth,youthName} from '../addons/domain/player-youth.mjs';
@@ -32,7 +33,8 @@ function snapPlayer(p,country,seed){
  const attributes=Object.fromEntries(Object.entries(profile.values));
  return {id:playerID(country,p.id),globalId:p.globalId??playerID(country,p.id),identity:p.identity?structuredClone(p.identity):undefined,
   name:p.name,shirtNumber:p.shirtNumber??p.identity?.shirtNumber??null,clubId:p.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,
-  wage:p.wage,contract:p.contract,apps:0,goals:0,nationality:p.nationality,attributes};
+  wage:p.wage,contract:p.contract,apps:0,goals:0,nationality:p.nationality,attributes,
+  personalityProfile:readPersonality(p,{seed,countryId:country})};
 }
 function leagueFrom(seed,code,season){
  const base=makeWorld(scopedSeed(seed,'official-world',code),code);
@@ -148,7 +150,8 @@ function seasonRollover(universe,league,season){
    const generated=generatePlayerAttributes({id,position:toAddonPosition(position),age,generationLevel,nationality:league.countryId},{seed:universe.seed,countryId:league.countryId});
    const ovr=generated.generatedOvr,potential=cap(ovr+Math.round(rand()*18),ovr,95);
    const p={id,name:youthName(league.countryId,universe.seed,club.id,season,serial),clubId:club.id,position,age,ovr,potential,contract:3,apps:0,goals:0,nationality:league.countryId,wage:1500+ovr*60};
-   p.attributes=Object.fromEntries(Object.entries(generated.attributeProfile.values));kept.push(p);
+   p.attributes=Object.fromEntries(Object.entries(generated.attributeProfile.values));
+   p.personalityProfile=generatePersonality(p,{seed:universe.seed,countryId:league.countryId});kept.push(p);
   }
  }
  league.players=kept;league.departedScorers=[];league.season=season;league.round=0;league.fixtures=createFixtures(league.clubs.map(c=>c.id),season).map(r=>({...r,matches:r.matches.map(m=>({...m,globalId:`${league.countryId}:match:${m.id}`}))}));
@@ -204,7 +207,9 @@ export function validateCareerWorld(w){
   const clubIds=new Set(l.clubs.map(c=>c.id));
   if(l.departedScorers!==undefined&&(!Array.isArray(l.departedScorers)||l.departedScorers.length>300||l.departedScorers.some(p=>typeof p.id!=='string'||!OFFICIAL_WORLD_COUNTRIES.some(c=>p.id.startsWith(c+':'))||!clubIds.has(p.clubId)||typeof p.name!=='string'||!isInt(p.goals)||!isInt(p.apps))))return false;
   for(const c of l.clubs){if(c.globalId!==`${l.countryId}:club:${c.id}`||ids.has(c.globalId))return false;ids.add(c.globalId);}
-  for(const p of l.players){if(typeof p.id!=='string'||!OFFICIAL_WORLD_COUNTRIES.some(country=>p.id.startsWith(country+':'))||ids.has(p.id)||!clubIds.has(p.clubId)||!isInt(p.age)||p.age<15||p.age>70||!isInt(p.ovr)||p.ovr<1||p.ovr>100||!p.attributes||Object.keys(p.attributes).length!==ATTRIBUTE_KEYS.length||Object.values(p.attributes).some(v=>!isInt(v)||v<1||v>100))return false;ids.add(p.id);}
+  for(const p of l.players){if(typeof p.id!=='string'||!OFFICIAL_WORLD_COUNTRIES.some(country=>p.id.startsWith(country+':'))||ids.has(p.id)||!clubIds.has(p.clubId)||!isInt(p.age)||p.age<15||p.age>70||!isInt(p.ovr)||p.ovr<1||p.ovr>100||!p.attributes||Object.keys(p.attributes).length!==ATTRIBUTE_KEYS.length||Object.values(p.attributes).some(v=>!isInt(v)||v<1||v>100))return false;
+   try{validatePersonality(p.personalityProfile);}catch{return false;}
+   ids.add(p.id);}
   for(let r=0;r<38;r++){
    const day=l.fixtures[r];if(day.round!==r+1||day.matches.length!==10)return false;
    for(const m of day.matches){if(Boolean(m.result)!==(r<l.round)||!clubIds.has(m.home)||!clubIds.has(m.away)||m.globalId!==`${l.countryId}:match:${m.id}`)return false;
