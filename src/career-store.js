@@ -6,7 +6,6 @@ const NOW=()=>new Date().toISOString();
 const nameOk=n=>typeof n==='string'&&n.trim().length>=1&&n.trim().length<=80;
 const iso=t=>typeof t==='string'&&Number.isFinite(Date.parse(t));
 const error=(code)=>new Error(code);
-const request=req=>new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||error('IDB_REQUEST'));});
 function transaction(db,stores,mode,operation){
  return new Promise((resolve,reject)=>{
   let result,settled=false;
@@ -51,12 +50,12 @@ export function checkEntry(meta,record){
 }
 export function readCatalog(db){
  return transaction(db,['careers','snapshots','preferences'],'readonly',(tx,done)=>{
-  let metas=[],snapshots=[],active;
+  let metas=[],snapshots=[];
   tx.objectStore('careers').getAll().onsuccess=e=>{metas=e.target.result;};
   tx.objectStore('snapshots').getAll().onsuccess=e=>{snapshots=e.target.result;};
-  tx.objectStore('preferences').get('active').onsuccess=e=>{active=e.target.result?.value;};
-  // Use one final request issued after the reads, preserving transaction ordering.
-  tx.objectStore('preferences').get('catalog').onsuccess=()=>{
+  // The final ordered request observes all prior results within the transaction.
+  tx.objectStore('preferences').get('active').onsuccess=e=>{
+   const active=e.target.result?.value;
    const map=new Map(snapshots.map(s=>[s.id,s]));
    const all=metas.map(meta=>{
     const state=checkEntry(meta,map.get(meta?.id));

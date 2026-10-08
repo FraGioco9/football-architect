@@ -205,7 +205,7 @@ test('simulation maintains match-free semantics, responsive UI and keyboard focu
  const state=createSession('PT',4,'2026-10-08'),meta={managerName:'M',countryId:'PT',clubId:4};
  const markup=simulationPage(meta,state,'it',false);
  assert.match(markup,/Avanza nel tempo/);
- assert.match(markup,/Nessuna partita/);
+ assert.match(markup,/Non viene giocata alcuna partita/);
  assert.doesNotMatch(markup,/\bfixture\b|\bscore\b|risultati|classifica/i);
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/:focus-visible/);
