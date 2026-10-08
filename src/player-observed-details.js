@@ -21,7 +21,7 @@ const names={
  CDM:{it:'Mediano',en:'Defensive midfielder'},CM:{it:'Centrocampista',en:'Central midfielder'},
  RM:{it:'Esterno destro',en:'Right midfielder'},LM:{it:'Esterno sinistro',en:'Left midfielder'},
  CAM:{it:'Trequartista',en:'Attacking midfielder'},RW:{it:'Ala destra',en:'Right winger'},
- LW:{it:'Ala sinistra',en:'Left winger'},CF:{it:'Seconda punta',en:'Centre forward'},ST:{it:'Attaccante',en:'Striker'}
+ LW:{it:'Ala sinistra',en:'Left winger'},ST:{it:'Attaccante',en:'Striker'}
 };
 const program={
  balanced:['Bilanciato','Balanced'],role:['Ruolo','Position'],technical:['Tecnico','Technical'],
