@@ -8,6 +8,7 @@ import {createFixtures} from './fixtures.js';
 import {randomFactory,scopedSeed} from './rng.js';
 import {hashYouth,youthName} from '../addons/domain/player-youth.mjs';
 import {generatePlayerAttributes,copyPlayerWithAttributes} from '../addons/domain/player-generator.mjs';
+import {generatePersonality,readPersonality} from '../addons/domain/player-personality.mjs';
 import {ATTRIBUTE_KEYS,createAttributes} from '../addons/domain/player-attributes.mjs';
 import {initialMedical} from '../addons/domain/player-medical.mjs';
 import {initialDevelopment} from '../addons/domain/player-development.mjs';
@@ -35,6 +36,7 @@ function newLeague(w,config){
   const ovr=generated.generatedOvr,potential=cap(ovr+Math.round(rand()*17),ovr,90);
   const p={id,name:youthName(country,w.seed,club.id,w.season,serial),clubId:club.id,position,age,ovr,potential,contract:2+Math.floor(rand()*4),wage:Math.round(900+ovr*48),nationality:country,apps:0,goals:0};
   p.attributes=structuredClone(generated.attributeProfile.values);
+  p.personalityProfile=generatePersonality(p,{seed:w.seed,countryId:country});
   players.push(p);
  }
  return {countryId:country,name:`${config.competition} · ${country} Divisione Due`,season:w.season,round:0,clubs,players,fixtures:createFixtures(clubs.map(c=>c.id),w.season),nextId,retired:0};
@@ -102,7 +104,7 @@ export function captureDivisionSeason(w){if(!divisionsEnabled(w))return null;
  plan.nextManagedTier=plan.countries[w.countryId].relegated.includes(w.clubId)?2:plan.countries[w.countryId].promoted.includes(w.clubId)?1:(s.managedTier??1);
  return plan;
 }
-const toForeign=(p,country)=>({id:p.globalId??(typeof p.id==='string'?p.id:`${country}:${p.id}`),name:p.name,clubId:p.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,wage:p.wage,contract:p.contract,apps:0,goals:0,nationality:p.nationality,attributes:p.attributes??p.attributeProfile?.values});
+const toForeign=(p,country,seed)=>({id:p.globalId??(typeof p.id==='string'?p.id:`${country}:${p.id}`),name:p.name,clubId:p.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,wage:p.wage,contract:p.contract,apps:0,goals:0,nationality:p.nationality,attributes:p.attributes??p.attributeProfile?.values,personalityProfile:readPersonality(p,{seed,countryId:country})});
 function toManaged(w,p){const id=Math.max(0,...w.players.map(x=>x.id),w.advancedV1?.youthV1?.nextPlayerId??0)+1,raw={...p,id,globalId:p.id,foot:'Destro',fitness:95,morale:75,form:6.8,value:Math.round(p.ovr**3*3/1000)*1000,injury:0,apps:0,goals:0,assists:0,yellow:0,cleanSheets:0,history:[]};
  raw.attributeProfile=p.attributes?createAttributes(p.attributes,{origin:'division-v2'}):copyPlayerWithAttributes({...raw,position:toAddonPosition(raw.position)},{seed:w.seed,countryId:w.countryId}).attributeProfile;delete raw.attributes;
  raw.medicalV1=initialMedical(raw,{day:w.advancedV1.clockDay});
@@ -111,7 +113,7 @@ function toManaged(w,p){const id=Math.max(0,...w.players.map(x=>x.id),w.advanced
 function adjustReputation(club,shift){club.reputation=cap(Math.round(club.reputation+shift),30,96);
  if(Number.isFinite(club.balance))club.balance=Math.max(0,Math.round(club.balance*(shift>0?1.12:.88)));
  if(Number.isFinite(club.transferBudget))club.transferBudget=Math.max(0,Math.round(club.transferBudget*(shift>0?1.15:.80)));}
-function managedForeign(w,p,country){return toForeign(p,country);}
+function managedForeign(w,p,country){return toForeign(p,country,w.seed);}
 // Unattached players belong to the free-agent pool, not to either league's
 // roster. In particular, a season rollover can otherwise clone them into the
 // first division and later register the same global ID at a foreign club.
@@ -219,7 +221,8 @@ export function openCareerDivisionsSeason(w,plan){if(!divisionsEnabled(w))return
      const position=i<2?'POR':positionCycle[serial%positionCycle.length],age=17+Math.floor(rnd()*5),generationLevel=cap(Math.round(club.reputation-8+rnd()*16),38,78);
      const generated=generatePlayerAttributes({id,position:toAddonPosition(position),age,generationLevel,nationality:country},{seed:w.seed,countryId:country});
      const ovr=generated.generatedOvr,potential=cap(ovr+Math.floor(rnd()*18),ovr,92);
-     const p={id,name:youthName(country,w.seed,club.id,w.season,serial),clubId:club.id,position,age,ovr,potential,wage:1200+ovr*48,contract:3,apps:0,goals:0,nationality:country};p.attributes=structuredClone(generated.attributeProfile.values);refreshed.push(p);
+     const p={id,name:youthName(country,w.seed,club.id,w.season,serial),clubId:club.id,position,age,ovr,potential,wage:1200+ovr*48,contract:3,apps:0,goals:0,nationality:country};p.attributes=structuredClone(generated.attributeProfile.values);
+     p.personalityProfile=generatePersonality(p,{seed:w.seed,countryId:country});refreshed.push(p);
    }}lower.players=refreshed;
   }
   record.lower=lower;
