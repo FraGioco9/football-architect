@@ -26,7 +26,7 @@ export function homePage(catalog,lang){
  return `<section class="hero"><span class="kicker">${tr(lang,'IL TUO MONDO CALCISTICO','YOUR FOOTBALL WORLD')}</span>
  <h1>${tr(lang,'Benvenuto in Football Architect','Welcome to Football Architect')}</h1><p>${tr(lang,'Ogni carriera è una storia diversa. Scegli una squadra e costruisci il tuo percorso.','Every career tells a different story. Choose a club and build your journey.')}</p></section>
  <div class="menu-stack">${active?`<section class="panel active-career" aria-label="${tr(lang,'Ultima carriera','Last career')}"><span class="kicker">${tr(lang,'ULTIMA CARRIERA','LAST CAREER')}</span>
- <div class="active-details">${crest(team)}<div><h2>${esc(team?.name??'—')}</h2><p>${esc(meta.managerName)} · ${tr(lang,'Stagione','Season')} ${esc(seasonLabel(active.state.date))}</p>
+ <div class="active-details">${crest(team)}<div><h2>${esc(team?.name??'—')}</h2><p>${meta.careerName&&meta.careerName!==team?.name?esc(meta.careerName)+' · ':''}${esc(meta.managerName)} · ${tr(lang,'Stagione','Season')} ${esc(seasonLabel(active.state.date))}</p>
  <p>${esc(fmtDate(active.state.date,lang))} · ${tr(lang,'Salvata','Saved')} ${esc(fmtDate(meta.updatedAt,lang,true))}</p></div></div>
  ${button('continue',tr(lang,'Continua carriera','Continue career'))}</section>`:''}
  <section class="menu-actions" aria-label="${tr(lang,'Azioni principali','Main actions')}">
@@ -71,7 +71,7 @@ export function careersPage(catalog,lang,legacyAvailable){
  ${rows.length?`<div class="career-list">${rows.map(row=>{
   const m=row.meta,team=m&&club(m.countryId,m.clubId),ok=row.status==='ok',id=esc(row.id);
   return `<article class="career-row ${ok?'':'corrupt'}">${crest(team)}<div class="career-copy">
-  <strong>${esc(team?.name??tr(lang,'Carriera non leggibile','Unreadable career'))}</strong><small>${esc(m?.managerName??'—')} ${ok?'· '+esc(seasonLabel(row.state.date)):''}</small>
+  <strong>${esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'))}</strong><small>${esc(m?.managerName??'—')} · ${esc(team?.name??'—')} ${ok?'· '+esc(seasonLabel(row.state.date)):''}</small>
   <small>${ok?tr(lang,'Data','Date')+' '+esc(fmtDate(row.state.date,lang))+' · '+tr(lang,'Salvata','Saved')+' '+esc(fmtDate(m.updatedAt,lang,true)):tr(lang,'Salvataggio danneggiato: caricamento disabilitato','Corrupt save: loading disabled')}</small></div>
   <div class="row-actions">${ok?button('load',tr(lang,'Carica','Load'),'secondary',`data-id="${id}"`):'<span class="corrupt-tag" aria-label="Corrotto">!</span>'}
   ${ok?button('rename',tr(lang,'Rinomina','Rename'),'ghost',`data-id="${id}"`):''}

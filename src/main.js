@@ -91,7 +91,7 @@ async function handle(action,element){
   case 'rename':{
    const entry=catalog.rows.find(r=>r.id===element.dataset.id&&r.status==='ok');
    if(!entry)return;
-   const name=prompt(tr(lang,'Nome allenatore','Manager name'),entry.meta.managerName);
+   const name=prompt(tr(lang,'Nome carriera','Career name'),entry.meta.careerName??entry.meta.managerName);
    if(name===null)return;
    const trimmed=name.trim();
    if(!trimmed||trimmed.length>80){notice=tr(lang,'Nome non valido','Invalid name');await render();return;}

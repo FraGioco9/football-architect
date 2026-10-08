@@ -108,12 +108,14 @@ test('reload from a second IndexedDB connection preserves all careers',async()=>
  const second=await openCareerDatabase(factory);
  assert.deepEqual((await selectCareer(second,save.meta.id)).state,save.state);
 });
-test('rename updates catalog metadata but never corrupts snapshot',async()=>{
+test('rename updates only the career label and never modifies the manager or snapshot',async()=>{
  const db=await setup(),a=await createCareer(db,form('Old','IT',2));
  const changed=await renameCareer(db,a.meta.id,'New Manager','2026-10-09T10:00:00Z');
- assert.equal(changed.managerName,'New Manager');
+ assert.equal(changed.careerName,'New Manager');
+ assert.equal(changed.managerName,'Old');
  const loaded=await selectCareer(db,a.meta.id);
- assert.equal(loaded.meta.managerName,'New Manager');
+ assert.equal(loaded.meta.careerName,'New Manager');
+ assert.equal(loaded.meta.managerName,'Old');
  assert.deepEqual(loaded.state,a.state);
 });
 test('delete is permanent for the selected career and clears active preference only when needed',async()=>{
@@ -154,6 +156,7 @@ test('JSON export/import roundtrip validates and creates independent identity',a
  const copied=await createCareer(db,{...parsed,id:mkId(),now:'2026-10-09T10:00:00Z'});
  assert.notEqual(copied.meta.id,a.meta.id);
  assert.deepEqual(copied.state,a.state);
+ assert.equal(copied.meta.careerName,a.meta.careerName);
  assert.equal((await readCatalog(db)).rows.length,2);
 });
 test('import rejects corrupt payload and private extra state',async()=>{

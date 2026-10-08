@@ -1,4 +1,5 @@
 import {createSession,validSession,readSession} from './simulation.js';
+import {getLeagueClubs} from './leagues.js';
 
 export const CAREER_DB='football-architect-careers-v1';
 export const EXPORT_FORMAT='football-architect-career';
@@ -36,7 +37,7 @@ export function openCareerDatabase(factory=globalThis.indexedDB){
 export function validMeta(m){
  return Boolean(m&&typeof m==='object'&&!Array.isArray(m)&&
   typeof m.id==='string'&&m.id.length>=8&&m.id.length<=128&&
-  nameOk(m.managerName)&&typeof m.countryId==='string'&&
+  nameOk(m.managerName)&&(m.careerName===undefined||nameOk(m.careerName))&&typeof m.countryId==='string'&&
   Number.isSafeInteger(m.clubId)&&m.clubId>0&&
   iso(m.createdAt)&&iso(m.updatedAt)&&m.schemaVersion===1);
 }
@@ -72,11 +73,12 @@ export function bestCareer(catalog){
  const rows=catalog?.rows??[];
  return rows.find(r=>r.id===catalog?.activeId&&r.status==='ok')??rows.find(r=>r.status==='ok')??null;
 }
-export function createCareer(db,{managerName,countryId,clubId,session=null,source=null,id=globalThis.crypto?.randomUUID?.(),now=NOW()}){
- if(!nameOk(managerName)||typeof id!=='string'||id.length<8||!iso(now))throw error('CAREER_DATA_INVALID');
+export function createCareer(db,{managerName,countryId,clubId,session=null,careerName=null,source=null,id=globalThis.crypto?.randomUUID?.(),now=NOW()}){
+ if(!nameOk(managerName)||(careerName!==null&&!nameOk(careerName))||typeof id!=='string'||id.length<8||!iso(now))throw error('CAREER_DATA_INVALID');
  const state=session??createSession(countryId,clubId);
  if(!validSession(state)||state.countryId!==countryId||state.clubId!==clubId)throw error('CAREER_DATA_INVALID');
- const meta={id,schemaVersion:1,managerName:managerName.trim(),countryId,clubId,createdAt:now,updatedAt:now};
+ const defaultName=getLeagueClubs(countryId).find(c=>c.id===clubId)?.name;
+ const meta={id,schemaVersion:1,careerName:(careerName??defaultName??managerName).trim(),managerName:managerName.trim(),countryId,clubId,createdAt:now,updatedAt:now};
  if(source==='minimal-v1')meta.source=source;
  return transaction(db,['careers','snapshots','preferences'],'readwrite',(tx,done)=>{
   const careers=tx.objectStore('careers'),snapshots=tx.objectStore('snapshots');
@@ -125,13 +127,13 @@ export function saveCareer(db,id,state,{expectedDays=null,now=NOW()}={}){
   };
  });
 }
-export function renameCareer(db,id,managerName,now=NOW()){
- if(!nameOk(managerName)||!iso(now))throw error('CAREER_NAME_INVALID');
+export function renameCareer(db,id,careerName,now=NOW()){
+ if(!nameOk(careerName)||!iso(now))throw error('CAREER_NAME_INVALID');
  return transaction(db,['careers'],'readwrite',(tx,done)=>{
   const cars=tx.objectStore('careers'),req=cars.get(id);
   req.onsuccess=()=>{
    if(!validMeta(req.result)){tx.abort();return;}
-   const meta={...req.result,managerName:managerName.trim(),updatedAt:now};
+   const meta={...req.result,careerName:careerName.trim(),updatedAt:now};
    cars.put(meta);done(meta);
   };
  });
@@ -161,7 +163,7 @@ export function parseCareerImport(text){
  if(payload?.format!==EXPORT_FORMAT||payload.version!==1||!nameOk(payload.meta?.managerName)||typeof payload.snapshotRaw!=='string')throw error('IMPORT_INVALID');
  const state=checkEntry(payload.meta,{raw:payload.snapshotRaw});
  if(!state)throw error('IMPORT_INVALID');
- return {managerName:payload.meta.managerName,countryId:state.countryId,clubId:state.clubId,session:state};
+ return {managerName:payload.meta.managerName,careerName:payload.meta.careerName??null,countryId:state.countryId,clubId:state.clubId,session:state};
 }
 export function readLegacyMinimal(storage){
  return readSession(storage);
