@@ -1,100 +1,178 @@
-import {LEAGUES,getLeagueClubs,leagueById} from './leagues.js';
-import {createSession,advanceSession,readSession,writeSession,seasonLabel} from './simulation.js';
+import {LEAGUES,getLeagueClubs} from './leagues.js';
+import {createSession,advanceSession} from './simulation.js';
+import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport,readLegacyMinimal,hasImportedLegacy} from './career-store.js';
+import {layout,homePage,managerPage,teamsPage,clubList,careersPage,settingsPage,simulationPage,tr,esc} from './ui-pages.js';
 
 const app=document.getElementById('app');
-let session=readSession(window.localStorage);
-let lang=(()=>{try{return window.localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{return 'it';}})();
-let country='IT',choice=null,query='',timer=null;
-const en=()=>lang==='en';
-const tr=(it,english)=>en()?english:it;
-const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const route=()=>['/','/teams','/simulation'].includes(location.pathname)?location.pathname:'/';
+const ROUTES=new Set(['/','/new-career','/new-career/team','/careers','/settings','/simulation']);
+let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
+let draft={managerName:'',countryId:'IT',clubId:null,query:''};
+let timer=null,busy=false,sequence=0,notice='';
+const locale=()=>lang;
+try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
+const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(path){stop();history.pushState({},'',path);render();}
-function localeDate(date){return new Intl.DateTimeFormat(en()?'en-GB':'it-IT',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'));}
-function frame(content){
- return `<div class="shell">
-  <a class="skip" href="#content">${tr('Vai al contenuto','Skip to content')}</a>
-  <header class="top"><a class="brand" href="/" data-action="home">FOOTBALL <b>ARCHITECT</b></a>
-   <label class="lang"><span>${tr('Lingua','Language')}</span><select id="language" aria-label="${tr('Lingua','Language')}">
-    <option value="it"${lang==='it'?' selected':''}>IT</option><option value="en"${lang==='en'?' selected':''}>EN</option></select></label>
-  </header><main id="content">${content}</main>
-  <footer>FOOTBALL ARCHITECT · ${tr('Prototipo offline · Nessuna partita','Offline prototype · No matches')}</footer>
- </div>`;
+function navigate(url){stop();notice='';history.pushState({},'',url);void render();}
+function fail(error){stop();notice=tr(lang,'Operazione non completata: ','Operation failed: ')+(error?.message??String(error));void render();}
+async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
+async function render(){
+ const ticket=++sequence;
+ if(!db){app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Impossibile aprire i salvataggi','Cannot open save storage')}</h1><p>${tr(lang,'IndexedDB non disponibile: i salvataggi non verranno sostituiti o cancellati.','IndexedDB is unavailable: existing saves will not be changed or deleted.')}</p></section>` ,lang,notice);return;}
+ let page=path();
+ try{
+  if(page!=='/simulation')await refreshCatalog();
+  if(ticket!==sequence)return;
+  if(page==='/new-career/team'&&!draft.managerName.trim()){history.replaceState({},'','/new-career');page='/new-career';}
+  if(page==='/simulation'&&!loaded){
+   await refreshCatalog();
+   const candidate=bestCareer(catalog);
+   if(candidate){loaded=await selectCareer(db,candidate.id);}
+   else {history.replaceState({},'','/');page='/';}
+  }
+  if(ticket!==sequence)return;
+  let inner;
+  if(page==='/new-career')inner=managerPage(draft,lang);
+  else if(page==='/new-career/team')inner=teamsPage(draft,lang);
+  else if(page==='/careers')inner=careersPage(catalog,lang,Boolean(readLegacyMinimal(localStorage))&&!hasImportedLegacy(catalog));
+  else if(page==='/settings')inner=settingsPage(lang);
+  else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null);
+  else inner=homePage(catalog,lang);
+  app.innerHTML=layout(inner,lang,notice);
+  document.documentElement.lang=lang;
+  document.title=tr(lang,'Football Architect','Football Architect');
+ }catch(e){
+  if(ticket!==sequence)return;
+  stop();
+  app.innerHTML=layout(`<section class="heading"><h1>${tr(lang,'Errore di caricamento','Loading error')}</h1><p>${esc(e.message)}</p>
+  <button class="btn secondary" data-action="home">${tr(lang,'Torna al menu','Back to menu')}</button></section>`,lang);
+ }
 }
-function button(action,text,variant='primary',extra=''){
- return `<button type="button" class="btn ${variant}" data-action="${action}" ${extra}>${safe(text)}</button>`;
+async function advance(days){
+ if(busy||!loaded)return;
+ busy=true;
+ const current=loaded;
+ try{
+  const next=advanceSession(current.state,days);
+  const saved=await saveCareer(db,current.meta.id,next,{expectedDays:current.state.daysElapsed});
+  if(loaded?.meta.id===current.meta.id){loaded=saved;await render();}
+ }catch(e){fail(e);}finally{busy=false;}
 }
-function home(){
- const l=session?leagueById(session.countryId):null,c= session?getLeagueClubs(session.countryId).find(x=>x.id===session.clubId):null;
- return `<section class="hero"><span class="kicker">${tr('IL TUO CALCIO, LE TUE SCELTE','YOUR CLUB. YOUR JOURNEY.')}</span>
-  <h1>${tr('Benvenuto in Football Architect','Welcome to Football Architect')}</h1>
-  <p>${tr('Scegli una squadra e avanza nel tempo. Nessuna partita, nessun risultato: solo una base pulita da cui ripartire.','Choose a club and advance through time. No matches or scores: a clean foundation.')}</p>
-  <div class="actions">${button('new',tr('Scegli una squadra','Choose a club'))}${session?button('continue',tr('Continua simulazione','Continue simulation'),'secondary'):''}</div>
-  </section>${session?`<section class="panel preview"><span class="kicker">${tr('SESSIONE ATTIVA','ACTIVE SESSION')}</span><h2>${safe(c?.name)}</h2><p>${safe(l?.country[lang])} · ${safe(localeDate(session.date))}</p></section>`:''}`;
+async function begin(){
+ if(!draft.managerName.trim()||draft.managerName.trim().length>80||!LEAGUES.some(l=>l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
+ const current=await createCareer(db,{managerName:draft.managerName,countryId:draft.countryId,clubId:draft.clubId});
+ loaded=current;
+ draft={managerName:'',countryId:'IT',clubId:null,query:''};
+ navigate('/simulation');
 }
-function clubsMarkup(){
- const clubs=getLeagueClubs(country).filter(c=>(c.name+' '+c.city).toLocaleLowerCase().includes(query.toLocaleLowerCase()));
- return clubs.length?clubs.map(c=>`<button type="button" class="club ${choice===c.id?'selected':''}" data-action="select" data-id="${c.id}" aria-pressed="${choice===c.id}">
-  <span class="crest" style="--club1:${safe(c.colors[0])};--club2:${safe(c.colors[1])}">${safe(c.short)}</span><span class="club-copy"><strong>${safe(c.name)}</strong><small>${safe(c.city)}</small></span><span aria-hidden="true">${choice===c.id?'✓':'›'}</span></button>`).join(''):`<p class="muted">${tr('Nessuna squadra trovata.','No clubs found.')}</p>`;
+async function load(id){stop();loaded=await selectCareer(db,id);navigate('/simulation');}
+function download(name,object){
+ const data=new Blob([JSON.stringify(object,null,2)],{type:'application/json'});
+ const href=URL.createObjectURL(data),link=document.createElement('a');
+ link.href=href;link.download=name;document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(href),1000);
 }
-function choose(){
- return `<section class="heading"><button type="button" class="back" data-action="home">← ${tr('Menu','Menu')}</button><span class="kicker">${tr('NUOVA SIMULAZIONE','NEW SIMULATION')}</span>
-  <h1>${tr('Scegli una squadra','Choose a club')}</h1><p>${tr('Otto nazioni, venti squadre inventate per campionato.','Eight countries, twenty fictional clubs in each league.')}</p></section>
-  <section class="panel"><div class="countries" role="group" aria-label="${tr('Paese','Country')}">${LEAGUES.map(l=>`<button type="button" data-action="country" data-country="${l.id}" aria-pressed="${l.id===country}">${safe(l.flag)} ${safe(l.country[lang])}</button>`).join('')}</div>
-  <label class="search-label" for="search">${tr('Cerca una squadra','Find a club')}</label><input id="search" type="search" placeholder="${tr('Nome o città','Name or city')}" value="${safe(query)}" autocomplete="off">
-  <div id="clubs" class="clubs" aria-live="polite">${clubsMarkup()}</div>
-  <div class="selection"><span id="selected">${choice?safe(getLeagueClubs(country).find(c=>c.id===choice)?.name):tr('Nessuna squadra selezionata','No club selected')}</span>
-   ${button('start',tr('Inizia simulazione','Start simulation'),'primary',choice?'':'disabled')}</div></section>`;
+async function handle(action,element){
+ switch(action){
+  case 'home':navigate('/');break;
+  case 'new':draft={managerName:'',countryId:'IT',clubId:null,query:''};navigate('/new-career');break;
+  case 'careers':navigate('/careers');break;
+  case 'settings':navigate('/settings');break;
+  case 'cancel-setup':draft={managerName:'',countryId:'IT',clubId:null,query:''};navigate('/');break;
+  case 'setup-back':navigate('/new-career');break;
+  case 'country':draft.countryId=element.dataset.country;draft.clubId=null;draft.query='';await render();break;
+  case 'select':draft.clubId=Number(element.dataset.id);await render();break;
+  case 'start-career':await begin();break;
+  case 'continue':{
+   await refreshCatalog();
+   const last=bestCareer(catalog);if(last)await load(last.id);
+   break;
+  }
+  case 'load':await load(element.dataset.id);break;
+  case 'rename':{
+   const entry=catalog.rows.find(r=>r.id===element.dataset.id&&r.status==='ok');
+   if(!entry)return;
+   const name=prompt(tr(lang,'Nome allenatore','Manager name'),entry.meta.managerName);
+   if(name===null)return;
+   const trimmed=name.trim();
+   if(!trimmed||trimmed.length>80){notice=tr(lang,'Nome non valido','Invalid name');await render();return;}
+   const meta=await renameCareer(db,entry.id,trimmed);
+   if(loaded?.meta.id===entry.id)loaded={...loaded,meta};
+   await render();break;
+  }
+  case 'export':{
+   const snapshot=await exportCareer(db,element.dataset.id);
+   download('football-architect-'+element.dataset.id+'.json',snapshot);
+   break;
+  }
+  case 'delete':{
+   const id=element.dataset.id,entry=catalog.rows.find(r=>r.id===id);
+   if(!entry)return;
+   if(!confirm(tr(lang,'Eliminare definitivamente questa carriera?','Permanently delete this career?')))return;
+   await deleteCareer(db,id);
+   if(loaded?.meta.id===id){stop();loaded=null;}
+   await render();break;
+  }
+  case 'import':document.getElementById('import-file')?.click();break;
+  case 'legacy':{
+   await refreshCatalog();
+   if(hasImportedLegacy(catalog))return;
+   const s=readLegacyMinimal(localStorage);if(!s)return;
+   const name=prompt(tr(lang,'Nome allenatore per la simulazione precedente','Manager name for previous simulation'),'');
+   if(name===null)return;
+   if(!name.trim()||name.trim().length>80){notice=tr(lang,'Nome non valido','Invalid name');await render();return;}
+   await createCareer(db,{managerName:name.trim(),countryId:s.countryId,clubId:s.clubId,session:s,source:'minimal-v1'});
+   notice=tr(lang,'Simulazione precedente importata. I dati originali rimangono intatti.','Previous simulation imported. Original data remains untouched.');
+   await render();break;
+  }
+  case 'day':stop();await advance(1);break;
+  case 'week':stop();await advance(7);break;
+  case 'month':stop();await advance(30);break;
+  case 'year':stop();await advance(365);break;
+  case 'toggle':{
+   if(timer!==null)stop();
+   else timer=setInterval(()=>{if(!busy)void advance(1);},500);
+   await render();break;
+  }
+ }
 }
-function simulation(){
- if(!session)return home();
- const league=leagueById(session.countryId),club=getLeagueClubs(session.countryId).find(c=>c.id===session.clubId);
- return `<section class="heading"><button class="back" type="button" data-action="home">← ${tr('Menu','Menu')}</button><span class="kicker">${tr('SIMULAZIONE','SIMULATION')}</span>
- <h1>${safe(club.name)}</h1><p>${safe(league.flag)} ${safe(league.country[lang])} · ${safe(club.city)}</p></section>
- <div class="metrics"><section class="panel"><span class="kicker">${tr('DATA DI GIOCO','SIMULATION DATE')}</span><h2>${safe(localeDate(session.date))}</h2></section>
- <section class="panel"><span class="kicker">${tr('STAGIONE','SEASON')}</span><h2>${safe(seasonLabel(session.date))}</h2></section>
- <section class="panel"><span class="kicker">${tr('GIORNI TRASCORSI','DAYS ELAPSED')}</span><h2>${session.daysElapsed.toLocaleString(en()?'en-GB':'it-IT')}</h2></section></div>
- <section class="panel control"><h2>${tr('Avanza nel tempo','Advance through time')}</h2>
- <p>${tr('La simulazione modifica soltanto la data e la stagione. Nessun incontro viene generato o giocato.','Only the date and season advance. No fixtures, matches or results are generated.')}</p>
- <div class="actions">${button('day',tr('+ 1 giorno','+ 1 day'))}${button('week',tr('+ 7 giorni','+ 7 days'))}${button('month',tr('+ 30 giorni','+ 30 days'))}${button('year',tr('+ 365 giorni','+ 365 days'))}</div>
- <div class="actions separated">${button('toggle',timer===null?tr('▶ Simulazione continua','▶ Auto-advance'):tr('Ⅱ Ferma simulazione','Ⅱ Pause simulation'),timer===null?'secondary':'warning')}
- ${button('change',tr('Cambia squadra','Change club'),'ghost')}</div>
- <p class="muted" role="status">${timer===null?tr('Simulazione in pausa.','Simulation paused.'):tr('Avanzamento automatico: un giorno alla volta.','Automatic advance: one day at a time.')}</p></section>`;
-}
-function render(){
- const path=route();
- if(path!=='/simulation')stop();
- if(path==='/simulation'&&!session){history.replaceState({},'','/');}
- app.innerHTML=frame(path==='/teams'?choose():path==='/simulation'&&session?simulation():home());
- document.documentElement.lang=lang;
- document.title='Football Architect';
-}
-function advance(days){if(!session)return;try{session=advanceSession(session,days);writeSession(window.localStorage,session);render();}catch(err){stop();render();window.alert(tr('Impossibile avanzare: ','Cannot advance: ')+err.message);}}
-document.addEventListener('click',e=>{
- const el=e.target.closest('[data-action]');if(!el||!app.contains(el))return;
- const action=el.dataset.action;
- if(action==='home'){e.preventDefault();navigate('/');return;}
- if(action==='new'){if(session&&!window.confirm(tr('Avviare una nuova simulazione? Quella attuale sarà sostituita, ma i vecchi salvataggi IndexedDB resteranno intatti.','Start a new simulation? The current one will be replaced. Old IndexedDB saves remain untouched.')))return;country='IT';choice=null;query='';navigate('/teams');return;}
- if(action==='continue'){navigate('/simulation');return;}
- if(action==='country'){country=el.dataset.country;choice=null;query='';render();return;}
- if(action==='select'){choice=Number(el.dataset.id);render();return;}
- if(action==='start'){if(!choice)return;try{session=createSession(country,choice);writeSession(window.localStorage,session);navigate('/simulation');}catch(err){window.alert(err.message);}return;}
- if(action==='change'){stop();if(!window.confirm(tr('Cambiare squadra e ricominciare?','Choose another club and restart?')))return;country=session.countryId;choice=null;query='';navigate('/teams');return;}
- if(action==='day'||action==='week'||action==='month'||action==='year'){stop();advance({day:1,week:7,month:30,year:365}[action]);return;}
- if(action==='toggle'){if(timer!==null){stop();render();}else{timer=setInterval(()=>advance(1),500);render();}return;}
+document.addEventListener('click',event=>{
+ const el=event.target.closest('[data-action]');if(!el||!app.contains(el))return;
+ if(el.dataset.action==='home')event.preventDefault();
+ if(busy)return;
+ void handle(el.dataset.action,el).catch(fail);
 });
-document.addEventListener('input',e=>{
- if(e.target.id!=='search')return;
- query=e.target.value;
- const target=document.getElementById('clubs');if(target)target.innerHTML=clubsMarkup();
+document.addEventListener('submit',event=>{
+ if(event.target.id!=='manager-form')return;
+ event.preventDefault();
+ const field=event.target.elements.namedItem('managerName');
+ const name=String(field?.value??'').trim();
+ if(!name||name.length>80){field?.focus();return;}
+ draft.managerName=name;navigate('/new-career/team');
 });
-document.addEventListener('change',e=>{
- if(e.target.id!=='language')return;
- lang=e.target.value==='en'?'en':'it';
- try{window.localStorage.setItem('football-architect:minimal:lang',lang);}catch{}
- render();
+document.addEventListener('input',event=>{
+ if(event.target.id!=='search')return;
+ draft.query=event.target.value;
+ const list=document.getElementById('clubs');if(list)list.innerHTML=clubList(draft,lang);
 });
-window.addEventListener('popstate',()=>{stop();render();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();render();}});
-render();
+document.addEventListener('change',event=>{
+ if(event.target.id==='language'){
+  lang=event.target.value==='en'?'en':'it';
+  try{localStorage.setItem('football-architect:minimal:lang',lang);}catch{}
+  void render();
+ }
+ if(event.target.id==='import-file')void (async()=>{
+  const file=event.target.files?.[0];if(!file)return;
+  if(file.size>2_000_000)throw Error('IMPORT_TOO_LARGE');
+  const data=parseCareerImport(await file.text());
+  await createCareer(db,data);
+  notice=tr(lang,'Carriera importata','Career imported');
+  await render();
+ })().catch(fail);
+});
+window.addEventListener('popstate',()=>{stop();void render();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();void render();}});
+async function boot(){
+ try{db=await openCareerDatabase();await render();}
+ catch(e){notice=e.message;await render();}
+}
+void boot();
