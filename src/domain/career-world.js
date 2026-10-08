@@ -29,7 +29,8 @@ function snapPlayer(p,country,seed){
  const profile=p.attributeProfile??generatePlayerAttributes({...p,position},{seed,countryId:country});
  // The field profile is stored once; do not repeat its verbose generator metadata.
  const attributes=Object.fromEntries(Object.entries(profile.values));
- return {id:playerID(country,p.id),name:p.name,clubId:p.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,
+ return {id:playerID(country,p.id),globalId:p.globalId??playerID(country,p.id),identity:p.identity?structuredClone(p.identity):undefined,
+  name:p.name,shirtNumber:p.shirtNumber??p.identity?.shirtNumber??null,clubId:p.clubId,position:p.position,age:p.age,ovr:p.ovr,potential:p.potential,
   wage:p.wage,contract:p.contract,apps:0,goals:0,nationality:p.nationality,attributes};
 }
 function leagueFrom(seed,code,season){

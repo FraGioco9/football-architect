@@ -4,8 +4,8 @@ const given={
   ENG:['Oliver','Elliot','Harry','Nathan','Lewis','Callum','George','Alfie','Isaac','Freddie','Joshua','Mason','Connor','Noah','Theo','Finley','Archie','Harvey'],
   ES:['Izan','Mateo','Sergio','Ander','Bruno','Hugo','Raúl','Iker','Álvaro','Darío','Javier','Marcos','Nicolás','Samuel','Iván','Rubén','Adrián','Leo'],
   DE:['Lukas','Jonas','Felix','Emil','Moritz','Leon','Finn','Timo','Nico','Jakob','Jannis','Paul','Florian','Henrik','Julian','Anton','Erik','Milan'],
-  FR:['Théo','Noé','Mathis','Adrien','Loïc','Rémi','Clément','Émile','Bastien','Maxence','Lucien','Hugo','Antoine','Alexis','Gaël','Raphaël','Simon','Arthur'],
-  PT:['Tiago','Nuno','Rúben','Diogo','Gonçalo','Tomás','Rafael','Afonso','Duarte','João','Pedro','Miguel','André','Bernardo','Martim','Simão','Leandro','Henrique'],
+  FR:['Théo','Noé','Mathis','Adrien','Loïc','Rémi','Clément','Émile','Bastien','Maxence','Lucien','Hugo','Antoine','Alexis','Gaël','Raphaël','Simon','Arthur','Jean-Baptiste'],
+  PT:['Tiago','Nuno','Rúben','Diogo','Gonçalo','Tomás','Rafael','Afonso','Duarte','João','Pedro','Miguel','André','Bernardo','Martim','Simão','Leandro','Henrique','João-Pedro'],
   NL:['Bram','Daan','Milan','Joris','Koen','Thijs','Luuk','Niels','Jasper','Sven','Sem','Tijn','Gijs','Wout','Joost','Lars','Ruben','Floris'],
   BR:['Caio','Davi','Luiz','João','Mateus','Enzo','Felipe','Rafael','Vinícius','Danilo','Pedro','Thiago','Renan','Vitor','Heitor','Bruno','Ícaro','Lucas']
 };
@@ -18,6 +18,16 @@ const stems={
   PT:['Val','More','Silv','Monte','Carvalh','Ribeir','Serr','Font','Barreir','Vian','Ferreir','Costa','Lour','Marqu','Pinheir'],
   NL:['Veld','Wester','Meer','Hout','Berg','Dijk','Bos','Waal','Kamp','Ver','Noord','Veen','Zand','Linde','Broek'],
   BR:['Rav','Soar','Monte','Caval','Val','Ferreir','Pinh','More','Oliveir','Barros','Mora','Cost','Luz','Pereir','Serr']
+};
+const surnamePrefixes={
+  IT:['','','','','Di ','De '],
+  ENG:['','','','','',"O'"],
+  ES:['','','','','De ','Del '],
+  DE:['','','','','von '],
+  FR:['','','','','Le ','Du '],
+  PT:['','','','','Da ','De '],
+  NL:['','','','Van ','De '],
+  BR:['','','','','Da ','Dos ']
 };
 const endings={
   IT:['etti','elli','oni','ari','ini','aldi','ucci','asso','ani','aro','ante','ino'],
@@ -32,16 +42,18 @@ const endings={
 export function syntheticName(rand,homeCountry,used){
   // Local identity predominates, with a small number of foreign signings.
   const codes=Object.keys(given),nationalityCode=rand()<.83?homeCountry:codes[Math.floor(rand()*codes.length)];
-  let fullName='';
+  let firstName='',lastName='',fullName='';
   for(let attempt=0;attempt<150;attempt++){
-    const first=given[nationalityCode][Math.floor(rand()*given[nationalityCode].length)];
+    firstName=given[nationalityCode][Math.floor(rand()*given[nationalityCode].length)];
     const stem=stems[nationalityCode][Math.floor(rand()*stems[nationalityCode].length)];
     const end=endings[nationalityCode][Math.floor(rand()*endings[nationalityCode].length)];
-    const surname=stem+end;
-    fullName=`${first} ${surname}`;
+    const prefixes=surnamePrefixes[nationalityCode]??[''];
+    const prefix=prefixes[Math.floor(rand()*prefixes.length)];
+    lastName=prefix+stem+end;
+    fullName=`${firstName} ${lastName}`;
     if(!used.has(fullName))break;
   }
   used.add(fullName);
   const nation={IT:'Italia',ENG:'Inghilterra',ES:'Spagna',DE:'Germania',FR:'Francia',PT:'Portogallo',NL:'Paesi Bassi',BR:'Brasile'}[nationalityCode];
-  return {name:fullName,nationality:nation};
+  return {name:fullName,firstName,lastName,nationality:nation,nationalityCode};
 }
