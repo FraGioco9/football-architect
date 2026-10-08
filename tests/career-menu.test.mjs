@@ -7,6 +7,7 @@ import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,create
 import {layout,homePage,managerPage,teamsPage,careersPage,settingsPage,simulationPage} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
+import {feedback,fromError,feedbackText,inlineManagerError,renderFeedback,renderBlockingError} from '../src/feedback.js';
 
 class FakeDB{
  constructor(){this.data=new Map();this.objectStoreNames={contains:key=>this.data.has(key)};}
@@ -277,7 +278,7 @@ test('the historic one-page onboarding contains country, club, and manager befor
  const db=await setup(),draft={managerName:'Ada Coach',countryId:'IT',clubId:2,query:''};
  const markup=managerPage(draft,'it'),compat=teamsPage(draft,'it');
  assert.match(markup,/class="onboarding restored-onboarding"/);
- assert.match(markup,/class="onboard-header"/);
+ assert.match(markup,/class="onboard-header fa-page-heading"/);
  assert.match(markup,/Costruisci la tua carriera/);
  assert.match(markup,/class="league-pick"/);
  assert.match(markup,/class="league-pick-options"/);
@@ -398,4 +399,92 @@ test('club table hover is contained and the document provides the only scrollbar
  assert.doesNotMatch(style,/\.restored-onboarding \.club-pick-grid\{max-height:/);
  assert.match(style,/\.restored-onboarding \.onboard-clubs\{min-width:0;overflow:visible\}/);
  assert.match(style,/--scrollbar-track:transparent;/);
+});
+
+
+test('all five routes share the same page heading and h1 hierarchy',()=>{
+ const draft={managerName:'QA',countryId:'IT',clubId:2,query:''};
+ const snapshots=[
+  homePage({rows:[],activeId:null},'it'),
+  managerPage(draft,'it'),
+  careersPage({rows:[],activeId:null},'it'),
+  settingsPage('it'),
+  simulationPage({managerName:'QA',countryId:'IT',clubId:2},createSession('IT',2,'2026-10-08'),'it',false)
+ ];
+ for(const page of snapshots){
+  assert.equal((page.match(/class="[^"]*fa-page-heading[^"]*"/g)||[]).length,1);
+  assert.equal((page.match(/<h1 class="fa-page-title">/g)||[]).length,1);
+  assert.equal((page.match(/<h1\b/g)||[]).length,1);
+ }
+ assert.match(layout(snapshots[0],'it'),/id="content" class="fa-page-main"/);
+});
+test('one shared CSS contract governs width, padding, title scale and type on all pages',()=>{
+ const stylesheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const [token,value] of Object.entries({
+  '--fa-page-width':'1200px',
+  '--fa-page-gutter':'clamp(16px,3.4vw,34px)',
+  '--fa-page-top':'clamp(24px,4vw,46px)',
+  '--fa-title-size':'clamp(30px,4.6vw,50px)',
+  '--fa-body-size':'14px',
+  '--fa-heading-gap':'clamp(22px,3vw,34px)',
+  '--fa-panel-padding':'clamp(16px,2.4vw,24px)'
+ }))assert.ok(stylesheet.includes(token+':'+value),token);
+ assert.match(stylesheet,/\.shell>\.top,\.shell>\.fa-page-main,\.shell>footer/);
+ assert.match(stylesheet,/\.fa-page-main \.fa-page-heading h1/);
+ assert.match(stylesheet,/\.fa-page-main \.restored-onboarding \.onboard-wrap\{padding:0\}/);
+ assert.match(stylesheet,/@media\(max-width:550px\)/);
+ assert.match(stylesheet,/#manager-name-error:not\(\[hidden\]\)/);
+});
+test('feedback messages are localized, severity-aware, dismissible and never expose raw errors',()=>{
+ const it=renderFeedback(feedback('error','IMPORT_INVALID'),'it');
+ const en=renderFeedback(feedback('success','IMPORT_OK'),'en');
+ assert.match(it,/role="alert"/);
+ assert.match(it,/File carriera non valido/);
+ assert.match(it,/data-action="feedback-dismiss"/);
+ assert.match(it,/aria-label="Chiudi messaggio"/);
+ assert.match(en,/role="status"/);
+ assert.match(en,/Career imported/);
+ assert.match(en,/data-feedback-kind="success"/);
+ assert.equal(renderFeedback(null,'it'),'');
+ const raw='<script>alert(1)</script> PRIVATE_JSON';
+ const generic=renderFeedback(fromError(new Error(raw)),'it');
+ assert.doesNotMatch(generic,/PRIVATE_JSON|<script>/);
+ assert.match(generic,/Operazione non riuscita/);
+});
+test('IndexedDB and import failures have safe and actionable guidance',()=>{
+ assert.equal(fromError(new Error('INDEXEDDB_UNAVAILABLE')).code,'INDEXEDDB_UNAVAILABLE');
+ assert.equal(fromError(Object.assign(new Error('problem'),{name:'QuotaExceededError'})).code,'STORAGE_QUOTA');
+ assert.equal(fromError(Object.assign(new Error('problem'),{name:'SecurityError'})).code,'STORAGE_PERMISSION');
+ assert.equal(fromError(new Error('internal'), 'read').code,'READ_FAILED');
+ assert.match(feedbackText(feedback('error','IDB_ABORT'),'en').description,/previous save remains/);
+ const blocking=renderBlockingError(new Error('INDEXEDDB_BLOCKED'),'it');
+ assert.match(blocking,/role="alert"/);
+ assert.match(blocking,/Archivio occupato/);
+ assert.match(blocking,/data-action="retry-storage"/);
+ assert.doesNotMatch(blocking,/INDEXEDDB_BLOCKED|stack|Error:/);
+});
+test('manager field validation uses an inline IT/EN message for blanks and length',()=>{
+ assert.equal(inlineManagerError(' Mario Rossi '),null);
+ assert.equal(inlineManagerError('  ','it').code,'FIELD_MANAGER_REQUIRED');
+ assert.match(inlineManagerError('  ','en').description,/Enter a name/);
+ assert.equal(inlineManagerError('x'.repeat(81),'it').code,'FIELD_MANAGER_LENGTH');
+ assert.equal(inlineManagerError('x'.repeat(80),'it'),null);
+ const html=managerPage({managerName:'',countryId:'IT',clubId:1},'it');
+ assert.match(html,/<form id="manager-form" class="onboard-manager-form" novalidate>/);
+ assert.match(html,/aria-invalid="false" aria-describedby="manager-name-error"/);
+ assert.match(html,/id="manager-name-error" class="field-error" role="alert" hidden/);
+});
+test('controllers use structured feedback and protect save data in recovery paths',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(controller,/function fail\(error\)\{stop\(\);feedbackState=fromError\(error\);/);
+ assert.match(controller,/case 'feedback-dismiss'/);
+ assert.match(controller,/case 'retry-storage'/);
+ assert.match(controller,/function validateManager\(field\)/);
+ assert.match(controller,/if\(!field\|\|!validateManager\(field\)\)/);
+ assert.match(controller,/feedback\('success','IMPORT_OK'\)/);
+ assert.match(controller,/feedback\('success','RENAME_OK'\)/);
+ assert.match(controller,/feedback\('success','DELETE_OK'\)/);
+ assert.doesNotMatch(controller,/notice=|esc\(e\.message\)|notice:e\.message/);
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.ok(server.includes("'/src/feedback.js'"));
 });
