@@ -28,7 +28,7 @@ const legacyPositionFamily=Object.freeze({
  TS:'fullback',LB:'fullback',LWB:'fullback',
  MED:'mid',CDM:'mid',CC:'mid',CM:'mid',COC:'mid',CAM:'mid',
  AD:'wide',AS:'wide',RM:'wide',LM:'wide',RW:'wide',LW:'wide',
- ATT:'striker',CF:'striker',ST:'striker'
+ ATT:'striker',ST:'striker'
 });
 const physical=Object.freeze({
  gk:{height:190,spread:9,weightBias:4},
@@ -48,7 +48,7 @@ const numberPreferences=Object.freeze({
  COC:[10,8,14,18,20,21],CAM:[10,8,14,18,20,21],
  AD:[7,11,17,19,21,22,27],RW:[7,11,17,19,21,22,27],RM:[7,11,17,19,21,22,27],
  AS:[11,7,17,19,21,22,27],LW:[11,7,17,19,21,22,27],LM:[11,7,17,19,21,22,27],
- ATT:[9,10,11,17,18,19,20,23],ST:[9,10,11,17,18,19,20,23],CF:[9,10,11,17,18,19,20,23]
+ ATT:[9,10,11,17,18,19,20,23],ST:[9,10,11,17,18,19,20,23]
 });
 
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
