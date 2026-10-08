@@ -4,7 +4,7 @@
 import {validatePersonality,clamp} from './player-personality.mjs';
 const number=(v,name,min,max)=>{if(!Number.isFinite(v)||v<min||v>max)throw new Error(`PLY02_${name}`);return v;};
 const round=(v)=>Math.round(v*1000)/1000;
-export const PERSONALITY_EVENTS=Object.freeze(['win','loss','bench','played','coach_praise','coach_criticism','training','contract_offer','transfer_rejected']);
+export const PERSONALITY_EVENTS=Object.freeze(['win','loss','bench','played','coach_praise','coach_criticism','training','contract_offer','transfer_rejected','coach_change','contract_promise']);
 export function evaluatePersonalityEffects(profile,{morale=50,playingTime=50,clubLevel=50,offeredRaise=0}={}){
  validatePersonality(profile);
  number(morale,'MORALE',0,100);number(playingTime,'PLAYING_TIME',0,100);number(clubLevel,'CLUB_LEVEL',0,100);number(offeredRaise,'RAISE',-100,300);
@@ -34,9 +34,10 @@ export function eventResponse(profile,type,{importance=1}={}){
   training:0.8+(p-50)*0.016,
   contract_offer:1.5+(l-50)*0.018,
   transfer_rejected:-2-(a-50)*0.035+(l-50)*0.016+(ad-50)*0.014,
+  coach_change:0,contract_promise:0,
  };
  const raw=effects[type]*importance;
  return {moraleDelta:round(clamp(raw,-8,8)),drivers:{
-  win:['determination'],loss:['determination','temperament'],bench:['ambition','professionalism'],played:['ambition'],coach_praise:['determination'],coach_criticism:['temperament','professionalism'],training:['professionalism'],contract_offer:['loyalty'],transfer_rejected:['ambition','loyalty','adaptability'],
+  win:['determination'],loss:['determination','temperament'],bench:['ambition','professionalism'],played:['ambition'],coach_praise:['determination'],coach_criticism:['temperament','professionalism'],training:['professionalism'],contract_offer:['loyalty'],transfer_rejected:['ambition','loyalty','adaptability'],coach_change:['coach_change'],contract_promise:['contract_promise'],
  }[type]};
 }

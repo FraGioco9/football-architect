@@ -7,7 +7,7 @@ import {addMessage} from './history.js';
 import {makeTerms,makeContract,validateContract,validateTerms,CONTRACT_ROLES} from '../addons/domain/player-contract.mjs';
 import {initialPromiseRecord,recordPromiseMatch,assessPromise,validatePromise} from '../addons/domain/player-contract-promises.mjs';
 import {reviewPlayerOffer} from '../addons/domain/player-contract-scouting.mjs';
-import {personalityEnabled,personalityPlayerView} from './career-personality.js';
+import {personalityEnabled,personalityPlayerView,applyCareerMoraleAdjustment} from './career-personality.js';
 import {financeEnabled} from './career-finance.js';
 
 const fail=(code)=>{throw Error(`PLY05_${code}`)};
@@ -141,7 +141,9 @@ export function settleCareerContractsRound(w,{matchId=null,startedIds=null}={}){
    const earned=c.terms.bonuses.appearance+scored*c.terms.bonuses.goal;
    if(earned>0){club.balance-=earned;paid+=earned;}
   }
-  if(promise&&promise.eligibleMatches>=5&&promise.eligibleMatches%5===0){const assessment=assessPromise(promise);if(assessment.met!==null){p.morale=cap(p.morale+assessment.moraleDelta,0,100);s.events.push({season:w.season,round:w.round,type:assessment.met?'promise_met':'promise_broken',playerId:id});}}
+  if(promise&&promise.eligibleMatches>=5&&promise.eligibleMatches%5===0){const assessment=assessPromise(promise);if(assessment.met!==null){if(personalityEnabled(w))applyCareerMoraleAdjustment(w,{playerId:id,eventId:`contract-promise:${key}:${id}`,delta:assessment.moraleDelta});
+    else p.morale=cap(p.morale+assessment.moraleDelta,0,100);
+    s.events.push({season:w.season,round:w.round,type:assessment.met?'promise_met':'promise_broken',playerId:id});}}
  }
  s.processedMatches.push(key);s.processedMatches=s.processedMatches.slice(-150);s.events.push({season:w.season,round:w.round,type:'match',playerId:'0',bonusEUR:paid});s.events=s.events.slice(-250);s.revision++;return paid;
 }

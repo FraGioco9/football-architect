@@ -2,7 +2,7 @@
  * until the player explicitly enables this mode. No historical fixture is regenerated.
  */
 import {validateCareerWorld} from './career-world.js';
-import {validateCareerPersonality,personalityMatchMultiplier} from './career-personality.js';
+import {validateCareerPersonality,personalityEnabled,personalityMatchMultiplier} from './career-personality.js';
 import {validateCareerContracts} from './career-contracts.js';
 import {validateCareerMarket} from './career-market.js';
 import {validateCareerCalendar} from './career-calendar.js';
@@ -377,7 +377,8 @@ export function simulateAdvancedMatch(w,m){
       if(sim04)p.minutesPlayed=Math.round(((p.minutesPlayed??0)+secs/60)*100)/100;
       p.apps++;p.form=clamp(+(6.5+((side.teamId===m.home?result.homeGoals-result.awayGoals:result.awayGoals-result.homeGoals)*.22)).toFixed(1),4,10);
       recordCareerMinutes(w,id,secs,p.form);
-      p.morale=clamp(p.morale+(side.teamId===m.home?result.homeGoals-result.awayGoals:result.awayGoals-result.homeGoals)*2,20,100);
+      // PLYR-06.2: managed morale is written by the one event ledger, never twice.
+      if(!(side.teamId===w.clubId&&personalityEnabled(w)))p.morale=clamp(p.morale+(side.teamId===m.home?result.homeGoals-result.awayGoals:result.awayGoals-result.homeGoals)*2,20,100);
       if(p.position==='POR'&&conceded===0&&secs===5400)p.cleanSheets++;
     }
   }
