@@ -45,7 +45,7 @@ function family(position){
  if(position==='CB')return 'defender';
  if(['RB','LB','RWB','LWB'].includes(position))return 'fullback';
  if(['CDM','CM'].includes(position))return 'midfield';
- if(['CAM','CF'].includes(position))return 'attackingMid';
+ if(position==='CAM')return 'attackingMid';
  if(['RM','LM','RW','LW'].includes(position))return 'winger';
  return 'striker';
 }
