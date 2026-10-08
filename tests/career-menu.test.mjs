@@ -338,3 +338,31 @@ test('restored original CSS and single-page UI are responsive while match engine
  assert.doesNotMatch(controller,/navigate\('\/new-career\/team'\)/);
  assert.doesNotMatch(controller,/simulateMatch|playMatch|matchEngine/);
 });
+
+test('every scrollbar uses the original site palette and a completely transparent track',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/--scrollbar-width:7px;/);
+ assert.match(css,/--scrollbar-track:transparent;/);
+ assert.match(css,/--scrollbar-thumb:#42565f;/);
+ assert.match(css,/--scrollbar-thumb-hover:#607980;/);
+ assert.match(css,/--scrollbar-thumb-active:#738d93;/);
+ assert.match(css,/:where\(html,body,body \*\)\{\s*scrollbar-width:thin;\s*scrollbar-color:var\(--scrollbar-thumb\) var\(--scrollbar-track\);/);
+ assert.match(css,/:where\(html,body,body \*\):hover\{\s*scrollbar-color:var\(--scrollbar-thumb-hover\) var\(--scrollbar-track\);/);
+ for(const part of ['::-webkit-scrollbar-track','::-webkit-scrollbar-track-piece','::-webkit-scrollbar-corner'])
+  assert.ok(css.includes(':where(html,body,body *)'+part),part);
+ assert.match(css, /::-webkit-scrollbar-corner\{\s*background:transparent;\s*border:0;\s*box-shadow:none;/);
+ assert.match(css, /::-webkit-scrollbar-thumb\{\s*background:var\(--scrollbar-thumb\);/);
+ assert.match(css, /::-webkit-scrollbar-thumb:active\{\s*background:var\(--scrollbar-thumb-active\);/);
+ assert.match(css, /::-webkit-scrollbar-button\{\s*display:none;\s*width:0;\s*height:0;/);
+});
+test('the transparent-track contract covers page, club grid and future nested scroll regions',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.match(css,/\.restored-onboarding \.club-pick-grid\{max-height:550px;overflow-y:auto;overscroll-behavior:contain\}/);
+ assert.match(css,/:where\(html,body,body \*\)::-webkit-scrollbar\{\s*width:var\(--scrollbar-width\);\s*height:var\(--scrollbar-width\);\s*background:transparent;/);
+ assert.match(ui,/class="club-pick-grid"/);
+ assert.match(ui,/class="career-grid"/);
+ // The shared selectors target every descendant, without requiring classes
+ // or making new containers scrollable.
+ assert.doesNotMatch(css.slice(css.lastIndexOf('/* QOL05.08')),/\boverflow(?:-[xy])?\s*:/);
+});

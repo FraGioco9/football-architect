@@ -324,3 +324,53 @@ main:has(.restored-onboarding),main:has(.restored-careers),main:has(.restored-se
  .onboard-intro-row{align-items:flex-start;flex-direction:column}
 }
 @media(prefers-reduced-motion:reduce){.restored-onboarding .club-pick{transition:none}.career-more>summary svg{transition:none}}
+
+
+/* QOL05.08 — Single pre-reset scrollbar contract, applied to every scroll surface.
+   Covers page scrolling, club selection, cards and any future nested scroll area.
+   Transparent tracks/corners; never force overflow or alter scrollable dimensions. */
+:root{
+  --scrollbar-width:7px;
+  --scrollbar-track:transparent;
+  --scrollbar-thumb:#42565f;
+  --scrollbar-thumb-hover:#607980;
+  --scrollbar-thumb-active:#738d93;
+}
+:where(html,body,body *){
+  scrollbar-width:thin;
+  scrollbar-color:var(--scrollbar-thumb) var(--scrollbar-track);
+}
+:where(html,body,body *):hover{
+  scrollbar-color:var(--scrollbar-thumb-hover) var(--scrollbar-track);
+}
+:where(html,body,body *)::-webkit-scrollbar{
+  width:var(--scrollbar-width);
+  height:var(--scrollbar-width);
+  background:transparent;
+}
+:where(html,body,body *)::-webkit-scrollbar-track,
+:where(html,body,body *)::-webkit-scrollbar-track-piece,
+:where(html,body,body *)::-webkit-scrollbar-corner{
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+:where(html,body,body *)::-webkit-scrollbar-thumb{
+  background:var(--scrollbar-thumb);
+  border:1px solid transparent;
+  background-clip:padding-box;
+  border-radius:999px;
+}
+:where(html,body,body *):hover::-webkit-scrollbar-thumb{
+  background:var(--scrollbar-thumb-hover);
+  background-clip:padding-box;
+}
+:where(html,body,body *)::-webkit-scrollbar-thumb:active{
+  background:var(--scrollbar-thumb-active);
+  background-clip:padding-box;
+}
+:where(html,body,body *)::-webkit-scrollbar-button{
+  display:none;
+  width:0;
+  height:0;
+}
