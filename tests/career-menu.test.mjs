@@ -338,7 +338,8 @@ test('restored original CSS and single-page UI are responsive while match engine
   assert.ok(sheet.includes('.'+name),name);
  assert.match(sheet,/@media\(max-width:760px\)/);
  assert.match(sheet,/@media\(max-width:430px\)/);
- assert.match(controller,/draft\.managerName=name;void begin\(\)\.catch\(fail\)/);
+ assert.match(controller,/if\(!field\|\|!validateManager\(field\)\)/);
+ assert.match(controller,/draft\.managerName=field\.value\.trim\(\)/);
  assert.match(controller,/case 'country':draft\.countryId=element\.dataset\.country;draft\.clubId=1/);
  assert.doesNotMatch(controller,/navigate\('\/new-career\/team'\)/);
  assert.doesNotMatch(controller,/simulateMatch|playMatch|matchEngine/);
