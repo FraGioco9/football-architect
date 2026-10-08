@@ -66,13 +66,13 @@ export function scoutingEstimate(w,id){
   const shift=(hash(w.seed,id,kind)%9)-4;
   const center=limit(Math.round(target+shift*(1-effective/115)),1,99);
   let low=limit(center-width,1,99),high=limit(center+width,1,99);
-  // Even at high confidence never output exact CA/PA; never show true as center guaranteed.
+  // Even at high confidence, estimated overall and skills remain intervals, not exact values.
   if(high-low<8){low=limit(high-8,1,99);high=limit(low+8,1,99);}
   return {min:low,max:high};
  };
  // No report: no numerical estimate whatsoever (public name/age/position remain).
  return {id,countryId:found.countryId,known:effective>0,confidence:effective,lastCheckedDay:day,
-   overall:effective?mk(found.player.ovr,'overall'):null,potential:effective?mk(found.player.potential,'potential'):null,
+   overall:effective?mk(found.player.ovr,'overall'):null,
    valueEUR:effective?{min:Math.round((found.player.value??found.player.ovr**3*3)*(.50+effective/300)/1000)*1000,max:Math.round((found.player.value??found.player.ovr**3*3)*(1.5-effective/300)/1000)*1000}:null,
    attributes:effective>=58?Object.fromEntries(Object.entries(found.player.attributes??found.player.attributeProfile?.values??{}).slice(0,12).map(([k,v])=>[k,mk(v,k)])):null};
 }
