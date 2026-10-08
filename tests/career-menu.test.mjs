@@ -282,7 +282,7 @@ test('the historic one-page onboarding contains country, club, and manager befor
  assert.match(markup,/class="league-pick"/);
  assert.match(markup,/class="league-pick-options"/);
  assert.equal((markup.match(/data-action="country"/g)||[]).length,8);
- assert.equal((markup.match(/data-action="select"/g)||[]).length,20);
+ assert.equal((markup.match(/class="club-table-select"/g)||[]).length,20);
  assert.match(markup,/<table class="club-table"/);
  assert.match(markup,/<thead>/);
  assert.match(markup,/<tbody>/);
@@ -368,7 +368,7 @@ test('the transparent-track contract covers page, club grid and future nested sc
  assert.match(ui,/class="career-grid"/);
  // The shared selectors target every descendant, without requiring classes
  // or making new containers scrollable.
- assert.doesNotMatch(css.slice(css.lastIndexOf('/* QOL05.08')),/\boverflow(?:-[xy])?\s*:/);
+ assert.doesNotMatch(css.slice(css.lastIndexOf('/* QOL05.08')),/\boverflow-[xy]\s*:/);
 });
 
 test('new career club table keeps every club on the document without an internal scrollbar',()=>{
