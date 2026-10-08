@@ -491,3 +491,138 @@ main:has(.restored-onboarding),main:has(.restored-careers),main:has(.restored-se
 @media(prefers-reduced-motion:reduce){
   .restored-onboarding .club-table td{transition:none}
 }
+
+
+/* Shared site foundations: menu, setup, careers, settings, simulation. */
+:root{
+ --fa-page-width:1200px;
+ --fa-page-gutter:clamp(16px,3.4vw,34px);
+ --fa-page-top:clamp(24px,4vw,46px);
+ --fa-page-bottom:clamp(36px,6vw,60px);
+ --fa-title-size:clamp(30px,4.6vw,50px);
+ --fa-title-leading:1.1;
+ --fa-title-weight:820;
+ --fa-body-size:14px;
+ --fa-body-leading:1.6;
+ --fa-heading-gap:clamp(22px,3vw,34px);
+ --fa-panel-padding:clamp(16px,2.4vw,24px);
+ --fa-section-size:19px;
+ --fa-label-size:11px;
+ --fa-panel-radius:14px;
+}
+.shell>.top,.shell>.fa-page-main,.shell>footer{
+ width:min(100%,var(--fa-page-width));
+ padding-inline:var(--fa-page-gutter);margin-inline:auto;
+}
+.shell>.fa-page-main{
+ flex:1 0 auto;min-width:0;
+ padding-top:var(--fa-page-top);padding-bottom:var(--fa-page-bottom);
+ font-size:var(--fa-body-size);line-height:var(--fa-body-leading);
+}
+.shell>main.fa-page-main:has(.restored-onboarding),
+.shell>main.fa-page-main:has(.restored-careers),
+.shell>main.fa-page-main:has(.restored-settings){
+ width:min(100%,var(--fa-page-width));
+ padding:var(--fa-page-top) var(--fa-page-gutter) var(--fa-page-bottom);
+}
+.fa-page-main .fa-page-heading{
+ width:100%;min-width:0;max-width:none;
+ margin:0 0 var(--fa-heading-gap);padding:0;text-align:left;
+}
+.fa-page-main .fa-page-heading h1,
+.fa-page-main .fa-page-heading .fa-page-title{
+ font-size:var(--fa-title-size);
+ font-weight:var(--fa-title-weight);
+ line-height:var(--fa-title-leading);
+ letter-spacing:-.045em;margin:10px 0 13px;
+ text-wrap:balance;overflow-wrap:anywhere;
+}
+.fa-page-main .fa-page-heading p{
+ max-width:68ch;font-size:var(--fa-body-size);
+ line-height:var(--fa-body-leading);
+ color:#a9c3be;margin:0;
+}
+.fa-page-main .fa-page-heading .kicker,
+.fa-page-main .fa-page-heading .pretitle{
+ display:block;font-size:var(--fa-label-size);
+ font-weight:750;letter-spacing:.13em;
+ color:#80d9b6;line-height:1.4;
+}
+.fa-page-main .hero.fa-page-heading{padding-top:0;padding-bottom:0}
+.fa-page-main .onboard-wrap,
+.fa-page-main .restored-careers,
+.fa-page-main .restored-settings{width:100%;max-width:none;margin-inline:0}
+.fa-page-main .restored-onboarding .onboard-wrap{padding:0}
+.fa-page-main .restored-onboarding{min-height:0}
+.fa-page-main .panel,
+.fa-page-main .league-pick,
+.fa-page-main .onboard-clubs,
+.fa-page-main .onboard-aside,
+.fa-page-main .career-card{border-radius:var(--fa-panel-radius)}
+.fa-page-main .panel,
+.fa-page-main .league-pick,
+.fa-page-main .restored-onboarding .onboard-clubs,
+.fa-page-main .restored-onboarding .onboard-aside,
+.fa-page-main .restored-careers .career-card{padding:var(--fa-panel-padding)}
+.fa-page-main .restored-settings .settings-panel{padding:0}
+.fa-page-main .restored-settings .settings-panel>h2,
+.fa-page-main .restored-settings .settings-language,
+.fa-page-main .restored-settings .about-grid,
+.fa-page-main .restored-settings .settings-actions{padding:var(--fa-panel-padding)}
+.fa-page-main .onboard-heading h2,
+.fa-page-main .league-pick-head h2,
+.fa-page-main .settings-panel>h2,
+.fa-page-main .control>h2{font-size:var(--fa-section-size);line-height:1.3}
+.fa-page-main .menu-stack{max-width:880px}
+@media(max-width:550px){
+ .fa-page-main .fa-page-heading h1{font-size:clamp(28px,8vw,38px)}
+ .fa-page-main .fa-page-heading{margin-bottom:24px}
+}
+/* Shared feedback: in-flow, accessible, not a blocking modal. */
+.fa-feedback{
+ display:grid;grid-template-columns:38px minmax(0,1fr) 34px;
+ align-items:start;gap:12px;padding:15px;
+ margin:0 0 var(--fa-heading-gap);
+ border:1px solid #78675a;border-radius:var(--fa-panel-radius);
+ background:#302a27;color:#f6e9da;
+}
+.fa-feedback-error{border-color:#a76d5d;background:#382b29}
+.fa-feedback-warning{border-color:#a98a58;background:#362f24}
+.fa-feedback-success{border-color:#3b856e;background:#193b34;color:#def5e9}
+.fa-feedback-icon,.fa-blocking-error-icon{
+ display:flex;justify-content:center;align-items:center;
+ width:36px;height:36px;border-radius:10px;background:#ffffff12;color:inherit;
+}
+.fa-feedback-copy{min-width:0}
+.fa-feedback-copy strong{display:block;font-size:14px;font-weight:800;line-height:1.35;margin:1px 0 4px}
+.fa-feedback-copy p{font-size:13px;line-height:1.55;margin:0;color:inherit;opacity:.93;overflow-wrap:anywhere}
+.fa-feedback-dismiss{
+ display:grid;place-items:center;width:34px;height:34px;padding:0;
+ border:1px solid transparent;border-radius:9px;background:transparent;color:inherit;
+}
+.fa-feedback-dismiss:hover{background:#ffffff19;border-color:#ffffff2b}
+.fa-feedback-dismiss:focus-visible{outline:2px solid #81e6bf;outline-offset:2px}
+.fa-blocking-error{max-width:680px}
+.fa-blocking-error .fa-page-title{
+ margin:18px 0 12px;font-size:var(--fa-title-size);
+ font-weight:var(--fa-title-weight);line-height:var(--fa-title-leading);
+}
+.fa-blocking-error>p{line-height:var(--fa-body-leading);color:#bed2ca}
+.fa-blocking-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px}
+.fa-blocking-error-icon{color:#efb49b;background:#4a302b;width:46px;height:46px}
+#manager-name[aria-invalid="true"]{
+ border-color:#db8d77;box-shadow:0 0 0 1px #b66c59;
+}
+#manager-name-error:not([hidden]){
+ display:block;margin:3px 0 0;padding:8px 10px;
+ border-left:3px solid #d99177;border-radius:3px;
+ background:#422925;color:#f4c3b3;
+ font-size:12px;line-height:1.5;text-align:left;
+}
+#manager-name-error[hidden]{display:none!important}
+@media(max-width:420px){
+ .fa-feedback{grid-template-columns:27px minmax(0,1fr) 30px;gap:9px;padding:12px}
+ .fa-feedback-icon{width:27px;height:27px}
+ .fa-feedback-dismiss{width:30px;height:30px}
+ .fa-blocking-actions .btn{flex:1}
+}

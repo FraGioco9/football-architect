@@ -11,6 +11,7 @@ const files=new Map([
  ['/src/icons.js','text/javascript; charset=utf-8'],
  ['/src/language-picker.js','text/javascript; charset=utf-8'],
  ['/src/career-store.js','text/javascript; charset=utf-8'],
+ ['/src/feedback.js','text/javascript; charset=utf-8'],
  ['/src/ui-pages.js','text/javascript; charset=utf-8'],
  ['/src/simulation.js','text/javascript; charset=utf-8'],
  ['/src/leagues.js','text/javascript; charset=utf-8'],

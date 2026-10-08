@@ -38,3 +38,17 @@ node --test .\tests\minimal-core.test.mjs .\tests\career-menu.test.mjs
 Per la verifica Windows controlla: primo avvio, 3 carriere indipendenti, refresh e riapertura, import/export, corruzione di uno snapshot, salvataggi storici, lingua IT/EN, mobile 320/390px, tabella completa senza scroll interno o overflow orizzontale, hover delle righe non tagliato, nessuna partita.
 
 Non eseguire deploy o merge senza autorizzazione esplicita.
+
+
+## Regole condivise per tutte le pagine
+
+I token CSS definiscono la larghezza massima `--fa-page-width` (1200px), il padding orizzontale `--fa-page-gutter`, il margine superiore `--fa-page-top`, il titolo `--fa-title-size`, la dimensione del testo `--fa-body-size`, la distanza dopo l'intestazione `--fa-heading-gap` e il padding dei pannelli `--fa-panel-padding`. La classe `fa-page-heading` è usata da Menu, Nuova carriera, Le tue carriere, Impostazioni e Simulazione. Le strutture originali restano distinte, ma condividono tipografia, allineamento e spaziature.
+
+## Messaggi di errore
+
+- `src/feedback.js` centralizza messaggi IT/EN, avvisi error/warning/success, notifica accessibile e pulsante di chiusura.
+- Non vengono esposti messaggi tecnici grezzi. Le anomalie IndexedDB e JSON hanno testo comprensibile e non cancellano i salvataggi.
+- Il nome allenatore non valido mostra l'errore sotto il campo, con `aria-invalid` e focus conservato.
+- Se IndexedDB non è accessibile, la pagina mostra un errore recuperabile e il pulsante Riprova.
+- Se un salvataggio fallisce, la simulazione automatica si interrompe. Importazione, rinomina ed eliminazione mostrano conferma.
+- Il collaudo browser Windows resta necessario: prova IT/EN, vista 320/390 px, messaggi chiudibili e dati locali invariati.
