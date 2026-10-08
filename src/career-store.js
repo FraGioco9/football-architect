@@ -55,7 +55,6 @@ export function readCatalog(db){
   tx.objectStore('careers').getAll().onsuccess=e=>{metas=e.target.result;};
   tx.objectStore('snapshots').getAll().onsuccess=e=>{snapshots=e.target.result;};
   tx.objectStore('preferences').get('active').onsuccess=e=>{active=e.target.result?.value;};
-  tx.oncomplete=()=>{}; // replaced by transaction() completion handler below
   // Use one final request issued after the reads, preserving transaction ordering.
   tx.objectStore('preferences').get('catalog').onsuccess=()=>{
    const map=new Map(snapshots.map(s=>[s.id,s]));
