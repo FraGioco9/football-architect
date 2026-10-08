@@ -121,3 +121,10 @@
 .plyr056-history li span:not(:first-child){text-align:right}
 .plyr056-development{min-width:0}
 @media(max-width:520px){.plyr056-history li{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.plyr056-history li span:first-child{grid-column:1/-1}.plyr056-history li span:nth-child(2){text-align:left}}
+
+/* PLYR-06.4: one qualitative Overview group; readable at 320/390 px. */
+.plyr064-card{min-width:0;overflow-wrap:anywhere}
+.plyr064-traits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.plyr064-trait{display:flex;flex-direction:column;gap:4px;min-width:0;padding:10px;border:1px solid var(--border-color,var(--border,#405469));border-radius:9px}
+.plyr064-trait strong{font-size:.875rem}.plyr064-trait span{font-size:.875rem;line-height:1.4}.plyr064-trait small{font-size:.75rem;color:var(--text-muted,var(--muted,#a5b5c3))}
+@media(max-width:540px){.plyr064-traits{grid-template-columns:minmax(0,1fr)}}

@@ -4,6 +4,7 @@
  */
 import {marketEnabled,marketClubs} from './career-market.js';
 import {addMessage} from './history.js';
+import {emptyTraitEvidence,advanceTraitEvidence,validateTraitEvidence} from '../addons/domain/player-personality-scouting.mjs';
 
 const err=code=>{throw Error(`MKT03_${code}`);};
 const int=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
@@ -50,7 +51,14 @@ export function shortlistScoutedPlayer(w,{revision,playerId,add=true}={}){
 export function refreshScoutingReport(w,{revision,playerId}={}){
  return edit(w,revision,(s,draft)=>{const found=scoutingPlayer(draft,playerId);if(!found)err('UNKNOWN_PLAYER');const coverage=s.coverage[found.countryId]??0;if(!coverage&&!s.reports[playerId])err('NO_COVERAGE');const previous=s.reports[playerId]?.confidence??0;
   const confidence=limit(Math.max(previous,12+coverage*9+s.staffLevel*3),0,88);
-  s.reports[playerId]={confidence,lastCheckedDay:draft.advancedV1.clockDay,countryId:found.countryId};return confidence;
+  const observer=`${draft.countryId}:club:${draft.clubId}`,previousReport=s.reports[playerId];
+  const current=previousReport?.personalityObserver===observer?previousReport?.personalityEvidence:null;
+  const oldEvidence=current??emptyTraitEvidence();
+  const canObserve=previousReport?.personalityObserver!==observer||previousReport?.lastCheckedDay!==draft.advancedV1.clockDay;
+  const evidence=canObserve?advanceTraitEvidence(oldEvidence,{
+   observationId:`scout-review:${observer}:${playerId}:${draft.advancedV1.clockDay}`,count:2}):oldEvidence;
+  s.reports[playerId]={confidence,lastCheckedDay:draft.advancedV1.clockDay,countryId:found.countryId,
+   personalityObserver:observer,personalityEvidence:evidence};return confidence;
  });
 }
 // Confidence represents precision, not the hidden actual statistic; minimum uncertainty remains.
@@ -91,7 +99,12 @@ export function advanceCareerScouting(w){
    // deterministic rotation spreads work beyond the same high-rating players.
    const sample=candidates.length?Array.from({length:Math.min(3,candidates.length)},(_,i)=>candidates[(m.progress*3-3+i)%candidates.length]):[];
    for(const c of sample){const previous=s.reports[c.id]?.confidence??0;
-    s.reports[c.id]={confidence:limit(Math.max(previous,24)+9+s.staffLevel*2,0,88),lastCheckedDay:reportDay,countryId:m.countryId};
+    const observer=`${w.countryId}:club:${w.clubId}`,old=s.reports[c.id];
+    const knowledge=old?.personalityObserver===observer?old.personalityEvidence:emptyTraitEvidence();
+    const evidence=advanceTraitEvidence(knowledge??emptyTraitEvidence(),{
+     observationId:`scout-mission:${observer}:${m.id}:${m.progress}:${c.id}`,count:2});
+    s.reports[c.id]={confidence:limit(Math.max(previous,24)+9+s.staffLevel*2,0,88),lastCheckedDay:reportDay,countryId:m.countryId,
+     personalityObserver:observer,personalityEvidence:evidence};
    }
    if(m.progress>=m.weeks){m.status='completed';addMessage(w,'Rapporto osservatori',`Missione completata: ${m.countryId}. I rapporti scouting sono aggiornati.`,'scouting',{type:'scouting.updated',params:{club:m.countryId}});}
   }
@@ -112,7 +125,13 @@ export function validateCareerScouting(w){
   if(new Set(s.shortlist).size!==s.shortlist.length||s.shortlist.some(id=>!playerIds.has(id)))return false;
   if(s.missions.filter(m=>m.status==='active').length>4)return false;
   for(const m of s.missions)if(!/^scout:\d+$/.test(m.id)||!countries.includes(m.countryId)||!['ALL','POR','TD','DC','TS','MED','CC','COC','AD','AS','ATT'].includes(m.position)||!int(m.ageMin,15,39)||!int(m.ageMax,m.ageMin,45)||!int(m.contractMax,0,20)||!int(m.weeks,1,12)||!int(m.progress,0,m.weeks)||!int(m.startedDay,0,w.advancedV1.clockDay)||!['active','completed','cancelled'].includes(m.status))return false;
-  for(const [id,r] of Object.entries(s.reports))if(!playerIds.has(id)||!countries.includes(r.countryId)||!int(r.confidence,1,88)||!int(r.lastCheckedDay,0,w.advancedV1.clockDay))return false;
+  for(const [id,r] of Object.entries(s.reports)){
+   if(!playerIds.has(id)||!countries.includes(r.countryId)||!int(r.confidence,1,88)||!int(r.lastCheckedDay,0,w.advancedV1.clockDay))return false;
+   if(r.personalityEvidence!==undefined){
+    validateTraitEvidence(r.personalityEvidence);
+    if(typeof r.personalityObserver!=='string'||!r.personalityObserver.match(/^(IT|EN|ENG|ES|DE|FR|NL|PT|BR):club:\d+$/))return false;
+   }
+  }
   return true;
  }catch{return false;}
 }

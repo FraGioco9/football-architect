@@ -3,7 +3,6 @@
  */
 import {readPlayerAttributes} from './domain/player-generator.mjs';
 import {ratePlayer,canonicalPosition} from './domain/player-ratings.mjs';
-import {readPersonality} from './domain/player-personality.mjs';
 import {readMedical} from './domain/player-medical.mjs';
 import {makeContract,makeTerms,contractTermSummary} from './domain/player-contract.mjs';
 import {availableRoles,defaultRole,roleDetails} from './domain/player-roles.mjs';
@@ -20,7 +19,6 @@ export function inspectCareerPlayer(player,world){
   const options={seed:world.seed,countryId:world.countryId};
   const attributes=readPlayerAttributes(normalized,options);
   const rating=ratePlayer(normalized,attributes);
-  const personality=readPersonality(normalized,options);
   const medical=readMedical(normalized,{day:world.round});
   const terms=makeTerms({startSeason:world.season,years:player.contract,annualWage:Math.round(player.wage*52),promisedRole:'rotation'});
   const contract=makeContract({playerId:player.id,clubId:player.clubId,terms});
@@ -29,7 +27,7 @@ export function inspectCareerPlayer(player,world){
     const fit=assessRoleFit(normalized,attributes,{position:canonical,role:role.id,duty});
     return {...fit,label:roleDetails(role.id,'it').label,labelEn:roleDetails(role.id,'en').label};
   }).sort((a,b)=>b.overall-a.overall||a.label.localeCompare(b.label));
-  return {playerId:player.id,position:canonical,attributes,rating,personality,medical,contract,remaining:contractTermSummary(contract,world.season),recommended,official:{ovr:player.ovr,fitness:player.fitness,injury:player.injury,weeklyWage:player.wage}};
+  return {playerId:player.id,position:canonical,attributes,rating,medical,contract,remaining:contractTermSummary(contract,world.season),recommended,official:{ovr:player.ovr,fitness:player.fitness,injury:player.injury,weeklyWage:player.wage}};
 }
 export function currentSeasonStats(world){
   const games=world.fixtures.flatMap(r=>r.matches).filter(m=>m.result);

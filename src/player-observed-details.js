@@ -7,7 +7,7 @@ import {validateMedical,medicalAvailability} from './addons/domain/player-medica
 import {validateDevelopment} from './addons/domain/player-development.mjs';
 import {readPlayerAttributes} from './addons/domain/player-generator.mjs';
 import {canonicalPosition,POSITIONS,familiarityPenalty,ratePlayer} from './addons/domain/player-ratings.mjs';
-import {personalityEnabled,validateCareerPersonality} from './domain/career-personality.js';
+import {personalityEnabled,validateCareerPersonality,personalityPlayerView} from './domain/career-personality.js';
 import {esc} from './ui-components.js';
 
 const tr=(lang,it,en)=>lang==='en'?en:it;
@@ -67,20 +67,33 @@ export function renderObservedMedical(w,player,lang='it'){
 }
 
 /** Existing medical / gameplay dynamics are public only to the managed club. */
+/** One accessible Overview section for qualitative personality and relationships.
+ * No hidden trait score, prediction, derived influence score, or duplicated card.
+ */
 export function renderObservedRelations(w,player,lang='it'){
- if(!own(w,player)||!personalityEnabled(w)||!validateCareerPersonality(w))return '';
- const state=w.advancedV1.personalityV1.playerStates[String(player.id)];
- if(!state)return '';
- const historic=Array.isArray(state.history)?state.history.slice(-6).reverse()
-   .filter(row=>validNumber(Math.abs(row.moraleDelta))&&validNumber(Math.abs(row.relationshipDelta))):[];
- const rows=fact(tr(lang,'Morale registrato','Recorded morale'),validNumber(state.morale)?`${decimal(state.morale)}/100`:'—')+
-    fact(tr(lang,'Rapporto con l’allenatore','Coach relationship'),validNumber(state.coachRelationship)?`${decimal(state.coachRelationship)}/100`:'—')+
-    fact(tr(lang,'Influenza nello spogliatoio','Dressing-room influence'),validNumber(state.influence)?`${decimal(state.influence)}/100`:'—');
- const event={win:['Vittoria','Win'],loss:['Sconfitta','Loss'],played:['Presenza','Appearance'],
-  bench:['Panchina','Bench'],draw:['Pareggio','Draw'],training:['Allenamento','Training']};
+ if(!personalityEnabled(w)||!validateCareerPersonality(w))return '';
+ const mine=own(w,player),view=personalityPlayerView(w,player,{lang,owned:mine});
+ if(!view)return '';
+ const title=tr(lang,'Personalità e relazioni','Personality and relationships');
+ const traits=`<div class="plyr064-traits" role="list" aria-label="${esc(tr(lang,'Osservazioni personali','Personality observations'))}">${view.traits.map(item=>
+  `<div class="plyr064-trait" role="listitem"><strong>${esc(item.label)}</strong>
+  <span>${esc(item.description)}</span><small>${esc(item.status)}</small></div>`).join('')}</div>`;
+ if(!mine)return `<section class="plyr051-card plyr056-card plyr064-card" aria-label="${esc(title)}">
+  <h2>${esc(title)}</h2><p class="plyr056-note">${tr(lang,'Solo osservazioni dello scout; valutazioni non definitive.','Scout observations only; all assessments remain provisional.')}</p>
+  ${traits}</section>`;
+ const st=w.advancedV1.personalityV1.playerStates[String(player.id)];
+ if(!st)return '';
+ const historic=Array.isArray(st.history)?st.history.slice(-6).reverse().filter(
+  row=>validNumber(Math.abs(row.moraleDelta))&&validNumber(Math.abs(row.relationshipDelta))):[];
+ const rows=fact(tr(lang,'Morale registrato','Recorded morale'),validNumber(st.morale)?`${decimal(st.morale)}/100`:'—')+
+  fact(tr(lang,'Rapporto con l’allenatore','Coach relationship'),validNumber(st.coachRelationship)?`${decimal(st.coachRelationship)}/100`:'—');
+ const event={win:['Vittoria','Win'],loss:['Sconfitta','Loss'],played:['Presenza','Appearance'],bench:['Panchina','Bench'],
+  training:['Allenamento','Training'],coach_praise:['Elogio','Praise'],coach_criticism:['Critica','Criticism'],
+  contract_promise:['Promessa','Promise'],coach_change:['Nuovo allenatore','New coach'],transfer_rejected:['Trattativa rifiutata','Rejected transfer']};
  const history=historic.length?`<div class="plyr056-history"><h3>${tr(lang,'Variazioni già registrate','Recorded changes')}</h3><ul>${historic.map(row=>
   `<li><span>${esc(lbl(event[row.type],lang)||tr(lang,'Evento','Event'))}</span><span>${tr(lang,'Morale','Morale')} ${esc(row.moraleDelta>0?'+':'')}${esc(decimal(row.moraleDelta))}</span><span>${tr(lang,'Rapporto','Relationship')} ${esc(row.relationshipDelta>0?'+':'')}${esc(decimal(row.relationshipDelta))}</span></li>`).join('')}</ul></div>`:'';
- return `<section class="plyr051-card plyr056-card"><h2>${tr(lang,'Rapporto con l’allenatore','Coach relationship')}</h2><dl class="plyr051-facts">${rows}</dl>${history}</section>`;
+ return `<section class="plyr051-card plyr056-card plyr064-card" aria-label="${esc(title)}"><h2>${esc(title)}</h2>
+ <dl class="plyr051-facts">${rows}</dl>${traits}${history}</section>`;
 }
 
 /** These are derived ratings for related positions, not verified learned positions.

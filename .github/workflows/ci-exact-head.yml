@@ -49,6 +49,9 @@ jobs:
       - name: Test PLYR-06.3 official integration
         run: node --test tests/plyr-06-3-official-integration.test.mjs
 
+      - name: Test PLYR-06.4 qualitative scouting and private DTOs
+        run: node --test tests/plyr-06-4-private-scouting.test.mjs
+
       - name: Smoke test local HTTP routes
         run: |
           node server.mjs &
