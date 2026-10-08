@@ -573,6 +573,7 @@ function continuousCalendarNotice(){
 async function runContinuousAdvance(){
   if(ui.continuing||blockedSaveError||!world.clubId)return;
   const token=++continuousAdvanceToken;
+  let stage='startup';
   ui.continuing=true;ui.continuationBlocker=null;ui.modal=null;render();
   try{
     const existingBlocker=firstCareerInputMessage(world);
@@ -582,20 +583,33 @@ async function runContinuousAdvance(){
       toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
       return;
     }
-    await runCheckpointed('before-day',()=>null);
-    const checkpointBlocker=firstCareerInputMessage(world);
-    if(checkpointBlocker){
-      ui.continuing=false;ui.continuationBlocker={type:'mail',id:checkpointBlocker.id};ui.openMail=checkpointBlocker.id;ui.modal=null;
-      void queueVaultSync();navigate('inbox',{replace:true});
-      toast(ui.language==='en'?'Simulation stopped: a message requires your input.':'Simulazione interrotta: un messaggio richiede il tuo intervento.','info');
-      return;
+    // A no-op checkpoint used to run before the first day. It could reject
+    // Continue before any simulation work (for example on checkpoint quota),
+    // despite daily advances already committing atomically to IndexedDB.
+    // Preflight the active slot instead, without mutating the save.
+    const catalog=readCareerCatalog(careerStorage);
+    const active=catalog.slots.find(slot=>slot.id===catalog.activeSlotId);
+    if(!active||careerStorage.getItem(active.storageKey)===null){
+      throw new Error(ui.language==='en'
+        ?'The active career save is missing. Reload the career before continuing.'
+        :'Il salvataggio della carriera attiva non è disponibile. Ricaricala prima di continuare.');
+    }
+    // A migrated in-memory career can differ from its last committed slot
+    // before the first advancing tick. Equality would reject a valid career;
+    // daily save validation and atomic IndexedDB commit remain authoritative.
+    if(!Array.isArray(world.fixtures)||world.fixtures.length===0){
+      throw new Error(ui.language==='en'
+        ?'The career calendar is unavailable. Reload the career before continuing.'
+        :'Il calendario della carriera non è disponibile. Ricaricala prima di continuare.');
     }
     while(ui.continuing&&token===continuousAdvanceToken&&world.round<world.fixtures.length){
       ensureCareerDates(world);
+      stage='calendar';
       const notice=continuousCalendarNotice();
       // MKT02 confirmations acknowledge deterministic processing (registrations,
       // window closures and offer expiries); they are not user decisions.
       // Continuous Continue therefore supplies the verified token automatically.
+      stage='daily-tick';
       const {result,blockingMessage}=await commitContinuousAdvanceTick({
         calendarConfirmationToken:notice.requiresConfirmation?notice.confirmationToken:null
       });
@@ -615,6 +629,7 @@ async function runContinuousAdvance(){
         toast(ui.language==='en'?'Simulation stopped: the board requires your attention.':'Simulazione interrotta: la dirigenza richiede il tuo intervento.','info');
         return;
       }
+      stage='render';
       render();
       if(result.match)toast(`${formatCareerDate(world.currentDate,ui.language)} · ${ui.language==='en'?'Matchday':'Giornata'} ${world.round} · ${matchText(result.match)}`);
       if(world.round>=world.fixtures.length)break;
@@ -622,7 +637,12 @@ async function runContinuousAdvance(){
     }
   }catch(error){
     if(token===continuousAdvanceToken){
-      ui.continuing=false;ui.continuationBlocker={type:'error'};void queueVaultSync();render();reportError(error.message);
+      ui.continuing=false;ui.continuationBlocker={type:'error'};void queueVaultSync();render();
+      const code=typeof error?.code==='string'?error.code:null;
+      const detail=String(error?.message||error||'Unknown error');
+      const message=(ui.language==='en'?'Continue stopped at ':'Continua interrotto durante ')+stage+': '+detail+(code?' ['+code+']':'');
+      console.error('[Football Architect] Continue failed', {stage,code,round:world.round,date:world.currentDate,error});
+      toast(message,'error');
     }
     return;
   }
