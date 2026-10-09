@@ -57,3 +57,12 @@ I token CSS definiscono la larghezza massima `--fa-page-width` (1200px), il padd
 ## Profilo allenatore
 
 Il nuovo profilo obbligatorio comprende esclusivamente **Nome, Cognome, Data di nascita, Nazionalità e Luogo di nascita**; nome completo e dati anagrafici vengono salvati insieme nella stessa transazione IndexedDB. La data deve esistere e non essere futura; tutti i campi sono obbligatori con messaggi sotto al campo in IT/EN. Import/export conserva il profilo completo. Le carriere create prima dell'aggiunta del profilo rimangono leggibili e importabili senza compilazioni inventate, mentre ogni nuova carriera necessita di tutti i cinque campi. Non vengono aggiunte esperienze, patentini, altre nazionalità, lingue o filosofie tattiche.
+
+
+## Controlli condivisi
+
+- Le caselle interattive vengono evidenziate solo dopo un clic diretto sulla casella, non dopo hover o clic sulla label. Il focus da tastiera mantiene un indicatore distinto. Il bordo di errore riprende quello di selezione, in rosso.
+- L'errore del form Allenatore compare accanto al pulsante Avanti, mentre i campi da correggere hanno il bordo rosso.
+- Il calendario del sito ha mese, anno, settimana da lunedi, selezione giorno, date future disabilitate e chiusura tramite Esc o clic esterno.
+- Nazionalita usa un menu scrollabile con 249 territori ISO tradotti in IT/EN, salvando il codice a due lettere per le nuove carriere. I vecchi profili non vengono migrati o cancellati.
+- I componenti condivisi risiedono in src/site-pickers.js e src/site-picker-ui.js.

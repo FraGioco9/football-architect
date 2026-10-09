@@ -67,16 +67,16 @@ export function managerPage(draft,lang,pickers={}){
   <div class="wizard-profile-grid">
    <div class="wizard-profile-field">
     <label class="input-label" for="manager-first-name">${tr(lang,'Nome','First name')}</label>
-    <input class="text-field wizard-profile-input" id="manager-first-name" name="firstName" type="text"
+    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-first-name" name="firstName" type="text"
      value="${esc(p.firstName)}" maxlength="40" autocomplete="given-name" required
-     aria-invalid="false" aria-describedby="manager-first-name-error" placeholder="${tr(lang,'Nome','First name')}">
+     aria-invalid="false" aria-describedby="manager-form-error" placeholder="${tr(lang,'Nome','First name')}">
     <p id="manager-first-name-error" class="field-error" role="alert" hidden></p>
    </div>
    <div class="wizard-profile-field">
     <label class="input-label" for="manager-last-name">${tr(lang,'Cognome','Last name')}</label>
-    <input class="text-field wizard-profile-input" id="manager-last-name" name="lastName" type="text"
+    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-last-name" name="lastName" type="text"
      value="${esc(p.lastName)}" maxlength="40" autocomplete="family-name" required
-     aria-invalid="false" aria-describedby="manager-last-name-error" placeholder="${tr(lang,'Cognome','Last name')}">
+     aria-invalid="false" aria-describedby="manager-form-error" placeholder="${tr(lang,'Cognome','Last name')}">
     <p id="manager-last-name-error" class="field-error" role="alert" hidden></p>
    </div>
    <div class="wizard-profile-field">
@@ -89,9 +89,9 @@ export function managerPage(draft,lang,pickers={}){
    </div>
    <div class="wizard-profile-field wizard-profile-birthplace">
     <label class="input-label" for="manager-birth-place">${tr(lang,'Luogo di nascita','Place of birth')}</label>
-    <input class="text-field wizard-profile-input" id="manager-birth-place" name="birthPlace" type="text"
+    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-birth-place" name="birthPlace" type="text"
      value="${esc(p.birthPlace)}" maxlength="80" autocomplete="off" required
-     aria-invalid="false" aria-describedby="manager-birth-place-error"
+     aria-invalid="false" aria-describedby="manager-form-error"
      placeholder="${tr(lang,'Città di nascita','Birthplace city')}">
     <p id="manager-birth-place-error" class="field-error" role="alert" hidden></p>
    </div>
