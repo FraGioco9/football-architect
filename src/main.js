@@ -409,6 +409,74 @@ document.addEventListener('change',event=>{
  })().catch(fail);
 });
 
+// Global Tab semantics for all site popovers: only their trigger is in tab order.
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Tab')return;
+ const el=document.activeElement;
+ const inLanguage=languageMenuOpen&&el?.closest?.('[data-language-picker]');
+ const inPicker=pickerOpen&&el?.closest?.('[data-fa-picker]');
+ if(!inLanguage&&!inPicker)return;
+ event.preventDefault();
+ event.stopImmediatePropagation();
+ const anchor=inLanguage?'language-combobox-home':pickerOpen==='calendar'?'manager-birth-date':'manager-nationality';
+ if(inLanguage)languageMenuOpen=false;
+ else {pickerOpen=null;pickerView='days';}
+ selectedBoxId=null;
+ void render().then(()=>tabRelativeTo(anchor,event.shiftKey)).catch(fail);
+},true);
+
+// Keyboard grid navigation is shared by days (7 columns), months and years (3).
+document.addEventListener('keydown',event=>{
+ if(event.ctrlKey||event.metaKey)return;
+ const el=event.target;
+ const trigger=el.closest?.('#manager-birth-date');
+ if(trigger&&event.key==='ArrowDown'){
+  event.preventDefault();
+  const focusDay=()=>app.querySelector('.fa-calendar-day.is-selected:not([disabled]),.fa-calendar-day.is-today:not([disabled]),.fa-calendar-day:not([disabled])')?.focus({preventScroll:false});
+  if(pickerOpen!=='calendar')void handle('calendar-toggle',trigger).then(focusDay).catch(fail);
+  else focusDay();
+  return;
+ }
+ if(pickerOpen!=='calendar')return;
+ const inside=el.closest?.('.fa-calendar-panel');
+ if(!inside)return;
+ if(event.altKey&&event.key==='ArrowUp'){
+  event.preventDefault();
+  pickerView=pickerView==='days'?'months':'years';
+  void render().then(()=>{
+   app.querySelector(pickerView==='months'?'.fa-calendar-month-option.is-selected':'.fa-calendar-year-option.is-selected')?.focus({preventScroll:false});
+  }).catch(fail);
+  return;
+ }
+ const day=el.closest('.fa-calendar-day'),month=el.closest('.fa-calendar-month-option'),year=el.closest('.fa-calendar-year-option');
+ const items=day?[...app.querySelectorAll('.fa-calendar-day')]:
+  month?[...app.querySelectorAll('.fa-calendar-month-option')]:
+  year?[...app.querySelectorAll('.fa-calendar-year-option')]:null;
+ if(!items)return;
+ if(day&&['PageUp','PageDown'].includes(event.key)){
+  event.preventDefault();
+  const monthDelta=(event.key==='PageDown'?1:-1)*(event.shiftKey?12:1);
+  const desired=day.dataset.value.slice(-2);
+  pickerMonth=shiftCalendarMonth(pickerMonth,monthDelta);
+  void render().then(()=>{
+   const grid=[...app.querySelectorAll('.fa-calendar-day:not([disabled])')];
+   (grid.find(x=>x.dataset.value?.startsWith(pickerMonth)&&x.dataset.value?.endsWith('-'+desired))||
+    grid.find(x=>x.dataset.value?.startsWith(pickerMonth))||grid[0])?.focus({preventScroll:false});
+  }).catch(fail);
+  return;
+ }
+ const deltas=day?{ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}:
+  {ArrowLeft:-1,ArrowRight:1,ArrowUp:-3,ArrowDown:3};
+ const i=items.indexOf(day||month||year);
+ const next=event.key==='Home'?0:event.key==='End'?items.length-1:i+(deltas[event.key]??NaN);
+ if(!Number.isFinite(next))return;
+ event.preventDefault();
+ const direction=next>=i?1:-1;
+ let target=next;
+ while(target>=0&&target<items.length&&items[target].disabled)target+=direction;
+ if(items[target])items[target].focus({preventScroll:false});
+},true);
+
 document.addEventListener('pointerdown',event=>{
  document.documentElement.classList.remove('fa-keyboard-navigation');
  // Only the interactive box itself can acquire the visual selected state.
