@@ -1,4 +1,4 @@
-import {createSession,validSession} from './simulation.js';
+import {createSession,validSession,sessionTime} from './simulation.js';
 import {getLeagueClubs} from './leagues.js';
 import {normalizeManagerProfile,managerFullName,validManagerProfile} from './manager-profile.js';
 
@@ -116,7 +116,7 @@ export function selectCareer(db,id){
   };
  });
 }
-export function saveCareer(db,id,state,{expectedDays=null,now=NOW()}={}){
+export function saveCareer(db,id,state,{expectedDays=null,expectedTime=null,now=NOW()}={}){
  if(!validSession(state)||!iso(now))throw error('CAREER_DATA_INVALID');
  return transaction(db,['careers','snapshots'],'readwrite',(tx,done)=>{
   const cars=tx.objectStore('careers'),shots=tx.objectStore('snapshots'),get=cars.get(id);
@@ -128,7 +128,9 @@ export function saveCareer(db,id,state,{expectedDays=null,now=NOW()}={}){
      tx.abort();return;
     }
     if(expectedDays!==null&&existing.daysElapsed!==expectedDays){tx.abort();return;}
-    if(state.daysElapsed<existing.daysElapsed){tx.abort();return;}
+    if(expectedTime!==null&&sessionTime(existing)!==expectedTime){tx.abort();return;}
+    if(state.daysElapsed<existing.daysElapsed||
+       (state.daysElapsed===existing.daysElapsed&&sessionTime(state)<sessionTime(existing))){tx.abort();return;}
     const updated={...meta,updatedAt:now};
     cars.put(updated);
     shots.put({id,raw:JSON.stringify(state)});

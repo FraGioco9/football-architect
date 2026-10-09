@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
-import {SAVE_KEY,validDate,localToday,createSession,validSession,advanceSession,seasonLabel,readSession,writeSession,clubFor} from '../src/simulation.js';
+import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
+import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
+import {simulationPage} from '../src/ui-pages.js';
 
 test('eight real countries each expose 20 invented clubs with unique identities',()=>{
  assert.equal(LEAGUES.length,8);
@@ -18,7 +20,8 @@ test('create session requires a real listed club and stores only minimal fields'
  const s=createSession('IT',2,'2026-10-08');
  assert.equal(s.clubId,2);assert.equal(s.countryId,'IT');
  assert.equal(s.date,'2026-10-08');assert.ok(validSession(s));
- assert.equal(Object.keys(s).sort().join(','),'clubId,countryId,date,daysElapsed,startedAt,version');
+ assert.equal(Object.keys(s).sort().join(','),'clubId,countryId,date,daysElapsed,startedAt,time,version');
+ assert.equal(s.time,'08:00');
  assert.throws(()=>createSession('UNLISTED',2,'2026-10-08'));
  assert.throws(()=>createSession('IT',21,'2026-10-08'));
  assert.ok(clubFor(s)?.name.includes('Bologna'));
@@ -66,7 +69,7 @@ test('all eight countries can advance a whole decade without any game events',()
   for(let i=0;i<10;i++)state=advanceSession(state,365);
   assert.equal(state.daysElapsed,3650);
   assert.ok(validSession(state));
-  assert.equal(Object.keys(state).length,6);
+  assert.equal(Object.keys(state).length,7);
  }
 });
 test('HTML contains only the required minimal application modules',()=>{
@@ -77,6 +80,174 @@ test('HTML contains only the required minimal application modules',()=>{
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  assert.ok(!server.includes('router.js'));
  assert.ok(server.includes("'/simulation'"));
+ // Missing imported JS modules leave the server's static loading screen visible.
+ assert.match(server, /\['\/src\/season-calendar\.js','text\/javascript; charset=utf-8'\]/);
+ assert.match(readFileSync(new URL('../src/main.js',import.meta.url),'utf8'),/from '\.\/season-calendar\.js'/);
+});
+
+test('CAL-01: new careers start in the latest July preseason, never on an arbitrary current day',()=>{
+ assert.equal(preseasonStart('2026-10-09'),'2026-07-01');
+ assert.equal(preseasonStart('2026-07-01'),'2026-07-01');
+ assert.equal(preseasonStart('2027-01-12'),'2026-07-01');
+ assert.equal(preseasonStart('2028-06-30'),'2027-07-01');
+ assert.equal(preseasonStart('2028-07-01'),'2028-07-01');
+ assert.equal(seasonOpeningYear('2027-02-05'),2026);
+ for(const bad of ['not-a-date','2027-02-30','2026-13-01',''])assert.throws(()=>preseasonStart(bad));
+ const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(main,/session:createSession\(draft\.countryId,draft\.clubId,preseasonStart\(localToday\(\)\)\)/);
+});
+
+test('CAL-01: derived calendar distinguishes preseason, season and break at exact ISO day boundaries',()=>{
+ const expectations=[
+  ['2026-07-01','preseason',1],
+  ['2026-08-14','preseason',1],
+  ['2026-08-15','season',1],
+  ['2026-12-31','season',1],
+  ['2027-01-01','season',1],
+  ['2027-05-31','season',1],
+  ['2027-06-01','offseason',1],
+  ['2027-06-30','offseason',1],
+  ['2027-07-01','preseason',1]
+ ];
+ for(const [date,phase,season] of expectations){
+  const calendar=seasonCalendar(date,date<'2027-07-01'?'2026-07-01':'2027-07-01');
+  assert.equal(calendar.phase,phase,date);
+  assert.equal(calendar.season,season,date);
+  assert.equal(calendar.preseasonStart,(date<'2027-07-01'?'2026':'2027')+'-07-01');
+  assert.ok(Object.isFrozen(calendar));
+ }
+});
+
+test('CAL-01: leap years and long advances preserve the valid clock-aware v1 save shape',()=>{
+ let state=createSession('IT',2,preseasonStart('2028-05-20'));
+ assert.equal(state.startedAt,'2027-07-01');
+ const originalKeys=Object.keys(state).sort();
+ const original={...state};
+ for(let n=0;n<3;n++)state=advanceSession(state,365);
+ assert.deepEqual(Object.keys(state).sort(),originalKeys);
+ assert.equal(validSession(state),true);
+ assert.equal(validSession(original),true);
+ assert.equal(seasonCalendar('2028-02-29').phase,'season');
+ assert.equal(seasonCalendar('2028-02-29','2027-07-01').season,1);
+ assert.equal(original.startedAt,'2027-07-01');
+ assert.ok(!('fixtures' in state));
+ assert.ok(!('matchResults' in state));
+});
+
+test('CAL-01: seasonal panel is bilingual, responsive and never invents fixtures or results',()=>{
+ const meta={managerName:'QA Test',countryId:'IT',clubId:2};
+ const preseason=createSession('IT',2,'2026-07-01');
+ for(const lang of ['it','en']){
+  const html=simulationPage(meta,preseason,lang,false);
+  assert.match(html,/class="panel fa-season-calendar"/);
+  assert.match(html,/class="fa-season-milestones"/);
+  assert.equal((html.match(/class="fa-season-milestone /g)||[]).length,3);
+  assert.equal((html.match(/class="fa-season-milestone is-current"/g)||[]).length,1);
+  assert.match(html,lang==='it'?/Calendario stagionale/:/Season calendar/);
+  assert.match(html,lang==='it'?/Prestagione/:/Preseason/);
+  assert.match(html,lang==='it'?/Partite e orari non sono ancora programmati/:/Fixtures and kick-off times are not yet scheduled/);
+  assert.ok(!html.includes('data-action="play-match"'));
+ }
+ const summer=simulationPage(meta,createSession('IT',2,'2027-06-15'),'en',false);
+ assert.match(summer,/Summer break/);
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-season-milestones\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-width:620px\)\{\.fa-season-milestones\{grid-template-columns:minmax\(0,1fr\)/);
+});
+
+
+test('CAL-01 clock: 1 July 08:00 new session, hourly advance and midnight rollover',()=>{
+ let s=createSession('IT',2,'2026-07-01');
+ assert.equal(s.time,DEFAULT_TIME);
+ assert.equal(sessionTime(s),'08:00');
+ assert.equal(seasonNumber(s),1);
+ s=advanceMinutes(s,60);
+ assert.equal(s.time,'09:00');assert.equal(s.daysElapsed,0);
+ s=advanceMinutes(s,15*60);
+ assert.equal(s.time,'00:00');assert.equal(s.date,'2026-07-02');
+ assert.equal(s.daysElapsed,1);
+ s=advanceMinutes(s,7*60+30);
+ assert.equal(s.time,'07:30');
+ assert.equal(advanceSession(s,1).time,'07:30');
+ assert.equal(validSession(s),true);
+ assert.equal(seasonNumber(advanceSession(createSession('IT',2,'2026-07-01'),365)),2);
+});
+test('CAL-01 transfer window: July/August through 31 August midnight, and all January',()=>{
+ const scenarios=[
+  ['2026-06-30','23:59',null,false],
+  ['2026-07-01','00:00','summer',true],
+  ['2026-08-31','23:59','summer',true],
+  ['2026-09-01','00:00',null,false],
+  ['2026-12-31','23:59',null,false],
+  ['2027-01-01','00:00','winter',true],
+  ['2027-01-31','23:59','winter',true],
+  ['2027-02-01','00:00',null,false],
+  ['2028-02-29','12:00',null,false]
+ ];
+ for(const [date,time,window,open] of scenarios){
+  const market=transferMarket(date,time);
+  assert.equal(market.window,window,date+' '+time);
+  assert.equal(market.open,open,date+' '+time);
+  assert.ok(Object.isFrozen(market));
+ }
+ assert.equal(transferMarket('2026-08-31','23:59').closesAt,'2026-09-01T00:00');
+ assert.equal(transferMarket('2027-01-31','23:59').closesAt,'2027-02-01T00:00');
+ const aug=advanceMinutes(createSession('IT',2,'2026-08-31','23:59'),1);
+ assert.equal(aug.date,'2026-09-01');assert.equal(aug.time,'00:00');
+ assert.equal(transferMarketFor(aug).open,false);
+ const jan=advanceMinutes(createSession('DE',6,'2027-01-31','23:59'),1);
+ assert.equal(transferMarketFor(jan).open,false);
+ assert.equal(transferMarketFor(createSession('IT',2,'2026-07-01')).open,true);
+ assert.throws(()=>transferMarket('2026-09-01','24:00'));
+});
+test('CAL-01 season numbering depends only on career start, not real-world season names',()=>{
+ const s=createSession('FR',1,'2026-07-01');
+ for(const [date,expected] of [['2026-07-01',1],['2027-06-30',1],['2027-07-01',2],
+  ['2028-06-30',2],['2028-07-01',3],['2029-07-01',4],['2030-07-01',5]]){
+  const days=Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(s.date+'T00:00:00Z'))/86400000);
+  let advanced=s;
+  let remaining=days;
+  while(remaining>0){const amount=Math.min(365,remaining);advanced=advanceSession(advanced,amount);remaining-=amount;}
+  assert.equal(seasonNumber(advanced),expected,date);
+  assert.equal(seasonCalendar(date,s.startedAt).season,expected,date);
+ }
+});
+test('CAL-01 legacy snapshots stay valid, display 08:00, and upgrade only when time advances',()=>{
+ const legacy={version:1,countryId:'IT',clubId:2,startedAt:'2026-08-15',date:'2026-08-16',daysElapsed:1};
+ assert.equal(validSession(legacy),true);
+ assert.equal(sessionTime(legacy),'08:00');
+ const next=advanceMinutes(legacy,60);
+ assert.deepEqual(legacy,{version:1,countryId:'IT',clubId:2,startedAt:'2026-08-15',date:'2026-08-16',daysElapsed:1});
+ assert.equal(next.time,'09:00');
+ assert.equal(validSession(next),true);
+ for(const bad of ['-1:00','24:00','23:60','8:00','25:59'])assert.equal(validTime(bad),false);
+ assert.throws(()=>createSession('IT',2,'2026-07-01','24:00'));
+ assert.equal(validSession({...next,time:'24:00'}),false);
+ assert.equal(validSession({...legacy,untrusted:true}),false);
+});
+test('CAL-01 UI: real clock and market status with Season 1/2, never year-labelled seasons',()=>{
+ const meta={managerName:'QA',countryId:'IT',clubId:2};
+ const july=createSession('IT',2,'2026-07-01');
+ const it=simulationPage(meta,july,'it',false);
+ assert.match(it,/Stagione 1/);
+ assert.match(it,/08:00/);
+ assert.match(it,/Calciomercato/);
+ assert.match(it,/Mercato estivo/);
+ assert.match(it,/fa-transfer-status is-open/);
+ assert.match(it,/data-action="hour"/);
+ assert.doesNotMatch(it,/2026\/27|2027\/28/);
+ const en=simulationPage(meta,advanceSession(july,365),'en',false);
+ assert.match(en,/Season 2/);
+ assert.match(en,/Summer transfer window/);
+ assert.match(en,/08:00/);
+ const closed=simulationPage(meta,createSession('IT',2,'2026-10-09'),'it',false);
+ assert.match(closed,/fa-transfer-status is-closed/);
+ assert.match(closed,/Calciomercato chiuso/);
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.doesNotMatch(ui,/seasonLabel\(/);
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-transfer-periods\{display:grid/);
+ assert.match(css,/@media\(max-width:620px\)\{\.fa-transfer-periods/);
 });
 
 test('startup screen restores the pre-reset visual identity without adding legacy game modules',()=>{

@@ -4,7 +4,7 @@ import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
-import {createSession,advanceSession,SAVE_KEY} from '../src/simulation.js';
+import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlag} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
@@ -1303,12 +1303,12 @@ test('all eight leagues use high-definition offline flags in new career, My Care
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/\.country-flag\{display:block;width:32px;height:24px/);
  assert.match(css,/\.wizard-careers \.wizard-career-location \.country-flag\{/);
- const saved=careersPage({rows:[{id:'one',status:'ok',meta:{managerName:'Ada',careerName:'Test',countryId:'BR',clubId:1,updatedAt:'2026-10-09'},state:{date:'2026-10-09'}}],activeId:null},'it');
+ const saved=careersPage({rows:[{id:'one',status:'ok',meta:{managerName:'Ada',careerName:'Test',countryId:'BR',clubId:1,updatedAt:'2026-10-09'},state:createSession('BR',1,'2026-10-09')}],activeId:null},'it');
  assert.match(saved,/class="wizard-careers-list"/);
  assert.match(saved,/class="wizard-career-location"/);
  assert.match(saved,/src="\/assets\/flags\/br\.svg"/);
  assert.doesNotMatch(saved,/class="career-grid"|class="career-card/);
- const simulation=simulationPage({managerName:'Ada',countryId:'IT',clubId:1},{date:'2026-10-09',daysElapsed:0},'it',false);
+ const simulation=simulationPage({managerName:'Ada',countryId:'IT',clubId:1},createSession('IT',1,'2026-10-09'),'it',false);
  assert.match(simulation,/src="\/assets\/flags\/it\.svg"/);
  assert.doesNotMatch(simulation,/undefined|class="wizard-country-flag-svg"/);
  const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
@@ -1708,4 +1708,53 @@ test('all destructive confirmations use the same site modal lifecycle, no native
  assert.match(css,/\.fa-site-dialog\{\s*box-sizing:border-box;/);
  assert.match(css,/\.fa-site-dialog \.fa-site-dialog-description\{/);
  assert.match(css,/\.fa-site-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
+});
+
+
+test('CAL-01 IndexedDB: hourly progress persists across catalog reload, export and import',async()=>{
+ const db=await setup();
+ const first=await createCareer(db,form('Clock QA','IT',2));
+ assert.equal(first.state.time,'08:00');
+ const changed=advanceMinutes(first.state,135);
+ assert.equal(changed.time,'10:15');assert.equal(changed.date,first.state.date);
+ await saveCareer(db,first.meta.id,changed,{expectedDays:0,expectedTime:'08:00'});
+ const reloaded=await selectCareer(db,first.meta.id);
+ assert.equal(reloaded.state.time,'10:15');
+ const catalog=await readCatalog(db);
+ assert.equal(catalog.rows.find(r=>r.id===first.meta.id).state.time,'10:15');
+ const exported=await exportCareer(db,first.meta.id);
+ const imported=parseCareerImport(JSON.stringify(exported));
+ const second=await createCareer(db,{...imported,id:mkId(),now:'2026-10-09T10:00:00Z'});
+ assert.equal(second.state.time,'10:15');
+ assert.equal(validSession(second.state),true);
+ const after=await selectCareer(db,first.meta.id);
+ assert.equal(after.state.time,'10:15');
+});
+
+test('CAL-01 IndexedDB: stale same-day saves are refused without deleting either slot',async()=>{
+ const db=await setup();
+ const saved=await createCareer(db,form('Optimistic QA','IT',2));
+ const oneHour=advanceMinutes(saved.state,60);
+ await saveCareer(db,saved.meta.id,oneHour,{expectedDays:0,expectedTime:'08:00'});
+ const staleTwoHours=advanceMinutes(saved.state,120);
+ await assert.rejects(()=>saveCareer(db,saved.meta.id,staleTwoHours,{expectedDays:0,expectedTime:'08:00'}));
+ await assert.rejects(()=>saveCareer(db,saved.meta.id,saved.state));
+ const reloaded=await selectCareer(db,saved.meta.id);
+ assert.equal(sessionTime(reloaded.state),'09:00');
+ assert.equal(reloaded.state.daysElapsed,0);
+});
+
+test('CAL-01 IndexedDB: legacy six-field JSON imports remain readable and acquire the clock only on advance',async()=>{
+ const db=await setup();
+ const old=createSession('IT',2,'2026-07-01');
+ delete old.time;
+ assert.equal(validSession(old),true);
+ const career=await createCareer(db,{...form('Old clock','IT',2),session:old});
+ assert.equal((await selectCareer(db,career.meta.id)).state.time,undefined);
+ assert.equal(sessionTime((await selectCareer(db,career.meta.id)).state),'08:00');
+ const payload=await exportCareer(db,career.meta.id);
+ assert.equal(parseCareerImport(JSON.stringify(payload)).session.time,undefined);
+ const advanced=advanceMinutes(old,60);
+ await saveCareer(db,career.meta.id,advanced,{expectedDays:0,expectedTime:'08:00'});
+ assert.equal((await selectCareer(db,career.meta.id)).state.time,'09:00');
 });

@@ -21,7 +21,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 - /new-career/team — **Passaggio 4/4: Squadra**. Tabella compatta di 20 club senza scrollbar interna, con reputazione e capienza, selezione esplicita, riepilogo del club, pulsante Rosa disabilitato e conferma «Inizia carriera». Il salvataggio viene creato solo in questo passaggio.
 - /careers — Layout originale a griglia di card, con salvataggi separati: carica, rinomina, esporta, importa JSON o elimina con conferma. I salvataggi corrotti sono esportabili/eliminabili ma non caricabili.
 - /settings — Pannelli originali di preferenze e gestione dati, con lingua IT/EN e operazioni disponibili per carriere locali.
-- /simulation — Avanzamento del tempo per 1/7/30/365 giorni, o continuo interrompibile.
+- /simulation — Calendario simulato con **giorno e ora**, avanzamento per **+1 ora**, 1/7/30/365 giorni o continuo interrompibile (+1 ora per intervallo). Mostra **Stagione 1, 2, 3…**, fasi prestagione/stagione/pausa estiva e stato del calciomercato. Non genera ancora partite o trasferimenti.
 
 ## Persistenza
 
@@ -77,3 +77,13 @@ La tabella **Squadra** allinea i contenuti di ciascuna colonna con un contenitor
 Il catalogo locale `assets/flags/` contiene **271 bandiere SVG 4:3** da [lipis/flag-icons](https://github.com/lipis/flag-icons), conservate come file vettoriali e distribuite secondo la licenza MIT in `assets/flags/LICENSE`. Non è incluso alcun asset quadrato `1x1`. Tutti i 271 file SVG della directory principale sono accessibili tramite `/assets/flags/<codice>.svg` (MIME `image/svg+xml`, header `X-Content-Type-Options: nosniff`); il server accetta esclusivamente nomi di file regolari con caratteri minuscoli, numeri e trattini, e non serve directory annidate o file sconosciuti. L'interfaccia utilizza attualmente otto di queste bandiere nella selezione Nazione, in Le mie carriere e nella simulazione. Le risorse sono locali e funzionano senza connessione Internet.
 
 La fase relativa ai **loghi dei club** è separata e non è inclusa in questo intervento.
+
+## Stagioni, orario e finestre di mercato
+
+- Ogni **nuova carriera** comincia il **1° luglio, ore 08:00** della stagione corrente. Per una creazione tra gennaio e giugno si usa il luglio dell'anno solare precedente.
+- Le stagioni sono mostrate come **Stagione 1, Stagione 2, …** in base alla data di inizio della singola carriera. Gli anni solari ISO restano **interni** per gli anni bisestili e la persistenza: non vengono usati come nomi delle stagioni nell'interfaccia.
+- Il clock usa **HH:mm** e giornate di gioco di 24 ore, indipendenti dal cambio legale dell'ora del computer. Il tasto **+1 ora** e la simulazione automatica avanzano di 60 minuti; i controlli giornalieri preservano l'ora corrente.
+- **Mercato estivo:** dal **1° luglio alle 00:00** alle **00:00 del 1° settembre**, cioè fino a tutto il **31 agosto**.
+- **Mercato invernale:** dal **1° gennaio alle 00:00** alle **00:00 del 1° febbraio**, cioè fino a tutto il **31 gennaio**.
+- **Persistenza compatibile:** il formato di sessione v1 accetta i vecchi sei campi (ora non registrata: visualizzazione predefinita **08:00**). I nuovi stati hanno anche il campo `time`; i vecchi vengono aggiornati soltanto quando si avanza nel tempo. Nessun aumento di versione del database, nessuna migrazione distruttiva. Import/export JSON resta disponibile.
+- Il calendario delle partite, il calciomercato operativo e le email che interrompono la simulazione restano fasi successive.
