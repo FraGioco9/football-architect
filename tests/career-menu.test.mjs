@@ -1968,3 +1968,24 @@ test('SHELL-SEARCH: continue/stop is in every active career topbar and search re
  assert.match(css,/@media\(max-width:1150px\)/);
  assert.match(css,/grid-template-areas:"club time language primary" "search search search search"/);
 });
+
+
+test('SHELL-SEARCH: Continue and Stop topbar buttons have identical fixed dimensions in IT/EN and at mobile widths',()=>{
+ const meta={countryId:'IT',clubId:2},state=createSession('IT',2,'2026-08-10');
+ for(const lang of ['it','en'])for(const route of ['/dashboard','/calendar','/simulation']){
+  const idle=layout('Content',lang,null,false,{route,meta,state,playing:false});
+  const active=layout('Content',lang,null,false,{route,meta,state,playing:true});
+  for(const html of [idle,active]){
+   assert.equal((html.match(/data-action="toggle"/g)||[]).length,1);
+   assert.match(html,/class="fa-shell-primary"[\s\S]*?<button[^>]*data-action="toggle"/);
+  }
+  assert.match(idle,lang==='it'?/>Continua<\/span>/:/>Continue<\/span>/);
+  assert.match(active,lang==='it'?/>Interrompi<\/span>/:/>Stop<\/span>/);
+ }
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const fixed=css.match(/\.fa-shell-primary \.btn\{([^}]+)\}/)?.[1];
+ assert.ok(fixed);
+ for(const declaration of ['width:128px','min-width:128px','max-width:128px','height:39px','min-height:39px','justify-content:center'])assert.ok(fixed.includes(declaration));
+ assert.match(css,/\.fa-shell-primary \.btn\{width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px/);
+ assert.match(css,/\.fa-shell-primary \.btn\{width:33px;min-width:33px;max-width:33px;height:34px;min-height:34px/);
+});
