@@ -12,7 +12,7 @@ let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,clubId:null,query:''});
 let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
-let pickerOpen=null,pickerMonth=null,pickerJump=false,selectedBoxId=null,managerSubmitted=false;
+let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
 let typeahead={kind:'',query:'',last:0};
 function positionCalendar(){
  const popup=app.querySelector('.fa-calendar-panel'),trigger=app.querySelector('#manager-birth-date');
@@ -29,7 +29,7 @@ window.addEventListener('scroll',positionCalendar,true);
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(url){stop();languageMenuOpen=false;feedbackState=null;pickerOpen=null;pickerJump=false;selectedBoxId=null;history.pushState({},'',url);void render();}
+function navigate(url){stop();languageMenuOpen=false;feedbackState=null;pickerOpen=null;pickerView='days';selectedBoxId=null;history.pushState({},'',url);void render();}
 function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
@@ -54,7 +54,7 @@ async function render(){
   }
   if(ticket!==sequence)return;
   let inner;
-  if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate),jump:pickerJump});
+  if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate),jump:pickerView});
   else if(page==='/new-career/country')inner=countryPage(draft,lang);
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang);
@@ -66,7 +66,12 @@ async function render(){
    if(managerSubmitted)validateManagerForm(document.getElementById('manager-form'),false);
    if(selectedBoxId)app.querySelectorAll('.fa-interactive-box').forEach(x=>x.classList.toggle('fa-control-selected',x.id===selectedBoxId));
   }
-  if(pickerOpen==='calendar')positionCalendar();
+  if(pickerOpen==='calendar'){
+   positionCalendar();
+   const list=app.querySelector('.fa-calendar-year-picker');
+   const chosen=list?.querySelector('.fa-calendar-year-option.is-selected');
+   if(list&&chosen)list.scrollTop=chosen.offsetTop-list.offsetTop-(list.clientHeight-chosen.clientHeight)/2;
+  }
   document.documentElement.lang=lang;
   document.title=tr(lang,'Football Architect','Football Architect');
  }catch(e){
@@ -145,6 +150,7 @@ async function handle(action,element){
 
   case 'nationality-toggle':
    pickerOpen=pickerOpen==='nationality'?null:'nationality';
+   if(!pickerOpen)selectedBoxId=null;
    await render();
    if(pickerOpen)app.querySelector('.fa-nationality-menu .fa-picker-option.is-selected, .fa-nationality-menu .fa-picker-option')?.focus({preventScroll:true});
    else app.querySelector('#manager-nationality')?.focus({preventScroll:true});
@@ -158,29 +164,47 @@ async function handle(action,element){
    break;
   }
   case 'calendar-toggle':
-   pickerOpen=pickerOpen==='calendar'?null:'calendar';pickerJump=false;
+   pickerOpen=pickerOpen==='calendar'?null:'calendar';pickerView='days';
+   if(!pickerOpen)selectedBoxId=null;
    pickerMonth=pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate);
    await render();
    app.querySelector('#manager-birth-date')?.focus({preventScroll:true});
    break;
   case 'calendar-jump-toggle':
-   pickerJump=!pickerJump;await render();
-   app.querySelector(pickerJump?'[data-calendar-part="year"]':'.fa-calendar-title')?.focus({preventScroll:true});
-   break;
-  case 'calendar-prev':case 'calendar-next':
-   pickerMonth=shiftCalendarMonth(pickerMonth,action==='calendar-next'?1:-1);
+   pickerView=pickerView==='days'?'months':pickerView==='months'?'years':'days';
    await render();
-   app.querySelector('[data-action="'+action+'"]')?.focus({preventScroll:true});
+   app.querySelector(pickerView==='months'?'.fa-calendar-month-option.is-selected':pickerView==='years'?'.fa-calendar-year-option.is-selected':'.fa-calendar-title')?.focus({preventScroll:true});
    break;
+  case 'calendar-prev':case 'calendar-next':case 'calendar-prev-coarse':case 'calendar-next-coarse':{
+   const sign=action.includes('next')?1:-1,coarse=action.includes('coarse');
+   const step=pickerView==='days'?(coarse?12:1):pickerView==='months'?(coarse?120:12):(coarse?1200:120);
+   pickerMonth=shiftCalendarMonth(pickerMonth,sign*step);
+   await render();
+   app.querySelector('[data-action="'+action+'"]')?.focus({preventScroll:true});break;
+  }
+  case 'calendar-month-select':{
+   const month=element.dataset.value;
+   if(!/^(0[1-9]|1[0-2])$/.test(month))break;
+   pickerMonth=shiftCalendarMonth(pickerMonth.slice(0,4)+'-'+month,0);
+   pickerView='days';await render();
+   app.querySelector('.fa-calendar-title')?.focus({preventScroll:true});break;
+  }
+  case 'calendar-year-select':{
+   const year=Number(element.dataset.value);
+   if(!Number.isInteger(year)||year<1900||year>Number(localToday().slice(0,4)))break;
+   pickerMonth=shiftCalendarMonth(year+'-'+pickerMonth.slice(5,7),0);
+   pickerView='months';await render();
+   app.querySelector('.fa-calendar-month-option.is-selected')?.focus({preventScroll:true});break;
+  }
   case 'calendar-day':case 'calendar-today':{
    const value=action==='calendar-today'?localToday():element.dataset.value;
    if(!validDate(value)||value>localToday())break;
    draft.managerProfile.birthDate=value;pickerOpen=null;pickerMonth=value.slice(0,7);
-   selectedBoxId=null;pickerJump=false;await render();
+   selectedBoxId=null;pickerView='days';await render();
    app.querySelector('#manager-birth-date')?.focus({preventScroll:true});break;
   }
   case 'calendar-clear':
-   draft.managerProfile.birthDate='';pickerOpen=null;pickerJump=false;selectedBoxId=null;
+   draft.managerProfile.birthDate='';pickerOpen=null;pickerView='days';selectedBoxId=null;
    await render();app.querySelector('#manager-birth-date')?.focus({preventScroll:true});break;
   case 'country':if(LEAGUES.some(l=>l.id===element.dataset.country)){draft.countryId=element.dataset.country;draft.clubId=null;await render();app.querySelector(`[data-action="country"][data-country="${draft.countryId}"]`)?.focus({preventScroll:true});}break;
   case 'country-next':if(LEAGUES.some(l=>l.id===draft.countryId))navigate('/new-career/team');break;
@@ -231,7 +255,8 @@ async function handle(action,element){
 }
 document.addEventListener('click',event=>{
  if(pickerOpen&&!event.target.closest?.('[data-fa-picker]')){
-  pickerOpen=null;
+  pickerOpen=null;pickerView='days';selectedBoxId=null;
+  app.querySelectorAll('.fa-control-selected').forEach(el=>el.classList.remove('fa-control-selected'));
   // Closing on an outside click must not recreate the form and steal focus
   // from the field the user just clicked.
   app.querySelector('.fa-picker-popover')?.remove();
@@ -346,21 +371,13 @@ document.addEventListener('keydown',event=>{
   }
  }
 },true);
-document.addEventListener('change',event=>{
- const selector=event.target.closest?.('[data-calendar-part]');
- if(!selector)return;
- const year=document.querySelector('[data-calendar-part="year"]')?.value;
- const month=document.querySelector('[data-calendar-part="month"]')?.value;
- if(!year||!month)return;
- pickerMonth=shiftCalendarMonth(year+'-'+month,0);pickerJump=true;
- void render().then(()=>app.querySelector('[data-calendar-part="'+selector.dataset.calendarPart+'"]')?.focus({preventScroll:true}));
-});
+
 document.addEventListener('keydown',event=>{
  if(!pickerOpen)return;
  if(event.key==='Escape'){
   event.preventDefault();
   const target=pickerOpen==='calendar'?'manager-birth-date':'manager-nationality';
-  pickerOpen=null;void render().then(()=>app.querySelector('#'+target)?.focus({preventScroll:true}));
+  pickerOpen=null;pickerView='days';selectedBoxId=null;void render().then(()=>app.querySelector('#'+target)?.focus({preventScroll:true}));
   return;
  }
  const item=event.target.closest?.('.fa-nationality-menu .fa-picker-option');
@@ -373,37 +390,35 @@ document.addEventListener('keydown',event=>{
 });
 
 
-// Type-to-closest-value works on the existing site dropdowns, including when closed.
-// Search moves focus; it does not commit a choice until Enter/click.
+// Shared typeahead: typing on any site dropdown focuses the nearest option.
 document.addEventListener('keydown',event=>{
- if(event.ctrlKey||event.altKey||event.metaKey||event.isComposing||event.key.length!==1||!/[\\p{L}\\p{N}]/u.test(event.key))return;
+ if(event.ctrlKey||event.altKey||event.metaKey||event.isComposing||
+   event.key.length!==1||!/[\p{L}\p{N}]/u.test(event.key))return;
  const target=event.target;
  const nationality=target.closest?.('[data-action="nationality-toggle"],.fa-nationality-menu .fa-picker-option');
  const language=target.closest?.('[data-action="language-toggle"],.language-listbox .language-option');
- const native=target.closest?.('select[data-calendar-part]');
- if(!nationality&&!language&&!native)return;
+ const month=target.closest?.('.fa-calendar-month-option');
+ const year=target.closest?.('.fa-calendar-year-option');
+ if(!nationality&&!language&&!month&&!year)return;
  event.preventDefault();
- const kind=nationality?'nationality':language?'language':native.dataset.calendarPart;
+ const kind=nationality?'nationality':language?'language':month?'calendar-month':'calendar-year';
  const now=Date.now(),same=typeahead.kind===kind;
  const query=selectTypeaheadBuffer(same?typeahead.query:'',event.key,same?now-typeahead.last:Infinity);
  typeahead={kind,query,last:now};
  const focusMatch=async()=>{
   if(kind==='nationality'&&pickerOpen!=='nationality'){pickerOpen='nationality';await render();}
   if(kind==='language'&&!languageMenuOpen){languageMenuOpen=true;await render();}
-  const options=native?[...app.querySelectorAll('select[data-calendar-part="'+kind+'"] option')]:
-   [...app.querySelectorAll(kind==='nationality'?'.fa-nationality-menu .fa-picker-option':'.language-listbox .language-option')];
-  const index=closestSelectIndex(options.map(o=>({label:o.textContent})),query);
-  if(index<0)return;
-  if(native){
-   const select=app.querySelector('select[data-calendar-part="'+kind+'"]');
-   if(select&&select.value!==options[index].value){
-    select.value=options[index].value;
-    select.dispatchEvent(new Event('change',{bubbles:true}));
-   }
-  }else{
-   options[index]?.focus({preventScroll:true});
-   options[index]?.scrollIntoView({block:'nearest',inline:'nearest'});
-  }
+  const selector=kind==='nationality'?'.fa-nationality-menu .fa-picker-option':
+   kind==='language'?'.language-listbox .language-option':
+   kind==='calendar-month'?'.fa-calendar-month-picker .fa-calendar-month-option':
+   '.fa-calendar-year-picker .fa-calendar-year-option';
+  const options=[...app.querySelectorAll(selector)];
+  const text=typeahead.kind===kind?typeahead.query:query;
+  const index=closestSelectIndex(options.map(o=>({label:o.textContent})),text);
+  const option=index>=0?options[index]:null;
+  option?.focus({preventScroll:true});
+  const panel=option?.closest('.fa-nationality-menu,.fa-calendar-year-picker');
+  if(panel)panel.scrollTop=option.offsetTop-panel.offsetTop-(panel.clientHeight-option.clientHeight)/2;
  };
  void focusMatch().catch(fail);
 },true);
