@@ -1048,7 +1048,8 @@ test('keyboard P0: site rerenders preserve focus and wizard route headings gain 
  assert.match(js,/if\(samePage\)restoreSnapshot\(snapshot\)/);
  assert.match(js,/lastRenderedRoute=page/);
  assert.match(js,/heading\?\.focus\(\{preventScroll:false\}\)/);
- assert.match(ui,/<h1 class="fa-page-title" tabindex="-1">/);
+ assert.match(ui,/<h1 class="fa-page-title">/);
+ assert.match(js,/heading\?\.setAttribute\('tabindex','-1'\)/);
 });
 test('keyboard P1: field-level bilingual summary and arrows/PageUp/PageDown date grid',()=>{
  const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');

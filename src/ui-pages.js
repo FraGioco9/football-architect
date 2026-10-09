@@ -49,7 +49,7 @@ function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,description
  <div class="onboard-wrap">
   <header class="onboard-header fa-page-heading">
    <span class="pretitle wizard-step-label">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/3</span>
-   <h1 class="fa-page-title" tabindex="-1">${tr(lang,titleIt,titleEn)}</h1>
+   <h1 class="fa-page-title">${tr(lang,titleIt,titleEn)}</h1>
    <p>${tr(lang,descriptionIt,descriptionEn)}</p>
    <div class="wizard-topline">
     ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}

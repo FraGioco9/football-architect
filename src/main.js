@@ -119,6 +119,7 @@ async function render(){
   if(samePage)restoreSnapshot(snapshot);
   else if(lastRenderedRoute!==null&&page.startsWith('/new-career')){
    const heading=app.querySelector('.wizard-page .fa-page-title');
+   heading?.setAttribute('tabindex','-1');
    heading?.focus({preventScroll:false});
   }
   lastRenderedRoute=page;
