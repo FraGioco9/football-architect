@@ -201,43 +201,63 @@ export function teamsPage(draft,lang){
 }
 
 export function careersPage(catalog,lang){
- const valid=catalog.rows;
- const cards=valid.map(row=>{
-  const m=row.meta,team=m&&club(m.countryId,m.clubId),l=m&&leagueById(m.countryId);
-  const healthy=row.status==='ok',active=row.id===catalog.activeId,id=esc(row.id);
+ const rows=catalog.rows;
+ const entries=rows.map((row,index)=>{
+  const m=row.meta,team=m&&club(m.countryId,m.clubId),league=m&&leagueById(m.countryId);
+  const healthy=row.status==='ok',active=healthy&&row.id===catalog.activeId,id=esc(row.id);
   const title=esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'));
-  return `<article class="career-card ${active&&healthy?'career-active':''}" aria-label="${title}">
-   <div class="career-card-top">
-    <div><span class="overline">${esc(l?.flag??'')} ${esc(l?.country?.[lang]??'')}${l?' · '+esc(l.competition):''}</span>
-    <h2>${title}</h2></div>
-    <span class="tag status-chip ${!healthy?'tag-danger':active?'tag-green':'tag-muted'}">${!healthy?tr(lang,'Da verificare','Needs attention'):active?tr(lang,'Attiva','Active'):tr(lang,'Disponibile','Available')}</span>
-   </div>
-   <div class="career-meta">
-    <span>${tr(lang,'Club','Club')}: <b>${esc(team?.name??'—')}</b></span>
-    <span>${tr(lang,'Allenatore','Manager')}: <b>${esc(m?.managerName??'—')}</b></span>
-    <span>${tr(lang,'Stagione','Season')}: <b>${healthy?esc(seasonLabel(row.state.date)):'—'}</b></span>
-    <span>${tr(lang,'Data di gioco','Game date')}: <b>${healthy?esc(fmtDate(row.state.date,lang)):'—'}</b></span>
-    <span>${tr(lang,'Ultimo salvataggio','Last saved')}: <b>${esc(fmtDate(m?.updatedAt,lang,true))}</b></span>
-   </div>
-   ${healthy?'':`<p class="career-warning" role="status">${tr(lang,'Salvataggio danneggiato: caricamento disabilitato. Puoi esportare o eliminare questa carriera.','Corrupt save: loading disabled. You can export or delete this career.')}</p>`}
-   <div class="career-actions">
-     ${healthy?button('load',active?tr(lang,'Continua','Continue'):tr(lang,'Apri','Open'),'secondary',`data-id="${id}"`):''}
-     ${button('export',tr(lang,'Esporta','Export'),'ghost',`data-id="${id}"`)}
+  const caption=[league?.country?.[lang],league?.competition].filter(Boolean).join(' · ');
+  const status=!healthy?tr(lang,'Da verificare','Needs attention'):active?tr(lang,'Attiva','Active'):tr(lang,'Disponibile','Available');
+  const fact=(label,value)=>`<div class="wizard-career-fact"><span>${label}</span><strong>${value}</strong></div>`;
+  return `<article class="wizard-career-row ${active?'is-current':''} ${healthy?'':'is-corrupt'}" aria-labelledby="wizard-career-${index}-title" ${active?'aria-current="true"':''}>
+    <div class="wizard-career-identity">
+     <span class="wizard-career-crest" aria-hidden="true">${team?crest(team):icon('shield',23)}</span>
+     <div class="wizard-career-heading">
+      <span class="wizard-career-location">${countryFlagSvg(league?.id)}<span>${esc(caption||tr(lang,'Salvataggio locale','Local save'))}</span></span>
+      <h3 id="wizard-career-${index}-title">${title}</h3>
+      ${team&&m?.careerName!==team.name?`<small>${esc(team.name)}</small>`:''}
+     </div>
+     <span class="wizard-career-status ${healthy?(active?'is-active':'is-available'):'is-invalid'}">${!healthy?icon('alert-triangle',14):active?icon('check',14):''}<span>${status}</span></span>
+    </div>
+    <div class="wizard-career-facts">
+     ${fact(tr(lang,'Allenatore','Manager'),esc(m?.managerName??'—'))}
+     ${fact(tr(lang,'Stagione','Season'),healthy?esc(seasonLabel(row.state.date)):'—')}
+     ${fact(tr(lang,'Data di gioco','Game date'),healthy?esc(fmtDate(row.state.date,lang)):'—')}
+     ${fact(tr(lang,'Ultimo salvataggio','Last saved'),esc(fmtDate(m?.updatedAt,lang,true)))}
+    </div>
+    ${healthy?'':`<p class="wizard-career-warning" role="status">${icon('alert-triangle',16)}${tr(lang,'Salvataggio danneggiato: caricamento disabilitato. Puoi esportare o eliminare questa carriera.','Corrupt save: loading disabled. You can export or delete this career.')}</p>`}
+    <div class="wizard-career-actions">
+     ${healthy?button('load',active?tr(lang,'Continua','Continue'):tr(lang,'Apri','Open'),'primary',`data-id="${id}"`):''}
+     ${healthy?button('rename',tr(lang,'Rinomina','Rename'),'secondary',`data-id="${id}"`):''}
+     ${button('export',tr(lang,'Esporta','Export'),'secondary',`data-id="${id}"`)}
      ${button('delete',tr(lang,'Elimina','Delete'),'danger',`data-id="${id}"`)}
-     ${healthy?`<details class="career-more"><summary>${tr(lang,'Altre azioni','More actions')} ${icon('chevron-down',15)}</summary>
-        <div class="career-more-panel">${button('rename',tr(lang,'Rinomina','Rename'),'ghost',`data-id="${id}"`)}</div></details>`:''}
-   </div>
-  </article>`;
+    </div>
+   </article>`;
  }).join('');
- return `<div class="restored-careers">
-  <header class="career-hub-heading fa-page-heading">
-   <span class="pretitle">${tr(lang,'SALVATAGGI LOCALI','LOCAL SAVES')}</span>
-   <div class="restored-section-head"><div><h1 class="fa-page-title">${tr(lang,'Le tue carriere','Your careers')}</h1><p>${tr(lang,'Apri una carriera o creane una nuova.','Open a career or create a new one.')}</p></div>
-   <div class="career-head-actions">${button('new',tr(lang,'Nuova carriera','New career'),'primary')} ${button('import',tr(lang,'Importa','Import'),'ghost')}</div></div>
-   <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
-  </header>
-  <div class="career-grid">${cards||`<div class="panel career-empty"><h2>${tr(lang,'Nessuna carriera salvata','No saved careers')}</h2>
-    <p>${tr(lang,'Crea la prima carriera per iniziare.','Create your first career to get started.')}</p></div>`}</div>
+ return `<div class="onboarding restored-onboarding wizard-page restored-careers wizard-careers">
+  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
+  <div class="onboard-wrap">
+   <header class="onboard-header fa-page-heading">
+    <span class="pretitle wizard-step-label">${tr(lang,'SALVATAGGI LOCALI','LOCAL SAVES')}</span>
+    <h1 class="fa-page-title">${tr(lang,'Le mie carriere','My careers')}</h1>
+    <div class="wizard-topline">${button('home',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}</div>
+   </header>
+   <section class="wizard-careers-panel panel" aria-labelledby="wizard-careers-title">
+    <div class="wizard-careers-toolbar">
+     <div class="onboard-heading wizard-careers-heading"><h2 id="wizard-careers-title">${tr(lang,'Carriere salvate','Saved careers')}</h2><span>${rows.length} ${tr(lang,rows.length===1?'CARRIERA':'CARRIERE',rows.length===1?'CAREER':'CAREERS')}</span></div>
+     <div class="wizard-careers-toolbar-actions">
+      ${button('new',tr(lang,'Nuova carriera','New career'),'primary')}
+      ${button('import',tr(lang,'Importa JSON','Import JSON'),'secondary')}
+     </div>
+    </div>
+    <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="${tr(lang,'File carriera JSON','Career JSON file')}">
+    <div class="wizard-careers-list">${entries||`<div class="wizard-careers-empty">
+      <span class="wizard-careers-empty-icon" aria-hidden="true">${icon('folder-open',28)}</span>
+      <h3>${tr(lang,'Nessuna carriera salvata','No saved careers')}</h3>
+      <p>${tr(lang,'Crea la prima carriera per iniziare.','Create your first career to get started.')}</p>
+     </div>`}</div>
+   </section>
+  </div>
  </div>`;
 }
 export function settingsPage(lang){
