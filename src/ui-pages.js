@@ -16,10 +16,11 @@ const fmtDate=(value,lang,clock=false)=>{
 const club=(country,id)=>getLeagueClubs(country).find(x=>x.id===id);
 const crest=c=>c?`<span class="crest" style="--club1:${esc(c.colors[0])};--club2:${esc(c.colors[1])}">${esc(c.short)}</span>`:'<span class="crest unknown">?</span>';
 
-/* Inline flags work offline and do not depend on Windows emoji fonts. */
-export function countryFlagSvg(code){
- const flags={"IT":"<rect width=\"11\" height=\"22\" fill=\"#009246\"/><rect x=\"11\" width=\"10\" height=\"22\" fill=\"#fff\"/><rect x=\"21\" width=\"11\" height=\"22\" fill=\"#ce2b37\"/>","ENG":"<rect width=\"32\" height=\"22\" fill=\"#fff\"/><path d=\"M13 0h6v22h-6zM0 8h32v6H0z\" fill=\"#ce1124\"/>","ES":"<rect width=\"32\" height=\"22\" fill=\"#aa151b\"/><rect y=\"5.5\" width=\"32\" height=\"11\" fill=\"#f1bf00\"/><path d=\"M11 8.5h4v6h-4z\" fill=\"#aa151b\"/>","DE":"<rect width=\"32\" height=\"7.34\" fill=\"#101010\"/><rect y=\"7.33\" width=\"32\" height=\"7.34\" fill=\"#dd0000\"/><rect y=\"14.66\" width=\"32\" height=\"7.34\" fill=\"#ffce00\"/>","FR":"<rect width=\"11\" height=\"22\" fill=\"#002395\"/><rect x=\"11\" width=\"10\" height=\"22\" fill=\"#fff\"/><rect x=\"21\" width=\"11\" height=\"22\" fill=\"#ed2939\"/>","PT":"<rect width=\"13\" height=\"22\" fill=\"#006600\"/><rect x=\"13\" width=\"19\" height=\"22\" fill=\"#ff0000\"/><circle cx=\"13\" cy=\"11\" r=\"5.4\" fill=\"#f8d447\"/><path d=\"M10.5 8.2h5v6l-2.5 1.6-2.5-1.6z\" fill=\"#fff\" stroke=\"#b0002a\" stroke-width=\".8\"/>","NL":"<rect width=\"32\" height=\"7.34\" fill=\"#ae1c28\"/><rect y=\"7.33\" width=\"32\" height=\"7.34\" fill=\"#fff\"/><rect y=\"14.66\" width=\"32\" height=\"7.34\" fill=\"#21468b\"/>","BR":"<rect width=\"32\" height=\"22\" fill=\"#009739\"/><path d=\"M16 3 29 11 16 19 3 11Z\" fill=\"#ffdf00\"/><circle cx=\"16\" cy=\"11\" r=\"5.3\" fill=\"#002776\"/><path d=\"M11 9.5c4.3-.9 8 1.2 10.1 3.7\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.4\"/>"};
- return flags[code]?'<svg class="wizard-country-flag-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 22" width="32" height="22" aria-hidden="true" focusable="false">'+flags[code]+'</svg>':'';
+/* Local HD SVG flags, bundled offline under the MIT flag-icons license. */
+const FLAG_ASSETS=Object.freeze({IT:'it',ENG:'gb-eng',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'br'});
+export function countryFlag(code){
+ const name=Object.hasOwn(FLAG_ASSETS,code)?FLAG_ASSETS[code]:null;
+ return name?`<img class="country-flag" src="/assets/flags/${name}.svg" width="32" height="24" alt="" decoding="async">`:'';
 }
 const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
@@ -118,7 +119,7 @@ export function countryPage(draft,lang){
   <div class="wizard-country-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
    ${LEAGUES.map(l=>`<button type="button" id="wizard-country-${esc(l.id)}" class="fa-interactive-box wizard-country-option ${l.id===selected?'fa-choice-selected':''}"
      data-action="country" data-country="${l.id}" aria-pressed="${l.id===selected}">
-     <span class="wizard-country-flag" aria-hidden="true">${countryFlagSvg(l.id)}</span>
+     <span class="wizard-country-flag" aria-hidden="true">${countryFlag(l.id)}</span>
      <span class="wizard-country-copy"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>
      <span class="wizard-country-check" aria-hidden="true">${l.id===selected?icon('check',15):''}</span></button>`).join('')}
   </div>
@@ -213,7 +214,7 @@ export function careersPage(catalog,lang,currentCareerId=null){
     <div class="wizard-career-identity">
      <span class="wizard-career-crest" aria-hidden="true">${team?crest(team):icon('shield',23)}</span>
      <div class="wizard-career-heading">
-      <span class="wizard-career-location">${countryFlagSvg(league?.id)}<span>${esc(caption||tr(lang,'Salvataggio locale','Local save'))}</span></span>
+      <span class="wizard-career-location">${countryFlag(league?.id)}<span>${esc(caption||tr(lang,'Salvataggio locale','Local save'))}</span></span>
       <h3 id="wizard-career-${index}-title">${title}</h3>
       ${team&&m?.careerName!==team.name?`<small>${esc(team.name)}</small>`:''}
      </div>
@@ -323,7 +324,7 @@ export function simulationPage(meta,state,lang,playing){
  const c=club(meta.countryId,meta.clubId),l=leagueById(meta.countryId);
  return `<section class="heading fa-page-heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
  <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1 class="fa-page-title">${esc(c?.name??'—')}</h1>
- <p>${esc(meta.managerName)} · ${esc(l.flag)} ${esc(l.country[lang])}</p></section>
+ <p>${esc(meta.managerName)} · <span class="career-country-flag" aria-hidden="true">${countryFlag(l.id)}</span> ${esc(l.country[lang])}</p></section>
  <div class="metrics"><section class="panel"><span class="kicker">${tr(lang,'DATA DI GIOCO','GAME DATE')}</span><h2>${esc(fmtDate(state.date,lang))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'STAGIONE','SEASON')}</span><h2>${esc(seasonLabel(state.date))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'GIORNI TRASCORSI','DAYS ELAPSED')}</span><h2>${state.daysElapsed.toLocaleString(lang==='en'?'en-GB':'it-IT')}</h2></section></div>

@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync,existsSync} from 'node:fs';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,SAVE_KEY} from '../src/simulation.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
-import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlagSvg} from '../src/ui-pages.js';
+import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlag} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
@@ -1276,22 +1278,93 @@ test('all four new-career steps have title but no subtitle in IT and EN',()=>{
  }
 });
 
-test('eight country flags are offline SVG rather than font dependent emoji',()=>{
+test('all eight leagues use high-definition offline flags in new career, My Careers, and simulation',()=>{
+ const codes={IT:'it',ENG:'gb-eng',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'br'};
+ assert.equal(LEAGUES.length,8);
  for(const league of LEAGUES){
-  const svg=countryFlagSvg(league.id);
-  assert.match(svg,/<svg class="wizard-country-flag-svg"/);
-  assert.match(svg,/<rect|<path|<circle/);
-  assert.doesNotMatch(svg,/[\u{1F1E6}-\u{1F1FF}]/u);
+  const asset=codes[league.id];
+  assert.ok(asset,'Missing country asset: '+league.id);
+  const tag=countryFlag(league.id);
+  assert.match(tag,new RegExp('class="country-flag" src="/assets/flags/'+asset+'\\.svg"'));
+  assert.match(tag,/width="32" height="24" alt=""/);
+  assert.doesNotMatch(tag,/[\u{1F1E6}-\u{1F1FF}]/u);
+  const svg=readFileSync(new URL('../assets/flags/'+asset+'.svg',import.meta.url),'utf8');
+  assert.match(svg,/<svg\b[^>]*viewBox="0 0 640 480"/);
   for(const lang of ['it','en']){
    const html=countryPage({countryId:null},lang);
    const start=html.indexOf('data-country="'+league.id+'"');
    assert.ok(start>=0);
-   assert.match(html.slice(start,start+500),/<svg class="wizard-country-flag-svg"/);
+   assert.ok(html.slice(start,start+500).includes(tag));
   }
  }
- assert.equal(countryFlagSvg('UNKNOWN'),'');
+ assert.equal(countryFlag('UNKNOWN'),'');
+ assert.equal(countryFlag('__proto__'),'');
+ assert.equal(countryFlag('GB'),'');
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
- assert.match(css,/\.wizard-country-flag-svg\{display:block;width:32px;height:22px/);
+ assert.match(css,/\.country-flag\{display:block;width:32px;height:24px/);
+ assert.match(css,/\.wizard-careers \.wizard-career-location \.country-flag\{/);
+ const saved=careersPage({rows:[{id:'one',status:'ok',meta:{managerName:'Ada',careerName:'Test',countryId:'BR',clubId:1,updatedAt:'2026-10-09'},state:{date:'2026-10-09'}}],activeId:null},'it');
+ assert.match(saved,/class="wizard-careers-list"/);
+ assert.match(saved,/class="wizard-career-location"/);
+ assert.match(saved,/src="\/assets\/flags\/br\.svg"/);
+ assert.doesNotMatch(saved,/class="career-grid"|class="career-card/);
+ const simulation=simulationPage({managerName:'Ada',countryId:'IT',clubId:1},{date:'2026-10-09',daysElapsed:0},'it',false);
+ assert.match(simulation,/src="\/assets\/flags\/it\.svg"/);
+ assert.doesNotMatch(simulation,/undefined|class="wizard-country-flag-svg"/);
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.doesNotMatch(ui,/esc\(l\.flag\)/);
+});
+
+test('full vendored 4:3 flag catalog contains exactly 271 safely named SVG assets and no 1x1 directory',()=>{
+ const dir=new URL('../assets/flags/',import.meta.url);
+ const names=readdirSync(dir);
+ const flags=names.filter(n=>n.endsWith('.svg'));
+ assert.equal(flags.length,271);
+ assert.equal(new Set(flags).size,271);
+ assert.equal(existsSync(new URL('../assets/flags/1x1/',import.meta.url)),false);
+ for(const name of flags){
+  assert.match(name,/^[a-z0-9]+(?:-[a-z0-9]+)*\.svg$/);
+  const svg=readFileSync(new URL('../assets/flags/'+name,import.meta.url),'utf8');
+  assert.match(svg,/<svg\b/);
+  assert.match(svg,/<\/svg>/);
+  assert.doesNotMatch(svg,/<script\b|<foreignObject\b|<image\b|\sonload=/i);
+ }
+ for(const name of ['it.svg','gb-eng.svg','br.svg','jp.svg','us.svg','xx.svg'])assert.ok(flags.includes(name));
+ assert.match(readFileSync(new URL('../assets/flags/LICENSE',import.meta.url),'utf8'),/MIT License/);
+});
+
+test('HTTP serves every bundled flag with SVG MIME and nosniff but denies unknown or nested paths',{timeout:30000},async()=>{
+ const port=24853;
+ const base='http://127.0.0.1:'+port;
+ const child=spawn(process.execPath,[fileURLToPath(new URL('../server.mjs',import.meta.url))],{
+  env:{...process.env,PORT:String(port)},stdio:'ignore'
+ });
+ try{
+  let ready=false;
+  for(let attempt=0;attempt<80;attempt++){
+   if(child.exitCode!==null)throw new Error('Flag smoke HTTP server exited with '+child.exitCode);
+   try{
+    if((await fetch(base+'/',{signal:AbortSignal.timeout(450)})).ok){ready=true;break;}
+   }catch{}
+   await new Promise(resolve=>setTimeout(resolve,75));
+  }
+  assert.ok(ready,'Offline HTTP server did not become ready');
+  const flags=readdirSync(new URL('../assets/flags/',import.meta.url)).filter(n=>n.endsWith('.svg'));
+  assert.equal(flags.length,271);
+  for(const name of flags){
+   const response=await fetch(base+'/assets/flags/'+name);
+   assert.equal(response.status,200,'SVG HTTP status: '+name);
+   assert.match(response.headers.get('content-type')??'',/^image\/svg\+xml\b/i,'MIME: '+name);
+   assert.equal(response.headers.get('x-content-type-options'),'nosniff','nosniff: '+name);
+   assert.match(await response.text(),/<svg\b/,'SVG body: '+name);
+  }
+  for(const path of ['/assets/flags/missing.svg','/assets/flags/1x1/ad.svg','/assets/flags/it.svg.txt','/assets/flags/it.svg%00']){
+   assert.equal((await fetch(base+path)).status,404,path);
+  }
+  assert.equal((await fetch(base+'/assets/flags/it.svg',{method:'POST'})).status,405);
+ }finally{
+  child.kill();
+ }
 });
 
 test('club table is denser and includes actual reputation and capacity for all 20 clubs',()=>{

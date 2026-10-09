@@ -16,7 +16,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 
 - / — Menu iniziale con l'ultima carriera valida.
 - /new-career — **Passaggio 1/4: Allenatore**. Nome, cognome, data di nascita, nazionalità e luogo di nascita obbligatori, con errori IT/EN e messaggio vicino ad Avanti. Menu resta nella testata. Nessun salvataggio in questa fase.
-- /new-career/country — **Passaggio 2/4: Nazione**. Selezione esplicita tra 8 Paesi con bandiere SVG offline; Indietro conserva l’allenatore.
+- /new-career/country — **Passaggio 2/4: Nazione**. Selezione esplicita tra 8 Paesi con bandiere SVG HD offline dal catalogo locale `flag-icons` 4:3; Indietro conserva l’allenatore.
 - /new-career/league — **Passaggio 3/4: Campionato**. Scelta esplicita del campionato disponibile per la nazione selezionata; oggi il catalogo contiene **un campionato per ciascuno degli 8 Paesi**. Il campionato resta una scelta nella bozza e non modifica lo schema dei salvataggi.
 - /new-career/team — **Passaggio 4/4: Squadra**. Tabella compatta di 20 club senza scrollbar interna, con reputazione e capienza, selezione esplicita, riepilogo del club, pulsante Rosa disabilitato e conferma «Inizia carriera». Il salvataggio viene creato solo in questo passaggio.
 - /careers — Layout originale a griglia di card, con salvataggi separati: carica, rinomina, esporta, importa JSON o elimina con conferma. I salvataggi corrotti sono esportabili/eliminabili ma non caricabili.
@@ -71,3 +71,9 @@ Il nuovo profilo obbligatorio comprende esclusivamente **Nome, Cognome, Data di 
 ## Tabelle del sito
 
 La tabella **Squadra** allinea i contenuti di ciascuna colonna con un contenitore dedicato e di altezza uniforme: stemma e nome, città, fondazione, reputazione, capienza e icona Scelta. Le celle rimangono elementi nativi di tabella e lo scorrimento resta quello della pagina. **Nessuna regola globale di allineamento viene applicata a tutte le tabelle**: le altre tabelle conservano i propri stili.
+
+## Bandiere SVG offline
+
+Il catalogo locale `assets/flags/` contiene **271 bandiere SVG 4:3** da [lipis/flag-icons](https://github.com/lipis/flag-icons), conservate come file vettoriali e distribuite secondo la licenza MIT in `assets/flags/LICENSE`. Non è incluso alcun asset quadrato `1x1`. Tutti i 271 file SVG della directory principale sono accessibili tramite `/assets/flags/<codice>.svg` (MIME `image/svg+xml`, header `X-Content-Type-Options: nosniff`); il server accetta esclusivamente nomi di file regolari con caratteri minuscoli, numeri e trattini, e non serve directory annidate o file sconosciuti. L'interfaccia utilizza attualmente otto di queste bandiere nella selezione Nazione, in Le mie carriere e nella simulazione. Le risorse sono locali e funzionano senza connessione Internet.
+
+La fase relativa ai **loghi dei club** è separata e non è inclusa in questo intervento.
