@@ -1384,3 +1384,29 @@ html.fa-modal-open{
 }
 html.fa-modal-open body{overflow:hidden}
 html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
+
+/* Pre-reset startup screen (snapshot 2cf7365): restore only the visual boot
+   shell. It disappears as soon as the current IndexedDB startup finishes. */
+#app > .boot {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  background: #0b121a;
+  color: #eaf1f4;
+  font-size: 31px;
+  letter-spacing: -.05em;
+  font-weight: 750;
+  text-align: center;
+}
+#app > .boot strong { color: #42d7ac; }
+#app > .boot span {
+  font-size: 12px;
+  letter-spacing: .03em;
+  color: #8598a5;
+  font-weight: 400;
+  margin-top: 15px;
+}
