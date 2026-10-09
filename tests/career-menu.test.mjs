@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
+import {LEAGUES,COMPETITIONS,getLeagueClubs,getCountryCompetitions,isSelectableCompetition} from '../src/leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
@@ -296,7 +296,7 @@ test('four separate new career pages require manager, country, championship and 
  assert.match(manager,/Avanti: Nazione/);
  assert.doesNotMatch(manager,/class="league-pick-options"|<table class="club-table"/);
  assert.match(manager,/<h1 class="fa-page-title">[\s\S]*?<div class="wizard-topline">[\s\S]*?data-action="cancel-setup"/);
- const chosen={managerName:'Ada Coach',countryId:'IT',championshipId:'IT',clubId:2,query:''};
+ const chosen={managerName:'Ada Coach',countryId:'IT',championshipId:'IT-1',clubId:2,query:''};
  const country=countryPage(blank,'it');
  assert.match(country,/PASSAGGIO 2\/4/);
  assert.equal((country.match(/data-action="country"/g)||[]).length,8);
@@ -310,10 +310,10 @@ test('four separate new career pages require manager, country, championship and 
  assert.equal((league.match(/data-action="championship" /g)||[]).length,1);
  assert.match(league,/data-action="championship-next" disabled/);
  assert.doesNotMatch(league,/<table class="club-table"|id="manager-form"/);
- const selectedLeague=championshipPage({...chosen,championshipId:'IT',clubId:null},'it');
+ const selectedLeague=championshipPage({...chosen,championshipId:'IT-1',clubId:null},'it');
  assert.match(selectedLeague,/aria-pressed="true"/);
  assert.doesNotMatch(selectedLeague,/data-action="championship-next" disabled/);
- const team=teamsPage({...chosen,championshipId:'IT',clubId:null},'it');
+ const team=teamsPage({...chosen,championshipId:'IT-1',clubId:null},'it');
  assert.match(team,/PASSAGGIO 4\/4/);
  assert.match(team,/class="wizard-no-club"/);
  assert.match(team,/data-action="start-career" disabled/);
@@ -601,20 +601,20 @@ test('wizard routes keep the input draft in memory and do not create a premature
  assert.match(server,/'\/new-career\/league'/);
  assert.match(controller,/draft\.managerName=managerFullName\(draft\.managerProfile\);[\s\S]*?navigate\('\/new-career\/country'\);/);
  assert.match(controller,/case 'country-next':if\(LEAGUES\.some\(l=>l\.id===draft\.countryId\)\)navigate\('\/new-career\/league'\)/);
- assert.match(controller,/case 'championship-next':if\(LEAGUES\.some\(l=>l\.id===draft\.championshipId&&l\.id===draft\.countryId\)\)navigate\('\/new-career\/team'\)/);
+ assert.match(controller,/case 'championship-next':if\(isSelectableCompetition\(draft\.countryId,draft\.championshipId\)\)navigate\('\/new-career\/team'\)/);
  assert.match(controller,/case 'start-career':await begin\(\)/);
- assert.match(controller,/if\(page==='\/new-career\/team'&&!LEAGUES\.some/);
+ assert.match(controller,/if\(page==='\/new-career\/team'&&!isSelectableCompetition/);
  assert.match(controller,/case 'setup-back':navigate\(path\(\)==='\/new-career\/team'\?'\/new-career\/league':path\(\)==='\/new-career\/league'\?'\/new-career\/country':'\/new-career'\)/);
  assert.doesNotMatch(controller,/case 'country':draft\.countryId=element\.dataset\.country;draft\.clubId=1/);
  const submit=controller.slice(controller.indexOf("document.addEventListener('submit'"),controller.indexOf("document.addEventListener('input'"));
  assert.doesNotMatch(submit,/begin\(|createCareer\(/);
  const start=controller.slice(controller.indexOf('async function begin()'),controller.indexOf('async function load('));
  assert.match(start,/createCareer\(db,/);
- assert.match(start,/getLeagueClubs\(draft\.countryId\)\.some/);
+ assert.match(start,/getCompetitionClubs\(draft\.championshipId\)\.some/);
 });
 test('all four setup screens have a high cancel button and consistent heading geometry',()=>{
  const draft={managerName:'Ada Manager',countryId:'IT',clubId:4};
- for(const [step,page] of [[1,managerPage(draft,'it')],[2,countryPage(draft,'it')],[3,championshipPage({...draft,championshipId:'IT'},'it')],[4,teamsPage(draft,'it')]]){
+ for(const [step,page] of [[1,managerPage(draft,'it')],[2,countryPage(draft,'it')],[3,championshipPage({...draft,championshipId:'IT-1'},'it')],[4,teamsPage(draft,'it')]]){
   assert.match(page,new RegExp('PASSAGGIO '+step+'/4'));
   assert.match(page,/<div class="wizard-topline">/);
   const cancel=page.indexOf('data-action="cancel-setup"');
@@ -665,8 +665,8 @@ test('wizard H1 has shared spacing and no header subtitles',()=>{
  for(const page of [
   managerPage({managerName:'',countryId:null,clubId:null},'it'),
   countryPage({managerName:'Ada',countryId:'IT',clubId:null},'it'),
-  championshipPage({managerName:'Ada',countryId:'IT',championshipId:'IT',clubId:null},'it'),
-  teamsPage({managerName:'Ada',countryId:'IT',championshipId:'IT',clubId:2},'it')
+  championshipPage({managerName:'Ada',countryId:'IT',championshipId:'IT-1',clubId:null},'it'),
+  teamsPage({managerName:'Ada',countryId:'IT',championshipId:'IT-1',clubId:2},'it')
  ]){
   const kicker=page.indexOf('class="pretitle wizard-step-label"');
   const title=page.indexOf('<h1 class="fa-page-title">');
@@ -1162,7 +1162,7 @@ test('shared centering works for typeahead, newly opened selected nationality, a
 test('wizard exit button is Menu in IT and EN for all four stages without changing its action',()=>{
  const draft={managerName:'Ada Manager',managerProfile:blankManagerProfile(),countryId:'IT',clubId:4};
  for(const lang of ['it','en']){
-  for(const page of [managerPage(draft,lang),countryPage(draft,lang),championshipPage({...draft,championshipId:'IT'},lang),teamsPage(draft,lang)]){
+  for(const page of [managerPage(draft,lang),countryPage(draft,lang),championshipPage({...draft,championshipId:'IT-1'},lang),teamsPage(draft,lang)]){
    assert.match(page,/<button[^>]*data-action="cancel-setup"[^>]*>[\s\S]*?<span>Menu<\/span><\/button>/);
    assert.doesNotMatch(page,/<span>(Annulla|Cancel)<\/span>/);
   }
@@ -1266,7 +1266,7 @@ test('all four new-career steps have title but no subtitle in IT and EN',()=>{
    managerPage({managerProfile:blankManagerProfile()},lang),
    countryPage({countryId:null},lang),
    championshipPage({countryId:'IT',championshipId:null},lang),
-   teamsPage({countryId:'IT',championshipId:'IT',clubId:null,managerName:'Ada'},lang)
+   teamsPage({countryId:'IT',championshipId:'IT-1',clubId:null,managerName:'Ada'},lang)
   ];
   for(let i=0;i<pages.length;i++){
    const header=pages[i].match(/<header class="onboard-header fa-page-heading">([\s\S]*?)<\/header>/)?.[1];
@@ -1415,6 +1415,7 @@ test('championship is a required fourth-stage selection, scoped to selected coun
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.equal(LEAGUES.length,8);
+ assert.equal(COMPETITIONS.length,16);
  for(const nation of LEAGUES){
   for(const lang of ['it','en']){
    const draft={countryId:nation.id,championshipId:null};
@@ -1425,7 +1426,14 @@ test('championship is a required fourth-stage selection, scoped to selected coun
    assert.match(blank,/aria-pressed="false"/);
    assert.match(blank,/data-action="championship-next" disabled/);
    assert.ok(blank.includes(nation.competition));
-   const checked=championshipPage({...draft,championshipId:nation.id},lang);
+   assert.deepEqual(getCountryCompetitions(nation.id).map(c=>c.id),[nation.id+'-1',nation.id+'-2']);
+   assert.equal(isSelectableCompetition(nation.id,nation.id+'-1'),true);
+   assert.equal(isSelectableCompetition(nation.id,nation.id+'-2'),false);
+   assert.match(blank,new RegExp('data-championship="'+nation.id+'-1"'));
+   assert.doesNotMatch(blank,new RegExp('data-championship="'+nation.id+'-2"'));
+   const unavailable=championshipPage({...draft,championshipId:nation.id+'-2'},lang);
+   assert.match(unavailable,/data-action="championship-next" disabled/);
+   const checked=championshipPage({...draft,championshipId:nation.id+'-1'},lang);
    assert.equal((checked.match(/aria-pressed="true"/g)||[]).length,1);
    assert.match(checked,/class="fa-interactive-box wizard-country-option wizard-championship-option fa-choice-selected"/);
    assert.doesNotMatch(checked,/data-action="championship-next" disabled/);
@@ -1433,9 +1441,9 @@ test('championship is a required fourth-stage selection, scoped to selected coun
  }
  assert.match(controller,/countryId:null,championshipId:null,clubId:null/);
  assert.match(controller,/case 'country':if\([\s\S]*?draft.championshipId=null;draft.clubId=null/);
- assert.match(controller,/case 'championship':if\(LEAGUES\.some\(l=>l\.id===element\.dataset\.championship&&l\.id===draft\.countryId\)\)/);
- assert.match(controller,/case 'championship-next':if\(LEAGUES\.some\(l=>l\.id===draft\.championshipId&&l\.id===draft\.countryId\)\)navigate\('\/new-career\/team'\)/);
- assert.match(controller,/draft\.championshipId&&l\.id===draft\.countryId/);
+ assert.match(controller,/case 'championship':if\(isSelectableCompetition\(draft\.countryId,element\.dataset\.championship\)\)/);
+ assert.match(controller,/case 'championship-next':if\(isSelectableCompetition\(draft\.countryId,draft\.championshipId\)\)navigate\('\/new-career\/team'\)/);
+ assert.match(controller,/isSelectableCompetition\(draft\.countryId,draft\.championshipId\)/);
  assert.match(controller,/history\.replaceState\(\{\},'','\/new-career\/league'\)/);
  assert.match(server,/'\/new-career\/league'/);
  assert.match(css,/\.wizard-championship-options\{grid-template-columns:minmax\(0,1fr\)\}/);
@@ -1450,7 +1458,7 @@ test('the club table rebuild does not impose any global table alignment rule',()
  assert.doesNotMatch(css,/\.fa-page-main table (?:th|td)\{display:(?:flex|grid)/);
  assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table :is\(th,td\)\{vertical-align:middle\}/);
  assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table \.club-table-cell\{\s*display:flex;align-items:center;/);
- const html=teamsPage({countryId:'IT',championshipId:'IT',clubId:1},'it');
+ const html=teamsPage({countryId:'IT',championshipId:'IT-1',clubId:1},'it');
  assert.match(html,/<table class="club-table"/);
  assert.doesNotMatch(html,/fa-table-cell-inner/);
 });
@@ -1459,7 +1467,7 @@ test('every club row uses an equal-height, vertically centered cell across eight
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  for(const nation of LEAGUES){
   for(const lang of ['it','en']){
-   const html=teamsPage({countryId:nation.id,championshipId:nation.id,clubId:1,managerName:'Ada'},lang);
+   const html=teamsPage({countryId:nation.id,championshipId:nation.id+'-1',clubId:1,managerName:'Ada'},lang);
    assert.equal((html.match(/class="club-table-row /g)||[]).length,20);
    assert.equal((html.match(/class="club-table-cell club-table-cell--name"/g)||[]).length,20);
    assert.equal((html.match(/class="club-table-cell club-table-cell--number"/g)||[]).length,40);
@@ -1481,8 +1489,8 @@ test('every club row uses an equal-height, vertically centered cell across eight
 
 test('local club cell rebuild preserves selection, keyboard focus and compact responsive rows',()=>{
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
- const selected=teamsPage({countryId:'IT',championshipId:'IT',clubId:2},'it');
- const blank=teamsPage({countryId:'IT',championshipId:'IT',clubId:null},'it');
+ const selected=teamsPage({countryId:'IT',championshipId:'IT-1',clubId:2},'it');
+ const blank=teamsPage({countryId:'IT',championshipId:'IT-1',clubId:null},'it');
  assert.equal((selected.match(/class="club-table-row is-selected"/g)||[]).length,1);
  assert.equal((blank.match(/class="club-table-row is-selected"/g)||[]).length,0);
  assert.equal((selected.match(/aria-pressed="true"/g)||[]).length,1);

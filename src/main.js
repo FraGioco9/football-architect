@@ -1,4 +1,4 @@
-import {LEAGUES,getLeagueClubs} from './leagues.js';
+import {LEAGUES,getCompetitionClubs,isSelectableCompetition} from './leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validDate,localToday} from './simulation.js';
 import {preseasonStart,seasonOpeningYear} from './season-calendar.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from './fixture-calendar.js';
@@ -120,7 +120,7 @@ async function render(){
   if((page==='/new-career/league'||page==='/new-career/team')&&!LEAGUES.some(l=>l.id===draft.countryId)){
    history.replaceState({},'','/new-career/country');page='/new-career/country';
   }
-  if(page==='/new-career/team'&&!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)){
+  if(page==='/new-career/team'&&!isSelectableCompetition(draft.countryId,draft.championshipId)){
    history.replaceState({},'','/new-career/league');page='/new-career/league';
   }
   if((page==='/simulation'||page==='/dashboard'||page==='/calendar')&&!loaded){
@@ -192,7 +192,7 @@ async function advanceClock(minutes){
 }
 async function advance(days){return advanceClock(days*1440);}
 async function begin(){
- if(busy||!validManagerProfile(draft.managerProfile)||!LEAGUES.some(l=>l.id===draft.countryId)||!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
+ if(busy||!validManagerProfile(draft.managerProfile)||!LEAGUES.some(l=>l.id===draft.countryId)||!isSelectableCompetition(draft.countryId,draft.championshipId)||!getCompetitionClubs(draft.championshipId).some(c=>c.id===draft.clubId))return;
  busy=true;
  try{
   const current=await createCareer(db,{managerName:managerFullName(draft.managerProfile),managerProfile:draft.managerProfile,countryId:draft.countryId,clubId:draft.clubId,session:createSession(draft.countryId,draft.clubId,preseasonStart(localToday()))});
@@ -405,9 +405,9 @@ async function handle(action,element){
    await render();app.querySelector('#manager-birth-date')?.focus({preventScroll:true});break;
   case 'country':if(LEAGUES.some(l=>l.id===element.dataset.country)){draft.countryId=element.dataset.country;draft.championshipId=null;draft.clubId=null;await render();app.querySelector(`[data-action="country"][data-country="${draft.countryId}"]`)?.focus({preventScroll:true});}break;
   case 'country-next':if(LEAGUES.some(l=>l.id===draft.countryId))navigate('/new-career/league');break;
-  case 'championship':if(LEAGUES.some(l=>l.id===element.dataset.championship&&l.id===draft.countryId)){draft.championshipId=element.dataset.championship;draft.clubId=null;await render();app.querySelector(`[data-action="championship"][data-championship="${draft.championshipId}"]`)?.focus({preventScroll:true});}break;
-  case 'championship-next':if(LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId))navigate('/new-career/team');break;
-  case 'select':if(LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)&&getLeagueClubs(draft.countryId).some(c=>c.id===Number(element.dataset.id))){draft.clubId=Number(element.dataset.id);await render();app.querySelector(`.club-table-select[data-id="${draft.clubId}"]`)?.focus({preventScroll:true});}break;
+  case 'championship':if(isSelectableCompetition(draft.countryId,element.dataset.championship)){draft.championshipId=element.dataset.championship;draft.clubId=null;await render();app.querySelector(`[data-action="championship"][data-championship="${draft.championshipId}"]`)?.focus({preventScroll:true});}break;
+  case 'championship-next':if(isSelectableCompetition(draft.countryId,draft.championshipId))navigate('/new-career/team');break;
+  case 'select':if(isSelectableCompetition(draft.countryId,draft.championshipId)&&getCompetitionClubs(draft.championshipId).some(c=>c.id===Number(element.dataset.id))){draft.clubId=Number(element.dataset.id);await render();app.querySelector(`.club-table-select[data-id="${draft.clubId}"]`)?.focus({preventScroll:true});}break;
   case 'start-career':await begin();break;
   case 'continue':{
    await refreshCatalog();

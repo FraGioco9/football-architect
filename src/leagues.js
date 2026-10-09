@@ -242,6 +242,14 @@ export const COMPETITIONS=Object.freeze(LEAGUES.flatMap(league=>[
 ]));
 export function countryById(id){return COUNTRIES.find(country=>country.id===id)??null;}
 export function competitionById(id){return COMPETITIONS.find(competition=>competition.id===id)??null;}
+export function getCountryCompetitions(countryId){
+  return COMPETITIONS.filter(competition=>competition.countryId===countryId);
+}
+export function isSelectableCompetition(countryId,competitionId){
+  const competition=competitionById(competitionId);
+  return competition!==null&&competition.countryId===countryId&&
+    competition.capacity>0&&competition.clubCount===competition.capacity;
+}
 export function getCountryClubs(countryId){
   if(!countryById(countryId))throw new RangeError('Unknown country');
   return getLeagueClubs(countryId);

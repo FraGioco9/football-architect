@@ -1,4 +1,4 @@
-import {LEAGUES,getLeagueClubs,leagueById} from './leagues.js';
+import {LEAGUES,getLeagueClubs,leagueById,countryById,getCountryCompetitions,isSelectableCompetition} from './leagues.js';
 import {seasonNumber,sessionTime,localToday} from './simulation.js';
 import {seasonCalendar,transferMarketFor} from './season-calendar.js';
 import {normalizeManagerProfile,managerAge} from './manager-profile.js';
@@ -176,8 +176,8 @@ export function countryPage(draft,lang){
  return wizardFrame(content,lang,2,'Scegli la nazione','Choose your country');
 }
 export function championshipPage(draft,lang){
- const country=LEAGUES.find(l=>l.id===draft.countryId);
- const options=country?[country]:[];
+ const country=countryById(draft.countryId);
+ const options=getCountryCompetitions(draft.countryId).filter(c=>isSelectableCompetition(draft.countryId,c.id));
  const selected=options.find(l=>l.id===draft.championshipId)??null;
  const loc=lang==='en'?'en':'it';
  const content=`<section class="wizard-country-panel wizard-championship-panel panel" aria-labelledby="championship-pick-title">
@@ -187,7 +187,7 @@ export function championshipPage(draft,lang){
    ${options.map(l=>`<button type="button" class="fa-interactive-box wizard-country-option wizard-championship-option ${l.id===selected?.id?'fa-choice-selected':''}"
     data-action="championship" data-championship="${esc(l.id)}" aria-pressed="${l.id===selected?.id}">
     <span class="wizard-championship-symbol" aria-hidden="true">${icon('shield',25)}</span>
-    <span class="wizard-country-copy"><b>${esc(l.competition)}</b><small>${esc(l.country[loc])} · ${l.clubCount} ${tr(lang,'squadre','clubs')}</small></span>
+    <span class="wizard-country-copy"><b>${esc(l.name)}</b><small>${esc(country.country[loc])} · ${l.clubCount} ${tr(lang,'squadre','clubs')}</small></span>
     <span class="wizard-country-check" aria-hidden="true">${l.id===selected?.id?icon('check',15):''}</span></button>`).join('')}
   </div>
   <div class="fa-action-row wizard-country-actions"><button class="btn primary begin-button" type="button" data-action="championship-next" ${selected?'':'disabled'}><span>${tr(lang,'Avanti: Squadra','Next: Club')}</span>${icon('chevron-right',18)}</button></div>

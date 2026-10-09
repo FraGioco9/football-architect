@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionById,getCountryClubs,getCompetitionClubs,getClub} from '../src/leagues.js';
+import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionById,getCountryCompetitions,isSelectableCompetition,getCountryClubs,getCompetitionClubs,getClub} from '../src/leagues.js';
 import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
 import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
 import {layout,simulationPage,calendarPage} from '../src/ui-pages.js';
@@ -284,6 +284,9 @@ test('DIV-02: eight countries map to sixteen distinct named competitions',()=>{
   assert.deepEqual(COMPETITIONS.filter(c=>c.countryId===legacy.id).map(c=>c.id),[
    legacy.id+'-1',legacy.id+'-2'
   ]);
+  assert.deepEqual(getCountryCompetitions(legacy.id).map(c=>c.id),[legacy.id+'-1',legacy.id+'-2']);
+  assert.equal(isSelectableCompetition(legacy.id,first.id),true);
+  assert.equal(isSelectableCompetition(legacy.id,second.id),false);
   assert.deepEqual([first.tier,second.tier],[1,2]);
   assert.equal(first.name,legacy.competition);
   assert.equal(second.name,secondNames[legacy.id]);
@@ -329,6 +332,11 @@ test('DIV-02: new lookup API rejects unknown IDs without falling back to Italy',
  assert.equal(competitionById('IT'),null);
  assert.equal(competitionById('IT-3'),null);
  assert.equal(competitionById('XX-1'),null);
+ assert.deepEqual(getCountryCompetitions('XX'),[]);
+ assert.equal(isSelectableCompetition('XX','IT-1'),false);
+ assert.equal(isSelectableCompetition('ENG','IT-1'),false);
+ assert.equal(isSelectableCompetition('IT','IT'),false);
+ assert.equal(isSelectableCompetition('IT','IT-2'),false);
  assert.throws(()=>getCountryClubs('XX'),RangeError);
  assert.throws(()=>getCountryClubs(undefined),RangeError);
  assert.throws(()=>getCompetitionClubs('XX-1'),RangeError);
