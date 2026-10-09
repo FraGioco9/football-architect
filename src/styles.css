@@ -648,3 +648,85 @@ html::-webkit-scrollbar-corner{
   background:transparent;
   box-shadow:none;
 }
+
+
+/* Three-page New Career wizard; Annulla and Indietro stay above the H1. */
+.wizard-page .onboard-wrap{max-width:100%}
+.wizard-page .wizard-topline{
+ display:flex;justify-content:space-between;align-items:flex-start;
+ gap:14px;min-height:44px;margin-bottom:16px;
+}
+.wizard-page .wizard-top-start{
+ display:flex;align-items:center;gap:16px;min-width:0;flex-wrap:wrap;
+}
+.wizard-page .wizard-top-start .pretitle{
+ font-size:var(--fa-label-size);letter-spacing:.12em;line-height:1.4;
+}
+.wizard-page .wizard-cancel,.wizard-page .wizard-back{
+ flex:none;min-height:39px;padding:9px 13px;
+ border:1px solid #3f5c59;background:#162b32;
+ color:#d1e7df;border-radius:10px;font-size:12px;font-weight:700;
+}
+.wizard-page .wizard-cancel:hover,.wizard-page .wizard-back:hover{
+ border-color:#63d7b6;background:#20413d;color:#f0fff7;
+}
+.wizard-page .wizard-cancel:focus-visible,
+.wizard-page .wizard-back:focus-visible{
+ outline:2px solid #80e5c4;outline-offset:2px;
+}
+.wizard-page .onboard-header .fa-page-title{margin:0 0 13px}
+.wizard-manager-panel{
+ max-width:680px;background:#142832;
+ border:1px solid #385552;
+}
+.wizard-manager-panel .onboard-heading{margin-bottom:20px}
+.wizard-manager-panel .wizard-manager-form{
+ display:grid;gap:12px;margin:0;
+}
+.wizard-manager-form .input-label{font-size:13px;font-weight:720}
+.wizard-manager-form .text-field{
+ width:100%;max-width:100%;min-height:48px;
+ padding:12px 14px;background:#10232c;border:1px solid #405e63;
+ border-radius:10px;color:#edf6f1;font-size:14px;
+}
+.wizard-manager-form .begin-button{
+ justify-content:space-between;min-height:46px;
+ width:100%;max-width:350px;margin-top:7px;
+}
+.wizard-manager-panel .hint{margin:18px 0 0;line-height:1.5}
+.wizard-country-panel{max-width:100%;margin:0}
+.wizard-country-panel .league-pick-options{margin-bottom:14px}
+.wizard-actions{display:flex;justify-content:flex-end;margin-top:18px}
+.wizard-actions .btn{min-width:200px;min-height:44px}
+.wizard-team-grid{align-items:start}
+.wizard-club-summary .begin-button{width:100%;min-height:46px;margin-top:14px}
+.wizard-club-summary .begin-button:disabled,
+.wizard-actions .btn:disabled{
+ opacity:.45;cursor:not-allowed;pointer-events:none;
+}
+.wizard-manager-summary{
+ display:grid;gap:5px;padding:15px;
+ background:#1b3536;border:1px solid #416b5c;
+ border-radius:10px;margin-top:18px;text-align:left;
+}
+.wizard-manager-summary span{font-size:10px;letter-spacing:.12em;color:#92c8b3;font-weight:800}
+.wizard-manager-summary strong{font-size:14px;color:#e7f9f0;overflow-wrap:anywhere}
+.wizard-no-club{text-align:center;padding:20px 4px;color:#b6d3ca}
+.wizard-empty-icon{
+ width:64px;height:64px;margin:14px auto;
+ display:grid;place-items:center;border-radius:16px;
+ border:1px solid #3c5e53;background:#1c3c38;color:#91dfb7;
+}
+.wizard-no-club h2{margin:8px 0;font-size:19px;color:#effbf5}
+.wizard-no-club p{margin:0;font-size:12px;line-height:1.6}
+@media(max-width:520px){
+ .wizard-page .wizard-topline{flex-wrap:wrap;gap:10px}
+ .wizard-page .wizard-top-start{flex:1 1 170px;gap:8px}
+ .wizard-page .wizard-cancel{margin-left:auto}
+ .wizard-page .wizard-back{padding:8px 10px}
+ .wizard-actions .btn,.wizard-manager-form .begin-button{width:100%;max-width:none}
+}
+@media(max-width:340px){
+ .wizard-page .wizard-top-start .pretitle{font-size:9px;letter-spacing:.08em}
+ .wizard-page .wizard-cancel{padding:8px 9px}
+}
