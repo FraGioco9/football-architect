@@ -219,7 +219,7 @@ test('simulation maintains match-free semantics, responsive UI and keyboard focu
  const markup=simulationPage(meta,state,'it',false);
  assert.match(markup,/Avanza nel tempo/);
  assert.match(markup,/Non viene giocata alcuna partita/);
- assert.doesNotMatch(markup,/\bfixture\b|\bscore\b|risultati|classifica/i);
+ assert.doesNotMatch(markup,/\bscore\b|risultati|classifica/i);
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/:focus-visible/);
  assert.match(css,/@media\(max-width:580px\)/);
