@@ -1,5 +1,6 @@
 import {LEAGUES,getLeagueClubs,leagueById} from './leagues.js';
-import {seasonLabel,localToday} from './simulation.js';
+import {seasonNumber,sessionTime,localToday} from './simulation.js';
+import {seasonCalendar,transferMarketFor} from './season-calendar.js';
 import {normalizeManagerProfile,managerAge} from './manager-profile.js';
 import {bestCareer} from './career-store.js';
 import {icon} from './icons.js';
@@ -13,6 +14,13 @@ const fmtDate=(value,lang,clock=false)=>{
  const d=new Date(clock?value:value+'T12:00:00Z');
  return Number.isFinite(d.getTime())?new Intl.DateTimeFormat(lang==='en'?'en-GB':'it-IT',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC',...(clock?{hour:'2-digit',minute:'2-digit'}:{})}).format(d):'—';
 };
+const fmtGameDate=(value,lang,time=null)=>{
+ if(!value)return '—';
+ const date=new Date(value+'T12:00:00Z');
+ const displayed=new Intl.DateTimeFormat(lang==='en'?'en-GB':'it-IT',
+  {day:'numeric',month:'short',timeZone:'UTC'}).format(date);
+ return displayed+(time?' · '+time:'');
+};
 const club=(country,id)=>getLeagueClubs(country).find(x=>x.id===id);
 const crest=c=>c?`<span class="crest" style="--club1:${esc(c.colors[0])};--club2:${esc(c.colors[1])}">${esc(c.short)}</span>`:'<span class="crest unknown">?</span>';
 
@@ -22,7 +30,7 @@ export function countryFlag(code){
  const name=Object.hasOwn(FLAG_ASSETS,code)?FLAG_ASSETS[code]:null;
  return name?`<img class="country-flag" src="/assets/flags/${name}.svg" width="32" height="24" alt="" decoding="async">`:'';
 }
-const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','start-career':'play','cancel-setup':'arrow-left'};
+const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
 export function layout(inner,lang,message=null,languageOpen=false){
  return `<div class="shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
@@ -38,8 +46,8 @@ export function homePage(catalog,lang){
  return `<section class="hero fa-page-heading"><span class="kicker">${tr(lang,'IL TUO MONDO CALCISTICO','YOUR FOOTBALL WORLD')}</span>
  <h1 class="fa-page-title">${tr(lang,'Benvenuto in Football Architect','Welcome to Football Architect')}</h1><p>${tr(lang,'Ogni carriera è una storia diversa. Scegli una squadra e costruisci il tuo percorso.','Every career tells a different story. Choose a club and build your journey.')}</p></section>
  <div class="menu-stack">${active?`<section class="panel active-career" aria-label="${tr(lang,'Ultima carriera','Last career')}"><span class="kicker active-label">${icon('clock',15)} ${tr(lang,'ULTIMA CARRIERA','LAST CAREER')}</span>
- <div class="active-details">${crest(team)}<div><h2>${esc(team?.name??'—')}</h2><p>${meta.careerName&&meta.careerName!==team?.name?esc(meta.careerName)+' · ':''}${esc(meta.managerName)} · ${tr(lang,'Stagione','Season')} ${esc(seasonLabel(active.state.date))}</p>
- <p>${esc(fmtDate(active.state.date,lang))} · ${tr(lang,'Salvata','Saved')} ${esc(fmtDate(meta.updatedAt,lang,true))}</p></div></div>
+ <div class="active-details">${crest(team)}<div><h2>${esc(team?.name??'—')}</h2><p>${meta.careerName&&meta.careerName!==team?.name?esc(meta.careerName)+' · ':''}${esc(meta.managerName)} · ${esc(tr(lang,'Stagione ','Season ')+seasonNumber(active.state))}</p>
+ <p>${esc(fmtGameDate(active.state.date,lang,sessionTime(active.state)))} · ${tr(lang,'Salvata','Saved')} ${esc(fmtDate(meta.updatedAt,lang,true))}</p></div></div>
  ${button('continue',tr(lang,'Continua carriera','Continue career'))}</section>`:''}
  <section class="menu-actions" aria-label="${tr(lang,'Azioni principali','Main actions')}">
  ${option('new','plus-circle',tr(lang,'Nuova carriera','New career'),tr(lang,'Inizia un nuovo percorso da allenatore','Begin a new managerial journey'))}
@@ -222,8 +230,8 @@ export function careersPage(catalog,lang,currentCareerId=null){
     </div>
     <div class="wizard-career-facts">
      ${fact(tr(lang,'Allenatore','Manager'),esc(m?.managerName??'—'))}
-     ${fact(tr(lang,'Stagione','Season'),healthy?esc(seasonLabel(row.state.date)):'—')}
-     ${fact(tr(lang,'Data di gioco','Game date'),healthy?esc(fmtDate(row.state.date,lang)):'—')}
+     ${fact(tr(lang,'Stagione','Season'),healthy?esc(tr(lang,'Stagione ','Season ')+seasonNumber(row.state)):'—')}
+     ${fact(tr(lang,'Data di gioco','Game date'),healthy?esc(fmtGameDate(row.state.date,lang,sessionTime(row.state))):'—')}
      ${fact(tr(lang,'Ultimo salvataggio','Last saved'),esc(fmtDate(m?.updatedAt,lang,true)))}
     </div>
     ${healthy?'':`<p class="wizard-career-warning" role="status">${icon('alert-triangle',16)}${tr(lang,'Salvataggio danneggiato: caricamento disabilitato. Puoi esportare o eliminare questa carriera.','Corrupt save: loading disabled. You can export or delete this career.')}</p>`}
@@ -322,15 +330,53 @@ export function settingsPage(lang){
 
 export function simulationPage(meta,state,lang,playing){
  const c=club(meta.countryId,meta.clubId),l=leagueById(meta.countryId);
+ const calendar=seasonCalendar(state.date,state.startedAt);
+ const market=transferMarketFor(state);
+ const marketTitle=market.window==='summer'?tr(lang,'Mercato estivo','Summer transfer window'):
+  market.window==='winter'?tr(lang,'Mercato invernale','Winter transfer window'):
+  tr(lang,'Calciomercato chiuso','Transfer window closed');
+ const phaseLabel=calendar.phase==='preseason'?tr(lang,'Prestagione','Preseason'):
+  calendar.phase==='season'?tr(lang,'Stagione','Season'):tr(lang,'Pausa estiva','Summer break');
+ const moments=[
+  {id:'preseason',date:calendar.preseasonStart,it:'Prestagione',en:'Preseason'},
+  {id:'season',date:calendar.seasonStart,it:'Periodo stagionale',en:'Season period'},
+  {id:'offseason',date:calendar.offseasonStart,it:'Pausa estiva',en:'Summer break'}
+ ];
  return `<section class="heading fa-page-heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
  <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1 class="fa-page-title">${esc(c?.name??'—')}</h1>
  <p>${esc(meta.managerName)} · <span class="career-country-flag" aria-hidden="true">${countryFlag(l.id)}</span> ${esc(l.country[lang])}</p></section>
- <div class="metrics"><section class="panel"><span class="kicker">${tr(lang,'DATA DI GIOCO','GAME DATE')}</span><h2>${esc(fmtDate(state.date,lang))}</h2></section>
- <section class="panel"><span class="kicker">${tr(lang,'STAGIONE','SEASON')}</span><h2>${esc(seasonLabel(state.date))}</h2></section>
+ <div class="metrics"><section class="panel"><span class="kicker">${tr(lang,'DATA DI GIOCO','GAME DATE')}</span><h2>${esc(fmtGameDate(state.date,lang,sessionTime(state)))}</h2></section>
+ <section class="panel"><span class="kicker">${tr(lang,'STAGIONE','SEASON')}</span><h2>${esc(tr(lang,'Stagione ','Season ')+seasonNumber(state))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'GIORNI TRASCORSI','DAYS ELAPSED')}</span><h2>${state.daysElapsed.toLocaleString(lang==='en'?'en-GB':'it-IT')}</h2></section></div>
+ <section class="panel fa-season-calendar" aria-labelledby="fa-season-calendar-title">
+  <div class="fa-season-calendar-header">
+   <h2 id="fa-season-calendar-title">${tr(lang,'Calendario stagionale','Season calendar')}</h2>
+   <span class="fa-season-phase">${esc(phaseLabel)}</span>
+  </div>
+  <div class="fa-season-milestones">
+   ${moments.map(m=>`<div class="fa-season-milestone ${calendar.phase===m.id?'is-current':''}">
+    <span>${tr(lang,m.it,m.en)}</span><strong>${esc(fmtGameDate(m.date,lang))}</strong>
+   </div>`).join('')}
+  </div>
+  <p class="muted">${tr(lang,
+   'Date reali e fasi stagionali. Partite e orari non sono ancora programmati né simulati.',
+   'Real dates and season phases. Fixtures and kick-off times are not yet scheduled or simulated.')}</p>
+ </section>
+ <section class="panel fa-transfer-window" aria-labelledby="fa-transfer-title">
+  <div class="fa-season-calendar-header">
+   <h2 id="fa-transfer-title">${tr(lang,'Calciomercato','Transfer market')}</h2>
+   <span class="fa-transfer-status ${market.open?'is-open':'is-closed'}">${market.open?tr(lang,'APERTO','OPEN'):tr(lang,'CHIUSO','CLOSED')}</span>
+  </div>
+  <p class="fa-transfer-name">${esc(marketTitle)}</p>
+  <div class="fa-transfer-periods">
+   <div><strong>${tr(lang,'Estate','Summer')}</strong><span>${tr(lang,'1 luglio 00:00 – 31 agosto 24:00','1 July 00:00 – 31 August 24:00')}</span></div>
+   <div><strong>${tr(lang,'Inverno','Winter')}</strong><span>${tr(lang,'1 gennaio 00:00 – 31 gennaio 24:00','1 January 00:00 – 31 January 24:00')}</span></div>
+  </div>
+  <p class="muted">${tr(lang,'La chiusura coincide con le 00:00 del 1° settembre o del 1° febbraio. Il mercato è solo informativo: non sono ancora disponibili trasferimenti.','Each window closes at 00:00 on 1 September or 1 February. Market timing is informational; transfers are not yet available.')}</p>
+ </section>
  <section class="panel control"><h2>${tr(lang,'Avanza nel tempo','Advance through time')}</h2><p>${tr(lang,'La simulazione modifica soltanto il calendario. Non viene giocata alcuna partita.','Only the calendar advances. No matches are played.')}</p>
- <div class="actions">${button('day',tr(lang,'+ 1 giorno','+ 1 day'))}${button('week',tr(lang,'+ 7 giorni','+ 7 days'))}${button('month',tr(lang,'+ 30 giorni','+ 30 days'))}${button('year',tr(lang,'+ 365 giorni','+ 365 days'))}</div>
+ <div class="actions">${button('hour',tr(lang,'+ 1 ora','+ 1 hour'))}${button('day',tr(lang,'+ 1 giorno','+ 1 day'))}${button('week',tr(lang,'+ 7 giorni','+ 7 days'))}${button('month',tr(lang,'+ 30 giorni','+ 30 days'))}${button('year',tr(lang,'+ 365 giorni','+ 365 days'))}</div>
  <div class="actions separated">${button('toggle',playing?tr(lang,'Ferma simulazione','Pause simulation'):tr(lang,'Simulazione continua','Auto-advance'),playing?'warning':'secondary')}
  ${button('careers',tr(lang,'Le mie carriere','My careers'),'ghost')}</div>
- <p class="muted" role="status">${playing?tr(lang,'Avanzamento automatico attivo','Automatic advancement active'):tr(lang,'Simulazione in pausa','Simulation paused')}</p></section>`;
+ <p class="muted" role="status">${playing?tr(lang,'Avanzamento automatico attivo: +1 ora a ogni intervallo','Automatic advancement: +1 hour per tick'):tr(lang,'Simulazione in pausa','Simulation paused')}</p></section>`;
 }

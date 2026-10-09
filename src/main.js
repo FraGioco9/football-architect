@@ -1,5 +1,6 @@
 import {LEAGUES,getLeagueClubs} from './leagues.js';
-import {createSession,advanceSession,validDate,localToday} from './simulation.js';
+import {createSession,advanceSession,advanceMinutes,sessionTime,validDate,localToday} from './simulation.js';
+import {preseasonStart} from './season-calendar.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
@@ -153,21 +154,24 @@ async function render(){
   app.innerHTML=layout(renderBlockingError(e,lang),lang,null,languageMenuOpen);
  }
 }
-async function advance(days){
+async function advanceClock(minutes){
  if(busy||!loaded)return;
  busy=true;
  const current=loaded;
  try{
-  const next=advanceSession(current.state,days);
-  const saved=await saveCareer(db,current.meta.id,next,{expectedDays:current.state.daysElapsed});
+  const next=advanceMinutes(current.state,minutes);
+  const saved=await saveCareer(db,current.meta.id,next,{
+   expectedDays:current.state.daysElapsed,expectedTime:sessionTime(current.state)
+  });
   if(loaded?.meta.id===current.meta.id){loaded=saved;await render();}
  }catch(e){fail(e);}finally{busy=false;}
 }
+async function advance(days){return advanceClock(days*1440);}
 async function begin(){
  if(busy||!validManagerProfile(draft.managerProfile)||!LEAGUES.some(l=>l.id===draft.countryId)||!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
  busy=true;
  try{
-  const current=await createCareer(db,{managerName:managerFullName(draft.managerProfile),managerProfile:draft.managerProfile,countryId:draft.countryId,clubId:draft.clubId});
+  const current=await createCareer(db,{managerName:managerFullName(draft.managerProfile),managerProfile:draft.managerProfile,countryId:draft.countryId,clubId:draft.clubId,session:createSession(draft.countryId,draft.clubId,preseasonStart(localToday()))});
   loaded=current;
   draft=newDraft();
   navigate('/simulation');
@@ -367,13 +371,14 @@ async function handle(action,element){
   }
   case 'delete-cancel':closeDeleteDialog(true);break;
   case 'import':document.getElementById('import-file')?.click();break;
+  case 'hour':stop();await advanceClock(60);break;
   case 'day':stop();await advance(1);break;
   case 'week':stop();await advance(7);break;
   case 'month':stop();await advance(30);break;
   case 'year':stop();await advance(365);break;
   case 'toggle':{
    if(timer!==null)stop();
-   else timer=setInterval(()=>{if(!busy)void advance(1);},500);
+   else timer=setInterval(()=>{if(!busy)void advanceClock(60);},500);
    await render();break;
   }
  }

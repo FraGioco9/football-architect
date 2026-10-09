@@ -56,6 +56,7 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/simulation)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/main.js)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/simulation.js)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/season-calendar.js)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/career-store.js)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/src/ui-pages.js)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/match/1)" = 404

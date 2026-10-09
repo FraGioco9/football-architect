@@ -18,6 +18,7 @@ const files=new Map([
  ['/src/site-picker-ui.js','text/javascript; charset=utf-8'],
  ['/src/ui-pages.js','text/javascript; charset=utf-8'],
  ['/src/simulation.js','text/javascript; charset=utf-8'],
+ ['/src/season-calendar.js','text/javascript; charset=utf-8'],
  ['/src/leagues.js','text/javascript; charset=utf-8'],
  ['/src/styles.css','text/css; charset=utf-8'],
  ['/assets/favicon.svg','image/svg+xml']
