@@ -1088,8 +1088,8 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
 .restored-onboarding .wizard-team-grid .club-table .club-table-reputation{width:11%;text-align:center}
 .restored-onboarding .wizard-team-grid .club-table .club-table-capacity{width:18%;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .restored-onboarding .wizard-team-grid .club-table .club-table-status{width:8%;text-align:center}
-.restored-onboarding .wizard-team-grid .club-table td{height:43px;padding:4px 6px;font-size:11px}
-.restored-onboarding .wizard-team-grid .club-table td:first-child{padding:3px 5px}
+.restored-onboarding .wizard-team-grid .club-table td{height:auto;padding:0 6px;font-size:11px}
+.restored-onboarding .wizard-team-grid .club-table td:first-child{padding:0 5px}
 .restored-onboarding .wizard-team-grid .club-table-select{gap:7px}
 .restored-onboarding .wizard-team-grid .club-table-select .crest{width:28px;min-width:28px;height:28px;flex-basis:28px;border-radius:7px;font-size:9px}
 .restored-onboarding .wizard-team-grid .club-table-name strong{font-size:11px;line-height:1.2}
@@ -1116,7 +1116,7 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
  .restored-onboarding .wizard-team-grid .club-table .club-table-reputation{width:15%}
  .restored-onboarding .wizard-team-grid .club-table .club-table-capacity{width:23%}
  .restored-onboarding .wizard-team-grid .club-table .club-table-status{width:9%}
- .restored-onboarding .wizard-team-grid .club-table td{height:45px;padding:3px 5px;font-size:10px}
+ .restored-onboarding .wizard-team-grid .club-table td{height:auto;padding:0 5px;font-size:10px}
  .restored-onboarding .wizard-team-grid .club-table-name small{display:block}
  .restored-onboarding .wizard-team-grid .club-table-reputation small{display:none}
  .restored-onboarding .wizard-team-grid .club-table th{padding:0 3px 5px;font-size:8px}
@@ -1130,11 +1130,6 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
  .restored-onboarding .wizard-team-grid .club-table td{font-size:9px}
 }
 
-/* Global table-cell contract: align text, controls and icons centrally on the row axis. */
-.fa-page-main table th,.fa-page-main table td{vertical-align:middle}
-.fa-page-main table :is(th,td)>:is(button,a,[role="button"]){align-items:center}
-.fa-page-main table :is(th,td) svg{vertical-align:middle}
-
 /* Step 3 - championship uses the same selected-box contract as country. */
 .wizard-championship-panel{max-width:820px}
 .wizard-championship-options{grid-template-columns:minmax(0,1fr)}
@@ -1145,34 +1140,28 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
 }
 .wizard-championship-option .wizard-country-copy b{white-space:normal}
 
-/* All site tables keep native table layout; their row contents use a shared
-   vertical axis instead of inline-flex baseline alignment. */
-.fa-page-main table :is(th,td) > .fa-table-cell-inner{
- display:flex;align-items:center;min-width:0;width:100%;
+
+/* Club selection table owns its alignment; no site-wide table overrides. */
+.restored-onboarding .wizard-team-grid .club-table :is(th,td){vertical-align:middle}
+.restored-onboarding .wizard-team-grid .club-table .club-table-cell{
+ display:flex;align-items:center;
+ min-width:0;min-height:41px;width:100%;padding:3px 0;
+ box-sizing:border-box;
 }
-.fa-page-main table :is(th,td) > .fa-table-cell-center{
- justify-content:center;text-align:center;
-}
-.fa-page-main table :is(th,td) > .fa-table-cell-start{
- justify-content:flex-start;text-align:left;
-}
-.fa-page-main table .fa-table-cell-inner > :is(button,a,[role="button"]){
- display:flex;align-items:center;min-width:0;
-}
-/* 43px desktop / 45px mobile row targets including padding and borders. */
-.restored-onboarding .wizard-team-grid .club-table .fa-table-cell-inner{
- min-height:33px;
-}
+.restored-onboarding .wizard-team-grid .club-table .club-table-cell--name{justify-content:flex-start}
+.restored-onboarding .wizard-team-grid .club-table .club-table-reputation .club-table-cell--number{justify-content:center}
+.restored-onboarding .wizard-team-grid .club-table .club-table-capacity .club-table-cell--number{justify-content:flex-end}
+.restored-onboarding .wizard-team-grid .club-table .club-table-cell--status{justify-content:center}
 .restored-onboarding .wizard-team-grid .club-table .club-table-select{
  display:flex;align-items:center;justify-content:flex-start;
+ min-height:35px;min-width:0;width:100%;
 }
 .restored-onboarding .wizard-team-grid .club-table-name{
- display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
+ display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;
 }
-.restored-onboarding .wizard-team-grid .club-table .club-table-status .club-table-indicator{
- display:flex;align-items:center;justify-content:center;margin-inline:auto;
- vertical-align:middle;line-height:1;
+.restored-onboarding .wizard-team-grid .club-table .club-table-indicator{
+ display:grid;place-items:center;margin:0;line-height:1;
 }
 @media(max-width:530px){
- .restored-onboarding .wizard-team-grid .club-table .fa-table-cell-inner{min-height:37px}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-cell{min-height:43px}
 }
