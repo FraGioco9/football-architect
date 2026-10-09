@@ -19,6 +19,7 @@ const files=new Map([
  ['/src/ui-pages.js','text/javascript; charset=utf-8'],
  ['/src/simulation.js','text/javascript; charset=utf-8'],
  ['/src/season-calendar.js','text/javascript; charset=utf-8'],
+ ['/src/fixture-calendar.js','text/javascript; charset=utf-8'],
  ['/src/leagues.js','text/javascript; charset=utf-8'],
  ['/src/styles.css','text/css; charset=utf-8'],
  ['/assets/favicon.svg','image/svg+xml']

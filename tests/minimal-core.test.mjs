@@ -5,6 +5,7 @@ import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionByI
 import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
 import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
 import {simulationPage} from '../src/ui-pages.js';
+import {nextScheduledClubFixture,scheduleCompetitionFixtures,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 
 test('eight real countries each expose 20 invented clubs with unique identities',()=>{
  assert.equal(LEAGUES.length,8);
@@ -145,7 +146,7 @@ test('CAL-01: seasonal panel is bilingual, responsive and never invents fixtures
   assert.equal((html.match(/class="fa-season-milestone is-current"/g)||[]).length,1);
   assert.match(html,lang==='it'?/Calendario stagionale/:/Season calendar/);
   assert.match(html,lang==='it'?/Prestagione/:/Preseason/);
-  assert.match(html,lang==='it'?/Partite e orari non sono ancora programmati/:/Fixtures and kick-off times are not yet scheduled/);
+  assert.match(html,lang==='it'?/Date e orari delle partite sono programmati/:/Match dates and kick-off times are scheduled/);
   assert.ok(!html.includes('data-action="play-match"'));
  }
  const summer=simulationPage(meta,createSession('IT',2,'2027-06-15'),'en',false);
@@ -337,4 +338,95 @@ test('DIV-02: new lookup API rejects unknown IDs without falling back to Italy',
  assert.equal(getClub('IT',21),null); // DIV-03 not implemented.
  assert.equal(getClub('IT',1)?.countryId,'IT');
  assert.equal(getLeagueClubs().length,20); // Legacy API contract unchanged.
+});
+
+test('CAL-02.3: chronological next kickoff stays selected at equality and moves after one minute',()=>{
+ const year=2026,country='IT',calendar=scheduleCompetitionFixtures('IT-1',year);
+ const all=calendar.matchdays.flatMap(d=>d.fixtures);
+ const first=[...all].sort((a,b)=>(a.date+'T'+a.time).localeCompare(b.date+'T'+b.time)||a.id.localeCompare(b.id))[0];
+ const start=createSession(country,first.homeClubId,first.date,first.time);
+ assert.equal(nextScheduledClubFixture(start).id,first.id);
+ const next=advanceMinutes(start,1);
+ assert.notEqual(nextScheduledClubFixture(next).id,first.id);
+ assert.deepEqual(Object.keys(next).sort(),Object.keys(start).sort());
+ assert.equal(validSession(next),true);
+});
+
+test('CAL-02.3: before kickoff, after kickoff and long advances never create results',()=>{
+ const calendar=scheduleCompetitionFixtures('FR-1',2026);
+ const fixture=calendar.matchdays.flatMap(d=>d.fixtures).find(f=>f.homeClubId===4||f.awayClubId===4);
+ const at=createSession('FR',4,fixture.date,fixture.time);
+ const before=advanceMinutes(createSession('FR',4,fixture.date,'00:00'),
+  Number(fixture.time.slice(0,2))*60+Number(fixture.time.slice(3))-1);
+ assert.equal(nextScheduledClubFixture(before).id,fixture.id);
+ assert.equal(nextScheduledClubFixture(at).id,fixture.id);
+ const after=advanceMinutes(at,1);
+ assert.notEqual(nextScheduledClubFixture(after).id,fixture.id);
+ const yearsLater=advanceSession(createSession('FR',4,'2026-07-01'),365);
+ assert.ok(nextScheduledClubFixture(yearsLater));
+ assert.equal(validSession(yearsLater),true);
+ for(const state of [before,at,after,yearsLater]){
+  assert.ok(!('fixtures' in state)&&!('results' in state)&&!('matchResults' in state));
+ }
+});
+
+test('CAL-02.3: winter pause, June and July select the next scheduled game',()=>{
+ for(const country of ['IT','BR']){
+  for(const [date,time,year] of [
+   ['2026-12-24','08:00',2026],['2027-01-02','23:00',2026],
+   ['2027-06-01','00:00',2027],['2027-06-30','23:59',2027],
+   ['2027-07-01','08:00',2027],['2028-02-29','12:00',2027]
+  ]){
+   const state=createSession(country,2,date,time);
+   const item=nextScheduledClubFixture(state);
+   assert.ok(item,country+' '+date);
+   assert.equal(item.seasonYear,year);
+   assert.ok(item.date+'T'+item.time>=state.date+'T'+time);
+   assert.ok(!('score' in item)&&!('result' in item));
+  }
+ }
+});
+
+test('CAL-02.3: legacy saves and saved session schema remain untouched',()=>{
+ const modern=createSession('IT',2,'2026-07-01');
+ const legacy={...modern};delete legacy.time;
+ assert.equal(validSession(legacy),true);
+ assert.equal(nextScheduledClubFixture(legacy).id,nextScheduledClubFixture(modern).id);
+ const original={...modern};
+ const fixture=nextScheduledClubFixture(modern);
+ assert.deepEqual(modern,original);
+ assert.ok(Object.isFrozen(fixture));
+ assert.deepEqual(Object.keys(modern).sort(),
+ ['version','countryId','clubId','startedAt','date','daysElapsed','time'].sort());
+});
+
+test('CAL-02.3: bounded cache is keyed by competition and season without cross-career leakage',()=>{
+ const calls=[];
+ const generated=(id,year)=>{calls.push(id+':'+year);return Object.freeze({id,year});};
+ const cache=createFixtureCalendarCache(2,generated);
+ const it=cache('IT-1',2026);
+ assert.strictEqual(cache('IT-1',2026),it);
+ const br=cache('BR-1',2026);
+ assert.notStrictEqual(br,it);
+ assert.strictEqual(cache('IT-1',2026),it); // refreshed LRU
+ cache('IT-1',2027); // evicts BR
+ assert.strictEqual(cache('IT-1',2026),it);
+ assert.notStrictEqual(cache('BR-1',2026),br);
+ assert.equal(calls.length,4);
+ assert.throws(()=>createFixtureCalendarCache(0),/cache size/);
+});
+
+test('CAL-02.3: projected match renders only a scheduled preview in IT and EN',()=>{
+ const state=createSession('IT',2,'2026-07-01');
+ const fixture=nextScheduledClubFixture(state);
+ const meta={managerName:'Test Manager',countryId:'IT',clubId:2};
+ for(const lang of ['it','en']){
+  const html=simulationPage(meta,state,lang,false,fixture);
+  assert.match(html,/class="panel fa-next-fixture"/);
+  assert.match(html,lang==='it'?/Prossima partita/:/Next match/);
+  assert.match(html,lang==='it'?/PROGRAMMATA/:/SCHEDULED/);
+  assert.ok(html.includes(fixture.time));
+  assert.ok(!html.includes('data-action="play-match"'));
+  assert.doesNotMatch(html,/\b(?:score|live|final score)\b|risultati|classifica/i);
+ }
 });

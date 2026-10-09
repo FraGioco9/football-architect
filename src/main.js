@@ -1,6 +1,7 @@
 import {LEAGUES,getLeagueClubs} from './leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validDate,localToday} from './simulation.js';
 import {preseasonStart} from './season-calendar.js';
+import {nextScheduledClubFixture,createFixtureCalendarCache} from './fixture-calendar.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
@@ -16,6 +17,8 @@ let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,lang
 let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
 let typeahead={kind:'',query:'',last:0};
 let lastRenderedRoute=null,careersFromSimulationId=null;
+// Derived schedules stay in memory only; cache is bounded across careers/seasons.
+const fixtureCalendarFor=createFixtureCalendarCache(4);
 // Keep the focused/matched option centered in the *menu's* visible viewport.
 // Using rects rather than offsetTop supports fixed popovers and nested ARIA rows.
 function centerMenuOption(option){
@@ -119,7 +122,7 @@ async function render(){
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang,careersFromSimulationId);
   else if(page==='/settings')inner=settingsPage(lang);
-  else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null);
+  else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null,nextScheduledClubFixture(loaded.state,fixtureCalendarFor));
   else inner=homePage(catalog,lang);
   closeRenameDialog(false);
   closeDeleteDialog(false);
