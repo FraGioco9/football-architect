@@ -1,5 +1,6 @@
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
+import {readdirSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
@@ -21,6 +22,12 @@ const files=new Map([
  ['/src/styles.css','text/css; charset=utf-8'],
  ['/assets/favicon.svg','image/svg+xml']
 ]);
+// Serve only regular SVG files from the vendored 4:3 flag catalog. The route
+// map is a strict allowlist: no traversal, nested paths, or square flag assets.
+for(const entry of readdirSync(path.join(root,'assets','flags'),{withFileTypes:true})){
+ if(entry.isFile()&&/^[a-z0-9]+(?:-[a-z0-9]+)*\.svg$/.test(entry.name))
+  files.set('/assets/flags/'+entry.name,'image/svg+xml');
+}
 const server=http.createServer(async(req,res)=>{
  const method=req.method??'GET';
  if(method!=='GET'&&method!=='HEAD'){res.writeHead(405,{Allow:'GET, HEAD'});res.end();return;}

@@ -1078,8 +1078,8 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
 
 /* New Career: flat SVG flags, compact club comparison, reserved Rosa feature. */
 .wizard-page .onboard-header .fa-page-title{margin-bottom:0}
-.wizard-country-flag{flex:0 0 34px;width:34px;height:23px;display:inline-flex;align-items:center;justify-content:center;font-size:0}
-.wizard-country-flag-svg{display:block;width:32px;height:22px;border:1px solid #ffffff44;border-radius:3px;overflow:hidden;box-shadow:0 1px 4px #0004}
+.wizard-country-flag{flex:0 0 36px;width:36px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:0}
+.country-flag{display:block;width:32px;height:24px;object-fit:cover;border:1px solid #ffffff44;border-radius:2px;box-shadow:0 1px 4px #0004}
 .restored-onboarding .wizard-team-grid .club-table{border-spacing:0 4px}
 .restored-onboarding .wizard-team-grid .club-table th{padding:0 6px 5px;font-size:9px;letter-spacing:.04em}
 .restored-onboarding .wizard-team-grid .club-table th:first-child{width:35%}
@@ -1216,7 +1216,7 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
  display:flex;align-items:center;gap:8px;min-width:0;
  font-size:10px;font-weight:750;color:#92b7ac;line-height:1.35;
 }
-.wizard-careers .wizard-career-location .wizard-country-flag-svg{
+.wizard-careers .wizard-career-location .country-flag{
  width:27px;height:19px;flex:none;
 }
 .wizard-careers .wizard-career-location>span{min-width:0;overflow-wrap:anywhere}
@@ -1410,3 +1410,7 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
   font-weight: 400;
   margin-top: 15px;
 }
+
+/* SVG flags in careers and simulation share the same offline asset. */
+.career-country-flag{display:inline-flex;align-items:center;vertical-align:middle;margin-right:5px}
+.career-country-flag .country-flag{width:19px;height:14px;border-radius:1px}
