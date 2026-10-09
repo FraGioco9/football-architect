@@ -796,12 +796,12 @@ test('site calendar has month and year selectors, Monday-first grid, leap dates,
  assert.equal(shiftCalendarMonth('2026-10',1,'2026-10-09'),'2026-10');
  assert.ok(calendarDays('2000-02','2026-10-09').some(x=>x?.iso==='2000-02-29'&&!x.disabled));
  assert.equal(calendarDays('2026-10','2026-10-09').find(x=>x?.iso==='2026-10-10').disabled,true);
- const it=renderDateControl('2000-02-29','it',true,'2000-02',true);
+ const it=renderDateControl('2000-02-29','it',true,'2000-02','months');
  const en=renderDateControl('','en',true,'2026-10');
  assert.match(it,/data-action="calendar-prev"/);
  assert.match(it,/data-action="calendar-next"/);
- assert.match(it,/data-calendar-part="month"/);
- assert.match(it,/data-calendar-part="year"/);
+ assert.match(it,/data-action="calendar-month-select"/);
+ assert.match(it,/data-calendar-view="months"/);
  assert.match(it,/data-action="calendar-day" data-value="2000-02-29"/);
  assert.match(it,/role="grid"/);
  assert.match(it,/aria-expanded="true"/);
@@ -834,7 +834,8 @@ test('shared site pickers stay open only when requested, with escape and outside
   assert.ok(js.includes("case '"+action+"'"),action);
  assert.match(js,/if\(event\.key==='Escape'\)/);
  assert.match(js,/if\(pickerOpen&&!event\.target\.closest\?\.\('\[data-fa-picker\]'\)\)/);
- assert.match(js,/data-calendar-part/);
+ assert.match(js,/case 'calendar-month-select'/);
+ assert.match(js,/case 'calendar-year-select'/);
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  assert.match(server,/'\/src\/site-pickers\.js'/);
  assert.match(server,/'\/src\/site-picker-ui\.js'/);
@@ -911,12 +912,13 @@ test('calendar uses MFL compact default and optional birth-year picker',()=>{
  assert.match(compact,/aria-expanded="false"/);
  assert.doesNotMatch(compact,/data-calendar-part="year"/);
  assert.equal((compact.match(/data-action="calendar-day"/g)||[]).length,42);
- const expanded=renderDateControl('2000-02-29','it',true,'2000-02',true);
- assert.match(expanded,/data-calendar-part="month"/);
- assert.match(expanded,/data-calendar-part="year"/);
+ const expanded=renderDateControl('2000-02-29','it',true,'2000-02','months');
+ assert.match(expanded,/data-action="calendar-month-select"/);
+ const years=renderDateControl('2000-02-29','it',true,'2000-02','years');
+ assert.match(years,/data-action="calendar-year-select"/);
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
- assert.match(css,/position:fixed;width:min\(228px,calc\(100vw - 16px\)\)/);
- assert.match(css,/height:24px;padding:0/);
+ assert.match(css,/position:fixed;width:min\(272px,calc\(100vw - 16px\)\)/);
+ assert.match(css,/height:30px;padding:0/);
 });
 test('shared typeahead chooses closest options with accents, spelling and country/language inputs',()=>{
  const {closestSelectIndex,selectTypeaheadBuffer}=typeaheadFns;
@@ -934,5 +936,41 @@ test('shared typeahead chooses closest options with accents, spelling and countr
  assert.match(main,/selectTypeaheadBuffer\(/);
  assert.match(main,/kind==='nationality'&&pickerOpen!=='nationality'/);
  assert.match(main,/kind==='language'&&!languageMenuOpen/);
- assert.match(main,/select\[data-calendar-part/);
+ assert.match(main,/fa-calendar-year-option/);
+});
+
+test('global non-selectable text preserves editable inputs and textareas',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/html,body,#app,#app \*\{user-select:none;-webkit-user-select:none\}/);
+ assert.match(css,/#app :is\(input:not\(\[type="button"\]\)/);
+ assert.match(css,/textarea,\[contenteditable="true"\]/);
+ assert.match(css,/user-select:text;-webkit-user-select:text/);
+});
+test('Teatro Baraccano calendar uses five-part header and month/year overlays',()=>{
+ const it=renderDateControl('2000-02-29','it',true,'2000-02');
+ for(const action of ['calendar-prev-coarse','calendar-prev','calendar-jump-toggle','calendar-next','calendar-next-coarse'])
+  assert.ok(it.includes('data-action="'+action+'"'),action);
+ assert.equal((it.match(/data-action="calendar-day"/g)||[]).length,42);
+ const months=renderDateControl('2000-02-29','it',true,'2000-02','months');
+ assert.equal((months.match(/data-action="calendar-month-select"/g)||[]).length,12);
+ const years=renderDateControl('2000-02-29','it',true,'2000-02','years');
+ assert.ok((years.match(/data-action="calendar-year-select"/g)||[]).length>=120);
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/grid-template-columns:34px 34px minmax\(0,1fr\) 34px 34px/);
+ assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/data-calendar-view="years"/);
+});
+test('second-click and Escape close popup without retaining green box highlight',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/if\(!pickerOpen\)selectedBoxId=null/);
+ assert.match(js,/pickerOpen=null;pickerView='days';selectedBoxId=null/);
+ assert.match(js,/app.querySelectorAll\('\.fa-control-selected'\).forEach\(el=>el.classList.remove\('\.fa-control-selected'\)\)/);
+ assert.match(js,/selectedBoxId=null;pickerView='days';await render\(\)/);
+});
+test('dropdown search handles Unicode and Baraccano month/year options',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/event\.key\.length!==1\|\|!\/\[\\p\{L\}\\p\{N\}\]\/u\.test\(event.key\)/);
+ for(const cls of ['.fa-nationality-menu .fa-picker-option','.language-listbox .language-option',
+                  '.fa-calendar-month-picker .fa-calendar-month-option','.fa-calendar-year-picker .fa-calendar-year-option'])
+  assert.ok(js.includes(cls),cls);
 });
