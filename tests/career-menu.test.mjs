@@ -523,7 +523,7 @@ test('settings icon uses a centered geometric cog with eight uniform teeth',()=>
  assert.match(settings,/<circle cx="12" cy="12" r="3\.2"\/>/);
  const path=settings.match(/<path d="([^"]+)"\/>/)?.[1];
  assert.ok(path?.startsWith('M')&&path.endsWith('Z'));
- const vertices=[...path.matchAll(/[ML](\\d+(?:\\.\\d+)?) (\\d+(?:\\.\\d+)?)/g)]
+ const vertices=[...path.matchAll(/[ML](\d+(?:\.\d+)?) (\d+(?:\.\d+)?)/g)]
   .map(([,x,y])=>({x:Number(x),y:Number(y)}));
  assert.equal(vertices.length,32);
  for(const point of vertices){
@@ -535,5 +535,5 @@ test('settings icon uses a centered geometric cog with eight uniform teeth',()=>
  assert.match(small,/width="16" height="16"/);
  assert.equal(small.match(/<path d="([^"]+)"/)?.[1],path);
  assert.equal((homePage({rows:[],activeId:null},'it').match(/data-action="settings"/g)||[]).length,1);
- assert.match(homePage({rows:[],activeId:null},'it'),/data-action="settings"[\\s\\S]*?<svg/);
+ assert.match(homePage({rows:[],activeId:null},'it'),/data-action="settings"[\s\S]*?<svg/);
 });
