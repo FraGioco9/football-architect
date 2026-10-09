@@ -162,13 +162,13 @@ export function teamsPage(draft,lang){
       <th scope="col" class="club-table-status">${tr(lang,'Scelta','Selection')}</th>
      </tr></thead>
      <tbody>${clubs.map(c=>`<tr class="club-table-row ${c.id===chosen?.id?'is-selected':''}" data-action="select" data-id="${c.id}">
-       <td><button type="button" class="club-table-select" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen?.id}" aria-label="${tr(lang,'Seleziona','Select')} ${esc(c.name)}">
-        ${crest(c)}<span class="club-table-name"><strong>${esc(c.name)}</strong><small>${esc(c.city)}</small></span></button></td>
+       <td><div class="fa-table-cell-inner fa-table-cell-start"><button type="button" class="club-table-select" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen?.id}" aria-label="${tr(lang,'Seleziona','Select')} ${esc(c.name)}">
+        ${crest(c)}<span class="club-table-name"><strong>${esc(c.name)}</strong><small>${esc(c.city)}</small></span></button></div></td>
        <td class="club-table-city">${esc(c.city)}</td>
        <td class="club-table-founded">${c.founded}</td>
        <td class="club-table-reputation" title="${tr(lang,'Reputazione','Reputation')}">${c.reputation}<small>/100</small></td>
        <td class="club-table-capacity" title="${esc(c.stadium)} · ${tr(lang,'Capienza','Capacity')}">${new Intl.NumberFormat(lang==='en'?'en-GB':'it-IT').format(c.capacity)}</td>
-       <td class="club-table-status"><span class="club-table-indicator" aria-hidden="true">${c.id===chosen?.id?icon('check',16):icon('chevron-right',16)}</span></td>
+       <td class="club-table-status"><div class="fa-table-cell-inner fa-table-cell-center"><span class="club-table-indicator" aria-hidden="true">${c.id===chosen?.id?icon('check',16):icon('chevron-right',16)}</span></div></td>
       </tr>`).join('')}</tbody>
     </table>
   </section>
