@@ -7,7 +7,7 @@ import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
-import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlag} from '../src/ui-pages.js';
+import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,calendarPage,countryFlag} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
@@ -212,7 +212,7 @@ test('IT/EN menu and dedicated routes are available and accessible',()=>{
  assert.match(settingsPage('en'),/Language/);
  assert.match(careersPage(empty,'en'),/Import/);
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
- for(const route of ['/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation'])assert.ok(server.includes("'"+route+"'"));
+ for(const route of ['/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/calendar'])assert.ok(server.includes("'"+route+"'"));
 });
 test('simulation maintains match-free semantics, responsive UI and keyboard focus',()=>{
  const state=createSession('PT',4,'2026-10-08'),meta={managerName:'M',countryId:'PT',clubId:4};
@@ -1795,4 +1795,43 @@ test('CAL-02.3: multiple careers reuse calendars by key, never another club sele
  assert.ok(b.homeClubId===2||b.awayClubId===2);
  assert.equal(nextScheduledClubFixture((await selectCareer(db,first.meta.id)).state,cache).id,a.id);
  assert.deepEqual((await selectCareer(db,second.meta.id)).state,second.state);
+});
+
+
+test('CAL-02.4: calendar renders for an imported v1 save without schema changes',async()=>{
+ const db=await setup(),first=await createCareer(db,form('Calendar','IT',4,'2026-10-08'));
+ const exported=await exportCareer(db,first.meta.id);
+ const parsed=parseCareerImport(JSON.stringify(exported));
+ const copy=await createCareer(db,{...parsed,id:mkId(),now:'2026-10-09T10:00:00Z'});
+ assert.deepEqual(copy.state,first.state);
+ const {scheduleCompetitionFixtures}=await import('../src/fixture-calendar.js');
+ const calendar=scheduleCompetitionFixtures('IT-1',2026);
+ for(const lang of ['it','en']){
+  const html=calendarPage(copy.meta,copy.state,lang,calendar,{month:'2026-10',filter:'club',view:'month'});
+  assert.match(html,/fa-fixture-calendar/);
+  assert.doesNotMatch(html,/\bscore\b|classifica|risultati/i);
+ }
+ assert.equal((await readCatalog(db)).rows.length,2);
+ assert.deepEqual(Object.keys(copy.state).sort(),Object.keys(first.state).sort());
+});
+
+test('CAL-02.4: dedicated route has HTTP 200 for GET/HEAD and never publishes match routes',{timeout:30000},async()=>{
+ const port=24854,base='http://127.0.0.1:'+port;
+ const child=spawn(process.execPath,[fileURLToPath(new URL('../server.mjs',import.meta.url))],{
+  env:{...process.env,PORT:String(port)},stdio:'ignore'
+ });
+ try{
+  let ready=false;
+  for(let attempt=0;attempt<80;attempt++){
+   if(child.exitCode!==null)throw Error('Calendar server exited');
+   try{if((await fetch(base+'/',{signal:AbortSignal.timeout(450)})).ok){ready=true;break;}}catch{}
+   await new Promise(resolve=>setTimeout(resolve,75));
+  }
+  assert.ok(ready,'Calendar server did not become ready');
+  const page=await fetch(base+'/calendar');
+  assert.equal(page.status,200);
+  assert.match(page.headers.get('content-type')??'',/^text\/html\b/i);
+  assert.equal((await fetch(base+'/calendar',{method:'HEAD'})).status,200);
+  assert.equal((await fetch(base+'/match/1')).status,404);
+ }finally{child.kill();}
 });

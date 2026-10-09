@@ -30,7 +30,7 @@ export function countryFlag(code){
  const name=Object.hasOwn(FLAG_ASSETS,code)?FLAG_ASSETS[code]:null;
  return name?`<img class="country-flag" src="/assets/flags/${name}.svg" width="32" height="24" alt="" decoding="async">`:'';
 }
-const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','start-career':'play','cancel-setup':'arrow-left'};
+const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','fixture-open':'calendar','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
 export function layout(inner,lang,message=null,languageOpen=false){
  return `<div class="shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
@@ -372,6 +372,7 @@ export function simulationPage(meta,state,lang,playing,nextFixture=null){
   ${nextFixture?`<p><strong>${esc(c?.name??'—')} — ${esc(fixtureOpponent?.name??'—')}</strong></p>
    <p class="muted">${esc(fmtDate(nextFixture.date,lang))} · ${esc(nextFixture.time)} · ${fixtureHome?tr(lang,'In casa','Home'):tr(lang,'In trasferta','Away')}</p>`:
    `<p class="muted">${tr(lang,'Nessuna partita futura disponibile','No upcoming match available')}</p>`}
+  <div class="actions">${button('fixture-open',tr(lang,'Apri calendario','Open calendar'),'secondary')}</div>
  </section>
  <section class="panel fa-transfer-window" aria-labelledby="fa-transfer-title">
   <div class="fa-season-calendar-header">
@@ -390,4 +391,88 @@ export function simulationPage(meta,state,lang,playing,nextFixture=null){
  <div class="actions separated">${button('toggle',playing?tr(lang,'Ferma simulazione','Pause simulation'):tr(lang,'Simulazione continua','Auto-advance'),playing?'warning':'secondary')}
  ${button('careers',tr(lang,'Le mie carriere','My careers'),'ghost')}</div>
  <p class="muted" role="status">${playing?tr(lang,'Avanzamento automatico attivo: +1 ora a ogni intervallo','Automatic advancement: +1 hour per tick'):tr(lang,'Simulazione in pausa','Simulation paused')}</p></section>`;
+}
+
+/** CAL-02.4: read-only calendar view. No results, persistence, or match engine. */
+export function calendarPage(meta,state,lang,calendar,options={}){
+ const view=options.view==='round'?'round':'month';
+ const filter=options.filter==='all'?'all':'club';
+ const month=options.month??state.date.slice(0,7);
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('Invalid displayed month');
+ const year=Number(month.slice(0,4)),number=Number(month.slice(5,7));
+ const date=new Date(month+'-01T12:00:00Z');
+ if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,7)!==month)throw new Error('Invalid calendar month');
+ const selectedDay=options.day?.slice(0,7)===month?options.day:null;
+ const round=Math.max(1,Math.min(38,Number.isSafeInteger(options.round)?options.round:1));
+ const c=club(meta.countryId,meta.clubId),league=leagueById(meta.countryId);
+ const all=calendar.matchdays.flatMap(day=>day.fixtures).filter(f=>
+  filter==='all'||f.homeClubId===meta.clubId||f.awayClubId===meta.clubId);
+ const ordered=[...all].sort((a,b)=>
+  (a.date+'T'+a.time).localeCompare(b.date+'T'+b.time)||a.id.localeCompare(b.id));
+ const visible=view==='round'?ordered.filter(f=>f.matchday===round):
+  ordered.filter(f=>f.date.slice(0,7)===month&&(!selectedDay||f.date===selectedDay));
+ const byDate=new Map();
+ for(const f of ordered)if(f.date.slice(0,7)===month)byDate.set(f.date,(byDate.get(f.date)??0)+1);
+ const monthLabel=new Intl.DateTimeFormat(lang==='en'?'en-GB':'it-IT',
+  {month:'long',year:'numeric',timeZone:'UTC'}).format(date);
+ const gameItem=f=>{
+  const home=club(meta.countryId,f.homeClubId);
+  const away=club(meta.countryId,f.awayClubId);
+  const myClub=f.homeClubId===meta.clubId||f.awayClubId===meta.clubId;
+  return '<li class="fa-fixture-item'+(myClub?' is-club':'')+'">'+
+   '<span class="fa-fixture-item-time">'+esc(fmtDate(f.date,lang))+' · '+esc(f.time)+'</span>'+
+   '<span class="fa-fixture-item-teams">'+esc(home?.name??'—')+' — '+esc(away?.name??'—')+'</span>'+
+   '<span class="fa-fixture-item-round">'+esc(tr(lang,'Giornata ','Round ')+f.matchday)+'</span></li>';
+ };
+ const dates=[...new Set(visible.map(f=>f.date))];
+ const matches=visible.length?
+  dates.map(day=>'<section class="fa-fixture-date-section"><h3>'+esc(fmtDate(day,lang))+'</h3>'+
+   '<ul class="fa-fixture-items">'+visible.filter(f=>f.date===day).map(gameItem).join('')+'</ul></section>').join(''):
+  '<p class="muted fa-fixture-empty">'+tr(lang,'Nessuna partita in questa selezione.','No matches in this selection.')+'</p>';
+ const toggle=(action,value,label,active)=>
+  '<button type="button" class="fa-fixture-toggle'+(active?' is-active':'')+
+   '" data-action="'+action+'" data-value="'+value+'" aria-pressed="'+String(active)+'">'+label+'</button>';
+ const firstWeekday=(date.getUTCDay()+6)%7;
+ const daysInMonth=new Date(Date.UTC(year,number,0)).getUTCDate();
+ const weekdays=lang==='en'?['Mon','Tue','Wed','Thu','Fri','Sat','Sun']:['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+ const dayControls=Array.from({length:firstWeekday},()=>'<span class="fa-fixture-outside" aria-hidden="true"></span>');
+ for(let day=1;day<=daysInMonth;day++){
+  const iso=month+'-'+String(day).padStart(2,'0');
+  const has=byDate.has(iso),selected=selectedDay===iso,current=state.date===iso;
+  dayControls.push('<button type="button" data-action="fixture-day" data-date="'+iso+
+   '" aria-pressed="'+String(selected)+'" aria-label="'+esc(fmtDate(iso,lang))+
+   (has?' · '+byDate.get(iso)+' '+tr(lang,'partite','matches'):'')+
+   '" class="fa-fixture-day'+(selected?' is-selected':'')+(current?' is-game-day':'')+'">'+
+   '<span>'+day+'</span>'+(has?'<span class="fa-fixture-dot" aria-hidden="true"></span>':'')+'</button>');
+ }
+ const prev='<button type="button" class="fa-fixture-nav" data-action="fixture-month-prev" aria-label="'+tr(lang,'Mese precedente','Previous month')+'">'+icon('arrow-left',18)+'</button>';
+ const next='<button type="button" class="fa-fixture-nav" data-action="fixture-month-next" aria-label="'+tr(lang,'Mese successivo','Next month')+'">'+icon('chevron-right',18)+'</button>';
+ const monthContent='<div class="fa-fixture-month-head">'+prev+
+   '<h2>'+esc(monthLabel)+'</h2>'+next+
+   '<button type="button" class="fa-fixture-current" data-action="fixture-month-current">'+tr(lang,'Data di gioco','Game date')+'</button></div>'+
+   '<div class="fa-fixture-calendar-grid" role="group" aria-label="'+tr(lang,'Giorni del mese','Days of month')+'">'+
+   weekdays.map(w=>'<span class="fa-fixture-weekday">'+w+'</span>').join('')+
+   dayControls.join('')+'</div>'+
+   (selectedDay?'<button type="button" class="fa-fixture-clear" data-action="fixture-day-clear">'+
+    tr(lang,'Mostra tutto il mese','Show whole month')+'</button>':'');
+ const roundContent='<div class="fa-fixture-round-head">'+
+   '<button type="button" class="fa-fixture-nav" data-action="fixture-round-prev" aria-label="'+tr(lang,'Giornata precedente','Previous round')+'">'+icon('arrow-left',18)+'</button>'+
+   '<h2>'+tr(lang,'Giornata ','Round ')+round+' / 38 · '+esc(calendar.seasonYear+'/'+String((calendar.seasonYear+1)%100).padStart(2,'0'))+'</h2>'+
+   '<button type="button" class="fa-fixture-nav" data-action="fixture-round-next" aria-label="'+tr(lang,'Giornata successiva','Next round')+'">'+icon('chevron-right',18)+'</button></div>';
+ return '<section class="heading fa-page-heading"><button type="button" class="back" data-action="fixture-back">'+
+  icon('arrow-left',16)+' '+tr(lang,'Simulazione','Simulation')+'</button>'+
+  '<span class="kicker">'+tr(lang,'CARRIERA','CAREER')+'</span>'+
+  '<h1 class="fa-page-title">'+tr(lang,'Calendario partite','Match calendar')+'</h1>'+
+  '<p>'+esc(c?.name??'—')+' · '+esc(league.country[lang])+'</p></section>'+
+  '<section class="panel fa-fixture-calendar" aria-labelledby="fa-fixture-calendar-title">'+
+  '<h2 id="fa-fixture-calendar-title" class="fa-fixture-heading">'+tr(lang,'Calendario','Calendar')+'</h2>'+
+  '<div class="fa-fixture-toolbar"><div class="fa-fixture-switch" role="group" aria-label="'+tr(lang,'Visualizzazione','View')+'">'+
+  toggle('fixture-view','month',tr(lang,'Mese','Month'),view==='month')+
+  toggle('fixture-view','round',tr(lang,'Giornate','Rounds'),view==='round')+'</div>'+
+  '<div class="fa-fixture-switch" role="group" aria-label="'+tr(lang,'Filtro partite','Match filter')+'">'+
+  toggle('fixture-filter','club',tr(lang,'La mia squadra','My team'),filter==='club')+
+  toggle('fixture-filter','all',tr(lang,'Tutte le partite','All matches'),filter==='all')+'</div></div>'+
+  (view==='month'?monthContent:roundContent)+
+  '<div class="fa-fixture-results" aria-live="polite"><h2>'+
+  tr(lang,'Incontri','Matches')+' · '+visible.length+'</h2>'+matches+'</div></section>';
 }

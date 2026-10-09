@@ -1444,3 +1444,54 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
 .fa-transfer-periods span{font-size:12px;color:#e4f1ed;overflow-wrap:anywhere}
 .fa-transfer-window>.muted{font-size:12px;max-width:none;margin:14px 0 0}
 @media(max-width:620px){.fa-transfer-periods{grid-template-columns:minmax(0,1fr)}}
+
+
+/* CAL-02.4: in-flow calendar, shared graphite/petrol theme, no nested scrollbars. */
+.fa-fixture-calendar{display:grid;gap:16px;min-width:0}
+.fa-fixture-heading{margin:0;font-size:var(--fa-section-size)}
+.fa-fixture-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.fa-fixture-switch{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.fa-fixture-toggle{min-height:42px;border:1px solid var(--fa-box-border);background:var(--fa-box-surface);color:#d6e9e3;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700}
+.fa-fixture-toggle.is-active{border-color:var(--fa-selection-border);background:#1e493f;color:#f2fff8}
+.fa-fixture-month-head{display:grid;grid-template-columns:40px minmax(0,1fr) 40px auto;align-items:center;gap:8px;min-width:0}
+.fa-fixture-month-head h2,.fa-fixture-round-head h2{margin:0;text-align:center;text-transform:capitalize;font-size:clamp(14px,2.4vw,19px);min-width:0;overflow-wrap:anywhere}
+.fa-fixture-nav{display:grid;place-items:center;min-width:40px;height:42px;padding:0;border:1px solid var(--fa-box-border);border-radius:10px;background:var(--fa-box-surface);color:#e2f4e9}
+.fa-fixture-current,.fa-fixture-clear{min-height:42px;border:1px solid var(--fa-box-border);border-radius:10px;background:var(--fa-box-surface);color:#d3eae0;padding:9px 12px;font-size:12px;font-weight:700}
+.fa-fixture-round-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px}
+.fa-fixture-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;min-width:0}
+.fa-fixture-weekday{display:grid;place-items:center;min-width:0;color:#a6c6bc;font-size:11px;font-weight:700;padding:5px 0}
+.fa-fixture-outside{min-width:0}
+.fa-fixture-day{min-width:0;min-height:61px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;padding:7px 2px;border:1px solid var(--fa-box-border);border-radius:10px;background:var(--fa-box-surface);color:#e4f1ed;font-weight:700;font-size:13px}
+.fa-fixture-day.is-game-day:not(.is-selected){box-shadow:inset 0 0 0 1px #668b82}
+.fa-fixture-day.is-selected{border-color:var(--fa-selection-border);background:#1e493f;color:#f2fff8}
+.fa-fixture-dot{display:block;width:5px;height:5px;background:#5ad5a7;border-radius:50%;flex:none}
+.fa-fixture-clear{justify-self:start}
+.fa-fixture-results{min-width:0}
+.fa-fixture-results>h2{margin:8px 0 14px;font-size:var(--fa-section-size)}
+.fa-fixture-date-section{min-width:0;margin:0 0 18px}
+.fa-fixture-date-section>h3{margin:0 0 8px;color:#c9e6da;font-size:13px}
+.fa-fixture-items{display:grid;gap:8px;margin:0;padding:0;list-style:none;min-width:0}
+.fa-fixture-item{display:grid;grid-template-columns:125px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;min-width:0;border:1px solid var(--fa-box-border);border-radius:10px;background:var(--fa-box-surface);font-size:12px}
+.fa-fixture-item-time{color:#adc9c1}
+.fa-fixture-item-teams{min-width:0;overflow-wrap:anywhere;font-weight:700;color:#e9f4ef}
+.fa-fixture-item-round{color:#adc9c1;white-space:nowrap}
+.fa-fixture-empty{margin:0}
+@media(max-width:620px){
+ .fa-fixture-toolbar{align-items:stretch}
+ .fa-fixture-switch{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fa-fixture-toggle{min-width:0}
+ .fa-fixture-item{grid-template-columns:minmax(0,1fr);gap:5px}
+ .fa-fixture-item-round{white-space:normal}
+}
+@media(max-width:390px){
+ .fa-fixture-calendar{gap:12px}
+ .fa-fixture-month-head{grid-template-columns:34px minmax(0,1fr) 34px;gap:5px}
+ .fa-fixture-month-head .fa-fixture-current{grid-column:1/-1;width:100%}
+ .fa-fixture-calendar-grid{gap:3px}
+ .fa-fixture-weekday{font-size:9px}
+ .fa-fixture-day{min-height:40px;padding:4px 1px;gap:3px;border-radius:7px;font-size:11px}
+ .fa-fixture-dot{width:4px;height:4px}
+ .fa-fixture-round-head{grid-template-columns:34px minmax(0,1fr) 34px;gap:5px}
+ .fa-fixture-nav{min-width:34px;height:40px}
+}
+@media(prefers-reduced-motion:reduce){.fa-fixture-toggle,.fa-fixture-day{transition:none}}
