@@ -1362,3 +1362,39 @@ test('global table cells always center their content vertically without altering
  assert.match(club,/<table class="club-table"/);
  assert.equal((club.match(/<td class="club-table-capacity"/g)||[]).length,20);
 });
+
+
+test('all club table rows center name, crest and Scelta icon without flexing table cells',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const league of LEAGUES){
+  for(const lang of ['it','en']){
+   const html=teamsPage({countryId:league.id,championshipId:league.id,clubId:1,managerName:'Ada'},lang);
+   assert.equal((html.match(/<div class="fa-table-cell-inner fa-table-cell-start"><button type="button" class="club-table-select"/g)||[]).length,20);
+   assert.equal((html.match(/<td class="club-table-status"><div class="fa-table-cell-inner fa-table-cell-center"><span class="club-table-indicator"/g)||[]).length,20);
+   assert.equal((html.match(/class="club-table-select"/g)||[]).length,20);
+   assert.equal((html.match(/class="club-table-row /g)||[]).length,20);
+  }
+ }
+ assert.match(css,/\.fa-page-main table th,\.fa-page-main table td\{vertical-align:middle\}/);
+ assert.match(css,/\.fa-page-main table :is\(th,td\) > \.fa-table-cell-inner\{\s*display:flex;align-items:center;min-width:0;width:100%/);
+ assert.match(css,/\.fa-page-main table :is\(th,td\) > \.fa-table-cell-center\{\s*justify-content:center/);
+ assert.match(css,/\.fa-page-main table :is\(th,td\) > \.fa-table-cell-start\{\s*justify-content:flex-start/);
+ assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table-name\{\s*display:flex;flex-direction:column;justify-content:center;align-items:flex-start/);
+ assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table \.club-table-status \.club-table-indicator\{\s*display:flex;align-items:center;justify-content:center;margin-inline:auto/);
+ assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table \.fa-table-cell-inner\{\s*min-height:33px/);
+ assert.match(css,/@media\(max-width:530px\)\{\s*\.restored-onboarding \.wizard-team-grid \.club-table \.fa-table-cell-inner\{min-height:37px\}/);
+ assert.doesNotMatch(css,/\.fa-page-main table (?:th|td)\{display:(?:flex|grid)/);
+});
+
+test('table selection centering preserves keyboard focus, selected rows and compact geometry',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const selected=teamsPage({countryId:'IT',championshipId:'IT',clubId:2},'it');
+ const blank=teamsPage({countryId:'IT',championshipId:'IT',clubId:null},'it');
+ assert.equal((selected.match(/class="club-table-row is-selected"/g)||[]).length,1);
+ assert.equal((blank.match(/class="club-table-row is-selected"/g)||[]).length,0);
+ assert.equal((selected.match(/aria-pressed="true"/g)||[]).length,1);
+ assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table td\{height:43px/);
+ assert.match(css,/@media\(max-width:530px\)\{[\s\S]*?\.restored-onboarding \.wizard-team-grid \.club-table td\{height:45px/);
+ assert.match(css,/html\.fa-keyboard-navigation \.wizard-team-grid \.club-table-row:focus-within:not\(\.is-selected\) td\{/);
+ assert.match(css,/\.wizard-team-grid \.club-table-row\.is-selected td\{/);
+});
