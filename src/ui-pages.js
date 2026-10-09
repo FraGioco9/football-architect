@@ -200,14 +200,14 @@ export function teamsPage(draft,lang){
  return wizardFrame(content,lang,4,'Scegli la squadra','Choose your club');
 }
 
-export function careersPage(catalog,lang){
+export function careersPage(catalog,lang,currentCareerId=null){
  const rows=catalog.rows;
  const entries=rows.map((row,index)=>{
   const m=row.meta,team=m&&club(m.countryId,m.clubId),league=m&&leagueById(m.countryId);
-  const healthy=row.status==='ok',active=healthy&&row.id===catalog.activeId,id=esc(row.id);
+  const healthy=row.status==='ok',active=healthy&&currentCareerId!==null&&row.id===currentCareerId,id=esc(row.id);
   const title=esc(m?.careerName??team?.name??tr(lang,'Carriera non leggibile','Unreadable career'));
   const caption=[league?.country?.[lang],league?.competition].filter(Boolean).join(' · ');
-  const status=!healthy?tr(lang,'Da verificare','Needs attention'):active?tr(lang,'Attiva','Active'):tr(lang,'Disponibile','Available');
+  const status=!healthy?tr(lang,'Da verificare','Needs attention'):tr(lang,'Attuale','Current');
   const fact=(label,value)=>`<div class="wizard-career-fact"><span>${label}</span><strong>${value}</strong></div>`;
   return `<article class="wizard-career-row ${active?'is-current':''} ${healthy?'':'is-corrupt'}" aria-labelledby="wizard-career-${index}-title" ${active?'aria-current="true"':''}>
     <div class="wizard-career-identity">
@@ -217,7 +217,7 @@ export function careersPage(catalog,lang){
       <h3 id="wizard-career-${index}-title">${title}</h3>
       ${team&&m?.careerName!==team.name?`<small>${esc(team.name)}</small>`:''}
      </div>
-     <span class="wizard-career-status ${healthy?(active?'is-active':'is-available'):'is-invalid'}">${!healthy?icon('alert-triangle',14):active?icon('check',14):''}<span>${status}</span></span>
+     ${!healthy||active?`<span class="wizard-career-status ${healthy?'is-active':'is-invalid'}">${!healthy?icon('alert-triangle',14):icon('check',14)}<span>${status}</span></span>`:''}
     </div>
     <div class="wizard-career-facts">
      ${fact(tr(lang,'Allenatore','Manager'),esc(m?.managerName??'—'))}
@@ -227,7 +227,7 @@ export function careersPage(catalog,lang){
     </div>
     ${healthy?'':`<p class="wizard-career-warning" role="status">${icon('alert-triangle',16)}${tr(lang,'Salvataggio danneggiato: caricamento disabilitato. Puoi esportare o eliminare questa carriera.','Corrupt save: loading disabled. You can export or delete this career.')}</p>`}
     <div class="wizard-career-actions">
-     ${healthy?button('load',active?tr(lang,'Continua','Continue'):tr(lang,'Apri','Open'),'primary',`data-id="${id}"`):''}
+     ${healthy?button('load',tr(lang,'Carica','Load'),'primary',`data-id="${id}"`):''}
      ${healthy?button('rename',tr(lang,'Rinomina','Rename'),'secondary',`data-id="${id}"`):''}
      ${button('export',tr(lang,'Esporta','Export'),'secondary',`data-id="${id}"`)}
      ${button('delete',tr(lang,'Elimina','Delete'),'danger',`data-id="${id}"`)}
@@ -240,7 +240,7 @@ export function careersPage(catalog,lang){
    <header class="onboard-header fa-page-heading">
     <span class="pretitle wizard-step-label">${tr(lang,'SALVATAGGI LOCALI','LOCAL SAVES')}</span>
     <h1 class="fa-page-title">${tr(lang,'Le mie carriere','My careers')}</h1>
-    <div class="wizard-topline">${button('home',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}</div>
+    <div class="wizard-topline">${button('cancel-setup',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}</div>
    </header>
    <section class="wizard-careers-panel panel" aria-labelledby="wizard-careers-title">
     <div class="wizard-careers-toolbar">
@@ -257,6 +257,21 @@ export function careersPage(catalog,lang){
       <p>${tr(lang,'Crea la prima carriera per iniziare.','Create your first career to get started.')}</p>
      </div>`}</div>
    </section>
+   <dialog id="career-rename-dialog" class="fa-rename-dialog" aria-labelledby="career-rename-title" aria-describedby="career-rename-description">
+    <form id="career-rename-form" novalidate>
+     <div class="fa-rename-dialog-header"><h2 id="career-rename-title">${tr(lang,'Rinomina carriera','Rename career')}</h2>
+      <button class="fa-rename-close" type="button" data-action="rename-cancel" aria-label="${tr(lang,'Chiudi','Close')}">${icon('x',17)}</button>
+     </div>
+     <p id="career-rename-description">${tr(lang,'Modifica il nome del salvataggio.','Change the save name.')}</p>
+     <label class="input-label" for="career-rename-input">${tr(lang,'Nome carriera','Career name')}</label>
+     <input id="career-rename-input" class="text-field fa-interactive-box" type="text" name="careerName" maxlength="80" autocomplete="off" required aria-describedby="career-rename-error">
+     <p id="career-rename-error" class="fa-rename-error" role="alert" hidden></p>
+     <div class="fa-rename-dialog-actions">
+      <button type="button" class="btn secondary" data-action="rename-cancel">${tr(lang,'Annulla','Cancel')}</button>
+      <button type="submit" class="btn primary">${icon('check',14)}<span>${tr(lang,'Salva','Save')}</span></button>
+     </div>
+    </form>
+   </dialog>
   </div>
  </div>`;
 }
