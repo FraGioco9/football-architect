@@ -1903,6 +1903,7 @@ test('UX-SHELL historic navigation: exact pre-reset category and two outline ico
   assert.match(html,/data-action="career-dashboard"[^>]+aria-current="page"[^>]*>[\s\S]*?class="fa-icon"[\s\S]*?rect x="3" y="3" width="7"/);
   assert.match(html,/data-action="fixture-open"[^>]*>[\s\S]*?rect width="18" height="18" x="3" y="4"/);
   assert.equal((html.match(/class="fa-shell-link/g)||[]).length,2);
+  assert.doesNotMatch(html,/data-action="(?:inbox|tactics|club|training|market|squad)"/);
  }
  const icons=readFileSync(new URL('../src/icons.js',import.meta.url),'utf8');
  assert.match(icons,/'grid-pre-reset':/);
@@ -1911,5 +1912,4 @@ test('UX-SHELL historic navigation: exact pre-reset category and two outline ico
  assert.match(css,/\.fa-shell-nav-group-title\{[^}]*font-size:8px;[^}]*letter-spacing:\.11em/);
  assert.match(css,/\.fa-shell-link\{[^}]*height:34px;min-height:34px/);
  assert.match(css,/@media\(max-width:720px\)\{[\s\S]*?\.fa-shell-nav-group-title\{height:5px;/);
- assert.doesNotMatch(html,/data-action="(?:inbox|tactics|club|training|market|squad)"/);
 });
