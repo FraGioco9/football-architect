@@ -83,7 +83,7 @@ window.addEventListener('scroll',positionCalendar,true);
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(url){stop();if(url!=='/careers')careersFromSimulationId=null;languageMenuOpen=false;feedbackState=null;pickerOpen=null;selectedBoxId=null;closeRenameDialog(false);history.pushState({},'',url);void render();}
+function navigate(url){stop();if(url!=='/careers')careersFromSimulationId=null;languageMenuOpen=false;feedbackState=null;pickerOpen=null;selectedBoxId=null;closeRenameDialog(false);closeDeleteDialog(false);history.pushState({},'',url);void render();}
 function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
@@ -121,10 +121,13 @@ async function render(){
   else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null);
   else inner=homePage(catalog,lang);
   closeRenameDialog(false);
+  closeDeleteDialog(false);
   app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen);
-  app.querySelector('#career-rename-dialog')?.addEventListener('close',()=>{
-   releaseSiteModalLock();
-   app.querySelector('#career-rename-input')?.classList.remove('fa-control-selected');
+  app.querySelectorAll('.fa-site-dialog').forEach(dialog=>{
+   dialog.addEventListener('close',()=>{
+    releaseSiteModalLock();
+    dialog.querySelector('.fa-interactive-box')?.classList.remove('fa-control-selected');
+   });
   });
   if(page==='/new-career'){
    if(managerSubmitted)validateManagerForm(document.getElementById('manager-form'),false);
@@ -196,6 +199,16 @@ function closeRenameDialog(restoreFocus=false){
  releaseSiteModalLock();
  if(restoreFocus&&originalId){
   const trigger=[...app.querySelectorAll('[data-action="rename"]')].find(x=>x.dataset.id===originalId);
+  trigger?.focus({preventScroll:true});
+ }
+}
+function closeDeleteDialog(restoreFocus=false){
+ const dialog=app.querySelector('#career-delete-dialog');
+ const originalId=dialog?.dataset.careerId;
+ if(dialog?.open)dialog.close();
+ releaseSiteModalLock();
+ if(restoreFocus&&originalId){
+  const trigger=[...app.querySelectorAll('[data-action="delete"]')].find(x=>x.dataset.id===originalId);
   trigger?.focus({preventScroll:true});
  }
 }
@@ -344,13 +357,15 @@ async function handle(action,element){
    break;
   }
   case 'delete':{
-   const id=element.dataset.id,entry=catalog.rows.find(r=>r.id===id);
+   const entry=catalog.rows.find(r=>r.id===element.dataset.id);
    if(!entry)return;
-   if(!confirm(tr(lang,'Eliminare definitivamente questa carriera?','Permanently delete this career?')))return;
-   await deleteCareer(db,id);
-   if(loaded?.meta.id===id){stop();loaded=null;}
-   feedbackState=feedback('success','DELETE_OK');await render();break;
+   const dialog=app.querySelector('#career-delete-dialog');
+   if(!dialog)return;
+   dialog.dataset.careerId=entry.id;
+   openSiteModal(dialog,dialog.querySelector('#career-delete-title'));
+   break;
   }
+  case 'delete-cancel':closeDeleteDialog(true);break;
   case 'import':document.getElementById('import-file')?.click();break;
   case 'day':stop();await advance(1);break;
   case 'week':stop();await advance(7);break;
@@ -474,6 +489,25 @@ document.addEventListener('submit',event=>{
    feedbackState=feedback('success','RENAME_OK');
    await render();
   }catch(error){closeRenameDialog(false);fail(error);}
+  finally{busy=false;}
+ })();
+});
+document.addEventListener('submit',event=>{
+ if(event.target.id!=='career-delete-form')return;
+ event.preventDefault();
+ if(busy)return;
+ const dialog=event.target.closest('#career-delete-dialog'),id=dialog?.dataset.careerId;
+ const entry=catalog.rows.find(r=>r.id===id);
+ if(!entry){closeDeleteDialog(false);return;}
+ busy=true;
+ void (async()=>{
+  try{
+   await deleteCareer(db,id);
+   if(loaded?.meta.id===id){stop();loaded=null;}
+   closeDeleteDialog(false);
+   feedbackState=feedback('success','DELETE_OK');
+   await render();
+  }catch(error){closeDeleteDialog(false);fail(error);}
   finally{busy=false;}
  })();
 });
@@ -642,7 +676,7 @@ document.addEventListener('keydown',event=>{
  void focusMatch().catch(fail);
 },true);
 
-window.addEventListener('popstate',()=>{stop();careersFromSimulationId=null;closeRenameDialog(false);void render();});
+window.addEventListener('popstate',()=>{stop();careersFromSimulationId=null;closeRenameDialog(false);closeDeleteDialog(false);void render();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();void render();}});
 async function boot(){
  try{db=await openCareerDatabase();storageFailure=null;await render();}
