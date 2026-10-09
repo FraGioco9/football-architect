@@ -1545,7 +1545,7 @@ test('Rename uses site-style native modal, trims and validates names, never brow
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  for(const locale of ['it','en']){
   const html=careersPage(catalog,locale);
-  assert.match(html,/<dialog id="career-rename-dialog" class="fa-rename-dialog" aria-labelledby="career-rename-title"/);
+  assert.match(html,/<dialog id="career-rename-dialog" class="fa-site-dialog fa-rename-dialog" aria-labelledby="career-rename-title"/);
   assert.match(html,/<form id="career-rename-form" novalidate>/);
   assert.match(html,/<input id="career-rename-input" class="text-field fa-interactive-box"[^>]*maxlength="80"/);
   assert.match(html,/id="career-rename-error" class="fa-rename-error" role="alert" hidden/);
@@ -1562,10 +1562,10 @@ test('Rename uses site-style native modal, trims and validates names, never brow
  assert.match(controller,/await renameCareer\(db,id,name\)/);
  assert.match(controller,/if\(loaded\?\.meta\.id===id\)loaded=\{\.\.\.loaded,meta\}/);
  assert.match(controller,/document\.addEventListener\('submit',event=>\{\s*if\(event\.target\.id!=='career-rename-form'\)return/);
- assert.match(controller,/addEventListener\('close',\(\)=>\{/);
- assert.match(css,/\.fa-rename-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
+ assert.match(controller,/app\.querySelectorAll\('\.fa-site-dialog'\)\.forEach\(dialog=>\{/);
+ assert.match(css,/\.fa-site-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
  assert.match(css,/html\.fa-modal-open\{\s*overflow:hidden;scrollbar-gutter:auto;scrollbar-width:none;/);
- assert.match(css,/\.fa-rename-dialog \.text-field\.fa-field-invalid\{/);
+ assert.match(css,/\.fa-site-dialog \.text-field\.fa-field-invalid\{/);
 });
 
 test('site popup contract: inert background and reserved hidden scrollbar without shifting page',()=>{
@@ -1582,8 +1582,8 @@ test('site popup contract: inert background and reserved hidden scrollbar withou
  assert.match(controller,/root\.classList\.add\('fa-modal-open'\)/);
  assert.match(controller,/function releaseSiteModalLock\(\)\{/);
  assert.match(controller,/root\.style\.removeProperty\('--fa-modal-scrollbar-gutter'\)/);
- assert.match(controller,/app\.querySelector\('#career-rename-dialog'\)\?\.addEventListener\('close'/);
- assert.match(controller,/closeRenameDialog\(false\);\s*app\.innerHTML=layout\(/);
+ assert.match(controller,/app\.querySelectorAll\('\.fa-site-dialog'\)\.forEach\(dialog=>\{/);
+ assert.match(controller,/closeRenameDialog\(false\);\s*closeDeleteDialog\(false\);\s*app\.innerHTML=layout\(/);
 });
 
 test('rename label cannot select or focus field; highlight appears only while input is focused',async()=>{
@@ -1604,8 +1604,35 @@ test('rename label cannot select or focus field; highlight appears only while in
  assert.doesNotMatch(controller,/input\.focus\(\);input\.select\(\)/);
  assert.match(controller,/document\.addEventListener\('focusin',event=>\{\s*if\(event\.target\.id!=='career-rename-input'\)return;\s*event\.target\.classList\.add\('fa-control-selected'\)/);
  assert.match(controller,/document\.addEventListener\('focusout',event=>\{\s*if\(event\.target\.id!=='career-rename-input'\)return;\s*event\.target\.classList\.remove\('fa-control-selected'\)/);
- assert.match(css,/\.fa-rename-dialog \.text-field\.fa-control-selected:not\(\.fa-field-invalid\)\{/);
- assert.doesNotMatch(css,/\.fa-rename-dialog \.text-field:focus-visible\{\s*border-color:var\(--fa-selection-border\)/);
- assert.match(css,/\.fa-rename-dialog \.text-field\.fa-field-invalid\{/);
+ assert.match(css,/\.fa-site-dialog \.text-field\.fa-control-selected:not\(\.fa-field-invalid\)\{/);
+ assert.doesNotMatch(css,/\.fa-site-dialog \.text-field:focus-visible\{\s*border-color:var\(--fa-selection-border\)/);
+ assert.match(css,/\.fa-site-dialog \.text-field\.fa-field-invalid\{/);
  assert.doesNotMatch(css,/career-rename-description/);
+});
+
+test('all destructive confirmations use the same site modal lifecycle, no native browser confirm',async()=>{
+ const db=await setup();await createCareer(db,form('Delete QA','IT',2));
+ const catalog=await readCatalog(db);
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const locale of ['it','en']){
+  const html=careersPage(catalog,locale);
+  const dialogs=[...html.matchAll(/<dialog id="career-(rename|delete)-dialog" class="fa-site-dialog /g)];
+  assert.equal(dialogs.length,2);
+  assert.match(html,/<dialog id="career-delete-dialog" class="fa-site-dialog fa-delete-dialog" aria-labelledby="career-delete-title"/);
+  assert.match(html,/<form id="career-delete-form">/);
+  assert.equal((html.match(/data-action="delete-cancel"/g)||[]).length,2);
+  assert.match(html,locale==='it'?/Eliminare definitivamente questa carriera/:/Permanently delete this career/);
+  assert.match(html,locale==='it'?/Elimina carriera/:/Delete career/);
+ }
+ assert.doesNotMatch(controller,/\bconfirm\(/);
+ assert.match(controller,/case 'delete':\{/);
+ assert.match(controller,/openSiteModal\(dialog,dialog\.querySelector\('#career-delete-title'\)\)/);
+ assert.match(controller,/case 'delete-cancel':closeDeleteDialog\(true\)/);
+ assert.match(controller,/document\.addEventListener\('submit',event=>\{\s*if\(event\.target\.id!=='career-delete-form'\)return/);
+ assert.match(controller,/await deleteCareer\(db,id\)/);
+ assert.match(controller,/closeDeleteDialog\(false\)/);
+ assert.match(css,/\.fa-site-dialog\{\s*box-sizing:border-box;/);
+ assert.match(css,/\.fa-site-dialog \.fa-site-dialog-description\{/);
+ assert.match(css,/\.fa-site-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
 });
