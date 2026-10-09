@@ -90,3 +90,13 @@ export function closestSelectIndex(options,query){
 export function selectTypeaheadBuffer(previous,char,elapsedMs){
  return elapsedMs<900?previous+char:char;
 }
+
+
+// Center a matched option within its own scrollable dropdown, never the page.
+// optionTop is the option's viewport top relative to the dropdown's viewport top.
+export function centeredMenuScrollTop(scrollTop,clientHeight,scrollHeight,optionTop,optionHeight){
+ const values=[scrollTop,clientHeight,scrollHeight,optionTop,optionHeight];
+ if(!values.every(Number.isFinite)||clientHeight<=0)return scrollTop;
+ const desired=scrollTop+optionTop-(clientHeight-optionHeight)/2;
+ return Math.max(0,Math.min(Math.max(0,scrollHeight-clientHeight),desired));
+}

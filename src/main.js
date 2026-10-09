@@ -4,7 +4,7 @@ import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,save
 import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from './manager-profile.js';
-import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer} from './site-pickers.js';
+import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer,centeredMenuScrollTop} from './site-pickers.js';
 
 const app=document.getElementById('app');
 const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/team','/careers','/settings','/simulation']);
@@ -15,6 +15,18 @@ let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,lang
 let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
 let typeahead={kind:'',query:'',last:0};
 let lastRenderedRoute=null;
+// Keep the focused/matched option centered in the *menu's* visible viewport.
+// Using rects rather than offsetTop supports fixed popovers and nested ARIA rows.
+function centerMenuOption(option){
+ if(!option)return;
+ const menu=option.closest('.fa-nationality-menu,.fa-calendar-year-picker,.fa-calendar-month-picker,.language-listbox');
+ if(!menu||menu.scrollHeight<=menu.clientHeight)return;
+ const menuRect=menu.getBoundingClientRect(),optionRect=option.getBoundingClientRect();
+ if(!menuRect.height||!optionRect.height)return;
+ menu.scrollTop=centeredMenuScrollTop(menu.scrollTop,menu.clientHeight,menu.scrollHeight,
+  optionRect.top-menuRect.top,optionRect.height);
+}
+
 function tabStopElements(){
  return [...document.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')]
   .filter(el=>el.tabIndex>=0&&!el.disabled&&el.type!=='hidden'&&
@@ -111,9 +123,7 @@ async function render(){
   }
   if(pickerOpen==='calendar'){
    positionCalendar();
-   const list=app.querySelector('.fa-calendar-year-picker');
-   const chosen=list?.querySelector('.fa-calendar-year-option.is-selected');
-   if(list&&chosen)list.scrollTop=chosen.offsetTop-list.offsetTop-(list.clientHeight-chosen.clientHeight)/2;
+   centerMenuOption(app.querySelector('.fa-calendar-year-picker .fa-calendar-year-option.is-selected'));
   }
   if(pickerOpen==='nationality')positionNationality();
   if(samePage)restoreSnapshot(snapshot);
@@ -165,7 +175,8 @@ async function toggleLanguageMenu(open,focus){
  if(focus==='combo')combo?.focus({preventScroll:true});
  if(focus==='option'){
   const options=[...app.querySelectorAll('[data-action="language-option"]')];
-  (options.find(o=>o.getAttribute('aria-selected')==='true')??options[0])?.focus({preventScroll:true});
+  const selected=options.find(o=>o.getAttribute('aria-selected')==='true')??options[0];
+  selected?.focus({preventScroll:true});centerMenuOption(selected);
  }
  if(focus==='next'){
   const controls=[...app.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled])')];
@@ -203,7 +214,10 @@ async function handle(action,element){
    pickerOpen=pickerOpen==='nationality'?null:'nationality';
    if(!pickerOpen)selectedBoxId=null;
    await render();
-   if(pickerOpen)app.querySelector('.fa-nationality-menu .fa-picker-option.is-selected, .fa-nationality-menu .fa-picker-option')?.focus({preventScroll:true});
+   if(pickerOpen){
+    const option=app.querySelector('.fa-nationality-menu .fa-picker-option.is-selected, .fa-nationality-menu .fa-picker-option');
+    option?.focus({preventScroll:true});centerMenuOption(option);
+   }
    else app.querySelector('#manager-nationality')?.focus({preventScroll:true});
    break;
   case 'nationality-select':{
@@ -502,7 +516,8 @@ document.addEventListener('keydown',event=>{
   event.preventDefault();
   const options=[...app.querySelectorAll('.fa-nationality-menu .fa-picker-option')],i=options.indexOf(item);
   const next=event.key==='Home'?0:event.key==='End'?options.length-1:(i+(event.key==='ArrowDown'?1:-1)+options.length)%options.length;
-  options[next]?.focus({preventScroll:true});
+  const nextOption=options[next];
+  nextOption?.focus({preventScroll:true});centerMenuOption(nextOption);
  }
 });
 
@@ -534,8 +549,7 @@ document.addEventListener('keydown',event=>{
   const index=closestSelectIndex(options.map(o=>({label:o.textContent})),text);
   const option=index>=0?options[index]:null;
   option?.focus({preventScroll:true});
-  const panel=option?.closest('.fa-nationality-menu,.fa-calendar-year-picker');
-  if(panel)panel.scrollTop=option.offsetTop-panel.offsetTop-(panel.clientHeight-option.clientHeight)/2;
+  centerMenuOption(option);
  };
  void focusMatch().catch(fail);
 },true);

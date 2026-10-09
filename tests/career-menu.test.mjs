@@ -1094,3 +1094,38 @@ test('generic IT/EN form errors remain by Avanti while invalid fields use red ou
  assert.match(css,/\.fa-action-error:not\(\[hidden\]\)/);
  assert.match(css,/\.fa-interactive-box\.fa-field-invalid/);
 });
+
+
+test('matched dropdown options are centered using relative viewport geometry, not offsetTop',()=>{
+ const {centeredMenuScrollTop,closestSelectIndex}=typeaheadFns;
+ assert.equal(centeredMenuScrollTop(0,200,1000,500,40),420);
+ assert.equal(centeredMenuScrollTop(300,200,1000,200,40),420);
+ assert.equal(centeredMenuScrollTop(0,200,1000,0,40),0);
+ assert.equal(centeredMenuScrollTop(600,200,1000,400,40),800);
+ assert.equal(centeredMenuScrollTop(0,220,200,40,40),0);
+ assert.equal(centeredMenuScrollTop(25,0,1000,200,40),25);
+ assert.equal(centeredMenuScrollTop(0,200,1000,NaN,40),0);
+ assert.equal(closestSelectIndex(['Albania','Francia','Italia','Regno Unito'],'Itla'),2);
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/function centerMenuOption\(option\)/);
+ assert.match(js,/option\.getBoundingClientRect\(\)/);
+ assert.match(js,/menu\.getBoundingClientRect\(\)/);
+ assert.match(js,/optionRect\.top-menuRect\.top/);
+ assert.match(js,/menu\.scrollTop=centeredMenuScrollTop\(/);
+ assert.doesNotMatch(js,/option\.offsetTop-panel\.offsetTop/);
+});
+
+test('shared centering works for typeahead, newly opened selected nationality, arrows and year grid',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ for(const selector of [
+  '.fa-nationality-menu,.fa-calendar-year-picker,.fa-calendar-month-picker,.language-listbox',
+  '.fa-nationality-menu .fa-picker-option.is-selected, .fa-nationality-menu .fa-picker-option',
+  '.fa-calendar-year-picker .fa-calendar-year-option.is-selected'
+ ])assert.ok(js.includes(selector),selector);
+ assert.match(js,/option\?\.focus\(\{preventScroll:true\}\);\s*centerMenuOption\(option\)/);
+ assert.match(js,/nextOption\?\.focus\(\{preventScroll:true\}\);centerMenuOption\(nextOption\)/);
+ assert.match(js,/selected\?\.focus\(\{preventScroll:true\}\);centerMenuOption\(selected\)/);
+ assert.match(js,/centerMenuOption\(app\.querySelector\('\.fa-calendar-year-picker/);
+ assert.match(js,/if\(kind==='nationality'&&pickerOpen!=='nationality'\)/);
+ assert.match(js,/if\(kind==='language'&&!languageMenuOpen\)/);
+});
