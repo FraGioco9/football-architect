@@ -5,6 +5,7 @@ import {bestCareer} from './career-store.js';
 import {icon} from './icons.js';
 import {languagePicker} from './language-picker.js';
 import {renderFeedback} from './feedback.js';
+import {renderDateControl,renderNationalityControl} from './site-picker-ui.js';
 export const esc=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export const tr=(lang,it,en)=>lang==='en'?en:it;
 const fmtDate=(value,lang,clock=false)=>{
@@ -58,7 +59,7 @@ function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,description
   ${content}
  </div></div>`;
 }
-export function managerPage(draft,lang){
+export function managerPage(draft,lang,pickers={}){
  const p=normalizeManagerProfile(draft.managerProfile);
  const form=`<section class="wizard-manager-panel panel" aria-labelledby="wizard-manager-title">
  <div class="onboard-heading"><h2 id="wizard-manager-title">${tr(lang,'1 · Il tuo allenatore','1 · Your manager')}</h2></div>
@@ -79,19 +80,12 @@ export function managerPage(draft,lang){
     <p id="manager-last-name-error" class="field-error" role="alert" hidden></p>
    </div>
    <div class="wizard-profile-field">
-    <label class="input-label" for="manager-birth-date">${tr(lang,'Data di nascita','Date of birth')}</label>
-    <input class="text-field wizard-profile-input" id="manager-birth-date" name="birthDate" type="date"
-     value="${esc(p.birthDate)}" max="${localToday()}" required
-     aria-invalid="false" aria-describedby="manager-birth-date-error">
-    <p id="manager-birth-date-error" class="field-error" role="alert" hidden></p>
+    <span class="input-label" id="manager-birth-date-label">${tr(lang,'Data di nascita','Date of birth')}</span>
+    ${renderDateControl(p.birthDate,lang,pickers.open==='calendar',pickers.month)}
    </div>
    <div class="wizard-profile-field">
-    <label class="input-label" for="manager-nationality">${tr(lang,'Nazionalità','Nationality')}</label>
-    <input class="text-field wizard-profile-input" id="manager-nationality" name="nationality" type="text"
-     value="${esc(p.nationality)}" maxlength="80" autocomplete="off" required
-     aria-invalid="false" aria-describedby="manager-nationality-error"
-     placeholder="${tr(lang,'Es. Italiana','E.g. Italian')}">
-    <p id="manager-nationality-error" class="field-error" role="alert" hidden></p>
+    <span class="input-label" id="manager-nationality-label">${tr(lang,'Nazionalità','Nationality')}</span>
+    ${renderNationalityControl(p.nationality,lang,pickers.open==='nationality')}
    </div>
    <div class="wizard-profile-field wizard-profile-birthplace">
     <label class="input-label" for="manager-birth-place">${tr(lang,'Luogo di nascita','Place of birth')}</label>
@@ -102,7 +96,10 @@ export function managerPage(draft,lang){
     <p id="manager-birth-place-error" class="field-error" role="alert" hidden></p>
    </div>
   </div>
-  <button class="btn primary begin-button" type="submit"><span>${tr(lang,'Avanti: Nazione','Next: Country')}</span>${icon('chevron-right',18)}</button>
+  <div class="fa-action-row wizard-manager-actions">
+   <button class="btn primary begin-button" type="submit"><span>${tr(lang,'Avanti: Nazione','Next: Country')}</span>${icon('chevron-right',18)}</button>
+   <p id="manager-form-error" class="fa-action-error" role="alert" hidden></p>
+  </div>
  </form>
  </section>`;
  return wizardFrame(form,lang,1,'Scegli il tuo allenatore','Choose your manager',
