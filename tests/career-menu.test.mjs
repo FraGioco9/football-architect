@@ -1197,9 +1197,35 @@ test('committed country choice keeps the green inset on hover and focus',()=>{
  assert.match(selected,/class="fa-interactive-box wizard-country-option fa-choice-selected"/);
  assert.match(css,/\.fa-page-main \.wizard-country-option\.fa-choice-selected\{\s*border-color:var\(--fa-selection-border\);/);
  for(const selector of [':hover',':focus',':focus-visible']){
-  assert.ok(css.includes('.fa-page-main .fa-interactive-box'+selector+':not(.fa-control-selected):not(.fa-choice-selected):not(.fa-field-invalid)'),selector);
+  assert.ok(css.includes('.fa-page-main .fa-interactive-box'+selector+':not(.fa-control-selected,.fa-choice-selected):not(.fa-field-invalid)'),selector);
  }
  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(main,/const box=event\.target\.closest\?\.\('\.fa-interactive-box'\)/);
  assert.match(main,/selectedBoxId=box\?\.id\?\?null/);
+});
+
+
+test('Tab keyboard highlight on manager fields wins over neutral focus CSS after country redesign',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ // One selector-list :not() excludes both selected states WITHOUT increasing
+ // specificity versus the original manager focus selectors.
+ const neutralBlock=css.match(/(\.fa-page-main \.fa-interactive-box:hover[\s\S]*?)\{\s*border-color:var\(--fa-box-border\)/)?.[1];
+ assert.ok(neutralBlock);
+ for(const focus of [':hover',':focus',':focus-visible']){
+  assert.ok(neutralBlock.includes('.fa-page-main .fa-interactive-box'+focus+':not(.fa-control-selected,.fa-choice-selected):not(.fa-field-invalid)'),focus);
+ }
+ assert.doesNotMatch(neutralBlock,/:not\(\.fa-control-selected\):not\(\.fa-choice-selected\)/);
+ const focusRule=css.indexOf('html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(.fa-field-invalid)');
+ const neutralRule=css.indexOf('.fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected,.fa-choice-selected):not(.fa-field-invalid)');
+ assert.ok(neutralRule>=0&&focusRule>neutralRule,'keyboard rule must be later with equal specificity');
+ assert.match(css,/border-color:var\(--fa-selection-border\);box-shadow:inset 0 0 0 1px var\(--fa-selection-border\);outline:none;/);
+ assert.match(js,/if\(event.key==='Tab'\)\{\s*selectedBoxId=null/);
+ assert.match(js,/document\.documentElement\.classList\.add\('fa-keyboard-navigation'\)/);
+ assert.match(ui,/export function managerPage\(draft,lang,pickers=\{\}\)/);
+ for(const field of ['manager-first-name','manager-last-name','manager-birth-date','manager-nationality','manager-birth-place']){
+  assert.ok(ui.includes('id="'+field+'"'),field);
+ }
+ assert.match(ui,/class="wizard-manager-panel panel"/);
 });
