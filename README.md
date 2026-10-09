@@ -15,9 +15,10 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 ## Pagine
 
 - / — Menu iniziale con l'ultima carriera valida.
-- /new-career — **Passaggio 1/3: Allenatore**. Nome, cognome, data di nascita, nazionalità e luogo di nascita obbligatori, con errori IT/EN sotto ciascun campo. Annulla resta nella testata. Nessun salvataggio in questa fase.
-- /new-career/country — **Passaggio 2/3: Nazione**. Selezione esplicita tra 8 Paesi; Indietro conserva l’allenatore.
-- /new-career/team — **Passaggio 3/3: Squadra**. Tabella completa di 20 club senza scrollbar interna, selezione esplicita, riepilogo del club e conferma «Inizia carriera». Il salvataggio viene creato solo in questo passaggio.
+- /new-career — **Passaggio 1/4: Allenatore**. Nome, cognome, data di nascita, nazionalità e luogo di nascita obbligatori, con errori IT/EN e messaggio vicino ad Avanti. Menu resta nella testata. Nessun salvataggio in questa fase.
+- /new-career/country — **Passaggio 2/4: Nazione**. Selezione esplicita tra 8 Paesi con bandiere SVG offline; Indietro conserva l’allenatore.
+- /new-career/league — **Passaggio 3/4: Campionato**. Scelta esplicita del campionato disponibile per la nazione selezionata; oggi il catalogo contiene **un campionato per ciascuno degli 8 Paesi**. Il campionato resta una scelta nella bozza e non modifica lo schema dei salvataggi.
+- /new-career/team — **Passaggio 4/4: Squadra**. Tabella compatta di 20 club senza scrollbar interna, con reputazione e capienza, selezione esplicita, riepilogo del club, pulsante Rosa disabilitato e conferma «Inizia carriera». Il salvataggio viene creato solo in questo passaggio.
 - /careers — Layout originale a griglia di card, con salvataggi separati: carica, rinomina, esporta, importa JSON o elimina con conferma. I salvataggi corrotti sono esportabili/eliminabili ma non caricabili.
 - /settings — Pannelli originali di preferenze e gestione dati, con lingua IT/EN e operazioni disponibili per carriere locali.
 - /simulation — Avanzamento del tempo per 1/7/30/365 giorni, o continuo interrompibile.
@@ -36,7 +37,7 @@ In caso di errore di scrittura la simulazione si interrompe e segnala il problem
 node --test .\tests\minimal-core.test.mjs .\tests\career-menu.test.mjs
 ```
 
-Per la verifica Windows controlla: navigazione Allenatore → Nazione → Squadra (tre URL), Annulla in alto, pulsanti Indietro e passaggi senza salvataggi prematuri, tre carriere indipendenti, refresh e riapertura, import/export, IT/EN, viewport 320/390px, tabella senza scroll interno, hover integro, nessuna partita.
+Per la verifica Windows controlla: navigazione Allenatore → Nazione → Campionato → Squadra (quattro URL), Menu in alto, pulsanti Indietro e passaggi senza salvataggi prematuri, tre carriere indipendenti, refresh e riapertura, import/export, IT/EN, viewport 320/390px, tabella senza scroll interno, hover integro, nessuna partita.
 
 Non eseguire deploy o merge senza autorizzazione esplicita.
 
@@ -66,3 +67,7 @@ Il nuovo profilo obbligatorio comprende esclusivamente **Nome, Cognome, Data di 
 - Il calendario del sito ha mese, anno, settimana da lunedi, selezione giorno, date future disabilitate e chiusura tramite Esc o clic esterno.
 - Nazionalita usa un menu scrollabile con 249 territori ISO tradotti in IT/EN, salvando il codice a due lettere per le nuove carriere. I vecchi profili non vengono migrati o cancellati.
 - I componenti condivisi risiedono in src/site-pickers.js e src/site-picker-ui.js.
+
+## Tabelle del sito
+
+Ogni tabella usa la regola CSS condivisa per allineare verticalmente al centro celle di intestazione, dati, pulsanti e icone, preservando la semantica nativa e il normale scorrimento della pagina.
