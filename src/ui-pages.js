@@ -30,7 +30,7 @@ export function countryFlag(code){
  const name=Object.hasOwn(FLAG_ASSETS,code)?FLAG_ASSETS[code]:null;
  return name?`<img class="country-flag" src="/assets/flags/${name}.svg" width="32" height="24" alt="" decoding="async">`:'';
 }
-const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','fixture-open':'calendar-days','start-career':'play','cancel-setup':'arrow-left'};
+const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','fixture-open':'calendar','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
 export function layout(inner,lang,message=null,languageOpen=false){
  return `<div class="shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
@@ -445,7 +445,7 @@ export function calendarPage(meta,state,lang,calendar,options={}){
    '" class="fa-fixture-day'+(selected?' is-selected':'')+(current?' is-game-day':'')+'">'+
    '<span>'+day+'</span>'+(has?'<span class="fa-fixture-dot" aria-hidden="true"></span>':'')+'</button>');
  }
- const prev='<button type="button" class="fa-fixture-nav" data-action="fixture-month-prev" aria-label="'+tr(lang,'Mese precedente','Previous month')+'">'+icon('chevron-left',18)+'</button>';
+ const prev='<button type="button" class="fa-fixture-nav" data-action="fixture-month-prev" aria-label="'+tr(lang,'Mese precedente','Previous month')+'">'+icon('arrow-left',18)+'</button>';
  const next='<button type="button" class="fa-fixture-nav" data-action="fixture-month-next" aria-label="'+tr(lang,'Mese successivo','Next month')+'">'+icon('chevron-right',18)+'</button>';
  const monthContent='<div class="fa-fixture-month-head">'+prev+
    '<h2>'+esc(monthLabel)+'</h2>'+next+
@@ -456,7 +456,7 @@ export function calendarPage(meta,state,lang,calendar,options={}){
    (selectedDay?'<button type="button" class="fa-fixture-clear" data-action="fixture-day-clear">'+
     tr(lang,'Mostra tutto il mese','Show whole month')+'</button>':'');
  const roundContent='<div class="fa-fixture-round-head">'+
-   '<button type="button" class="fa-fixture-nav" data-action="fixture-round-prev" aria-label="'+tr(lang,'Giornata precedente','Previous round')+'">'+icon('chevron-left',18)+'</button>'+
+   '<button type="button" class="fa-fixture-nav" data-action="fixture-round-prev" aria-label="'+tr(lang,'Giornata precedente','Previous round')+'">'+icon('arrow-left',18)+'</button>'+
    '<h2>'+tr(lang,'Giornata ','Round ')+round+' / 38 · '+esc(calendar.seasonYear+'/'+String((calendar.seasonYear+1)%100).padStart(2,'0'))+'</h2>'+
    '<button type="button" class="fa-fixture-nav" data-action="fixture-round-next" aria-label="'+tr(lang,'Giornata successiva','Next round')+'">'+icon('chevron-right',18)+'</button></div>';
  return '<section class="heading fa-page-heading"><button type="button" class="back" data-action="fixture-back">'+
