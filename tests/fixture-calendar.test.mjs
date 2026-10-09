@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
-import {generateFixtureCalendar,generateCompetitionFixtures} from '../src/fixture-calendar.js';
+import {generateFixtureCalendar,generateCompetitionFixtures,scheduleCompetitionFixtures} from '../src/fixture-calendar.js';
 
 function verifySeason(countryId,year){
   const competitionId=countryId+'-1';
@@ -107,4 +107,115 @@ test('CAL-02.1: fixture generator is pure and does not touch CAL-01 persistence 
   assert.ok(!('time' in fixture));
   assert.ok(!('score' in fixture));
   assert.ok(!('result' in fixture));
+});
+
+const FIXTURE_DAY=86400000;
+const DATE_SLOTS=Object.freeze({
+ 0:['12:30','15:00','18:00','20:45'],
+ 1:['20:45'],2:['18:30','20:45'],3:['18:30','20:45'],
+ 4:['18:30','20:45'],5:['20:45'],
+ 6:['12:30','15:00','18:00','20:45']
+});
+function inspectScheduledCalendar(competitionId,year,strategy='varied'){
+ const source=generateCompetitionFixtures(competitionId,year);
+ const calendar=scheduleCompetitionFixtures(competitionId,year,{strategy});
+ assert.ok(Object.isFrozen(calendar));
+ assert.ok(Object.isFrozen(calendar.matchdays));
+ assert.equal(calendar.matchdays.length,38);
+ const visits=new Map();
+ let count=0,previousRoundEnd=-Infinity,midweekRounds=0;
+ const usedDays=new Set();
+ for(let i=0;i<38;i++){
+  const round=calendar.matchdays[i],old=source.matchdays[i];
+  assert.equal(round.number,old.number);
+  assert.ok(Object.isFrozen(round));
+  assert.ok(Object.isFrozen(round.fixtures));
+  assert.equal(round.fixtures.length,10);
+  let first=Infinity,last=-Infinity,midweek=false;
+  for(let j=0;j<10;j++){
+   const f=round.fixtures[j],original=old.fixtures[j];
+   assert.ok(Object.isFrozen(f));
+   const {date,time,...pairing}=f;
+   assert.deepEqual(pairing,original);
+   assert.deepEqual(Object.keys(f).sort(),
+    ['id','competitionId','seasonYear','matchday','homeClubId','awayClubId','date','time'].sort());
+   assert.match(date,/^\\d{4}-\\d{2}-\\d{2}$/);
+   assert.match(time,/^\\d{2}:\\d{2}$/);
+   const stamp=Date.parse(date+'T'+time+':00Z'),dayStamp=Date.parse(date+'T00:00:00Z');
+   assert.ok(Number.isFinite(stamp));
+   assert.equal(new Date(dayStamp).toISOString().slice(0,10),date);
+   assert.ok(dayStamp>=Date.UTC(year,7,15)&&dayStamp<=Date.UTC(year+1,4,31));
+   assert.ok(!(date>=year+'-12-24'&&date<=(year+1)+'-01-02'));
+   const weekday=new Date(stamp).getUTCDay();
+   assert.ok(DATE_SLOTS[weekday].includes(time),'Unexpected slot '+date+' '+time);
+   usedDays.add(weekday);
+   if([2,3,4].includes(weekday))midweek=true;
+   if(strategy==='conservative')assert.equal(weekday,6);
+   first=Math.min(first,stamp);last=Math.max(last,stamp);
+   for(const clubId of [f.homeClubId,f.awayClubId]){
+    const prior=visits.get(clubId);
+    if(prior!==undefined)assert.ok(stamp-prior>=72*3600000,'Insufficient club rest');
+    visits.set(clubId,stamp);
+   }
+   count++;
+  }
+  assert.ok(first-previousRoundEnd>=72*3600000,'Overlapping rounds');
+  previousRoundEnd=last;
+  if(midweek)midweekRounds++;
+ }
+ assert.equal(count,380);
+ assert.equal(visits.size,20);
+ if(strategy==='varied'){
+  assert.equal(midweekRounds,4,'Four midweek matchdays expected');
+  for(const weekday of [2,3,4])assert.ok(usedDays.has(weekday),'Missing midweek day '+weekday);
+  assert.ok(usedDays.has(6)&&usedDays.has(0),'Weekend dates missing');
+ }
+ return calendar;
+}
+
+test('CAL-02.2: universal slots and exact 72h rest across eight countries and leap years',()=>{
+ for(const league of LEAGUES){
+  for(const year of [2026,2027,2028,2032,2099,2100])
+   inspectScheduledCalendar(league.id+'-1',year);
+ }
+});
+
+test('CAL-02.2: conservative Saturday-only fallback passes every hard invariant',()=>{
+ for(const league of LEAGUES)
+  for(const year of [2026,2028,2100])
+   inspectScheduledCalendar(league.id+'-1',year,'conservative');
+});
+
+test('CAL-02.2: dates are deterministic and CAL-02.1 data stays unchanged',()=>{
+ const source=generateCompetitionFixtures('IT-1',2026);
+ const first=scheduleCompetitionFixtures('IT-1',2026);
+ assert.deepEqual(first,scheduleCompetitionFixtures('IT-1',2026));
+ assert.notDeepEqual(first,scheduleCompetitionFixtures('IT-1',2027));
+ assert.deepEqual(source,generateCompetitionFixtures('IT-1',2026));
+ const brazil=scheduleCompetitionFixtures('BR-1',2026);
+ assert.ok(brazil.matchdays.some(d=>d.fixtures.some(f=>typeof f.date==='string'&&typeof f.time==='string')));
+ assert.ok(brazil.matchdays.every(d=>d.fixtures.every(f=>!('score' in f)&&!('result' in f))));
+});
+
+test('CAL-02.2: a full 400-year Gregorian cycle remains schedulable',()=>{
+ for(let year=2000;year<2400;year++){
+  const calendar=scheduleCompetitionFixtures('IT-1',year);
+  assert.equal(calendar.matchdays.length,38);
+  const fallback=scheduleCompetitionFixtures('IT-1',year,{strategy:'conservative'});
+  assert.equal(fallback.matchdays.length,38);
+  for(const item of [calendar,fallback]){
+   for(let i=1;i<38;i++){
+    const prev=Math.max(...item.matchdays[i-1].fixtures.map(f=>Date.parse(f.date+'T'+f.time+':00Z')));
+    const next=Math.min(...item.matchdays[i].fixtures.map(f=>Date.parse(f.date+'T'+f.time+':00Z')));
+    assert.ok(next-prev>=72*3600000);
+   }
+  }
+ }
+});
+
+test('CAL-02.2: invalid seasons or incomplete second divisions cannot be scheduled',()=>{
+ assert.throws(()=>scheduleCompetitionFixtures('IT-2',2026));
+ assert.throws(()=>scheduleCompetitionFixtures('INVALID',2026));
+ assert.throws(()=>scheduleCompetitionFixtures('IT-1',2026.5));
+ assert.throws(()=>scheduleCompetitionFixtures('IT-1',2026,{strategy:'unknown'}));
 });
