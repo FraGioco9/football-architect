@@ -20,7 +20,7 @@ export function initialCalendarMonth(date,today=localToday()){
 export function shiftCalendarMonth(month,delta,today=localToday()){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!Number.isInteger(delta))return initialCalendarMonth('',today);
  const n=Number(month.slice(0,4))*12+Number(month.slice(5))-1+delta;
- const bound=Math.min(Number(today.slice(0,4))*12+Number(today.slice(5))-1,Math.max(1900*12,n));
+ const bound=Math.min(Number(today.slice(0,4))*12+Number(today.slice(5,7))-1,Math.max(1900*12,n));
  return Math.floor(bound/12)+'-'+String(bound%12+1).padStart(2,'0');
 }
 export function calendarDays(month,today=localToday()){
