@@ -219,3 +219,39 @@ export function getLeagueClubs(id='IT'){
     capacity:Math.max(11000,39000-index*1300+(index%3)*420)
   }));
 }
+
+// DIV-02: immutable country and competition catalogs; existing UI keeps using LEAGUES.
+// Division membership is the initial catalog assignment, not a permanent club ID.
+const secondDivisionNames=Object.freeze({
+  IT:'Lega delle Città',ENG:'Shield League',ES:'Liga de las Regiones',
+  DE:'Vereinsliga',FR:'Ligue des Régions',PT:'Liga Atlântica',
+  NL:'Bondsklasse',BR:'Liga das Regiões'
+});
+export const COUNTRIES=Object.freeze(LEAGUES.map(league=>Object.freeze({
+  id:league.id,flag:league.flag,country:Object.freeze({...league.country})
+})));
+export const COMPETITIONS=Object.freeze(LEAGUES.flatMap(league=>[
+  Object.freeze({
+    id:league.id+'-1',countryId:league.id,tier:1,name:league.competition,
+    clubCount:league.clubCount,capacity:20
+  }),
+  Object.freeze({
+    id:league.id+'-2',countryId:league.id,tier:2,name:secondDivisionNames[league.id],
+    clubCount:0,capacity:20 // DIV-03 will add the second division's 20 clubs.
+  })
+]));
+export function countryById(id){return COUNTRIES.find(country=>country.id===id)??null;}
+export function competitionById(id){return COMPETITIONS.find(competition=>competition.id===id)??null;}
+export function getCountryClubs(countryId){
+  if(!countryById(countryId))throw new RangeError('Unknown country');
+  return getLeagueClubs(countryId);
+}
+export function getCompetitionClubs(competitionId){
+  const competition=competitionById(competitionId);
+  if(!competition)throw new RangeError('Unknown competition');
+  return competition.tier===1?getCountryClubs(competition.countryId):[];
+}
+export function getClub(countryId,clubId){
+  if(!countryById(countryId)||!Number.isSafeInteger(clubId)||clubId<1)return null;
+  return getCountryClubs(countryId).find(club=>club.id===clubId)??null;
+}
