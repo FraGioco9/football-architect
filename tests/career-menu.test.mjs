@@ -838,3 +838,11 @@ test('shared site pickers stay open only when requested, with escape and outside
  assert.match(server,/'\/src\/site-pickers\.js'/);
  assert.match(server,/'\/src\/site-picker-ui\.js'/);
 });
+
+test('outside click closes picker without rerendering clicked input or losing focus',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(controller,/app\.querySelector\('\.fa-picker-popover'\)\?\.remove\(\)/);
+ assert.match(controller,/app\.querySelector\('\.fa-picker-trigger\[aria-expanded="true"\]'\)\?\.setAttribute\('aria-expanded','false'\)/);
+ assert.doesNotMatch(controller,/if\(!event\.target\.closest\?\.\('\[data-action\]'\)\)\{void render\(\);return;\}/);
+ assert.match(controller,/event\.target\.closest\?\.\('\[data-fa-picker\]'\)\?\.querySelector\('\.fa-picker-trigger'\)/);
+});

@@ -214,7 +214,10 @@ async function handle(action,element){
 document.addEventListener('click',event=>{
  if(pickerOpen&&!event.target.closest?.('[data-fa-picker]')){
   pickerOpen=null;
-  if(!event.target.closest?.('[data-action]')){void render();return;}
+  // Closing on an outside click must not recreate the form and steal focus
+  // from the field the user just clicked.
+  app.querySelector('.fa-picker-popover')?.remove();
+  app.querySelector('.fa-picker-trigger[aria-expanded="true"]')?.setAttribute('aria-expanded','false');
  }
  const el=event.target.closest('[data-action]');
  if(languageMenuOpen&&!event.target.closest('[data-language-picker]')){
@@ -309,7 +312,8 @@ document.addEventListener('change',event=>{
 document.addEventListener('pointerdown',event=>{
  // Only the interactive box itself can acquire the visual selected state.
  // Clicking its label never selects it; keyboard focus has a separate indicator.
- const box=event.target.closest?.('.fa-interactive-box');
+ const box=event.target.closest?.('.fa-interactive-box')??
+   event.target.closest?.('[data-fa-picker]')?.querySelector('.fa-picker-trigger');
  selectedBoxId=box?.id??null;
  app.querySelectorAll('.fa-interactive-box').forEach(el=>el.classList.toggle('fa-control-selected',el.id===selectedBoxId));
 },true);
