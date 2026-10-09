@@ -663,3 +663,103 @@ test('manager page omits the obsolete confirmation-save disclaimer in both langu
   assert.match(html,/class="fa-page-title"/);
  }
 });
+
+
+const modernProfile=Object.freeze({firstName:'Ada',lastName:'Rossi',birthDate:'1988-04-19',nationality:'Italiana',birthPlace:'Bologna'});
+test('manager profile normalizes exactly five values and validates each field',()=>{
+ assert.deepEqual(MANAGER_PROFILE_FIELDS,['firstName','lastName','birthDate','nationality','birthPlace']);
+ assert.deepEqual(blankManagerProfile(),{firstName:'',lastName:'',birthDate:'',nationality:'',birthPlace:''});
+ assert.equal(managerFullName({...modernProfile,firstName:' Ada  '}),'Ada Rossi');
+ assert.equal(validManagerProfile(modernProfile,'2026-10-09'),true);
+ assert.deepEqual(managerProfileIssues(modernProfile,'2026-10-09'),{});
+ for(const field of MANAGER_PROFILE_FIELDS){
+  const missing={...modernProfile,[field]:'   '};
+  const issues=managerProfileIssues(missing,'2026-10-09');
+  assert.ok(issues[field],field+' missing must be rejected');
+  assert.equal(validManagerProfile(missing,'2026-10-09'),false);
+  assert.match(feedbackText({code:issues[field]},'it').description,/\S/);
+  assert.match(feedbackText({code:issues[field]},'en').description,/\S/);
+ }
+ for(const birthDate of ['2027-01-01','2026-02-30','1987-02-29','nonsense']){
+  assert.equal(validManagerProfile({...modernProfile,birthDate},'2026-10-09'),false,birthDate);
+ }
+ assert.equal(validManagerProfile({...modernProfile,birthDate:'2000-02-29'},'2026-10-09'),true);
+ for(const key of ['firstName','lastName']){
+  assert.equal(validManagerProfile({...modernProfile,[key]:'X'.repeat(41)},'2026-10-09'),false,key);
+ }
+ for(const key of ['nationality','birthPlace']){
+  assert.equal(validManagerProfile({...modernProfile,[key]:'X'.repeat(81)},'2026-10-09'),false,key);
+ }
+ assert.deepEqual(Object.keys(normalizeManagerProfile({...modernProfile,experience:'ex player'})),MANAGER_PROFILE_FIELDS);
+});
+test('new careers require complete profile and persist it throughout IndexedDB and JSON roundtrip',async()=>{
+ const db=await setup(),now='2026-10-09T10:00:00.000Z';
+ const data={countryId:'IT',clubId:2,id:mkId(),now};
+ await assert.rejects(createCareer(db,{...data,managerName:'Ada Rossi'}),/CAREER_DATA_INVALID/);
+ for(const field of MANAGER_PROFILE_FIELDS){
+  await assert.rejects(createCareer(db,{...data,managerProfile:{...modernProfile,[field]:''}}),/CAREER_DATA_INVALID/);
+ }
+ assert.equal((await readCatalog(db)).rows.length,0);
+ const original=await createCareer(db,{...data,managerProfile:modernProfile});
+ assert.equal(original.meta.managerName,'Ada Rossi');
+ assert.deepEqual(original.meta.managerProfile,modernProfile);
+ assert.equal(original.meta.schemaVersion,1);
+ const catalog=await readCatalog(db);
+ assert.deepEqual(catalog.rows[0].meta.managerProfile,modernProfile);
+ const backup=await exportCareer(db,original.meta.id);
+ assert.deepEqual(backup.meta.managerProfile,modernProfile);
+ const parsed=parseCareerImport(JSON.stringify(backup));
+ assert.deepEqual(parsed.managerProfile,modernProfile);
+ assert.equal(parsed.legacyImport,false);
+ const copy=await createCareer(db,{...parsed,id:mkId(),now});
+ assert.equal(copy.meta.managerName,'Ada Rossi');
+ assert.deepEqual(copy.meta.managerProfile,modernProfile);
+ assert.equal((await readCatalog(db)).rows.length,2);
+ const update=advanceSession(copy.state,1);
+ const saved=await saveCareer(db,copy.meta.id,update,{expectedDays:0,now:'2026-10-10T10:00:00Z'});
+ assert.deepEqual(saved.meta.managerProfile,modernProfile);
+ await assert.rejects(createCareer(db,{...data,managerProfile:{...modernProfile,birthDate:'2030-01-01'}}),/CAREER_DATA_INVALID/);
+});
+test('older PR48 careers remain readable and importable without fabricated biographical data',async()=>{
+ const db=await setup(),old=await createCareer(db,form('Old Manager','IT',1));
+ assert.equal(old.meta.managerProfile,undefined);
+ const backup=await exportCareer(db,old.meta.id);
+ const parsed=parseCareerImport(JSON.stringify(backup));
+ assert.equal(parsed.legacyImport,true);
+ assert.equal(parsed.managerProfile,null);
+ const copy=await createCareer(db,{...parsed,id:mkId()});
+ assert.equal(copy.meta.managerName,'Old Manager');
+ assert.equal(copy.meta.managerProfile,undefined);
+ assert.equal((await readCatalog(db)).rows.filter(x=>x.status==='ok').length,2);
+});
+test('tampered biography exports are rejected before any save is changed',async()=>{
+ const db=await setup();
+ const career=await createCareer(db,{managerProfile:modernProfile,countryId:'IT',clubId:1,id:mkId(),now:'2026-10-09T10:00:00Z'});
+ const backup=await exportCareer(db,career.meta.id);
+ for(const meta of [
+  {...backup.meta,managerProfile:{...modernProfile,birthDate:'2026-02-30'}},
+  {...backup.meta,managerProfile:{...modernProfile,nationality:''}},
+  {...backup.meta,managerName:'Impostore'},
+  {...backup.meta,managerProfile:{...modernProfile,birthPlace:null}}
+ ]){
+  assert.throws(()=>parseCareerImport(JSON.stringify({...backup,meta})),/IMPORT_INVALID/);
+ }
+ const after=await readCatalog(db);
+ assert.equal(after.rows.length,1);
+ assert.equal(after.rows[0].status,'ok');
+});
+test('wizard controller validates five fields before navigating and creates only on final step',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(controller,/const issues=managerProfileIssues\(profile\)/);
+ assert.match(controller,/for\(const key of MANAGER_PROFILE_FIELDS\)/);
+ assert.match(controller,/if\(!validateManagerForm\(event\.target\)\)return;/);
+ assert.match(controller,/if\(form\?\.dataset\.validated==='true'\)validateManagerForm\(form,false\)/);
+ assert.match(controller,/if\(busy\|\|!validManagerProfile\(draft\.managerProfile\)/);
+ assert.match(controller,/createCareer\(db,\{managerName:managerFullName\(draft\.managerProfile\),managerProfile:draft\.managerProfile/);
+ assert.match(server,/'\/src\/manager-profile\.js'/);
+ assert.match(css,/\.wizard-manager-form \.wizard-profile-grid\{/);
+ assert.match(css,/@media\(max-width:620px\)/);
+ assert.match(css,/\.wizard-profile-field \.field-error:not\(\[hidden\]\)/);
+});
