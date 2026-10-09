@@ -14,6 +14,48 @@ let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
 let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
 let typeahead={kind:'',query:'',last:0};
+let lastRenderedRoute=null;
+function tabStopElements(){
+ return [...document.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')]
+  .filter(el=>el.tabIndex>=0&&!el.disabled&&el.type!=='hidden'&&
+   !el.closest('[hidden],[inert],[aria-hidden="true"],.fa-picker-popover,.language-listbox')&&
+   el.getClientRects().length>0);
+}
+function tabRelativeTo(anchorId,reverse=false){
+ const controls=tabStopElements(),i=controls.findIndex(x=>x.id===anchorId);
+ const next=i>=0?controls[i+(reverse?-1:1)]:null;
+ if(next)next.focus({preventScroll:false});
+ else document.activeElement?.blur?.();
+}
+function focusSnapshot(){
+ const el=document.activeElement;
+ if(!el||!app.contains(el)||!el.matches?.('a,button,input,select,textarea,[tabindex]'))return null;
+ return {id:el.id,action:el.dataset.action,value:el.dataset.value,
+  country:el.dataset.country,item:el.dataset.id};
+}
+function restoreSnapshot(snapshot){
+ if(!snapshot)return false;
+ const all=[...app.querySelectorAll('a,button,input,select,textarea,[tabindex]')];
+ const target=(snapshot.id?document.getElementById(snapshot.id):null)||
+  all.find(el=>el.dataset.action===snapshot.action&&
+   (snapshot.value===undefined||el.dataset.value===snapshot.value)&&
+   (snapshot.country===undefined||el.dataset.country===snapshot.country)&&
+   (snapshot.item===undefined||el.dataset.id===snapshot.item));
+ if(!target||!app.contains(target)||target.disabled)return false;
+ target.focus({preventScroll:true});return true;
+}
+function positionNationality(){
+ const popup=app.querySelector('.fa-nationality-menu'),trigger=app.querySelector('#manager-nationality');
+ if(!popup||!trigger)return;
+ const rect=trigger.getBoundingClientRect(),gap=6,margin=8;
+ const width=popup.offsetWidth,height=popup.offsetHeight;
+ const left=Math.max(margin,Math.min(rect.left,window.innerWidth-width-margin));
+ const below=rect.bottom+gap+height<=window.innerHeight-margin;
+ const top=below?rect.bottom+gap:Math.max(margin,rect.top-height-gap);
+ popup.style.left=Math.round(left)+'px';popup.style.top=Math.round(top)+'px';
+}
+window.addEventListener('resize',positionNationality);
+window.addEventListener('scroll',positionNationality,true);
 function positionCalendar(){
  const popup=app.querySelector('.fa-calendar-panel'),trigger=app.querySelector('#manager-birth-date');
  if(!popup||!trigger)return;
@@ -53,6 +95,7 @@ async function render(){
    else {history.replaceState({},'','/');page='/';}
   }
   if(ticket!==sequence)return;
+  const snapshot=focusSnapshot(),samePage=lastRenderedRoute===page;
   let inner;
   if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate),jump:pickerView});
   else if(page==='/new-career/country')inner=countryPage(draft,lang);
@@ -72,6 +115,13 @@ async function render(){
    const chosen=list?.querySelector('.fa-calendar-year-option.is-selected');
    if(list&&chosen)list.scrollTop=chosen.offsetTop-list.offsetTop-(list.clientHeight-chosen.clientHeight)/2;
   }
+  if(pickerOpen==='nationality')positionNationality();
+  if(samePage)restoreSnapshot(snapshot);
+  else if(lastRenderedRoute!==null&&page.startsWith('/new-career')){
+   const heading=app.querySelector('.wizard-page .fa-page-title');
+   heading?.focus({preventScroll:false});
+  }
+  lastRenderedRoute=page;
   document.documentElement.lang=lang;
   document.title=tr(lang,'Football Architect','Football Architect');
  }catch(e){
@@ -308,8 +358,15 @@ function validateManagerForm(form,focus=true){
  const summary=document.getElementById('manager-form-error');
  if(summary){
   summary.hidden=invalid.length===0;
-  summary.textContent=invalid.length?
-   tr(lang,'Controlla i campi evidenziati in rosso.','Check the fields highlighted in red.'):'';
+  const labels={firstName:tr(lang,'Nome','First name'),lastName:tr(lang,'Cognome','Last name'),
+   birthDate:tr(lang,'Data di nascita','Date of birth'),nationality:tr(lang,'Nazionalità','Nationality'),
+   birthPlace:tr(lang,'Luogo di nascita','Place of birth')};
+  const detail=invalid.map(key=>{
+   const suffix=issues[key]?.includes('LENGTH')?tr(lang,' (troppo lungo)',' (too long)'):
+    key==='birthDate'?tr(lang,' (non valida)',' (invalid)'):'';
+   return labels[key]+suffix;
+  }).join(', ');
+  summary.textContent=invalid.length?tr(lang,'Controlla: ','Check: ')+detail:'';
  }
  if(invalid.length){
   managerSubmitted=true;
@@ -317,7 +374,7 @@ function validateManagerForm(form,focus=true){
    const key=invalid[0];
    (key==='birthDate'?document.getElementById('manager-birth-date'):
     key==='nationality'?document.getElementById('manager-nationality'):
-    form.elements.namedItem(key))?.focus({preventScroll:true});
+    form.elements.namedItem(key))?.focus({preventScroll:false});
   }
   return false;
  }
