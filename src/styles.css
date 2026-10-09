@@ -824,7 +824,10 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
  box-shadow:0 18px 42px #0008;border-radius:12px;padding:7px;
  color:#e7f5f0;
 }
-.fa-nationality-menu{max-height:270px;overflow-y:auto;overscroll-behavior:contain}
+.fa-nationality-menu{
+ position:fixed;width:min(320px,calc(100vw - 16px));max-height:min(270px,calc(100dvh - 16px));
+ overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;z-index:1000;
+}
 .fa-picker-option{
  display:flex;align-items:center;justify-content:space-between;
  width:100%;padding:9px 11px;min-height:37px;text-align:left;
@@ -870,6 +873,7 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
 .fa-calendar-weekdays,.fa-calendar-grid{
  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;
 }
+.fa-calendar-row{display:contents}
 .fa-calendar-weekdays{margin-bottom:2px}
 .fa-calendar-weekday{
  display:grid;place-items:center;height:20px;
