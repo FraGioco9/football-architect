@@ -54,7 +54,7 @@ function wizardFrame(content,lang,step,titleIt,titleEn){
  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
  <div class="onboard-wrap">
   <header class="onboard-header fa-page-heading">
-   <span class="pretitle wizard-step-label">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/3</span>
+   <span class="pretitle wizard-step-label">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/4</span>
    <h1 class="fa-page-title">${tr(lang,titleIt,titleEn)}</h1>
    <div class="wizard-topline">
     ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}
@@ -122,16 +122,35 @@ export function countryPage(draft,lang){
      <span class="wizard-country-copy"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>
      <span class="wizard-country-check" aria-hidden="true">${l.id===selected?icon('check',15):''}</span></button>`).join('')}
   </div>
-  <div class="fa-action-row wizard-country-actions"><button class="btn primary begin-button" type="button" data-action="country-next" ${selected?'':'disabled'}><span>${tr(lang,'Avanti: Squadra','Next: Club')}</span>${icon('chevron-right',18)}</button></div>
+  <div class="fa-action-row wizard-country-actions"><button class="btn primary begin-button" type="button" data-action="country-next" ${selected?'':'disabled'}><span>${tr(lang,'Avanti: Campionato','Next: League')}</span>${icon('chevron-right',18)}</button></div>
  </section>`;
  return wizardFrame(content,lang,2,'Scegli la nazione','Choose your country');
+}
+export function championshipPage(draft,lang){
+ const country=LEAGUES.find(l=>l.id===draft.countryId);
+ const options=country?[country]:[];
+ const selected=options.find(l=>l.id===draft.championshipId)??null;
+ const loc=lang==='en'?'en':'it';
+ const content=`<section class="wizard-country-panel wizard-championship-panel panel" aria-labelledby="championship-pick-title">
+  <div class="onboard-heading"><h2 id="championship-pick-title">${tr(lang,'3 · Il tuo campionato','3 · Your league')}</h2>
+   <span>${options.length} ${tr(lang,'CAMPIONATO DISPONIBILE','AVAILABLE LEAGUE')}</span></div>
+  <div class="wizard-country-options wizard-championship-options" role="group" aria-label="${tr(lang,'Campionato','League')}">
+   ${options.map(l=>`<button type="button" class="fa-interactive-box wizard-country-option wizard-championship-option ${l.id===selected?.id?'fa-choice-selected':''}"
+    data-action="championship" data-championship="${esc(l.id)}" aria-pressed="${l.id===selected?.id}">
+    <span class="wizard-championship-symbol" aria-hidden="true">${icon('shield',25)}</span>
+    <span class="wizard-country-copy"><b>${esc(l.competition)}</b><small>${esc(l.country[loc])} · ${l.clubCount} ${tr(lang,'squadre','clubs')}</small></span>
+    <span class="wizard-country-check" aria-hidden="true">${l.id===selected?.id?icon('check',15):''}</span></button>`).join('')}
+  </div>
+  <div class="fa-action-row wizard-country-actions"><button class="btn primary begin-button" type="button" data-action="championship-next" ${selected?'':'disabled'}><span>${tr(lang,'Avanti: Squadra','Next: Club')}</span>${icon('chevron-right',18)}</button></div>
+ </section>`;
+ return wizardFrame(content,lang,3,'Scegli il campionato','Choose your league');
 }
 export function teamsPage(draft,lang){
  const league=leagueById(draft.countryId),clubs=getLeagueClubs(league.id),loc=lang==='en'?'en':'it';
  const chosen=clubs.find(c=>c.id===draft.clubId)??null;
  const content=`<div class="onboard-grid wizard-team-grid">
   <section class="onboard-clubs wizard-team-panel" aria-labelledby="clubs-title">
-   <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'3 · La tua squadra','3 · Your club')}</h2>
+   <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'4 · La tua squadra','4 · Your club')}</h2>
     <span>${clubs.length} ${tr(lang,'SOCIETÀ','CLUBS')}</span></div>
     <table class="club-table" id="clubs" aria-label="${tr(lang,'Squadre disponibili','Available clubs')}">
      <thead><tr>
@@ -178,7 +197,7 @@ export function teamsPage(draft,lang){
 
    </aside>
  </div>`;
- return wizardFrame(content,lang,3,'Scegli la squadra','Choose your club');
+ return wizardFrame(content,lang,4,'Scegli la squadra','Choose your club');
 }
 
 export function careersPage(catalog,lang){
