@@ -284,7 +284,7 @@ test('three separate new career pages require manager, country and club before s
  assert.match(manager,/id="manager-name"/);
  assert.match(manager,/Avanti: Nazione/);
  assert.doesNotMatch(manager,/class="league-pick-options"|<table class="club-table"/);
- assert.match(manager,/<div class="wizard-topline">[\s\S]*?data-action="cancel-setup"[\s\S]*?<h1/);
+ assert.match(manager,/<h1 class="fa-page-title">[\s\S]*?<p>[\s\S]*?<div class="wizard-topline">[\s\S]*?data-action="cancel-setup"/);
  const chosen={managerName:'Ada Coach',countryId:'IT',clubId:2,query:''};
  const country=countryPage(blank,'it');
  assert.match(country,/PASSAGGIO 2\/3/);
