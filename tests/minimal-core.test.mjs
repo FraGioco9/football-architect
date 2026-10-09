@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
+import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionById,getCountryClubs,getCompetitionClubs,getClub} from '../src/leagues.js';
 import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
 import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
 import {simulationPage} from '../src/ui-pages.js';
@@ -258,4 +258,83 @@ test('startup screen restores the pre-reset visual identity without adding legac
  assert.match(css, /#app > \.boot strong\s*\{[^}]*color:\s*#42d7ac;/);
  assert.match(css, /#app > \.boot span\s*\{[^}]*font-size:\s*12px;/);
  assert.doesNotMatch(html, /match-|addon|dashboard|roadmap|issue/i);
+});
+
+test('DIV-02: eight countries map to sixteen distinct named competitions',()=>{
+ const secondNames={
+  IT:'Lega delle Città',ENG:'Shield League',ES:'Liga de las Regiones',
+  DE:'Vereinsliga',FR:'Ligue des Régions',PT:'Liga Atlântica',
+  NL:'Bondsklasse',BR:'Liga das Regiões'
+ };
+ assert.equal(COUNTRIES.length,8);
+ assert.equal(COMPETITIONS.length,16);
+ assert.equal(new Set(COMPETITIONS.map(c=>c.id)).size,16);
+ assert.deepEqual(COUNTRIES.map(c=>c.id),LEAGUES.map(l=>l.id));
+ assert.ok(Object.isFrozen(COUNTRIES));
+ assert.ok(Object.isFrozen(COMPETITIONS));
+ for(const legacy of LEAGUES){
+  const country=countryById(legacy.id);
+  assert.deepEqual(country.country,legacy.country);
+  assert.equal(country.flag,legacy.flag);
+  assert.ok(Object.isFrozen(country));
+  assert.ok(Object.isFrozen(country.country));
+  const first=competitionById(legacy.id+'-1');
+  const second=competitionById(legacy.id+'-2');
+  assert.deepEqual(COMPETITIONS.filter(c=>c.countryId===legacy.id).map(c=>c.id),[
+   legacy.id+'-1',legacy.id+'-2'
+  ]);
+  assert.deepEqual([first.tier,second.tier],[1,2]);
+  assert.equal(first.name,legacy.competition);
+  assert.equal(second.name,secondNames[legacy.id]);
+  assert.equal(first.clubCount,20);
+  assert.equal(second.clubCount,0);
+  assert.equal(first.capacity,20);
+  assert.equal(second.capacity,20);
+  assert.ok(Object.isFrozen(first));
+  assert.ok(Object.isFrozen(second));
+ }
+});
+
+test('DIV-02: all 160 original club identities and existing session schemas remain valid',()=>{
+ let count=0;
+ for(const legacy of LEAGUES){
+  const countryClubs=getCountryClubs(legacy.id);
+  const firstClubs=getCompetitionClubs(legacy.id+'-1');
+  const former=getLeagueClubs(legacy.id);
+  assert.deepEqual(countryClubs,former);
+  assert.deepEqual(firstClubs,former);
+  assert.deepEqual(getCompetitionClubs(legacy.id+'-2'),[]);
+  assert.deepEqual(countryClubs.map(c=>c.id),Array.from({length:20},(_,i)=>i+1));
+  for(const club of countryClubs){
+   assert.deepEqual(getClub(legacy.id,club.id),club);
+   count++;
+  }
+  const session=createSession(legacy.id,20,'2026-07-01');
+  assert.equal(validSession(session),true);
+  assert.equal('competitionId' in session,false);
+  assert.equal('divisionId' in session,false);
+  const legacySnapshot={version:1,countryId:legacy.id,clubId:1,
+   startedAt:'2026-07-01',date:'2026-07-01',daysElapsed:0};
+  assert.equal(validSession(legacySnapshot),true);
+  assert.equal(clubFor(legacySnapshot).id,1);
+ }
+ assert.equal(count,160);
+ assert.equal(LEAGUES.length,8); // DIV-04 alone may change the UI.
+});
+
+test('DIV-02: new lookup API rejects unknown IDs without falling back to Italy',()=>{
+ assert.equal(countryById('IT-1'),null);
+ assert.equal(countryById('XX'),null);
+ assert.equal(competitionById('IT'),null);
+ assert.equal(competitionById('IT-3'),null);
+ assert.equal(competitionById('XX-1'),null);
+ assert.throws(()=>getCountryClubs('XX'),RangeError);
+ assert.throws(()=>getCountryClubs(undefined),RangeError);
+ assert.throws(()=>getCompetitionClubs('XX-1'),RangeError);
+ assert.throws(()=>getCompetitionClubs('IT'),RangeError);
+ assert.equal(getClub('XX',1),null);
+ assert.equal(getClub('IT',0),null);
+ assert.equal(getClub('IT',21),null); // DIV-03 not implemented.
+ assert.equal(getClub('IT',1)?.countryId,'IT');
+ assert.equal(getLeagueClubs().length,20); // Legacy API contract unchanged.
 });
