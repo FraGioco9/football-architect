@@ -77,7 +77,10 @@ export function generateFixtureCalendar({competitionId,seasonYear,clubIds}={}){
     });
     return Object.freeze({number,fixtures:Object.freeze(fixtures)});
   });
-  return Object.freeze({competitionId,seasonYear,matchdays:Object.freeze(matchda/** Enumerated competition IDs (IT-1, ENG-1, etc.) come from the DIV-02 catalog. */
+  return Object.freeze({competitionId,seasonYear,matchdays:Object.freeze(matchdays)});
+}
+
+/** Enumerated competition IDs (IT-1, ENG-1, etc.) come from the DIV-02 catalog. */
 export function generateCompetitionFixtures(competitionId,seasonYear){
   if(!COMPETITIONS.some(competition=>competition.id===competitionId))throw new Error('Unknown competition');
   return generateFixtureCalendar({
