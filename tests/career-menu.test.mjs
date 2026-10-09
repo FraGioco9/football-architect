@@ -1209,6 +1209,7 @@ test('Tab keyboard highlight on manager fields wins over neutral focus CSS after
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
  const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const manager=managerPage({managerProfile:blankManagerProfile()},'it');
  // One selector-list :not() excludes both selected states WITHOUT increasing
  // specificity versus the original manager focus selectors.
  const neutralBlock=css.match(/(\.fa-page-main \.fa-interactive-box:hover[\s\S]*?)\{\s*border-color:var\(--fa-box-border\)/)?.[1];
@@ -1225,7 +1226,7 @@ test('Tab keyboard highlight on manager fields wins over neutral focus CSS after
  assert.match(js,/document\.documentElement\.classList\.add\('fa-keyboard-navigation'\)/);
  assert.match(ui,/export function managerPage\(draft,lang,pickers=\{\}\)/);
  for(const field of ['manager-first-name','manager-last-name','manager-birth-date','manager-nationality','manager-birth-place']){
-  assert.ok(ui.includes('id="'+field+'"'),field);
+  assert.ok(manager.includes('id="'+field+'"'),field);
  }
  assert.match(ui,/class="wizard-manager-panel panel"/);
 });
