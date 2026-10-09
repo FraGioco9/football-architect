@@ -339,8 +339,6 @@ document.addEventListener('keydown',event=>{
   items[next]?.focus({preventScroll:true});
  }else if(event.key==='Escape'){
   event.preventDefault();void toggleLanguageMenu(false,'combo');
- }else if(event.key==='Tab'){
-  event.preventDefault();void toggleLanguageMenu(false,event.shiftKey?'combo':'next');
  }
 });
 function updateManagerField(field,code){
