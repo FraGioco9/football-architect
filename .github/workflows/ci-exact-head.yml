@@ -48,6 +48,8 @@ jobs:
           for i in $(seq 1 20); do curl -fsS http://127.0.0.1:2000/ -o /dev/null 2>/dev/null && break; sleep 1; done
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/new-career)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/new-career/country)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/new-career/league)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/new-career/team)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/careers)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:2000/settings)" = 200
