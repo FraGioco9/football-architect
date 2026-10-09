@@ -529,3 +529,13 @@ test('CAL-02.4: responsive 320/390 contracts keep a 7-column grid with no nested
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  assert.ok(server.includes("'/calendar'"));
 });
+
+
+test('UX-SHELL: routes and source avoid restoring pre-reset match engine',()=>{
+ const src=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.ok(src.includes("'/dashboard'"));
+ assert.ok(server.includes("'/dashboard'"));
+ assert.doesNotMatch(src,/simulateMatch|playMatchday|matchEngine|newSeason/);
+ assert.doesNotMatch(server,/\/match\/\d|\/squad|\/training|\/tactics/);
+});
