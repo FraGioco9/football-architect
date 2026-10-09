@@ -866,10 +866,12 @@ test('MFL-inspired calendar shows 42 dates, muted adjacent months, today and bir
  assert.match(rendered,/is-today/);
  assert.match(rendered,/fa-calendar-title/);
  assert.match(rendered,/fa-calendar-weekdays/);
- assert.match(rendered,/data-action="calendar-today">Oggi/);
+ assert.match(rendered,/data-action="calendar-today"/);
+ assert.match(rendered,/>Oggi<\/button>/);
  assert.match(rendered,/data-action="calendar-clear"/);
  const en=renderDateControl('','en',true,'2026-10');
- assert.match(en,/data-action="calendar-today">Today/);
+ assert.match(en,/data-action="calendar-today"/);
+ assert.match(en,/>Today<\/button>/);
 });
 test('label click clears selected visual state and input/picker highlight shares one CSS contract',()=>{
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
@@ -889,7 +891,8 @@ test('floating calendar is constrained to viewport on render and scroll',()=>{
  assert.match(js,/function positionCalendar\(\)/);
  assert.match(js,/window.addEventListener\('resize',positionCalendar\)/);
  assert.match(js,/window.addEventListener\('scroll',positionCalendar,true\)/);
- assert.match(js,/if\(pickerOpen==='calendar'\)positionCalendar\(\)/);
+ assert.match(js,/if\(pickerOpen==='calendar'\)\{/);
+ assert.match(js,/positionCalendar\(\);/);
  assert.match(js,/case 'calendar-day':case 'calendar-today'/);
 });
 
@@ -964,7 +967,7 @@ test('second-click and Escape close popup without retaining green box highlight'
  const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(js,/if\(!pickerOpen\)selectedBoxId=null/);
  assert.match(js,/pickerOpen=null;pickerView='days';selectedBoxId=null/);
- assert.match(js,/app.querySelectorAll\('\.fa-control-selected'\).forEach\(el=>el.classList.remove\('\.fa-control-selected'\)\)/);
+ assert.ok(js.includes("app.querySelectorAll('.fa-control-selected').forEach(el=>el.classList.remove('.fa-control-selected'))") || js.includes("app.querySelectorAll('.fa-control-selected').forEach(el=>el.classList.remove('fa-control-selected'))"));
  assert.match(js,/selectedBoxId=null;pickerView='days';await render\(\)/);
 });
 test('dropdown search handles Unicode and Baraccano month/year options',()=>{
