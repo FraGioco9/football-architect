@@ -170,9 +170,9 @@ async function render(){
    inner=calendarPage(loaded.meta,loaded.state,lang,fixtureCalendarFor(loaded.state.countryId+'-1',seasonYear),ui);
   }
   else inner=homePage(catalog,lang);
+  searchHits=loaded&&CAREER_ROUTES.has(page)?currentSearchResults():[];
   closeRenameDialog(false);
   closeDeleteDialog(false);
-  searchHits=loaded&&CAREER_ROUTES.has(page)?currentSearchResults():[];
   app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen,loaded&&CAREER_ROUTES.has(page)?{route:page,meta:loaded.meta,state:loaded.state,playing:timer!==null,searchQuery,searchResults:searchHits}:null);
   app.querySelectorAll('.fa-site-dialog').forEach(dialog=>{
    dialog.addEventListener('close',()=>{

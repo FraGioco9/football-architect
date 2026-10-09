@@ -1614,7 +1614,9 @@ test('Current career appears only with an explicit in-simulation entry context',
  assert.match(controller,/case 'careers':careersFromSimulationId=path\(\)==='\/simulation'&&loaded\?loaded\.meta\.id:null;if\(path\(\)==='\/dashboard'&&loaded\)careersFromSimulationId=loaded\.meta\.id;navigate\('\/careers'\);/);
  assert.match(controller,/careersPage\(catalog,lang,careersFromSimulationId\)/);
  assert.match(controller,/if\(url!=='\/careers'\)careersFromSimulationId=null/);
- assert.match(controller,/window\.addEventListener\('popstate',\(\)=>\{stop\(\);careersFromSimulationId=null;/);
+ assert.match(controller,/window\.addEventListener\('popstate',\(\)=>\{/);
+ assert.match(controller,/if\(!\(CAREER_ROUTES\.has\(lastRenderedRoute\)&&CAREER_ROUTES\.has\(path\(\)\)\)\)stop\(\)/);
+ assert.match(controller,/searchQuery='';searchHits=\[\];careersFromSimulationId=null/);
 });
 
 test('Rename uses site-style native modal, trims and validates names, never browser prompt',async()=>{
@@ -1866,9 +1868,9 @@ test('UX-SHELL: route-specific topbar offers one meaningful action, never duplic
  const dashboard=render('/dashboard'),playing=render('/simulation',true),calendar=render('/calendar');
  assert.match(dashboard,/class="fa-shell-primary"[\s\S]*?data-action="toggle"/);
  assert.match(playing,/data-action="toggle"[\s\S]*?Interrompi/);
- assert.match(calendar,/class="fa-shell-primary"[\s\S]*?data-action="career-dashboard"/);
+ assert.match(calendar,/class="fa-shell-primary"[\s\S]*?data-action="toggle"/);
  assert.match(calendar,/aria-current="page"/);
- assert.doesNotMatch(calendar,/data-action="toggle"/);
+ assert.equal((calendar.match(/data-action="toggle"/g)||[]).length,1);
  assert.doesNotMatch(dashboard,/data-action="(?:play-match|new-season)"/);
  const standalone=layout('<h1>Menu</h1>','it');
  assert.doesNotMatch(standalone,/fa-club-sidebar|fa-shell-sidebar|fa-shell-topbar/);
