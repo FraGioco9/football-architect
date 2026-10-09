@@ -139,8 +139,8 @@ function inspectScheduledCalendar(competitionId,year,strategy='varied'){
    assert.deepEqual(pairing,original);
    assert.deepEqual(Object.keys(f).sort(),
     ['id','competitionId','seasonYear','matchday','homeClubId','awayClubId','date','time'].sort());
-   assert.match(date,/^\\d{4}-\\d{2}-\\d{2}$/);
-   assert.match(time,/^\\d{2}:\\d{2}$/);
+   assert.match(date,/^\d{4}-\d{2}-\d{2}$/);
+   assert.match(time,/^\d{2}:\d{2}$/);
    const stamp=Date.parse(date+'T'+time+':00Z'),dayStamp=Date.parse(date+'T00:00:00Z');
    assert.ok(Number.isFinite(stamp));
    assert.equal(new Date(dayStamp).toISOString().slice(0,10),date);
