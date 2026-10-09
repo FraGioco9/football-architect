@@ -441,7 +441,7 @@ test('CAL-02.4: 38 matchdays and all 380 immutable scheduled fixtures are visibl
   const html=calendarPage(meta,state,'it',calendar,{view:'round',filter:'all',month:'2026-10',round});
   assert.match(html,/Giornata /);
   assert.match(html,/Incontri · 10/);
-  assert.equal((html.match(/class="fa-fixture-item/g)||[]).length,10);
+  assert.equal((html.match(/<li class="fa-fixture-item(?: is-club)?">/g)||[]).length,10);
   assert.doesNotMatch(html,/\bscore\b|classifica|risultati/i);
   total+=10;
  }
@@ -456,7 +456,7 @@ test('CAL-02.4: my club shows exactly one immutable fixture per round',()=>{
  for(let round=1;round<=38;round++){
   const html=calendarPage(meta,state,'en',calendar,{view:'round',filter:'club',month:'2028-10',round});
   assert.match(html,/Matches · 1/);
-  shown+=(html.match(/class="fa-fixture-item/g)||[]).length;
+  shown+=(html.match(/<li class="fa-fixture-item(?: is-club)?">/g)||[]).length;
  }
  assert.equal(shown,38);
  assert.ok(!('fixtures' in state));
@@ -486,11 +486,11 @@ test('CAL-02.4: month and day filters are subsets of the deterministic fixture i
  const mine=calendarPage(meta,state,'en',cal,{view:'month',month,filter:'club'});
  const inMonth=fixtures.filter(f=>f.date.startsWith(month));
  const myCount=inMonth.filter(f=>f.homeClubId===4||f.awayClubId===4).length;
- assert.equal((all.match(/class="fa-fixture-item/g)||[]).length,inMonth.length);
- assert.equal((mine.match(/class="fa-fixture-item/g)||[]).length,myCount);
+ assert.equal((all.match(/<li class="fa-fixture-item(?: is-club)?">/g)||[]).length,inMonth.length);
+ assert.equal((mine.match(/<li class="fa-fixture-item(?: is-club)?">/g)||[]).length,myCount);
  for(const date of dates){
   const day=calendarPage(meta,state,'en',cal,{view:'month',month,day:date,filter:'all'});
-  assert.equal((day.match(/class="fa-fixture-item/g)||[]).length,fixtures.filter(f=>f.date===date).length);
+  assert.equal((day.match(/<li class="fa-fixture-item(?: is-club)?">/g)||[]).length,fixtures.filter(f=>f.date===date).length);
  }
  const winter=calendarPage(meta,state,'en',cal,{view:'month',month:'2026-12',day:'2026-12-25',filter:'all'});
  assert.match(winter,/No matches in this selection/);
