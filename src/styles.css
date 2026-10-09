@@ -1144,3 +1144,35 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
  color:#9be4c4;background:#183b38;border:1px solid #3f6b5a;border-radius:9px
 }
 .wizard-championship-option .wizard-country-copy b{white-space:normal}
+
+/* All site tables keep native table layout; their row contents use a shared
+   vertical axis instead of inline-flex baseline alignment. */
+.fa-page-main table :is(th,td) > .fa-table-cell-inner{
+ display:flex;align-items:center;min-width:0;width:100%;
+}
+.fa-page-main table :is(th,td) > .fa-table-cell-center{
+ justify-content:center;text-align:center;
+}
+.fa-page-main table :is(th,td) > .fa-table-cell-start{
+ justify-content:flex-start;text-align:left;
+}
+.fa-page-main table .fa-table-cell-inner > :is(button,a,[role="button"]){
+ display:flex;align-items:center;min-width:0;
+}
+/* 43px desktop / 45px mobile row targets including padding and borders. */
+.restored-onboarding .wizard-team-grid .club-table .fa-table-cell-inner{
+ min-height:33px;
+}
+.restored-onboarding .wizard-team-grid .club-table .club-table-select{
+ display:flex;align-items:center;justify-content:flex-start;
+}
+.restored-onboarding .wizard-team-grid .club-table-name{
+ display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
+}
+.restored-onboarding .wizard-team-grid .club-table .club-table-status .club-table-indicator{
+ display:flex;align-items:center;justify-content:center;margin-inline:auto;
+ vertical-align:middle;line-height:1;
+}
+@media(max-width:530px){
+ .restored-onboarding .wizard-team-grid .club-table .fa-table-cell-inner{min-height:37px}
+}
