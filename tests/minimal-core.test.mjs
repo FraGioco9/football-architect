@@ -78,3 +78,13 @@ test('HTML contains only the required minimal application modules',()=>{
  assert.ok(!server.includes('router.js'));
  assert.ok(server.includes("'/simulation'"));
 });
+
+test('startup screen restores the pre-reset visual identity without adding legacy game modules',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(html, /<div id="app"><div class="boot" role="status" aria-live="polite">Football <strong>Architect<\/strong><span>Caricamento…<\/span><\/div><\/div>/);
+ assert.match(css, /#app > \.boot\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/);
+ assert.match(css, /#app > \.boot strong\s*\{[^}]*color:\s*#42d7ac;/);
+ assert.match(css, /#app > \.boot span\s*\{[^}]*font-size:\s*12px;/);
+ assert.doesNotMatch(html, /match-|addon|dashboard|roadmap|issue/i);
+});
