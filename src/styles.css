@@ -841,9 +841,9 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
 /* Baraccano SiteCalendar structure, Football Architect graphite/petrol colors. */
 .fa-calendar-panel{
  position:fixed;width:min(272px,calc(100vw - 16px));max-width:none;
- height:344px;max-height:calc(100dvh - 16px);
+ height:auto;max-height:calc(100dvh - 16px);
  padding:8px;border:1px solid #3e5e5d;border-radius:9px;
- z-index:1000;overflow:hidden;background:#132832;
+ z-index:1000;overflow-x:hidden;overflow-y:auto;background:#132832;
 }
 .fa-calendar-head{
  display:grid;grid-template-columns:34px 34px minmax(0,1fr) 34px 34px;
@@ -897,29 +897,35 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
  outline:2px solid #8aa8a3;outline-offset:1px;
 }
 .fa-calendar-footer{
- display:flex;align-items:center;justify-content:flex-end;gap:8px;
+ display:flex;align-items:center;justify-content:space-between;gap:8px;
  margin-top:6px;padding-top:6px;border-top:1px solid #355752;
 }
 .fa-calendar-today,.fa-calendar-clear{
  min-height:24px;padding:3px 7px;font-size:11px;font-weight:700;
 }
 .fa-calendar-today{color:#90e8c2}
+/* Views size themselves from their visible content instead of reserving day-grid
+   space behind an absolutely positioned month/year panel. */
 .fa-calendar-panel[data-calendar-view="months"] > :is(.fa-calendar-weekdays,.fa-calendar-grid,.fa-calendar-footer),
 .fa-calendar-panel[data-calendar-view="years"] > :is(.fa-calendar-weekdays,.fa-calendar-grid,.fa-calendar-footer){
- visibility:hidden;pointer-events:none;
+ display:none;
 }
 .fa-calendar-month-picker,.fa-calendar-year-picker{
- position:absolute;z-index:6;top:44px;right:9px;bottom:9px;left:9px;
+ position:relative;
  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;
  padding:6px;border:1px solid #3e5e5d;border-radius:6px;
- background:#132832;overflow-x:hidden;overflow-y:auto;
+ background:#132832;overflow-x:hidden;
  overscroll-behavior:contain;touch-action:pan-y;
  scrollbar-width:thin;scrollbar-color:#436c61 transparent;
 }
 .fa-calendar-month-picker{
- grid-template-rows:repeat(4,minmax(0,1fr));overflow-y:hidden;
+ grid-template-rows:repeat(4,36px);overflow-y:hidden;
 }
-.fa-calendar-year-picker{grid-auto-rows:32px;align-content:start}
+.fa-calendar-year-picker{
+ grid-auto-rows:32px;align-content:start;
+ max-height:min(280px,calc(100dvh - 94px));
+ overflow-y:auto;
+}
 .fa-calendar-month-option,.fa-calendar-year-option{
  display:grid;place-items:center;min-height:0;width:100%;
  padding:2px;border:0;border-radius:5px;background:transparent;

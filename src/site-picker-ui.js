@@ -44,8 +44,8 @@ export function renderDateControl(value,lang,open=false,view=initialCalendarMont
   '<button type="button" class="fa-calendar-nav" data-action="calendar-next-coarse" aria-label="'+t(lang,'Anno successivo','Next year')+'"'+(maxStep?' disabled':'')+'>»</button></div>'+
   '<div class="fa-calendar-weekdays">'+labelsWeek+'</div>'+
   '<div class="fa-calendar-grid" role="grid" aria-label="'+e(labels[m-1]+' '+year)+'">'+dayMarkup+'</div>'+
-  '<div class="fa-calendar-footer"><button type="button" data-action="calendar-today" class="fa-calendar-today">'+t(lang,'Oggi','Today')+'</button>'+
-  '<button type="button" data-action="calendar-clear" class="fa-calendar-clear">'+t(lang,'Cancella data','Clear date')+'</button></div>'+
+  '<div class="fa-calendar-footer"><button type="button" data-action="calendar-clear" class="fa-calendar-clear">'+t(lang,'Cancella data','Clear date')+'</button>'+
+  '<button type="button" data-action="calendar-today" class="fa-calendar-today">'+t(lang,'Oggi','Today')+'</button></div>'+
   (mode==='months'?'<div class="fa-calendar-month-picker" role="grid" aria-label="'+t(lang,'Scegli mese','Choose month')+'">'+months+'</div>':'')+
   (mode==='years'?'<div class="fa-calendar-year-picker" role="grid" aria-label="'+t(lang,'Scegli anno','Choose year')+'">'+years+'</div>':'')+'</section>':'';
  return '<div class="fa-picker fa-calendar-picker" data-fa-picker="calendar">'+

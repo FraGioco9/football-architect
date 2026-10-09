@@ -977,3 +977,28 @@ test('dropdown search handles Unicode and Baraccano month/year options',()=>{
                   '.fa-calendar-month-picker .fa-calendar-month-option','.fa-calendar-year-picker .fa-calendar-year-option'])
   assert.ok(js.includes(cls),cls);
 });
+
+test('calendar height follows active view and footer order is Clear left, Today right',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const it=renderDateControl('2000-02-29','it',true,'2000-02','days');
+ const en=renderDateControl('2000-02-29','en',true,'2000-02','days');
+ const itClear=it.indexOf('data-action="calendar-clear"'),itToday=it.indexOf('data-action="calendar-today"');
+ const enClear=en.indexOf('data-action="calendar-clear"'),enToday=en.indexOf('data-action="calendar-today"');
+ assert.ok(itClear>0&&itToday>itClear,'Italian footer order');
+ assert.ok(enClear>0&&enToday>enClear,'English footer order');
+ assert.match(it,/>Cancella data<\/button>/);
+ assert.match(it,/>Oggi<\/button>/);
+ assert.match(en,/>Clear date<\/button>/);
+ assert.match(en,/>Today<\/button>/);
+ assert.match(css,/\.fa-calendar-panel\{\s*position:fixed;width:min\(272px,calc\(100vw - 16px\)\);max-width:none;\s*height:auto;max-height:calc\(100dvh - 16px\)/);
+ assert.doesNotMatch(css,/height:344px/);
+ assert.match(css,/\.fa-calendar-footer\{\s*display:flex;align-items:center;justify-content:space-between/);
+ assert.match(css,/data-calendar-view="years"\] > :is\(\.fa-calendar-weekdays,\.fa-calendar-grid,\.fa-calendar-footer\)\{\s*display:none/);
+ assert.match(css,/\.fa-calendar-month-picker,\s*\.fa-calendar-year-picker\{\s*position:relative/);
+ assert.match(css,/\.fa-calendar-month-picker\{\s*grid-template-rows:repeat\(4,36px\)/);
+ assert.match(css,/\.fa-calendar-year-picker\{[\s\S]*?max-height:min\(280px,calc\(100dvh - 94px\)\)/);
+ const months=renderDateControl('2000-02-29','it',true,'2000-02','months');
+ const years=renderDateControl('2000-02-29','it',true,'2000-02','years');
+ assert.equal((months.match(/data-action="calendar-month-select"/g)||[]).length,12);
+ assert.ok((years.match(/data-action="calendar-year-select"/g)||[]).length>=120);
+});
