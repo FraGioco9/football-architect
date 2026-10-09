@@ -1562,8 +1562,50 @@ test('Rename uses site-style native modal, trims and validates names, never brow
  assert.match(controller,/await renameCareer\(db,id,name\)/);
  assert.match(controller,/if\(loaded\?\.meta\.id===id\)loaded=\{\.\.\.loaded,meta\}/);
  assert.match(controller,/document\.addEventListener\('submit',event=>\{\s*if\(event\.target\.id!=='career-rename-form'\)return/);
- assert.match(controller,/addEventListener\('close',\(\)=>document\.documentElement\.classList\.remove\('fa-modal-open'\)\)/);
+ assert.match(controller,/addEventListener\('close',\(\)=>\{/);
  assert.match(css,/\.fa-rename-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
- assert.match(css,/html\.fa-modal-open\{overflow:hidden;scrollbar-width:none\}/);
+ assert.match(css,/html\.fa-modal-open\{\s*overflow:hidden;scrollbar-gutter:auto;scrollbar-width:none;/);
  assert.match(css,/\.fa-rename-dialog \.text-field\.fa-field-invalid\{/);
+});
+
+test('site popup contract: inert background and reserved hidden scrollbar without shifting page',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/html\{\s*scrollbar-gutter:stable;\s*\}/);
+ assert.match(css,/html\.fa-modal-open\{[\s\S]*?overflow:hidden;scrollbar-gutter:auto;scrollbar-width:none;\s*padding-right:var\(--fa-modal-scrollbar-gutter,0px\);/);
+ assert.match(css,/html\.fa-modal-open body\{overflow:hidden\}/);
+ assert.match(css,/html\.fa-modal-open::-webkit-scrollbar\{display:none;width:0;height:0\}/);
+ assert.match(controller,/function openSiteModal\(dialog,initialFocus\)\{/);
+ assert.match(controller,/Math\.max\(0,window\.innerWidth-root\.clientWidth\)/);
+ assert.match(controller,/root\.style\.setProperty\('--fa-modal-scrollbar-gutter',gutter\+'\x70x'\)/);
+ assert.match(controller,/dialog\.showModal\(\)/);
+ assert.match(controller,/root\.classList\.add\('fa-modal-open'\)/);
+ assert.match(controller,/function releaseSiteModalLock\(\)\{/);
+ assert.match(controller,/root\.style\.removeProperty\('--fa-modal-scrollbar-gutter'\)/);
+ assert.match(controller,/app\.querySelector\('#career-rename-dialog'\)\?\.addEventListener\('close'/);
+ assert.match(controller,/closeRenameDialog\(false\);\s*app\.innerHTML=layout\(/);
+});
+
+test('rename label cannot select or focus field; highlight appears only while input is focused',async()=>{
+ const db=await setup();await createCareer(db,form('Ada','IT',2));
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const locale of ['it','en']){
+  const html=careersPage(await readCatalog(db),locale);
+  assert.doesNotMatch(html,/Modifica il nome del salvataggio|Change the save name|career-rename-description/);
+  assert.doesNotMatch(html,/<label[^>]*for="career-rename-input"/);
+  assert.match(html,/<span class="input-label" id="career-rename-field-label">/);
+  assert.match(html,/id="career-rename-title" tabindex="-1"/);
+  assert.match(html,/id="career-rename-input"[^>]*aria-labelledby="career-rename-field-label"/);
+  assert.doesNotMatch(html,/<input[^>]*class="[^"]*fa-control-selected/);
+  assert.doesNotMatch(html,/aria-describedby="career-rename-description"/);
+ }
+ assert.match(controller,/openSiteModal\(dialog,dialog\.querySelector\('#career-rename-title'\)\)/);
+ assert.doesNotMatch(controller,/input\.focus\(\);input\.select\(\)/);
+ assert.match(controller,/document\.addEventListener\('focusin',event=>\{\s*if\(event\.target\.id!=='career-rename-input'\)return;\s*event\.target\.classList\.add\('fa-control-selected'\)/);
+ assert.match(controller,/document\.addEventListener\('focusout',event=>\{\s*if\(event\.target\.id!=='career-rename-input'\)return;\s*event\.target\.classList\.remove\('fa-control-selected'\)/);
+ assert.match(css,/\.fa-rename-dialog \.text-field\.fa-control-selected:not\(\.fa-field-invalid\)\{/);
+ assert.doesNotMatch(css,/\.fa-rename-dialog \.text-field:focus-visible\{\s*border-color:var\(--fa-selection-border\)/);
+ assert.match(css,/\.fa-rename-dialog \.text-field\.fa-field-invalid\{/);
+ assert.doesNotMatch(css,/career-rename-description/);
 });
