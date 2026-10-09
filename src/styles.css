@@ -626,3 +626,25 @@ main:has(.restored-onboarding),main:has(.restored-careers),main:has(.restored-se
  .fa-feedback-dismiss{width:30px;height:30px}
  .fa-blocking-actions .btn{flex:1}
 }
+
+
+/* The document keeps the same available content width with or without page
+   overflow. Reserve a single root scrollbar gutter, not nested gutters.
+   This prevents title/cards from moving between short and long routes. */
+html{
+  scrollbar-gutter:stable;
+}
+/* Browser support fallback: keep the scrollport width stable without adding
+   a second scroll container. The thumb remains hidden when not needed. */
+@supports not (scrollbar-gutter:stable){
+  html{overflow-y:scroll;}
+}
+/* The root track itself must be invisible, not merely the inner elements.
+   The shared thumb styling above continues to apply on every scroll area. */
+html::-webkit-scrollbar,
+html::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track-piece,
+html::-webkit-scrollbar-corner{
+  background:transparent;
+  box-shadow:none;
+}

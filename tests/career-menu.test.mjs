@@ -489,3 +489,27 @@ test('controllers use structured feedback and protect save data in recovery path
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  assert.ok(server.includes("'/src/feedback.js'"));
 });
+
+
+test('the document reserves one stable root scrollbar gutter across all routes',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const rule=sheet.slice(sheet.lastIndexOf('/* The document keeps the same available content width'));
+ assert.match(rule,/html\{\s*scrollbar-gutter:stable;\s*\}/);
+ assert.match(rule,/@supports not \(scrollbar-gutter:stable\)\{\s*html\{overflow-y:scroll;\}\s*\}/);
+ assert.doesNotMatch(rule,/body\{[^}]*scrollbar-gutter|\.shell\{[^}]*scrollbar-gutter|\.fa-page-main\{[^}]*scrollbar-gutter/);
+ assert.doesNotMatch(rule,/scrollbar-gutter:stable both-edges/);
+});
+test('page scrollbar track is fully transparent and nested scrollbars keep shared style',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const rule=sheet.slice(sheet.lastIndexOf('/* The document keeps the same available content width'));
+ for(const part of ['::-webkit-scrollbar-track','::-webkit-scrollbar-track-piece','::-webkit-scrollbar-corner']){
+  assert.ok(rule.includes('html'+part),part);
+ }
+ assert.match(rule,/html::-webkit-scrollbar-corner\{\s*background:transparent;\s*box-shadow:none;\s*\}/);
+ assert.match(sheet,/--scrollbar-track:transparent;/);
+ assert.match(sheet,/--scrollbar-thumb:#42565f;/);
+ assert.match(sheet,/:where\(html,body,body \*\)\{\s*scrollbar-width:thin;/);
+ const code=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ for(const name of ['hero fa-page-heading','onboarding restored-onboarding','restored-careers','restored-settings','heading fa-page-heading'])
+  assert.ok(code.includes(name),name);
+});
