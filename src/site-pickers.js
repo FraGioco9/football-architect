@@ -59,3 +59,34 @@ export function birthDateLabel(iso,lang='it'){
  if(!validDate(iso))return '';
  return new Intl.DateTimeFormat(locale(lang),{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'));
 }
+
+// One shared, locale-neutral closest-match algorithm for custom and native dropdowns.
+export function closestSelectIndex(options,query){
+ const fold=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const needle=fold(query);
+ if(!needle||!options?.length)return -1;
+ const distance=(a,b)=>{
+  let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+   const next=[i];
+   for(let j=1;j<=b.length;j++)
+    next[j]=Math.min(next[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+   prev=next;
+  }
+  return prev[b.length];
+ };
+ let best=-1,score=Infinity;
+ options.forEach((option,i)=>{
+  const label=fold(typeof option==='string'?option:option?.label);
+  const words=label.split(/[\s\-(),]+/).filter(Boolean);
+  const rank=label===needle?0:label.startsWith(needle)?1:words.some(w=>w.startsWith(needle))?2:label.includes(needle)?3:4;
+  // Fuzzy matching tolerates misplaced characters without surprising exact prefix matches.
+  const edit=rank===4?Math.min(distance(needle,label.slice(0,needle.length)),...words.map(w=>distance(needle,w.slice(0,Math.max(needle.length,w.length))))):0;
+  const candidate=rank*10000+edit*100+Math.abs(label.length-needle.length);
+  if(candidate<score){score=candidate;best=i;}
+ });
+ return best;
+}
+export function selectTypeaheadBuffer(previous,char,elapsedMs){
+ return elapsedMs<900?previous+char:char;
+}

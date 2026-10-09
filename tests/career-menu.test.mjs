@@ -9,6 +9,7 @@ import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile,managerAge} from '../src/manager-profile.js';
+import * as typeaheadFns from '../src/site-pickers.js';
 import {NATIONALITY_CODES,nationalityOptions,isNationalityCode,initialCalendarMonth,shiftCalendarMonth,calendarDays,calendarGridDays,birthDateLabel} from '../src/site-pickers.js';
 import {renderDateControl,renderNationalityControl} from '../src/site-picker-ui.js';
 
@@ -795,7 +796,7 @@ test('site calendar has month and year selectors, Monday-first grid, leap dates,
  assert.equal(shiftCalendarMonth('2026-10',1,'2026-10-09'),'2026-10');
  assert.ok(calendarDays('2000-02','2026-10-09').some(x=>x?.iso==='2000-02-29'&&!x.disabled));
  assert.equal(calendarDays('2026-10','2026-10-09').find(x=>x?.iso==='2026-10-10').disabled,true);
- const it=renderDateControl('2000-02-29','it',true,'2000-02');
+ const it=renderDateControl('2000-02-29','it',true,'2000-02',true);
  const en=renderDateControl('','en',true,'2026-10');
  assert.match(it,/data-action="calendar-prev"/);
  assert.match(it,/data-action="calendar-next"/);
@@ -844,7 +845,7 @@ test('outside click closes picker without rerendering clicked input or losing fo
  assert.match(controller,/app\.querySelector\('\.fa-picker-popover'\)\?\.remove\(\)/);
  assert.match(controller,/app\.querySelector\('\.fa-picker-trigger\[aria-expanded="true"\]'\)\?\.setAttribute\('aria-expanded','false'\)/);
  assert.doesNotMatch(controller,/if\(!event\.target\.closest\?\.\('\[data-action\]'\)\)\{void render\(\);return;\}/);
- assert.match(controller,/event\.target\.closest\?\.\('\[data-fa-picker\]'\)\?\.querySelector\('\.fa-picker-trigger'\)/);
+ assert.match(controller,/const box=event\.target\.closest\?\.\('\.fa-interactive-box'\)/);
 });
 
 test('MFL-inspired calendar shows 42 dates, muted adjacent months, today and birth-date shortcut',()=>{
@@ -889,4 +890,49 @@ test('floating calendar is constrained to viewport on render and scroll',()=>{
  assert.match(js,/window.addEventListener\('scroll',positionCalendar,true\)/);
  assert.match(js,/if\(pickerOpen==='calendar'\)positionCalendar\(\)/);
  assert.match(js,/case 'calendar-day':case 'calendar-today'/);
+});
+
+test('noninteractive field labels never synthesize click selection or implicit focus',()=>{
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const page=managerPage({managerProfile:blankManagerProfile()},'it');
+ for(const field of ['first-name','last-name','birth-place']){
+  assert.match(page,new RegExp('id="manager-'+field+'-label"'));
+  assert.match(page,new RegExp('id="manager-'+field+'" aria-labelledby="manager-'+field+'-label"'));
+  assert.doesNotMatch(page,new RegExp('<label[^>]+for="manager-'+field+'"'));
+ }
+ assert.match(main,/const box=event.target.closest\?\.\('\.fa-interactive-box'\)/);
+ assert.doesNotMatch(main,/event\.target\.closest\?\.\('\[data-fa-picker\]'\)\?\.querySelector/);
+ assert.match(main,/if\(event.key==='Tab'\)/);
+});
+test('calendar uses MFL compact default and optional birth-year picker',()=>{
+ const compact=renderDateControl('2000-02-29','it',true,'2000-02');
+ assert.match(compact,/data-action="calendar-jump-toggle"/);
+ assert.match(compact,/aria-expanded="false"/);
+ assert.doesNotMatch(compact,/data-calendar-part="year"/);
+ assert.equal((compact.match(/data-action="calendar-day"/g)||[]).length,42);
+ const expanded=renderDateControl('2000-02-29','it',true,'2000-02',true);
+ assert.match(expanded,/data-calendar-part="month"/);
+ assert.match(expanded,/data-calendar-part="year"/);
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/position:fixed;width:min\(228px,calc\(100vw - 16px\)\)/);
+ assert.match(css,/height:24px;padding:0/);
+});
+test('shared typeahead chooses closest options with accents, spelling and country/language inputs',()=>{
+ const {closestSelectIndex,selectTypeaheadBuffer}=typeaheadFns;
+ const countries=['Albania','Francia','Italia','Îles Åland','Stati Uniti','Regno Unito'];
+ assert.equal(closestSelectIndex(countries,'ital'),2);
+ assert.equal(closestSelectIndex(countries,'franc'),1);
+ assert.equal(closestSelectIndex(countries,'iles'),3);
+ assert.equal(closestSelectIndex(countries,'itla'),2);
+ assert.equal(closestSelectIndex(['Italiano','English'],'engl'),1);
+ assert.equal(selectTypeaheadBuffer('It','a',100),'Ita');
+ assert.equal(selectTypeaheadBuffer('It','F',1200),'F');
+ const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(main,/document.addEventListener\('keydown',event=>\{/);
+ assert.match(main,/closestSelectIndex\(options.map/);
+ assert.match(main,/selectTypeaheadBuffer\(/);
+ assert.match(main,/kind==='nationality'&&pickerOpen!=='nationality'/);
+ assert.match(main,/kind==='language'&&!languageMenuOpen/);
+ assert.match(main,/select\[data-calendar-part/);
 });

@@ -66,30 +66,30 @@ export function managerPage(draft,lang,pickers={}){
  <form id="manager-form" class="onboard-manager-form wizard-manager-form" novalidate>
   <div class="wizard-profile-grid">
    <div class="wizard-profile-field">
-    <label class="input-label" for="manager-first-name">${tr(lang,'Nome','First name')}</label>
-    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-first-name" name="firstName" type="text"
+    <span class="input-label" id="manager-first-name-label">${tr(lang,'Nome','First name')}</span>
+    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-first-name" aria-labelledby="manager-first-name-label" name="firstName" type="text"
      value="${esc(p.firstName)}" maxlength="40" autocomplete="given-name" required
      aria-invalid="false" aria-describedby="manager-form-error" placeholder="${tr(lang,'Nome','First name')}">
     <p id="manager-first-name-error" class="field-error" role="alert" hidden></p>
    </div>
    <div class="wizard-profile-field">
-    <label class="input-label" for="manager-last-name">${tr(lang,'Cognome','Last name')}</label>
-    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-last-name" name="lastName" type="text"
+    <span class="input-label" id="manager-last-name-label">${tr(lang,'Cognome','Last name')}</span>
+    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-last-name" aria-labelledby="manager-last-name-label" name="lastName" type="text"
      value="${esc(p.lastName)}" maxlength="40" autocomplete="family-name" required
      aria-invalid="false" aria-describedby="manager-form-error" placeholder="${tr(lang,'Cognome','Last name')}">
     <p id="manager-last-name-error" class="field-error" role="alert" hidden></p>
    </div>
    <div class="wizard-profile-field">
     <span class="input-label" id="manager-birth-date-label">${tr(lang,'Data di nascita','Date of birth')}</span>
-    ${renderDateControl(p.birthDate,lang,pickers.open==='calendar',pickers.month)}
+    ${renderDateControl(p.birthDate,lang,pickers.open==='calendar',pickers.month,pickers.jump)}
    </div>
    <div class="wizard-profile-field">
     <span class="input-label" id="manager-nationality-label">${tr(lang,'Nazionalità','Nationality')}</span>
     ${renderNationalityControl(p.nationality,lang,pickers.open==='nationality')}
    </div>
    <div class="wizard-profile-field wizard-profile-birthplace">
-    <label class="input-label" for="manager-birth-place">${tr(lang,'Luogo di nascita','Place of birth')}</label>
-    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-birth-place" name="birthPlace" type="text"
+    <span class="input-label" id="manager-birth-place-label">${tr(lang,'Luogo di nascita','Place of birth')}</span>
+    <input class="text-field fa-interactive-box wizard-profile-input" id="manager-birth-place" aria-labelledby="manager-birth-place-label" name="birthPlace" type="text"
      value="${esc(p.birthPlace)}" maxlength="80" autocomplete="off" required
      aria-invalid="false" aria-describedby="manager-form-error"
      placeholder="${tr(lang,'Città di nascita','Birthplace city')}">

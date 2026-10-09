@@ -4,7 +4,7 @@ import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,save
 import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from './manager-profile.js';
-import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth} from './site-pickers.js';
+import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer} from './site-pickers.js';
 
 const app=document.getElementById('app');
 const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/team','/careers','/settings','/simulation']);
@@ -12,7 +12,8 @@ let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,clubId:null,query:''});
 let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
-let pickerOpen=null,pickerMonth=null,selectedBoxId=null,managerSubmitted=false;
+let pickerOpen=null,pickerMonth=null,pickerJump=false,selectedBoxId=null,managerSubmitted=false;
+let typeahead={kind:'',query:'',last:0};
 function positionCalendar(){
  const popup=app.querySelector('.fa-calendar-panel'),trigger=app.querySelector('#manager-birth-date');
  if(!popup||!trigger)return;
@@ -28,7 +29,7 @@ window.addEventListener('scroll',positionCalendar,true);
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(url){stop();languageMenuOpen=false;feedbackState=null;pickerOpen=null;selectedBoxId=null;history.pushState({},'',url);void render();}
+function navigate(url){stop();languageMenuOpen=false;feedbackState=null;pickerOpen=null;pickerJump=false;selectedBoxId=null;history.pushState({},'',url);void render();}
 function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
@@ -53,7 +54,7 @@ async function render(){
   }
   if(ticket!==sequence)return;
   let inner;
-  if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate)});
+  if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate),jump:pickerJump});
   else if(page==='/new-career/country')inner=countryPage(draft,lang);
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang);
@@ -151,16 +152,20 @@ async function handle(action,element){
   case 'nationality-select':{
    const value=element.dataset.value;
    if(!isNationalityCode(value))break;
-   draft.managerProfile.nationality=value;pickerOpen=null;selectedBoxId='manager-nationality';
+   draft.managerProfile.nationality=value;pickerOpen=null;selectedBoxId=null;
    await render();
    app.querySelector('#manager-nationality')?.focus({preventScroll:true});
    break;
   }
   case 'calendar-toggle':
-   pickerOpen=pickerOpen==='calendar'?null:'calendar';
+   pickerOpen=pickerOpen==='calendar'?null:'calendar';pickerJump=false;
    pickerMonth=pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate);
    await render();
    app.querySelector('#manager-birth-date')?.focus({preventScroll:true});
+   break;
+  case 'calendar-jump-toggle':
+   pickerJump=!pickerJump;await render();
+   app.querySelector(pickerJump?'[data-calendar-part="year"]':'.fa-calendar-title')?.focus({preventScroll:true});
    break;
   case 'calendar-prev':case 'calendar-next':
    pickerMonth=shiftCalendarMonth(pickerMonth,action==='calendar-next'?1:-1);
@@ -171,11 +176,11 @@ async function handle(action,element){
    const value=action==='calendar-today'?localToday():element.dataset.value;
    if(!validDate(value)||value>localToday())break;
    draft.managerProfile.birthDate=value;pickerOpen=null;pickerMonth=value.slice(0,7);
-   selectedBoxId='manager-birth-date';await render();
+   selectedBoxId=null;pickerJump=false;await render();
    app.querySelector('#manager-birth-date')?.focus({preventScroll:true});break;
   }
   case 'calendar-clear':
-   draft.managerProfile.birthDate='';pickerOpen=null;selectedBoxId='manager-birth-date';
+   draft.managerProfile.birthDate='';pickerOpen=null;pickerJump=false;selectedBoxId=null;
    await render();app.querySelector('#manager-birth-date')?.focus({preventScroll:true});break;
   case 'country':if(LEAGUES.some(l=>l.id===element.dataset.country)){draft.countryId=element.dataset.country;draft.clubId=null;await render();app.querySelector(`[data-action="country"][data-country="${draft.countryId}"]`)?.focus({preventScroll:true});}break;
   case 'country-next':if(LEAGUES.some(l=>l.id===draft.countryId))navigate('/new-career/team');break;
@@ -326,14 +331,20 @@ document.addEventListener('pointerdown',event=>{
  document.documentElement.classList.remove('fa-keyboard-navigation');
  // Only the interactive box itself can acquire the visual selected state.
  // Clicking its label never selects it; keyboard focus has a separate indicator.
- const box=event.target.closest?.('.fa-interactive-box')??
-   event.target.closest?.('[data-fa-picker]')?.querySelector('.fa-picker-trigger');
+ const box=event.target.closest?.('.fa-interactive-box');
+ // Menu entries and non-interactive labels are never equivalent to clicking a field.
  selectedBoxId=box?.id??null;
+ typeahead={kind:'',query:'',last:0};
  app.querySelectorAll('.fa-interactive-box').forEach(el=>el.classList.toggle('fa-control-selected',el.id===selectedBoxId));
 },true);
 document.addEventListener('keydown',event=>{
- if(['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End'].includes(event.key))
+ if(['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End'].includes(event.key)){
   document.documentElement.classList.add('fa-keyboard-navigation');
+  if(event.key==='Tab'){
+   selectedBoxId=null;
+   app.querySelectorAll('.fa-control-selected').forEach(el=>el.classList.remove('fa-control-selected'));
+  }
+ }
 },true);
 document.addEventListener('change',event=>{
  const selector=event.target.closest?.('[data-calendar-part]');
@@ -341,7 +352,7 @@ document.addEventListener('change',event=>{
  const year=document.querySelector('[data-calendar-part="year"]')?.value;
  const month=document.querySelector('[data-calendar-part="month"]')?.value;
  if(!year||!month)return;
- pickerMonth=shiftCalendarMonth(year+'-'+month,0);
+ pickerMonth=shiftCalendarMonth(year+'-'+month,0);pickerJump=true;
  void render().then(()=>app.querySelector('[data-calendar-part="'+selector.dataset.calendarPart+'"]')?.focus({preventScroll:true}));
 });
 document.addEventListener('keydown',event=>{
@@ -360,6 +371,42 @@ document.addEventListener('keydown',event=>{
   options[next]?.focus({preventScroll:true});
  }
 });
+
+
+// Type-to-closest-value works on the existing site dropdowns, including when closed.
+// Search moves focus; it does not commit a choice until Enter/click.
+document.addEventListener('keydown',event=>{
+ if(event.ctrlKey||event.altKey||event.metaKey||event.isComposing||event.key.length!==1||!/[\\p{L}\\p{N}]/u.test(event.key))return;
+ const target=event.target;
+ const nationality=target.closest?.('[data-action="nationality-toggle"],.fa-nationality-menu .fa-picker-option');
+ const language=target.closest?.('[data-action="language-toggle"],.language-listbox .language-option');
+ const native=target.closest?.('select[data-calendar-part]');
+ if(!nationality&&!language&&!native)return;
+ event.preventDefault();
+ const kind=nationality?'nationality':language?'language':native.dataset.calendarPart;
+ const now=Date.now(),same=typeahead.kind===kind;
+ const query=selectTypeaheadBuffer(same?typeahead.query:'',event.key,same?now-typeahead.last:Infinity);
+ typeahead={kind,query,last:now};
+ const focusMatch=async()=>{
+  if(kind==='nationality'&&pickerOpen!=='nationality'){pickerOpen='nationality';await render();}
+  if(kind==='language'&&!languageMenuOpen){languageMenuOpen=true;await render();}
+  const options=native?[...app.querySelectorAll('select[data-calendar-part="'+kind+'"] option')]:
+   [...app.querySelectorAll(kind==='nationality'?'.fa-nationality-menu .fa-picker-option':'.language-listbox .language-option')];
+  const index=closestSelectIndex(options.map(o=>({label:o.textContent})),query);
+  if(index<0)return;
+  if(native){
+   const select=app.querySelector('select[data-calendar-part="'+kind+'"]');
+   if(select&&select.value!==options[index].value){
+    select.value=options[index].value;
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+   }
+  }else{
+   options[index]?.focus({preventScroll:true});
+   options[index]?.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+ };
+ void focusMatch().catch(fail);
+},true);
 
 window.addEventListener('popstate',()=>{stop();void render();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();void render();}});

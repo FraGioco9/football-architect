@@ -834,23 +834,24 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
 }
 /* MFL-like 42-day calendar with Football Architect's graphite/petrol palette. */
 .fa-calendar-panel{
- position:fixed;width:min(290px,calc(100vw - 16px));
- max-width:none;padding:9px;border-radius:11px;z-index:1000;
+ position:fixed;width:min(228px,calc(100vw - 16px));
+ max-width:none;padding:6px;border-radius:8px;z-index:1000;
 }
 .fa-calendar-head{
  display:grid;grid-template-columns:30px minmax(0,1fr) 30px;
- gap:5px;align-items:center;min-height:30px;margin-bottom:5px;
+ gap:4px;align-items:center;min-height:26px;margin-bottom:4px;
 }
 .fa-calendar-title{
  color:#e8f6ef;text-align:center;font-size:13px;font-weight:750;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ border:0;background:transparent;width:100%;padding:0;cursor:pointer;
 }
 .fa-calendar-nav,.fa-calendar-today,.fa-calendar-clear{
  border:0;background:transparent;color:#a8c9c2;
  border-radius:6px;cursor:pointer;
 }
 .fa-calendar-nav{
- width:30px;height:30px;display:grid;place-items:center;
+ width:28px;height:28px;display:grid;place-items:center;
  padding:0;font-size:21px;line-height:1;
 }
 .fa-calendar-head :disabled,.fa-calendar-day:disabled{opacity:.25;cursor:not-allowed}
@@ -872,7 +873,7 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
  color:#95c2b4;font-size:10px;font-weight:800;text-transform:uppercase;
 }
 .fa-calendar-day{
- display:grid;place-items:center;min-width:0;height:31px;padding:0;
+ display:grid;place-items:center;min-width:0;height:24px;padding:0;
  border:1px solid transparent;border-radius:6px;
  background:transparent;color:#dceae6;font-size:12px;cursor:pointer;
 }
@@ -886,7 +887,7 @@ html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(
 .fa-calendar-clear:hover,.fa-calendar-day:hover:not(.is-selected):not(:disabled){
  background:#1f3b3d;color:#9de6ce;
 }
-.fa-calendar-jump select:focus-visible,.fa-calendar-nav:focus-visible,
+.fa-calendar-jump select:focus-visible,.fa-calendar-title:focus-visible,.fa-calendar-nav:focus-visible,
 .fa-calendar-day:focus-visible,.fa-calendar-today:focus-visible,.fa-calendar-clear:focus-visible{
  outline:2px solid #8aa8a3;outline-offset:1px;
 }

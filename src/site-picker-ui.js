@@ -17,7 +17,7 @@ export function renderNationalityControl(value,lang,open=false){
 }
 /** Shared SiteCalendar: MFL-like compact month header, 42-day grid and footer,
  * with fast month/year controls suitable for choosing a birth date. */
-export function renderDateControl(value,lang,open=false,view=initialCalendarMonth(value)){
+export function renderDateControl(value,lang,open=false,view=initialCalendarMonth(value),jump=false){
  const month=shiftCalendarMonth(view,0),year=Number(month.slice(0,4)),m=Number(month.slice(5)),today=localToday();
  const displayed=birthDateLabel(value,lang),labels=calendarMonthNames(lang);
  const months=labels.map((label,i)=>'<option value="'+String(i+1).padStart(2,'0')+'"'+(i+1===m?' selected':'')+'>'+e(label)+'</option>').join('');
@@ -29,11 +29,11 @@ export function renderDateControl(value,lang,open=false,view=initialCalendarMont
  const pop=open?'<section class="fa-picker-popover fa-calendar-panel" role="dialog" aria-label="'+t(lang,'Scegli la data di nascita','Choose date of birth')+'">'+
   '<div class="fa-calendar-head">'+
   '<button type="button" class="fa-calendar-nav" data-action="calendar-prev" aria-label="'+t(lang,'Mese precedente','Previous month')+'"'+(month==='1900-01'?' disabled':'')+'>‹</button>'+
-  '<div class="fa-calendar-title" aria-live="polite">'+e(labels[m-1]+' '+year)+'</div>'+
+  '<button type="button" class="fa-calendar-title" data-action="calendar-jump-toggle" aria-expanded="'+jump+'" aria-label="'+t(lang,'Scegli mese e anno','Choose month and year')+'">'+e(labels[m-1]+' '+year)+'</button>'+
   '<button type="button" class="fa-calendar-nav" data-action="calendar-next" aria-label="'+t(lang,'Mese successivo','Next month')+'"'+(month===today.slice(0,7)?' disabled':'')+'>›</button></div>'+
-  '<div class="fa-calendar-jump">'+
+  (jump?'<div class="fa-calendar-jump">'+
   '<select class="fa-calendar-month" data-calendar-part="month" aria-label="'+t(lang,'Mese','Month')+'">'+months+'</select>'+
-  '<select class="fa-calendar-year" data-calendar-part="year" aria-label="'+t(lang,'Anno','Year')+'">'+years+'</select></div>'+
+  '<select class="fa-calendar-year" data-calendar-part="year" aria-label="'+t(lang,'Anno','Year')+'">'+years+'</select></div>':'')+
   '<div class="fa-calendar-weekdays">'+headers+'</div>'+
   '<div class="fa-calendar-grid" role="grid" aria-label="'+e(labels[m-1]+' '+year)+'">'+days+'</div>'+
   '<div class="fa-calendar-footer">'+
