@@ -1610,7 +1610,7 @@ test('Current career appears only with an explicit in-simulation entry context',
  }
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(controller,/let lastRenderedRoute=null,careersFromSimulationId=null;/);
- assert.match(controller,/case 'careers':careersFromSimulationId=path\(\)==='\/simulation'&&loaded\?loaded\.meta\.id:null;navigate\('\/careers'\);/);
+ assert.match(controller,/case 'careers':careersFromSimulationId=path\(\)==='\/simulation'&&loaded\?loaded\.meta\.id:null;if\(path\(\)==='\/dashboard'&&loaded\)careersFromSimulationId=loaded\.meta\.id;navigate\('\/careers'\);/);
  assert.match(controller,/careersPage\(catalog,lang,careersFromSimulationId\)/);
  assert.match(controller,/if\(url!=='\/careers'\)careersFromSimulationId=null/);
  assert.match(controller,/window\.addEventListener\('popstate',\(\)=>\{stop\(\);careersFromSimulationId=null;/);
