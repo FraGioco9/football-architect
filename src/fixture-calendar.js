@@ -104,6 +104,20 @@ const WEEKEND_KICKOFFS=Object.freeze({
 });
 const MIDWEEK_KICKOFFS=Object.freeze(['18:30','20:45']);
 
+/** Only scheduling conflicts, never unexpected programming errors, permit fallback. */
+export class FixtureSchedulingConflict extends Error {
+ constructor(message){super(message);this.name='FixtureSchedulingConflict';}
+}
+
+/** Pure selector: injected callbacks make the automatic recovery path testable. */
+export function withFixtureFallback(varied,conservative){
+ try{return varied();}
+ catch(error){
+  if(!(error instanceof FixtureSchedulingConflict))throw error;
+  return conservative();
+ }
+}
+
 function legalFixtureDay(timestamp,seasonYear){
  const date=new Date(timestamp).toISOString().slice(0,10);
  return timestamp>=Date.UTC(seasonYear,7,15) &&
@@ -152,7 +166,7 @@ function assignFixtureKickoffs(source,conservative){
   const kind=conservative?'conservative':(midweeks.get(i)||'weekend');
   const previousKind=conservative?null:midweeks.get(i-1);
   const slots=kickoffSlots(anchors[i],seasonYear,kind,previousKind);
-  if(!slots.length)throw new Error('No legal kick-off slots');
+  if(!slots.length)throw new FixtureSchedulingConflict('No legal kick-off slots');
   const offset=seedFor(competitionId,seasonYear+i+1)%slots.length;
   const fixtures=round.fixtures.map((fixture,j)=>
    Object.freeze({...fixture,...slots[(j+offset)%slots.length]}));
@@ -183,12 +197,12 @@ function verifyScheduledKickoffs(calendar){
    roundLast=Math.max(roundLast,stamp);
    for(const id of [fixture.homeClubId,fixture.awayClubId]){
     if(lastByClub.has(id)&&stamp-lastByClub.get(id)<MIN_FIXTURE_REST_MS)
-     throw new Error('Insufficient 72-hour rest for club '+id);
+     throw new FixtureSchedulingConflict('Insufficient 72-hour rest for club '+id);
     lastByClub.set(id,stamp);
    }
   }
   if(roundFirst-previousRoundEnd<MIN_FIXTURE_REST_MS)
-   throw new Error('Overlapping matchdays');
+   throw new FixtureSchedulingConflict('Overlapping matchdays');
   previousRoundEnd=roundLast;
  }
  return calendar;
@@ -204,6 +218,8 @@ export function scheduleCompetitionFixtures(competitionId,seasonYear,{strategy='
  if(strategy!=='varied'&&strategy!=='conservative')throw new Error('Unknown fixture strategy');
  const source=generateCompetitionFixtures(competitionId,seasonYear);
  if(strategy==='conservative')return verifyScheduledKickoffs(assignFixtureKickoffs(source,true));
- try{return verifyScheduledKickoffs(assignFixtureKickoffs(source,false));}
- catch{return verifyScheduledKickoffs(assignFixtureKickoffs(source,true));}
+ return withFixtureFallback(
+  ()=>verifyScheduledKickoffs(assignFixtureKickoffs(source,false)),
+  ()=>verifyScheduledKickoffs(assignFixtureKickoffs(source,true))
+ );
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
-import {generateFixtureCalendar,generateCompetitionFixtures,scheduleCompetitionFixtures} from '../src/fixture-calendar.js';
+import {generateFixtureCalendar,generateCompetitionFixtures,scheduleCompetitionFixtures,FixtureSchedulingConflict,withFixtureFallback} from '../src/fixture-calendar.js';
 
 function verifySeason(countryId,year){
   const competitionId=countryId+'-1';
@@ -218,4 +218,53 @@ test('CAL-02.2: invalid seasons or incomplete second divisions cannot be schedul
  assert.throws(()=>scheduleCompetitionFixtures('INVALID',2026));
  assert.throws(()=>scheduleCompetitionFixtures('IT-1',2026.5));
  assert.throws(()=>scheduleCompetitionFixtures('IT-1',2026,{strategy:'unknown'}));
+});
+
+test('CAL-02.2: an automatic planning conflict invokes the conservative fallback exactly once',()=>{
+ let variedCalls=0,conservativeCalls=0;
+ const expected=scheduleCompetitionFixtures('IT-1',2026,{strategy:'conservative'});
+ const output=withFixtureFallback(
+  ()=>{variedCalls++;throw new FixtureSchedulingConflict('Insufficient 72-hour rest');},
+  ()=>{conservativeCalls++;return expected;}
+ );
+ assert.strictEqual(output,expected);
+ assert.equal(variedCalls,1);
+ assert.equal(conservativeCalls,1);
+ assert.equal(output.matchdays.length,38);
+ assert.equal(output.matchdays.flatMap(day=>day.fixtures).length,380);
+});
+
+test('CAL-02.2: successful varied planning does not invoke fallback',()=>{
+ let conservativeCalls=0;
+ const expected=scheduleCompetitionFixtures('BR-1',2028);
+ const output=withFixtureFallback(
+  ()=>expected,
+  ()=>{conservativeCalls++;throw Error('Fallback must not run');}
+ );
+ assert.strictEqual(output,expected);
+ assert.equal(conservativeCalls,0);
+});
+
+test('CAL-02.2: unexpected programming errors propagate without running fallback',()=>{
+ let conservativeCalls=0;
+ for(const error of [new TypeError('Unexpected invalid value'),
+                     new SyntaxError('Unexpected source'),
+                     new Error('Unapproved kick-off time')]){
+  assert.throws(
+   ()=>withFixtureFallback(()=>{throw error;},()=>{conservativeCalls++;return null;}),
+   caught=>caught===error
+  );
+ }
+ assert.equal(conservativeCalls,0);
+});
+
+test('CAL-02.2: errors in conservative fallback propagate instead of being hidden',()=>{
+ const expected=new RangeError('Conservative planning failed');
+ assert.throws(
+  ()=>withFixtureFallback(
+   ()=>{throw new FixtureSchedulingConflict('No legal kick-off slots');},
+   ()=>{throw expected;}
+  ),
+  caught=>caught===expected
+ );
 });
