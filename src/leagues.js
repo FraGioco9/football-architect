@@ -3,7 +3,7 @@
 // Club entries are [fictional historical-style name, real city, fictional stadium].
 const definitions = [
   {
-    id:'IT', flag:'🇮🇹', country:{it:'Italia',en:'Italy'}, competition:'Lega Federale Italiana',
+    id:'IT', flag:'🇮🇹', country:{it:'Italia',en:'Italy'}, competition:'Lega Federale',
     clubs:[
       ['US Velaria Torino','Torino','Campo Sociale Velaria'],
       ['AC Rinascenti Bologna','Bologna','Stadio delle Fornaci'],
@@ -28,7 +28,7 @@ const definitions = [
     ]
   },
   {
-    id:'ENG', flag:'🇬🇧', country:{it:'Inghilterra',en:'England'}, competition:'Crown Counties Championship',
+    id:'ENG', flag:'🇬🇧', country:{it:'Inghilterra',en:'England'}, competition:'Crown League',
     clubs:[
       ['London Southwick FC','London','Southwick Recreation Ground'],
       ['Bristol Crownbridge AFC','Bristol','Crownbridge Road'],
@@ -53,7 +53,7 @@ const definitions = [
     ]
   },
   {
-    id:'ES', flag:'🇪🇸', country:{it:'Spagna',en:'Spain'}, competition:'Campeonato de la Unión',
+    id:'ES', flag:'🇪🇸', country:{it:'Spagna',en:'Spain'}, competition:'Liga de la Unión',
     clubs:[
       ['CD Alborada Madrid','Madrid','Campo de la Alborada'],
       ['FC Mar de Cobre Barcelona','Barcelona','Estadi del Mirador'],
@@ -78,7 +78,7 @@ const definitions = [
     ]
   },
   {
-    id:'DE', flag:'🇩🇪', country:{it:'Germania',en:'Germany'}, competition:'Deutsche Vereinsmeisterschaft',
+    id:'DE', flag:'🇩🇪', country:{it:'Germania',en:'Germany'}, competition:'Meisterliga',
     clubs:[
       ['SV Morgenrot Berlin','Berlin','Morgenrot-Sportplatz'],
       ['FC Hafenstern Hamburg','Hamburg','Hafenstern-Stadion'],
@@ -103,7 +103,7 @@ const definitions = [
     ]
   },
   {
-    id:'FR', flag:'🇫🇷', country:{it:'Francia',en:'France'}, competition:'Championnat des Sociétés Françaises',
+    id:'FR', flag:'🇫🇷', country:{it:'Francia',en:'France'}, competition:'Ligue des Sociétés',
     clubs:[
       ['Union Sportive Équinoxe Paris','Paris','Stade de l’Équinoxe'],
       ['FC Montclair Lyon','Lyon','Parc Montclair'],
@@ -128,7 +128,7 @@ const definitions = [
     ]
   },
   {
-    id:'PT', flag:'🇵🇹', country:{it:'Portogallo',en:'Portugal'}, competition:'Campeonato da União Portuguesa',
+    id:'PT', flag:'🇵🇹', country:{it:'Portogallo',en:'Portugal'}, competition:'Liga Lusitana',
     clubs:[
       ['Sport Clube Miradouro Lisboa','Lisboa','Campo do Miradouro'],
       ['FC Ribeiralta Porto','Porto','Estádio da Ribeiralta'],
@@ -153,7 +153,7 @@ const definitions = [
     ]
   },
   {
-    id:'NL', flag:'🇳🇱', country:{it:'Paesi Bassi',en:'Netherlands'}, competition:'Nationaal Bonds-Kampioenschap',
+    id:'NL', flag:'🇳🇱', country:{it:'Paesi Bassi',en:'Netherlands'}, competition:'Oranjeliga',
     clubs:[
       ['VV Waterpoort Amsterdam','Amsterdam','Waterpoort Sportpark'],
       ['SV Havenlicht Rotterdam','Rotterdam','Havenlicht Stadion'],
@@ -178,7 +178,7 @@ const definitions = [
     ]
   },
   {
-    id:'BR', flag:'🇧🇷', country:{it:'Brasile',en:'Brazil'}, competition:'Campeonato Nacional das Associações',
+    id:'BR', flag:'🇧🇷', country:{it:'Brasile',en:'Brazil'}, competition:'Liga das Associações',
     clubs:[
       ['AC Sol das Marés Rio','Rio de Janeiro','Estádio das Marés'],
       ['AA Vila Brilhante São Paulo','São Paulo','Campo Vila Brilhante'],
