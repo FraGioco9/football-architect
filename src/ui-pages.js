@@ -15,6 +15,12 @@ const fmtDate=(value,lang,clock=false)=>{
 };
 const club=(country,id)=>getLeagueClubs(country).find(x=>x.id===id);
 const crest=c=>c?`<span class="crest" style="--club1:${esc(c.colors[0])};--club2:${esc(c.colors[1])}">${esc(c.short)}</span>`:'<span class="crest unknown">?</span>';
+
+/* Inline flags work offline and do not depend on Windows emoji fonts. */
+export function countryFlagSvg(code){
+ const flags={"IT":"<rect width=\"11\" height=\"22\" fill=\"#009246\"/><rect x=\"11\" width=\"10\" height=\"22\" fill=\"#fff\"/><rect x=\"21\" width=\"11\" height=\"22\" fill=\"#ce2b37\"/>","ENG":"<rect width=\"32\" height=\"22\" fill=\"#fff\"/><path d=\"M13 0h6v22h-6zM0 8h32v6H0z\" fill=\"#ce1124\"/>","ES":"<rect width=\"32\" height=\"22\" fill=\"#aa151b\"/><rect y=\"5.5\" width=\"32\" height=\"11\" fill=\"#f1bf00\"/><path d=\"M11 8.5h4v6h-4z\" fill=\"#aa151b\"/>","DE":"<rect width=\"32\" height=\"7.34\" fill=\"#101010\"/><rect y=\"7.33\" width=\"32\" height=\"7.34\" fill=\"#dd0000\"/><rect y=\"14.66\" width=\"32\" height=\"7.34\" fill=\"#ffce00\"/>","FR":"<rect width=\"11\" height=\"22\" fill=\"#002395\"/><rect x=\"11\" width=\"10\" height=\"22\" fill=\"#fff\"/><rect x=\"21\" width=\"11\" height=\"22\" fill=\"#ed2939\"/>","PT":"<rect width=\"13\" height=\"22\" fill=\"#006600\"/><rect x=\"13\" width=\"19\" height=\"22\" fill=\"#ff0000\"/><circle cx=\"13\" cy=\"11\" r=\"5.4\" fill=\"#f8d447\"/><path d=\"M10.5 8.2h5v6l-2.5 1.6-2.5-1.6z\" fill=\"#fff\" stroke=\"#b0002a\" stroke-width=\".8\"/>","NL":"<rect width=\"32\" height=\"7.34\" fill=\"#ae1c28\"/><rect y=\"7.33\" width=\"32\" height=\"7.34\" fill=\"#fff\"/><rect y=\"14.66\" width=\"32\" height=\"7.34\" fill=\"#21468b\"/>","BR":"<rect width=\"32\" height=\"22\" fill=\"#009739\"/><path d=\"M16 3 29 11 16 19 3 11Z\" fill=\"#ffdf00\"/><circle cx=\"16\" cy=\"11\" r=\"5.3\" fill=\"#002776\"/><path d=\"M11 9.5c4.3-.9 8 1.2 10.1 3.7\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.4\"/>"};
+ return flags[code]?'<svg class="wizard-country-flag-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 22" width="32" height="22" aria-hidden="true" focusable="false">'+flags[code]+'</svg>':'';
+}
 const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
 export function layout(inner,lang,message=null,languageOpen=false){
@@ -43,14 +49,13 @@ export function homePage(catalog,lang){
 
 
 /* Three setup pages: the wizard is intentionally ephemeral until final confirmation. */
-function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,descriptionEn){
+function wizardFrame(content,lang,step,titleIt,titleEn){
  return `<div class="onboarding restored-onboarding wizard-page">
  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
  <div class="onboard-wrap">
   <header class="onboard-header fa-page-heading">
    <span class="pretitle wizard-step-label">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/3</span>
    <h1 class="fa-page-title">${tr(lang,titleIt,titleEn)}</h1>
-   <p>${tr(lang,descriptionIt,descriptionEn)}</p>
    <div class="wizard-topline">
     ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}
     ${button('cancel-setup',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}
@@ -102,8 +107,7 @@ export function managerPage(draft,lang,pickers={}){
   </div>
  </form>
  </section>`;
- return wizardFrame(form,lang,1,'Scegli il tuo allenatore','Choose your manager',
-  'Inserisci i dati personali dell’allenatore per iniziare.','Enter your manager’s personal details to get started.');
+ return wizardFrame(form,lang,1,'Scegli il tuo allenatore','Choose your manager');
 }
 export function countryPage(draft,lang){
  const selected=LEAGUES.some(l=>l.id===draft.countryId)?draft.countryId:null;
@@ -114,13 +118,13 @@ export function countryPage(draft,lang){
   <div class="wizard-country-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
    ${LEAGUES.map(l=>`<button type="button" id="wizard-country-${esc(l.id)}" class="fa-interactive-box wizard-country-option ${l.id===selected?'fa-choice-selected':''}"
      data-action="country" data-country="${l.id}" aria-pressed="${l.id===selected}">
-     <span class="wizard-country-flag" aria-hidden="true">${esc(l.flag)}</span>
+     <span class="wizard-country-flag" aria-hidden="true">${countryFlagSvg(l.id)}</span>
      <span class="wizard-country-copy"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>
      <span class="wizard-country-check" aria-hidden="true">${l.id===selected?icon('check',15):''}</span></button>`).join('')}
   </div>
   <div class="fa-action-row wizard-country-actions"><button class="btn primary begin-button" type="button" data-action="country-next" ${selected?'':'disabled'}><span>${tr(lang,'Avanti: Squadra','Next: Club')}</span>${icon('chevron-right',18)}</button></div>
  </section>`;
- return wizardFrame(content,lang,2,'Scegli la nazione','Choose your country','Seleziona la nazione in cui iniziare la carriera.','Select the country where you want to start.');
+ return wizardFrame(content,lang,2,'Scegli la nazione','Choose your country');
 }
 export function teamsPage(draft,lang){
  const league=leagueById(draft.countryId),clubs=getLeagueClubs(league.id),loc=lang==='en'?'en':'it';
@@ -134,6 +138,8 @@ export function teamsPage(draft,lang){
       <th scope="col">${tr(lang,'Squadra','Club')}</th>
       <th scope="col" class="club-table-city">${tr(lang,'Città','City')}</th>
       <th scope="col" class="club-table-founded">${tr(lang,'Fondazione','Founded')}</th>
+      <th scope="col" class="club-table-reputation">${tr(lang,'Rep.','Rep.')}</th>
+      <th scope="col" class="club-table-capacity">${tr(lang,'Posti','Seats')}</th>
       <th scope="col" class="club-table-status">${tr(lang,'Scelta','Selection')}</th>
      </tr></thead>
      <tbody>${clubs.map(c=>`<tr class="club-table-row ${c.id===chosen?.id?'is-selected':''}" data-action="select" data-id="${c.id}">
@@ -141,6 +147,8 @@ export function teamsPage(draft,lang){
         ${crest(c)}<span class="club-table-name"><strong>${esc(c.name)}</strong><small>${esc(c.city)}</small></span></button></td>
        <td class="club-table-city">${esc(c.city)}</td>
        <td class="club-table-founded">${c.founded}</td>
+       <td class="club-table-reputation" title="${tr(lang,'Reputazione','Reputation')}">${c.reputation}<small>/100</small></td>
+       <td class="club-table-capacity" title="${esc(c.stadium)} · ${tr(lang,'Capienza','Capacity')}">${new Intl.NumberFormat(lang==='en'?'en-GB':'it-IT').format(c.capacity)}</td>
        <td class="club-table-status"><span class="club-table-indicator" aria-hidden="true">${c.id===chosen?.id?icon('check',16):icon('chevron-right',16)}</span></td>
       </tr>`).join('')}</tbody>
     </table>
@@ -155,8 +163,8 @@ export function teamsPage(draft,lang){
     <p class="selected-competition">${esc(league.competition)}</p>
     <div class="selected-stats">
       <div><span>${tr(lang,'REPUTAZIONE','REPUTATION')}</span><strong>${chosen.reputation}<small>/100</small></strong></div>
-      <div><span>${tr(lang,'STADIO','STADIUM')}</span><strong>${(chosen.capacity/1000).toFixed(1)}k</strong></div>
-      <div><span>${tr(lang,'CITTÀ','CITY')}</span><strong class="selected-stat-city">${esc(chosen.city)}</strong></div>
+      <div><span>${tr(lang,'POSTI','SEATS')}</span><strong>${new Intl.NumberFormat(lang==='en'?'en-GB':'it-IT').format(chosen.capacity)}</strong></div>
+      <div class="wizard-stadium-stat"><span>${tr(lang,'STADIO','STADIUM')}</span><strong class="selected-stat-city">${esc(chosen.stadium)}</strong></div>
     </div>
 `:`<div class="wizard-no-club">
      <div class="selected-pretitle">${tr(lang,'CLUB SELEZIONATO','SELECTED CLUB')}</div>
@@ -166,12 +174,11 @@ export function teamsPage(draft,lang){
     </div>`}
     <div class="wizard-manager-summary"><span>${tr(lang,'ALLENATORE','MANAGER')}</span><strong>${esc(draft.managerName)}</strong>
      ${managerAge(draft.managerProfile)!==null?`<small>${managerAge(draft.managerProfile)} ${tr(lang,'anni','years old')}</small>`:''}</div>
-    <div class="fa-action-row wizard-team-actions"><button class="btn primary begin-button" type="button" data-action="start-career" ${chosen?'':'disabled'}><span>${tr(lang,'Inizia carriera','Start career')}</span>${icon('chevron-right',18)}</button></div>
+    <div class="fa-action-row wizard-team-actions"><button type="button" class="btn secondary wizard-roster-button" disabled aria-disabled="true" title="${tr(lang,'Rosa disponibile in seguito','Squad management coming later')}"><span>${tr(lang,'Rosa','Squad')}</span></button><button class="btn primary begin-button" type="button" data-action="start-career" ${chosen?'':'disabled'}><span>${tr(lang,'Inizia carriera','Start career')}</span>${icon('chevron-right',18)}</button></div>
 
    </aside>
  </div>`;
- return wizardFrame(content,lang,3,'Scegli la squadra','Choose your club',
-  'Seleziona una squadra per completare la configurazione.','Select a club to finish setup.');
+ return wizardFrame(content,lang,3,'Scegli la squadra','Choose your club');
 }
 
 export function careersPage(catalog,lang){
