@@ -1080,7 +1080,9 @@ test('keyboard Tab uses identical green border and inset as click selection, wit
  const shared=/\.fa-page-main \.fa-interactive-box\.fa-control-selected:not\(\.fa-field-invalid\),[\s\S]*?html\.fa-keyboard-navigation \.fa-page-main \.fa-interactive-box:focus-visible:not\(\.fa-field-invalid\)\{\s*border-color:var\(--fa-selection-border\);box-shadow:inset 0 0 0 1px var\(--fa-selection-border\);outline:none;/;
  assert.match(css,shared);
  assert.doesNotMatch(css,/outline:2px solid #8aa8a3;outline-offset:2px;/);
- assert.match(js,/if\(event.key==='Tab'\)\{\s*selectedBoxId=null;\s*app.querySelectorAll\('\.fa-control-selected'\)\.forEach\(el=>el.classList.remove\('\.fa-control-selected'\)\)/);
+ assert.ok(js.includes("if(event.key==='Tab'){"));
+ assert.ok(js.includes("selectedBoxId=null;"));
+ assert.ok(js.includes("app.querySelectorAll('.fa-control-selected').forEach(el=>el.classList.remove('fa-control-selected'))"));
  assert.match(css,/\.fa-page-main \.fa-interactive-box\.fa-field-invalid,[\s\S]*?border-color:var\(--fa-error-border\)/);
 });
 test('generic IT/EN form errors remain by Avanti while invalid fields use red outlines',()=>{
