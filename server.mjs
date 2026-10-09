@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT??2000);
-const routes=new Set(['/','/new-career','/new-career/country','/new-career/team','/careers','/settings','/simulation']);
+const routes=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation']);
 const files=new Map([
  ['/src/main.js','text/javascript; charset=utf-8'],
  ['/src/icons.js','text/javascript; charset=utf-8'],
