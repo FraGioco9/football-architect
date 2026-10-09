@@ -1297,7 +1297,7 @@ test('club table is denser and includes actual reputation and capacity for all 2
   assert.match(html,/class="wizard-stadium-stat"/);
   assert.match(html,/class="club-table-row is-selected"/);
  }
- assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table td\{height:43px/);
+ assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table td\{height:auto;padding:0 6px/);
  assert.match(css,/\.restored-onboarding \.wizard-team-grid \.club-table\{border-spacing:0 4px\}/);
  assert.match(css,/@media\(max-width:530px\)\{[\s\S]*?\.club-table-reputation\{width:15%/);
  assert.doesNotMatch(css,/\.wizard-team-grid\{[^}]*overflow-y:auto/);
