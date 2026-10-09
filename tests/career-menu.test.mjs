@@ -65,7 +65,7 @@ let counter=0;
 const mkId=()=>('fixture-career-'+String(++counter).padStart(7,'0'));
 const setup=async()=>openCareerDatabase(createFactory());
 const form=(managerName='Mario Rossi',countryId='IT',clubId=1,date='2026-10-08')=>({
- managerName,countryId,clubId,session:createSession(countryId,clubId,date),id:mkId(),now:'2026-10-08T10:00:00.000Z'
+ managerName,countryId,clubId,legacyImport:true,session:createSession(countryId,clubId,date),id:mkId(),now:'2026-10-08T10:00:00.000Z'
 });
 test('IndexedDB schema has three isolated stores',async()=>{
  const db=await setup();assert.ok(db.objectStoreNames.contains('careers'));
