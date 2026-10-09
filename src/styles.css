@@ -1526,7 +1526,7 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
 .fa-shell-language{flex:none;position:relative;z-index:15}
 .fa-shell-language .language-picker{width:148px;flex-basis:148px}
 .fa-shell-primary{flex:none}
-.fa-shell-primary .btn{min-height:39px;padding:8px 12px;font-size:12px;white-space:nowrap}
+.fa-shell-primary .btn{width:128px;min-width:128px;max-width:128px;height:39px;min-height:39px;flex:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;font-size:12px;white-space:nowrap}
 .fa-shell-workspace>.fa-page-main,.fa-shell-workspace>footer{width:min(100%,var(--fa-page-width));padding-inline:var(--fa-page-gutter);margin-inline:auto}
 .fa-shell-workspace>.fa-page-main{flex:1 0 auto;min-width:0;padding-top:var(--fa-page-top);padding-bottom:var(--fa-page-bottom);font-size:var(--fa-body-size);line-height:var(--fa-body-leading)}
 .fa-shell-workspace>footer{margin-top:auto}
@@ -1566,7 +1566,7 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
  .fa-shell-language .language-current{justify-content:center}
  .fa-shell-language .language-current b{min-width:28px}
  .fa-shell-language .language-listbox{right:0;width:146px}
- .fa-shell-primary .btn{width:36px;height:36px;min-height:36px;padding:0}
+ .fa-shell-primary .btn{width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;padding:0}
  .fa-shell-primary .btn span{display:none}
 }
 @media(max-width:390px){
@@ -1577,7 +1577,7 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
  .fa-shell-club .crest{min-width:25px;width:25px;height:25px;font-size:8px}
  .fa-shell-time{font-size:9px;letter-spacing:-.01em}
  .fa-shell-language .language-picker{width:42px;flex-basis:42px}
- .fa-shell-primary .btn{width:33px;height:34px;min-height:34px}
+ .fa-shell-primary .btn{width:33px;min-width:33px;max-width:33px;height:34px;min-height:34px}
  .fa-shell-nav{padding:10px 4px}
  .fa-shell-link{width:44px;height:35px;min-height:35px}
 }
