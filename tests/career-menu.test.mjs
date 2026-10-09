@@ -1303,12 +1303,12 @@ test('all eight leagues use high-definition offline flags in new career, My Care
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/\.country-flag\{display:block;width:32px;height:24px/);
  assert.match(css,/\.wizard-careers \.wizard-career-location \.country-flag\{/);
- const saved=careersPage({rows:[{id:'one',status:'ok',meta:{managerName:'Ada',careerName:'Test',countryId:'BR',clubId:1,updatedAt:'2026-10-09'},state:{date:'2026-10-09'}}],activeId:null},'it');
+ const saved=careersPage({rows:[{id:'one',status:'ok',meta:{managerName:'Ada',careerName:'Test',countryId:'BR',clubId:1,updatedAt:'2026-10-09'},state:createSession('BR',1,'2026-10-09')}],activeId:null},'it');
  assert.match(saved,/class="wizard-careers-list"/);
  assert.match(saved,/class="wizard-career-location"/);
  assert.match(saved,/src="\/assets\/flags\/br\.svg"/);
  assert.doesNotMatch(saved,/class="career-grid"|class="career-card/);
- const simulation=simulationPage({managerName:'Ada',countryId:'IT',clubId:1},{date:'2026-10-09',daysElapsed:0},'it',false);
+ const simulation=simulationPage({managerName:'Ada',countryId:'IT',clubId:1},createSession('IT',1,'2026-10-09'),'it',false);
  assert.match(simulation,/src="\/assets\/flags\/it\.svg"/);
  assert.doesNotMatch(simulation,/undefined|class="wizard-country-flag-svg"/);
  const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
