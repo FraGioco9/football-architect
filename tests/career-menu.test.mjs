@@ -1002,3 +1002,73 @@ test('calendar height follows active view and footer order is Clear left, Today 
  assert.equal((months.match(/data-action="calendar-month-select"/g)||[]).length,12);
  assert.ok((years.match(/data-action="calendar-year-select"/g)||[]).length>=120);
 });
+
+test('keyboard P0: one Tab stop per custom dropdown, all options navigable without Tab',()=>{
+ const nationality=renderNationalityControl('IT','it',true);
+ const nationalOptions=[...nationality.matchAll(/<button[^>]*role="option"[^>]*>/g)].map(m=>m[0]);
+ assert.equal(nationalOptions.length,NATIONALITY_CODES.length);
+ assert.ok(nationalOptions.every(b=>b.includes('tabindex="-1"')));
+ assert.match(nationality,/aria-controls="fa-nationality-listbox"/);
+ for(const view of ['days','months','years']){
+  const cal=renderDateControl('2000-02-29','it',true,'2000-02',view);
+  const buttons=[...cal.matchAll(/<button\b[^>]*>/g)].map(x=>x[0]);
+  const internals=buttons.filter(x=>!x.includes('id="manager-birth-date"'));
+  assert.ok(internals.length>0);
+  assert.ok(internals.every(x=>x.includes('tabindex="-1"')));
+  assert.match(cal,/id="manager-birth-date" type="button"/);
+ }
+});
+test('keyboard P0: calendar grids have proper ARIA rows and preserve approved footer',()=>{
+ const days=renderDateControl('2000-02-29','it',true,'2000-02','days');
+ assert.equal((days.match(/role="row" class="fa-calendar-row"/g)||[]).length,6);
+ assert.equal((days.match(/role="gridcell"/g)||[]).length,42);
+ const months=renderDateControl('2000-02-29','en',true,'2000-02','months');
+ assert.equal((months.match(/role="row" class="fa-calendar-row"/g)||[]).length,10);
+ const years=renderDateControl('2000-02-29','it',true,'2000-02','years');
+ assert.ok((years.match(/role="row" class="fa-calendar-row"/g)||[]).length>=45);
+ assert.ok(days.indexOf('data-action="calendar-clear"')<days.indexOf('data-action="calendar-today"'));
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-calendar-row\{display:contents\}/);
+});
+test('keyboard P0: global Tab closes popovers and navigates from trigger, both directions',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/function tabStopElements\(\)/);
+ assert.match(js,/function tabRelativeTo\(anchorId,reverse=false\)/);
+ assert.match(js,/tabRelativeTo\(anchor,event.shiftKey\)/);
+ assert.match(js,/event.stopImmediatePropagation\(\)/);
+ assert.match(js,/languageMenuOpen&&el\?\.closest\?\.\('\[data-language-picker\]'\)/);
+ assert.match(js,/pickerOpen&&el\?\.closest\?\.\('\[data-fa-picker\]'\)/);
+ assert.doesNotMatch(js,/toggleLanguageMenu\(false,event.shiftKey\?'combo':'next'\)/);
+});
+test('keyboard P0: site rerenders preserve focus and wizard route headings gain focus',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.match(js,/function focusSnapshot\(\)/);
+ assert.match(js,/function restoreSnapshot\(snapshot\)/);
+ assert.match(js,/if\(samePage\)restoreSnapshot\(snapshot\)/);
+ assert.match(js,/lastRenderedRoute=page/);
+ assert.match(js,/heading\?\.focus\(\{preventScroll:false\}\)/);
+ assert.match(ui,/<h1 class="fa-page-title" tabindex="-1">/);
+});
+test('keyboard P1: field-level bilingual summary and arrows/PageUp/PageDown date grid',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/tr\(lang,'Controlla: ','Check: '\)\+detail/);
+ assert.match(js,/key==='birthDate'\?tr\(lang,' \(non valida\)',' \(invalid\)'\)/);
+ assert.match(js,/form.elements.namedItem\(key\)\)\?\.focus\(\{preventScroll:false\}\)/);
+ assert.match(js,/event.altKey&&event.key==='ArrowUp'/);
+ assert.match(js,/const deltas=day\?/);
+ assert.match(js,/const monthDelta=/);
+ assert.match(js,/pickerMonth=shiftCalendarMonth\(pickerMonth,monthDelta\)/);
+ assert.match(js,/event.key==='Home'/);
+ assert.match(js,/event.key==='End'/);
+});
+test('keyboard P1: responsive dropdown positioned within viewport',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(js,/function positionNationality\(\)/);
+ assert.match(js,/window.addEventListener\('resize',positionNationality\)/);
+ assert.match(js,/window.addEventListener\('scroll',positionNationality,true\)/);
+ assert.match(js,/if\(pickerOpen==='nationality'\)positionNationality\(\)/);
+ assert.match(css,/\.fa-nationality-menu\{\s*position:fixed;width:min\(320px,calc\(100vw - 16px\)\)/);
+ assert.match(css,/max-height:min\(270px,calc\(100dvh - 16px\)\)/);
+});
