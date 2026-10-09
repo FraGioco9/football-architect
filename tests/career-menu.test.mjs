@@ -1189,3 +1189,17 @@ test('club step preserves full-page table, summary, and consistent action',()=>{
  assert.match(css,/\.wizard-team-grid \.club-table-row\.is-selected td\{/);
  assert.match(css,/html\.fa-keyboard-navigation \.wizard-team-grid \.club-table-row:focus-within:not\(\.is-selected\) td\{/);
 });
+
+
+test('committed country choice keeps the green inset on hover and focus',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const selected=countryPage({countryId:'IT'},'it');
+ assert.match(selected,/class="fa-interactive-box wizard-country-option fa-choice-selected"/);
+ assert.match(css,/\.fa-page-main \.wizard-country-option\.fa-choice-selected\{\s*border-color:var\(--fa-selection-border\);/);
+ for(const selector of [':hover',':focus',':focus-visible']){
+  assert.ok(css.includes('.fa-page-main .fa-interactive-box'+selector+':not(.fa-control-selected):not(.fa-choice-selected):not(.fa-field-invalid)'),selector);
+ }
+ const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(main,/const box=event\.target\.closest\?\.\('\.fa-interactive-box'\)/);
+ assert.match(main,/selectedBoxId=box\?\.id\?\?null/);
+});

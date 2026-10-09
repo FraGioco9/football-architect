@@ -791,9 +791,9 @@ html::-webkit-scrollbar-corner{
  box-shadow:none;outline:none;color:#eef7f2;
  transition:border-color .15s ease,box-shadow .15s ease;
 }
-.fa-page-main .fa-interactive-box:hover:not(.fa-control-selected):not(.fa-field-invalid),
-.fa-page-main .fa-interactive-box:focus:not(.fa-control-selected):not(.fa-field-invalid),
-.fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-field-invalid){
+.fa-page-main .fa-interactive-box:hover:not(.fa-control-selected):not(.fa-choice-selected):not(.fa-field-invalid),
+.fa-page-main .fa-interactive-box:focus:not(.fa-control-selected):not(.fa-choice-selected):not(.fa-field-invalid),
+.fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-choice-selected):not(.fa-field-invalid){
  border-color:var(--fa-box-border);background:var(--fa-box-surface);box-shadow:none;outline:none;
 }
 /* Keyboard focus uses the exact same selection treatment as a clicked box.
