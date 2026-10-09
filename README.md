@@ -15,7 +15,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 ## Pagine
 
 - / — Menu iniziale con l'ultima carriera valida.
-- /new-career — **Passaggio 1/3: Allenatore**. Nome obbligatorio con validazione IT/EN. Pulsante Annulla in alto, prima del titolo. Nessun salvataggio in questa fase.
+- /new-career — **Passaggio 1/3: Allenatore**. Nome, cognome, data di nascita, nazionalità e luogo di nascita obbligatori, con errori IT/EN sotto ciascun campo. Annulla resta nella testata. Nessun salvataggio in questa fase.
 - /new-career/country — **Passaggio 2/3: Nazione**. Selezione esplicita tra 8 Paesi; Indietro conserva l’allenatore.
 - /new-career/team — **Passaggio 3/3: Squadra**. Tabella completa di 20 club senza scrollbar interna, selezione esplicita, riepilogo del club e conferma «Inizia carriera». Il salvataggio viene creato solo in questo passaggio.
 - /careers — Layout originale a griglia di card, con salvataggi separati: carica, rinomina, esporta, importa JSON o elimina con conferma. I salvataggi corrotti sono esportabili/eliminabili ma non caricabili.
@@ -24,7 +24,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 
 ## Persistenza
 
-IndexedDB `football-architect-careers-v1`, schema 1, stores `careers`, `snapshots`, `preferences`. Scritture di metadati e snapshot nella medesima transazione. La lingua rimane una preferenza globale localStorage.
+IndexedDB `football-architect-careers-v1`, schema 1, stores `careers`, `snapshots`, `preferences`. Il profilo è memorizzato nei metadati della carriera, senza un quarto store o migrazioni distruttive. Scritture di metadati e snapshot nella medesima transazione. La lingua rimane una preferenza globale localStorage.
 
 La voce «Recupera simulazione precedente» non è più disponibile. Le sessioni minimali e gli archivi IndexedDB storici restano intatti, ma non vengono aperti né migrati automaticamente.
 
@@ -53,3 +53,7 @@ I token CSS definiscono la larghezza massima `--fa-page-width` (1200px), il padd
 - Se IndexedDB non è accessibile, la pagina mostra un errore recuperabile e il pulsante Riprova.
 - Se un salvataggio fallisce, la simulazione automatica si interrompe. Importazione, rinomina ed eliminazione mostrano conferma.
 - Il collaudo browser Windows resta necessario: prova IT/EN, vista 320/390 px, messaggi chiudibili e dati locali invariati.
+
+## Profilo allenatore
+
+Il nuovo profilo obbligatorio comprende esclusivamente **Nome, Cognome, Data di nascita, Nazionalità e Luogo di nascita**; nome completo e dati anagrafici vengono salvati insieme nella stessa transazione IndexedDB. La data deve esistere e non essere futura; tutti i campi sono obbligatori con messaggi sotto al campo in IT/EN. Import/export conserva il profilo completo. Le carriere create prima dell'aggiunta del profilo rimangono leggibili e importabili senza compilazioni inventate, mentre ogni nuova carriera necessita di tutti i cinque campi. Non vengono aggiunte esperienze, patentini, altre nazionalità, lingue o filosofie tattiche.

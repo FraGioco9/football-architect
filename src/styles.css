@@ -739,3 +739,32 @@ html::-webkit-scrollbar-corner{
  .wizard-page .wizard-step-label{font-size:9px;letter-spacing:.08em}
  .wizard-page .wizard-cancel{padding:8px 9px}
 }
+
+
+/* Shared manager profile: two columns desktop, one column on narrow screens. */
+.wizard-manager-panel{max-width:820px}
+.wizard-manager-form .wizard-profile-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ align-items:start;gap:18px 20px;
+}
+.wizard-profile-field{display:flex;flex-direction:column;min-width:0;gap:7px}
+.wizard-profile-field .input-label{margin:0}
+.wizard-profile-field .text-field{
+ min-width:0;width:100%;min-height:47px;
+ color-scheme:dark;
+}
+.wizard-profile-field .text-field[aria-invalid="true"]{
+ border-color:#db8d77;box-shadow:0 0 0 1px #b66c59;
+}
+.wizard-profile-field .field-error:not([hidden]){
+ display:block;margin:0;padding:8px 10px;
+ border-left:3px solid #d99177;border-radius:3px;
+ background:#422925;color:#f4c3b3;font-size:12px;
+ line-height:1.5;text-align:left;
+}
+.wizard-profile-field .field-error[hidden]{display:none!important}
+.wizard-manager-form .begin-button{margin-top:18px}
+@media(max-width:620px){
+ .wizard-manager-form .wizard-profile-grid{grid-template-columns:1fr;gap:15px}
+ .wizard-manager-panel{max-width:none}
+}

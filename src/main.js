@@ -2,12 +2,14 @@ import {LEAGUES,getLeagueClubs} from './leagues.js';
 import {createSession,advanceSession} from './simulation.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
 import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
-import {feedback,fromError,inlineManagerError,renderBlockingError} from './feedback.js';
+import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
+import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from './manager-profile.js';
 
 const app=document.getElementById('app');
 const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/team','/careers','/settings','/simulation']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
-let draft={managerName:'',countryId:null,clubId:null,query:''};
+const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,clubId:null,query:''});
+let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
@@ -23,7 +25,7 @@ async function render(){
   if(page!=='/simulation')await refreshCatalog();
   if(ticket!==sequence)return;
   if((page==='/new-career/country'||page==='/new-career/team')&&
-    (!draft.managerName.trim()||draft.managerName.trim().length>80)){
+    (!validManagerProfile(draft.managerProfile))){
    history.replaceState({},'','/new-career');page='/new-career';
   }
   if(page==='/new-career/team'&&!LEAGUES.some(l=>l.id===draft.countryId)){
@@ -64,12 +66,12 @@ async function advance(days){
  }catch(e){fail(e);}finally{busy=false;}
 }
 async function begin(){
- if(busy||!draft.managerName.trim()||draft.managerName.trim().length>80||!LEAGUES.some(l=>l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
+ if(busy||!validManagerProfile(draft.managerProfile)||!LEAGUES.some(l=>l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
  busy=true;
  try{
-  const current=await createCareer(db,{managerName:draft.managerName,countryId:draft.countryId,clubId:draft.clubId});
+  const current=await createCareer(db,{managerName:managerFullName(draft.managerProfile),managerProfile:draft.managerProfile,countryId:draft.countryId,clubId:draft.clubId});
   loaded=current;
-  draft={managerName:'',countryId:null,clubId:null,query:''};
+  draft=newDraft();
   navigate('/simulation');
  }finally{busy=false;}
 }
@@ -115,10 +117,10 @@ async function handle(action,element){
   case 'language-option':await setLanguage(element.dataset.value);break;
   case 'language-focus':await toggleLanguageMenu(true,'option');break;
   case 'home':navigate('/');break;
-  case 'new':draft={managerName:'',countryId:null,clubId:null,query:''};navigate('/new-career');break;
+  case 'new':draft=newDraft();navigate('/new-career');break;
   case 'careers':navigate('/careers');break;
   case 'settings':navigate('/settings');break;
-  case 'cancel-setup':draft={managerName:'',countryId:null,clubId:null,query:''};navigate('/');break;
+  case 'cancel-setup':draft=newDraft();navigate('/');break;
   case 'setup-back':navigate(path()==='/new-career/team'?'/new-career/country':'/new-career');break;
   case 'country':if(LEAGUES.some(l=>l.id===element.dataset.country)){draft.countryId=element.dataset.country;draft.clubId=null;await render();app.querySelector(`[data-action="country"][data-country="${draft.countryId}"]`)?.focus({preventScroll:true});}break;
   case 'country-next':if(LEAGUES.some(l=>l.id===draft.countryId))navigate('/new-career/team');break;
@@ -199,25 +201,51 @@ document.addEventListener('keydown',event=>{
   event.preventDefault();void toggleLanguageMenu(false,event.shiftKey?'combo':'next');
  }
 });
-function validateManager(field){
- const issue=inlineManagerError(String(field.value??''),lang);
- const message=document.getElementById('manager-name-error');
- field.setAttribute('aria-invalid',issue?'true':'false');
- if(message){message.hidden=!issue;message.textContent=issue?.description??'';}
- return !issue;
+function updateManagerField(field,code){
+ const id=field.id+'-error';
+ const error=document.getElementById(id);
+ field.setAttribute('aria-invalid',code?'true':'false');
+ if(error){
+  error.hidden=!code;
+  error.textContent=code?feedbackText({code},lang).description:'';
+ }
+}
+function validateManagerForm(form,focus=true){
+ const profile=Object.fromEntries(MANAGER_PROFILE_FIELDS.map(key=>[
+  key,String(form.elements.namedItem(key)?.value??'')
+ ]));
+ const issues=managerProfileIssues(profile);
+ let first=null;
+ for(const key of MANAGER_PROFILE_FIELDS){
+  const field=form.elements.namedItem(key);
+  if(!field)continue;
+  updateManagerField(field,issues[key]);
+  if(issues[key]&&!first)first=field;
+ }
+ if(first){
+  form.dataset.validated='true';
+  if(focus)first.focus();
+  return false;
+ }
+ draft.managerProfile=normalizeManagerProfile(profile);
+ draft.managerName=managerFullName(draft.managerProfile);
+ delete form.dataset.validated;
+ return true;
 }
 document.addEventListener('submit',event=>{
  if(event.target.id!=='manager-form')return;
  event.preventDefault();
- const field=event.target.elements.namedItem('managerName');
- if(!field||!validateManager(field)){field?.focus();return;}
- draft.managerName=field.value.trim();
+ if(!validateManagerForm(event.target))return;
  navigate('/new-career/country');
 });
 document.addEventListener('input',event=>{
- if(event.target.id!=='manager-name')return;
- draft.managerName=event.target.value;
- if(event.target.getAttribute('aria-invalid')==='true')validateManager(event.target);
+ const field=event.target;
+ if(!field.classList?.contains('wizard-profile-input'))return;
+ if(!MANAGER_PROFILE_FIELDS.includes(field.name))return;
+ draft.managerProfile[field.name]=field.value;
+ draft.managerName=managerFullName(draft.managerProfile);
+ const form=field.form;
+ if(form?.dataset.validated==='true')validateManagerForm(form,false);
 });
 document.addEventListener('change',event=>{
  if(event.target.id==='import-file')void (async()=>{

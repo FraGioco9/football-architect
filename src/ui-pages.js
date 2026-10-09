@@ -1,5 +1,6 @@
 import {LEAGUES,getLeagueClubs,leagueById} from './leagues.js';
-import {seasonLabel} from './simulation.js';
+import {seasonLabel,localToday} from './simulation.js';
+import {normalizeManagerProfile} from './manager-profile.js';
 import {bestCareer} from './career-store.js';
 import {icon} from './icons.js';
 import {languagePicker} from './language-picker.js';
@@ -58,18 +59,54 @@ function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,description
  </div></div>`;
 }
 export function managerPage(draft,lang){
- const content=`<section class="wizard-manager-panel panel" aria-labelledby="wizard-manager-title">
+ const p=normalizeManagerProfile(draft.managerProfile);
+ const form=`<section class="wizard-manager-panel panel" aria-labelledby="wizard-manager-title">
  <div class="onboard-heading"><h2 id="wizard-manager-title">${tr(lang,'1 · Il tuo allenatore','1 · Your manager')}</h2></div>
  <form id="manager-form" class="onboard-manager-form wizard-manager-form" novalidate>
-  <label class="input-label" for="manager-name">${tr(lang,'Nome allenatore','Manager name')}</label>
-  <input class="text-field" id="manager-name" name="managerName" maxlength="80" required autocomplete="off"
-   value="${esc(draft.managerName)}" aria-invalid="false" aria-describedby="manager-name-error" placeholder="${tr(lang,'Inserisci il nome dell’allenatore','Enter manager name')}">
-  <p id="manager-name-error" class="field-error" role="alert" hidden>${tr(lang,'Inserisci un nome per proseguire.','Enter a name to continue.')}</p>
+  <div class="wizard-profile-grid">
+   <div class="wizard-profile-field">
+    <label class="input-label" for="manager-first-name">${tr(lang,'Nome','First name')}</label>
+    <input class="text-field wizard-profile-input" id="manager-first-name" name="firstName" type="text"
+     value="${esc(p.firstName)}" maxlength="40" autocomplete="given-name" required
+     aria-invalid="false" aria-describedby="manager-first-name-error" placeholder="${tr(lang,'Nome','First name')}">
+    <p id="manager-first-name-error" class="field-error" role="alert" hidden></p>
+   </div>
+   <div class="wizard-profile-field">
+    <label class="input-label" for="manager-last-name">${tr(lang,'Cognome','Last name')}</label>
+    <input class="text-field wizard-profile-input" id="manager-last-name" name="lastName" type="text"
+     value="${esc(p.lastName)}" maxlength="40" autocomplete="family-name" required
+     aria-invalid="false" aria-describedby="manager-last-name-error" placeholder="${tr(lang,'Cognome','Last name')}">
+    <p id="manager-last-name-error" class="field-error" role="alert" hidden></p>
+   </div>
+   <div class="wizard-profile-field">
+    <label class="input-label" for="manager-birth-date">${tr(lang,'Data di nascita','Date of birth')}</label>
+    <input class="text-field wizard-profile-input" id="manager-birth-date" name="birthDate" type="date"
+     value="${esc(p.birthDate)}" max="${localToday()}" required
+     aria-invalid="false" aria-describedby="manager-birth-date-error">
+    <p id="manager-birth-date-error" class="field-error" role="alert" hidden></p>
+   </div>
+   <div class="wizard-profile-field">
+    <label class="input-label" for="manager-nationality">${tr(lang,'Nazionalità','Nationality')}</label>
+    <input class="text-field wizard-profile-input" id="manager-nationality" name="nationality" type="text"
+     value="${esc(p.nationality)}" maxlength="80" autocomplete="off" required
+     aria-invalid="false" aria-describedby="manager-nationality-error"
+     placeholder="${tr(lang,'Es. Italiana','E.g. Italian')}">
+    <p id="manager-nationality-error" class="field-error" role="alert" hidden></p>
+   </div>
+   <div class="wizard-profile-field wizard-profile-birthplace">
+    <label class="input-label" for="manager-birth-place">${tr(lang,'Luogo di nascita','Place of birth')}</label>
+    <input class="text-field wizard-profile-input" id="manager-birth-place" name="birthPlace" type="text"
+     value="${esc(p.birthPlace)}" maxlength="80" autocomplete="off" required
+     aria-invalid="false" aria-describedby="manager-birth-place-error"
+     placeholder="${tr(lang,'Città di nascita','Birthplace city')}">
+    <p id="manager-birth-place-error" class="field-error" role="alert" hidden></p>
+   </div>
+  </div>
   <button class="btn primary begin-button" type="submit"><span>${tr(lang,'Avanti: Nazione','Next: Country')}</span>${icon('chevron-right',18)}</button>
  </form>
-
  </section>`;
- return wizardFrame(content,lang,1,'Scegli il tuo allenatore','Choose your manager','Inserisci il nome dell’allenatore per iniziare.','Enter your manager name to get started.');
+ return wizardFrame(form,lang,1,'Scegli il tuo allenatore','Choose your manager',
+  'Inserisci i dati personali dell’allenatore per iniziare.','Enter your manager’s personal details to get started.');
 }
 export function countryPage(draft,lang){
  const selected=LEAGUES.some(l=>l.id===draft.countryId)?draft.countryId:null;
