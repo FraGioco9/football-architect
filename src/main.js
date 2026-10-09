@@ -4,12 +4,13 @@ import {preseasonStart,seasonOpeningYear} from './season-calendar.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from './fixture-calendar.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,calendarPage,tr} from './ui-pages.js';
+import {guidePage} from './game-guide.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from './manager-profile.js';
 import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer,centeredMenuScrollTop} from './site-pickers.js';
 
 const app=document.getElementById('app');
-const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar']);
+const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar','/guide']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,championshipId:null,clubId:null,query:''});
 let draft=newDraft();
@@ -108,10 +109,10 @@ function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
  const ticket=++sequence;
- if(!db){app.innerHTML=layout(renderBlockingError(storageFailure??new Error('INDEXEDDB_UNAVAILABLE'),lang),lang,null,languageMenuOpen);return;}
+ if(!db){app.innerHTML=layout(path()==='/guide'?guidePage(lang):renderBlockingError(storageFailure??new Error('INDEXEDDB_UNAVAILABLE'),lang),lang,null,languageMenuOpen);return;}
  let page=path();
  try{
-  if(page!=='/simulation'&&page!=='/dashboard'&&page!=='/calendar')await refreshCatalog();
+  if(page!=='/simulation'&&page!=='/dashboard'&&page!=='/calendar'&&page!=='/guide')await refreshCatalog();
   if(ticket!==sequence)return;
   if((page==='/new-career/country'||page==='/new-career/league'||page==='/new-career/team')&&
     (!validManagerProfile(draft.managerProfile))){
@@ -138,6 +139,7 @@ async function render(){
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang,careersFromSimulationId);
   else if(page==='/settings')inner=settingsPage(lang);
+  else if(page==='/guide')inner=guidePage(lang);
   else if((page==='/simulation'||page==='/dashboard')&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null,nextScheduledClubFixture(loaded.state,fixtureCalendarFor));
   else if(page==='/calendar'&&loaded){
    const ui=fixturePageState();
@@ -339,6 +341,7 @@ async function handle(action,element){
   case 'new':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/new-career');break;
   case 'careers':careersFromSimulationId=path()==='/simulation'&&loaded?loaded.meta.id:null;if(path()==='/dashboard'&&loaded)careersFromSimulationId=loaded.meta.id;navigate('/careers');break;
   case 'settings':navigate('/settings');break;
+  case 'guide':navigate('/guide');break;
   case 'cancel-setup':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/');break;
   case 'setup-back':navigate(path()==='/new-career/team'?'/new-career/league':path()==='/new-career/league'?'/new-career/country':'/new-career');break;
 

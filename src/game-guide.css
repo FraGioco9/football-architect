@@ -1,0 +1,41 @@
+/* Game guide: intentionally scoped; shares site tokens and existing panels. */
+.game-guide{display:grid;gap:18px;max-width:1100px;margin-inline:auto;min-width:0}
+.game-guide .guide-header{display:grid;justify-items:start;gap:0;margin-bottom:2px}
+.game-guide .guide-header .page-back{margin-bottom:25px}
+.game-guide .guide-header .kicker{margin:0}
+.game-guide .guide-header h1{margin:9px 0 12px}
+.game-guide .guide-header p{max-width:67ch}
+.game-guide .guide-nav,.game-guide .guide-topic,.game-guide .guide-faq{box-shadow:none}
+.game-guide h2{font-size:clamp(17px,2vw,22px);letter-spacing:-.02em;margin:8px 0 18px}
+.game-guide .guide-nav{padding:20px 22px}
+.game-guide .guide-nav h2{margin:0 0 13px}
+.guide-nav-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.guide-nav-links a{min-height:46px;display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid #355850;border-radius:10px;background:#183236;font-size:13px;color:#dcefe8;font-weight:700;min-width:0}
+.guide-nav-links a:hover{color:#a6eccb}
+.guide-nav-links a svg:first-child{color:#92d7b8;flex:none}
+.guide-nav-links a svg:last-child{margin-left:auto;flex:none;color:#92aa9e}
+.guide-nav-links a span{min-width:0}
+.guide-topic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.guide-topic{min-width:0;scroll-margin-top:22px;padding:clamp(19px,2.5vw,25px)}
+.guide-topic-heading{display:flex;align-items:center;gap:12px}
+.guide-topic-icon{width:40px;height:40px;flex:0 0 40px;border:1px solid #375f56;background:#1e413c;border-radius:12px;display:grid;place-items:center;color:#9be6c0}
+.guide-topic-heading h2{margin:0;font-size:18px}
+.guide-topic>p{color:#abc6bd;font-size:13px;line-height:1.65;margin:17px 0 12px}
+.guide-topic ul{padding:0 0 0 19px;margin:0;display:grid;gap:9px;color:#deede6;font-size:13px;line-height:1.55}
+.guide-topic li::marker{color:#70cda5}
+.game-guide .guide-faq{padding:22px}
+.game-guide .guide-faq h2{margin:0 0 12px}
+.guide-question{border-top:1px solid #2f4e49}
+.guide-question summary{display:flex;align-items:center;gap:12px;justify-content:space-between;list-style:none;cursor:pointer;padding:15px 2px;color:#e7f3ee;font-size:14px;font-weight:730}
+.guide-question summary::-webkit-details-marker{display:none}
+.guide-question summary svg{color:#8dcdb0;flex:none;transition:transform .15s}
+.guide-question[open] summary svg{transform:rotate(180deg)}
+.guide-question summary:focus-visible{outline:2px solid #57e8bf;outline-offset:3px;border-radius:4px}
+.guide-question p{font-size:13px;color:#abc7be;line-height:1.65;padding:0 24px 14px 2px;margin:0}
+.guide-footnote{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#9cbab0;line-height:1.6;margin:2px 0}
+.guide-footnote svg{flex:none;margin-top:1px;color:#85c9aa}
+@media(max-width:680px){
+ .game-guide{gap:13px}
+ .guide-topic-heading h2{font-size:17px}
+}
+@media(prefers-reduced-motion:reduce){.guide-question summary svg{transition:none}}

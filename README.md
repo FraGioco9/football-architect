@@ -21,6 +21,7 @@ Apri http://127.0.0.1:2000. Porta 2000, solo loopback.
 - /new-career/team — **Passaggio 4/4: Squadra**. Tabella compatta di 20 club senza scrollbar interna, con reputazione e capienza, selezione esplicita, riepilogo del club, pulsante Rosa disabilitato e conferma «Inizia carriera». Il salvataggio viene creato solo in questo passaggio.
 - /careers — Layout originale a griglia di card, con salvataggi separati: carica, rinomina, esporta, importa JSON o elimina con conferma. I salvataggi corrotti sono esportabili/eliminabili ma non caricabili.
 - /settings — Pannelli originali di preferenze e gestione dati, con lingua IT/EN e operazioni disponibili per carriere locali.
+- /guide — Manuale bilingue delle meccaniche effettivamente implementate: universo calcistico, fasi della stagione, tempo simulato, formula del campionato, programmazione delle partite, finestre di mercato e FAQ sulle regole. Non descrive creazione carriera, menu, salvataggi o istruzioni sui pulsanti; accessibile dal menu e dalle Impostazioni.
 - /simulation — Calendario simulato con **giorno e ora**, avanzamento per **+1 ora**, 1/7/30/365 giorni o continuo interrompibile (+1 ora per intervallo). Mostra **Stagione 1, 2, 3…**, fasi prestagione/stagione/pausa estiva e stato del calciomercato. Non genera ancora partite o trasferimenti.
 
 ## Persistenza

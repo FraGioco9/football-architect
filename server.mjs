@@ -6,7 +6,7 @@ import path from 'node:path';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT??2000);
-const routes=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar']);
+const routes=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar','/guide']);
 const files=new Map([
  ['/src/main.js','text/javascript; charset=utf-8'],
  ['/src/icons.js','text/javascript; charset=utf-8'],
@@ -17,6 +17,8 @@ const files=new Map([
  ['/src/site-pickers.js','text/javascript; charset=utf-8'],
  ['/src/site-picker-ui.js','text/javascript; charset=utf-8'],
  ['/src/ui-pages.js','text/javascript; charset=utf-8'],
+ ['/src/game-guide.js','text/javascript; charset=utf-8'],
+ ['/src/game-guide.css','text/css; charset=utf-8'],
  ['/src/simulation.js','text/javascript; charset=utf-8'],
  ['/src/season-calendar.js','text/javascript; charset=utf-8'],
  ['/src/fixture-calendar.js','text/javascript; charset=utf-8'],

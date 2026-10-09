@@ -1,6 +1,7 @@
 // Shared outline SVG icons: consistent stroke, alignment and accessible decorative markup.
 const paths={
  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+ 'book-open':'<path d="M12 7a7 7 0 0 0-9-2v15a7 7 0 0 1 9 2 7 7 0 0 1 9-2V5a7 7 0 0 0-9 2ZM12 7v15"/>',
  // Identical paths restored from pre-reset PR #32; scoped to career navigation.
  'grid-pre-reset':'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
  'calendar-pre-reset':'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',

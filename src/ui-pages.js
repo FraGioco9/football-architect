@@ -93,6 +93,7 @@ export function homePage(catalog,lang){
  ${option('new','plus-circle',tr(lang,'Nuova carriera','New career'),tr(lang,'Inizia un nuovo percorso da allenatore','Begin a new managerial journey'))}
  ${option('careers','folder-open',tr(lang,'Le mie carriere','My careers'),tr(lang,'Carica e gestisci i salvataggi','Load and manage saved careers'))}
  ${option('settings','settings',tr(lang,'Impostazioni','Settings'),tr(lang,'Lingua e preferenze','Language and preferences'))}
+ ${option('guide','book-open',tr(lang,'Guida al gioco','Game guide'),tr(lang,'Scopri le regole di stagioni, campionati e partite','Learn about seasons, leagues and match scheduling'))}
  </section></div>`;
 }
 
@@ -363,7 +364,7 @@ export function settingsPage(lang){
       <div>${icon('shield',22)}<strong>${tr(lang,'Universo immaginario','Fictional universe')}</strong><p>${tr(lang,'Paesi e città reali; squadre e competizioni inventate.','Real countries and cities; invented clubs and leagues.')}</p></div>
       <div>${icon('folder-open',22)}<strong>100% offline</strong><p>${tr(lang,'Nessun account, cloud o servizio esterno.','No accounts, cloud or external services.')}</p></div>
       <div>${icon('calendar',22)}<strong>${tr(lang,'Simulazione calendario','Calendar simulation')}</strong><p>${tr(lang,'Avanzamento del tempo, senza partite.','Time advancement without matches.')}</p></div>
-    </div></section>
+    </div><div class="settings-actions">${option('guide','book-open',tr(lang,'Guida al gioco','Game guide'),tr(lang,'Stagioni, campionati e simulazione','Seasons, leagues and simulation'))}</div></section>
   </div>
  </div>`;
 }

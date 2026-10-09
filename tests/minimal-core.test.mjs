@@ -541,3 +541,43 @@ test('UX-SHELL: routes and source avoid restoring pre-reset match engine',()=>{
  assert.doesNotMatch(src,/simulateMatch|playMatchday|matchEngine|newSeason/);
  assert.doesNotMatch(server,/\/match\/\d|\/squad|\/training|\/tactics/);
 });
+
+test('game guide explains gameplay mechanics rather than onboarding or UI operations',async()=>{
+ const {guidePage}=await import('../src/game-guide.js');
+ const it=guidePage('it'),en=guidePage('en');
+ for(const page of [it,en]){
+  assert.match(page,/class="game-guide"/);
+  assert.match(page,/data-action="home"/);
+  assert.match(page,/<nav class="guide-nav panel"/);
+  assert.equal((page.match(/class="guide-topic-heading"/g)||[]).length,6);
+  assert.equal((page.match(/<details class="guide-question"/g)||[]).length,4);
+  for(const id of ['world','seasons','time','league','fixtures','market']){
+   assert.ok(page.includes('id="guide-'+id+'"'));
+   assert.ok(page.includes('href="#guide-'+id+'"'));
+  }
+  assert.doesNotMatch(page,/guide-start|guide-step|guide-saves|guide-offline|guide-new-career/i);
+  assert.doesNotMatch(page,/IndexedDB|JSON|browser data|salvatagg|save files|import|export|first name|cognome|birth date|data di nascita|click|clicca|menu a tendina/i);
+  assert.ok(!page.includes('undefined'));
+ }
+ assert.match(it,/Come funziona Football Architect/);
+ assert.match(it,/38 giornate/);
+ assert.match(it,/72 ore di riposo/);
+ assert.match(it,/non producono ancora risultati/);
+ assert.match(en,/How Football Architect works/);
+ assert.match(en,/38 rounds/);
+ assert.match(en,/72 hours of rest/);
+ assert.match(en,/do not yet produce results/);
+});
+test('guide is routable, linked and served by the strict static file allowlist',()=>{
+ const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ for(const source of [main,server])assert.match(source,/'\/guide'/);
+ assert.match(main,/else if\(page==='\/guide'\)inner=guidePage\(lang\)/);
+ assert.match(main,/case 'guide':navigate\('\/guide'\)/);
+ assert.match(ui,/option\('guide','book-open'/);
+ assert.match(server,/\['\/src\/game-guide\.js','text\/javascript; charset=utf-8'\]/);
+ assert.match(server,/\['\/src\/game-guide\.css','text\/css; charset=utf-8'\]/);
+ assert.match(html,/href="\/src\/game-guide\.css"/);
+});
