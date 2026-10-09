@@ -108,18 +108,17 @@ export function managerPage(draft,lang,pickers={}){
 export function countryPage(draft,lang){
  const selected=LEAGUES.some(l=>l.id===draft.countryId)?draft.countryId:null;
  const loc=lang==='en'?'en':'it';
- const content=`<section class="league-pick wizard-country-panel" aria-labelledby="league-pick-title">
-  <div class="league-pick-head"><div><span class="eyebrow">${tr(lang,'2 · NAZIONE E CAMPIONATO','2 · COUNTRY AND LEAGUE')}</span>
-   <h2 id="league-pick-title">${tr(lang,'Scegli dove iniziare','Choose where to start')}</h2></div>
-   <span class="league-pick-count">${LEAGUES.length} ${tr(lang,'NAZIONI','COUNTRIES')}</span></div>
-  <div class="league-pick-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
-   ${LEAGUES.map(l=>`<button type="button" class="league-pick-option ${l.id===selected?'active':''}"
+ const content=`<section class="wizard-country-panel panel" aria-labelledby="league-pick-title">
+  <div class="onboard-heading"><h2 id="league-pick-title">${tr(lang,'2 · La tua nazione','2 · Your country')}</h2>
+   <span>${LEAGUES.length} ${tr(lang,'NAZIONI','COUNTRIES')}</span></div>
+  <div class="wizard-country-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
+   ${LEAGUES.map(l=>`<button type="button" id="wizard-country-${esc(l.id)}" class="fa-interactive-box wizard-country-option ${l.id===selected?'fa-choice-selected':''}"
      data-action="country" data-country="${l.id}" aria-pressed="${l.id===selected}">
-     <span class="league-flag country-flag" aria-hidden="true">${esc(l.flag)}</span>
-     <span class="league-pick-text"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>
-     ${l.id===selected?icon('check',15):''}</button>`).join('')}
+     <span class="wizard-country-flag" aria-hidden="true">${esc(l.flag)}</span>
+     <span class="wizard-country-copy"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>
+     <span class="wizard-country-check" aria-hidden="true">${l.id===selected?icon('check',15):''}</span></button>`).join('')}
   </div>
-  <div class="wizard-actions">${button('country-next',tr(lang,'Avanti: Squadra','Next: Club'),'primary',selected?'':'disabled')}</div>
+  <div class="fa-action-row wizard-country-actions"><button class="btn primary begin-button" type="button" data-action="country-next" ${selected?'':'disabled'}><span>${tr(lang,'Avanti: Squadra','Next: Club')}</span>${icon('chevron-right',18)}</button></div>
  </section>`;
  return wizardFrame(content,lang,2,'Scegli la nazione','Choose your country','Seleziona la nazione in cui iniziare la carriera.','Select the country where you want to start.');
 }
@@ -127,8 +126,8 @@ export function teamsPage(draft,lang){
  const league=leagueById(draft.countryId),clubs=getLeagueClubs(league.id),loc=lang==='en'?'en':'it';
  const chosen=clubs.find(c=>c.id===draft.clubId)??null;
  const content=`<div class="onboard-grid wizard-team-grid">
-  <section class="onboard-clubs" aria-labelledby="clubs-title">
-   <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'3 · Scegli il club','3 · Choose your club')}</h2>
+  <section class="onboard-clubs wizard-team-panel" aria-labelledby="clubs-title">
+   <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'3 · La tua squadra','3 · Your club')}</h2>
     <span>${clubs.length} ${tr(lang,'SOCIETÀ','CLUBS')}</span></div>
     <table class="club-table" id="clubs" aria-label="${tr(lang,'Squadre disponibili','Available clubs')}">
      <thead><tr>
@@ -147,7 +146,8 @@ export function teamsPage(draft,lang){
     </table>
   </section>
    <aside class="onboard-aside wizard-club-summary">
-   ${chosen?`    <div class="selected-club-glow" style="--club-light:${esc(chosen.colors[0])}"></div>
+   <div class="onboard-heading wizard-summary-heading"><h2>${tr(lang,'Riepilogo','Summary')}</h2></div>
+   ${chosen?`    
     <div class="selected-pretitle">${tr(lang,'CLUB SELEZIONATO','SELECTED CLUB')}</div>
     <div class="selected-crest">${crest(chosen)}</div>
     <h2>${esc(chosen.name)}</h2>
@@ -166,8 +166,8 @@ export function teamsPage(draft,lang){
     </div>`}
     <div class="wizard-manager-summary"><span>${tr(lang,'ALLENATORE','MANAGER')}</span><strong>${esc(draft.managerName)}</strong>
      ${managerAge(draft.managerProfile)!==null?`<small>${managerAge(draft.managerProfile)} ${tr(lang,'anni','years old')}</small>`:''}</div>
-    ${button('start-career',tr(lang,'Inizia carriera','Start career'),'primary begin-button',chosen?'':'disabled')}
-    <p class="hint">${tr(lang,'Il salvataggio verrà creato solo dopo questa conferma.','Your save is created only after confirming this step.')}</p>
+    <div class="fa-action-row wizard-team-actions"><button class="btn primary begin-button" type="button" data-action="start-career" ${chosen?'':'disabled'}><span>${tr(lang,'Inizia carriera','Start career')}</span>${icon('chevron-right',18)}</button></div>
+
    </aside>
  </div>`;
  return wizardFrame(content,lang,3,'Scegli la squadra','Choose your club',

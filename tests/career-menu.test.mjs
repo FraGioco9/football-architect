@@ -1142,3 +1142,50 @@ test('wizard exit button is Menu in IT and EN for all three stages without chang
  const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(js,/case 'cancel-setup':draft=newDraft\(\);managerSubmitted=false;pickerMonth=null;navigate\('\/'\);break;/);
 });
+
+
+test('country step uses same panel, green focus and selection contract as manager',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const lang of ['it','en']){
+  const blank=countryPage({countryId:null,clubId:null},lang);
+  assert.match(blank,/class="wizard-country-panel panel"/);
+  assert.match(blank,/class="onboard-heading"><h2 id="league-pick-title">/);
+  assert.equal((blank.match(/class="fa-interactive-box wizard-country-option /g)||[]).length,8);
+  assert.equal((blank.match(/aria-pressed="false"/g)||[]).length,8);
+  assert.match(blank,/data-action="country-next" disabled/);
+  assert.match(blank,/class="fa-action-row wizard-country-actions"/);
+  assert.match(blank,lang==='it'?/Avanti: Squadra/:/Next: Club/);
+  assert.doesNotMatch(blank,/class="league-pick wizard-country-panel"/);
+  const selected=countryPage({countryId:'IT',clubId:null},lang);
+  assert.equal((selected.match(/fa-choice-selected/g)||[]).length,1);
+  assert.equal((selected.match(/aria-pressed="true"/g)||[]).length,1);
+  assert.doesNotMatch(selected,/data-action="country-next" disabled/);
+ }
+ assert.match(css,/\.wizard-country-panel\{max-width:820px\}/);
+ assert.match(css,/\.fa-page-main \.wizard-country-option\.fa-choice-selected\{/);
+ assert.match(css,/@media\(max-width:620px\)\{\s*\.wizard-country-options\{grid-template-columns:minmax\(0,1fr\)/);
+});
+
+test('club step preserves full-page table, summary, and consistent action',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const lang of ['it','en']){
+  const blank=teamsPage({managerName:'Ada Rossi',countryId:'IT',clubId:null},lang);
+  assert.match(blank,/class="onboard-clubs wizard-team-panel"/);
+  assert.match(blank,/class="onboard-aside wizard-club-summary"/);
+  assert.equal((blank.match(/class="club-table-select"/g)||[]).length,20);
+  assert.equal((blank.match(/class="club-table-row /g)||[]).length,20);
+  assert.match(blank,/class="fa-action-row wizard-team-actions"/);
+  assert.match(blank,/data-action="start-career" disabled/);
+  assert.doesNotMatch(blank,/selected-club-glow|class="hint"/);
+  const selected=teamsPage({managerName:'Ada Rossi',countryId:'IT',clubId:2},lang);
+  assert.equal((selected.match(/class="club-table-row is-selected"/g)||[]).length,1);
+  assert.match(selected,/class="selected-stats"/);
+  assert.match(selected,/class="wizard-manager-summary"/);
+  assert.doesNotMatch(selected,/data-action="start-career" disabled/);
+ }
+ assert.match(css,/\.wizard-team-grid\{grid-template-columns:minmax\(0,1fr\) 320px/);
+ assert.match(css,/@media\(max-width:760px\)\{\s*\.wizard-team-grid\{grid-template-columns:minmax\(0,1fr\)\}/);
+ assert.doesNotMatch(css,/\.wizard-team-grid\{[^}]*overflow-y:auto/);
+ assert.match(css,/\.wizard-team-grid \.club-table-row\.is-selected td\{/);
+ assert.match(css,/html\.fa-keyboard-navigation \.wizard-team-grid \.club-table-row:focus-within:not\(\.is-selected\) td\{/);
+});
