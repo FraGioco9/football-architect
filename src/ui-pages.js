@@ -67,7 +67,7 @@ export function managerPage(draft,lang){
   <p id="manager-name-error" class="field-error" role="alert" hidden>${tr(lang,'Inserisci un nome per proseguire.','Enter a name to continue.')}</p>
   <button class="btn primary begin-button" type="submit"><span>${tr(lang,'Avanti: Nazione','Next: Country')}</span>${icon('chevron-right',18)}</button>
  </form>
- <p class="hint">${tr(lang,'Non verrà creato alcun salvataggio prima della conferma finale.','No save is created before final confirmation.')}</p>
+
  </section>`;
  return wizardFrame(content,lang,1,'Scegli il tuo allenatore','Choose your manager','Inserisci il nome dell’allenatore per iniziare.','Enter your manager name to get started.');
 }

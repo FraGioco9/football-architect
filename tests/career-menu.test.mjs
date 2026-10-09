@@ -633,3 +633,15 @@ test('wizard H1 and subtitle share the same top position and spacing as standard
   assert.ok(kicker>=0&&title>kicker&&subtitle>title&&buttons>subtitle);
  }
 });
+
+test('manager page omits the obsolete confirmation-save disclaimer in both languages',()=>{
+ const draft={managerName:'Ada Manager',countryId:null,clubId:null};
+ for(const lang of ['it','en']){
+  const html=managerPage(draft,lang);
+  assert.doesNotMatch(html,/Non verrà creato alcun salvataggio prima della conferma finale/);
+  assert.doesNotMatch(html,/No save is created before final confirmation/);
+  assert.match(html,/id="manager-form"/);
+  assert.match(html,/data-action="cancel-setup"/);
+  assert.match(html,/class="fa-page-title"/);
+ }
+});
