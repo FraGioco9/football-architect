@@ -14,7 +14,7 @@ let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
 let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
 let typeahead={kind:'',query:'',last:0};
-let lastRenderedRoute=null;
+let lastRenderedRoute=null,careersFromSimulationId=null;
 // Keep the focused/matched option centered in the *menu's* visible viewport.
 // Using rects rather than offsetTop supports fixed popovers and nested ARIA rows.
 function centerMenuOption(option){
@@ -83,7 +83,7 @@ window.addEventListener('scroll',positionCalendar,true);
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
-function navigate(url){stop();languageMenuOpen=false;feedbackState=null;pickerOpen=null;pickerView='days';selectedBoxId=null;history.pushState({},'',url);void render();}
+function navigate(url){stop();if(url!=='/careers')careersFromSimulationId=null;languageMenuOpen=false;feedbackState=null;pickerOpen=null;selectedBoxId=null;closeRenameDialog(false);closeDeleteDialog(false);history.pushState({},'',url);void render();}
 function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
 async function render(){
@@ -116,11 +116,19 @@ async function render(){
   else if(page==='/new-career/country')inner=countryPage(draft,lang);
   else if(page==='/new-career/league')inner=championshipPage(draft,lang);
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
-  else if(page==='/careers')inner=careersPage(catalog,lang);
+  else if(page==='/careers')inner=careersPage(catalog,lang,careersFromSimulationId);
   else if(page==='/settings')inner=settingsPage(lang);
   else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null);
   else inner=homePage(catalog,lang);
+  closeRenameDialog(false);
+  closeDeleteDialog(false);
   app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen);
+  app.querySelectorAll('.fa-site-dialog').forEach(dialog=>{
+   dialog.addEventListener('close',()=>{
+    releaseSiteModalLock();
+    dialog.querySelector('.fa-interactive-box')?.classList.remove('fa-control-selected');
+   });
+  });
   if(page==='/new-career'){
    if(managerSubmitted)validateManagerForm(document.getElementById('manager-form'),false);
    if(selectedBoxId)app.querySelectorAll('.fa-interactive-box').forEach(x=>x.classList.toggle('fa-control-selected',x.id===selectedBoxId));
@@ -166,6 +174,44 @@ async function begin(){
  }finally{busy=false;}
 }
 async function load(id){stop();loaded=await selectCareer(db,id);navigate('/simulation');}
+// Shared modal lifecycle: native showModal makes the background inert, while
+// the reserved scrollbar gutter prevents page movement when the thumb hides.
+function releaseSiteModalLock(){
+ const root=document.documentElement;
+ root.classList.remove('fa-modal-open');
+ root.style.removeProperty('--fa-modal-scrollbar-gutter');
+}
+function openSiteModal(dialog,initialFocus){
+ if(!dialog||typeof dialog.showModal!=='function')return false;
+ const root=document.documentElement;
+ const gutter=Math.max(0,window.innerWidth-root.clientWidth);
+ root.style.setProperty('--fa-modal-scrollbar-gutter',gutter+'px');
+ try{dialog.showModal();}
+ catch(error){releaseSiteModalLock();throw error;}
+ root.classList.add('fa-modal-open');
+ initialFocus?.focus({preventScroll:true});
+ return true;
+}
+function closeRenameDialog(restoreFocus=false){
+ const dialog=app.querySelector('#career-rename-dialog');
+ const originalId=dialog?.dataset.careerId;
+ if(dialog?.open)dialog.close();
+ releaseSiteModalLock();
+ if(restoreFocus&&originalId){
+  const trigger=[...app.querySelectorAll('[data-action="rename"]')].find(x=>x.dataset.id===originalId);
+  trigger?.focus({preventScroll:true});
+ }
+}
+function closeDeleteDialog(restoreFocus=false){
+ const dialog=app.querySelector('#career-delete-dialog');
+ const originalId=dialog?.dataset.careerId;
+ if(dialog?.open)dialog.close();
+ releaseSiteModalLock();
+ if(restoreFocus&&originalId){
+  const trigger=[...app.querySelectorAll('[data-action="delete"]')].find(x=>x.dataset.id===originalId);
+  trigger?.focus({preventScroll:true});
+ }
+}
 function download(name,object){
  const data=new Blob([JSON.stringify(object,null,2)],{type:'application/json'});
  const href=URL.createObjectURL(data),link=document.createElement('a');
@@ -209,7 +255,7 @@ async function handle(action,element){
   case 'language-focus':await toggleLanguageMenu(true,'option');break;
   case 'home':navigate('/');break;
   case 'new':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/new-career');break;
-  case 'careers':navigate('/careers');break;
+  case 'careers':careersFromSimulationId=path()==='/simulation'&&loaded?loaded.meta.id:null;navigate('/careers');break;
   case 'settings':navigate('/settings');break;
   case 'cancel-setup':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/');break;
   case 'setup-back':navigate(path()==='/new-career/team'?'/new-career/league':path()==='/new-career/league'?'/new-career/country':'/new-career');break;
@@ -290,28 +336,36 @@ async function handle(action,element){
   case 'rename':{
    const entry=catalog.rows.find(r=>r.id===element.dataset.id&&r.status==='ok');
    if(!entry)return;
-   const name=prompt(tr(lang,'Nome carriera','Career name'),entry.meta.careerName??entry.meta.managerName);
-   if(name===null)return;
-   const trimmed=name.trim();
-   if(!trimmed||trimmed.length>80){feedbackState=feedback('error','CAREER_NAME_INVALID');await render();return;}
-   const meta=await renameCareer(db,entry.id,trimmed);
-   if(loaded?.meta.id===entry.id)loaded={...loaded,meta};
-   feedbackState=feedback('success','RENAME_OK');
-   await render();break;
+   const dialog=app.querySelector('#career-rename-dialog');
+   const input=dialog?.querySelector('#career-rename-input');
+   if(!dialog||!input||typeof dialog.showModal!=='function')return;
+   dialog.dataset.careerId=entry.id;
+   input.value=entry.meta.careerName??entry.meta.managerName;
+   input.setAttribute('aria-invalid','false');
+   input.classList.remove('fa-field-invalid');
+   const warning=dialog.querySelector('#career-rename-error');
+   if(warning){warning.hidden=true;warning.textContent='';}
+   // Focus starts at the title: the field is not selected until the user
+   // explicitly clicks or tabs into it.
+   openSiteModal(dialog,dialog.querySelector('#career-rename-title'));
+   break;
   }
+  case 'rename-cancel':closeRenameDialog(true);break;
   case 'export':{
    const snapshot=await exportCareer(db,element.dataset.id);
    download('football-architect-'+element.dataset.id+'.json',snapshot);
    break;
   }
   case 'delete':{
-   const id=element.dataset.id,entry=catalog.rows.find(r=>r.id===id);
+   const entry=catalog.rows.find(r=>r.id===element.dataset.id);
    if(!entry)return;
-   if(!confirm(tr(lang,'Eliminare definitivamente questa carriera?','Permanently delete this career?')))return;
-   await deleteCareer(db,id);
-   if(loaded?.meta.id===id){stop();loaded=null;}
-   feedbackState=feedback('success','DELETE_OK');await render();break;
+   const dialog=app.querySelector('#career-delete-dialog');
+   if(!dialog)return;
+   dialog.dataset.careerId=entry.id;
+   openSiteModal(dialog,dialog.querySelector('#career-delete-title'));
+   break;
   }
+  case 'delete-cancel':closeDeleteDialog(true);break;
   case 'import':document.getElementById('import-file')?.click();break;
   case 'day':stop();await advance(1);break;
   case 'week':stop();await advance(7);break;
@@ -409,6 +463,68 @@ document.addEventListener('input',event=>{
  draft.managerName=managerFullName(draft.managerProfile);
  const form=field.form;
  if(managerSubmitted)validateManagerForm(form,false);
+});
+document.addEventListener('submit',event=>{
+ if(event.target.id!=='career-rename-form')return;
+ event.preventDefault();
+ if(busy)return;
+ const form=event.target,dialog=form.closest('#career-rename-dialog');
+ const id=dialog?.dataset.careerId,input=form.querySelector('#career-rename-input');
+ const name=input?.value.trim()??'';
+ const message=form.querySelector('#career-rename-error');
+ if(!name||name.length>80){
+  if(message){message.hidden=false;message.textContent=tr(lang,'Inserisci un nome da 1 a 80 caratteri.','Enter a name between 1 and 80 characters.');}
+  input?.setAttribute('aria-invalid','true');
+  input?.classList.add('fa-field-invalid');
+  input?.focus();return;
+ }
+ const entry=catalog.rows.find(r=>r.id===id&&r.status==='ok');
+ if(!entry){closeRenameDialog(false);return;}
+ busy=true;
+ void (async()=>{
+  try{
+   const meta=await renameCareer(db,id,name);
+   if(loaded?.meta.id===id)loaded={...loaded,meta};
+   closeRenameDialog(false);
+   feedbackState=feedback('success','RENAME_OK');
+   await render();
+  }catch(error){closeRenameDialog(false);fail(error);}
+  finally{busy=false;}
+ })();
+});
+document.addEventListener('submit',event=>{
+ if(event.target.id!=='career-delete-form')return;
+ event.preventDefault();
+ if(busy)return;
+ const dialog=event.target.closest('#career-delete-dialog'),id=dialog?.dataset.careerId;
+ const entry=catalog.rows.find(r=>r.id===id);
+ if(!entry){closeDeleteDialog(false);return;}
+ busy=true;
+ void (async()=>{
+  try{
+   await deleteCareer(db,id);
+   if(loaded?.meta.id===id){stop();loaded=null;}
+   closeDeleteDialog(false);
+   feedbackState=feedback('success','DELETE_OK');
+   await render();
+  }catch(error){closeDeleteDialog(false);fail(error);}
+  finally{busy=false;}
+ })();
+});
+document.addEventListener('focusin',event=>{
+ if(event.target.id!=='career-rename-input')return;
+ event.target.classList.add('fa-control-selected');
+});
+document.addEventListener('focusout',event=>{
+ if(event.target.id!=='career-rename-input')return;
+ event.target.classList.remove('fa-control-selected');
+});
+document.addEventListener('input',event=>{
+ if(event.target.id!=='career-rename-input')return;
+ event.target.classList.remove('fa-field-invalid');
+ event.target.setAttribute('aria-invalid','false');
+ const message=document.getElementById('career-rename-error');
+ if(message){message.hidden=true;message.textContent='';}
 });
 document.addEventListener('change',event=>{
  if(event.target.id==='import-file')void (async()=>{
@@ -560,7 +676,7 @@ document.addEventListener('keydown',event=>{
  void focusMatch().catch(fail);
 },true);
 
-window.addEventListener('popstate',()=>{stop();void render();});
+window.addEventListener('popstate',()=>{stop();careersFromSimulationId=null;closeRenameDialog(false);closeDeleteDialog(false);void render();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();void render();}});
 async function boot(){
  try{db=await openCareerDatabase();storageFailure=null;await render();}

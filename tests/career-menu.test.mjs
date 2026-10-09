@@ -329,22 +329,33 @@ test('four separate new career pages require manager, country, championship and 
  await createCareer(db,form('Ada Coach','IT',2));
  assert.equal((await readCatalog(db)).rows.length,1);
 });
-test('historic career library uses its card grid and old-style actions with minimal saves',async()=>{
+test('My Careers adopts the four-step wizard visual shell and preserves all save actions',async()=>{
  const db=await setup();await createCareer(db,form('Ada','IT',2));
  const html=careersPage(await readCatalog(db),'it');
- assert.match(html,/class="restored-careers"/);
- assert.match(html,/class="career-grid"/);
- assert.match(html,/class="career-card/);
- assert.match(html,/class="career-meta"/);
- assert.match(html,/class="career-actions"/);
- assert.match(html,/class="career-more"/);
- assert.match(html,/Le tue carriere/);
- assert.match(html,/data-action="load"/);
- assert.match(html,/data-action="rename"/);
- assert.match(html,/data-action="export"/);
- assert.match(html,/data-action="delete"/);
+ assert.match(html,/class="onboarding restored-onboarding wizard-page restored-careers wizard-careers"/);
+ assert.match(html,/class="onboard-wrap"/);
+ assert.match(html,/class="onboard-header fa-page-heading"/);
+ assert.match(html,/class="wizard-topline"/);
+ assert.match(html,/class="wizard-careers-panel panel"/);
+ assert.match(html,/class="onboard-heading wizard-careers-heading"/);
+ assert.match(html,/class="wizard-careers-list"/);
+ assert.doesNotMatch(html,/class="wizard-career-row is-current /);
+ assert.match(html,/class="wizard-career-facts"/);
+ assert.match(html,/class="wizard-career-actions"/);
+ assert.match(html,/Le mie carriere/);
+ assert.match(html,/data-action="cancel-setup"/);
+ for(const action of ['load','rename','export','delete','new','import'])
+  assert.ok(html.includes('data-action="'+action+'"'),action);
+ assert.equal((html.match(/id="import-file"/g)||[]).length,1);
  assert.doesNotMatch(html,/Recupera simulazione precedente|Checkpoint|Duplicazione/);
- assert.match(careersPage({rows:[],activeId:null},'en'),/No saved careers/);
+ assert.doesNotMatch(html,/class="career-grid"|class="career-card|class="career-more"/);
+ const empty=careersPage({rows:[],activeId:null},'en');
+ assert.match(empty,/No saved careers/);
+ assert.match(empty,/class="wizard-careers-empty"/);
+ assert.match(empty,/data-action="new"/);
+ assert.match(empty,/data-action="import"/);
+ assert.match(empty,/class="fa-page-title">My careers/);
+ assert.doesNotMatch(empty,/data-action="load"|data-action="delete"/);
 });
 test('historic settings restores the two-column panels and keeps live features only',()=>{
  const html=settingsPage('it');
@@ -364,7 +375,7 @@ test('historic settings restores the two-column panels and keeps live features o
 test('historic page styling survives the three-step wizard without restoring match systems',()=>{
  const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
- for(const name of ['onboard-wrap','onboard-grid','club-table','career-grid','career-card','settings-grid','settings-action'])
+ for(const name of ['onboard-wrap','onboard-grid','club-table','wizard-careers-panel','wizard-career-row','settings-grid','settings-action'])
   assert.ok(sheet.includes('.'+name),name);
  assert.match(sheet,/@media\(max-width:760px\)/);
  assert.match(sheet,/@media\(max-width:430px\)/);
@@ -397,7 +408,7 @@ test('the transparent-track contract covers page, club grid and future nested sc
  assert.match(css,/\.restored-onboarding \.club-table\{/);
  assert.match(css,/:where\(html,body,body \*\)::-webkit-scrollbar\{\s*width:var\(--scrollbar-width\);\s*height:var\(--scrollbar-width\);\s*background:transparent;/);
  assert.match(ui,/<table class="club-table"/);
- assert.match(ui,/class="career-grid"/);
+ assert.match(ui,/class="wizard-careers-list"/);
  // The shared selectors target every descendant, without requiring classes
  // or making new containers scrollable.
  const scrollbarContract=css.slice(css.indexOf('/* QOL05.08'),css.indexOf('/* New Career: all 20 clubs'));
@@ -1401,4 +1412,227 @@ test('local club cell rebuild preserves selection, keyboard focus and compact re
  assert.match(css,/html\.fa-keyboard-navigation \.wizard-team-grid \.club-table-row:focus-within:not\(\.is-selected\) td\{/);
  assert.match(css,/\.wizard-team-grid \.club-table-row\.is-selected td\{/);
  assert.doesNotMatch(css,/\.wizard-team-grid\{[^}]*overflow-y:auto/);
+});
+
+
+test('My Careers preserves three independent rows, active selection and full action IDs',async()=>{
+ const db=await setup();
+ const a=await createCareer(db,form('Ada','IT',2));
+ await createCareer(db,form('Bo','DE',3));
+ const c=await createCareer(db,form('Cami','FR',4));
+ await selectCareer(db,a.meta.id);
+ const catalog=await readCatalog(db);
+ for(const lang of ['it','en']){
+  const html=careersPage(catalog,lang);
+  assert.equal((html.match(/class="wizard-career-row /g)||[]).length,3);
+  assert.equal((html.match(/class="wizard-career-identity"/g)||[]).length,3);
+  assert.equal((html.match(/class="wizard-career-facts"/g)||[]).length,3);
+  assert.equal((html.match(/class="wizard-career-actions"/g)||[]).length,3);
+  assert.equal((html.match(/aria-current="true"/g)||[]).length,0);
+  assert.equal((html.match(/data-action="load"/g)||[]).length,3);
+  assert.equal((html.match(/data-action="rename"/g)||[]).length,3);
+  assert.equal((html.match(/data-action="export"/g)||[]).length,3);
+  assert.equal((html.match(/data-action="delete"/g)||[]).length,3);
+  assert.ok(html.includes('data-id="'+a.meta.id+'"'));
+  assert.ok(html.includes('data-id="'+c.meta.id+'"'));
+  assert.match(html,lang==='it'?/Carriere salvate/:/Saved careers/);
+  assert.match(html,lang==='it'?/>Carica</:/>Load</);
+  assert.match(html,lang==='it'?/Ultimo salvataggio/:/Last saved/);
+  assert.doesNotMatch(html,lang==='it'?/Disponibile|Attiva</:/Available|Active</);
+  const fromSimulation=careersPage(catalog,lang,a.meta.id);
+  assert.equal((fromSimulation.match(/aria-current="true"/g)||[]).length,1);
+  assert.match(fromSimulation,/class="wizard-career-row is-current /);
+  assert.match(fromSimulation,lang==='it'?/Attuale/:/Current/);
+  assert.equal((fromSimulation.match(/data-action="load"/g)||[]).length,3);
+ }
+});
+
+test('My Careers shows a corrupt slot with red status, export/delete but never load/rename',async()=>{
+ const db=await setup();
+ const good=await createCareer(db,form('Healthy','IT',1));
+ const corrupt=await createCareer(db,form('Broken','ENG',2));
+ db.data.get('snapshots').set(corrupt.meta.id,{id:corrupt.meta.id,raw:'{bad'});
+ const catalog=await readCatalog(db);
+ const it=careersPage(catalog,'it'),en=careersPage(catalog,'en');
+ for(const html of [it,en]){
+  const row=html.match(new RegExp('<article class="wizard-career-row [^"]*"[^>]*>[\\s\\S]*?'+corrupt.meta.id+'[\\s\\S]*?<\\/article>'));
+  // Extract by the corrupt row's unique label rather than depending on ordering.
+  assert.match(html,/class="wizard-career-row  is-corrupt"/);
+  assert.match(html,/class="wizard-career-status is-invalid"/);
+  assert.match(html,/class="wizard-career-warning" role="status"/);
+  assert.match(html,new RegExp('data-action="export"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.match(html,new RegExp('data-action="delete"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.doesNotMatch(html,new RegExp('data-action="load"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.doesNotMatch(html,new RegExp('data-action="rename"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.match(html,new RegExp('data-action="load"[^>]*data-id="'+good.meta.id+'"'));
+ }
+ assert.match(it,/Salvataggio danneggiato/);
+ assert.match(en,/Corrupt save: loading disabled/);
+});
+
+test('My Careers uses only wizard-scoped panels and responsive document scrolling',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.match(sheet,/\.fa-page-main \.wizard-careers \.wizard-careers-panel\{/);
+ assert.match(sheet,/background:#142832;border:1px solid #385552;box-shadow:none;/);
+ assert.match(sheet,/\.wizard-careers \.wizard-career-row\{/);
+ assert.match(sheet,/\.wizard-careers \.wizard-career-row\.is-current\{/);
+ assert.match(sheet,/\.wizard-careers \.wizard-career-row\.is-corrupt\{/);
+ assert.match(sheet,/@media\(max-width:760px\)\{[\s\S]*?\.wizard-careers \.wizard-career-facts/);
+ assert.match(sheet,/@media\(max-width:620px\)\{[\s\S]*?\.wizard-careers \.wizard-topline/);
+ assert.match(sheet,/@media\(max-width:400px\)\{[\s\S]*?\.wizard-careers \.wizard-career-actions/);
+ const block=sheet.slice(sheet.indexOf('/* My Careers follows the New Career wizard layout'));
+ assert.doesNotMatch(block,/overflow-y:\s*(?:scroll|auto)|max-height:\s*\d+px/);
+ assert.match(ui,/class="wizard-careers-panel panel"/);
+ assert.match(ui,/class="wizard-careers-list"/);
+ const empty=careersPage({rows:[],activeId:null},'en');
+ assert.equal((empty.match(/<h1\b/g)||[]).length,1);
+ assert.doesNotMatch(empty,/<p[^>]*>Open a career or create a new one\./);
+ assert.doesNotMatch(empty,/STEP \d\/\d/);
+});
+
+
+test('My Careers compact UI uses identical Menu button markup as New Career',()=>{
+ const lang=['it','en'],catalog={rows:[],activeId:'persisted-selection'};
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const locale of lang){
+  const manager=managerPage({managerName:'Ada',managerProfile:blankManagerProfile()},locale);
+  const careers=careersPage(catalog,locale);
+  const extract=page=>page.match(/<button type="button" class="btn ghost wizard-cancel" data-action="cancel-setup"[^>]*>[\s\S]*?<\/button>/)?.[0];
+  assert.ok(extract(manager));
+  assert.equal(extract(careers),extract(manager));
+  assert.equal((careers.match(/data-action="cancel-setup"/g)||[]).length,1);
+  assert.doesNotMatch(careers,/is-current|is-available|Attiva|Disponibile|Active|Available/);
+ }
+ const block=css.slice(css.indexOf('/* Compact My Careers controls'));
+ assert.match(block,/\.wizard-careers \.wizard-career-actions \.btn\{\s*min-width:84px;min-height:33px;padding:6px 9px;\s*font-size:10px/);
+ assert.match(block,/\.wizard-careers \.wizard-careers-toolbar-actions \.btn\{\s*min-width:110px;min-height:35px;padding:6px 10px;\s*font-size:11px/);
+ assert.match(block,/\.wizard-careers \.wizard-career-actions \.btn \.fa-icon,[\s\S]*?width:13px;height:13px/);
+ assert.match(ui,/button\('cancel-setup',tr\(lang,'Menu','Menu'\),'ghost wizard-cancel'\)/);
+});
+
+test('Current career appears only with an explicit in-simulation entry context',async()=>{
+ const db=await setup();
+ const a=await createCareer(db,form('Ada','IT',2));
+ const b=await createCareer(db,form('B','ENG',3));
+ await selectCareer(db,a.meta.id);
+ const catalog=await readCatalog(db);
+ for(const locale of ['it','en']){
+  const fromMenu=careersPage(catalog,locale);
+  assert.equal((fromMenu.match(/aria-current="true"/g)||[]).length,0);
+  assert.doesNotMatch(fromMenu,/is-current|is-available|Disponibile|Available/);
+  const fromCareer=careersPage(catalog,locale,b.meta.id);
+  assert.equal((fromCareer.match(/aria-current="true"/g)||[]).length,1);
+  assert.equal((fromCareer.match(/class="wizard-career-status is-active"/g)||[]).length,1);
+  assert.match(fromCareer,locale==='it'?/Attuale/:/Current/);
+  assert.equal((fromCareer.match(/data-action="load"/g)||[]).length,2);
+  assert.doesNotMatch(fromCareer,/class="wizard-career-status is-available"/);
+ }
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(controller,/let lastRenderedRoute=null,careersFromSimulationId=null;/);
+ assert.match(controller,/case 'careers':careersFromSimulationId=path\(\)==='\/simulation'&&loaded\?loaded\.meta\.id:null;navigate\('\/careers'\);/);
+ assert.match(controller,/careersPage\(catalog,lang,careersFromSimulationId\)/);
+ assert.match(controller,/if\(url!=='\/careers'\)careersFromSimulationId=null/);
+ assert.match(controller,/window\.addEventListener\('popstate',\(\)=>\{stop\(\);careersFromSimulationId=null;/);
+});
+
+test('Rename uses site-style native modal, trims and validates names, never browser prompt',async()=>{
+ const db=await setup();
+ await createCareer(db,form('Ada','IT',2));
+ const catalog=await readCatalog(db);
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const locale of ['it','en']){
+  const html=careersPage(catalog,locale);
+  assert.match(html,/<dialog id="career-rename-dialog" class="fa-site-dialog fa-rename-dialog" aria-labelledby="career-rename-title"/);
+  assert.match(html,/<form id="career-rename-form" novalidate>/);
+  assert.match(html,/<input id="career-rename-input" class="text-field fa-interactive-box"[^>]*maxlength="80"/);
+  assert.match(html,/id="career-rename-error" class="fa-rename-error" role="alert" hidden/);
+  assert.equal((html.match(/data-action="rename-cancel"/g)||[]).length,2);
+  assert.match(html,locale==='it'?/Rinomina carriera/:/Rename career/);
+  assert.match(html,locale==='it'?/Annulla/:/Cancel/);
+  assert.match(html,locale==='it'?/>Salva</:/>Save</);
+ }
+ assert.doesNotMatch(controller,/\bprompt\(/);
+ assert.match(controller,/case 'rename':\{/);
+ assert.match(controller,/dialog\.showModal\(\)/);
+ assert.match(controller,/case 'rename-cancel':closeRenameDialog\(true\)/);
+ assert.match(controller,/if\(!name\|\|name\.length>80\)/);
+ assert.match(controller,/await renameCareer\(db,id,name\)/);
+ assert.match(controller,/if\(loaded\?\.meta\.id===id\)loaded=\{\.\.\.loaded,meta\}/);
+ assert.match(controller,/document\.addEventListener\('submit',event=>\{\s*if\(event\.target\.id!=='career-rename-form'\)return/);
+ assert.match(controller,/app\.querySelectorAll\('\.fa-site-dialog'\)\.forEach\(dialog=>\{/);
+ assert.match(css,/\.fa-site-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
+ assert.match(css,/html\.fa-modal-open\{\s*overflow:hidden;scrollbar-gutter:auto;scrollbar-width:none;/);
+ assert.match(css,/\.fa-site-dialog \.text-field\.fa-field-invalid\{/);
+});
+
+test('site popup contract: inert background and reserved hidden scrollbar without shifting page',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/html\{\s*scrollbar-gutter:stable;\s*\}/);
+ assert.match(css,/html\.fa-modal-open\{[\s\S]*?overflow:hidden;scrollbar-gutter:auto;scrollbar-width:none;\s*padding-right:var\(--fa-modal-scrollbar-gutter,0px\);/);
+ assert.match(css,/html\.fa-modal-open body\{overflow:hidden\}/);
+ assert.match(css,/html\.fa-modal-open::-webkit-scrollbar\{display:none;width:0;height:0\}/);
+ assert.match(controller,/function openSiteModal\(dialog,initialFocus\)\{/);
+ assert.match(controller,/Math\.max\(0,window\.innerWidth-root\.clientWidth\)/);
+ assert.match(controller,/root\.style\.setProperty\('--fa-modal-scrollbar-gutter',gutter\+'\x70x'\)/);
+ assert.match(controller,/dialog\.showModal\(\)/);
+ assert.match(controller,/root\.classList\.add\('fa-modal-open'\)/);
+ assert.match(controller,/function releaseSiteModalLock\(\)\{/);
+ assert.match(controller,/root\.style\.removeProperty\('--fa-modal-scrollbar-gutter'\)/);
+ assert.match(controller,/app\.querySelectorAll\('\.fa-site-dialog'\)\.forEach\(dialog=>\{/);
+ assert.match(controller,/closeRenameDialog\(false\);\s*closeDeleteDialog\(false\);\s*app\.innerHTML=layout\(/);
+});
+
+test('rename label cannot select or focus field; highlight appears only while input is focused',async()=>{
+ const db=await setup();await createCareer(db,form('Ada','IT',2));
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const locale of ['it','en']){
+  const html=careersPage(await readCatalog(db),locale);
+  assert.doesNotMatch(html,/Modifica il nome del salvataggio|Change the save name|career-rename-description/);
+  assert.doesNotMatch(html,/<label[^>]*for="career-rename-input"/);
+  assert.match(html,/<span class="input-label" id="career-rename-field-label">/);
+  assert.match(html,/id="career-rename-title" tabindex="-1"/);
+  assert.match(html,/id="career-rename-input"[^>]*aria-labelledby="career-rename-field-label"/);
+  assert.doesNotMatch(html,/<input[^>]*class="[^"]*fa-control-selected/);
+  assert.doesNotMatch(html,/aria-describedby="career-rename-description"/);
+ }
+ assert.match(controller,/openSiteModal\(dialog,dialog\.querySelector\('#career-rename-title'\)\)/);
+ assert.doesNotMatch(controller,/input\.focus\(\);input\.select\(\)/);
+ assert.match(controller,/document\.addEventListener\('focusin',event=>\{\s*if\(event\.target\.id!=='career-rename-input'\)return;\s*event\.target\.classList\.add\('fa-control-selected'\)/);
+ assert.match(controller,/document\.addEventListener\('focusout',event=>\{\s*if\(event\.target\.id!=='career-rename-input'\)return;\s*event\.target\.classList\.remove\('fa-control-selected'\)/);
+ assert.match(css,/\.fa-site-dialog \.text-field\.fa-control-selected:not\(\.fa-field-invalid\)\{/);
+ assert.doesNotMatch(css,/\.fa-site-dialog \.text-field:focus-visible\{\s*border-color:var\(--fa-selection-border\)/);
+ assert.match(css,/\.fa-site-dialog \.text-field\.fa-field-invalid\{/);
+ assert.doesNotMatch(css,/career-rename-description/);
+});
+
+test('all destructive confirmations use the same site modal lifecycle, no native browser confirm',async()=>{
+ const db=await setup();await createCareer(db,form('Delete QA','IT',2));
+ const catalog=await readCatalog(db);
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const locale of ['it','en']){
+  const html=careersPage(catalog,locale);
+  const dialogs=[...html.matchAll(/<dialog id="career-(rename|delete)-dialog" class="fa-site-dialog /g)];
+  assert.equal(dialogs.length,2);
+  assert.match(html,/<dialog id="career-delete-dialog" class="fa-site-dialog fa-delete-dialog" aria-labelledby="career-delete-title"/);
+  assert.match(html,/<form id="career-delete-form">/);
+  assert.equal((html.match(/data-action="delete-cancel"/g)||[]).length,2);
+  assert.match(html,locale==='it'?/Eliminare definitivamente questa carriera/:/Permanently delete this career/);
+  assert.match(html,locale==='it'?/Elimina carriera/:/Delete career/);
+ }
+ assert.doesNotMatch(controller,/\bconfirm\(/);
+ assert.match(controller,/case 'delete':\{/);
+ assert.match(controller,/openSiteModal\(dialog,dialog\.querySelector\('#career-delete-title'\)\)/);
+ assert.match(controller,/case 'delete-cancel':closeDeleteDialog\(true\)/);
+ assert.match(controller,/document\.addEventListener\('submit',event=>\{\s*if\(event\.target\.id!=='career-delete-form'\)return/);
+ assert.match(controller,/await deleteCareer\(db,id\)/);
+ assert.match(controller,/closeDeleteDialog\(false\)/);
+ assert.match(css,/\.fa-site-dialog\{\s*box-sizing:border-box;/);
+ assert.match(css,/\.fa-site-dialog \.fa-site-dialog-description\{/);
+ assert.match(css,/\.fa-site-dialog::backdrop\{background:rgba\(4,14,19,\.77\)\}/);
 });
