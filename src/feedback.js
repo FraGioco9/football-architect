@@ -2,8 +2,6 @@ import {icon} from './icons.js';
 
 // Localized messages never expose raw exceptions or internal save details.
 const dictionary={
- FIELD_MANAGER_REQUIRED:{it:['Nome allenatore obbligatorio','Inserisci un nome per iniziare la carriera.'],en:['Manager name required','Enter a name to start your career.']},
- FIELD_MANAGER_LENGTH:{it:['Nome troppo lungo','Il nome dell’allenatore non può superare 80 caratteri.'],en:['Name too long','The manager name cannot exceed 80 characters.']},
  FIELD_FIRST_REQUIRED:{it:['Nome obbligatorio','Inserisci il nome.'],en:['First name required','Enter your first name.']},
  FIELD_FIRST_LENGTH:{it:['Nome troppo lungo','Il nome può contenere al massimo 40 caratteri.'],en:['First name too long','First name must be 40 characters or fewer.']},
  FIELD_LAST_REQUIRED:{it:['Cognome obbligatorio','Inserisci il cognome.'],en:['Last name required','Enter your last name.']},
@@ -48,11 +46,6 @@ export function feedbackText(item,lang='it'){
  const entry=dictionary[item?.code]??dictionary.UNKNOWN;
  const [title,description]=entry[lang==='en'?'en':'it'];
  return {title,description};
-}
-export function inlineManagerError(name,lang='it'){
- const value=typeof name==='string'?name.trim():'';
- const code=!value?'FIELD_MANAGER_REQUIRED':value.length>80?'FIELD_MANAGER_LENGTH':null;
- return code?{code,...feedbackText({code},lang)}:null;
 }
 export function renderFeedback(item,lang='it'){
  if(!item)return '';

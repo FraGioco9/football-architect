@@ -1,6 +1,6 @@
 import {LEAGUES,getLeagueClubs,leagueById} from './leagues.js';
 import {seasonLabel,localToday} from './simulation.js';
-import {normalizeManagerProfile} from './manager-profile.js';
+import {normalizeManagerProfile,managerAge} from './manager-profile.js';
 import {bestCareer} from './career-store.js';
 import {icon} from './icons.js';
 import {languagePicker} from './language-picker.js';
@@ -167,7 +167,8 @@ export function teamsPage(draft,lang){
      <h2>${tr(lang,'Seleziona una squadra','Select a club')}</h2>
      <p>${tr(lang,'Scegli una delle squadre nella tabella per proseguire.','Choose a club in the table to continue.')}</p>
     </div>`}
-    <div class="wizard-manager-summary"><span>${tr(lang,'ALLENATORE','MANAGER')}</span><strong>${esc(draft.managerName)}</strong></div>
+    <div class="wizard-manager-summary"><span>${tr(lang,'ALLENATORE','MANAGER')}</span><strong>${esc(draft.managerName)}</strong>
+     ${managerAge(draft.managerProfile)!==null?`<small>${managerAge(draft.managerProfile)} ${tr(lang,'anni','years old')}</small>`:''}</div>
     ${button('start-career',tr(lang,'Inizia carriera','Start career'),'primary begin-button',chosen?'':'disabled')}
     <p class="hint">${tr(lang,'Il salvataggio verrà creato solo dopo questa conferma.','Your save is created only after confirming this step.')}</p>
    </aside>

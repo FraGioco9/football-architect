@@ -8,7 +8,7 @@ import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPa
 import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
-import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from '../src/manager-profile.js';
+import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile,managerAge} from '../src/manager-profile.js';
 
 class FakeDB{
  constructor(){this.data=new Map();this.objectStoreNames={contains:key=>this.data.has(key)};}
@@ -695,9 +695,9 @@ test('manager profile normalizes exactly five values and validates each field',(
 test('new careers require complete profile and persist it throughout IndexedDB and JSON roundtrip',async()=>{
  const db=await setup(),now='2026-10-09T10:00:00.000Z';
  const data={countryId:'IT',clubId:2,id:mkId(),now};
- await assert.rejects(createCareer(db,{...data,managerName:'Ada Rossi'}),/CAREER_DATA_INVALID/);
+ assert.throws(()=>createCareer(db,{...data,managerName:'Ada Rossi'}),/CAREER_DATA_INVALID/);
  for(const field of MANAGER_PROFILE_FIELDS){
-  await assert.rejects(createCareer(db,{...data,managerProfile:{...modernProfile,[field]:''}}),/CAREER_DATA_INVALID/);
+  assert.throws(()=>createCareer(db,{...data,managerProfile:{...modernProfile,[field]:''}}),/CAREER_DATA_INVALID/);
  }
  assert.equal((await readCatalog(db)).rows.length,0);
  const original=await createCareer(db,{...data,managerProfile:modernProfile});
@@ -718,7 +718,7 @@ test('new careers require complete profile and persist it throughout IndexedDB a
  const update=advanceSession(copy.state,1);
  const saved=await saveCareer(db,copy.meta.id,update,{expectedDays:0,now:'2026-10-10T10:00:00Z'});
  assert.deepEqual(saved.meta.managerProfile,modernProfile);
- await assert.rejects(createCareer(db,{...data,managerProfile:{...modernProfile,birthDate:'2030-01-01'}}),/CAREER_DATA_INVALID/);
+ assert.throws(()=>createCareer(db,{...data,managerProfile:{...modernProfile,birthDate:'2030-01-01'}}),/CAREER_DATA_INVALID/);
 });
 test('older PR48 careers remain readable and importable without fabricated biographical data',async()=>{
  const db=await setup(),old=await createCareer(db,form('Old Manager','IT',1));
@@ -762,4 +762,16 @@ test('wizard controller validates five fields before navigating and creates only
  assert.match(css,/\.wizard-manager-form \.wizard-profile-grid\{/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(css,/\.wizard-profile-field \.field-error:not\(\[hidden\]\)/);
+});
+
+test('manager age is derived from birth date, not stored as a sixth field',()=>{
+ assert.equal(managerAge(modernProfile,'2026-04-18'),37);
+ assert.equal(managerAge(modernProfile,'2026-04-19'),38);
+ assert.equal(managerAge(modernProfile,'2027-04-18'),38);
+ assert.equal(managerAge(modernProfile,'2027-04-19'),39);
+ assert.equal(managerAge({...modernProfile,birthDate:'2035-01-01'},'2026-10-09'),null);
+ assert.deepEqual(MANAGER_PROFILE_FIELDS,['firstName','lastName','birthDate','nationality','birthPlace']);
+ const page=teamsPage({managerName:'Ada Rossi',managerProfile:modernProfile,countryId:'IT',clubId:2},'it');
+ assert.match(page,/ALLENATORE/);
+ assert.match(page,/anni/);
 });
