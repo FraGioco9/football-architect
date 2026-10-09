@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,SAVE_KEY} from '../src/simulation.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
-import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlagSvg} from '../src/ui-pages.js';
+import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlagSvg} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
@@ -209,7 +209,7 @@ test('IT/EN menu and dedicated routes are available and accessible',()=>{
  assert.match(settingsPage('en'),/Language/);
  assert.match(careersPage(empty,'en'),/Import/);
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
- for(const route of ['/new-career','/new-career/country','/new-career/team','/careers','/settings','/simulation'])assert.ok(server.includes("'"+route+"'"));
+ for(const route of ['/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation'])assert.ok(server.includes("'"+route+"'"));
 });
 test('simulation maintains match-free semantics, responsive UI and keyboard focus',()=>{
  const state=createSession('PT',4,'2026-10-08'),meta={managerName:'M',countryId:'PT',clubId:4};
@@ -278,11 +278,11 @@ test('only live route modules are published by the offline server',()=>{
 
 
 
-test('three separate new career pages require manager, country and club before saving',async()=>{
+test('four separate new career pages require manager, country, championship and club before saving',async()=>{
  const db=await setup(),blank={managerName:'',countryId:null,clubId:null,query:''};
  const manager=managerPage(blank,'it');
  assert.match(manager,/class="onboard-header fa-page-heading"/);
- assert.match(manager,/PASSAGGIO 1\/3/);
+ assert.match(manager,/PASSAGGIO 1\/4/);
  assert.match(manager,/Scegli il tuo allenatore/);
  assert.match(manager,/id="manager-form"/);
  assert.match(manager,/id="manager-first-name"/);
@@ -293,17 +293,25 @@ test('three separate new career pages require manager, country and club before s
  assert.match(manager,/Avanti: Nazione/);
  assert.doesNotMatch(manager,/class="league-pick-options"|<table class="club-table"/);
  assert.match(manager,/<h1 class="fa-page-title">[\s\S]*?<div class="wizard-topline">[\s\S]*?data-action="cancel-setup"/);
- const chosen={managerName:'Ada Coach',countryId:'IT',clubId:2,query:''};
+ const chosen={managerName:'Ada Coach',countryId:'IT',championshipId:'IT',clubId:2,query:''};
  const country=countryPage(blank,'it');
- assert.match(country,/PASSAGGIO 2\/3/);
+ assert.match(country,/PASSAGGIO 2\/4/);
  assert.equal((country.match(/data-action="country"/g)||[]).length,8);
  assert.match(country,/data-action="country-next" disabled/);
  assert.doesNotMatch(country,/<table class="club-table"|id="manager-form"/);
  const selectedCountry=countryPage({...chosen,clubId:null},'it');
  assert.match(selectedCountry,/aria-pressed="true"/);
  assert.doesNotMatch(selectedCountry,/data-action="country-next" disabled/);
- const team=teamsPage({...chosen,clubId:null},'it');
- assert.match(team,/PASSAGGIO 3\/3/);
+ const league=championshipPage({...chosen,championshipId:null,clubId:null},'it');
+ assert.match(league,/PASSAGGIO 3\/4/);
+ assert.equal((league.match(/data-action="championship" /g)||[]).length,1);
+ assert.match(league,/data-action="championship-next" disabled/);
+ assert.doesNotMatch(league,/<table class="club-table"|id="manager-form"/);
+ const selectedLeague=championshipPage({...chosen,championshipId:'IT',clubId:null},'it');
+ assert.match(selectedLeague,/aria-pressed="true"/);
+ assert.doesNotMatch(selectedLeague,/data-action="championship-next" disabled/);
+ const team=teamsPage({...chosen,championshipId:'IT',clubId:null},'it');
+ assert.match(team,/PASSAGGIO 4\/4/);
  assert.match(team,/class="wizard-no-club"/);
  assert.match(team,/data-action="start-career" disabled/);
  assert.match(team,/<table class="club-table"/);
@@ -574,12 +582,15 @@ test('wizard routes keep the input draft in memory and do not create a premature
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  assert.match(controller,/['"]\/new-career\/country['"]/);
  assert.match(controller,/['"]\/new-career\/team['"]/);
+ assert.match(controller,/['"]\/new-career\/league['"]/);
  assert.match(server,/'\/new-career\/country'/);
+ assert.match(server,/'\/new-career\/league'/);
  assert.match(controller,/draft\.managerName=managerFullName\(draft\.managerProfile\);[\s\S]*?navigate\('\/new-career\/country'\);/);
- assert.match(controller,/case 'country-next':if\(LEAGUES\.some\(l=>l\.id===draft\.countryId\)\)navigate\('\/new-career\/team'\)/);
+ assert.match(controller,/case 'country-next':if\(LEAGUES\.some\(l=>l\.id===draft\.countryId\)\)navigate\('\/new-career\/league'\)/);
+ assert.match(controller,/case 'championship-next':if\(LEAGUES\.some\(l=>l\.id===draft\.championshipId&&l\.id===draft\.countryId\)\)navigate\('\/new-career\/team'\)/);
  assert.match(controller,/case 'start-career':await begin\(\)/);
  assert.match(controller,/if\(page==='\/new-career\/team'&&!LEAGUES\.some/);
- assert.match(controller,/case 'setup-back':navigate\(path\(\)==='\/new-career\/team'\?'\/new-career\/country':'\/new-career'\)/);
+ assert.match(controller,/case 'setup-back':navigate\(path\(\)==='\/new-career\/team'\?'\/new-career\/league':path\(\)==='\/new-career\/league'\?'\/new-career\/country':'\/new-career'\)/);
  assert.doesNotMatch(controller,/case 'country':draft\.countryId=element\.dataset\.country;draft\.clubId=1/);
  const submit=controller.slice(controller.indexOf("document.addEventListener('submit'"),controller.indexOf("document.addEventListener('input'"));
  assert.doesNotMatch(submit,/begin\(|createCareer\(/);
@@ -587,10 +598,10 @@ test('wizard routes keep the input draft in memory and do not create a premature
  assert.match(start,/createCareer\(db,/);
  assert.match(start,/getLeagueClubs\(draft\.countryId\)\.some/);
 });
-test('all three setup screens have a high cancel button and consistent heading geometry',()=>{
+test('all four setup screens have a high cancel button and consistent heading geometry',()=>{
  const draft={managerName:'Ada Manager',countryId:'IT',clubId:4};
- for(const [step,page] of [[1,managerPage(draft,'it')],[2,countryPage(draft,'it')],[3,teamsPage(draft,'it')]]){
-  assert.match(page,new RegExp('PASSAGGIO '+step+'/3'));
+ for(const [step,page] of [[1,managerPage(draft,'it')],[2,countryPage(draft,'it')],[3,championshipPage({...draft,championshipId:'IT'},'it')],[4,teamsPage(draft,'it')]]){
+  assert.match(page,new RegExp('PASSAGGIO '+step+'/4'));
   assert.match(page,/<div class="wizard-topline">/);
   const cancel=page.indexOf('data-action="cancel-setup"');
   const heading=page.indexOf('<h1 class="fa-page-title">');
@@ -612,7 +623,8 @@ test('step-specific translations and keyboard access are maintained at 320/390 w
  const blank={managerName:'',countryId:null,clubId:null};
  assert.match(managerPage(blank,'en'),/Next: Country/);
  assert.match(countryPage(blank,'en'),/Choose your country/);
- assert.match(countryPage(blank,'en'),/Next: Club/);
+ assert.match(countryPage(blank,'en'),/Next: League/);
+ assert.match(championshipPage({countryId:'IT',championshipId:null},'en'),/Next: Club/);
  assert.match(teamsPage({managerName:'Ada',countryId:'IT',clubId:null},'en'),/Select a club/);
  const team=teamsPage({managerName:'Ada',countryId:'IT',clubId:2},'en');
  assert.equal((team.match(/class="club-table-select"/g)||[]).length,20);
@@ -639,7 +651,8 @@ test('wizard H1 has shared spacing and no header subtitles',()=>{
  for(const page of [
   managerPage({managerName:'',countryId:null,clubId:null},'it'),
   countryPage({managerName:'Ada',countryId:'IT',clubId:null},'it'),
-  teamsPage({managerName:'Ada',countryId:'IT',clubId:2},'it')
+  championshipPage({managerName:'Ada',countryId:'IT',championshipId:'IT',clubId:null},'it'),
+  teamsPage({managerName:'Ada',countryId:'IT',championshipId:'IT',clubId:2},'it')
  ]){
   const kicker=page.indexOf('class="pretitle wizard-step-label"');
   const title=page.indexOf('<h1 class="fa-page-title">');
@@ -1132,10 +1145,10 @@ test('shared centering works for typeahead, newly opened selected nationality, a
 });
 
 
-test('wizard exit button is Menu in IT and EN for all three stages without changing its action',()=>{
+test('wizard exit button is Menu in IT and EN for all four stages without changing its action',()=>{
  const draft={managerName:'Ada Manager',managerProfile:blankManagerProfile(),countryId:'IT',clubId:4};
  for(const lang of ['it','en']){
-  for(const page of [managerPage(draft,lang),countryPage(draft,lang),teamsPage(draft,lang)]){
+  for(const page of [managerPage(draft,lang),countryPage(draft,lang),championshipPage({...draft,championshipId:'IT'},lang),teamsPage(draft,lang)]){
    assert.match(page,/<button[^>]*data-action="cancel-setup"[^>]*>[\s\S]*?<span>Menu<\/span><\/button>/);
    assert.doesNotMatch(page,/<span>(Annulla|Cancel)<\/span>/);
   }
@@ -1155,7 +1168,7 @@ test('country step uses same panel, green focus and selection contract as manage
   assert.equal((blank.match(/aria-pressed="false"/g)||[]).length,8);
   assert.match(blank,/data-action="country-next" disabled/);
   assert.match(blank,/class="fa-action-row wizard-country-actions"/);
-  assert.match(blank,lang==='it'?/Avanti: Squadra/:/Next: Club/);
+  assert.match(blank,lang==='it'?/Avanti: Campionato/:/Next: League/);
   assert.doesNotMatch(blank,/class="league-pick wizard-country-panel"/);
   const selected=countryPage({countryId:'IT',clubId:null},lang);
   assert.equal((selected.match(/fa-choice-selected/g)||[]).length,1);
@@ -1233,17 +1246,18 @@ test('Tab keyboard highlight on manager fields wins over neutral focus CSS after
 });
 
 
-test('all three new-career steps have title but no subtitle in IT and EN',()=>{
+test('all four new-career steps have title but no subtitle in IT and EN',()=>{
  for(const lang of ['it','en']){
   const pages=[
    managerPage({managerProfile:blankManagerProfile()},lang),
    countryPage({countryId:null},lang),
-   teamsPage({countryId:'IT',clubId:null,managerName:'Ada'},lang)
+   championshipPage({countryId:'IT',championshipId:null},lang),
+   teamsPage({countryId:'IT',championshipId:'IT',clubId:null,managerName:'Ada'},lang)
   ];
   for(let i=0;i<pages.length;i++){
    const header=pages[i].match(/<header class="onboard-header fa-page-heading">([\s\S]*?)<\/header>/)?.[1];
    assert.ok(header);
-   assert.match(header,new RegExp((lang==='it'?'PASSAGGIO ':'STEP ')+(i+1)+'/3'));
+   assert.match(header,new RegExp((lang==='it'?'PASSAGGIO ':'STEP ')+(i+1)+'/4'));
    assert.match(header,/<h1 class="fa-page-title">/);
    assert.doesNotMatch(header,/<p\b/);
    assert.match(header,/<div class="wizard-topline">/);
@@ -1303,4 +1317,48 @@ test('Rosa is visible, disabled, translated and has no action until implemented'
  }
  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.doesNotMatch(main,/case 'roster':|case 'squad':/);
+});
+
+
+test('championship is a required fourth-stage selection, scoped to selected country',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.equal(LEAGUES.length,8);
+ for(const nation of LEAGUES){
+  for(const lang of ['it','en']){
+   const draft={countryId:nation.id,championshipId:null};
+   const blank=championshipPage(draft,lang);
+   assert.match(blank,/class="wizard-country-panel wizard-championship-panel panel"/);
+   assert.match(blank,lang==='it'?/Scegli il campionato/:/Choose your league/);
+   assert.equal((blank.match(/data-action="championship" /g)||[]).length,1);
+   assert.match(blank,/aria-pressed="false"/);
+   assert.match(blank,/data-action="championship-next" disabled/);
+   assert.ok(blank.includes(nation.competition));
+   const checked=championshipPage({...draft,championshipId:nation.id},lang);
+   assert.equal((checked.match(/aria-pressed="true"/g)||[]).length,1);
+   assert.match(checked,/class="fa-interactive-box wizard-country-option wizard-championship-option fa-choice-selected"/);
+   assert.doesNotMatch(checked,/data-action="championship-next" disabled/);
+  }
+ }
+ assert.match(controller,/countryId:null,championshipId:null,clubId:null/);
+ assert.match(controller,/case 'country':if\([\s\S]*?draft.championshipId=null;draft.clubId=null/);
+ assert.match(controller,/case 'championship':if\(LEAGUES\.some\(l=>l\.id===element\.dataset\.championship&&l\.id===draft\.countryId\)\)/);
+ assert.match(controller,/case 'championship-next':if\(LEAGUES\.some\(l=>l\.id===draft\.championshipId&&l\.id===draft\.countryId\)\)navigate\('\/new-career\/team'\)/);
+ assert.match(controller,/draft\.championshipId&&l\.id===draft\.countryId/);
+ assert.match(controller,/history\.replaceState\(\{\},'','\/new-career\/league'\)/);
+ assert.match(server,/'\/new-career\/league'/);
+ assert.match(css,/\.wizard-championship-options\{grid-template-columns:minmax\(0,1fr\)\}/);
+ assert.doesNotMatch(controller,/managerProfile:[\s\S]{0,80}championshipId:[\s\S]{0,80}createCareer\(/);
+});
+
+test('global table cells always center their content vertically without altering table display',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(sheet,/\.fa-page-main table th,\.fa-page-main table td\{vertical-align:middle\}/);
+ assert.match(sheet,/\.fa-page-main table :is\(th,td\)>:is\(button,a,\[role="button"\]\)\{align-items:center\}/);
+ assert.match(sheet,/\.fa-page-main table :is\(th,td\) svg\{vertical-align:middle\}/);
+ assert.doesNotMatch(sheet,/\.fa-page-main table (?:td|th)\{display:(?:flex|grid)/);
+ const club=teamsPage({countryId:'IT',championshipId:'IT',clubId:1},'en');
+ assert.match(club,/<table class="club-table"/);
+ assert.equal((club.match(/<td class="club-table-capacity"/g)||[]).length,20);
 });
