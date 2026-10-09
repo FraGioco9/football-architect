@@ -1075,3 +1075,57 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
  .wizard-country-copy b{font-size:13px}
  .wizard-country-flag{font-size:22px}
 }
+
+/* New Career: flat SVG flags, compact club comparison, reserved Rosa feature. */
+.wizard-page .onboard-header .fa-page-title{margin-bottom:0}
+.wizard-country-flag{flex:0 0 34px;width:34px;height:23px;display:inline-flex;align-items:center;justify-content:center;font-size:0}
+.wizard-country-flag-svg{display:block;width:32px;height:22px;border:1px solid #ffffff44;border-radius:3px;overflow:hidden;box-shadow:0 1px 4px #0004}
+.restored-onboarding .wizard-team-grid .club-table{border-spacing:0 4px}
+.restored-onboarding .wizard-team-grid .club-table th{padding:0 6px 5px;font-size:9px;letter-spacing:.04em}
+.restored-onboarding .wizard-team-grid .club-table th:first-child{width:35%}
+.restored-onboarding .wizard-team-grid .club-table .club-table-city{width:17%}
+.restored-onboarding .wizard-team-grid .club-table .club-table-founded{width:11%}
+.restored-onboarding .wizard-team-grid .club-table .club-table-reputation{width:11%;text-align:center}
+.restored-onboarding .wizard-team-grid .club-table .club-table-capacity{width:18%;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.restored-onboarding .wizard-team-grid .club-table .club-table-status{width:8%;text-align:center}
+.restored-onboarding .wizard-team-grid .club-table td{height:43px;padding:4px 6px;font-size:11px}
+.restored-onboarding .wizard-team-grid .club-table td:first-child{padding:3px 5px}
+.restored-onboarding .wizard-team-grid .club-table-select{gap:7px}
+.restored-onboarding .wizard-team-grid .club-table-select .crest{width:28px;min-width:28px;height:28px;flex-basis:28px;border-radius:7px;font-size:9px}
+.restored-onboarding .wizard-team-grid .club-table-name strong{font-size:11px;line-height:1.2}
+.restored-onboarding .wizard-team-grid .club-table-name small{font-size:9px;line-height:1.25}
+.restored-onboarding .wizard-team-grid .club-table-reputation small{font-size:9px;color:#8ea6ac}
+.restored-onboarding .wizard-team-grid .club-table-indicator{width:19px;height:19px}
+.wizard-team-grid .selected-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wizard-team-grid .selected-stats .wizard-stadium-stat{grid-column:1/-1}
+.wizard-team-grid .selected-stats .wizard-stadium-stat strong{line-height:1.4}
+.wizard-team-grid .wizard-team-actions{display:flex;gap:9px;align-items:stretch}
+.fa-page-main .wizard-team-actions .wizard-roster-button{flex:0 0 76px;min-height:47px;margin:0;border-radius:10px}
+.fa-page-main .wizard-team-actions .begin-button{flex:1 1 0;min-width:0}
+@media(max-width:1100px){
+ .restored-onboarding .wizard-team-grid .club-table .club-table-founded{display:none}
+ .restored-onboarding .wizard-team-grid .club-table th:first-child{width:41%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-city{width:20%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-reputation{width:12%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-capacity{width:19%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-status{width:8%}
+}
+@media(max-width:530px){
+ .restored-onboarding .wizard-team-grid .club-table .club-table-city{display:none}
+ .restored-onboarding .wizard-team-grid .club-table th:first-child{width:53%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-reputation{width:15%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-capacity{width:23%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-status{width:9%}
+ .restored-onboarding .wizard-team-grid .club-table td{height:45px;padding:3px 5px;font-size:10px}
+ .restored-onboarding .wizard-team-grid .club-table-name small{display:block}
+ .restored-onboarding .wizard-team-grid .club-table-reputation small{display:none}
+ .restored-onboarding .wizard-team-grid .club-table th{padding:0 3px 5px;font-size:8px}
+}
+@media(max-width:360px){
+ .restored-onboarding .wizard-team-grid .club-table th:first-child{width:51%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-reputation{width:16%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-capacity{width:24%}
+ .restored-onboarding .wizard-team-grid .club-table .club-table-status{width:9%}
+ .restored-onboarding .wizard-team-grid .club-table-select .crest{width:25px;min-width:25px;height:25px;flex-basis:25px}
+ .restored-onboarding .wizard-team-grid .club-table td{font-size:9px}
+}
