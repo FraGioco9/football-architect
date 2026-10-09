@@ -122,7 +122,10 @@ async function render(){
   else inner=homePage(catalog,lang);
   closeRenameDialog(false);
   app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen);
-  app.querySelector('#career-rename-dialog')?.addEventListener('close',()=>document.documentElement.classList.remove('fa-modal-open'));
+  app.querySelector('#career-rename-dialog')?.addEventListener('close',()=>{
+   releaseSiteModalLock();
+   app.querySelector('#career-rename-input')?.classList.remove('fa-control-selected');
+  });
   if(page==='/new-career'){
    if(managerSubmitted)validateManagerForm(document.getElementById('manager-form'),false);
    if(selectedBoxId)app.querySelectorAll('.fa-interactive-box').forEach(x=>x.classList.toggle('fa-control-selected',x.id===selectedBoxId));
@@ -168,11 +171,29 @@ async function begin(){
  }finally{busy=false;}
 }
 async function load(id){stop();loaded=await selectCareer(db,id);navigate('/simulation');}
+// Shared modal lifecycle: native showModal makes the background inert, while
+// the reserved scrollbar gutter prevents page movement when the thumb hides.
+function releaseSiteModalLock(){
+ const root=document.documentElement;
+ root.classList.remove('fa-modal-open');
+ root.style.removeProperty('--fa-modal-scrollbar-gutter');
+}
+function openSiteModal(dialog,initialFocus){
+ if(!dialog||typeof dialog.showModal!=='function')return false;
+ const root=document.documentElement;
+ const gutter=Math.max(0,window.innerWidth-root.clientWidth);
+ root.style.setProperty('--fa-modal-scrollbar-gutter',gutter+'px');
+ try{dialog.showModal();}
+ catch(error){releaseSiteModalLock();throw error;}
+ root.classList.add('fa-modal-open');
+ initialFocus?.focus({preventScroll:true});
+ return true;
+}
 function closeRenameDialog(restoreFocus=false){
  const dialog=app.querySelector('#career-rename-dialog');
  const originalId=dialog?.dataset.careerId;
  if(dialog?.open)dialog.close();
- document.documentElement.classList.remove('fa-modal-open');
+ releaseSiteModalLock();
  if(restoreFocus&&originalId){
   const trigger=[...app.querySelectorAll('[data-action="rename"]')].find(x=>x.dataset.id===originalId);
   trigger?.focus({preventScroll:true});
@@ -311,9 +332,10 @@ async function handle(action,element){
    input.classList.remove('fa-field-invalid');
    const warning=dialog.querySelector('#career-rename-error');
    if(warning){warning.hidden=true;warning.textContent='';}
-   dialog.showModal();
-   document.documentElement.classList.add('fa-modal-open');
-   input.focus();input.select();break;
+   // Focus starts at the title: the field is not selected until the user
+   // explicitly clicks or tabs into it.
+   openSiteModal(dialog,dialog.querySelector('#career-rename-title'));
+   break;
   }
   case 'rename-cancel':closeRenameDialog(true);break;
   case 'export':{
@@ -454,6 +476,14 @@ document.addEventListener('submit',event=>{
   }catch(error){closeRenameDialog(false);fail(error);}
   finally{busy=false;}
  })();
+});
+document.addEventListener('focusin',event=>{
+ if(event.target.id!=='career-rename-input')return;
+ event.target.classList.add('fa-control-selected');
+});
+document.addEventListener('focusout',event=>{
+ if(event.target.id!=='career-rename-input')return;
+ event.target.classList.remove('fa-control-selected');
 });
 document.addEventListener('input',event=>{
  if(event.target.id!=='career-rename-input')return;
