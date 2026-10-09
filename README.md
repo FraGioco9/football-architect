@@ -70,4 +70,4 @@ Il nuovo profilo obbligatorio comprende esclusivamente **Nome, Cognome, Data di 
 
 ## Tabelle del sito
 
-Ogni tabella usa la regola CSS condivisa per allineare verticalmente al centro celle di intestazione, dati, pulsanti e icone, preservando la semantica nativa e il normale scorrimento della pagina.
+La tabella **Squadra** allinea i contenuti di ciascuna colonna con un contenitore dedicato e di altezza uniforme: stemma e nome, città, fondazione, reputazione, capienza e icona Scelta. Le celle rimangono elementi nativi di tabella e lo scorrimento resta quello della pagina. **Nessuna regola globale di allineamento viene applicata a tutte le tabelle**: le altre tabelle conservano i propri stili.
