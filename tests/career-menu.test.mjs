@@ -9,6 +9,8 @@ import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile,managerAge} from '../src/manager-profile.js';
+import {NATIONALITY_CODES,nationalityOptions,isNationalityCode,initialCalendarMonth,shiftCalendarMonth,calendarDays,birthDateLabel} from '../src/site-pickers.js';
+import {renderDateControl,renderNationalityControl} from '../src/site-picker-ui.js';
 
 class FakeDB{
  constructor(){this.data=new Map();this.objectStoreNames={contains:key=>this.data.has(key)};}
@@ -486,28 +488,22 @@ test('IndexedDB and import failures have safe and actionable guidance',()=>{
  assert.match(blocking,/data-action="retry-storage"/);
  assert.doesNotMatch(blocking,/INDEXEDDB_BLOCKED|stack|Error:/);
 });
-test('five required manager fields render inline IT/EN validation without extra traits',()=>{
+test('all five required controls use shared styling and action-level error feedback in IT/EN',()=>{
  const markup=managerPage({managerProfile:blankManagerProfile()},'it');
  const en=managerPage({managerProfile:blankManagerProfile()},'en');
  assert.match(markup,/<form id="manager-form" class="onboard-manager-form wizard-manager-form" novalidate>/);
- for(const [key,id,label] of [
-  ['firstName','manager-first-name','Nome'],
-  ['lastName','manager-last-name','Cognome'],
-  ['birthDate','manager-birth-date','Data di nascita'],
-  ['nationality','manager-nationality','Nazionalità'],
-  ['birthPlace','manager-birth-place','Luogo di nascita']
- ]){
-  assert.match(markup,new RegExp('name="'+key+'"[^>]*required'));
-  assert.match(markup,new RegExp('id="'+id+'-error" class="field-error" role="alert" hidden'));
-  assert.match(markup,new RegExp(label));
- }
- assert.equal((markup.match(/class="text-field wizard-profile-input"/g)||[]).length,5);
- assert.match(markup,/name="birthDate" type="date"/);
- assert.match(en,/First name/);
- assert.match(en,/Last name/);
- assert.match(en,/Date of birth/);
- assert.match(en,/Nationality/);
- assert.match(en,/Place of birth/);
+ assert.equal((markup.match(/class="text-field fa-interactive-box wizard-profile-input"/g)||[]).length,3);
+ assert.equal((markup.match(/class="fa-interactive-box fa-picker-trigger wizard-profile-input"/g)||[]).length,2);
+ for(const key of MANAGER_PROFILE_FIELDS)assert.match(markup,new RegExp('name="'+key+'"'));
+ assert.match(markup,/id="manager-birth-date"/);
+ assert.match(markup,/id="manager-nationality"/);
+ assert.match(markup,/type="hidden" name="birthDate"/);
+ assert.match(markup,/type="hidden" name="nationality"/);
+ assert.doesNotMatch(markup,/name="birthDate" type="date"/);
+ assert.match(markup,/class="fa-action-row wizard-manager-actions"/);
+ assert.match(markup,/id="manager-form-error" class="fa-action-error" role="alert" hidden/);
+ for(const label of ['Nome','Cognome','Data di nascita','Nazionalità','Luogo di nascita'])assert.ok(markup.includes(label),label);
+ for(const label of ['First name','Last name','Date of birth','Nationality','Place of birth'])assert.ok(en.includes(label),label);
  assert.doesNotMatch(markup,/Seconda nazionalità|Esperienza|Patentino|Filosofia tattica|Lingue conosciute/);
 });
 test('controllers use structured feedback and protect save data in recovery paths',()=>{
@@ -755,7 +751,7 @@ test('wizard controller validates five fields before navigating and creates only
  assert.match(controller,/const issues=managerProfileIssues\(profile\)/);
  assert.match(controller,/for\(const key of MANAGER_PROFILE_FIELDS\)/);
  assert.match(controller,/if\(!validateManagerForm\(event\.target\)\)return;/);
- assert.match(controller,/if\(form\?\.dataset\.validated==='true'\)validateManagerForm\(form,false\)/);
+ assert.match(controller,/if\(managerSubmitted\)validateManagerForm\(form,false\)/);
  assert.match(controller,/if\(busy\|\|!validManagerProfile\(draft\.managerProfile\)/);
  assert.match(controller,/createCareer\(db,\{managerName:managerFullName\(draft\.managerProfile\),managerProfile:draft\.managerProfile/);
  assert.match(server,/'\/src\/manager-profile\.js'/);
@@ -774,4 +770,71 @@ test('manager age is derived from birth date, not stored as a sixth field',()=>{
  const page=teamsPage({managerName:'Ada Rossi',managerProfile:modernProfile,countryId:'IT',clubId:2},'it');
  assert.match(page,/ALLENATORE/);
  assert.match(page,/anni/);
+});
+
+
+test('nationality dropdown localizes broad ISO choices and supports selected state',()=>{
+ assert.ok(NATIONALITY_CODES.length>=240);
+ assert.equal(new Set(NATIONALITY_CODES).size,NATIONALITY_CODES.length);
+ for(const key of ['IT','FR','DE','US','JP','BR','ZA','AU'])assert.equal(isNationalityCode(key),true);
+ assert.equal(isNationalityCode('ZZ'),false);
+ const italian=nationalityOptions('it'),english=nationalityOptions('en');
+ assert.equal(italian.length,english.length);
+ assert.equal(italian.find(x=>x.code==='IT').label,'Italia');
+ assert.equal(english.find(x=>x.code==='IT').label,'Italy');
+ assert.match(renderNationalityControl('IT','it',true),/data-action="nationality-select" data-value="IT" aria-selected="true"/);
+ assert.match(renderNationalityControl('','en',false),/Choose nationality/);
+ assert.match(renderNationalityControl('IT','en',true),/role="listbox"/);
+ assert.match(renderNationalityControl('IT','it',false),/aria-expanded="false"/);
+});
+test('site calendar has month and year selectors, Monday-first grid, leap dates, limits and bilingual UI',()=>{
+ assert.equal(initialCalendarMonth('1988-02-29','2026-10-09'),'1988-02');
+ assert.equal(initialCalendarMonth('','2026-10-09'),'1996-01');
+ assert.equal(shiftCalendarMonth('2000-12',1,'2026-10-09'),'2001-01');
+ assert.equal(shiftCalendarMonth('1900-01',-1,'2026-10-09'),'1900-01');
+ assert.equal(shiftCalendarMonth('2026-10',1,'2026-10-09'),'2026-10');
+ assert.ok(calendarDays('2000-02','2026-10-09').some(x=>x?.iso==='2000-02-29'&&!x.disabled));
+ assert.equal(calendarDays('2026-10','2026-10-09').find(x=>x?.iso==='2026-10-10').disabled,true);
+ const it=renderDateControl('2000-02-29','it',true,'2000-02');
+ const en=renderDateControl('','en',true,'2026-10');
+ assert.match(it,/data-action="calendar-prev"/);
+ assert.match(it,/data-action="calendar-next"/);
+ assert.match(it,/data-calendar-part="month"/);
+ assert.match(it,/data-calendar-part="year"/);
+ assert.match(it,/data-action="calendar-day" data-value="2000-02-29"/);
+ assert.match(it,/role="grid"/);
+ assert.match(it,/aria-expanded="true"/);
+ assert.match(en,/Choose date of birth/);
+ assert.match(en,/data-value="2026-10-10"[^>]* disabled/);
+ assert.equal(birthDateLabel('2000-02-29','it'),'29/02/2000');
+});
+test('global selected/error visual contract only responds to a box click, not labels or hover',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/document\.addEventListener\('pointerdown',event=>\{/);
+ assert.match(js,/event\.target\.closest\?\.\('\.fa-interactive-box'\)/);
+ assert.match(js,/selectedBoxId=box\?\.id\?\?null/);
+ assert.doesNotMatch(js,/event\.target\.closest\?\.\('label'\)\.classList\.add/);
+ assert.match(css,/\.fa-page-main \.fa-interactive-box\.fa-control-selected:not\(\.fa-field-invalid\)/);
+ assert.match(css,/\.fa-page-main \.fa-interactive-box\.fa-field-invalid/);
+ assert.match(css,/--fa-error-border:#e57872/);
+ assert.match(css,/\.restored-onboarding \.league-pick-option:not\(\.active\):hover/);
+ assert.match(css,/\.restored-onboarding \.club-table-row:not\(\.is-selected\):hover td/);
+ assert.match(css,/\.fa-action-error:not\(\[hidden\]\)/);
+ assert.match(js,/const summary=document\.getElementById\('manager-form-error'\)/);
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.match(ui,/id="manager-form-error"/);
+ assert.match(ui,/renderDateControl\(p\.birthDate/);
+ assert.match(ui,/renderNationalityControl\(p\.nationality/);
+});
+test('shared site pickers stay open only when requested, with escape and outside click handlers',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ for(const action of ['nationality-toggle','nationality-select','calendar-toggle','calendar-prev','calendar-next','calendar-day','calendar-clear'])
+  assert.ok(js.includes("case '"+action+"'"),action);
+ assert.match(js,/if\(event\.key==='Escape'\)/);
+ assert.match(js,/if\(pickerOpen&&!event\.target\.closest\?\.\('\[data-fa-picker\]'\)\)/);
+ assert.match(js,/data-calendar-part/);
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(server,/'\/src\/site-pickers\.js'/);
+ assert.match(server,/'\/src\/site-picker-ui\.js'/);
 });
