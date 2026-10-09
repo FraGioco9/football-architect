@@ -31,3 +31,10 @@ export function validManagerProfile(value,today=localToday()){
   MANAGER_PROFILE_FIELDS.every(field=>typeof value[field]==='string')&&
   Object.keys(managerProfileIssues(value,today)).length===0);
 }
+
+export function managerAge(profile,date=localToday()){
+ const birthday=normalizeManagerProfile(profile).birthDate;
+ if(!validDate(birthday)||!validDate(date)||birthday>date)return null;
+ const year=Number(date.slice(0,4))-Number(birthday.slice(0,4));
+ return year-(date.slice(5)<birthday.slice(5)?1:0);
+}
