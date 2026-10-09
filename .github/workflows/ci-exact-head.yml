@@ -39,6 +39,8 @@ jobs:
         run: node --test tests/minimal-core.test.mjs
       - name: Verify multi-career IndexedDB and menu regression
         run: node --test tests/career-menu.test.mjs
+      - name: Verify CAL-02.1 deterministic home/away fixture generation
+        run: node --test tests/fixture-calendar.test.mjs
 
       - name: Verify HTTP routes and no match pages
         run: |
