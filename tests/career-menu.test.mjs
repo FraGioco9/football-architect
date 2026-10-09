@@ -514,3 +514,26 @@ test('page scrollbar track is fully transparent and nested scrollbars keep share
  for(const name of ['hero fa-page-heading','onboarding restored-onboarding','restored-careers','restored-settings','heading fa-page-heading'])
   assert.ok(code.includes(name),name);
 });
+
+test('settings icon uses a centered geometric cog with eight uniform teeth',()=>{
+ const settings=icon('settings',21);
+ assert.match(settings,/viewBox="0 0 24 24"/);
+ assert.match(settings,/width="21" height="21"/);
+ assert.match(settings,/aria-hidden="true" focusable="false"/);
+ assert.match(settings,/<circle cx="12" cy="12" r="3\.2"\/>/);
+ const path=settings.match(/<path d="([^"]+)"\/>/)?.[1];
+ assert.ok(path?.startsWith('M')&&path.endsWith('Z'));
+ const vertices=[...path.matchAll(/[ML](\\d+(?:\\.\\d+)?) (\\d+(?:\\.\\d+)?)/g)]
+  .map(([,x,y])=>({x:Number(x),y:Number(y)}));
+ assert.equal(vertices.length,32);
+ for(const point of vertices){
+  const radius=Math.hypot(point.x-12,point.y-12);
+  assert.ok(radius>7.8&&radius<10.1,'cog fits within 24px viewBox');
+ }
+ assert.equal((settings.match(/<circle/g)||[]).length,1);
+ const small=icon('settings',16);
+ assert.match(small,/width="16" height="16"/);
+ assert.equal(small.match(/<path d="([^"]+)"/)?.[1],path);
+ assert.equal((homePage({rows:[],activeId:null},'it').match(/data-action="settings"/g)||[]).length,1);
+ assert.match(homePage({rows:[],activeId:null},'it'),/data-action="settings"[\\s\\S]*?<svg/);
+});
