@@ -853,7 +853,8 @@ test('MFL-inspired calendar shows 42 dates, muted adjacent months, today and bir
  assert.equal(grid[0].iso,'2026-01-26');
  assert.equal(grid[0].outside,true);
  assert.equal(grid[6].iso,'2026-02-01');
- assert.equal(calendarGridDays('1900-01','2026-10-09')[0].disabled,true);
+ assert.equal(calendarGridDays('1900-01','2026-10-09')[0].iso,'1900-01-01');
+ assert.equal(calendarGridDays('1900-01','2026-10-09')[0].disabled,false);
  const today=calendarGridDays('2026-10','2026-10-09');
  assert.equal(today.find(d=>d.iso==='2026-10-09').disabled,false);
  assert.equal(today.find(d=>d.iso==='2026-10-10').disabled,true);
