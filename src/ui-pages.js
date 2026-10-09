@@ -257,7 +257,7 @@ export function careersPage(catalog,lang,currentCareerId=null){
       <p>${tr(lang,'Crea la prima carriera per iniziare.','Create your first career to get started.')}</p>
      </div>`}</div>
    </section>
-   <dialog id="career-rename-dialog" class="fa-rename-dialog" aria-labelledby="career-rename-title">
+   <dialog id="career-rename-dialog" class="fa-site-dialog fa-rename-dialog" aria-labelledby="career-rename-title">
     <form id="career-rename-form" novalidate>
      <div class="fa-rename-dialog-header"><h2 id="career-rename-title" tabindex="-1">${tr(lang,'Rinomina carriera','Rename career')}</h2>
       <button class="fa-rename-close" type="button" data-action="rename-cancel" aria-label="${tr(lang,'Chiudi','Close')}">${icon('x',17)}</button>
@@ -268,6 +268,18 @@ export function careersPage(catalog,lang,currentCareerId=null){
      <div class="fa-rename-dialog-actions">
       <button type="button" class="btn secondary" data-action="rename-cancel">${tr(lang,'Annulla','Cancel')}</button>
       <button type="submit" class="btn primary">${icon('check',14)}<span>${tr(lang,'Salva','Save')}</span></button>
+     </div>
+    </form>
+   </dialog>
+   <dialog id="career-delete-dialog" class="fa-site-dialog fa-delete-dialog" aria-labelledby="career-delete-title" aria-describedby="career-delete-description">
+    <form id="career-delete-form">
+     <div class="fa-rename-dialog-header"><h2 id="career-delete-title" tabindex="-1">${tr(lang,'Elimina carriera','Delete career')}</h2>
+      <button class="fa-rename-close" type="button" data-action="delete-cancel" aria-label="${tr(lang,'Chiudi','Close')}">${icon('x',17)}</button>
+     </div>
+     <p id="career-delete-description" class="fa-site-dialog-description">${tr(lang,'Eliminare definitivamente questa carriera?','Permanently delete this career?')}</p>
+     <div class="fa-rename-dialog-actions">
+      <button type="button" class="btn secondary" data-action="delete-cancel">${tr(lang,'Annulla','Cancel')}</button>
+      <button type="submit" class="btn danger">${icon('trash',14)}<span>${tr(lang,'Elimina','Delete')}</span></button>
      </div>
     </form>
    </dialog>
