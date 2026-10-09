@@ -5,6 +5,7 @@ import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
+import {nextScheduledClubFixture,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,countryFlag} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
@@ -218,7 +219,7 @@ test('simulation maintains match-free semantics, responsive UI and keyboard focu
  const markup=simulationPage(meta,state,'it',false);
  assert.match(markup,/Avanza nel tempo/);
  assert.match(markup,/Non viene giocata alcuna partita/);
- assert.doesNotMatch(markup,/\bfixture\b|\bscore\b|risultati|classifica/i);
+ assert.doesNotMatch(markup,/\bscore\b|risultati|classifica/i);
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/:focus-visible/);
  assert.match(css,/@media\(max-width:580px\)/);
@@ -1349,6 +1350,11 @@ test('HTTP serves every bundled flag with SVG MIME and nosniff but denies unknow
    await new Promise(resolve=>setTimeout(resolve,75));
   }
   assert.ok(ready,'Offline HTTP server did not become ready');
+  const fixtureModule=await fetch(base+'/src/fixture-calendar.js');
+  assert.equal(fixtureModule.status,200,'Fixture module must load in the browser');
+  assert.match(fixtureModule.headers.get('content-type')??'',/^text\/javascript\b/);
+  assert.equal(fixtureModule.headers.get('x-content-type-options'),'nosniff');
+  assert.match(await fixtureModule.text(),/export function nextScheduledClubFixture/);
   const flags=readdirSync(new URL('../assets/flags/',import.meta.url)).filter(n=>n.endsWith('.svg'));
   assert.equal(flags.length,271);
   for(const name of flags){
@@ -1757,4 +1763,36 @@ test('CAL-01 IndexedDB: legacy six-field JSON imports remain readable and acquir
  const advanced=advanceMinutes(old,60);
  await saveCareer(db,career.meta.id,advanced,{expectedDays:0,expectedTime:'08:00'});
  assert.equal((await selectCareer(db,career.meta.id)).state.time,'09:00');
+});
+
+test('CAL-02.3: IndexedDB and JSON roundtrip reconstruct the same next match',async()=>{
+ const db=await setup(),initial=createSession('BR',9,'2026-07-01');
+ const saved=await createCareer(db,{...form('Fixture Import','BR',9,'2026-07-01'),session:initial});
+ const expected=nextScheduledClubFixture(initial);
+ const forward=advanceSession(initial,30);
+ const updated=await saveCareer(db,saved.meta.id,forward,{expectedDays:0,expectedTime:sessionTime(initial)});
+ const reopened=await selectCareer(db,saved.meta.id);
+ assert.deepEqual(reopened.state,forward);
+ assert.equal(nextScheduledClubFixture(reopened.state).id,nextScheduledClubFixture(updated.state).id);
+ const exported=await exportCareer(db,saved.meta.id);
+ assert.deepEqual(Object.keys(JSON.parse(exported.snapshotRaw)).sort(),Object.keys(forward).sort());
+ const parsed=parseCareerImport(JSON.stringify(exported));
+ const copied=await createCareer(db,{...parsed,id:mkId(),now:'2026-11-10T10:00:00.000Z'});
+ assert.deepEqual(copied.state,forward);
+ assert.equal(nextScheduledClubFixture(copied.state).id,nextScheduledClubFixture(forward).id);
+ assert.ok(expected&&nextScheduledClubFixture(initial).id===expected.id);
+ assert.equal((await readCatalog(db)).rows.length,2);
+});
+
+test('CAL-02.3: multiple careers reuse calendars by key, never another club selection',async()=>{
+ const db=await setup();
+ const first=await createCareer(db,form('First','IT',1,'2026-07-01'));
+ const second=await createCareer(db,form('Second','IT',2,'2026-07-01'));
+ const cache=createFixtureCalendarCache(4);
+ const a=nextScheduledClubFixture((await selectCareer(db,first.meta.id)).state,cache);
+ const b=nextScheduledClubFixture((await selectCareer(db,second.meta.id)).state,cache);
+ assert.ok(a.homeClubId===1||a.awayClubId===1);
+ assert.ok(b.homeClubId===2||b.awayClubId===2);
+ assert.equal(nextScheduledClubFixture((await selectCareer(db,first.meta.id)).state,cache).id,a.id);
+ assert.deepEqual((await selectCareer(db,second.meta.id)).state,second.state);
 });

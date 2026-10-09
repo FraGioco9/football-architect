@@ -328,8 +328,10 @@ export function settingsPage(lang){
  </div>`;
 }
 
-export function simulationPage(meta,state,lang,playing){
+export function simulationPage(meta,state,lang,playing,nextFixture=null){
  const c=club(meta.countryId,meta.clubId),l=leagueById(meta.countryId);
+ const fixtureOpponent=nextFixture?club(meta.countryId,nextFixture.homeClubId===meta.clubId?nextFixture.awayClubId:nextFixture.homeClubId):null;
+ const fixtureHome=nextFixture?.homeClubId===meta.clubId;
  const calendar=seasonCalendar(state.date,state.startedAt);
  const market=transferMarketFor(state);
  const marketTitle=market.window==='summer'?tr(lang,'Mercato estivo','Summer transfer window'):
@@ -359,8 +361,17 @@ export function simulationPage(meta,state,lang,playing){
    </div>`).join('')}
   </div>
   <p class="muted">${tr(lang,
-   'Date reali e fasi stagionali. Partite e orari non sono ancora programmati né simulati.',
-   'Real dates and season phases. Fixtures and kick-off times are not yet scheduled or simulated.')}</p>
+   'Date e orari delle partite sono programmati, ma non viene ancora giocato alcun incontro.',
+   'Match dates and kick-off times are scheduled, but no matches are played yet.')}</p>
+ </section>
+ <section class="panel fa-next-fixture" aria-labelledby="fa-next-fixture-title">
+  <div class="fa-season-calendar-header">
+   <h2 id="fa-next-fixture-title">${tr(lang,'Prossima partita','Next match')}</h2>
+   <span class="fa-season-phase">${tr(lang,'PROGRAMMATA','SCHEDULED')}</span>
+  </div>
+  ${nextFixture?`<p><strong>${esc(c?.name??'—')} — ${esc(fixtureOpponent?.name??'—')}</strong></p>
+   <p class="muted">${esc(fmtDate(nextFixture.date,lang))} · ${esc(nextFixture.time)} · ${fixtureHome?tr(lang,'In casa','Home'):tr(lang,'In trasferta','Away')}</p>`:
+   `<p class="muted">${tr(lang,'Nessuna partita futura disponibile','No upcoming match available')}</p>`}
  </section>
  <section class="panel fa-transfer-window" aria-labelledby="fa-transfer-title">
   <div class="fa-season-calendar-header">

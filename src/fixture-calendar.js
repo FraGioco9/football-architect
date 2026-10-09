@@ -3,6 +3,8 @@
  * No kick-off dates, scores, standings, match engine or persistent data.
  */
 import {COMPETITIONS,getCompetitionClubs} from './leagues.js';
+import {validSession,sessionTime} from './simulation.js';
+import {seasonOpeningYear} from './season-calendar.js';
 
 const CLUB_COUNT=20;
 const HALF_ROUNDS=CLUB_COUNT-1;
@@ -222,4 +224,43 @@ export function scheduleCompetitionFixtures(competitionId,seasonYear,{strategy='
   ()=>verifyScheduledKickoffs(assignFixtureKickoffs(source,false)),
   ()=>verifyScheduledKickoffs(assignFixtureKickoffs(source,true))
  );
+}
+
+/** Find the next fixture for the current saved career, without simulating it. */
+export function nextScheduledClubFixture(state,calendarFor=scheduleCompetitionFixtures){
+ if(!validSession(state))throw new Error('Invalid calendar session');
+ const competitionId=state.countryId+'-1';
+ const now=state.date+'T'+sessionTime(state);
+ const currentYear=seasonOpeningYear(state.date);
+ for(const year of [currentYear,currentYear+1]){
+  const calendar=calendarFor(competitionId,year);
+  let next=null,nextAt=null;
+  for(const day of calendar.matchdays)for(const fixture of day.fixtures){
+   if(fixture.homeClubId!==state.clubId&&fixture.awayClubId!==state.clubId)continue;
+   const at=fixture.date+'T'+fixture.time;
+   // Equality is intentional: a scheduled event remains until the clock passes kickoff.
+   if(at<now||(nextAt!==null&&at>=nextAt))continue;
+   next=fixture;nextAt=at;
+  }
+  if(next)return next;
+ }
+ return null;
+}
+
+/** Four immutable seasonal calendars at most, never persisted to IndexedDB. */
+export function createFixtureCalendarCache(maxEntries=4,generate=scheduleCompetitionFixtures){
+ if(!Number.isSafeInteger(maxEntries)||maxEntries<1)throw new Error('Invalid fixture cache size');
+ const cache=new Map();
+ return (competitionId,seasonYear)=>{
+  const key=competitionId+':'+seasonYear;
+  if(cache.has(key)){
+   const calendar=cache.get(key);
+   cache.delete(key);cache.set(key,calendar);
+   return calendar;
+  }
+  const calendar=generate(competitionId,seasonYear);
+  cache.set(key,calendar);
+  if(cache.size>maxEntries)cache.delete(cache.keys().next().value);
+  return calendar;
+ };
 }
