@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionById,getCountryClubs,getCompetitionClubs,getClub} from '../src/leagues.js';
 import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
 import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
-import {simulationPage,calendarPage} from '../src/ui-pages.js';
+import {layout,simulationPage,calendarPage} from '../src/ui-pages.js';
 import {nextScheduledClubFixture,scheduleCompetitionFixtures,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 
 test('eight real countries each expose 20 invented clubs with unique identities',()=>{
@@ -508,7 +508,9 @@ test('CAL-02.4: bilingual controls, selection styling, no match simulation and u
  assert.match(en,/Match calendar/);
  assert.match(en,/All matches/);
  assert.match(en,/Rounds/);
- assert.match(it,/data-action="fixture-back"/);
+ const shell=layout(it,'it',null,false,{route:'/calendar',meta,state,playing:false});
+ assert.match(shell,/data-action="career-dashboard"/);
+ assert.match(shell,/data-action="fixture-open"/);
  assert.doesNotMatch(it,/data-action="play-match"|data-action="simulate-match"|matchEngine/i);
  assert.equal(JSON.stringify(state),snapshot);
  assert.ok(calendar.matchdays.every(d=>Object.isFrozen(d.fixtures)));
@@ -528,4 +530,14 @@ test('CAL-02.4: responsive 320/390 contracts keep a 7-column grid with no nested
  assert.doesNotMatch(css,/\.fa-fixture-(?:results|items|calendar)\s*\{[^}]*overflow-y:\s*(?:auto|scroll)/);
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
  assert.ok(server.includes("'/calendar'"));
+});
+
+
+test('UX-SHELL: routes and source avoid restoring pre-reset match engine',()=>{
+ const src=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.ok(src.includes("'/dashboard'"));
+ assert.ok(server.includes("'/dashboard'"));
+ assert.doesNotMatch(src,/simulateMatch|playMatchday|matchEngine|newSeason/);
+ assert.doesNotMatch(server,/\/match\/\d|\/squad|\/training|\/tactics/);
 });

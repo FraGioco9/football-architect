@@ -9,7 +9,7 @@ import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,manag
 import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer,centeredMenuScrollTop} from './site-pickers.js';
 
 const app=document.getElementById('app');
-const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/calendar']);
+const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,championshipId:null,clubId:null,query:''});
 let draft=newDraft();
@@ -111,7 +111,7 @@ async function render(){
  if(!db){app.innerHTML=layout(renderBlockingError(storageFailure??new Error('INDEXEDDB_UNAVAILABLE'),lang),lang,null,languageMenuOpen);return;}
  let page=path();
  try{
-  if(page!=='/simulation'&&page!=='/calendar')await refreshCatalog();
+  if(page!=='/simulation'&&page!=='/dashboard'&&page!=='/calendar')await refreshCatalog();
   if(ticket!==sequence)return;
   if((page==='/new-career/country'||page==='/new-career/league'||page==='/new-career/team')&&
     (!validManagerProfile(draft.managerProfile))){
@@ -123,7 +123,7 @@ async function render(){
   if(page==='/new-career/team'&&!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)){
    history.replaceState({},'','/new-career/league');page='/new-career/league';
   }
-  if((page==='/simulation'||page==='/calendar')&&!loaded){
+  if((page==='/simulation'||page==='/dashboard'||page==='/calendar')&&!loaded){
    await refreshCatalog();
    const candidate=bestCareer(catalog);
    if(candidate){loaded=await selectCareer(db,candidate.id);}
@@ -138,7 +138,7 @@ async function render(){
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang,careersFromSimulationId);
   else if(page==='/settings')inner=settingsPage(lang);
-  else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null,nextScheduledClubFixture(loaded.state,fixtureCalendarFor));
+  else if((page==='/simulation'||page==='/dashboard')&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null,nextScheduledClubFixture(loaded.state,fixtureCalendarFor));
   else if(page==='/calendar'&&loaded){
    const ui=fixturePageState();
    const seasonYear=seasonOpeningYear(ui.month+'-01');
@@ -147,7 +147,7 @@ async function render(){
   else inner=homePage(catalog,lang);
   closeRenameDialog(false);
   closeDeleteDialog(false);
-  app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen);
+  app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen,loaded&&['/simulation','/dashboard','/calendar'].includes(page)?{route:page,meta:loaded.meta,state:loaded.state,playing:timer!==null}:null);
   app.querySelectorAll('.fa-site-dialog').forEach(dialog=>{
    dialog.addEventListener('close',()=>{
     releaseSiteModalLock();
@@ -198,10 +198,10 @@ async function begin(){
   const current=await createCareer(db,{managerName:managerFullName(draft.managerProfile),managerProfile:draft.managerProfile,countryId:draft.countryId,clubId:draft.clubId,session:createSession(draft.countryId,draft.clubId,preseasonStart(localToday()))});
   loaded=current;
   draft=newDraft();
-  navigate('/simulation');
+  navigate('/dashboard');
  }finally{busy=false;}
 }
-async function load(id){stop();loaded=await selectCareer(db,id);navigate('/simulation');}
+async function load(id){stop();loaded=await selectCareer(db,id);navigate('/dashboard');}
 // Shared modal lifecycle: native showModal makes the background inert, while
 // the reserved scrollbar gutter prevents page movement when the thumb hides.
 function releaseSiteModalLock(){
@@ -282,8 +282,9 @@ async function handle(action,element){
   case 'language-option':await setLanguage(element.dataset.value);break;
   case 'language-focus':await toggleLanguageMenu(true,'option');break;
   case 'home':navigate('/');break;
+  case 'career-dashboard':navigate('/dashboard');break;
   case 'fixture-open':navigate('/calendar');break;
-  case 'fixture-back':navigate('/simulation');break;
+  case 'fixture-back':navigate('/dashboard');break;
   case 'fixture-view':{
    const ui=fixturePageState();
    if(!ui||!['month','round'].includes(element.dataset.value))break;
@@ -336,7 +337,7 @@ async function handle(action,element){
    await render();break;
   }
   case 'new':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/new-career');break;
-  case 'careers':careersFromSimulationId=path()==='/simulation'&&loaded?loaded.meta.id:null;navigate('/careers');break;
+  case 'careers':careersFromSimulationId=path()==='/simulation'&&loaded?loaded.meta.id:null;if(path()==='/dashboard'&&loaded)careersFromSimulationId=loaded.meta.id;navigate('/careers');break;
   case 'settings':navigate('/settings');break;
   case 'cancel-setup':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/');break;
   case 'setup-back':navigate(path()==='/new-career/team'?'/new-career/league':path()==='/new-career/league'?'/new-career/country':'/new-career');break;

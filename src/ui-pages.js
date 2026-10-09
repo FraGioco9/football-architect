@@ -32,7 +32,47 @@ export function countryFlag(code){
 }
 const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','fixture-open':'calendar','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
-export function layout(inner,lang,message=null,languageOpen=false){
+export function layout(inner,lang,message=null,languageOpen=false,career=null){
+ if(career&&(career.route==='/dashboard'||career.route==='/simulation'||career.route==='/calendar')){
+  const meta=career.meta,state=career.state,playing=Boolean(career.playing);
+  const c=club(meta.countryId,meta.clubId),phase=seasonCalendar(state.date,state.startedAt).phase;
+  const phaseName=phase==='preseason'?tr(lang,'Prestagione','Preseason'):
+   phase==='season'?tr(lang,'Stagione','Season'):tr(lang,'Pausa estiva','Summer break');
+  const dashboard=career.route!=='/calendar';
+  const nav=(action,name,label,active)=>`<button type="button" class="fa-shell-link${active?' is-active':''}" data-action="${action}" aria-label="${label}" ${active?'aria-current="page"':''}>${icon(name,18)}<span>${label}</span></button>`;
+  const action=dashboard
+   ?button('toggle',playing?tr(lang,'Interrompi','Stop'):tr(lang,'Continua','Continue'),playing?'warning':'primary')
+   :`<button type="button" class="btn secondary" data-action="career-dashboard">${icon('clock',16)}<span>${tr(lang,'Dashboard','Dashboard')}</span></button>`;
+  const shortDate=state.date.slice(8,10)+'/'+state.date.slice(5,7);
+  return `<div class="shell fa-career-shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
+   <aside class="fa-shell-sidebar" aria-label="${tr(lang,'Navigazione carriera','Career navigation')}">
+    <div class="fa-shell-sidebar-head"><span class="brand-symbol">${icon('shield',21)}</span><span class="fa-shell-wordmark">FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span></div>
+    <nav class="fa-shell-nav" aria-label="${tr(lang,'Pagine della carriera','Career pages')}">
+     <section class="fa-shell-nav-group" aria-labelledby="fa-shell-start-title">
+      <h2 class="fa-shell-nav-group-title" id="fa-shell-start-title">${tr(lang,'Inizio','Home')}</h2>
+      <div class="fa-shell-nav-group-items">
+       ${nav('career-dashboard','grid-pre-reset',tr(lang,'Dashboard','Dashboard'),dashboard)}
+       ${nav('fixture-open','calendar-pre-reset',tr(lang,'Calendario','Calendar'),!dashboard)}
+      </div>
+     </section>
+    </nav>
+   </aside>
+   <div class="fa-shell-workspace">
+    <header class="fa-shell-topbar">
+     <div class="fa-shell-club" title="${esc(c?.name??'—')}">${crest(c)}<strong>${esc(c?.name??'—')}</strong></div>
+     <div class="fa-shell-time" aria-label="${tr(lang,'Data e fase della carriera','Career date and phase')}">
+      ${icon('calendar',15)}<span class="fa-shell-date-full">${esc(fmtGameDate(state.date,lang,sessionTime(state)))}</span>
+      <span class="fa-shell-date-short">${esc(shortDate)} · ${esc(sessionTime(state))}</span>
+      <span class="fa-shell-phase">· ${esc(phaseName)}</span>
+     </div>
+     <div class="fa-shell-language">${languagePicker(lang,languageOpen)}</div>
+     <div class="fa-shell-primary">${action}</div>
+    </header>
+    <main id="content" class="fa-page-main">${renderFeedback(message,lang)}${inner}</main>
+    <footer>FOOTBALL ARCHITECT · ${tr(lang,'OFFLINE · GIOCATORE SINGOLO','OFFLINE · SINGLE PLAYER')}</footer>
+   </div>
+  </div>`;
+ }
  return `<div class="shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
  <header class="top"><a class="brand" href="/" data-action="home"><span class="brand-symbol">${icon('shield',22)}</span><span>FOOTBALL <b>ARCHITECT</b><small>BUILD YOUR LEGACY</small></span></a>
  <div class="header-actions">${languagePicker(lang,languageOpen)}</div></header>
@@ -344,9 +384,9 @@ export function simulationPage(meta,state,lang,playing,nextFixture=null){
   {id:'season',date:calendar.seasonStart,it:'Periodo stagionale',en:'Season period'},
   {id:'offseason',date:calendar.offseasonStart,it:'Pausa estiva',en:'Summer break'}
  ];
- return `<section class="heading fa-page-heading"><button class="back" type="button" data-action="home">${icon('arrow-left',16)} ${tr(lang,'Menu','Menu')}</button>
- <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1 class="fa-page-title">${esc(c?.name??'—')}</h1>
- <p>${esc(meta.managerName)} · <span class="career-country-flag" aria-hidden="true">${countryFlag(l.id)}</span> ${esc(l.country[lang])}</p></section>
+ return `<section class="heading fa-page-heading">
+ <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1 class="fa-page-title">${tr(lang,'Dashboard','Dashboard')}</h1>
+ <p>${esc(c?.name??'—')} · ${esc(meta.managerName)} · <span class="career-country-flag" aria-hidden="true">${countryFlag(l.id)}</span> ${esc(l.country[lang])}</p></section>
  <div class="metrics"><section class="panel"><span class="kicker">${tr(lang,'DATA DI GIOCO','GAME DATE')}</span><h2>${esc(fmtGameDate(state.date,lang,sessionTime(state)))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'STAGIONE','SEASON')}</span><h2>${esc(tr(lang,'Stagione ','Season ')+seasonNumber(state))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'GIORNI TRASCORSI','DAYS ELAPSED')}</span><h2>${state.daysElapsed.toLocaleString(lang==='en'?'en-GB':'it-IT')}</h2></section></div>
@@ -388,8 +428,7 @@ export function simulationPage(meta,state,lang,playing,nextFixture=null){
  </section>
  <section class="panel control"><h2>${tr(lang,'Avanza nel tempo','Advance through time')}</h2><p>${tr(lang,'La simulazione modifica soltanto il calendario. Non viene giocata alcuna partita.','Only the calendar advances. No matches are played.')}</p>
  <div class="actions">${button('hour',tr(lang,'+ 1 ora','+ 1 hour'))}${button('day',tr(lang,'+ 1 giorno','+ 1 day'))}${button('week',tr(lang,'+ 7 giorni','+ 7 days'))}${button('month',tr(lang,'+ 30 giorni','+ 30 days'))}${button('year',tr(lang,'+ 365 giorni','+ 365 days'))}</div>
- <div class="actions separated">${button('toggle',playing?tr(lang,'Ferma simulazione','Pause simulation'):tr(lang,'Simulazione continua','Auto-advance'),playing?'warning':'secondary')}
- ${button('careers',tr(lang,'Le mie carriere','My careers'),'ghost')}</div>
+ <div class="actions separated">${button('careers',tr(lang,'Le mie carriere','My careers'),'ghost')}</div>
  <p class="muted" role="status">${playing?tr(lang,'Avanzamento automatico attivo: +1 ora a ogni intervallo','Automatic advancement: +1 hour per tick'):tr(lang,'Simulazione in pausa','Simulation paused')}</p></section>`;
 }
 
@@ -459,8 +498,7 @@ export function calendarPage(meta,state,lang,calendar,options={}){
    '<button type="button" class="fa-fixture-nav" data-action="fixture-round-prev" aria-label="'+tr(lang,'Giornata precedente','Previous round')+'">'+icon('arrow-left',18)+'</button>'+
    '<h2>'+tr(lang,'Giornata ','Round ')+round+' / 38 · '+esc(calendar.seasonYear+'/'+String((calendar.seasonYear+1)%100).padStart(2,'0'))+'</h2>'+
    '<button type="button" class="fa-fixture-nav" data-action="fixture-round-next" aria-label="'+tr(lang,'Giornata successiva','Next round')+'">'+icon('chevron-right',18)+'</button></div>';
- return '<section class="heading fa-page-heading"><button type="button" class="back" data-action="fixture-back">'+
-  icon('arrow-left',16)+' '+tr(lang,'Simulazione','Simulation')+'</button>'+
+ return '<section class="heading fa-page-heading">'+
   '<span class="kicker">'+tr(lang,'CARRIERA','CAREER')+'</span>'+
   '<h1 class="fa-page-title">'+tr(lang,'Calendario partite','Match calendar')+'</h1>'+
   '<p>'+esc(c?.name??'—')+' · '+esc(league.country[lang])+'</p></section>'+

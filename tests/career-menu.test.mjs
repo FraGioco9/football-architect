@@ -212,7 +212,7 @@ test('IT/EN menu and dedicated routes are available and accessible',()=>{
  assert.match(settingsPage('en'),/Language/);
  assert.match(careersPage(empty,'en'),/Import/);
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
- for(const route of ['/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/calendar'])assert.ok(server.includes("'"+route+"'"));
+ for(const route of ['/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar'])assert.ok(server.includes("'"+route+"'"));
 });
 test('simulation maintains match-free semantics, responsive UI and keyboard focus',()=>{
  const state=createSession('PT',4,'2026-10-08'),meta={managerName:'M',countryId:'PT',clubId:4};
@@ -1610,7 +1610,7 @@ test('Current career appears only with an explicit in-simulation entry context',
  }
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(controller,/let lastRenderedRoute=null,careersFromSimulationId=null;/);
- assert.match(controller,/case 'careers':careersFromSimulationId=path\(\)==='\/simulation'&&loaded\?loaded\.meta\.id:null;navigate\('\/careers'\);/);
+ assert.match(controller,/case 'careers':careersFromSimulationId=path\(\)==='\/simulation'&&loaded\?loaded\.meta\.id:null;if\(path\(\)==='\/dashboard'&&loaded\)careersFromSimulationId=loaded\.meta\.id;navigate\('\/careers'\);/);
  assert.match(controller,/careersPage\(catalog,lang,careersFromSimulationId\)/);
  assert.match(controller,/if\(url!=='\/careers'\)careersFromSimulationId=null/);
  assert.match(controller,/window\.addEventListener\('popstate',\(\)=>\{stop\(\);careersFromSimulationId=null;/);
@@ -1834,4 +1834,82 @@ test('CAL-02.4: dedicated route has HTTP 200 for GET/HEAD and never publishes ma
   assert.equal((await fetch(base+'/calendar',{method:'HEAD'})).status,200);
   assert.equal((await fetch(base+'/match/1')).status,404);
  }finally{child.kill();}
+});
+
+
+test('UX-SHELL: dashboard and calendar are the only career sidebar entries in IT/EN',()=>{
+ const meta={countryId:'IT',clubId:2,managerName:'Test Manager'};
+ const state=createSession('IT',2,'2026-10-08');
+ for(const lang of ['it','en']){
+  for(const route of ['/dashboard','/calendar','/simulation']){
+   const html=layout('<h1>Content</h1>',lang,null,false,{route,meta,state,playing:false});
+   assert.match(html,/class="shell fa-career-shell"/);
+   assert.equal((html.match(/class="fa-shell-link/g)||[]).length,2);
+   assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
+   assert.match(html,/data-action="career-dashboard"/);
+   assert.match(html,/data-action="fixture-open"/);
+   assert.match(html,/class="fa-shell-topbar"/);
+   assert.match(html,/class="fa-shell-club"/);
+   assert.match(html,/class="fa-shell-time"/);
+   assert.match(html,/data-action="language-toggle"/);
+   assert.doesNotMatch(html,/data-action="(?:play-match|open-inbox|open-tactics|open-club)"/);
+   assert.equal((html.match(/<nav\b/g)||[]).length,1);
+   assert.match(html,lang==='it'?/Calendario/:/Calendar/);
+  }
+ }
+});
+
+test('UX-SHELL: route-specific topbar offers one meaningful action, never duplicate dashboard CTA',()=>{
+ const meta={countryId:'IT',clubId:1},state=createSession('IT',1,'2026-08-10');
+ const render=(route,playing=false)=>layout('Content','it',null,false,{route,meta,state,playing});
+ const dashboard=render('/dashboard'),playing=render('/simulation',true),calendar=render('/calendar');
+ assert.match(dashboard,/class="fa-shell-primary"[\s\S]*?data-action="toggle"/);
+ assert.match(playing,/data-action="toggle"[\s\S]*?Interrompi/);
+ assert.match(calendar,/class="fa-shell-primary"[\s\S]*?data-action="career-dashboard"/);
+ assert.match(calendar,/aria-current="page"/);
+ assert.doesNotMatch(calendar,/data-action="toggle"/);
+ assert.doesNotMatch(dashboard,/data-action="(?:play-match|new-season)"/);
+ const standalone=layout('<h1>Menu</h1>','it');
+ assert.doesNotMatch(standalone,/fa-club-sidebar|fa-shell-sidebar|fa-shell-topbar/);
+ assert.match(standalone,/class="top"/);
+});
+
+test('UX-SHELL: preserves both new dashboard and legacy simulation routes without changing save format',()=>{
+ const src=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(src,/page==='\/simulation'\|\|page==='\/dashboard'/);
+ for(const route of ['/dashboard','/simulation','/calendar'])assert.ok(server.includes("'"+route+"'"));
+ assert.match(src,/case 'career-dashboard':navigate\('\/dashboard'\)/);
+ const current=createSession('IT',1,'2026-07-01');
+ assert.equal(validSession(current),true);
+ assert.deepEqual(Object.keys(current).sort(),['version','countryId','clubId','startedAt','date','daysElapsed','time'].sort());
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-career-shell\{display:grid;grid-template-columns:210px minmax\(0,1fr\)/);
+ assert.match(css,/@media\(max-width:720px\)/);
+ assert.match(css,/@media\(max-width:390px\)/);
+ assert.match(css,/\.fa-shell-link\{[^}]*border-radius:11px/);
+ assert.doesNotMatch(css,/\.fa-shell-sidebar[^}]*display:none/);
+});
+
+
+test('UX-SHELL historic navigation: exact pre-reset category and two outline icons',()=>{
+ const meta={countryId:'IT',clubId:2},state=createSession('IT',2,'2026-10-08');
+ for(const lang of ['it','en']){
+  const html=layout('Content',lang,null,false,{route:'/dashboard',meta,state,playing:false});
+  assert.match(html,/class="fa-shell-nav-group" aria-labelledby="fa-shell-start-title"/);
+  assert.match(html,lang==='it'?/id="fa-shell-start-title">Inizio<\/h2>/:/id="fa-shell-start-title">Home<\/h2>/);
+  assert.match(html,/class="fa-shell-nav-group-items"/);
+  assert.match(html,/FOOTBALL <b>ARCHITECT<\/b><small>MANAGER<\/small>/);
+  assert.match(html,/data-action="career-dashboard"[^>]+aria-current="page"[^>]*>[\s\S]*?class="fa-icon"[\s\S]*?rect x="3" y="3" width="7"/);
+  assert.match(html,/data-action="fixture-open"[^>]*>[\s\S]*?rect width="18" height="18" x="3" y="4"/);
+  assert.equal((html.match(/class="fa-shell-link/g)||[]).length,2);
+  assert.doesNotMatch(html,/data-action="(?:inbox|tactics|club|training|market|squad)"/);
+ }
+ const icons=readFileSync(new URL('../src/icons.js',import.meta.url),'utf8');
+ assert.match(icons,/'grid-pre-reset':/);
+ assert.match(icons,/'calendar-pre-reset':/);
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-shell-nav-group-title\{[^}]*font-size:8px;[^}]*letter-spacing:\.11em/);
+ assert.match(css,/\.fa-shell-link\{[^}]*height:34px;min-height:34px/);
+ assert.match(css,/@media\(max-width:720px\)\{[\s\S]*?\.fa-shell-nav-group-title\{height:5px;/);
 });

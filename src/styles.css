@@ -1495,3 +1495,89 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
  .fa-fixture-nav{min-width:34px;height:40px}
 }
 @media(prefers-reduced-motion:reduce){.fa-fixture-toggle,.fa-fixture-day{transition:none}}
+
+
+/* UX-SHELL: pre-reset two-page career navigation, rebuilt using current design tokens. */
+.fa-career-shell{display:grid;grid-template-columns:210px minmax(0,1fr);min-height:100dvh}
+.fa-shell-sidebar{grid-column:1;grid-row:1;background:#0e2026;border-right:1px solid var(--fa-box-border);display:flex;flex-direction:column;min-width:0;position:sticky;top:0;height:100dvh;z-index:12}
+.fa-shell-sidebar-head{height:60px;min-height:60px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid #294a49;white-space:nowrap}
+.fa-shell-sidebar-head .brand-symbol{width:28px;height:30px;flex:none;border-radius:8px}
+.fa-shell-wordmark{font-size:11px;font-weight:850;letter-spacing:.08em;color:#eaf6f0;line-height:1.12}
+.fa-shell-wordmark small{display:block;margin-top:3px;font-size:7px;font-weight:650;letter-spacing:.16em;color:#7caaa0}
+.fa-shell-wordmark b{color:var(--fa-menu-accent)}
+.fa-shell-nav{display:flex;flex-direction:column;gap:4px;padding:18px 9px 10px;align-content:start;min-width:0}
+.fa-shell-nav-group{display:grid;gap:3px;margin:0;min-width:0}
+.fa-shell-nav-group-title{min-height:13px;margin:0;padding:0 8px;color:#79958d;font-size:8px;font-weight:800;letter-spacing:.11em;line-height:13px;text-transform:uppercase}
+.fa-shell-nav-group-items{display:grid;gap:2px;min-width:0}
+.fa-shell-link{width:100%;height:34px;min-height:34px;min-width:0;display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:0 9px;border:1px solid transparent;border-radius:11px;background:transparent;color:#b8d2c9;font-weight:700;font-size:10.5px;white-space:nowrap}
+.fa-shell-link .fa-icon{flex-shrink:0}
+.fa-shell-link:hover{background:#1b3838;color:#e5f5ed}
+.fa-shell-link.is-active{color:#ddfff0;background:linear-gradient(90deg,#22483e,#1a3934);border-color:var(--fa-selection-border);box-shadow:inset 0 0 0 1px #57d9af22}
+.fa-shell-link:focus-visible{outline:2px solid var(--fa-selection-border);outline-offset:2px}
+.fa-shell-workspace{grid-column:2;grid-row:1;min-width:0;min-height:100dvh;display:flex;flex-direction:column}
+.fa-shell-topbar{width:100%;min-width:0;min-height:60px;display:flex;align-items:center;gap:clamp(8px,1.4vw,20px);padding:10px clamp(12px,2.5vw,28px);border-bottom:1px solid #2b514d;background:#102a2d}
+.fa-shell-club{display:flex;gap:9px;align-items:center;min-width:0;flex:1 1 170px}
+.fa-shell-club .crest{min-width:33px;width:33px;height:33px;border-radius:9px;font-size:10px;flex:none}
+.fa-shell-club strong{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fa-shell-time{display:flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;color:#c3d9d2;font-size:12px;white-space:nowrap}
+.fa-shell-time .fa-icon{color:#7fcaab;flex:none}
+.fa-shell-phase{color:#9ebdb1}
+.fa-shell-date-short{display:none}
+.fa-shell-language{flex:none;position:relative;z-index:15}
+.fa-shell-language .language-picker{width:148px;flex-basis:148px}
+.fa-shell-primary{flex:none}
+.fa-shell-primary .btn{min-height:39px;padding:8px 12px;font-size:12px;white-space:nowrap}
+.fa-shell-workspace>.fa-page-main,.fa-shell-workspace>footer{width:min(100%,var(--fa-page-width));padding-inline:var(--fa-page-gutter);margin-inline:auto}
+.fa-shell-workspace>.fa-page-main{flex:1 0 auto;min-width:0;padding-top:var(--fa-page-top);padding-bottom:var(--fa-page-bottom);font-size:var(--fa-body-size);line-height:var(--fa-body-leading)}
+.fa-shell-workspace>footer{margin-top:auto}
+.fa-career-shell .fa-fixture-calendar{min-width:0}
+@media(max-width:1024px){
+ .fa-career-shell{grid-template-columns:180px minmax(0,1fr)}
+ .fa-shell-wordmark{font-size:10px}
+ .fa-shell-sidebar-head{padding-inline:10px;gap:7px}
+ .fa-shell-nav{padding:16px 7px 9px;gap:3px}
+ .fa-shell-nav-group{gap:2px}
+ .fa-shell-nav-group-title{min-height:12px;line-height:12px;padding-inline:7px}
+ .fa-shell-nav-group-items{gap:1px}
+ .fa-shell-link{height:33px;min-height:33px;padding-inline:8px;gap:7px;font-size:10px}
+ .fa-shell-time .fa-shell-phase{display:none}
+}
+@media(max-width:720px){
+ .fa-career-shell{grid-template-columns:58px minmax(0,1fr)}
+ .fa-shell-sidebar-head{height:54px;min-height:54px;justify-content:center;padding:8px 4px}
+ .fa-shell-sidebar-head .brand-symbol{width:31px;height:33px}
+ .fa-shell-wordmark,.fa-shell-link span{display:none}
+ .fa-shell-nav{padding:10px 7px 8px;gap:2px}
+ .fa-shell-nav-group{gap:1px}
+ .fa-shell-nav-group-title{height:5px;min-height:5px;margin:1px 4px;padding:0;border-top:1px solid #2e4f4c;font-size:0;line-height:0}
+ .fa-shell-nav-group:first-child .fa-shell-nav-group-title{border-top:0;margin-top:0}
+ .fa-shell-nav-group-items{gap:1px;padding-bottom:0}
+ .fa-shell-link{width:44px;height:35px;min-height:35px;justify-content:center;gap:0;padding:0}
+ .fa-shell-topbar{min-height:54px;gap:7px;padding:8px 10px}
+ .fa-shell-club{flex:1 1 0}
+ .fa-shell-club .crest{min-width:27px;width:27px;height:27px}
+ .fa-shell-club strong{font-size:11px}
+ .fa-shell-time{font-size:10px}
+ .fa-shell-time .fa-icon,.fa-shell-date-full{display:none}
+ .fa-shell-date-short{display:inline}
+ .fa-shell-language .language-picker{width:48px;flex-basis:48px}
+ .fa-shell-language .language-combobox{height:36px;min-width:0;grid-template-columns:1fr;padding:0 3px;text-align:center}
+ .fa-shell-language .language-icon,.fa-shell-language .language-chevron,.fa-shell-language .language-current span{display:none}
+ .fa-shell-language .language-current{justify-content:center}
+ .fa-shell-language .language-current b{min-width:28px}
+ .fa-shell-language .language-listbox{right:0;width:146px}
+ .fa-shell-primary .btn{width:36px;height:36px;min-height:36px;padding:0}
+ .fa-shell-primary .btn span{display:none}
+}
+@media(max-width:390px){
+ .fa-career-shell{grid-template-columns:52px minmax(0,1fr)}
+ .fa-shell-topbar{gap:4px;padding:7px}
+ .fa-shell-club{gap:4px}
+ .fa-shell-club strong{max-width:54px;font-size:10px}
+ .fa-shell-club .crest{min-width:25px;width:25px;height:25px;font-size:8px}
+ .fa-shell-time{font-size:9px;letter-spacing:-.01em}
+ .fa-shell-language .language-picker{width:42px;flex-basis:42px}
+ .fa-shell-primary .btn{width:33px;height:34px;min-height:34px}
+ .fa-shell-nav{padding:10px 4px}
+ .fa-shell-link{width:44px;height:35px;min-height:35px}
+}
