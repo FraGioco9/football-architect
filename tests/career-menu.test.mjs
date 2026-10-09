@@ -1053,8 +1053,8 @@ test('keyboard P0: site rerenders preserve focus and wizard route headings gain 
 });
 test('keyboard P1: field-level bilingual summary and arrows/PageUp/PageDown date grid',()=>{
  const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
- assert.match(js,/tr\(lang,'Controlla: ','Check: '\)\+detail/);
- assert.match(js,/key==='birthDate'\?tr\(lang,' \(non valida\)',' \(invalid\)'\)/);
+ assert.match(js,/tr\(lang,'Controlla i campi evidenziati in rosso.','Check the fields highlighted in red.'\)/);
+ assert.doesNotMatch(js,/tr\(lang,'Controlla: ','Check: '\)\+detail/);
  assert.match(js,/form.elements.namedItem\(key\)\)\?\.focus\(\{preventScroll:false\}\)/);
  assert.match(js,/event.altKey&&event.key==='ArrowUp'/);
  assert.match(js,/const deltas=day\?/);
@@ -1072,4 +1072,23 @@ test('keyboard P1: responsive dropdown positioned within viewport',()=>{
  assert.match(js,/if\(pickerOpen==='nationality'\)positionNationality\(\)/);
  assert.match(css,/\.fa-nationality-menu\{\s*position:fixed;width:min\(320px,calc\(100vw - 16px\)\)/);
  assert.match(css,/max-height:min\(270px,calc\(100dvh - 16px\)\)/);
+});
+
+test('keyboard Tab uses identical green border and inset as click selection, with no alternate focus ring',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const shared=/\.fa-page-main \.fa-interactive-box\.fa-control-selected:not\(\.fa-field-invalid\),[\s\S]*?html\.fa-keyboard-navigation \.fa-page-main \.fa-interactive-box:focus-visible:not\(\.fa-field-invalid\)\{\s*border-color:var\(--fa-selection-border\);box-shadow:inset 0 0 0 1px var\(--fa-selection-border\);outline:none;/;
+ assert.match(css,shared);
+ assert.doesNotMatch(css,/outline:2px solid #8aa8a3;outline-offset:2px;/);
+ assert.match(js,/if\(event.key==='Tab'\)\{\s*selectedBoxId=null;\s*app.querySelectorAll\('\.fa-control-selected'\)\.forEach\(el=>el.classList.remove\('\.fa-control-selected'\)\)/);
+ assert.match(css,/\.fa-page-main \.fa-interactive-box\.fa-field-invalid,[\s\S]*?border-color:var\(--fa-error-border\)/);
+});
+test('generic IT/EN form errors remain by Avanti while invalid fields use red outlines',()=>{
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(js,/tr\(lang,'Controlla i campi evidenziati in rosso.','Check the fields highlighted in red.'\)/);
+ assert.doesNotMatch(js,/const detail=invalid.map/);
+ assert.match(js,/updateManagerField\(form.elements.namedItem\(key\),issues\[key\]\)/);
+ assert.match(css,/\.fa-action-error:not\(\[hidden\]\)/);
+ assert.match(css,/\.fa-interactive-box\.fa-field-invalid/);
 });

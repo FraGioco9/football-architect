@@ -357,15 +357,8 @@ function validateManagerForm(form,focus=true){
  const summary=document.getElementById('manager-form-error');
  if(summary){
   summary.hidden=invalid.length===0;
-  const labels={firstName:tr(lang,'Nome','First name'),lastName:tr(lang,'Cognome','Last name'),
-   birthDate:tr(lang,'Data di nascita','Date of birth'),nationality:tr(lang,'Nazionalità','Nationality'),
-   birthPlace:tr(lang,'Luogo di nascita','Place of birth')};
-  const detail=invalid.map(key=>{
-   const suffix=issues[key]?.includes('LENGTH')?tr(lang,' (troppo lungo)',' (too long)'):
-    key==='birthDate'?tr(lang,' (non valida)',' (invalid)'):'';
-   return labels[key]+suffix;
-  }).join(', ');
-  summary.textContent=invalid.length?tr(lang,'Controlla: ','Check: ')+detail:'';
+  summary.textContent=invalid.length?
+   tr(lang,'Controlla i campi evidenziati in rosso.','Check the fields highlighted in red.'):'';
  }
  if(invalid.length){
   managerSubmitted=true;

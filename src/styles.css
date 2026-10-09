@@ -796,8 +796,11 @@ html::-webkit-scrollbar-corner{
 .fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-field-invalid){
  border-color:var(--fa-box-border);background:var(--fa-box-surface);box-shadow:none;outline:none;
 }
+/* Keyboard focus uses the exact same selection treatment as a clicked box.
+   Unlike .fa-control-selected, the focus effect disappears automatically on blur. */
 .fa-page-main .fa-interactive-box.fa-control-selected:not(.fa-field-invalid),
-.fa-page-main .wizard-profile-field .text-field.fa-control-selected:focus:not(.fa-field-invalid){
+.fa-page-main .wizard-profile-field .text-field.fa-control-selected:focus:not(.fa-field-invalid),
+html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(.fa-field-invalid){
  border-color:var(--fa-selection-border);box-shadow:inset 0 0 0 1px var(--fa-selection-border);outline:none;
 }
 .fa-page-main .fa-interactive-box.fa-field-invalid,
@@ -806,10 +809,6 @@ html::-webkit-scrollbar-corner{
 .fa-page-main .fa-interactive-box.fa-field-invalid:focus-visible,
 .fa-page-main .wizard-profile-field .text-field[aria-invalid="true"]{
  border-color:var(--fa-error-border);box-shadow:inset 0 0 0 1px var(--fa-error-border);outline:none;
-}
-/* Neutral, solid keyboard locator only; mouse/label focus has no ring. */
-html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-field-invalid){
- outline:2px solid #8aa8a3;outline-offset:2px;
 }
 .fa-page-main .wizard-profile-field .fa-picker-trigger{
  display:flex;align-items:center;justify-content:space-between;gap:12px;
