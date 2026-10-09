@@ -370,7 +370,8 @@ test('the transparent-track contract covers page, club grid and future nested sc
  assert.match(ui,/class="career-grid"/);
  // The shared selectors target every descendant, without requiring classes
  // or making new containers scrollable.
- assert.doesNotMatch(css.slice(css.lastIndexOf('/* QOL05.08')),/\boverflow-[xy]\s*:/);
+ const scrollbarContract=css.slice(css.indexOf('/* QOL05.08'),css.indexOf('/* New Career: all 20 clubs'));
+ assert.doesNotMatch(scrollbarContract,/\boverflow-[xy]\s*:/);
 });
 
 test('new career club table keeps every club on the document without an internal scrollbar',()=>{
@@ -390,7 +391,7 @@ test('new career club table keeps every club on the document without an internal
 });
 test('club table hover is contained and the document provides the only scrollbar',()=>{
  const style=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
- const tableRules=style.slice(style.lastIndexOf('/* New Career: all 20 clubs'));
+ const tableRules=style.slice(style.indexOf('/* New Career: all 20 clubs'),style.indexOf('/* Shared site foundations'));
  assert.match(tableRules,/\.club-table\{\s*width:100%;\s*min-width:0;\s*table-layout:fixed;/);
  assert.match(tableRules,/\.club-table-row:hover td/);
  assert.match(tableRules,/\.club-table-row:focus-within td/);
