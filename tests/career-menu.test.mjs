@@ -9,7 +9,7 @@ import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
 import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile,managerAge} from '../src/manager-profile.js';
-import {NATIONALITY_CODES,nationalityOptions,isNationalityCode,initialCalendarMonth,shiftCalendarMonth,calendarDays,birthDateLabel} from '../src/site-pickers.js';
+import {NATIONALITY_CODES,nationalityOptions,isNationalityCode,initialCalendarMonth,shiftCalendarMonth,calendarDays,calendarGridDays,birthDateLabel} from '../src/site-pickers.js';
 import {renderDateControl,renderNationalityControl} from '../src/site-picker-ui.js';
 
 class FakeDB{
@@ -845,4 +845,47 @@ test('outside click closes picker without rerendering clicked input or losing fo
  assert.match(controller,/app\.querySelector\('\.fa-picker-trigger\[aria-expanded="true"\]'\)\?\.setAttribute\('aria-expanded','false'\)/);
  assert.doesNotMatch(controller,/if\(!event\.target\.closest\?\.\('\[data-action\]'\)\)\{void render\(\);return;\}/);
  assert.match(controller,/event\.target\.closest\?\.\('\[data-fa-picker\]'\)\?\.querySelector\('\.fa-picker-trigger'\)/);
+});
+
+test('MFL-inspired calendar shows 42 dates, muted adjacent months, today and birth-date shortcut',()=>{
+ const grid=calendarGridDays('2026-02','2026-10-09');
+ assert.equal(grid.length,42);
+ assert.equal(grid[0].iso,'2026-01-26');
+ assert.equal(grid[0].outside,true);
+ assert.equal(grid[6].iso,'2026-02-01');
+ assert.equal(calendarGridDays('1900-01','2026-10-09')[0].disabled,true);
+ const today=calendarGridDays('2026-10','2026-10-09');
+ assert.equal(today.find(d=>d.iso==='2026-10-09').disabled,false);
+ assert.equal(today.find(d=>d.iso==='2026-10-10').disabled,true);
+ const rendered=renderDateControl('2000-02-29','it',true,'2026-10');
+ assert.equal((rendered.match(/data-action="calendar-day"/g)||[]).length,42);
+ assert.match(rendered,/class="fa-calendar-day is-outside/);
+ assert.match(rendered,/is-today/);
+ assert.match(rendered,/fa-calendar-title/);
+ assert.match(rendered,/fa-calendar-weekdays/);
+ assert.match(rendered,/data-action="calendar-today">Oggi/);
+ assert.match(rendered,/data-action="calendar-clear"/);
+ const en=renderDateControl('','en',true,'2026-10');
+ assert.match(en,/data-action="calendar-today">Today/);
+});
+test('label click clears selected visual state and input/picker highlight shares one CSS contract',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/document.documentElement.classList.remove\('fa-keyboard-navigation'\)/);
+ assert.match(js,/selectedBoxId=box\?\.id\?\?null/);
+ assert.match(css,/\.fa-page-main \.fa-interactive-box\.fa-control-selected:not\(\.fa-field-invalid\),/);
+ assert.match(css,/\.fa-page-main \.wizard-profile-field \.text-field\.fa-control-selected:focus:not\(\.fa-field-invalid\)/);
+ assert.doesNotMatch(css,/\.fa-page-main \.wizard-profile-field \.text-field:focus\{border-color:var\(--fa-box-border\)\}/);
+ assert.doesNotMatch(css,/outline:2px dashed/);
+ assert.match(css,/html\.fa-keyboard-navigation .*fa-interactive-box:focus-visible/);
+});
+test('floating calendar is constrained to viewport on render and scroll',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(css,/\.fa-calendar-panel\{\s*position:fixed/);
+ assert.match(js,/function positionCalendar\(\)/);
+ assert.match(js,/window.addEventListener\('resize',positionCalendar\)/);
+ assert.match(js,/window.addEventListener\('scroll',positionCalendar,true\)/);
+ assert.match(js,/if\(pickerOpen==='calendar'\)positionCalendar\(\)/);
+ assert.match(js,/case 'calendar-day':case 'calendar-today'/);
 });

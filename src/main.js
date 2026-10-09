@@ -13,6 +13,18 @@ const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),country
 let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
 let pickerOpen=null,pickerMonth=null,selectedBoxId=null,managerSubmitted=false;
+function positionCalendar(){
+ const popup=app.querySelector('.fa-calendar-panel'),trigger=app.querySelector('#manager-birth-date');
+ if(!popup||!trigger)return;
+ const rect=trigger.getBoundingClientRect(),margin=8,gap=6;
+ const width=popup.offsetWidth,height=popup.offsetHeight;
+ const left=Math.max(margin,Math.min(rect.left,window.innerWidth-width-margin));
+ const below=rect.bottom+gap+height<=window.innerHeight-margin;
+ const top=below?rect.bottom+gap:Math.max(margin,rect.top-height-gap);
+ popup.style.left=Math.round(left)+'px';popup.style.top=Math.round(top)+'px';
+}
+window.addEventListener('resize',positionCalendar);
+window.addEventListener('scroll',positionCalendar,true);
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
@@ -53,6 +65,7 @@ async function render(){
    if(managerSubmitted)validateManagerForm(document.getElementById('manager-form'),false);
    if(selectedBoxId)app.querySelectorAll('.fa-interactive-box').forEach(x=>x.classList.toggle('fa-control-selected',x.id===selectedBoxId));
   }
+  if(pickerOpen==='calendar')positionCalendar();
   document.documentElement.lang=lang;
   document.title=tr(lang,'Football Architect','Football Architect');
  }catch(e){
@@ -154,8 +167,8 @@ async function handle(action,element){
    await render();
    app.querySelector('[data-action="'+action+'"]')?.focus({preventScroll:true});
    break;
-  case 'calendar-day':{
-   const value=element.dataset.value;
+  case 'calendar-day':case 'calendar-today':{
+   const value=action==='calendar-today'?localToday():element.dataset.value;
    if(!validDate(value)||value>localToday())break;
    draft.managerProfile.birthDate=value;pickerOpen=null;pickerMonth=value.slice(0,7);
    selectedBoxId='manager-birth-date';await render();
@@ -310,12 +323,17 @@ document.addEventListener('change',event=>{
 });
 
 document.addEventListener('pointerdown',event=>{
+ document.documentElement.classList.remove('fa-keyboard-navigation');
  // Only the interactive box itself can acquire the visual selected state.
  // Clicking its label never selects it; keyboard focus has a separate indicator.
  const box=event.target.closest?.('.fa-interactive-box')??
    event.target.closest?.('[data-fa-picker]')?.querySelector('.fa-picker-trigger');
  selectedBoxId=box?.id??null;
  app.querySelectorAll('.fa-interactive-box').forEach(el=>el.classList.toggle('fa-control-selected',el.id===selectedBoxId));
+},true);
+document.addEventListener('keydown',event=>{
+ if(['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End'].includes(event.key))
+  document.documentElement.classList.add('fa-keyboard-navigation');
 },true);
 document.addEventListener('change',event=>{
  const selector=event.target.closest?.('[data-calendar-part]');

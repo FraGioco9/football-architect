@@ -770,7 +770,8 @@ html::-webkit-scrollbar-corner{
 }
 
 
-/* Unified interaction contract: a click selects a box, not hover, focus or label click. */
+/* Global control contract. Only a pointer-selected box gets the petrol-green inset
+   border; label/hover focus cannot resurrect a previously selected box. */
 :root{
  --fa-box-border:#405e63;
  --fa-box-surface:#10232c;
@@ -785,23 +786,24 @@ html::-webkit-scrollbar-corner{
  transition:border-color .15s ease,box-shadow .15s ease;
 }
 .fa-page-main .fa-interactive-box:hover:not(.fa-control-selected):not(.fa-field-invalid),
-.fa-page-main .fa-interactive-box:focus:not(.fa-control-selected):not(.fa-field-invalid){
- border-color:var(--fa-box-border);background:var(--fa-box-surface);box-shadow:none;
+.fa-page-main .fa-interactive-box:focus:not(.fa-control-selected):not(.fa-field-invalid),
+.fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-field-invalid){
+ border-color:var(--fa-box-border);background:var(--fa-box-surface);box-shadow:none;outline:none;
 }
-.fa-page-main .fa-interactive-box.fa-control-selected:not(.fa-field-invalid){
- border-color:var(--fa-selection-border);box-shadow:inset 0 0 0 1px var(--fa-selection-border);
+.fa-page-main .fa-interactive-box.fa-control-selected:not(.fa-field-invalid),
+.fa-page-main .wizard-profile-field .text-field.fa-control-selected:focus:not(.fa-field-invalid){
+ border-color:var(--fa-selection-border);box-shadow:inset 0 0 0 1px var(--fa-selection-border);outline:none;
 }
 .fa-page-main .fa-interactive-box.fa-field-invalid,
 .fa-page-main .fa-interactive-box.fa-field-invalid:hover,
-.fa-page-main .fa-interactive-box.fa-field-invalid:focus{
- border-color:var(--fa-error-border);box-shadow:inset 0 0 0 1px var(--fa-error-border);
-}
-.fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-field-invalid){
- outline:2px dashed #90b4ac;outline-offset:2px;
-}
-.fa-page-main .wizard-profile-field .text-field:focus{border-color:var(--fa-box-border)}
+.fa-page-main .fa-interactive-box.fa-field-invalid:focus,
+.fa-page-main .fa-interactive-box.fa-field-invalid:focus-visible,
 .fa-page-main .wizard-profile-field .text-field[aria-invalid="true"]{
- border-color:var(--fa-error-border);box-shadow:inset 0 0 0 1px var(--fa-error-border);
+ border-color:var(--fa-error-border);box-shadow:inset 0 0 0 1px var(--fa-error-border);outline:none;
+}
+/* Neutral, solid keyboard locator only; mouse/label focus has no ring. */
+html.fa-keyboard-navigation .fa-page-main .fa-interactive-box:focus-visible:not(.fa-control-selected):not(.fa-field-invalid){
+ outline:2px solid #8aa8a3;outline-offset:2px;
 }
 .fa-page-main .wizard-profile-field .fa-picker-trigger{
  display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -830,42 +832,72 @@ html::-webkit-scrollbar-corner{
  background:#204a3e;border-color:var(--fa-selection-border);
  color:#ebfff5;
 }
-.fa-calendar-panel{width:min(358px,calc(100vw - 48px));max-width:none;padding:12px}
+/* MFL-like 42-day calendar with Football Architect's graphite/petrol palette. */
+.fa-calendar-panel{
+ position:fixed;width:min(290px,calc(100vw - 16px));
+ max-width:none;padding:9px;border-radius:11px;z-index:1000;
+}
 .fa-calendar-head{
- display:grid;grid-template-columns:30px minmax(0,1fr) 75px 30px;
- gap:5px;align-items:center;margin-bottom:11px;
+ display:grid;grid-template-columns:30px minmax(0,1fr) 30px;
+ gap:5px;align-items:center;min-height:30px;margin-bottom:5px;
 }
-.fa-calendar-head select,.fa-calendar-nav{
- min-width:0;width:100%;height:34px;border-radius:8px;
- border:1px solid #3b625e;background:#1c3439;
- color:#e8f6ef;font-size:12px;padding:5px 4px;
+.fa-calendar-title{
+ color:#e8f6ef;text-align:center;font-size:13px;font-weight:750;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.fa-calendar-nav{font-size:22px;display:grid;place-items:center;padding:0}
+.fa-calendar-nav,.fa-calendar-today,.fa-calendar-clear{
+ border:0;background:transparent;color:#a8c9c2;
+ border-radius:6px;cursor:pointer;
+}
+.fa-calendar-nav{
+ width:30px;height:30px;display:grid;place-items:center;
+ padding:0;font-size:21px;line-height:1;
+}
 .fa-calendar-head :disabled,.fa-calendar-day:disabled{opacity:.25;cursor:not-allowed}
-.fa-calendar-head select:focus-visible,.fa-calendar-nav:focus-visible,
-.fa-calendar-day:focus-visible,.fa-calendar-clear:focus-visible{
- outline:2px dashed #90b4ac;outline-offset:2px;
+.fa-calendar-jump{
+ display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:5px;
+ margin-bottom:7px;
 }
-.fa-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.fa-calendar-jump select{
+ min-width:0;width:100%;min-height:30px;border-radius:7px;
+ border:1px solid #3b625e;background:#1c3439;
+ color:#e8f6ef;font-size:12px;padding:5px 6px;
+}
+.fa-calendar-weekdays,.fa-calendar-grid{
+ display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;
+}
+.fa-calendar-weekdays{margin-bottom:4px}
 .fa-calendar-weekday{
- padding:7px 0;color:#95c2b4;font-size:10px;
- font-weight:800;text-align:center;text-transform:uppercase;
+ display:grid;place-items:center;height:18px;
+ color:#95c2b4;font-size:10px;font-weight:800;text-transform:uppercase;
 }
-.fa-calendar-day,.fa-calendar-empty{
- display:grid;place-items:center;min-width:0;min-height:34px;
- border:1px solid transparent;border-radius:7px;
- background:transparent;color:#dceae6;font-size:12px;
+.fa-calendar-day{
+ display:grid;place-items:center;min-width:0;height:31px;padding:0;
+ border:1px solid transparent;border-radius:6px;
+ background:transparent;color:#dceae6;font-size:12px;cursor:pointer;
 }
-.fa-calendar-day:hover:not(.is-selected):not(:disabled){
- border-color:#426960;background:#1f3b3d;
+.fa-calendar-day.is-outside{color:#8da7a9;opacity:.55}
+.fa-calendar-day.is-today:not(.is-selected){box-shadow:inset 0 0 0 1px var(--fa-selection-border)}
+.fa-calendar-day.is-selected,
+.fa-calendar-day.is-selected:hover:not(:disabled){
+ border-color:var(--fa-selection-border);background:#255544;color:#f0fff6;opacity:1;
 }
-.fa-calendar-day.is-selected{
- border-color:var(--fa-selection-border);background:#255544;color:#f0fff6;
+.fa-calendar-nav:hover:not(:disabled),.fa-calendar-today:hover,
+.fa-calendar-clear:hover,.fa-calendar-day:hover:not(.is-selected):not(:disabled){
+ background:#1f3b3d;color:#9de6ce;
 }
-.fa-calendar-clear{
- display:block;margin:10px 0 0 auto;padding:7px 9px;
- color:#b5d8cd;background:none;border:1px solid #355752;border-radius:8px;font-size:11px;
+.fa-calendar-jump select:focus-visible,.fa-calendar-nav:focus-visible,
+.fa-calendar-day:focus-visible,.fa-calendar-today:focus-visible,.fa-calendar-clear:focus-visible{
+ outline:2px solid #8aa8a3;outline-offset:1px;
 }
+.fa-calendar-footer{
+ display:flex;align-items:center;justify-content:space-between;gap:8px;
+ margin-top:7px;padding-top:6px;border-top:1px solid #355752;
+}
+.fa-calendar-today,.fa-calendar-clear{
+ min-height:26px;padding:4px 7px;font-size:11px;font-weight:700;
+}
+.fa-calendar-today{color:#90e8c2}
 .fa-action-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .fa-page-main .wizard-manager-form .fa-action-row .begin-button{
  flex:0 1 300px;min-width:175px;margin-top:0;
@@ -877,7 +909,7 @@ html::-webkit-scrollbar-corner{
  background:#442c2b;color:#ffd4ce;font-size:12px;line-height:1.4;
 }
 .fa-action-error[hidden]{display:none!important}
-/* Selection cards and table rows keep their original neutral color until clicked. */
+/* Selection cards and table rows keep their neutral state until activated. */
 .restored-onboarding .league-pick-option:not(.active):hover{
  background:#192c35;border-color:#304754;
 }
@@ -894,7 +926,6 @@ html::-webkit-scrollbar-corner{
 @media(max-width:620px){
  .fa-page-main .wizard-manager-form .fa-action-row .begin-button,
  .fa-action-error:not([hidden]){flex:1 1 100%;max-width:none}
- .fa-calendar-panel{left:0}
 }
 @media(prefers-reduced-motion:reduce){
  .fa-page-main .fa-interactive-box{transition:none}

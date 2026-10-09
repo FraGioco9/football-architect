@@ -36,6 +36,19 @@ export function calendarDays(month,today=localToday()){
  }
  return items;
 }
+/** MFL-style six-week calendar: dates outside the month remain visible but muted. */
+export function calendarGridDays(month,today=localToday()){
+ const match=/^(\d{4})-(0[1-9]|1[0-2])$/.exec(month);
+ if(!match)return [];
+ const year=Number(match[1]),number=Number(match[2]);
+ const first=new Date(Date.UTC(year,number-1,1));
+ const offset=(first.getUTCDay()+6)%7;
+ return Array.from({length:42},(_,index)=>{
+  const date=new Date(Date.UTC(year,number-1,1-offset+index));
+  const iso=date.toISOString().slice(0,10);
+  return {iso,day:date.getUTCDate(),outside:date.getUTCMonth()!==number-1,disabled:iso<'1900-01-01'||iso>today};
+ });
+}
 export function calendarMonthNames(lang='it'){
  return Array.from({length:12},(_,i)=>new Intl.DateTimeFormat(locale(lang),{month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(2024,i,1))));
 }
