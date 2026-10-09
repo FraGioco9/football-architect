@@ -579,7 +579,9 @@ test('all three setup screens have a high cancel button and consistent heading g
   assert.match(page,/<div class="wizard-topline">/);
   const cancel=page.indexOf('data-action="cancel-setup"');
   const heading=page.indexOf('<h1 class="fa-page-title">');
-  assert.ok(cancel>0&&heading>cancel,'Cancel appears above the title');
+  const subtitle=page.indexOf('<p>',heading);
+  assert.ok(cancel>subtitle,'Controls follow the complete title and subtitle in DOM');
+  assert.match(page,/<span class="pretitle wizard-step-label">/);
   assert.equal((page.match(/<h1\b/g)||[]).length,1);
   if(step>1)assert.match(page,/data-action="setup-back"/);
   else assert.doesNotMatch(page,/data-action="setup-back"/);
@@ -587,7 +589,9 @@ test('all three setup screens have a high cancel button and consistent heading g
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/\.wizard-page \.wizard-topline\{/);
  assert.match(css,/\.wizard-page \.wizard-cancel/);
- assert.match(css,/@media\(max-width:520px\)/);
+ assert.match(css,/\.wizard-page \.onboard-header\{position:relative\}/);
+ assert.match(css,/position:absolute;top:0;right:0;/);
+ assert.match(css,/@media\(max-width:680px\)/);
 });
 test('step-specific translations and keyboard access are maintained at 320/390 widths',()=>{
  const blank={managerName:'',countryId:null,clubId:null};
@@ -605,4 +609,27 @@ test('step-specific translations and keyboard access are maintained at 320/390 w
  assert.match(css,/@media\(max-width:340px\)/);
  assert.doesNotMatch(css,/\.wizard-team-grid\{[^}]*overflow-y:auto/);
  assert.match(css,/scrollbar-gutter:stable/);
+});
+
+test('wizard H1 and subtitle share the same top position and spacing as standard pages',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(sheet,/\.fa-page-main \.fa-page-heading h1,[\s\S]*?font-size:var\(--fa-title-size\)/);
+ assert.match(sheet,/\.fa-page-main \.fa-page-heading p\{[\s\S]*?font-size:var\(--fa-body-size\)/);
+ assert.match(sheet,/\.wizard-page \.onboard-header \.fa-page-title\{margin:10px 0 13px\}/);
+ assert.match(sheet,/\.wizard-page \.onboard-header>p\{margin:0\}/);
+ const wizardStyles=sheet.slice(sheet.indexOf('/* Three-page New Career wizard'));
+ assert.match(wizardStyles,/\.wizard-page \.wizard-topline\{\s*position:absolute;top:0;right:0;/);
+ assert.doesNotMatch(wizardStyles,/\.wizard-page \.wizard-topline\{[^}]*margin-bottom:/);
+ assert.match(wizardStyles,/@media\(max-width:680px\)\{[\s\S]*?position:static;justify-content:flex-end/);
+ for(const page of [
+  managerPage({managerName:'',countryId:null,clubId:null},'it'),
+  countryPage({managerName:'Ada',countryId:'IT',clubId:null},'it'),
+  teamsPage({managerName:'Ada',countryId:'IT',clubId:2},'it')
+ ]){
+  const kicker=page.indexOf('class="pretitle wizard-step-label"');
+  const title=page.indexOf('<h1 class="fa-page-title">');
+  const subtitle=page.indexOf('<p>',title);
+  const buttons=page.indexOf('class="wizard-topline"',subtitle);
+  assert.ok(kicker>=0&&title>kicker&&subtitle>title&&buttons>subtitle);
+ }
 });

@@ -652,15 +652,15 @@ html::-webkit-scrollbar-corner{
 
 /* Three-page New Career wizard; Annulla and Indietro stay above the H1. */
 .wizard-page .onboard-wrap{max-width:100%}
-.wizard-page .wizard-topline{
- display:flex;justify-content:space-between;align-items:flex-start;
- gap:14px;min-height:44px;margin-bottom:16px;
-}
-.wizard-page .wizard-top-start{
- display:flex;align-items:center;gap:16px;min-width:0;flex-wrap:wrap;
-}
-.wizard-page .wizard-top-start .pretitle{
+.wizard-page .onboard-header{position:relative}
+.wizard-page .wizard-step-label{
+ display:block;min-height:16px;
  font-size:var(--fa-label-size);letter-spacing:.12em;line-height:1.4;
+}
+.wizard-page .wizard-topline{
+ position:absolute;top:0;right:0;
+ display:flex;justify-content:flex-end;align-items:center;
+ gap:10px;margin:0;min-height:0;
 }
 .wizard-page .wizard-cancel,.wizard-page .wizard-back{
  flex:none;min-height:39px;padding:9px 13px;
@@ -674,7 +674,11 @@ html::-webkit-scrollbar-corner{
 .wizard-page .wizard-back:focus-visible{
  outline:2px solid #80e5c4;outline-offset:2px;
 }
-.wizard-page .onboard-header .fa-page-title{margin:0 0 13px}
+.wizard-page .onboard-header .fa-page-title{margin:10px 0 13px}
+.wizard-page .onboard-header>p{margin:0}
+.wizard-page .onboard-header>.wizard-step-label{padding-right:220px}
+.wizard-page .onboard-header>.fa-page-title,
+.wizard-page .onboard-header>p{padding-right:220px}
 .wizard-manager-panel{
  max-width:680px;background:#142832;
  border:1px solid #385552;
@@ -719,14 +723,19 @@ html::-webkit-scrollbar-corner{
 }
 .wizard-no-club h2{margin:8px 0;font-size:19px;color:#effbf5}
 .wizard-no-club p{margin:0;font-size:12px;line-height:1.6}
-@media(max-width:520px){
- .wizard-page .wizard-topline{flex-wrap:wrap;gap:10px}
- .wizard-page .wizard-top-start{flex:1 1 170px;gap:8px}
- .wizard-page .wizard-cancel{margin-left:auto}
+@media(max-width:680px){
+ /* At narrow widths controls follow the subtitle, never compress or shift it. */
+ .wizard-page .wizard-topline{
+  position:static;justify-content:flex-end;flex-wrap:wrap;
+  gap:10px;margin:16px 0 0;
+ }
+ .wizard-page .onboard-header>.wizard-step-label,
+ .wizard-page .onboard-header>.fa-page-title,
+ .wizard-page .onboard-header>p{padding-right:0}
  .wizard-page .wizard-back{padding:8px 10px}
  .wizard-actions .btn,.wizard-manager-form .begin-button{width:100%;max-width:none}
 }
 @media(max-width:340px){
- .wizard-page .wizard-top-start .pretitle{font-size:9px;letter-spacing:.08em}
+ .wizard-page .wizard-step-label{font-size:9px;letter-spacing:.08em}
  .wizard-page .wizard-cancel{padding:8px 9px}
 }

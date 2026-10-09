@@ -46,15 +46,13 @@ function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,description
  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
  <div class="onboard-wrap">
   <header class="onboard-header fa-page-heading">
-   <div class="wizard-topline">
-    <div class="wizard-top-start">
-     ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}
-     <span class="pretitle">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/3</span>
-    </div>
-    ${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost wizard-cancel')}
-   </div>
+   <span class="pretitle wizard-step-label">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/3</span>
    <h1 class="fa-page-title">${tr(lang,titleIt,titleEn)}</h1>
    <p>${tr(lang,descriptionIt,descriptionEn)}</p>
+   <div class="wizard-topline">
+    ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}
+    ${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost wizard-cancel')}
+   </div>
   </header>
   ${content}
  </div></div>`;
