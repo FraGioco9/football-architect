@@ -5,7 +5,6 @@ import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionByI
 import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
 import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
 import {simulationPage,calendarPage} from '../src/ui-pages.js';
-import {scheduleCompetitionFixtures} from '../src/fixture-calendar.js';
 import {nextScheduledClubFixture,scheduleCompetitionFixtures,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 
 test('eight real countries each expose 20 invented clubs with unique identities',()=>{
