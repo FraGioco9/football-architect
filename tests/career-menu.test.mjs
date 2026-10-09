@@ -7,7 +7,8 @@ import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,create
 import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPage,simulationPage} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
 import {icon} from '../src/icons.js';
-import {feedback,fromError,feedbackText,inlineManagerError,renderFeedback,renderBlockingError} from '../src/feedback.js';
+import {feedback,fromError,feedbackText,renderFeedback,renderBlockingError} from '../src/feedback.js';
+import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from '../src/manager-profile.js';
 
 class FakeDB{
  constructor(){this.data=new Map();this.objectStoreNames={contains:key=>this.data.has(key)};}
@@ -74,7 +75,7 @@ test('IndexedDB schema has three isolated stores',async()=>{
 });
 test('manager/team setup creates no save until explicit createCareer',async()=>{
  const db=await setup(),draft={managerName:'Ada Manager',countryId:'IT',clubId:2,query:''};
- assert.match(managerPage(draft,'it'),/Nome allenatore/);
+ assert.match(managerPage(draft,'it'),/Cognome/);
  assert.match(teamsPage(draft,'it'),/Inizia carriera/);
  assert.equal((await readCatalog(db)).rows.length,0);
  await createCareer(db,form('Ada Manager','IT',2));
@@ -200,7 +201,7 @@ test('IT/EN menu and dedicated routes are available and accessible',()=>{
  assert.match(html,/New career/);assert.match(html,/My careers/);assert.match(html,/Settings/);
  assert.match(html,/Skip to content/);
  const draft={managerName:'Mario',countryId:'DE',clubId:1,query:''};
- assert.match(managerPage(draft,'en'),/Manager name/);
+ assert.match(managerPage(draft,'en'),/First name/);
  assert.match(teamsPage(draft,'en'),/Choose your club/);
  assert.match(settingsPage('en'),/Language/);
  assert.match(careersPage(empty,'en'),/Import/);
@@ -281,7 +282,11 @@ test('three separate new career pages require manager, country and club before s
  assert.match(manager,/PASSAGGIO 1\/3/);
  assert.match(manager,/Scegli il tuo allenatore/);
  assert.match(manager,/id="manager-form"/);
- assert.match(manager,/id="manager-name"/);
+ assert.match(manager,/id="manager-first-name"/);
+ assert.match(manager,/id="manager-last-name"/);
+ assert.match(manager,/id="manager-birth-date"/);
+ assert.match(manager,/id="manager-nationality"/);
+ assert.match(manager,/id="manager-birth-place"/);
  assert.match(manager,/Avanti: Nazione/);
  assert.doesNotMatch(manager,/class="league-pick-options"|<table class="club-table"/);
  assert.match(manager,/<h1 class="fa-page-title">[\s\S]*?<p>[\s\S]*?<div class="wizard-topline">[\s\S]*?data-action="cancel-setup"/);
@@ -352,8 +357,8 @@ test('historic page styling survives the three-step wizard without restoring mat
   assert.ok(sheet.includes('.'+name),name);
  assert.match(sheet,/@media\(max-width:760px\)/);
  assert.match(sheet,/@media\(max-width:430px\)/);
- assert.match(controller,/if\(!field\|\|!validateManager\(field\)\)/);
- assert.match(controller,/draft\.managerName=field\.value\.trim\(\)/);
+ assert.match(controller,/if\(!validateManagerForm\(event\.target\)\)return;/);
+ assert.match(controller,/draft\.managerName=managerFullName\(draft\.managerProfile\)/);
  assert.match(controller,/case 'country':if\(LEAGUES\.some\(l=>l\.id===element\.dataset\.country\)\)/);
  assert.match(controller,/navigate\('\/new-career\/team'\)/);
  assert.doesNotMatch(controller,/simulateMatch|playMatch|matchEngine/);
@@ -481,24 +486,37 @@ test('IndexedDB and import failures have safe and actionable guidance',()=>{
  assert.match(blocking,/data-action="retry-storage"/);
  assert.doesNotMatch(blocking,/INDEXEDDB_BLOCKED|stack|Error:/);
 });
-test('manager field validation uses an inline IT/EN message for blanks and length',()=>{
- assert.equal(inlineManagerError(' Mario Rossi '),null);
- assert.equal(inlineManagerError('  ','it').code,'FIELD_MANAGER_REQUIRED');
- assert.match(inlineManagerError('  ','en').description,/Enter a name/);
- assert.equal(inlineManagerError('x'.repeat(81),'it').code,'FIELD_MANAGER_LENGTH');
- assert.equal(inlineManagerError('x'.repeat(80),'it'),null);
- const html=managerPage({managerName:'',countryId:'IT',clubId:1},'it');
- assert.match(html,/<form id="manager-form" class="onboard-manager-form wizard-manager-form" novalidate>/);
- assert.match(html,/aria-invalid="false" aria-describedby="manager-name-error"/);
- assert.match(html,/id="manager-name-error" class="field-error" role="alert" hidden/);
+test('five required manager fields render inline IT/EN validation without extra traits',()=>{
+ const markup=managerPage({managerProfile:blankManagerProfile()},'it');
+ const en=managerPage({managerProfile:blankManagerProfile()},'en');
+ assert.match(markup,/<form id="manager-form" class="onboard-manager-form wizard-manager-form" novalidate>/);
+ for(const [key,id,label] of [
+  ['firstName','manager-first-name','Nome'],
+  ['lastName','manager-last-name','Cognome'],
+  ['birthDate','manager-birth-date','Data di nascita'],
+  ['nationality','manager-nationality','Nazionalità'],
+  ['birthPlace','manager-birth-place','Luogo di nascita']
+ ]){
+  assert.match(markup,new RegExp('name="'+key+'"[^>]*required'));
+  assert.match(markup,new RegExp('id="'+id+'-error" class="field-error" role="alert" hidden'));
+  assert.match(markup,new RegExp(label));
+ }
+ assert.equal((markup.match(/class="text-field wizard-profile-input"/g)||[]).length,5);
+ assert.match(markup,/name="birthDate" type="date"/);
+ assert.match(en,/First name/);
+ assert.match(en,/Last name/);
+ assert.match(en,/Date of birth/);
+ assert.match(en,/Nationality/);
+ assert.match(en,/Place of birth/);
+ assert.doesNotMatch(markup,/Seconda nazionalità|Esperienza|Patentino|Filosofia tattica|Lingue conosciute/);
 });
 test('controllers use structured feedback and protect save data in recovery paths',()=>{
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(controller,/function fail\(error\)\{stop\(\);feedbackState=fromError\(error\);/);
  assert.match(controller,/case 'feedback-dismiss'/);
  assert.match(controller,/case 'retry-storage'/);
- assert.match(controller,/function validateManager\(field\)/);
- assert.match(controller,/if\(!field\|\|!validateManager\(field\)\)/);
+ assert.match(controller,/function validateManagerForm\(form,focus=true\)/);
+ assert.match(controller,/if\(!validateManagerForm\(event\.target\)\)return;/);
  assert.match(controller,/feedback\('success','IMPORT_OK'\)/);
  assert.match(controller,/feedback\('success','RENAME_OK'\)/);
  assert.match(controller,/feedback\('success','DELETE_OK'\)/);
@@ -560,7 +578,7 @@ test('wizard routes keep the input draft in memory and do not create a premature
  assert.match(controller,/['"]\/new-career\/country['"]/);
  assert.match(controller,/['"]\/new-career\/team['"]/);
  assert.match(server,/'\/new-career\/country'/);
- assert.match(controller,/draft\.managerName=field\.value\.trim\(\);\s*navigate\('\/new-career\/country'\);/);
+ assert.match(controller,/draft\.managerName=managerFullName\(draft\.managerProfile\);[\s\S]*?navigate\('\/new-career\/country'\);/);
  assert.match(controller,/case 'country-next':if\(LEAGUES\.some\(l=>l\.id===draft\.countryId\)\)navigate\('\/new-career\/team'\)/);
  assert.match(controller,/case 'start-career':await begin\(\)/);
  assert.match(controller,/if\(page==='\/new-career\/team'&&!LEAGUES\.some/);
@@ -635,7 +653,7 @@ test('wizard H1 and subtitle share the same top position and spacing as standard
 });
 
 test('manager page omits the obsolete confirmation-save disclaimer in both languages',()=>{
- const draft={managerName:'Ada Manager',countryId:null,clubId:null};
+ const draft={managerProfile:blankManagerProfile(),countryId:null,clubId:null};
  for(const lang of ['it','en']){
   const html=managerPage(draft,lang);
   assert.doesNotMatch(html,/Non verrà creato alcun salvataggio prima della conferma finale/);
