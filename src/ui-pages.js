@@ -257,14 +257,13 @@ export function careersPage(catalog,lang,currentCareerId=null){
       <p>${tr(lang,'Crea la prima carriera per iniziare.','Create your first career to get started.')}</p>
      </div>`}</div>
    </section>
-   <dialog id="career-rename-dialog" class="fa-rename-dialog" aria-labelledby="career-rename-title" aria-describedby="career-rename-description">
+   <dialog id="career-rename-dialog" class="fa-rename-dialog" aria-labelledby="career-rename-title">
     <form id="career-rename-form" novalidate>
-     <div class="fa-rename-dialog-header"><h2 id="career-rename-title">${tr(lang,'Rinomina carriera','Rename career')}</h2>
+     <div class="fa-rename-dialog-header"><h2 id="career-rename-title" tabindex="-1">${tr(lang,'Rinomina carriera','Rename career')}</h2>
       <button class="fa-rename-close" type="button" data-action="rename-cancel" aria-label="${tr(lang,'Chiudi','Close')}">${icon('x',17)}</button>
      </div>
-     <p id="career-rename-description">${tr(lang,'Modifica il nome del salvataggio.','Change the save name.')}</p>
-     <label class="input-label" for="career-rename-input">${tr(lang,'Nome carriera','Career name')}</label>
-     <input id="career-rename-input" class="text-field fa-interactive-box" type="text" name="careerName" maxlength="80" autocomplete="off" required aria-describedby="career-rename-error">
+     <span class="input-label" id="career-rename-field-label">${tr(lang,'Nome carriera','Career name')}</span>
+     <input id="career-rename-input" class="text-field fa-interactive-box" type="text" name="careerName" maxlength="80" autocomplete="off" required aria-labelledby="career-rename-field-label" aria-describedby="career-rename-error">
      <p id="career-rename-error" class="fa-rename-error" role="alert" hidden></p>
      <div class="fa-rename-dialog-actions">
       <button type="button" class="btn secondary" data-action="rename-cancel">${tr(lang,'Annulla','Cancel')}</button>
