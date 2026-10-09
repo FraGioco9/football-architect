@@ -329,22 +329,33 @@ test('four separate new career pages require manager, country, championship and 
  await createCareer(db,form('Ada Coach','IT',2));
  assert.equal((await readCatalog(db)).rows.length,1);
 });
-test('historic career library uses its card grid and old-style actions with minimal saves',async()=>{
+test('My Careers adopts the four-step wizard visual shell and preserves all save actions',async()=>{
  const db=await setup();await createCareer(db,form('Ada','IT',2));
  const html=careersPage(await readCatalog(db),'it');
- assert.match(html,/class="restored-careers"/);
- assert.match(html,/class="career-grid"/);
- assert.match(html,/class="career-card/);
- assert.match(html,/class="career-meta"/);
- assert.match(html,/class="career-actions"/);
- assert.match(html,/class="career-more"/);
- assert.match(html,/Le tue carriere/);
- assert.match(html,/data-action="load"/);
- assert.match(html,/data-action="rename"/);
- assert.match(html,/data-action="export"/);
- assert.match(html,/data-action="delete"/);
+ assert.match(html,/class="onboarding restored-onboarding wizard-page restored-careers wizard-careers"/);
+ assert.match(html,/class="onboard-wrap"/);
+ assert.match(html,/class="onboard-header fa-page-heading"/);
+ assert.match(html,/class="wizard-topline"/);
+ assert.match(html,/class="wizard-careers-panel panel"/);
+ assert.match(html,/class="onboard-heading wizard-careers-heading"/);
+ assert.match(html,/class="wizard-careers-list"/);
+ assert.match(html,/class="wizard-career-row is-current /);
+ assert.match(html,/class="wizard-career-facts"/);
+ assert.match(html,/class="wizard-career-actions"/);
+ assert.match(html,/Le mie carriere/);
+ assert.match(html,/data-action="home"/);
+ for(const action of ['load','rename','export','delete','new','import'])
+  assert.ok(html.includes('data-action="'+action+'"'),action);
+ assert.equal((html.match(/id="import-file"/g)||[]).length,1);
  assert.doesNotMatch(html,/Recupera simulazione precedente|Checkpoint|Duplicazione/);
- assert.match(careersPage({rows:[],activeId:null},'en'),/No saved careers/);
+ assert.doesNotMatch(html,/class="career-grid"|class="career-card|class="career-more"/);
+ const empty=careersPage({rows:[],activeId:null},'en');
+ assert.match(empty,/No saved careers/);
+ assert.match(empty,/class="wizard-careers-empty"/);
+ assert.match(empty,/data-action="new"/);
+ assert.match(empty,/data-action="import"/);
+ assert.match(empty,/class="fa-page-title">My careers/);
+ assert.doesNotMatch(empty,/data-action="load"|data-action="delete"/);
 });
 test('historic settings restores the two-column panels and keeps live features only',()=>{
  const html=settingsPage('it');
@@ -364,7 +375,7 @@ test('historic settings restores the two-column panels and keeps live features o
 test('historic page styling survives the three-step wizard without restoring match systems',()=>{
  const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
- for(const name of ['onboard-wrap','onboard-grid','club-table','career-grid','career-card','settings-grid','settings-action'])
+ for(const name of ['onboard-wrap','onboard-grid','club-table','wizard-careers-panel','wizard-career-row','settings-grid','settings-action'])
   assert.ok(sheet.includes('.'+name),name);
  assert.match(sheet,/@media\(max-width:760px\)/);
  assert.match(sheet,/@media\(max-width:430px\)/);
@@ -397,7 +408,7 @@ test('the transparent-track contract covers page, club grid and future nested sc
  assert.match(css,/\.restored-onboarding \.club-table\{/);
  assert.match(css,/:where\(html,body,body \*\)::-webkit-scrollbar\{\s*width:var\(--scrollbar-width\);\s*height:var\(--scrollbar-width\);\s*background:transparent;/);
  assert.match(ui,/<table class="club-table"/);
- assert.match(ui,/class="career-grid"/);
+ assert.match(ui,/class="wizard-careers-list"/);
  // The shared selectors target every descendant, without requiring classes
  // or making new containers scrollable.
  const scrollbarContract=css.slice(css.indexOf('/* QOL05.08'),css.indexOf('/* New Career: all 20 clubs'));
@@ -1401,4 +1412,75 @@ test('local club cell rebuild preserves selection, keyboard focus and compact re
  assert.match(css,/html\.fa-keyboard-navigation \.wizard-team-grid \.club-table-row:focus-within:not\(\.is-selected\) td\{/);
  assert.match(css,/\.wizard-team-grid \.club-table-row\.is-selected td\{/);
  assert.doesNotMatch(css,/\.wizard-team-grid\{[^}]*overflow-y:auto/);
+});
+
+
+test('My Careers preserves three independent rows, active selection and full action IDs',async()=>{
+ const db=await setup();
+ const a=await createCareer(db,form('Ada','IT',2));
+ await createCareer(db,form('Bo','DE',3));
+ const c=await createCareer(db,form('Cami','FR',4));
+ await selectCareer(db,a.meta.id);
+ const catalog=await readCatalog(db);
+ for(const lang of ['it','en']){
+  const html=careersPage(catalog,lang);
+  assert.equal((html.match(/class="wizard-career-row /g)||[]).length,3);
+  assert.equal((html.match(/class="wizard-career-identity"/g)||[]).length,3);
+  assert.equal((html.match(/class="wizard-career-facts"/g)||[]).length,3);
+  assert.equal((html.match(/class="wizard-career-actions"/g)||[]).length,3);
+  assert.equal((html.match(/aria-current="true"/g)||[]).length,1);
+  assert.equal((html.match(/data-action="load"/g)||[]).length,3);
+  assert.equal((html.match(/data-action="rename"/g)||[]).length,3);
+  assert.equal((html.match(/data-action="export"/g)||[]).length,3);
+  assert.equal((html.match(/data-action="delete"/g)||[]).length,3);
+  assert.ok(html.includes('data-id="'+a.meta.id+'"'));
+  assert.ok(html.includes('data-id="'+c.meta.id+'"'));
+  assert.match(html,lang==='it'?/Carriere salvate/:/Saved careers/);
+  assert.match(html,lang==='it'?/Continua/:/Continue/);
+  assert.match(html,lang==='it'?/Ultimo salvataggio/:/Last saved/);
+ }
+});
+
+test('My Careers shows a corrupt slot with red status, export/delete but never load/rename',async()=>{
+ const db=await setup();
+ const good=await createCareer(db,form('Healthy','IT',1));
+ const corrupt=await createCareer(db,form('Broken','ENG',2));
+ db.data.get('snapshots').set(corrupt.meta.id,{id:corrupt.meta.id,raw:'{bad'});
+ const catalog=await readCatalog(db);
+ const it=careersPage(catalog,'it'),en=careersPage(catalog,'en');
+ for(const html of [it,en]){
+  const row=html.match(new RegExp('<article class="wizard-career-row [^"]*"[^>]*>[\\s\\S]*?'+corrupt.meta.id+'[\\s\\S]*?<\\/article>'));
+  // Extract by the corrupt row's unique label rather than depending on ordering.
+  assert.match(html,/class="wizard-career-row  is-corrupt"/);
+  assert.match(html,/class="wizard-career-status is-invalid"/);
+  assert.match(html,/class="wizard-career-warning" role="status"/);
+  assert.match(html,new RegExp('data-action="export"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.match(html,new RegExp('data-action="delete"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.doesNotMatch(html,new RegExp('data-action="load"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.doesNotMatch(html,new RegExp('data-action="rename"[^>]*data-id="'+corrupt.meta.id+'"'));
+  assert.match(html,new RegExp('data-action="load"[^>]*data-id="'+good.meta.id+'"'));
+ }
+ assert.match(it,/Salvataggio danneggiato/);
+ assert.match(en,/Corrupt save: loading disabled/);
+});
+
+test('My Careers uses only wizard-scoped panels and responsive document scrolling',()=>{
+ const sheet=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.match(sheet,/\.fa-page-main \.wizard-careers \.wizard-careers-panel\{/);
+ assert.match(sheet,/background:#142832;border:1px solid #385552;box-shadow:none;/);
+ assert.match(sheet,/\.wizard-careers \.wizard-career-row\{/);
+ assert.match(sheet,/\.wizard-careers \.wizard-career-row\.is-current\{/);
+ assert.match(sheet,/\.wizard-careers \.wizard-career-row\.is-corrupt\{/);
+ assert.match(sheet,/@media\(max-width:760px\)\{[\s\S]*?\.wizard-careers \.wizard-career-facts/);
+ assert.match(sheet,/@media\(max-width:620px\)\{[\s\S]*?\.wizard-careers \.wizard-topline/);
+ assert.match(sheet,/@media\(max-width:400px\)\{[\s\S]*?\.wizard-careers \.wizard-career-actions/);
+ const block=sheet.slice(sheet.indexOf('/* My Careers follows the New Career wizard layout'));
+ assert.doesNotMatch(block,/overflow-y:\s*(?:scroll|auto)|max-height:\s*\d+px/);
+ assert.match(ui,/class="wizard-careers-panel panel"/);
+ assert.match(ui,/class="wizard-careers-list"/);
+ const empty=careersPage({rows:[],activeId:null},'en');
+ assert.equal((empty.match(/<h1\b/g)||[]).length,1);
+ assert.doesNotMatch(empty,/<p[^>]*>Open a career or create a new one\./);
+ assert.doesNotMatch(empty,/STEP \d\/\d/);
 });
