@@ -1129,3 +1129,16 @@ test('shared centering works for typeahead, newly opened selected nationality, a
  assert.match(js,/if\(kind==='nationality'&&pickerOpen!=='nationality'\)/);
  assert.match(js,/if\(kind==='language'&&!languageMenuOpen\)/);
 });
+
+
+test('wizard exit button is Menu in IT and EN for all three stages without changing its action',()=>{
+ const draft={managerName:'Ada Manager',managerProfile:blankManagerProfile(),countryId:'IT',clubId:4};
+ for(const lang of ['it','en']){
+  for(const page of [managerPage(draft,lang),countryPage(draft,lang),teamsPage(draft,lang)]){
+   assert.match(page,/<button[^>]*data-action="cancel-setup"[^>]*>[\s\S]*?<span>Menu<\/span><\/button>/);
+   assert.doesNotMatch(page,/<span>(Annulla|Cancel)<\/span>/);
+  }
+ }
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(js,/case 'cancel-setup':draft=newDraft\(\);managerSubmitted=false;pickerMonth=null;navigate\('\/'\);break;/);
+});

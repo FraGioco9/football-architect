@@ -53,7 +53,7 @@ function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,description
    <p>${tr(lang,descriptionIt,descriptionEn)}</p>
    <div class="wizard-topline">
     ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}
-    ${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost wizard-cancel')}
+    ${button('cancel-setup',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}
    </div>
   </header>
   ${content}
