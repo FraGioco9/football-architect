@@ -1,15 +1,15 @@
 import {LEAGUES,getLeagueClubs} from './leagues.js';
 import {createSession,advanceSession,validDate,localToday} from './simulation.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
-import {layout,homePage,managerPage,countryPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
+import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from './manager-profile.js';
 import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer,centeredMenuScrollTop} from './site-pickers.js';
 
 const app=document.getElementById('app');
-const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/team','/careers','/settings','/simulation']);
+const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
-const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,clubId:null,query:''});
+const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,championshipId:null,clubId:null,query:''});
 let draft=newDraft();
 let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,languageMenuOpen=false;
 let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
@@ -93,12 +93,15 @@ async function render(){
  try{
   if(page!=='/simulation')await refreshCatalog();
   if(ticket!==sequence)return;
-  if((page==='/new-career/country'||page==='/new-career/team')&&
+  if((page==='/new-career/country'||page==='/new-career/league'||page==='/new-career/team')&&
     (!validManagerProfile(draft.managerProfile))){
    history.replaceState({},'','/new-career');page='/new-career';
   }
-  if(page==='/new-career/team'&&!LEAGUES.some(l=>l.id===draft.countryId)){
+  if((page==='/new-career/league'||page==='/new-career/team')&&!LEAGUES.some(l=>l.id===draft.countryId)){
    history.replaceState({},'','/new-career/country');page='/new-career/country';
+  }
+  if(page==='/new-career/team'&&!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)){
+   history.replaceState({},'','/new-career/league');page='/new-career/league';
   }
   if(page==='/simulation'&&!loaded){
    await refreshCatalog();
@@ -111,6 +114,7 @@ async function render(){
   let inner;
   if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate),jump:pickerView});
   else if(page==='/new-career/country')inner=countryPage(draft,lang);
+  else if(page==='/new-career/league')inner=championshipPage(draft,lang);
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang);
   else if(page==='/settings')inner=settingsPage(lang);
@@ -152,7 +156,7 @@ async function advance(days){
  }catch(e){fail(e);}finally{busy=false;}
 }
 async function begin(){
- if(busy||!validManagerProfile(draft.managerProfile)||!LEAGUES.some(l=>l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
+ if(busy||!validManagerProfile(draft.managerProfile)||!LEAGUES.some(l=>l.id===draft.countryId)||!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)||!getLeagueClubs(draft.countryId).some(c=>c.id===draft.clubId))return;
  busy=true;
  try{
   const current=await createCareer(db,{managerName:managerFullName(draft.managerProfile),managerProfile:draft.managerProfile,countryId:draft.countryId,clubId:draft.clubId});
@@ -208,7 +212,7 @@ async function handle(action,element){
   case 'careers':navigate('/careers');break;
   case 'settings':navigate('/settings');break;
   case 'cancel-setup':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/');break;
-  case 'setup-back':navigate(path()==='/new-career/team'?'/new-career/country':'/new-career');break;
+  case 'setup-back':navigate(path()==='/new-career/team'?'/new-career/league':path()==='/new-career/league'?'/new-career/country':'/new-career');break;
 
   case 'nationality-toggle':
    pickerOpen=pickerOpen==='nationality'?null:'nationality';
@@ -271,9 +275,11 @@ async function handle(action,element){
   case 'calendar-clear':
    draft.managerProfile.birthDate='';pickerOpen=null;pickerView='days';selectedBoxId=null;
    await render();app.querySelector('#manager-birth-date')?.focus({preventScroll:true});break;
-  case 'country':if(LEAGUES.some(l=>l.id===element.dataset.country)){draft.countryId=element.dataset.country;draft.clubId=null;await render();app.querySelector(`[data-action="country"][data-country="${draft.countryId}"]`)?.focus({preventScroll:true});}break;
-  case 'country-next':if(LEAGUES.some(l=>l.id===draft.countryId))navigate('/new-career/team');break;
-  case 'select':if(getLeagueClubs(draft.countryId).some(c=>c.id===Number(element.dataset.id))){draft.clubId=Number(element.dataset.id);await render();app.querySelector(`.club-table-select[data-id="${draft.clubId}"]`)?.focus({preventScroll:true});}break;
+  case 'country':if(LEAGUES.some(l=>l.id===element.dataset.country)){draft.countryId=element.dataset.country;draft.championshipId=null;draft.clubId=null;await render();app.querySelector(`[data-action="country"][data-country="${draft.countryId}"]`)?.focus({preventScroll:true});}break;
+  case 'country-next':if(LEAGUES.some(l=>l.id===draft.countryId))navigate('/new-career/league');break;
+  case 'championship':if(LEAGUES.some(l=>l.id===element.dataset.championship&&l.id===draft.countryId)){draft.championshipId=element.dataset.championship;draft.clubId=null;await render();app.querySelector(`[data-action="championship"][data-championship="${draft.championshipId}"]`)?.focus({preventScroll:true});}break;
+  case 'championship-next':if(LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId))navigate('/new-career/team');break;
+  case 'select':if(LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)&&getLeagueClubs(draft.countryId).some(c=>c.id===Number(element.dataset.id))){draft.clubId=Number(element.dataset.id);await render();app.querySelector(`.club-table-select[data-id="${draft.clubId}"]`)?.focus({preventScroll:true});}break;
   case 'start-career':await begin();break;
   case 'continue':{
    await refreshCatalog();
