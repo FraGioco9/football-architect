@@ -40,30 +40,64 @@ export function homePage(catalog,lang){
 }
 
 
-/* The original pre-reset onboarding layout, using current minimal team data. */
-export function managerPage(draft,lang){
- const league=leagueById(draft.countryId),clubs=getLeagueClubs(league.id);
- const chosen=clubs.find(c=>c.id===draft.clubId)??clubs[0],loc=lang==='en'?'en':'it';
- return `<div class="onboarding restored-onboarding">
+/* Three setup pages: the wizard is intentionally ephemeral until final confirmation. */
+function wizardFrame(content,lang,step,titleIt,titleEn,descriptionIt,descriptionEn){
+ return `<div class="onboarding restored-onboarding wizard-page">
  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
  <div class="onboard-wrap">
-  <div class="onboard-header fa-page-heading"><span class="pretitle">${tr(lang,'NUOVA CARRIERA','NEW CAREER')}</span>
-   <h1 class="fa-page-title">${tr(lang,'Costruisci la tua carriera','Build your career')}</h1>
-   <div class="onboard-intro-row"><p>${tr(lang,'Scegli una nazione, una squadra e il tuo allenatore.','Choose a country, a club and your manager.')}</p>
-   <button class="btn ghost" type="button" data-action="cancel-setup">${icon('arrow-left',16)} ${tr(lang,'Annulla','Cancel')}</button></div></div>
-  <section class="league-pick" aria-labelledby="league-pick-title">
-   <div class="league-pick-head"><div><span class="eyebrow">${tr(lang,'1 · NAZIONE E CAMPIONATO','1 · COUNTRY AND LEAGUE')}</span>
-    <h2 id="league-pick-title">${tr(lang,'Scegli dove iniziare','Choose where to start')}</h2></div>
-    <span class="league-pick-count">${LEAGUES.length} ${tr(lang,'NAZIONI','COUNTRIES')}</span></div>
-   <div class="league-pick-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
-   ${LEAGUES.map(l=>`<button type="button" class="league-pick-option ${l.id===league.id?'active':''}" data-action="country" data-country="${l.id}" aria-pressed="${l.id===league.id}">
-    <span class="league-flag country-flag" aria-hidden="true">${esc(l.flag)}</span><span class="league-pick-text"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>${l.id===league.id?icon('check',15):''}</button>`).join('')}
+  <header class="onboard-header fa-page-heading">
+   <div class="wizard-topline">
+    <span class="pretitle">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/3</span>
+    ${button('cancel-setup',tr(lang,'Annulla','Cancel'),'ghost wizard-cancel')}
    </div>
-  </section>
-  <div class="onboard-grid">
-   <section class="onboard-clubs" aria-labelledby="clubs-title">
-    <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'2 · Scegli il club','2 · Choose your club')}</h2>
-     <span>${clubs.length} ${tr(lang,'SOCIETÀ','CLUBS')}</span></div>
+   <h1 class="fa-page-title">${tr(lang,titleIt,titleEn)}</h1>
+   <p>${tr(lang,descriptionIt,descriptionEn)}</p>
+  </header>
+  ${content}
+  ${step>1?`<nav class="wizard-back-nav" aria-label="${tr(lang,'Navigazione carriera','Career navigation')}">
+    ${button('setup-back',tr(lang,'Indietro','Back'),'ghost')}
+   </nav>`:''}
+ </div></div>`;
+}
+export function managerPage(draft,lang){
+ const content=`<section class="wizard-manager-panel panel" aria-labelledby="wizard-manager-title">
+ <div class="onboard-heading"><h2 id="wizard-manager-title">${tr(lang,'1 · Il tuo allenatore','1 · Your manager')}</h2></div>
+ <form id="manager-form" class="onboard-manager-form wizard-manager-form" novalidate>
+  <label class="input-label" for="manager-name">${tr(lang,'Nome allenatore','Manager name')}</label>
+  <input class="text-field" id="manager-name" name="managerName" maxlength="80" required autocomplete="off"
+   value="${esc(draft.managerName)}" aria-invalid="false" aria-describedby="manager-name-error" placeholder="${tr(lang,'Inserisci il nome dell’allenatore','Enter manager name')}">
+  <p id="manager-name-error" class="field-error" role="alert" hidden>${tr(lang,'Inserisci un nome per proseguire.','Enter a name to continue.')}</p>
+  <button class="btn primary begin-button" type="submit"><span>${tr(lang,'Avanti: Nazione','Next: Country')}</span>${icon('chevron-right',18)}</button>
+ </form>
+ <p class="hint">${tr(lang,'Non verrà creato alcun salvataggio prima della conferma finale.','No save is created before final confirmation.')}</p>
+ </section>`;
+ return wizardFrame(content,lang,1,'Scegli il tuo allenatore','Choose your manager','Inserisci il nome dell’allenatore per iniziare.','Enter your manager name to get started.');
+}
+export function countryPage(draft,lang){
+ const selected=LEAGUES.some(l=>l.id===draft.countryId)?draft.countryId:null;
+ const loc=lang==='en'?'en':'it';
+ const content=`<section class="league-pick wizard-country-panel" aria-labelledby="league-pick-title">
+  <div class="league-pick-head"><div><span class="eyebrow">${tr(lang,'2 · NAZIONE E CAMPIONATO','2 · COUNTRY AND LEAGUE')}</span>
+   <h2 id="league-pick-title">${tr(lang,'Scegli dove iniziare','Choose where to start')}</h2></div>
+   <span class="league-pick-count">${LEAGUES.length} ${tr(lang,'NAZIONI','COUNTRIES')}</span></div>
+  <div class="league-pick-options" role="group" aria-label="${tr(lang,'Nazione','Country')}">
+   ${LEAGUES.map(l=>`<button type="button" class="league-pick-option ${l.id===selected?'active':''}"
+     data-action="country" data-country="${l.id}" aria-pressed="${l.id===selected}">
+     <span class="league-flag country-flag" aria-hidden="true">${esc(l.flag)}</span>
+     <span class="league-pick-text"><b>${esc(l.country[loc])}</b><small>${esc(l.competition)}</small></span>
+     ${l.id===selected?icon('check',15):''}</button>`).join('')}
+  </div>
+  <div class="wizard-actions">${button('country-next',tr(lang,'Avanti: Squadra','Next: Club'),'primary',selected?'':'disabled')}</div>
+ </section>`;
+ return wizardFrame(content,lang,2,'Scegli la nazione','Choose your country','Seleziona la nazione in cui iniziare la carriera.','Select the country where you want to start.');
+}
+export function teamsPage(draft,lang){
+ const league=leagueById(draft.countryId),clubs=getLeagueClubs(league.id),loc=lang==='en'?'en':'it';
+ const chosen=clubs.find(c=>c.id===draft.clubId)??null;
+ const content=`<div class="onboard-grid wizard-team-grid">
+  <section class="onboard-clubs" aria-labelledby="clubs-title">
+   <div class="onboard-heading"><h2 id="clubs-title">${tr(lang,'3 · Scegli il club','3 · Choose your club')}</h2>
+    <span>${clubs.length} ${tr(lang,'SOCIETÀ','CLUBS')}</span></div>
     <table class="club-table" id="clubs" aria-label="${tr(lang,'Squadre disponibili','Available clubs')}">
      <thead><tr>
       <th scope="col">${tr(lang,'Squadra','Club')}</th>
@@ -71,17 +105,17 @@ export function managerPage(draft,lang){
       <th scope="col" class="club-table-founded">${tr(lang,'Fondazione','Founded')}</th>
       <th scope="col" class="club-table-status">${tr(lang,'Scelta','Selection')}</th>
      </tr></thead>
-     <tbody>${clubs.map(c=>`<tr class="club-table-row ${c.id===chosen.id?'is-selected':''}" data-action="select" data-id="${c.id}">
-       <td><button type="button" class="club-table-select" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen.id}" aria-label="${tr(lang,'Seleziona','Select')} ${esc(c.name)}">
+     <tbody>${clubs.map(c=>`<tr class="club-table-row ${c.id===chosen?.id?'is-selected':''}" data-action="select" data-id="${c.id}">
+       <td><button type="button" class="club-table-select" data-action="select" data-id="${c.id}" aria-pressed="${c.id===chosen?.id}" aria-label="${tr(lang,'Seleziona','Select')} ${esc(c.name)}">
         ${crest(c)}<span class="club-table-name"><strong>${esc(c.name)}</strong><small>${esc(c.city)}</small></span></button></td>
        <td class="club-table-city">${esc(c.city)}</td>
        <td class="club-table-founded">${c.founded}</td>
-       <td class="club-table-status"><span class="club-table-indicator" aria-hidden="true">${c.id===chosen.id?icon('check',16):icon('chevron-right',16)}</span></td>
+       <td class="club-table-status"><span class="club-table-indicator" aria-hidden="true">${c.id===chosen?.id?icon('check',16):icon('chevron-right',16)}</span></td>
       </tr>`).join('')}</tbody>
     </table>
-   </section>
-   <aside class="onboard-aside">
-    <div class="selected-club-glow" style="--club-light:${esc(chosen.colors[0])}"></div>
+  </section>
+   <aside class="onboard-aside wizard-club-summary">
+   ${chosen?`    <div class="selected-club-glow" style="--club-light:${esc(chosen.colors[0])}"></div>
     <div class="selected-pretitle">${tr(lang,'CLUB SELEZIONATO','SELECTED CLUB')}</div>
     <div class="selected-crest">${crest(chosen)}</div>
     <h2>${esc(chosen.name)}</h2>
@@ -92,20 +126,21 @@ export function managerPage(draft,lang){
       <div><span>${tr(lang,'STADIO','STADIUM')}</span><strong>${(chosen.capacity/1000).toFixed(1)}k</strong></div>
       <div><span>${tr(lang,'CITTÀ','CITY')}</span><strong class="selected-stat-city">${esc(chosen.city)}</strong></div>
     </div>
-    <form id="manager-form" class="onboard-manager-form" novalidate>
-     <label class="input-label" for="manager-name">${tr(lang,'3 · NOME ALLENATORE','3 · MANAGER NAME')}</label>
-     <input class="text-field" id="manager-name" name="managerName" maxlength="80" required autocomplete="off"
-      value="${esc(draft.managerName)}" aria-invalid="false" aria-describedby="manager-name-error" placeholder="${tr(lang,'Inserisci il nome dell’allenatore','Enter manager name')}">
-     <p id="manager-name-error" class="field-error" role="alert" hidden>${tr(lang,'Inserisci il nome dell’allenatore per iniziare.','Enter the manager name to start.')}</p>
-     <button class="btn primary begin-button" type="submit">${tr(lang,'Inizia carriera','Start career')} ${icon('chevron-right',18)}</button>
-    </form>
-    <p class="hint">${tr(lang,'Il salvataggio verrà creato solo dopo la conferma.','The save will only be created after confirmation.')}</p>
+`:`<div class="wizard-no-club">
+     <div class="selected-pretitle">${tr(lang,'CLUB SELEZIONATO','SELECTED CLUB')}</div>
+     <div class="wizard-empty-icon">${icon('shield',26)}</div>
+     <h2>${tr(lang,'Seleziona una squadra','Select a club')}</h2>
+     <p>${tr(lang,'Scegli una delle squadre nella tabella per proseguire.','Choose a club in the table to continue.')}</p>
+    </div>`}
+    <div class="wizard-manager-summary"><span>${tr(lang,'ALLENATORE','MANAGER')}</span><strong>${esc(draft.managerName)}</strong></div>
+    ${button('start-career',tr(lang,'Inizia carriera','Start career'),'primary begin-button',chosen?'':'disabled')}
+    <p class="hint">${tr(lang,'Il salvataggio verrà creato solo dopo questa conferma.','Your save is created only after confirming this step.')}</p>
    </aside>
-  </div>
- </div></div>`;
+ </div>`;
+ return wizardFrame(content,lang,3,'Scegli la squadra','Choose your club',
+  'Seleziona una squadra per completare la configurazione.','Select a club to finish setup.');
 }
-export function teamsPage(draft,lang){return managerPage(draft,lang);}
-export function clubList(draft,lang){return managerPage(draft,lang);}
+
 export function careersPage(catalog,lang){
  const valid=catalog.rows;
  const cards=valid.map(row=>{
