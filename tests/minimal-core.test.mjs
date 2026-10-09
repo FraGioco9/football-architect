@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {LEAGUES,getLeagueClubs,COUNTRIES,COMPETITIONS,countryById,competitionById,getCountryClubs,getCompetitionClubs,getClub} from '../src/leagues.js';
 import {SAVE_KEY,DEFAULT_TIME,validDate,validTime,localToday,createSession,validSession,advanceSession,advanceMinutes,sessionTime,seasonLabel,seasonNumber,readSession,writeSession,clubFor} from '../src/simulation.js';
 import {seasonOpeningYear,preseasonStart,seasonCalendar,transferMarket,transferMarketFor} from '../src/season-calendar.js';
-import {simulationPage} from '../src/ui-pages.js';
+import {simulationPage,calendarPage} from '../src/ui-pages.js';
+import {scheduleCompetitionFixtures} from '../src/fixture-calendar.js';
 import {nextScheduledClubFixture,scheduleCompetitionFixtures,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 
 test('eight real countries each expose 20 invented clubs with unique identities',()=>{
@@ -429,4 +430,103 @@ test('CAL-02.3: projected match renders only a scheduled preview in IT and EN',(
   assert.ok(!html.includes('data-action="play-match"'));
   assert.doesNotMatch(html,/\b(?:score|live|final score)\b|risultati|classifica/i);
  }
+});
+
+
+test('CAL-02.4: 38 matchdays and all 380 immutable scheduled fixtures are visible by round',()=>{
+ const calendar=scheduleCompetitionFixtures('IT-1',2026);
+ const state=createSession('IT',2,'2026-10-01');
+ const meta={countryId:'IT',clubId:2,managerName:'Tester'};
+ let total=0;
+ for(let round=1;round<=38;round++){
+  const html=calendarPage(meta,state,'it',calendar,{view:'round',filter:'all',month:'2026-10',round});
+  assert.match(html,/Giornata /);
+  assert.match(html,/Incontri · 10/);
+  assert.equal((html.match(/class="fa-fixture-item/g)||[]).length,10);
+  assert.doesNotMatch(html,/\bscore\b|classifica|risultati/i);
+  total+=10;
+ }
+ assert.equal(total,380);
+});
+
+test('CAL-02.4: my club shows exactly one immutable fixture per round',()=>{
+ const calendar=scheduleCompetitionFixtures('BR-1',2028);
+ const state=createSession('BR',8,'2028-10-01');
+ const meta={countryId:'BR',clubId:8,managerName:'Manager'};
+ let shown=0;
+ for(let round=1;round<=38;round++){
+  const html=calendarPage(meta,state,'en',calendar,{view:'round',filter:'club',month:'2028-10',round});
+  assert.match(html,/Matches · 1/);
+  shown+=(html.match(/class="fa-fixture-item/g)||[]).length;
+ }
+ assert.equal(shown,38);
+ assert.ok(!('fixtures' in state));
+});
+
+test('CAL-02.4: month view has correct number of days, chronology and daylight-independent markers',()=>{
+ const calendar=scheduleCompetitionFixtures('IT-1',2027),meta={countryId:'IT',clubId:3},state=createSession('IT',3,'2028-02-29');
+ for(const [month,days] of [['2027-09',30],['2028-02',29],['2028-04',30],['2028-05',31],['2028-06',30]]){
+  const html=calendarPage(meta,state,'it',calendar,{view:'month',filter:'all',month});
+  assert.equal((html.match(/data-action="fixture-day"/g)||[]).length,days);
+  assert.ok(html.includes('data-action="fixture-month-prev"'));
+  assert.ok(html.includes('data-action="fixture-month-next"'));
+ }
+ const feb=calendarPage(meta,state,'en',calendar,{view:'month',filter:'all',month:'2028-02'});
+ assert.match(feb,/data-date="2028-02-29"/);
+ const selected=calendarPage(meta,state,'en',calendar,{view:'month',filter:'all',month:'2028-02',day:'2028-02-29'});
+ assert.match(selected,/data-action="fixture-day-clear"/);
+ assert.match(selected,/aria-pressed="true"/);
+});
+
+test('CAL-02.4: month and day filters are subsets of the deterministic fixture inventory',()=>{
+ const cal=scheduleCompetitionFixtures('FR-1',2026),meta={countryId:'FR',clubId:4},state=createSession('FR',4,'2026-07-01');
+ const fixtures=cal.matchdays.flatMap(d=>d.fixtures);
+ const month='2026-10';
+ const dates=[...new Set(fixtures.filter(f=>f.date.startsWith(month)).map(f=>f.date))];
+ const all=calendarPage(meta,state,'en',cal,{view:'month',month,filter:'all'});
+ const mine=calendarPage(meta,state,'en',cal,{view:'month',month,filter:'club'});
+ const inMonth=fixtures.filter(f=>f.date.startsWith(month));
+ const myCount=inMonth.filter(f=>f.homeClubId===4||f.awayClubId===4).length;
+ assert.equal((all.match(/class="fa-fixture-item/g)||[]).length,inMonth.length);
+ assert.equal((mine.match(/class="fa-fixture-item/g)||[]).length,myCount);
+ for(const date of dates){
+  const day=calendarPage(meta,state,'en',cal,{view:'month',month,day:date,filter:'all'});
+  assert.equal((day.match(/class="fa-fixture-item/g)||[]).length,fixtures.filter(f=>f.date===date).length);
+ }
+ const winter=calendarPage(meta,state,'en',cal,{view:'month',month:'2026-12',day:'2026-12-25',filter:'all'});
+ assert.match(winter,/No matches in this selection/);
+});
+
+test('CAL-02.4: bilingual controls, selection styling, no match simulation and untouched save',()=>{
+ const state=createSession('PT',1,'2026-08-01'),snapshot=JSON.stringify(state);
+ const meta={countryId:'PT',clubId:1,managerName:'Coach'};
+ const calendar=scheduleCompetitionFixtures('PT-1',2026);
+ const it=calendarPage(meta,state,'it',calendar,{view:'month',filter:'club',month:'2026-08'});
+ const en=calendarPage(meta,state,'en',calendar,{view:'round',filter:'all',month:'2026-08',round:1});
+ assert.match(it,/Calendario partite/);
+ assert.match(it,/La mia squadra/);
+ assert.match(it,/Tutte le partite/);
+ assert.match(en,/Match calendar/);
+ assert.match(en,/All matches/);
+ assert.match(en,/Rounds/);
+ assert.match(it,/data-action="fixture-back"/);
+ assert.doesNotMatch(it,/data-action="play-match"|data-action="simulate-match"|matchEngine/i);
+ assert.equal(JSON.stringify(state),snapshot);
+ assert.ok(calendar.matchdays.every(d=>Object.isFrozen(d.fixtures)));
+ const source=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(source,/case 'fixture-open'/);
+ assert.match(source,/case 'fixture-month-prev'/);
+ assert.match(source,/case 'fixture-day'/);
+ assert.match(source,/case 'fixture-round-next'/);
+ assert.match(source,/fixtureCalendarFor\(loaded.state.countryId\+'-1',seasonYear\)/);
+});
+
+test('CAL-02.4: responsive 320/390 contracts keep a 7-column grid with no nested scrolling',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-fixture-calendar-grid\{display:grid;grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-width:390px\)\{/);
+ assert.match(css,/\.fa-fixture-day\{min-height:40px/);
+ assert.doesNotMatch(css,/\.fa-fixture-(?:results|items|calendar)\s*\{[^}]*overflow-y:\s*(?:auto|scroll)/);
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.ok(server.includes("'/calendar'"));
 });

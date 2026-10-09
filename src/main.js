@@ -1,15 +1,15 @@
 import {LEAGUES,getLeagueClubs} from './leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validDate,localToday} from './simulation.js';
-import {preseasonStart} from './season-calendar.js';
+import {preseasonStart,seasonOpeningYear} from './season-calendar.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from './fixture-calendar.js';
 import {openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from './career-store.js';
-import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,tr} from './ui-pages.js';
+import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,calendarPage,tr} from './ui-pages.js';
 import {feedback,fromError,feedbackText,renderBlockingError} from './feedback.js';
 import {MANAGER_PROFILE_FIELDS,blankManagerProfile,normalizeManagerProfile,managerFullName,managerProfileIssues,validManagerProfile} from './manager-profile.js';
 import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectIndex,selectTypeaheadBuffer,centeredMenuScrollTop} from './site-pickers.js';
 
 const app=document.getElementById('app');
-const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation']);
+const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/calendar']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,championshipId:null,clubId:null,query:''});
 let draft=newDraft();
@@ -17,6 +17,7 @@ let timer=null,busy=false,sequence=0,feedbackState=null,storageFailure=null,lang
 let pickerOpen=null,pickerMonth=null,pickerView='days',selectedBoxId=null,managerSubmitted=false;
 let typeahead={kind:'',query:'',last:0};
 let lastRenderedRoute=null,careersFromSimulationId=null;
+let fixtureCalendarPageState=null; // Ephemeral view/filter/month, never part of a career snapshot.
 // Derived schedules stay in memory only; cache is bounded across careers/seasons.
 const fixtureCalendarFor=createFixtureCalendarCache(4);
 // Keep the focused/matched option centered in the *menu's* visible viewport.
@@ -87,6 +88,21 @@ window.addEventListener('scroll',positionCalendar,true);
 try{lang=localStorage.getItem('football-architect:minimal:lang')==='en'?'en':'it';}catch{}
 const path=()=>ROUTES.has(location.pathname)?location.pathname:'/';
 function stop(){if(timer!==null){clearInterval(timer);timer=null;}}
+function fixturePageState(){
+ if(!loaded)return null;
+ if(!fixtureCalendarPageState||fixtureCalendarPageState.careerId!==loaded.meta.id){
+  fixtureCalendarPageState={careerId:loaded.meta.id,view:'month',filter:'club',month:loaded.state.date.slice(0,7),day:null,round:1};
+ }
+ return fixtureCalendarPageState;
+}
+function shiftFixtureMonth(offset){
+ const ui=fixturePageState();
+ const date=new Date(ui.month+'-01T12:00:00Z');
+ date.setUTCMonth(date.getUTCMonth()+offset);
+ if(date.getUTCFullYear()<2||date.getUTCFullYear()>9997)return;
+ ui.month=date.toISOString().slice(0,7);
+ ui.day=null;
+}
 function navigate(url){stop();if(url!=='/careers')careersFromSimulationId=null;languageMenuOpen=false;feedbackState=null;pickerOpen=null;selectedBoxId=null;closeRenameDialog(false);closeDeleteDialog(false);history.pushState({},'',url);void render();}
 function fail(error){stop();feedbackState=fromError(error);void render();}
 async function refreshCatalog(){catalog=await readCatalog(db);return catalog;}
@@ -95,7 +111,7 @@ async function render(){
  if(!db){app.innerHTML=layout(renderBlockingError(storageFailure??new Error('INDEXEDDB_UNAVAILABLE'),lang),lang,null,languageMenuOpen);return;}
  let page=path();
  try{
-  if(page!=='/simulation')await refreshCatalog();
+  if(page!=='/simulation'&&page!=='/calendar')await refreshCatalog();
   if(ticket!==sequence)return;
   if((page==='/new-career/country'||page==='/new-career/league'||page==='/new-career/team')&&
     (!validManagerProfile(draft.managerProfile))){
@@ -107,7 +123,7 @@ async function render(){
   if(page==='/new-career/team'&&!LEAGUES.some(l=>l.id===draft.championshipId&&l.id===draft.countryId)){
    history.replaceState({},'','/new-career/league');page='/new-career/league';
   }
-  if(page==='/simulation'&&!loaded){
+  if((page==='/simulation'||page==='/calendar')&&!loaded){
    await refreshCatalog();
    const candidate=bestCareer(catalog);
    if(candidate){loaded=await selectCareer(db,candidate.id);}
@@ -123,6 +139,11 @@ async function render(){
   else if(page==='/careers')inner=careersPage(catalog,lang,careersFromSimulationId);
   else if(page==='/settings')inner=settingsPage(lang);
   else if(page==='/simulation'&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null,nextScheduledClubFixture(loaded.state,fixtureCalendarFor));
+  else if(page==='/calendar'&&loaded){
+   const ui=fixturePageState();
+   const seasonYear=seasonOpeningYear(ui.month+'-01');
+   inner=calendarPage(loaded.meta,loaded.state,lang,fixtureCalendarFor(loaded.state.countryId+'-1',seasonYear),ui);
+  }
   else inner=homePage(catalog,lang);
   closeRenameDialog(false);
   closeDeleteDialog(false);
@@ -261,6 +282,59 @@ async function handle(action,element){
   case 'language-option':await setLanguage(element.dataset.value);break;
   case 'language-focus':await toggleLanguageMenu(true,'option');break;
   case 'home':navigate('/');break;
+  case 'fixture-open':navigate('/calendar');break;
+  case 'fixture-back':navigate('/simulation');break;
+  case 'fixture-view':{
+   const ui=fixturePageState();
+   if(!ui||!['month','round'].includes(element.dataset.value))break;
+   ui.view=element.dataset.value;
+   if(ui.view==='round'){
+    const year=seasonOpeningYear(ui.month+'-01');
+    const calendar=fixtureCalendarFor(loaded.state.countryId+'-1',year);
+    const at=loaded.state.date+'T'+sessionTime(loaded.state);
+    const upcoming=calendar.matchdays.find(day=>day.fixtures.some(f=>f.date+'T'+f.time>=at));
+    ui.round=upcoming?.number??38;
+   }
+   await render();break;
+  }
+  case 'fixture-filter':{
+   const ui=fixturePageState();
+   if(!ui||!['club','all'].includes(element.dataset.value))break;
+   ui.filter=element.dataset.value;await render();break;
+  }
+  case 'fixture-month-prev':case 'fixture-month-next':{
+   if(!fixturePageState())break;
+   shiftFixtureMonth(action==='fixture-month-prev'?-1:1);
+   await render();break;
+  }
+  case 'fixture-month-current':{
+   const ui=fixturePageState();
+   if(!ui)break;
+   ui.month=loaded.state.date.slice(0,7);ui.day=null;await render();break;
+  }
+  case 'fixture-day':{
+   const ui=fixturePageState();
+   const value=element.dataset.date;
+   if(!ui||!validDate(value)||value.slice(0,7)!==ui.month)break;
+   ui.day=ui.day===value?null:value;await render();break;
+  }
+  case 'fixture-day-clear':{
+   const ui=fixturePageState();
+   if(!ui)break;
+   ui.day=null;await render();break;
+  }
+  case 'fixture-round-prev':case 'fixture-round-next':{
+   const ui=fixturePageState();
+   if(!ui)break;
+   const next=ui.round+(action==='fixture-round-prev'?-1:1);
+   if(next>=1&&next<=38)ui.round=next;
+   else {
+    const year=seasonOpeningYear(ui.month+'-01')+(next<1?-1:1);
+    if(year<2||year>9997)break;
+    ui.month=String(year)+'-08';ui.round=next<1?38:1;ui.day=null;
+   }
+   await render();break;
+  }
   case 'new':draft=newDraft();managerSubmitted=false;pickerMonth=null;navigate('/new-career');break;
   case 'careers':careersFromSimulationId=path()==='/simulation'&&loaded?loaded.meta.id:null;navigate('/careers');break;
   case 'settings':navigate('/settings');break;
