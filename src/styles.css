@@ -1165,3 +1165,137 @@ html.fa-keyboard-navigation .wizard-team-grid .club-table-row:focus-within:not(.
 @media(max-width:530px){
  .restored-onboarding .wizard-team-grid .club-table .club-table-cell{min-height:43px}
 }
+
+
+/* My Careers follows the New Career wizard layout, without a nested scrollbar. */
+.fa-page-main .wizard-careers .onboard-wrap{max-width:100%;padding:0}
+.fa-page-main .wizard-careers .wizard-careers-panel{
+ width:100%;max-width:980px;margin:0;
+ background:#142832;border:1px solid #385552;box-shadow:none;
+}
+.wizard-careers .wizard-careers-toolbar{
+ display:flex;align-items:center;justify-content:space-between;
+ flex-wrap:wrap;gap:14px;margin-bottom:20px;
+}
+.wizard-careers .wizard-careers-heading{min-width:0;flex:1 1 250px;margin:0}
+.wizard-careers .wizard-careers-toolbar-actions{
+ display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+}
+.wizard-careers .wizard-careers-toolbar-actions .btn{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:45px;min-width:145px;margin:0;
+}
+.wizard-careers .wizard-careers-list{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.wizard-careers .wizard-career-row{
+ min-width:0;display:grid;gap:15px;
+ border:1px solid var(--fa-box-border);border-radius:10px;
+ padding:16px;background:var(--fa-box-surface);box-shadow:none;
+}
+.wizard-careers .wizard-career-row.is-current{
+ border-color:var(--fa-selection-border);
+ box-shadow:inset 0 0 0 1px var(--fa-selection-border);
+}
+.wizard-careers .wizard-career-row.is-corrupt{
+ border-color:var(--fa-error-border);
+ box-shadow:inset 0 0 0 1px var(--fa-error-border);
+}
+.wizard-careers .wizard-career-identity{
+ display:grid;grid-template-columns:44px minmax(0,1fr) auto;
+ gap:13px;align-items:center;min-width:0;
+}
+.wizard-careers .wizard-career-crest{
+ display:grid;place-items:center;width:44px;height:44px;min-width:0;
+ color:#92bcad;border-radius:10px;background:#1a3338;
+}
+.wizard-careers .wizard-career-crest .crest{
+ width:44px;height:44px;margin:0;min-width:0;border-radius:10px;
+ display:grid;place-items:center;font-size:12px;
+}
+.wizard-careers .wizard-career-heading{display:grid;gap:3px;min-width:0}
+.wizard-careers .wizard-career-location{
+ display:flex;align-items:center;gap:8px;min-width:0;
+ font-size:10px;font-weight:750;color:#92b7ac;line-height:1.35;
+}
+.wizard-careers .wizard-career-location .wizard-country-flag-svg{
+ width:27px;height:19px;flex:none;
+}
+.wizard-careers .wizard-career-location>span{min-width:0;overflow-wrap:anywhere}
+.wizard-careers .wizard-career-heading h3{
+ margin:0;font-size:16px;line-height:1.35;
+ font-weight:750;color:#edf6f1;overflow-wrap:anywhere;
+}
+.wizard-careers .wizard-career-heading small{
+ color:#9fb6b2;font-size:11px;line-height:1.4;overflow-wrap:anywhere;
+}
+.wizard-careers .wizard-career-status{
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ border-radius:8px;border:1px solid #3b6060;padding:6px 9px;
+ font-size:10px;font-weight:750;white-space:nowrap;color:#bdcfd0;background:#243740;
+}
+.wizard-careers .wizard-career-status.is-active{
+ color:#b8f4d4;border-color:#398d77;background:#174338;
+}
+.wizard-careers .wizard-career-status.is-invalid{
+ color:#f4bbb7;border-color:#a35a55;background:#492d2c;
+}
+.wizard-careers .wizard-career-facts{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:12px;padding:13px 0;
+ border-top:1px solid #345052;border-bottom:1px solid #345052;
+}
+.wizard-careers .wizard-career-fact{display:grid;align-content:start;gap:5px;min-width:0}
+.wizard-careers .wizard-career-fact>span{
+ color:#93aaa9;font-size:9px;font-weight:800;
+ letter-spacing:.07em;text-transform:uppercase;
+}
+.wizard-careers .wizard-career-fact>strong{
+ color:#e4f1ed;font-size:12px;line-height:1.45;
+ font-weight:700;overflow-wrap:anywhere;
+}
+.wizard-careers .wizard-career-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.wizard-careers .wizard-career-actions .btn{
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:0 1 auto;min-width:105px;min-height:42px;margin:0;
+}
+.wizard-careers .wizard-career-warning{
+ display:flex;align-items:flex-start;gap:9px;margin:0;
+ color:#f1bfba;font-size:12px;line-height:1.5;
+}
+.wizard-careers .wizard-career-warning svg{flex:none;margin-top:1px}
+.wizard-careers .wizard-careers-empty{
+ display:grid;justify-items:start;gap:8px;min-width:0;
+ padding:22px;border:1px dashed #405f5a;border-radius:10px;
+ background:var(--fa-box-surface);
+}
+.wizard-careers .wizard-careers-empty-icon{
+ display:grid;place-items:center;width:44px;height:44px;
+ background:#1e3b3b;color:#8ddfba;border-radius:10px;
+}
+.wizard-careers .wizard-careers-empty h3{margin:2px 0 0;font-size:17px}
+.wizard-careers .wizard-careers-empty p{
+ margin:0;color:#9fb6b2;font-size:12px;line-height:1.5;
+}
+@media(max-width:760px){
+ .wizard-careers .wizard-career-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .wizard-careers .wizard-careers-toolbar-actions{width:100%}
+ .wizard-careers .wizard-careers-toolbar-actions .btn{flex:1 1 150px}
+}
+@media(max-width:620px){
+ .wizard-careers .wizard-topline{position:static;justify-content:flex-start;margin-top:13px}
+ .wizard-careers .onboard-header>.wizard-step-label,
+ .wizard-careers .onboard-header>.fa-page-title{padding-right:0}
+}
+@media(max-width:400px){
+ .wizard-careers .wizard-career-row{padding:12px;gap:12px}
+ .wizard-careers .wizard-career-identity{
+  grid-template-columns:40px minmax(0,1fr);gap:9px;
+ }
+ .wizard-careers .wizard-career-crest,
+ .wizard-careers .wizard-career-crest .crest{width:40px;height:40px}
+ .wizard-careers .wizard-career-status{grid-column:1/-1;justify-self:start}
+ .wizard-careers .wizard-career-facts{grid-template-columns:minmax(0,1fr);gap:10px}
+ .wizard-careers .wizard-career-actions{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ .wizard-careers .wizard-career-actions .btn{min-width:0;width:100%}
+}
