@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
 import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from '../src/fixture-calendar.js';
+import {searchCareer} from '../src/global-search.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,calendarPage,countryFlag} from '../src/ui-pages.js';
 import {languagePicker} from '../src/language-picker.js';
@@ -1912,4 +1913,56 @@ test('UX-SHELL historic navigation: exact pre-reset category and two outline ico
  assert.match(css,/\.fa-shell-nav-group-title\{[^}]*font-size:8px;[^}]*letter-spacing:\.11em/);
  assert.match(css,/\.fa-shell-link\{[^}]*height:34px;min-height:34px/);
  assert.match(css,/@media\(max-width:720px\)\{[\s\S]*?\.fa-shell-nav-group-title\{height:5px;/);
+});
+
+
+test('SHELL-SEARCH: global results include only real pages and scheduled matches, with IT/EN and Unicode support',()=>{
+ const meta={countryId:'IT',clubId:2};
+ const calendar=createFixtureCalendarCache(4)('IT-1',2026);
+ const pages=searchCareer('calendario','it',meta,calendar,'2026-07-01T08:00');
+ assert.equal(pages[0]?.kind,'page');
+ assert.equal(pages[0]?.route,'/calendar');
+ const en=searchCareer('dashboard','en',meta,calendar,'2026-07-01T08:00');
+ assert.equal(en[0]?.route,'/dashboard');
+ const club=getLeagueClubs('IT')[1];
+ const results=searchCareer(club.name.slice(0,5),'it',meta,calendar,'2026-07-01T08:00');
+ assert.ok(results.some(r=>r.kind==='fixture'));
+ const match=results.find(r=>r.kind==='fixture');
+ assert.match(match.date,/^\d{4}-\d{2}-\d{2}$/);
+ assert.ok(calendar.matchdays.some(d=>d.fixtures.some(f=>f.date===match.date)));
+ assert.deepEqual(searchCareer('','it',meta,calendar),[]);
+ assert.deepEqual(searchCareer('nonexistent-search-string-xx','en',meta,calendar),[]);
+ assert.ok(searchCareer('a','it',meta,calendar).length<=8);
+ assert.deepEqual(searchCareer('  ','it',meta,calendar),[]);
+ assert.deepEqual(searchCareer('calendario','it',null,calendar),[]);
+ const unsafe=searchCareer('<script>','it',meta,calendar);
+ assert.deepEqual(unsafe,[]);
+});
+
+test('SHELL-SEARCH: continue/stop is in every active career topbar and search remains scoped to real pages',()=>{
+ const meta={countryId:'IT',clubId:1},state=createSession('IT',1,'2026-08-10');
+ const render=(route,playing)=>layout('Body','it',null,false,{route,meta,state,playing,searchQuery:'cal',searchResults:searchCareer('cal','it',meta,createFixtureCalendarCache(4)('IT-1',2026))});
+ for(const route of ['/dashboard','/simulation','/calendar']){
+  for(const playing of [false,true]){
+   const html=render(route,playing);
+   assert.match(html,/class="fa-shell-primary"[\s\S]*?data-action="toggle"/);
+   assert.equal((html.match(/data-action="toggle"/g)||[]).length,1);
+   assert.match(html,playing?/Interrompi/:/Continua/);
+   assert.match(html,/id="fa-global-search-input"/);
+   assert.match(html,/role="combobox"/);
+   assert.match(html,/id="fa-global-search-results"/);
+   assert.match(html,/data-action="global-search-result"/);
+  }
+ }
+ const src=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(src,/CAREER_ROUTES\.has\(path\(\)\)\&\&CAREER_ROUTES\.has\(url\)/);
+ assert.match(src,/searchQuery='';searchHits=\[\]/);
+ assert.match(src,/case 'global-search-result':/);
+ assert.match(src,/view\.view='month';view\.filter='all'/);
+ assert.ok(server.includes("'/src/global-search.js'"));
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-shell-search\{position:relative/);
+ assert.match(css,/@media\(max-width:1150px\)/);
+ assert.match(css,/grid-template-areas:"club time language primary" "search search search search"/);
 });

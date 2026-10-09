@@ -32,6 +32,12 @@ export function countryFlag(code){
 }
 const buttonIcons={continue:'play',new:'plus-circle',careers:'folder-open',settings:'settings',load:'play',rename:'pencil',export:'download',delete:'trash',import:'upload',hour:'clock',day:'calendar',week:'calendar',month:'calendar',year:'calendar',toggle:'play','fixture-open':'calendar','start-career':'play','cancel-setup':'arrow-left'};
 export const button=(action,title,variant='primary',attrs='')=>`<button type="button" class="btn ${variant}" data-action="${action}" ${attrs}>${buttonIcons[action]?icon(action==='toggle'&&variant==='warning'?'pause':buttonIcons[action],16):''}<span>${esc(title)}</span></button>`;
+export function renderGlobalSearchResults(results,lang){
+ if(!results.length)return '<p class="fa-global-search-empty" role="status">'+tr(lang,'Nessun risultato','No results')+'</p>';
+ return results.map((item,i)=>'<button type="button" role="option" aria-selected="false" class="fa-global-search-result" data-action="global-search-result" data-index="'+i+'">'+
+  '<span class="fa-global-search-result-title">'+esc(item.title)+'</span>'+
+  '<span class="fa-global-search-result-detail">'+esc(item.detail)+'</span></button>').join('');
+}
 export function layout(inner,lang,message=null,languageOpen=false,career=null){
  if(career&&(career.route==='/dashboard'||career.route==='/simulation'||career.route==='/calendar')){
   const meta=career.meta,state=career.state,playing=Boolean(career.playing);
@@ -40,9 +46,10 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
    phase==='season'?tr(lang,'Stagione','Season'):tr(lang,'Pausa estiva','Summer break');
   const dashboard=career.route!=='/calendar';
   const nav=(action,name,label,active)=>`<button type="button" class="fa-shell-link${active?' is-active':''}" data-action="${action}" aria-label="${label}" ${active?'aria-current="page"':''}>${icon(name,18)}<span>${label}</span></button>`;
-  const action=dashboard
-   ?button('toggle',playing?tr(lang,'Interrompi','Stop'):tr(lang,'Continua','Continue'),playing?'warning':'primary')
-   :`<button type="button" class="btn secondary" data-action="career-dashboard">${icon('clock',16)}<span>${tr(lang,'Dashboard','Dashboard')}</span></button>`;
+  const action=button('toggle',playing?tr(lang,'Interrompi','Stop'):tr(lang,'Continua','Continue'),playing?'warning':'primary');
+  const searchQuery=String(career.searchQuery??'');
+  const searchResults=career.searchResults??[];
+  const searchOpen=Boolean(searchQuery.trim());
   const shortDate=state.date.slice(8,10)+'/'+state.date.slice(5,7);
   return `<div class="shell fa-career-shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
    <aside class="fa-shell-sidebar" aria-label="${tr(lang,'Navigazione carriera','Career navigation')}">
@@ -64,6 +71,13 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
       ${icon('calendar',15)}<span class="fa-shell-date-full">${esc(fmtGameDate(state.date,lang,sessionTime(state)))}</span>
       <span class="fa-shell-date-short">${esc(shortDate)} · ${esc(sessionTime(state))}</span>
       <span class="fa-shell-phase">· ${esc(phaseName)}</span>
+     </div>
+     <div class="fa-shell-search" data-global-search>
+      <label class="fa-shell-search-label" for="fa-global-search-input">${tr(lang,'Ricerca globale','Global search')}</label>
+      <div class="fa-shell-search-field">${icon('search',16)}
+       <input id="fa-global-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="fa-global-search-results" aria-expanded="${String(searchOpen)}" autocomplete="off" spellcheck="false" maxlength="80" placeholder="${tr(lang,'Cerca pagine e partite','Search pages and matches')}" value="${esc(searchQuery)}">
+      </div>
+      <div id="fa-global-search-results" class="fa-global-search-results" role="listbox" aria-label="${tr(lang,'Risultati ricerca','Search results')}" ${searchOpen?'':'hidden'}>${searchOpen?renderGlobalSearchResults(searchResults,lang):''}</div>
      </div>
      <div class="fa-shell-language">${languagePicker(lang,languageOpen)}</div>
      <div class="fa-shell-primary">${action}</div>

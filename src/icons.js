@@ -13,6 +13,7 @@ const paths={
  flag:'<path d="M4 22V4M4 4c3-2 6 2 9 0s6-2 8 0v11c-2-2-5-2-8 0S7 13 4 15"/>',
  check:'<path d="m5 12 4 4L19 6"/>',
  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>',
  play:'<path d="m8 5 11 7-11 7V5Z"/>',
  pause:'<path d="M8 5v14M16 5v14"/>',
  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',

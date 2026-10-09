@@ -9,6 +9,7 @@ const port=Number(process.env.PORT??2000);
 const routes=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar']);
 const files=new Map([
  ['/src/main.js','text/javascript; charset=utf-8'],
+ ['/src/global-search.js','text/javascript; charset=utf-8'],
  ['/src/icons.js','text/javascript; charset=utf-8'],
  ['/src/language-picker.js','text/javascript; charset=utf-8'],
  ['/src/career-store.js','text/javascript; charset=utf-8'],

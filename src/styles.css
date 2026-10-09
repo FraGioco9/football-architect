@@ -1581,3 +1581,40 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
  .fa-shell-nav{padding:10px 4px}
  .fa-shell-link{width:44px;height:35px;min-height:35px}
 }
+
+
+/* SHELL-SEARCH: one contextual CTA across career pages and a functional global search. */
+.fa-shell-search{position:relative;min-width:150px;flex:1 1 240px;max-width:440px;z-index:16}
+.fa-shell-search-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.fa-shell-search-field{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;padding:0 10px;border:1px solid var(--fa-box-border);border-radius:10px;background:#132a2f;color:#9fbfb5}
+.fa-shell-search-field:focus-within{border-color:var(--fa-selection-border);box-shadow:0 0 0 2px rgba(75,207,164,.16)}
+.fa-shell-search-field .fa-icon{flex-shrink:0}
+.fa-shell-search-field input{width:100%;min-width:0;height:36px;padding:0;border:0;background:transparent;color:#e8f4f0;outline:0;box-shadow:none;font-size:12px}
+.fa-shell-search-field input:focus-visible{outline:0}
+.fa-shell-search-field input::placeholder{color:#91aaa4;opacity:1}
+.fa-global-search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;max-height:min(350px,60dvh);overflow:auto;padding:5px;border:1px solid #42635e;border-radius:11px;background:#10242c;box-shadow:0 16px 35px rgba(0,0,0,.4)}
+.fa-global-search-results[hidden]{display:none}
+.fa-global-search-result{display:grid;gap:3px;width:100%;padding:10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#ecf5ef;text-align:left}
+.fa-global-search-result:hover,.fa-global-search-result:focus-visible{background:#20443a;border-color:var(--fa-selection-border);outline:0}
+.fa-global-search-result-title{font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.fa-global-search-result-detail{font-size:11px;color:#acc5bc}
+.fa-global-search-empty{margin:5px;padding:12px 8px;font-size:12px;color:#b9cbc5}
+.fa-shell-club{flex:0 1 195px}
+.fa-shell-time{flex:0 0 auto}
+@media(max-width:1150px){
+ .fa-shell-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"club time language primary" "search search search search";gap:8px}
+ .fa-shell-club{grid-area:club;flex:auto;min-width:0}
+ .fa-shell-time{grid-area:time}
+ .fa-shell-search{grid-area:search;max-width:none;min-width:0;width:100%}
+ .fa-shell-language{grid-area:language}
+ .fa-shell-primary{grid-area:primary}
+ .fa-shell-date-full{display:none}
+ .fa-shell-date-short{display:inline}
+}
+@media(max-width:720px){
+ .fa-shell-topbar{grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px}
+ .fa-shell-search{z-index:16}
+ .fa-shell-search-field{min-height:36px}
+ .fa-global-search-results{max-height:50dvh}
+}
+@media(prefers-reduced-motion:reduce){.fa-global-search-result{transition:none}}
