@@ -1884,9 +1884,32 @@ test('UX-SHELL: preserves both new dashboard and legacy simulation routes withou
  assert.equal(validSession(current),true);
  assert.deepEqual(Object.keys(current).sort(),['version','countryId','clubId','startedAt','date','daysElapsed','time'].sort());
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
- assert.match(css,/\.fa-career-shell\{display:grid;grid-template-columns:220px minmax\(0,1fr\)/);
+ assert.match(css,/\.fa-career-shell\{display:grid;grid-template-columns:210px minmax\(0,1fr\)/);
  assert.match(css,/@media\(max-width:720px\)/);
  assert.match(css,/@media\(max-width:390px\)/);
  assert.match(css,/\.fa-shell-link\{[^}]*border-radius:11px/);
  assert.doesNotMatch(css,/\.fa-shell-sidebar[^}]*display:none/);
+});
+
+
+test('UX-SHELL historic navigation: exact pre-reset category and two outline icons',()=>{
+ const meta={countryId:'IT',clubId:2},state=createSession('IT',2,'2026-10-08');
+ for(const lang of ['it','en']){
+  const html=layout('Content',lang,null,false,{route:'/dashboard',meta,state,playing:false});
+  assert.match(html,/class="fa-shell-nav-group" aria-labelledby="fa-shell-start-title"/);
+  assert.match(html,lang==='it'?/id="fa-shell-start-title">Inizio<\/h2>/:/id="fa-shell-start-title">Home<\/h2>/);
+  assert.match(html,/class="fa-shell-nav-group-items"/);
+  assert.match(html,/FOOTBALL <b>ARCHITECT<\/b><small>MANAGER<\/small>/);
+  assert.match(html,/data-action="career-dashboard"[^>]+aria-current="page"[^>]*>[\s\S]*?class="fa-icon"[\s\S]*?rect x="3" y="3" width="7"/);
+  assert.match(html,/data-action="fixture-open"[^>]*>[\s\S]*?rect width="18" height="18" x="3" y="4"/);
+  assert.equal((html.match(/class="fa-shell-link/g)||[]).length,2);
+ }
+ const icons=readFileSync(new URL('../src/icons.js',import.meta.url),'utf8');
+ assert.match(icons,/'grid-pre-reset':/);
+ assert.match(icons,/'calendar-pre-reset':/);
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-shell-nav-group-title\{[^}]*font-size:8px;[^}]*letter-spacing:\.11em/);
+ assert.match(css,/\.fa-shell-link\{[^}]*height:34px;min-height:34px/);
+ assert.match(css,/@media\(max-width:720px\)\{[\s\S]*?\.fa-shell-nav-group-title\{height:5px;/);
+ assert.doesNotMatch(html,/data-action="(?:inbox|tactics|club|training|market|squad)"/);
 });

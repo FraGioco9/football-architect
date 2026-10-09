@@ -46,10 +46,15 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
   const shortDate=state.date.slice(8,10)+'/'+state.date.slice(5,7);
   return `<div class="shell fa-career-shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
    <aside class="fa-shell-sidebar" aria-label="${tr(lang,'Navigazione carriera','Career navigation')}">
-    <div class="fa-shell-sidebar-head"><span class="brand-symbol">${icon('shield',21)}</span><span class="fa-shell-wordmark">FOOTBALL <b>ARCHITECT</b></span></div>
+    <div class="fa-shell-sidebar-head"><span class="brand-symbol">${icon('shield',21)}</span><span class="fa-shell-wordmark">FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span></div>
     <nav class="fa-shell-nav" aria-label="${tr(lang,'Pagine della carriera','Career pages')}">
-     ${nav('career-dashboard','clock',tr(lang,'Dashboard','Dashboard'),dashboard)}
-     ${nav('fixture-open','calendar',tr(lang,'Calendario','Calendar'),!dashboard)}
+     <section class="fa-shell-nav-group" aria-labelledby="fa-shell-start-title">
+      <h2 class="fa-shell-nav-group-title" id="fa-shell-start-title">${tr(lang,'Inizio','Home')}</h2>
+      <div class="fa-shell-nav-group-items">
+       ${nav('career-dashboard','grid-pre-reset',tr(lang,'Dashboard','Dashboard'),dashboard)}
+       ${nav('fixture-open','calendar-pre-reset',tr(lang,'Calendario','Calendar'),!dashboard)}
+      </div>
+     </section>
     </nav>
    </aside>
    <div class="fa-shell-workspace">
