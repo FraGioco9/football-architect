@@ -61,6 +61,23 @@ const indexContent = function indexContent(root){
  }).join("\n");
  return '          <div class="app-world-countries">\n'+cards+'\n          </div>';
 };
+const standingsFilters = function standingsFilters(){
+ const group=(kind,key,label,options)=>{
+  const buttons=options.map(([value,textKey,text],i)=>'                  <button type="button" class="app-standing-filter-button'+(i===0?' is-active':'')+'" data-standing-filter="'+kind+'" data-standing-value="'+value+'" aria-pressed="'+(i===0?'true':'false')+'" data-app-i18n="'+textKey+'">'+text+'</button>').join("\n");
+  return '              <div class="app-standing-filter-group" role="group" aria-labelledby="standing-filter-'+kind+'-label">\n'+
+   '                <span class="app-standing-filter-label" id="standing-filter-'+kind+'-label" data-app-i18n="'+key+'">'+label+'</span>\n'+
+   '                <div class="app-standing-filter-options">\n'+buttons+'\n                </div>\n              </div>';
+ };
+ return '            <div class="app-standing-filters" role="group" aria-label="Standings filters" data-app-aria="standingFilters">\n'+
+  group("leg","standingFilterLeg","Leg",[
+   ["all","standingFilterAll","All"],["first","standingFilterFirst","First leg"],["second","standingFilterSecond","Second leg"]])+'\n'+
+  group("venue","standingFilterVenue","Venue",[
+   ["all","standingFilterAll","All"],["home","standingFilterHome","Home"],["away","standingFilterAway","Away"]])+'\n'+
+  group("form","standingFilterForm","Form",[
+   ["all","standingFilterAll","All"],["last5","standingFilterLast5","Last 5"],["last10","standingFilterLast10","Last 10"]])+'\n'+
+  '            </div>\n'+
+  '            <p class="app-standing-filter-status" id="app-standing-filter-status" role="status" data-app-i18n="standingFilterUnavailable" hidden>No match data for the selected filters.</p>\n';
+};
 const detailAppend = function detailAppend(d){
  const cs=provisionalClubs.get(d.id);
  if(!cs||cs.length!==d.capacity)throw Error("missing clubs "+d.id);
@@ -73,7 +90,7 @@ ${Array.from({length:9},()=> '                  <td class="app-world-stat-unknow
                 </tr>`).join("\n");
  return `
           <div class="app-world-standings">
-            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+${standingsFilters()}            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
                 <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
                 <thead>

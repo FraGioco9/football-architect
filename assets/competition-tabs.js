@@ -33,4 +33,27 @@
     });
   });
   select(0);
+  const filterRoot = document.querySelector(".app-standing-filters");
+  if (filterRoot) {
+    const buttons = [...filterRoot.querySelectorAll("[data-standing-filter]")];
+    const status = document.getElementById("app-standing-filter-status");
+    const selections = {leg:"all",venue:"all",form:"all"};
+    const expected = {leg:["all","first","second"],venue:["all","home","away"],form:["all","last5","last10"]};
+    if (status && buttons.length === 9 && buttons.every(button =>
+      Object.hasOwn(expected, button.dataset.standingFilter) &&
+      expected[button.dataset.standingFilter].includes(button.dataset.standingValue))) {
+      function applyFilter(group,value) {
+        selections[group] = value;
+        for (const button of buttons) {
+          const active = selections[button.dataset.standingFilter] === button.dataset.standingValue;
+          button.classList.toggle("is-active",active);
+          button.setAttribute("aria-pressed",String(active));
+        }
+        // No match database exists yet: selections never create statistics.
+        status.hidden = Object.values(selections).every(value => value === "all");
+      }
+      buttons.forEach(button => button.addEventListener("click", () =>
+        applyFilter(button.dataset.standingFilter,button.dataset.standingValue)));
+    }
+  }
 })();
