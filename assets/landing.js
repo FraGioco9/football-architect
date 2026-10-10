@@ -102,7 +102,7 @@
       const key = node.dataset.i18nAria;
       if (Object.hasOwn(copy, key)) node.setAttribute("aria-label", copy[key]);
     }
-    if (document.getElementById("page-title")) document.title = copy.guideTitle + " — Football Architect";
+    if (labels.some(node => node.dataset.i18n === "guideTitle")) document.title = copy.guideTitle + " — Football Architect";
     if (persist) {
       try { window.localStorage.setItem(STORAGE_KEY, language); }
       catch { /* Language remains active if storage is unavailable. */ }
