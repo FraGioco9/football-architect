@@ -45,6 +45,11 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .cta-secondary:hover{background:rgba(255,255,255,.035);border-color:#678378}
 .cta:active{filter:brightness(1.07)}
 .action-status{position:fixed;inset-inline-end:max(24px,env(safe-area-inset-right));inset-block-end:max(24px,env(safe-area-inset-bottom));z-index:20;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;width:min(420px,calc(100vw - 36px));margin:0;padding:14px 14px 14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.5;overflow-wrap:anywhere;box-shadow:0 10px 26px rgba(0,0,0,.23)}
+/* Opacity and a small vertical lift keep notices subtle without reflow. */
+@keyframes toast-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toast-exit{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(8px)}}
+.action-status:not([hidden]){animation:toast-enter 200ms ease-out both}
+.action-status.toast-exit{animation:toast-exit 180ms ease-in both;pointer-events:none}
 .status-close{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;padding:0;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
 .status-close:hover{border-color:var(--border);background:rgba(255,255,255,.04);color:var(--text)}
 .status-close svg{display:block;width:16px;height:16px;margin:auto}
