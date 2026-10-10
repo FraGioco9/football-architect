@@ -365,18 +365,15 @@ export function settingsPage(lang,languageOpen=false){
  const option=(action,iconName,title,desc)=>`<button class="settings-action" type="button" data-action="${action}">
   ${icon(iconName,22)}<span><strong>${esc(title)}</strong><small>${esc(desc)}</small></span>${icon('chevron-right',17)}</button>`;
  return `<div class="restored-settings">
-  <header class="career-hub-heading fa-page-heading"><span class="pretitle">${tr(lang,'PREFERENZE','PREFERENCES')}</span>
-   <h1 class="fa-page-title">${tr(lang,'Impostazioni e salvataggi','Settings and saves')}</h1><p>${tr(lang,'Le tue carriere esistono soltanto su questo computer, senza account e senza servizi esterni.','Your careers are stored on this computer, without accounts or external services.')}</p></header>
+  <header class="fa-settings-heading"><h1>${tr(lang,'Impostazioni','Settings')}</h1></header>
   <div class="settings-grid">
    <section class="settings-panel panel"><h2>${tr(lang,'Lingua','Language')}</h2>
-    <div class="settings-language"><div class="setting-fact"><span>${tr(lang,'LINGUA ATTUALE','CURRENT LANGUAGE')}</span><b>${lang==='en'?'English':'Italiano'}</b></div>
-    ${languagePicker(lang,languageOpen)}</div></section>
+    <div class="settings-language">${languagePicker(lang,languageOpen)}</div></section>
    <section class="settings-panel panel"><h2>${tr(lang,'La tua carriera','Your career')}</h2>
     ${info(tr(lang,'SALVATAGGI','SAVES'),tr(lang,'IndexedDB locale','Local IndexedDB'))}
     ${info(tr(lang,'ACCOUNT','ACCOUNT'),tr(lang,'Non richiesto','Not required'))}
     ${info(tr(lang,'CONNESSIONE','CONNECTION'),tr(lang,'Offline','Offline'))}</section>
    <section class="settings-panel panel"><h2>${tr(lang,'Gestione dati','Data management')}</h2>
-    <p class="settings-panel-note">${tr(lang,'Esporta una copia o importa una carriera esistente.','Export a copy or import an existing career.')}</p>
     <div class="settings-actions">
       ${option('careers','folder-open',tr(lang,'Gestisci carriere','Manage careers'),tr(lang,'Carica, rinomina o elimina un salvataggio.','Load, rename or delete a save.'))}
       ${option('new','plus-circle',tr(lang,'Nuova carriera','New career'),tr(lang,'Inizia senza cancellare quelle esistenti.','Start without deleting existing careers.'))}
