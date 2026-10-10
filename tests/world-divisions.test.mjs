@@ -95,3 +95,29 @@ test("PAGE-COMPLETE-01 keeps the three sporting areas empty and offers same-coun
   assert.match(generator,/detailAppend\(division\)/);
   assert.ok(search.includes('../data/divisions.json'));
 });
+
+test("COMPETITIONS-01 uses a trophy sidebar icon, no subtitle, and rounded flags",()=>{
+  const app=read("assets/app.js");
+  const css=read("assets/app.css");
+  const sharedCss=read("assets/landing.css");
+  const template=read("templates/app-page.html");
+  const generator=read("tools/generate-app-pages.mjs");
+  assert.equal((app.match(/navCompetitions:/g)||[]).length,5,"five translated sidebar labels");
+  assert.ok(template.includes('data-app-i18n="navCompetitions">Competitions'));
+  assert.ok(template.includes('M7 4h10v5a5 5 0 0 1-10 0V4Z'),"original trophy icon");
+  assert.ok(generator.includes('data-app-aria="navCompetitions"'));
+  assert.ok(css.includes('border-radius:6px}'));
+  assert.ok(sharedCss.includes('img[src*="assets/flags/"]{border-radius:6px}'));
+  assert.ok(!generator.includes("app-world-lead"),"index has no introductory subtitle");
+  for(const path of ["app/dashboard/index.html","app/calendar/index.html","app/settings/index.html",indexPath,...routes.map(x=>x.file)]){
+    const html=read(path);
+    assert.ok(html.includes('data-app-i18n="navCompetitions">Competitions'),path);
+    assert.ok(html.includes('data-app-aria="navCompetitions"'),path);
+    assert.ok(html.includes('M7 4h10v5a5 5 0 0 1-10 0V4Z'),path);
+    if(path===indexPath) assert.ok(!html.includes("app-world-lead"),path);
+    else if(path.startsWith("app/world/divisions/")){
+      assert.ok(!html.includes('data-app-i18n="placeholderNotice"'),path);
+      assert.ok(html.includes('data-app-i18n="competitionNotice"'),path);
+    }
+  }
+});

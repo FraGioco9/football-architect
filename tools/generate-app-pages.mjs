@@ -40,7 +40,7 @@ const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;")
 const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
 const worldNav = (href, active) => '            <a class="fa-shell-link' + (active ? ' is-active' : '') +
   '" id="app-nav-divisions" href="' + href + '" data-app-view="divisions"' +
-  (active ? ' aria-current="page"' : '') + ' aria-label="Divisions" data-app-aria="divisions">';
+  (active ? ' aria-current="page"' : '') + ' aria-label="Competitions" data-app-aria="navCompetitions">';
 const worldSection = (content, active) => '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"' +
   (active ? '' : ' hidden') + '>\n' +
   '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="divisions">Divisions</h1>\n' +
@@ -62,8 +62,7 @@ const indexContent = root => {
       encode(country.name.en) + '</span></h2>\n              <div class="app-world-grid">\n' + cards +
       '\n              </div>\n            </section>';
   }).join("\n");
-  return '          <p class="app-world-lead" data-app-i18n="divisionIntro">Explore the 16 documented divisions across eight countries. No league season is running yet.</p>\n' +
-    '          <div class="app-world-countries">\n' + countries + '\n          </div>';
+  return '          <div class="app-world-countries">\n' + countries + '\n          </div>';
 };
 const detailAppend = function detailAppend(division){
   const other=divisionData.divisions.find(d=>d.countryId===division.countryId && d.id!==division.id);
@@ -102,7 +101,6 @@ const detailContent = (division, root) => {
     '</span> · <span data-app-i18n="' + level + '">' +
     (division.tier === 1 ? "First division" : "Second division") + '</span></p>\n' +
     '              <h2 id="division-detail-name">' + encode(division.name) + '</h2>\n' +
-    '              <p data-app-i18n="placeholderNotice">Temporary badge; final division identity artwork is not integrated.</p>\n' +
     '            </div>\n          </div>\n' +
     '          <dl class="app-world-facts">\n' +
     '            <div><dt data-app-i18n="countryLabel">Country</dt><dd data-world-country="' + division.countryId + '">' + encode(country.name.en) + '</dd></div>\n' +

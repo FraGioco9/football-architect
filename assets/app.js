@@ -5,6 +5,7 @@
     en: {
       skip:"Skip to main content",
       navWorld:"World",
+      navCompetitions:"Competitions",
       divisionIntro:"Explore the 16 documented divisions across eight countries. No league season is running yet.",
       divisionTier1:"First division",
       divisionTier2:"Second division",
@@ -57,6 +58,7 @@
     de: {
       skip:"Zum Hauptinhalt springen",
       navWorld:"Welt",
+      navCompetitions:"Wettbewerbe",
       divisionIntro:"Entdecke die 16 dokumentierten Ligen in acht Ländern. Der Ligabetrieb hat noch nicht begonnen.",
       divisionTier1:"Erste Liga",
       divisionTier2:"Zweite Liga",
@@ -109,6 +111,7 @@
     es: {
       skip:"Saltar al contenido principal",
       navWorld:"Mundo",
+      navCompetitions:"Competiciones",
       divisionIntro:"Explora las 16 divisiones documentadas en ocho países. La competición aún no ha comenzado.",
       divisionTier1:"Primera división",
       divisionTier2:"Segunda división",
@@ -161,6 +164,7 @@
     fr: {
       skip:"Aller au contenu principal",
       navWorld:"Monde",
+      navCompetitions:"Compétitions",
       divisionIntro:"Découvrez les 16 divisions répertoriées dans huit pays. Aucune compétition n'est encore en cours.",
       divisionTier1:"Première division",
       divisionTier2:"Deuxième division",
@@ -213,6 +217,7 @@
     it: {
       skip:"Vai al contenuto principale",
       navWorld:"Mondo",
+      navCompetitions:"Competizioni",
       divisionIntro:"Esplora le 16 divisioni documentate di otto Paesi. I campionati non sono ancora attivi.",
       divisionTier1:"Prima divisione",
       divisionTier2:"Seconda divisione",
