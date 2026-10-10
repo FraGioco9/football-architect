@@ -1,33 +1,44 @@
-# Football Architect — Cataloghi divisioni e club
+# Football Architect — Division and club catalogues
 
-**Stato:** il progetto conserva cataloghi di divisioni/club e una Landing statica, senza motore del gioco, Guide/Home interne, login, salvataggi, partite o deploy automatici.
+**Current status:** This repository contains the division and club catalogues and a standalone static landing page. It does not yet include a game engine, internal Guide/Home pages, login, saves, matches, or automatic deployment.
 
-## Landing in locale
+## Run the landing page locally
 
-Apri `index.html` direttamente o avvia su Windows `py -m http.server 2000` dalla cartella del repository, poi visita `http://127.0.0.1:2000`. Non occorrono build, npm o Docker. Test: `node --test tests/landing.test.mjs`.
+Open `index.html` directly, or start a local static server from the repository directory on Windows:
 
-Lingua iniziale **English**, poi Deutsch, Español, Français, Italiano; la preferenza viene salvata localmente. I due pulsanti **Enter the app** e **Guide** annunciano la futura disponibilità delle destinazioni, senza aprire pagine inesistenti.
+```powershell
+py -m http.server 2000
+```
 
-## Cosa rimane
-- **8 Paesi, 16 divisioni** in [data/divisions.json](data/divisions.json): 2 livelli per Paese con nomi/ID fittizi approvati, capacità indicativa 20 club per livello; **nessuna divisione integrata nel gioco**.
-- **320 identità club** in [data/clubs.json](data/clubs.json), chiave stabile `(countryId,clubId)`, 320 nomi completi documentati e 320 sigle `abbr` approvate e univoche.
-- **160 dati storici di prima divisione** (vecchie denominazioni, città, stadi) nel campo `firstDivisionReference` dei primi 20 club per Paese. I vecchi nomi non sono automaticamente quelli approvati più recentemente.
-- **Otto bandiere** dei Paesi interessati, dal pack preesistente, più [licenza](assets/flags/LICENSE). Eliminati gli altri SVG del pack che non servono a questi cataloghi.
-- La documentazione integrale dei [320 nomi completi](docs/clubs/fullnames-source.md) e [320 sigle, riconciliazioni e audit](docs/clubs/registry-history.md), conservata senza modifiche alle fonti.
-- La [direzione artistica divisionale approvata](docs/divisions/design-direction.md).
+Then visit `http://127.0.0.1:2000`. No npm, Docker, or build step is needed. Run the landing contract tests using `node --test tests/landing.test.mjs`.
 
-## Stato dell'identità grafica
-Le roadmap di progettazione [DIV-ASSET #60](https://github.com/FraGioco9/football-architect/issues/60) e [CLUB-ASSET #61](https://github.com/FraGioco9/football-architect/issues/61) rimangono fonti di riferimento. **Non esistono ancora 16 + 320 stemmi finali**: non inventare SVG/loghi o dati che non risultino approvati. I 320 `fullName` sono disponibili, ma non tutti hanno ricevuto una convalida formale congiunta. Il catalogo della prima divisione nel vecchio codice aveva solo 160 club, mentre i restanti 160 sono progettazione documentale: non sono stati implementati nel gioco.
+**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The native language dropdown uses the Graphite & Petrol theme, while its expanded picker may still follow browser and operating-system conventions.
 
-## Correzioni da conservare
+The **Enter the app** and **Guide** buttons show a localized notice that those destinations are not yet available rather than navigating to missing pages. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
+
+## Available project assets
+
+- **8 countries and 16 divisions** in [data/divisions.json](data/divisions.json): two fictional tiers per country, with a target capacity of 20 clubs per tier. These divisions have not been integrated into gameplay.
+- **320 club identities** in [data/clubs.json](data/clubs.json), with stable `(countryId,clubId)` keys, documented full names, and approved unique `abbr` values.
+- **160 historical first-division references** (old names, cities, and stadiums) in `firstDivisionReference` for the first 20 clubs in each country. Historical names are not necessarily the latest approved identities.
+- **SVG flags and their [license](assets/flags/LICENSE)**, including the eight countries represented in the league catalogue.
+- The [320-club full-name source](docs/clubs/fullnames-source.md), [club abbreviations and reconciliation history](docs/clubs/registry-history.md), and [approved division design direction](docs/divisions/design-direction.md).
+
+## Visual-identity status
+
+The [DIV-ASSET roadmap #60](https://github.com/FraGioco9/football-architect/issues/60) and [CLUB-ASSET roadmap #61](https://github.com/FraGioco9/football-architect/issues/61) remain the design references. The complete set of 16 final division crests and 320 final club crests is not yet finished. Do not invent crests or unapproved information. All 320 club full names are documented, though some have not received final joint validation. The historical game implementation covered only 160 first-tier clubs; the remaining 160 are documented designs, not integrated gameplay.
+
+## Club identity corrections to preserve
+
 - IT,1: **US Velaria Torino**, `VEL`
-- IT,2: **AC Rinascenti Bologna**, `RIN` (non AC Felsina Bologna)
+- IT,2: **AC Rinascenti Bologna**, `RIN` (not AC Felsina Bologna)
 - FR,27: **FC Émaux**, `EMX`
 - FR,33: **CS Garrigues**, `GRG`
 - PT,34: **AC Fontes**, `FTS`
 - BR,16: **EC Falésia Clara**, `FCL`
 
-## Provenienza e reset
-- Baseline storica `main`: `72d16de4a3ad410dab84fd9d1f42007a187a98b1`.
-- Riconciliazioni integrali: [issue #61, commento completo](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309) e [archivio](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091598842).
-- Il reset è **un nuovo commit**, non una riscrittura irreversibile della cronologia Git. Le vecchie branch/PR possono restare accessibili ma non rappresentano il nuovo `main`.
+## Provenance and reset
+
+- Historical `main` baseline: `72d16de4a3ad410dab84fd9d1f42007a187a98b1`.
+- Reconciliation records: [issue #61, full comment](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309) and [archive](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091598842).
+- The reset was a **new commit**, not a destructive rewriting of Git history. Old branches and PRs may remain accessible, but do not represent the current `main`.
