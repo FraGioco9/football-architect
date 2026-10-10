@@ -54,7 +54,7 @@ test("guide is a separate accessible route with native filtering",()=>{
 test("shared language, verified data fetch, no fabricated division assignments or untrusted HTML",()=>{
  for(const word of ["football-architect:language","../data/divisions.json","../data/clubs.json","approvedShortName","firstDivisionReference","legacyTitle","noAssignment","emblemPending","loadError","changeLanguage","normalize(","typeSelect.value","countrySelect.value","search.value"]) assert.ok(js.includes(word),word);
  assert.match(js,/const languages = \["en", "de", "es", "fr", "it"\]/);
- assert.match(js,/state.language:"en"/);
+ assert.match(js,/language:"en"/);
  assert.match(js,/\.textContent\s*=/);
  assert.doesNotMatch(js,/\.innerHTML\s*=/);
  assert.doesNotMatch(js,/localStorage\.clear|indexedDB|window\.open/);
