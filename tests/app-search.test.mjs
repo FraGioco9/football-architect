@@ -29,6 +29,9 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
     "@keyframes app-search-out","@media(max-width:390px)",
     "@media(prefers-reduced-motion:reduce)"]) assert.ok(css.includes(key),key);
   assert.match(css,/\.app-search-trigger span\{display:none\}/);
+  assert.match(css,/\.fa-shell-search\{flex:0 1 330px;min-width:0\}/);
+  assert.match(css,/@media\(min-width:1025px\)\{\.fa-shell-club,\.fa-shell-time\{flex:1 1 0\}\.fa-shell-time\{justify-content:flex-end\}\}/);
+  assert.match(css,/@media\(max-width:1024px\)\{\s*\.fa-shell-search\{flex:0 0 38px\}/);
   assert.match(css,/\.app-search-results\[hidden\]\{display:none\}/);
   assert.match(css,/\.app-search-dialog\.is-closing \.app-search-panel/);
   assert.match(css,/-webkit-user-select:text;user-select:text;-webkit-touch-callout:default/);
