@@ -87,3 +87,24 @@ test("COMPETITIONS-02 preserves five languages, rounded flags and accessible foc
  assert.ok(search.includes("/app/world/competitions/"));
  assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
 });
+
+test("COMPETITIONS-03 places title, logo, metadata and return button in one header on all pages",()=>{
+ const css=read("assets/app.css");
+ assert.ok(css.includes(".app-competition-header{display:flex"));
+ assert.ok(css.includes(".app-competition-return:focus-visible"));
+ for(const {division,file} of routes){
+  const html=read(file);
+  assert.ok(html.includes('class="app-competition-header"'),file);
+  assert.ok(html.includes('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"'),file);
+  assert.ok(html.includes('data-app-aria="crestPlaceholder">'+division.id+'</span>'),file);
+  assert.ok(html.includes('id="division-detail-name">'+division.name.replaceAll("&","&amp;")+'</span>'),file);
+  assert.ok(html.includes('data-world-country="'+division.countryId+'"'),file);
+  assert.ok(html.includes('data-app-i18n="'+(division.tier===1?'divisionTier1':'divisionTier2')+'"'),file);
+  assert.ok(html.includes('class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions"'),file);
+  assert.ok(html.indexOf('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"')<html.indexOf('id="division-detail-name"'),file);
+  assert.ok(html.indexOf('id="division-detail-name"')<html.indexOf('class="app-world-detail-meta"'),file);
+  assert.ok(html.indexOf('class="app-world-detail-meta"')<html.indexOf('class="app-competition-return'),file);
+  assert.ok(!html.includes('class="app-world-back"'),file);
+  assert.equal((html.match(/<h1 class="app-page-title" id="divisions-title"/g)||[]).length,1,file);
+ }
+});
