@@ -72,7 +72,7 @@ function simulate(language="en"){
       id,tagName:tag,children:[],textContent:"",value:"",hidden:false,open:false,attributes:{},
       classList:{values:new Set(),add(x){this.values.add(x)},remove(x){this.values.delete(x)}},
       addEventListener(name,callback){if(!listeners.has(this))listeners.set(this,{});listeners.get(this)[name]=callback},
-      emit(name,extra={}){listeners.get(this)?.[name]?.({target:this,preventDefault(){},...extra})},
+      emit(name,extra={}){listeners.get(this)?.[name]?.({target:this,preventDefault(){},stopPropagation(){},...extra})},
       setAttribute(k,v){this.attributes[k]=v},
       append(...items){this.children.push(...items)},
       replaceChildren(...items){this.children=items},
