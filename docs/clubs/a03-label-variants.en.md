@@ -6,7 +6,6 @@ This document preserves 41 approved-in-conversation **A03 display labels** that 
 
 - Primary names: `football_architect_A02_FINAL_320_APPROVED.csv` (`Club`), validated against `football_architect_CREST02_320_ANAGRAFICHE.csv` (`Approved short name (A02)`).
 - A03 alternatives: `football_architect_A03_FINAL_320_APPROVED.csv` (`Club (A03 exact)`), validated against CREST-02 (`A03 club label (exact)`).
-- Prior proposal for additional corroboration: `football_architect_CLUB-02_320_sigle.csv`; IT-02 in this old register (`AC Felsina Bologna` / `FEL`) is superseded by the reconciled `AC Rinascenti Bologna` / `RIN`.
 - Permanent record key: countryId + clubId, here formatted as `CC-00`; no division allocations or positions participate in identity matching.
 - All 41 entries concern club IDs 21–40: 2 ENG, 19 ES, 20 DE. These are label variants, **not** a new choice of primaryName.
 

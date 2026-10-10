@@ -269,5 +269,8 @@ test("CLUB-PRIMARY-239-01 preserves six reconciliations and an independent A03 a
  assert.equal(differences.filter(x=>x[1].startsWith("ES-")).length,19);
  assert.equal(differences.filter(x=>x[1].startsWith("DE-")).length,20);
  assert.equal(new Set(differences.map(x=>x[1])).size,41);
- assert.ok(!audit.includes("AC Felsina Bologna"));
+ assert.ok(!/^\|\s*IT-02\s*\|/m.test(audit));
+ const it02=manifest.divisions.flatMap(d=>d.clubs).find(c=>c.countryId==="IT"&&c.clubId===2);
+ assert.equal(it02?.primaryName,"AC Rinascenti Bologna");
+ assert.equal(it02?.abbr,"RIN");
 });

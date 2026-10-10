@@ -167,7 +167,7 @@ The [Guide](guide/index.html) currently explains only **Divisions** (country com
 | Stable club key | Approved short name | Approved abbreviation |
 |---|---|---|
 | `IT,1` | **US Velaria Torino** | `VEL` |
-| `IT,2` | **AC Rinascenti Bologna** (not AC Felsina Bologna) | `RIN` (not `FEL`) |
+| `IT,2` | **AC Rinascenti Bologna** | `RIN` |
 | `FR,27` | **FC Émaux** | `EMX` |
 | `FR,33` | **CS Garrigues** | `GRG` |
 | `PT,34` | **AC Fontes** | `FTS` |
