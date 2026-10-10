@@ -4,6 +4,7 @@
   const STORAGE_KEY = "football-architect:language";
   const SUPPORTED = ["en","de","es","fr","it"];
   const TOAST_DURATION_MS = 5000;
+  const TOAST_EXIT_MS = 180;
   const messages = {
     en: {
       language:"Language",dismiss:"Dismiss notice",summary:"Explore an alternative football world.",
@@ -61,6 +62,7 @@
   let activeIndex = 0;
   let lastAction = null;
   let toastTimer = null;
+  let toastExitTimer = null;
   let toastHovered = false;
   let toastFocused = false;
 
@@ -71,15 +73,40 @@
     }
   }
 
+  function finishToastDismiss() {
+    toastExitTimer = null;
+    status.hidden = true;
+    status.classList.remove("toast-exit");
+    lastAction = null;
+    toastHovered = false;
+    toastFocused = false;
+  }
+
   function dismissToast() {
     cancelToastTimer();
-    status.hidden = true;
-    lastAction = null;
+    if (status.hidden || status.classList.contains("toast-exit")) return;
+    status.classList.add("toast-exit");
+    // Reduced motion also removes the exit delay so hiding is immediate.
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishToastDismiss();
+    } else {
+      toastExitTimer = window.setTimeout(finishToastDismiss, TOAST_EXIT_MS);
+    }
+  }
+
+  function showToast() {
+    if (toastExitTimer !== null) {
+      window.clearTimeout(toastExitTimer);
+      toastExitTimer = null;
+    }
+    status.classList.remove("toast-exit");
+    status.hidden = false;
+    scheduleToastDismiss();
   }
 
   function scheduleToastDismiss() {
     cancelToastTimer();
-    if (status.hidden || toastHovered || toastFocused) return;
+    if (status.hidden || status.classList.contains("toast-exit") || toastHovered || toastFocused) return;
     toastTimer = window.setTimeout(() => {
       toastTimer = null;
       dismissToast();
@@ -181,8 +208,7 @@
       lastAction = button.dataset.destination;
       const copy = messages[language];
       statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
-      status.hidden = false;
-      scheduleToastDismiss();
+      showToast();
       closeMenu();
     });
   }
