@@ -225,12 +225,12 @@ html{scroll-padding-top:72px}
 .app-world-standing-table tbody tr:hover{background:rgba(100,203,169,.045)}
 .app-world-standing-table .app-world-standing-name-head{text-align:left}
 .app-world-standing-table .app-world-standing-club{min-width:0;text-align:left;font-weight:650}
-.app-world-standing-club{display:flex;align-items:center;gap:10px}
-.app-world-club-code{display:grid;place-items:center;flex:none;min-width:38px;min-height:30px;padding:3px 5px;border:1px solid #40695e;border-radius:8px;background:#1a3b35;color:#b6e4cc;font-size:10px;font-weight:800}
-.app-world-club-name{min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.45}
+.app-world-standing-club{display:table-cell;text-align:left}
+.app-world-club-code{display:inline-grid;place-items:center;vertical-align:middle;margin-right:10px;min-width:38px;min-height:30px;padding:3px 5px;border:1px solid #40695e;border-radius:8px;background:#1a3b35;color:#b6e4cc;font-size:10px;font-weight:800}
+.app-world-club-name{display:inline;vertical-align:middle;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.45}
 .app-world-standing-table .app-world-stat-unknown{color:#8ca9a0}
 @media(max-width:1100px){.app-world-standing-table tr>*:nth-child(7),.app-world-standing-table tr>*:nth-child(8),.app-world-standing-table tr>*:nth-child(9){display:none}}
-@media(max-width:620px){.app-world-standings{padding:13px 10px}.app-world-standing-table tr>*{padding:10px 4px}.app-world-standing-table tr>*:nth-child(n+4):not(:last-child){display:none}.app-world-standing-table tr>*:first-child{width:32px}.app-world-standing-table tr>*:nth-child(3){width:32px}.app-world-standing-table tr>*:last-child{width:39px}.app-world-standing-club{gap:6px}.app-world-club-code{min-width:30px;min-height:27px;font-size:9px}.app-world-club-name{font-size:11px}}
+@media(max-width:620px){.app-world-standings{padding:13px 10px}.app-world-standing-table tr>*{padding:10px 4px}.app-world-standing-table tr>*:nth-child(n+4):not(:last-child){display:none}.app-world-standing-table tr>*:first-child{width:32px}.app-world-standing-table tr>*:nth-child(3){width:32px}.app-world-standing-table tr>*:last-child{width:39px}.app-world-standing-club .app-world-club-code{margin-right:6px;min-width:30px;min-height:27px;font-size:9px}.app-world-club-name{font-size:11px}}
 
 /* UI-WORLD: complete division views without fabricated sporting records. */
 .app-world-related{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:18px 0;color:var(--muted);font-size:12px}
