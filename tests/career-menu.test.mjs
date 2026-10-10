@@ -825,7 +825,8 @@ test('site calendar has month and year selectors, Monday-first grid, leap dates,
  assert.ok(calendarDays('2000-02','2026-10-09').some(x=>x?.iso==='2000-02-29'&&!x.disabled));
  assert.equal(calendarDays('2026-10','2026-10-09').find(x=>x?.iso==='2026-10-10').disabled,true);
  const it=renderDateControl('2000-02-29','it',true,'2000-02','months');
- const en=renderDateControl('','en',true,'2026-10');
+ const now=localToday(),nextDay=new Date(Date.parse(now+'T12:00:00Z')+86400000).toISOString().slice(0,10);
+ const en=renderDateControl('','en',true,now.slice(0,7));
  assert.match(it,/data-action="calendar-prev"/);
  assert.match(it,/data-action="calendar-next"/);
  assert.match(it,/data-action="calendar-month-select"/);
@@ -834,7 +835,7 @@ test('site calendar has month and year selectors, Monday-first grid, leap dates,
  assert.match(it,/role="grid"/);
  assert.match(it,/aria-expanded="true"/);
  assert.match(en,/Choose date of birth/);
- assert.match(en,/data-value="2026-10-10"[^>]* disabled/);
+ assert.match(en,new RegExp('data-value="'+nextDay+'"[^>]* disabled'));
  assert.equal(birthDateLabel('2000-02-29','it'),'29/02/2000');
 });
 test('global selected/error visual contract only responds to a box click, not labels or hover',()=>{
