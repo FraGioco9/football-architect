@@ -35,6 +35,15 @@
   const words = () => translations[document.documentElement.lang] || translations.en;
   const links = () => [...list.querySelectorAll("a.app-search-result")];
   let closingTimer = null;
+  // Closing on a backdrop click requires a matching pointer gesture, not only
+  // a click retargeted to the dialog after an inside/outside drag.
+  const backdropDragThreshold = 8;
+  let backdropStart = null;
+  let validBackdropClick = false;
+  function resetBackdropPointer() {
+    backdropStart = null;
+    validBackdropClick = false;
+  }
 
   function render() {
     const query = fold(input.value);
@@ -97,6 +106,7 @@
   function finishClose() {
     if (closingTimer !== null) clearTimeout(closingTimer);
     closingTimer = null;
+    resetBackdropPointer();
     dialog.classList.remove("is-closing");
     if (dialog.open) dialog.close();
   }
@@ -111,9 +121,40 @@
   }
   trigger.addEventListener("click",open);
   closeButton.addEventListener("click",close);
+  // Capture Escape before the native search input can consume it to clear text.
+  dialog.addEventListener("keydown",event => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+  },true);
   dialog.addEventListener("cancel",event => { event.preventDefault(); close(); });
-  dialog.addEventListener("click",event => { if (event.target === dialog) close(); });
+  dialog.addEventListener("pointerdown",event => {
+    validBackdropClick = false;
+    backdropStart = event.target === dialog
+      ? {pointerId:event.pointerId,x:event.clientX,y:event.clientY} : null;
+  });
+  dialog.addEventListener("pointermove",event => {
+    if (!backdropStart || backdropStart.pointerId !== event.pointerId) return;
+    if (event.target !== dialog ||
+        Math.hypot(event.clientX - backdropStart.x,event.clientY - backdropStart.y) > backdropDragThreshold) {
+      backdropStart = null;
+    }
+  });
+  dialog.addEventListener("pointerup",event => {
+    validBackdropClick = !!backdropStart && event.target === dialog &&
+      event.pointerId === backdropStart.pointerId &&
+      Math.hypot(event.clientX - backdropStart.x,event.clientY - backdropStart.y) <= backdropDragThreshold;
+    backdropStart = null;
+  });
+  dialog.addEventListener("pointercancel",resetBackdropPointer);
+  dialog.addEventListener("click",event => {
+    const shouldClose = event.target === dialog && validBackdropClick;
+    validBackdropClick = false;
+    if (shouldClose) close();
+  });
   dialog.addEventListener("close",() => {
+    resetBackdropPointer();
     if (closingTimer !== null) clearTimeout(closingTimer);
     closingTimer = null;
     dialog.classList.remove("is-closing");

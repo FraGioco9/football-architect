@@ -183,3 +183,119 @@ test("SEARCH-01 follows shared language changes while open",()=>{
   app.input.emit("input");
   assert.equal(app.links()[0].href,"/app/settings/");
 });
+
+
+test("SEARCH-01 closes on a pointer backdrop tap and tolerates small movement",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.dialog.emit("pointerdown",{pointerId:1,clientX:32,clientY:45});
+  app.dialog.emit("pointermove",{pointerId:1,clientX:34,clientY:47});
+  app.dialog.emit("pointerup",{pointerId:1,clientX:34,clientY:47});
+  app.dialog.emit("click");
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.document.activeElement,app.trigger);
+});
+
+test("SEARCH-01 ignores internal pointer clicks on search, X and results",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.input.value="calendar";
+  app.input.emit("input");
+  for(const target of [app.input,app.nodes["app-search-close"],app.links()[0]]){
+    app.dialog.emit("pointerdown",{target,pointerId:2,clientX:220,clientY:180});
+    app.dialog.emit("pointerup",{target,pointerId:2,clientX:220,clientY:180});
+    app.dialog.emit("click",{target});
+    assert.equal(app.dialog.open,true);
+  }
+});
+
+test("SEARCH-01 rejects inside-outside and outside-inside dragged clicks",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.dialog.emit("pointerdown",{target:app.input,pointerId:3,clientX:230,clientY:150});
+  app.dialog.emit("pointerup",{target:app.dialog,pointerId:3,clientX:30,clientY:30});
+  app.dialog.emit("click",{target:app.dialog});
+  assert.equal(app.dialog.open,true);
+  app.dialog.emit("pointerdown",{target:app.dialog,pointerId:4,clientX:30,clientY:30});
+  app.dialog.emit("pointermove",{target:app.input,pointerId:4,clientX:230,clientY:150});
+  app.dialog.emit("pointerup",{target:app.input,pointerId:4,clientX:230,clientY:150});
+  app.dialog.emit("click",{target:app.dialog});
+  assert.equal(app.dialog.open,true);
+});
+
+test("SEARCH-01 ignores dragged backdrop, mismatched pointer, and cancellation",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.dialog.emit("pointerdown",{pointerId:10,clientX:10,clientY:10});
+  app.dialog.emit("pointermove",{pointerId:10,clientX:60,clientY:10});
+  app.dialog.emit("pointerup",{pointerId:10,clientX:60,clientY:10});
+  app.dialog.emit("click");
+  assert.equal(app.dialog.open,true);
+  app.dialog.emit("pointerdown",{pointerId:11,clientX:10,clientY:10});
+  app.dialog.emit("pointerup",{pointerId:12,clientX:10,clientY:10});
+  app.dialog.emit("click");
+  assert.equal(app.dialog.open,true);
+  app.dialog.emit("pointerdown",{pointerId:13,clientX:10,clientY:10});
+  app.dialog.emit("pointercancel",{pointerId:13});
+  app.dialog.emit("click");
+  assert.equal(app.dialog.open,true);
+});
+
+test("SEARCH-01 first Escape dismisses filled native search without clearing query",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.input.value="calendar";
+  app.input.emit("input");
+  let prevented=false,stopped=false;
+  app.dialog.emit("keydown",{target:app.input,key:"Escape",
+    preventDefault(){prevented=true},stopPropagation(){stopped=true}});
+  assert.equal(prevented,true);
+  assert.equal(stopped,true);
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.document.activeElement,app.trigger);
+  assert.equal(app.input.value,"calendar");
+});
+
+test("SEARCH-01 focused-result Escape, X and native cancel still close correctly",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.input.emit("keydown",{key:"ArrowDown"});
+  const target=app.links()[0];
+  assert.equal(app.document.activeElement,target);
+  app.dialog.emit("keydown",{target,key:"Escape"});
+  assert.equal(app.dialog.open,false);
+  app.trigger.emit("click");
+  app.nodes["app-search-close"].emit("click");
+  assert.equal(app.dialog.open,false);
+  app.trigger.emit("click");
+  app.dialog.emit("cancel");
+  assert.equal(app.dialog.open,false);
+});
+
+test("SEARCH-01 leaves Tab and Shift+Tab to native modal focus management",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  assert.equal(app.document.activeElement,app.input);
+  for(const shiftKey of [false,true]){
+    let prevented=false;
+    app.dialog.emit("keydown",{target:app.input,key:"Tab",shiftKey,
+      preventDefault(){prevented=true}});
+    assert.equal(prevented,false);
+    assert.equal(app.dialog.open,true);
+  }
+  assert.match(script,/dialog\.showModal\(\)/);
+  assert.match(script,/dialog\.addEventListener\("keydown",[\s\S]*?,true\)/);
+});
+
+test("SEARCH-01 Enter, native result clicks, and focus restoration remain functional",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.input.value="calendar";
+  app.input.emit("input");
+  const result=app.links()[0];
+  app.input.emit("keydown",{key:"Enter"});
+  assert.equal(result.clicked,true);
+  app.list.emit("click",{target:result});
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.document.activeElement,app.trigger);
+});
