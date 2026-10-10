@@ -1,27 +1,27 @@
-# DIV-ASSET-P02 — Stemmi campione inglesi approvati
+# DIV-ASSET-P02 — Approved English visual sample descriptions
 
-Fase **P02 approvata in conversazione**: 2/2 campioni inglesi approvati, portando il totale a **4/16 (25%)**. I PNG originali sono nella Libreria persistente personale `/Football Architect/DIV-ASSET/`; qui si conservano descrizioni e checksum, **non** i file binari.
+**P02 approved in conversation:** both English samples passed visual approval, bringing the overall total to **4/16 (25%)**. Their original PNGs are preserved in the personal Library folder `/Football Architect/DIV-ASSET/`. This document records descriptions and integrity references, **not binary artwork**.
 
-## ENG-1 — Crown League (prima divisione)
+## ENG-1 — Crown League (first tier)
 
-Campione approvato: `emblema_della_crown_league_i.png`, SHA-256 `8ff35e75fa7cfa4485f814e89abb6aefbef7eb293cf9d6c08cceb9508fa753fd`.
+Approved original `emblema_della_crown_league_i.png`; SHA-256 `8ff35e75fa7cfa4485f814e89abb6aefbef7eb293cf9d6c08cceb9508fa753fd`.
 
-- Crest inglese di massima divisione: scudo classico blu navy con bordi pergamena/avorio e oro antico; corona araldica superiore e medaglione centrale con corona.
-- Rami di alloro laterali, iscrizione `CROWN LEAGUE` in maiuscolo serif, numero romano `I`, segni divisori orizzontali.
-- Atmosfera regale/heritage, più cerimoniale rispetto al secondo livello.
-- Per realizzazione SVG definitiva, utilizzare **esattamente** A03: base `#17304A`, chiaro `#EEE4D2`, accento `#B99451`.
+- Prestigious historical English crest: classic navy shield with parchment/ivory and antique-gold borders; regal crest above and central medallion containing a stylized crown.
+- Flanking heraldic laurels, uppercase serif `CROWN LEAGUE` inscription, Roman numeral `I` and restrained horizontal divider rules.
+- Heritage-inspired, noticeably more ceremonial than the second tier.
+- For final SVG production, use the **exact approved A03 values**: base `#17304A`, light `#EEE4D2`, accent `#B99451`.
 
-## ENG-2 — Shield League (seconda divisione)
+## ENG-2 — Shield League (second tier)
 
-**Solo versione corretta e approvata**: `emblema_araldico_shield_league_ii.png`, SHA-256 `b72d6a5ced753f65083d60c0f218d48a9d4b1299d5e14212f4dc398dcf806534`.
+**Only the corrected approved original:** `emblema_araldico_shield_league_ii.png`; SHA-256 `b72d6a5ced753f65083d60c0f218d48a9d4b1299d5e14212f4dc398dcf806534`.
 
-- Crest inglese della stessa famiglia, senza corona: scudo principale blu ardesia/grigio-acciaio, bordi multipli crema e argento chiaro.
-- Medaglione centrale tondo contenente **uno scudo interno da rendere con geometria esattamente simmetrica sull'asse verticale**, punta e croce centrate, bordo speculare.
-- Quattro quarti: campi alternati chiari e tratteggi diagonali; tratteggio bilanciato e ordinato. Allori argentati bilaterali, lettering `SHIELD LEAGUE` in maiuscolo e `II` in basso.
-- Più semplice e meno cerimoniale di ENG-1, ma coerente in tipografia, silhouette e finitura.
-- Per realizzazione SVG definitiva, utilizzare **esattamente** A03: base `#364C61`, chiaro `#F0EAE0`, accento `#CFD7DA`.
-- **Revisioni:** la bozza originale `emblema_shield_league_ii.png` aveva un problema di asimmetria centrale segnalato dall'utente. È stata sostituita dalla versione corretta prima dell'approvazione della fase P02. **Non usare la bozza come riferimento né salvarla come approvata**. La simmetria geometrica definitiva sarà verificata sul master SVG A04.
+- Related English crest without a crown: slate/steel-blue outer shield, concentric cream and light-silver borders.
+- Centered circular medallion containing an **inner shield that must be exactly symmetric about the vertical axis**; centered top peak, lower tip, cross and mirrored outline.
+- Four quadrants with alternating pale fills and balanced diagonal hatching; symmetrical silver laurels, uppercase `SHIELD LEAGUE` lettering and `II` beneath.
+- Simpler and less ceremonial than ENG-1, with a consistent visual system.
+- For final SVG production, use the **exact approved A03 values**: base `#364C61`, light `#F0EAE0`, accent `#CFD7DA`.
+- The earlier `emblema_shield_league_ii.png` draft failed the user's symmetry review. The corrected PNG replaced that draft **before** P02 approval. Do not use or save the earlier draft as an approved reference. Final vector geometry requires a separate exact-symmetry check.
 
-## Regole del futuro export
+## Future export rules
 
-PNG di anteprima: raster quadrato RGBA 1254 × 1254 con sfondo trasparente. Non chiamarli master SVG: le 4 varianti `primary`, `compact`, `mono-dark`, `mono-light` per ciascuna divisione sono **ancora da produrre**. Il sistema A01–A05 resta immutato. Nessuna integrazione runtime, merge, deploy o modifica ai database.
+Each preview is a transparent 1254 × 1254 RGBA PNG, **not an SVG master**. The four `primary`, `compact`, `mono-dark`, and `mono-light` variants for each division remain **unproduced**. A01–A05 design rules are unchanged. No runtime integration, merge, deployment or database changes.

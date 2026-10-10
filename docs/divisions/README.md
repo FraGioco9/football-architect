@@ -1,25 +1,29 @@
-# Football Architect — DIV-ASSET, registro approvazioni
+# Football Architect — DIV-ASSET approval archive
 
-Stato: **A01–A05 approvate (5/5, 100% progettazione)**; **P01 + P02 approvate (4/16 campioni grafici, 25%)**. Riferimento: [issue #60](https://github.com/FraGioco9/football-architect/issues/60). Aggiornato 2026-10-10 secondo approvazioni esplicite in conversazione.
+**Status (2026-10-10):** A01–A05 design milestones **approved, 5/5 (100%)**; P01–P02 visual samples **approved, 4/16 (25%)**. The authoritative issue is [#60](https://github.com/FraGioco9/football-architect/issues/60).
 
-Questa cartella conserva decisioni, palette, concept e inventario per la **sola identità visiva divisionale**. Non è una libreria di loghi utilizzata dal gioco. Il repository attuale contiene cataloghi e documentazione, non una build attiva.
+This directory preserves approved decisions, symbols, color palettes, specifications and production records for the **division identity project only**. It does not contain game-ready logos and does not modify game integration. The current repository mainline contains catalogues and documentation, not an active game build.
 
-## Fonte canonica del progetto grafico
+## Design documents
 
-- [design-direction.md](design-direction.md) — A01, regole stilistiche.
-- [concepts.md](concepts.md) — A02, 16 identità e simboli.
-- [palettes-and-type.md](palettes-and-type.md) — A03, tutti i 48 codici HEX e gerarchia tipografica.
-- [technical-spec.md](technical-spec.md) — A04, standard SVG, varianti, nomenclatura.
-- [design-review.md](design-review.md) — A05, revisione, riserve e prove differite.
-- [production-log.md](production-log.md) — registro delle approvazioni campione P01 e future fasi P02+.
-- [p01-visual-brief.md](p01-visual-brief.md) — descrizione conservativa dei campioni italiani.
-- [p02-visual-brief.md](p02-visual-brief.md) — descrizione dei due campioni inglesi approvati, inclusa la revisione dello scudo ENG-2. I brief **non sostituiscono le immagini**.
-- [inventory.json](inventory.json) — manifest documentale delle 16 divisioni e delle 64 varianti SVG **previste**, non prodotte.
+- [design-direction.md](design-direction.md) — A01: approved historical-institutional heraldic art direction.
+- [concepts.md](concepts.md) — A02: 16 approved division concepts and symbols.
+- [palettes-and-type.md](palettes-and-type.md) — A03: 16 original palettes (48 fixed HEX values), typography and monochrome rules.
+- [technical-spec.md](technical-spec.md) — A04: SVG requirements, variants, viewBox and naming.
+- [design-review.md](design-review.md) — A05: design review, accepted differentiators and deferred production checks.
+- [production-log.md](production-log.md) — P01/P02 approvals, image checksums and future phase log.
+- [p01-visual-brief.md](p01-visual-brief.md) — Approved Italian image references in descriptive form.
+- [p02-visual-brief.md](p02-visual-brief.md) — Approved English image references, including the corrected ENG-2 shield.
+- [inventory.json](inventory.json) — Planning inventory of 16 divisions and 64 **expected** SVG variants.
 
-## Importante: stato file immagine
+## Original PNG preservation
 
-I campioni PNG P01 e P02 **sono stati generati e approvati nella conversazione** e **conservati come originali nella Libreria persistente di ChatGPT**, nella cartella personale `/Football Architect/DIV-ASSET/`. I file PNG **non sono ancora presenti come blob binari in questo branch GitHub**. Nomi, dimensioni e SHA-256 di tutti e quattro sono in [production-log.md](production-log.md). Non dire che i 64 SVG esistono: **0/64 prodotti**.
+All four approved P01/P02 PNG originals are preserved in the persistent ChatGPT Library folder `/Football Architect/DIV-ASSET/`. **Their binary contents have not been uploaded to this GitHub branch.** Exact original filenames and SHA-256 digests are recorded in [production-log.md](production-log.md). Original Italian-language PNG filenames are preserved as immutable identifiers, not translated.
 
-## Procedura per le prossime approvazioni
+**Master SVGs produced: 0/64.** The approved PNGs are visual references, not finalized vector exports.
 
-Ogni nuova approvazione P02+ aggiornerà su questo branch `production-log.md` e, se necessario, `inventory.json`, salvando ogni immagine generata e approvata anche nella Libreria persistente, finché l'upload binario su GitHub non sia possibile. **Non sostituire** uno stemma campione approvato senza una nuova approvazione. Niente modifiche all'app, deploy, DB o merge automatici.
+## Future approval protocol
+
+For each newly approved sample, update this dedicated branch and draft PR #69: preserve the new original image in the Library and update the log/inventory with identifiers, approval status and integrity metadata. Upload actual binaries to GitHub only through a supported transfer method. Never replace an approved image without fresh approval. **All new GitHub prose, commit messages, PR/issue content, code comments and metadata should be written in English**, while official division names retain their native spelling.
+
+No merge, deployment, game-code changes, database changes or automatic runtime integration.

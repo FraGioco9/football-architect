@@ -1,25 +1,27 @@
-# DIV-ASSET-A04 — Specifica di produzione approvata
+# DIV-ASSET-A04 — Approved asset-production specification
 
-**Inventario previsto:** 16 divisioni × 4 varianti = **64 SVG**, più un manifest e un README nel futuro pacchetto. **Non ancora prodotti: 0/64**.
+**Planned inventory:** 16 divisions × four variants = **64 SVGs**, plus one manifest and one README for the future independent pack. **Produced: 0/64 SVGs.**
 
-## Formato
+## Format and geometry
 
-- SVG vettoriali autonomi, compatibili con browser moderni, con `viewBox="0 0 512 512"` e canvas intrinseco 512 × 512.
-- Sfondo davvero trasparente, senza rettangolo opaco nascosto; colori HEX approvati, geometria vettoriale, nessun raster incorporato, script, riferimenti esterni, font remoti, gradiente o 3D.
-- Composizione centrata. Margine di sicurezza di almeno **40 unità** sul master principale e **56 unità** sul compatto; non sovradimensionare sigilli di forme diverse fino a farli toccare il canvas.
-- Testo vettorializzato in tracciati nell'output, senza distribuire i file dei caratteri. Conservare eventualmente sorgenti di lavoro separati dall'export finale, fuori dal pack runtime.
+- Self-contained vector SVG compatible with modern browsers; `viewBox="0 0 512 512"`, intrinsic dimensions 512 × 512.
+- Genuine transparent background, with no hidden opaque rectangle. Approved explicit HEX colors, vector geometry, no embedded rasters, scripts, external assets, remote fonts, gradients or 3D effects.
+- Centered artwork. Minimum clear margin: **40 units** for the primary mark and **56 units** for the compact mark. Distinct shield silhouettes should not be stretched to reach the canvas edge.
+- Convert all visible lettering to vector outlines in distributed SVGs; no bundled font files. Editable working sources, if any, must remain separate from the final standalone pack.
 
-## Quattro varianti per ciascun ID
+## Four variants per division
 
-| Suffisso | Contenuto | Prove dimensionali |
+| Suffix | Contents | Planned size checks |
 |---|---|---|
-| `primary` | Stemma pieno con nome ufficiale, simbolo e ornamentazione | 64, 128, 256, 512 px |
-| `compact` | Stesso linguaggio con dettagli ridotti, senza lettering esteso | 16, 24, 32, 48, 64 px |
-| `mono-dark` | Compatta, una tinta scura, per fondo chiaro | 16, 24, 32, 64 px |
-| `mono-light` | Compatta, una tinta chiara, per fondo scuro | 16, 24, 32, 64 px |
+| `primary` | Full emblem with official name, central symbol and controlled decoration | 64, 128, 256, 512 px |
+| `compact` | Same identity, simplified details, no full-length lettering | 16, 24, 32, 48, 64 px |
+| `mono-dark` | Compact geometry in a single dark ink for light backgrounds | 16, 24, 32, 64 px |
+| `mono-light` | Compact geometry in a single light ink for dark backgrounds | 16, 24, 32, 64 px |
 
-## Nomenclatura
+## Naming and packaging
 
-Formato `<id-lowercase>-<primary|compact|mono-dark|mono-light>.svg`, per esempio `it-1-primary.svg`. ID stabili; niente spazi, accenti o titoli nei nomi file. Il futuro pack isolato avrà `svg/` + `manifest.json` + `README.md`; **nessuna integrazione in `src/`, asset runtime, interfaccia, database o salvataggi**.
+Filename format: `<lowercase-division-id>-<primary|compact|mono-dark|mono-light>.svg`, for example `it-1-primary.svg`. No spaces or accents in generated SVG filenames; division IDs are stable even if display names later change.
 
-Il file [inventory.json](inventory.json) è il registro documentale preliminare: elenca nomi **attesi**, non link verso SVG già esistenti. Eventuali PNG raster derivati sono facoltativi e non fanno parte del requisito di 64 SVG.
+The **future isolated asset pack** will contain `svg/`, `manifest.json`, and `README.md`. No import into `src/`, runtime asset directories, UI, game logic, saves or database is authorized.
+
+[inventory.json](inventory.json) is a documentation-only register of **expected names**, not evidence of existing SVG files. PNG previews are optional and are not part of the 64-vector requirement.

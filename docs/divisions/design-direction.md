@@ -1,20 +1,21 @@
-# DIV-ASSET-A01 — Direzione artistica approvata
+# DIV-ASSET-A01 — Approved art direction
 
-**Approvata esplicitamente in conversazione.** [Issue #60](https://github.com/FraGioco9/football-architect/issues/60).
+**Explicitly approved in the conversation.** Tracked by [issue #60](https://github.com/FraGioco9/football-architect/issues/60).
 
-## Araldica calcistica moderna
+## Modern football heraldry
 
-Identità storica, istituzionale, calcistica e originale. Sistema coordinato di 16 stemmi per 8 Paesi, due divisioni per Paese. Le coppie devono avere un legame di famiglia, ma differenziarsi senza testo e in monocromia.
+The 16 identities share an original, historical, institutional and football-oriented art direction across **eight national families**, with one first- and one second-tier division per country. Pairs must look related yet be distinguishable even without lettering and in monochrome.
 
-### Regole trasversali
+### Shared design principles
 
-- Silhouette araldica forte: scudi classici/arrotondati/appuntiti, medaglioni e sigilli; medesima qualità grafica, non necessariamente la stessa sagoma.
-- Tratto pulito e uniforme, geometrie vettoriali nitide; decorazioni limitate e funzionali (alloro, nastro, corona, sigillo), senza micro-dettagli.
-- Prima divisione più solenne/prestigiosa: gerarchia centrale, bordo autorevole, accento cerimoniale. Seconda divisione coordinata, più sobria e territoriale; non deve apparire inferiore come qualità di esecuzione.
-- Otto toni nazionali: Italia civico-federale, Inghilterra heritage/regale, Spagna unità/regioni, Germania struttura/ordine, Francia istituzionale/raffinata, Portogallo storico-marittimo, Paesi Bassi chiarezza/identità, Brasile energia/associazioni.
-- Evitare loghi di leghe reali, marchi registrati, mascotte, look esports/arcade, gradienti, metallo 3D, eccessiva texture, bandiere incollate, simboli non autorizzati.
-- Stemma di **competizione** e non stemma di club. Testo subordinato al simbolo: lo stemma deve restare distinguibile senza poter leggere il nome.
+- Strong heraldic silhouette: classical, rounded or pointed shields, medallions and seals. Comparable artistic quality is required; identical outer silhouettes are not.
+- Clean consistent strokes, crisp vector geometry and functional restrained ornamentation (laurels, ribbons, crowns and seals); avoid unnecessary micro-details.
+- First tier: prestigious, solemn, formal central hierarchy, authoritative border, carefully controlled ceremonial accents.
+- Second tier: coordinated but simpler and more territorial, without ever appearing less polished.
+- Eight national tones: **Italy** civic/federal; **England** heritage/regal; **Spain** unity/regions; **Germany** order/structure; **France** refined/institutional; **Portugal** historical/Atlantic; **Netherlands** clarity/identity; **Brazil** energy/associations.
+- Avoid real league marks, registered trademarks, copied imagery, mascots, esports/arcade styling, gradients, 3D metal, excessive textures, flag collages and unauthorized symbols.
+- These must look like **competition emblems**, not club crests. Symbols take priority over wording; the mark should work without readable text.
 
-## Autorità dei documenti
+## Specification hierarchy
 
-A02 specifica simboli, A03 colori e font, A04 aspetti tecnici, A05 raccomandazioni di revisione e prove future. Tutte le cinque fasi sono **approvate nella conversazione**; la produzione dei master SVG è separata e non ancora completata.
+A02 defines individual symbols, A03 fixes palette and typography, A04 defines technical exports, and A05 records reviews and post-production checks. **All five design phases are approved.** Finalized SVG masters have not been produced. The image samples are a separate production track.

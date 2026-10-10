@@ -1,23 +1,23 @@
-# DIV-ASSET-A05 — Revisione conclusiva approvata
+# DIV-ASSET-A05 — Approved final design review
 
-**Approvazione A05 confermata esplicitamente in conversazione**. Le fasi progettuali A01–A05 sono quindi **5/5, 100%**. Ciò **non significa** che i master siano prodotti o collaudati.
+**A05 was explicitly approved in conversation.** The design roadmap A01–A05 is **5/5 complete (100%)**, which does **not** certify that masters have been created or technically tested.
 
-## Audit progettuale
+## Design checks completed
 
-- **16/16** identità concettuali, **8/8** famiglie nazionali, nomi e ID confrontati con il catalogo.
-- **16/16** palette A03 definite con **48** codici HEX, contrasto base/chiaro superiore a 4,5:1 in ogni coppia; nessuna modifica ai colori approvati.
-- Tipografia condivisa Roboto Slab 600 / IBM Plex Sans Condensed 500, nomi e segni diacritici preservati.
-- **64/64** percorsi SVG previsti con quattro suffissi, senza collisioni nominali.
-- Chiarimenti distintivi **approvati**: ENG-1 corona / NL-1 preferibilmente leone; IT-2 torri civiche / ES-1 raggi geometrici; ES-2 mosaico / BR-2 stella multipartita; DE-2 intreccio angolare / NL-2 lineare.
+- **16/16** conceptual competition identities and **8/8** national families reviewed against canonical division names and IDs.
+- **16/16** approved palettes with **48 HEX values**. Every base/light pair has contrast above 4.5:1; no approved colors changed.
+- Shared Roboto Slab 600 / IBM Plex Sans Condensed 500 type hierarchy, with original naming and diacritics preserved.
+- **64/64** proposed SVG filenames accounted for, based on four standard variants per division without planned naming collisions.
+- A05-approved distinctive details: ENG-1 crown versus NL-1 preferably an abstract lion; IT-2 civic towers versus ES-1 geometric rays; ES-2 mosaic versus BR-2 multipartite star; DE-2 angular association motif versus NL-2 linear links.
 
-## Verifiche necessariamente rinviate alla produzione
+## Checks deferred until real production
 
-- Esistenza effettiva dei master e fedeltà ai concept/HEX/font approvati.
-- Confronto reale con marchi/stemmi esistenti per ridurre il rischio di somiglianze improprie: originalità **non legalmente certificata**.
-- Prove a 16/24/32/64/128/256/512 px, distinguibilità senza testo, testo leggibile su variante principale, resa su sfondi chiari/scuri.
-- Validità XML/SVG, indipendenza da script/font esterni, sfondo trasparente, conversione testo in paths, margini di sicurezza e resa monocromatica.
-- Coerenza e completezza reale dei 64 file e del pack autonomo.
+- Existence of masters and fidelity to approved symbols, exact HEX values and vectorized lettering.
+- Originality/similarity assessment against existing league trademarks; **no legal originality certification is implied**.
+- Rendering at 16/24/32/64/128/256/512 px, distinction without lettering, full-name readability, and light/dark background testing.
+- Valid SVG/XML, no external script/font dependencies, transparent backgrounds, path outlines, safe margins, truly useful monochrome geometry.
+- Actual completeness of the 64 delivered SVGs and consistency of the standalone final pack.
 
-## Esito
+## Outcome
 
-**Progettazione approvata al 100%; produzione vettoriale 0/64 (0%).** Campioni P01 approvati separatamente come immagini raster di riferimento, vedi [production-log.md](production-log.md). Nessuna autorizzazione implicita a integrare gli asset nel gioco.
+**Design approved: 100%. Final vector production: 0/64 (0%).** Four P01/P02 reference PNGs are approved separately; see [production-log.md](production-log.md). No authority to integrate any assets into the game is implied.

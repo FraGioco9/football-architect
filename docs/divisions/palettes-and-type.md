@@ -1,8 +1,8 @@
-# DIV-ASSET-A03 — Palette, tipografia, monocromia (approvate)
+# DIV-ASSET-A03 — Approved palettes, typography and monochrome system
 
-**16 palette immutabili fino a nuova approvazione**. Ordine: base / chiaro / accento. Il colore base è dominante (~65–75%), chiaro per lettering e dettagli principali (~15–25%), accento per ornamento (~5–10%). Proporzioni indicative, non vincoli geometrici.
+The **16 palettes below are approved and must not be altered without renewed approval**. Columns follow the base/light/accent order. Typical visual allocation: base 65–75%, light 15–25%, accent 5–10%. These are guidelines rather than mandatory area measurements.
 
-| ID | Nome ufficiale | Base | Chiaro | Accento | Contrasto base/chiaro |
+| ID | Official division name | Base | Light | Accent | Base/light contrast |
 |---|---|---|---|---|---|
 | IT-1 | Lega Federale | `#194D3A` | `#F3E8CC` | `#B78B55` | 7.96:1 |
 | IT-2 | Lega delle Città | `#405D4C` | `#F1EADD` | `#E1B885` | 6.08:1 |
@@ -21,28 +21,28 @@
 | BR-1 | Liga das Associações | `#176347` | `#F4EEDB` | `#E8C56D` | 6.22:1 |
 | BR-2 | Liga das Regiões | `#2D6C58` | `#F9F5E8` | `#E5CC80` | 5.67:1 |
 
-Il contrasto base/chiaro minimo calcolato è **5.08:1**, sopra 4,5:1. Il contrasto teorico non garantisce la leggibilità del disegno alle dimensioni effettive. Gli accenti decorativi non sono automaticamente appropriati per testo piccolo.
+The lowest calculated base/light contrast is **5.08:1** (NL-1), above 4.5:1. These numerical ratios do not prove legibility of finished badges at their real rendered sizes. Accent shades must not automatically be used for small lettering.
 
-## Famiglie cromatiche
+## National palette character
 
-- Italia: verde federale vs salvia civica, avorio e bronzo.
-- Inghilterra: blu navy vs blu ardesia, con oro antico vs argento.
-- Spagna: rosso istituzionale vs terracotta, crema e ocra.
-- Germania: antracite vs grigio blu, accenti acciaio e bronzo tenue.
-- Francia: blu istituzionale vs ardesia, toni chiari e rame rosato.
-- Portogallo: borgogna nobile vs blu atlantico, avorio e accenti diversi.
-- Paesi Bassi: arancio bruciato vs ocra ardesia, crema e rame.
-- Brasile: verde nazionale profondo vs verde più morbido, avorio e oro sabbia.
+- Italy: deep federal green versus civic sage; ivory and bronze.
+- England: navy versus slate, with antique gold for the first tier and silver for the second.
+- Spain: institutional red versus terracotta; cream and ochre.
+- Germany: charcoal versus blue-grey; steel and muted bronze.
+- France: institutional blue versus slate; pale grounds and copper-rose accents.
+- Portugal: historical burgundy versus Atlantic blue; ivory and differentiated accents.
+- Netherlands: burnt orange versus darker ochre; cream and copper.
+- Brazil: national forest green versus softer green; ivory and sand-gold.
 
-## Tipografia approvata
+## Approved typography
 
-- Denominazione ufficiale: **Roboto Slab Semibold 600**, in MAIUSCOLO, centrata e leggibile, massimo due righe equilibrate.
-- Elementi secondari/numerali/indicazioni: **IBM Plex Sans Condensed Medium 500**.
-- La prima divisione ha peso visivo più autorevole; seconda lievemente più asciutta, ma stesso sistema, senza usare otto font diversi.
-- Strutture di lettering: IT cartiglio classico; ENG nastro araldico; ES fascia arcuata; DE pannello geometrico; FR sigillo simmetrico; PT cartiglio storico curvo; NL fascia compatta; BR iscrizione su sigillo/medaglione.
-- Conservare accenti e grafie ufficiali dei nomi: CITTÀ, Unión, Sociétés, Régions, Atlântica, Associações. Non aggiungere date di fondazione inventate e non abbreviare senza approvazione.
-- Nei master SVG distribuiti, i caratteri saranno **convertiti in tracciati** (non redistribuire file font).
+- **Primary official names:** Roboto Slab Semibold 600, uppercase, centered, legible, ideally no more than two balanced lines.
+- **Secondary labels, numerals and detail text:** IBM Plex Sans Condensed Medium 500.
+- First-tier typography may carry slightly more visual authority. The same coordinated type system applies to all countries.
+- Lettering placement: IT classical cartouche; ENG heraldic ribbon; ES lightly arched band; DE geometric panel; FR symmetric seal; PT curved historical cartouche; NL compact band; BR inscription on seal or medallion.
+- Preserve all official names and diacritics exactly (e.g., CITTÀ, Unión, Sociétés, Régions, Atlântica, Associações); never invent founding dates or abbreviate names without approval.
+- Convert lettering to **vector paths** in final exported SVGs; do not redistribute font files.
 
-## Monocromia
+## Monochrome
 
-Varianti chiare/scure con un solo colore d'inchiostro, sfondo trasparente, senza gradienti o ombre. I numerali romani **I** e **II**, la forma e i simboli devono distinguere i livelli senza affidarsi al colore. La conversione automatica in grigio non è sufficiente.
+Provide light-ink and dark-ink versions on genuinely transparent backgrounds, without gradients or shadows. Shapes, symbols and Roman numerals **I / II** must distinguish tiers independently of color. Automatic grayscale conversion is not an acceptable final monochrome deliverable.

@@ -1,17 +1,17 @@
-# DIV-ASSET-P01 — Descrizione dei due campioni visivi approvati
+# DIV-ASSET-P01 — Approved Italian visual sample descriptions
 
-**Documento di ricostruzione/provenienza, non copia delle immagini originali.** Le due immagini PNG sono state approvate esplicitamente in conversazione dall'utente. La loro presenza in GitHub è ancora pendente, vedi [production-log.md](production-log.md).
+**Provenance/visual reconstruction brief, not a copy of the original images.** The original PNGs have been explicitly approved in conversation and stored in the persistent Library. Their GitHub binary upload remains pending; see [production-log.md](production-log.md).
 
-## IT-1 — Lega Federale (prima divisione)
+## IT-1 — Lega Federale (first tier)
 
-Stemma araldico verticale verde federale profondo con punta inferiore. Corona muraria superiore con merli e archi stilizzati. Bordo bronzo/oro antico con filetto avorio interno; campo centrale verde. Medaglione centrale circolare con anelli chiari e bronzo e **nodo federale intrecciato** avorio/bronzo. Alloro bilaterale che sale dai lati e si incrocia vicino alla punta. Nome `LEGA` sopra `FEDERALE` in grandi maiuscole serif avorio. Numerale romano `I` inferiore, separatori orizzontali bronzo. Flat, silhouette bilanciata, fondo trasparente.
+A tall traditional federal-green heraldic shield with a pointed bottom. At the top sits a stylized mural crown with battlements and arched openings. Antique bronze/gold edging encloses an ivory inner line and deep-green field. The large round central medallion contains an **interwoven federal unity knot** in ivory and bronze, surrounded by concentric bright and bronze rings. Symmetric laurels rise along both sides and meet near the base. The text reads `LEGA` above `FEDERALE` in prominent ivory slab-serif capitals, with Roman numeral `I` beneath and bronze horizontal dividers. Flat graphic finish, controlled symmetry, transparent background.
 
-## IT-2 — Lega delle Città (seconda divisione)
+## IT-2 — Lega delle Città (second tier)
 
-Stemma civico nella stessa famiglia, più snello e meno cerimoniale. Corona muraria stilizzata, bordo chiaro/bronzo, campo verde; grande **rosone circolare formato da torri cittadine astratte** disposte radialmente, centro bronzeo. Alloro laterale coordinato; nome `LEGA` sopra `DELLE CITTÀ` con accento corretto in grandi maiuscole. Numerale romano `II` inferiore, filetti bronzo e pointe finale. Flat e trasparente. La palette esecutiva è quella di IT-2 A03, non una campionatura automatica del PNG.
+A slimmer, less ceremonial shield within the same Italian visual family. Stylized civic mural crown, ivory/bronze trim, green central field; a large **circular rosette assembled from radially arranged abstract city towers** with a bronze center. Related flanking laurels, uppercase `LEGA` above `DELLE CITTÀ` with the correct grave accent, Roman numeral `II` at the bottom and restrained bronze dividers. Flat artwork on genuine transparency. Use IT-2's exact **A03 palette** for the final SVG, not auto-sampled colors from the PNG.
 
-## Differenze visive da mantenere
+## Differences to preserve
 
-- IT-1 = nodo di unione, tono federale, prima divisione. IT-2 = torri radiali, tono civico, secondo livello.
-- Stessa famiglia di scudo, corona urbana, serif, dettagli avorio/bronzo; separazione chiara anche senza scritte.
-- Nessuna variante SVG finalizzata al momento, né alterazioni del gioco.
+- IT-1 = interwoven unity knot and federal first-tier tone. IT-2 = radial towers and civic second-tier tone.
+- Shared Italian shield language, mural crowns, slab-serif lettering and ivory/bronze details; clearly different central symbols even without text.
+- No SVG variant has been finalized; no game integration is authorized.

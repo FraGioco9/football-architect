@@ -1,30 +1,32 @@
-# DIV-ASSET — Registro produzione e approvazioni
+# DIV-ASSET — Production and approval register
 
-Il progetto grafico A01–A05 è **approvato e terminato (5/5, 100%)**. Questo registro mantiene distinta la produzione campione dalla consegna finale dei 64 SVG.
+The A01–A05 design phase is **fully approved (5/5, 100%)**. This record distinguishes the progress of visual sample approval from the eventual delivery of 64 finalized SVGs.
 
-| Fase | Identità | Decisione | Immagini approvate | SVG finali |
+| Phase | Division | Approval | Approved image | Final SVGs |
 |---|---|---|---|---|
-| P01 | IT-1 Lega Federale | Approvata in conversazione | 1 campione PNG | 0/4 |
-| P01 | IT-2 Lega delle Città | Approvata in conversazione | 1 campione PNG | 0/4 |
-| P02 | ENG-1 Crown League | Approvata in conversazione | 1 campione PNG | 0/4 |
-| P02 | ENG-2 Shield League | Approvata in conversazione, **solo versione corretta** | 1 campione PNG | 0/4 |
-| P03+ | Restanti 12 stemmi | Da progettare/produrre | 0 | 0/48 |
+| P01 | IT-1 Lega Federale | Approved in conversation | 1 PNG sample | 0/4 |
+| P01 | IT-2 Lega delle Città | Approved in conversation | 1 PNG sample | 0/4 |
+| P02 | ENG-1 Crown League | Approved in conversation | 1 PNG sample | 0/4 |
+| P02 | ENG-2 Shield League | **Corrected version only** approved | 1 PNG sample | 0/4 |
+| P03+ | Remaining 12 divisions | Pending | 0 | 0/48 |
 
-## Integrità campioni approvati — PNG originali salvati nella Libreria persistente, non ancora caricati nel repository
+**Current total: 4/16 sample identities approved (25%). Final SVGs: 0/64.**
 
-- **IT-1**, nome originale locale `stemma_della_lega_federale_i.png`, RGBA 1254 × 1254 px, SHA-256 `bfd87c44cd029b0fac73cf077cb30ea64175cb2da68f7666ad61297acc976ede`.
-- **IT-2**, nome originale locale `emblema_lega_delle_città_ii.png`, RGBA 1254 × 1254 px, SHA-256 `0d8569f841fd1e822a0ad7c5e7a2319d8664e33a334378f4bd075526778db1e7`.
-- **ENG-1**, nome originale `emblema_della_crown_league_i.png`, RGBA 1254 × 1254 px, SHA-256 `8ff35e75fa7cfa4485f814e89abb6aefbef7eb293cf9d6c08cceb9508fa753fd`.
-- **ENG-2**, **versione corretta dopo richiesta di simmetria dello scudo centrale**, nome originale `emblema_araldico_shield_league_ii.png`, RGBA 1254 × 1254 px, SHA-256 `b72d6a5ced753f65083d60c0f218d48a9d4b1299d5e14212f4dc398dcf806534`.
+## Integrity: approved originals preserved in the Library, not in GitHub binaries
 
-**Conservazione confermata:** i quattro PNG originali approvati sono stati caricati nella Libreria persistente di ChatGPT in `/Football Architect/DIV-ASSET/`, con i nomi originali indicati sopra (IT-1, IT-2, ENG-1 ed ENG-2). **NON sono inclusi nei commit GitHub di questo branch**; il collegamento GitHub attuale non trasferisce automaticamente il binario dal runtime. Le impronte SHA-256 permettono di controllare una futura importazione su GitHub. Il backup è quindi **GitHub per i documenti + Libreria persistente per i quattro PNG**, non tutto su GitHub.
+- **IT-1** — original filename `stemma_della_lega_federale_i.png`; RGBA 1254 × 1254; SHA-256 `bfd87c44cd029b0fac73cf077cb30ea64175cb2da68f7666ad61297acc976ede`.
+- **IT-2** — original filename `emblema_lega_delle_città_ii.png`; RGBA 1254 × 1254; SHA-256 `0d8569f841fd1e822a0ad7c5e7a2319d8664e33a334378f4bd075526778db1e7`.
+- **ENG-1** — original filename `emblema_della_crown_league_i.png`; RGBA 1254 × 1254; SHA-256 `8ff35e75fa7cfa4485f814e89abb6aefbef7eb293cf9d6c08cceb9508fa753fd`.
+- **ENG-2**, **approved symmetry-corrected version** — original filename `emblema_araldico_shield_league_ii.png`; RGBA 1254 × 1254; SHA-256 `b72d6a5ced753f65083d60c0f218d48a9d4b1299d5e14212f4dc398dcf806534`.
 
-Le anteprime generate rappresentano approvazione **visiva/compositiva**; per i definitivi SVG applicare gli esatti HEX A03, la tipografia vettorializzata e le quattro varianti A04. Non reinterpretare un PNG come master SVG già esistente. Aggiungere al registro nuove approvazioni solo dopo consenso esplicito dell'utente.
+All four original PNGs are stored in the persistent ChatGPT Library folder `/Football Architect/DIV-ASSET/`. **These binary PNG files are not in the current GitHub branch.** Original filenames are deliberately retained so checksums continue to identify the approved snapshots. GitHub contains the design documents, SHA-256 metadata and visual briefs; the Library contains the actual PNGs.
 
-## Protocollo update futuro
+These visual samples establish approved composition only. Final SVGs must use the precise A03 HEX palette, outlined approved typography and all four A04 variants. Do not present a PNG as a completed master SVG.
 
-Aggiornare **solo branch documentale** e PR associata con nuove approvazioni, senza merge automatico, deploy, modifica database o integrazione del gioco. Il repository include una baseline di club separata: non toccare `docs/clubs`, `data/clubs.json` o altri ambiti fuori DIV-ASSET.
+## P02 correction history
 
-## P02 — stato revisione
+The earlier unapproved Shield League draft `emblema_shield_league_ii.png` displayed imperfect inner-shield symmetry. The user requested a correction. **Only** `emblema_araldico_shield_league_ii.png` was subsequently approved. The final A04 SVG must have an exactly mirrored inner shield outline, centered tip and cross, and correctly balanced quadrants. Never treat the superseded draft as approved.
 
-ENG-1 ed ENG-2 **approvati nella conversazione**. Per ENG-2, la prima bozza `emblema_shield_league_ii.png` non è la versione approvata: conservare esclusivamente `emblema_araldico_shield_league_ii.png` come campione di riferimento. I campioni sono PNG vettorial-style, **non** SVG finali A04. Le immagini originali sono nella Libreria personale `/Football Architect/DIV-ASSET/`; nel branch GitHub sono archiviati metadati di integrità e brief grafico, non i binari.
+## Future update protocol
+
+On each new explicit approval, update the **dedicated documentation branch and draft PR #69** in English; add sample preservation details to this register and the [inventory](inventory.json). Do not automatically merge, deploy, change databases or implement game assets. Do not change unrelated club documentation or division catalog data.

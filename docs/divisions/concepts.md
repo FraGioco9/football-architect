@@ -1,35 +1,35 @@
-# DIV-ASSET-A02 — Concept approvati (16/16)
+# DIV-ASSET-A02 — Approved concepts (16/16)
 
-**Approvazione completa dei concept in conversazione.** Paesi reali, divisioni fittizie. Lo stemma di un campionato deve essere un emblema di lega, non uno scudo di club.
+**All 16 concepts were approved in conversation.** The setting uses real countries and fictional competitions. The official names below retain their original languages by design.
 
-| ID | Divisione | Forma | Simbolo centrale | Dettaglio secondario |
+| ID | Official division name | Shape | Central symbol | Secondary details |
 |---|---|---|---|---|
-| IT-1 | Lega Federale | scudo federale classico | nodo araldico di unione nel sigillo centrale | corona muraria e allori sobri |
-| IT-2 | Lega delle Città | scudo civico coordinato, più snello | rosone formato da torri urbane astratte | fascia o sigillo civico semplificato |
-| ENG-1 | Crown League | crest britannico monumentale | corona stilizzata sul sigillo centrale | nastro e allori contenuti |
-| ENG-2 | Shield League | scudo britannico essenziale | scudo interno con partitura geometrica astratta | cornice robusta, senza corona |
-| ES-1 | Liga de la Unión | scudo con base arrotondata e impianto unitario | sole/rosetta radiale di unione | fascia centrale discreta |
-| ES-2 | Liga de las Regiones | scudo coordinato più sobrio | mosaico quadrangolare di territori | moduli regionali; evitare una rosetta solare identica a ES-1 |
-| DE-1 | Meisterliga | scudo geometrico rigoroso | stella centrale dell'eccellenza sportiva | eventuale disco calcistico astratto |
-| DE-2 | Vereinsliga | scudo geometrico coordinato | intreccio angolare di associazioni sportive | struttura modulare disciplinata |
-| FR-1 | Ligue des Sociétés | sigillo/medaglione elegante e simmetrico | monogramma o sigillo associativo originale | alloro sottile e nastro sobrio |
-| FR-2 | Ligue des Régions | medaglione coordinato e più snello | rosone territoriale radiale | bordo minimale |
-| PT-1 | Liga Lusitana | scudo lusitano storico e nobile | rosa dei venti o sfera astratta stilizzata | nastro minimale |
-| PT-2 | Liga Atlântica | scudo della stessa famiglia più aperto | onde geometriche atlantiche | piccola stella nautica facoltativa |
-| NL-1 | Oranjeliga | scudo iconico e compatto | leone astratto fortemente semplificato | pannello centrale leggibile; evitare corona gemella di ENG-1 |
-| NL-2 | Bondsklasse | scudo associativo essenziale | intreccio lineare di connessioni | bordo geometrico più sottile |
-| BR-1 | Liga das Associações | grande sigillo sportivo dinamico | associazioni convergenti in un simbolo radiale | ornamenti moderati |
-| BR-2 | Liga das Regiões | sigillo regionale coordinato | stella multipartita, diversa dal mosaico ES-2 | elementi radiali astratti |
+| IT-1 | Lega Federale | Traditional federal shield | Interwoven heraldic unity knot inside a round seal | Stylized mural crown and restrained laurels |
+| IT-2 | Lega delle Città | Related, slimmer civic shield | Rosette formed by abstract urban towers | Simplified civic band or seal |
+| ENG-1 | Crown League | Monumental British heraldic crest | Stylized crown within the central seal | Restrained ribbon and laurels |
+| ENG-2 | Shield League | Essential British shield | Inner shield with abstract geometric quartering | Strong outer frame; no crown |
+| ES-1 | Liga de la Unión | Unified, rounded-bottom shield | Sun-like radial rosette expressing union | Subtle central ribbon |
+| ES-2 | Liga de las Regiones | Sober variant of the national shield | Quadrangular mosaic representing regions | Territorial panels; avoid duplicating ES-1's solar rosette |
+| DE-1 | Meisterliga | Strictly geometric shield | Central star symbolizing sporting excellence | Optional abstract football disc |
+| DE-2 | Vereinsliga | Coordinated geometric shield | Angular interlocking club-association motif | Disciplined modular structure |
+| FR-1 | Ligue des Sociétés | Elegant, symmetric seal or medallion | Original association monogram or institutional seal | Fine laurels and restrained ribbon |
+| FR-2 | Ligue des Régions | Leaner related medallion | Radial regional rosette | Minimal outer border |
+| PT-1 | Liga Lusitana | Noble historical Lusitanian shield | Compass rose or simplified abstract sphere | Minimal ribbon |
+| PT-2 | Liga Atlântica | More open shield of the same family | Geometric Atlantic waves | Optional small nautical star |
+| NL-1 | Oranjeliga | Compact, iconic shield | Highly simplified abstract lion | Readable central panel; avoid an ENG-1-like crown |
+| NL-2 | Bondsklasse | Essential association shield | Linear network or interlaced association motif | Thinner geometric border |
+| BR-1 | Liga das Associações | Dynamic institutional sports seal | Converging associations forming a radial emblem | Moderate decorative elements |
+| BR-2 | Liga das Regiões | Related regional seal | Multipartite star, unlike the ES-2 mosaic | Abstract radial elements |
 
-## Coppie e gerarchie
+## National pairs and visual hierarchy
 
-- IT: sigillo nazionale dell'unione contro identità urbana. Prima classica, seconda civica e snella.
-- ENG: corona per la prima, scudo partito per la seconda; non riusare una corona identica su NL-1.
-- ES: unità radiale per la prima, mosaico di territori per la seconda. Evitare il rosone civico di IT-2.
-- DE: stella dell'eccellenza contro rete angolare di associazioni; geometria robusta per entrambe.
-- FR: sigillo monogrammatico istituzionale contro rosone territoriale; ornamento controllato.
-- PT: rosa dei venti storica contro onde atlantiche; stessa matrice araldica.
-- NL: leone nazionale astratto contro intreccio lineare; più grafico e compatto di ENG.
-- BR: associazioni convergenti contro stella multipartita; non riciclare il mosaico di ES-2.
+- **Italy:** National unity seal versus civic towers; classical first tier and slimmer urban second tier.
+- **England:** Crown versus quartered shield. Do not repeat the same crown on the Netherlands' top-tier badge.
+- **Spain:** Radial unifying symbol versus regional mosaic. Keep the first-tier rosette distinct from Italy's urban tower rosette.
+- **Germany:** Excellence star versus angular club associations, with disciplined, strong geometry.
+- **France:** Institutional monogrammatic seal versus regional rosette, both refined and restrained.
+- **Portugal:** Historical compass rose versus Atlantic waves, within related Lusitanian heraldry.
+- **Netherlands:** Abstract lion versus linear association links; more graphic and compact than the English marks.
+- **Brazil:** Converging associations versus multipartite regional star; do not duplicate Spain's mosaic.
 
-Queste differenze sono **vincoli di produzione proposti e accettati con A05**. Le immagini reali dovranno essere confrontate tra loro per confermarne la distinzione visiva.
+These differences are **A05-approved production constraints**. Visual similarity across actual final artwork still requires verification.

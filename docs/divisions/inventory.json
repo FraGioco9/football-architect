@@ -62,9 +62,9 @@
     {
       "id": "IT-1",
       "name": "Lega Federale",
-      "country": "Italia",
+      "country": "Italy",
       "tier": 1,
-      "mainSymbol": "nodo araldico di unione nel sigillo centrale",
+      "mainSymbol": "Interwoven heraldic unity knot inside a round seal",
       "palette": {
         "base": "#194D3A",
         "light": "#F3E8CC",
@@ -76,14 +76,14 @@
         "it-1-mono-dark.svg",
         "it-1-mono-light.svg"
       ],
-      "state": "concept-approved; SVG-not-produced"
+      "state": "concept-approved; visual-sample-approved; SVG-not-produced"
     },
     {
       "id": "IT-2",
       "name": "Lega delle Città",
-      "country": "Italia",
+      "country": "Italy",
       "tier": 2,
-      "mainSymbol": "rosone formato da torri urbane astratte",
+      "mainSymbol": "Rosette formed by abstract urban towers",
       "palette": {
         "base": "#405D4C",
         "light": "#F1EADD",
@@ -95,14 +95,14 @@
         "it-2-mono-dark.svg",
         "it-2-mono-light.svg"
       ],
-      "state": "concept-approved; SVG-not-produced"
+      "state": "concept-approved; visual-sample-approved; SVG-not-produced"
     },
     {
       "id": "ENG-1",
       "name": "Crown League",
-      "country": "Inghilterra",
+      "country": "England",
       "tier": 1,
-      "mainSymbol": "corona stilizzata sul sigillo centrale",
+      "mainSymbol": "Stylized crown within the central seal",
       "palette": {
         "base": "#17304A",
         "light": "#EEE4D2",
@@ -119,9 +119,9 @@
     {
       "id": "ENG-2",
       "name": "Shield League",
-      "country": "Inghilterra",
+      "country": "England",
       "tier": 2,
-      "mainSymbol": "scudo interno con partitura geometrica astratta",
+      "mainSymbol": "Inner shield with abstract geometric quartering",
       "palette": {
         "base": "#364C61",
         "light": "#F0EAE0",
@@ -138,9 +138,9 @@
     {
       "id": "ES-1",
       "name": "Liga de la Unión",
-      "country": "Spagna",
+      "country": "Spain",
       "tier": 1,
-      "mainSymbol": "sole/rosetta radiale di unione",
+      "mainSymbol": "Sun-like radial rosette expressing union",
       "palette": {
         "base": "#8D2F2A",
         "light": "#F6E9D2",
@@ -157,9 +157,9 @@
     {
       "id": "ES-2",
       "name": "Liga de las Regiones",
-      "country": "Spagna",
+      "country": "Spain",
       "tier": 2,
-      "mainSymbol": "mosaico quadrangolare di territori",
+      "mainSymbol": "Quadrangular mosaic representing regions",
       "palette": {
         "base": "#86402E",
         "light": "#F6E9D2",
@@ -176,9 +176,9 @@
     {
       "id": "DE-1",
       "name": "Meisterliga",
-      "country": "Germania",
+      "country": "Germany",
       "tier": 1,
-      "mainSymbol": "stella centrale dell'eccellenza sportiva",
+      "mainSymbol": "Central star symbolizing sporting excellence",
       "palette": {
         "base": "#242C31",
         "light": "#EDEAE2",
@@ -195,9 +195,9 @@
     {
       "id": "DE-2",
       "name": "Vereinsliga",
-      "country": "Germania",
+      "country": "Germany",
       "tier": 2,
-      "mainSymbol": "intreccio angolare di associazioni sportive",
+      "mainSymbol": "Angular interlocking club-association motif",
       "palette": {
         "base": "#3C4A50",
         "light": "#F1EFE8",
@@ -214,9 +214,9 @@
     {
       "id": "FR-1",
       "name": "Ligue des Sociétés",
-      "country": "Francia",
+      "country": "France",
       "tier": 1,
-      "mainSymbol": "monogramma o sigillo associativo originale",
+      "mainSymbol": "Original association monogram or institutional seal",
       "palette": {
         "base": "#243D6B",
         "light": "#EFF0E7",
@@ -233,9 +233,9 @@
     {
       "id": "FR-2",
       "name": "Ligue des Régions",
-      "country": "Francia",
+      "country": "France",
       "tier": 2,
-      "mainSymbol": "rosone territoriale radiale",
+      "mainSymbol": "Radial regional rosette",
       "palette": {
         "base": "#3F5B75",
         "light": "#F5F2EB",
@@ -252,9 +252,9 @@
     {
       "id": "PT-1",
       "name": "Liga Lusitana",
-      "country": "Portogallo",
+      "country": "Portugal",
       "tier": 1,
-      "mainSymbol": "rosa dei venti o sfera astratta stilizzata",
+      "mainSymbol": "Compass rose or simplified abstract sphere",
       "palette": {
         "base": "#713333",
         "light": "#F4E9D9",
@@ -271,9 +271,9 @@
     {
       "id": "PT-2",
       "name": "Liga Atlântica",
-      "country": "Portogallo",
+      "country": "Portugal",
       "tier": 2,
-      "mainSymbol": "onde geometriche atlantiche",
+      "mainSymbol": "Geometric Atlantic waves",
       "palette": {
         "base": "#285461",
         "light": "#F3E9DE",
@@ -290,9 +290,9 @@
     {
       "id": "NL-1",
       "name": "Oranjeliga",
-      "country": "Paesi Bassi",
+      "country": "Netherlands",
       "tier": 1,
-      "mainSymbol": "leone astratto fortemente semplificato",
+      "mainSymbol": "Highly simplified abstract lion",
       "palette": {
         "base": "#A74C17",
         "light": "#FFF0DC",
@@ -309,9 +309,9 @@
     {
       "id": "NL-2",
       "name": "Bondsklasse",
-      "country": "Paesi Bassi",
+      "country": "Netherlands",
       "tier": 2,
-      "mainSymbol": "intreccio lineare di connessioni",
+      "mainSymbol": "Linear network or interlaced association motif",
       "palette": {
         "base": "#844A21",
         "light": "#F5EBDD",
@@ -328,9 +328,9 @@
     {
       "id": "BR-1",
       "name": "Liga das Associações",
-      "country": "Brasile",
+      "country": "Brazil",
       "tier": 1,
-      "mainSymbol": "associazioni convergenti in un simbolo radiale",
+      "mainSymbol": "Converging associations forming a radial emblem",
       "palette": {
         "base": "#176347",
         "light": "#F4EEDB",
@@ -347,9 +347,9 @@
     {
       "id": "BR-2",
       "name": "Liga das Regiões",
-      "country": "Brasile",
+      "country": "Brazil",
       "tier": 2,
-      "mainSymbol": "stella multipartita, diversa dal mosaico ES-2",
+      "mainSymbol": "Multipartite star, unlike the ES-2 mosaic",
       "palette": {
         "base": "#2D6C58",
         "light": "#F9F5E8",
@@ -363,5 +363,6 @@
       ],
       "state": "concept-approved; SVG-not-produced"
     }
-  ]
+  ],
+  "githubDocumentationLanguage": "en"
 }
