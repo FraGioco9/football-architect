@@ -39,6 +39,7 @@ function element(properties = {}) {
 
 function render(saved = null, deny = false, reducedMotion = false) {
   const stored = new Map();
+  const navigation = [];
   if (saved !== null) stored.set("football-architect:language", saved);
   const options = optionMatches.map(match => element({ id: match[1], dataset: { language: match[2] }, textContent: match[3] }));
   const labels = [...html.matchAll(/data-i18n="([^"]+)"/g)].map(match => element({ dataset: { i18n: match[1] } }));
@@ -82,6 +83,7 @@ function render(saved = null, deny = false, reducedMotion = false) {
     localStorage,
     setTimeout(callback, delay) { const id = nextTimerId++; timers.set(id, { at: time + delay, callback }); return id; },
     clearTimeout(id) { timers.delete(id); },
+    location: { assign(href) { navigation.push(href); } },
     matchMedia(query) {
       assert.equal(query, "(prefers-reduced-motion: reduce)");
       return { matches: reducedMotion };
@@ -99,7 +101,7 @@ function render(saved = null, deny = false, reducedMotion = false) {
     time = end;
   };
   runInNewContext(js, { document, window }, { timeout: 2000 });
-  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, advance, timers };
+  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, advance, timers, navigation };
 }
 
 test("semantic full-page landing and custom five-language listbox", () => {
@@ -191,7 +193,8 @@ test("dismissible multilingual notice does not change menu or page flow", () => 
   r.options[4].fire("click");
   assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
   r.guide.fire("click");
-  assert.match(r.statusMessage.textContent, /^La guida/);
+  assert.deepEqual(r.navigation, ["./guide/"]);
+  assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
   r.close.fire("click");
   assert.equal(r.status.classList.contains("toast-exit"), true);
   r.advance(180);
@@ -269,8 +272,8 @@ test("repeated actions reset the timer, explicit dismiss cancels it, and touch d
   const r = render();
   r.app.fire("click");
   r.advance(4500);
-  r.guide.fire("click");
-  assert.match(r.statusMessage.textContent, /guide is not available/);
+  r.app.fire("click");
+  assert.match(r.statusMessage.textContent, /app is not available/);
   r.advance(4999);
   assert.equal(r.status.hidden, false);
   r.status.fire("pointerenter", { pointerType: "touch" });

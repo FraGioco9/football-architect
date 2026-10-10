@@ -8,15 +8,19 @@ The game-world baseline is **8 countries, 16 fictional division identities, and 
 
 ## Local landing page
 
-The repository also provides a standalone static landing page (`index.html`), styled in Graphite & Petrol. It is not a playable game and does not include active Guide or Home routes.
+The repository also provides a standalone static Landing page (`index.html`) and a short World Guide (`guide/index.html`) explaining Divisions and Clubs, styled in Graphite & Petrol. It is not a playable game and does not include an active internal Home.
 
-To preview locally on Windows, run `py -m http.server 2000 --bind 127.0.0.1` and open `http://127.0.0.1:2000/`. No npm, Docker, or build step is needed. Run `node --test tests/landing.test.mjs` for landing contract checks.
+To preview locally on Windows, run `py -m http.server 2000 --bind 127.0.0.1`; open `http://127.0.0.1:2000/` for the Landing or `http://127.0.0.1:2000/guide/` for the Guide. No npm, Docker, or build step is needed. Run `node --test tests/*.test.mjs` for all site contract checks.
 
 English is the default language, with Deutsch, Español, Français, and Italiano selectable through a custom accessible dropdown. The language preference is persisted locally.
 
-The Enter the app and Guide buttons display localized notices. Notices auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart the countdown when interaction ends. They animate in over 200 ms and out over 180 ms, with reduced-motion support. The layout is responsive, reserves a scrollbar gutter, and prevents text selection.
+The **Enter the app** button displays a localized unavailability notice; the **Guide** button navigates to `/guide/`. Notices auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart the countdown when interaction ends. They animate in over 200 ms and out over 180 ms, with reduced-motion support. The layout is responsive, reserves a scrollbar gutter, and prevents text selection.
 
-These static landing features do not enable gameplay or deployment.
+These static informational pages do not enable gameplay or deployment.
+
+## Guide
+
+The [Guide](guide/index.html) currently explains only **Divisions** (country competitions with first/second tiers of 20 planned places) and **Clubs** (teams with persistent identities independent of their competition). A left sidebar navigates between the two explanations and highlights the selected entry. At 320/390px it becomes compact horizontal navigation above the text. The same English-default five-language selector and saved language preference are shared with the Landing. This is **not** an asset directory or club catalogue. See [roadmap #67](https://github.com/FraGioco9/football-architect/issues/67).
 
 ## Current resources
 
