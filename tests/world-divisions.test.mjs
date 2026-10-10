@@ -213,6 +213,31 @@ test("COMPETITIONS-08 removes all provisional standings filters and highlights p
  assert.equal((page.match(/<th scope="col"/g)||[]).length,11);
 });
 
+test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club",()=>{
+ const css=read("assets/app.css"),renderer=read("assets/competition-page.js");
+ const generator=read("tools/generate-app-pages.mjs");
+ const page=read("app/world/competitions/_shared/index.html");
+ assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
+ assert.ok(css.includes(".app-world-club-crest-placeholder::before{content:\"\";"));
+ assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
+ assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
+ assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
+ assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
+ assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
+ assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
+ assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
+ assert.ok(!renderer.includes("name.textContent = club.fullName"));
+ assert.ok(generator.includes('class="app-world-club-crest-placeholder" data-club-crest='));
+ assert.equal((page.match(/<th scope="col"/g)||[]).length,11);
+ assert.ok(!page.includes("app-world-club-crest-placeholder"));
+ assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
+ for(const {division,file} of routes){
+  const html=read(file);
+  assert.ok(html.length<1200,division.id);
+  assert.ok(!html.includes("app-world-club-crest-placeholder"),division.id);
+ }
+});
+
 test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{
  const canonical=clubs;
  const byId=new Map(canonical.map(c=>[c.countryId+":"+c.clubId,c]));

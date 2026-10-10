@@ -58,20 +58,17 @@
     const th = document.createElement("th");
     th.scope = "row";
     th.className = "app-world-standing-club";
-    const abbr = document.createElement("span");
-    abbr.className = "app-world-club-code";
-    abbr.setAttribute("aria-hidden", "true");
-    abbr.textContent = club.abbr;
+    const identity = document.createElement("span");
+    identity.className = "app-world-club-identity";
+    const crest = document.createElement("span");
+    crest.className = "app-world-club-crest-placeholder";
+    crest.dataset.clubCrest = tr.dataset.worldClub;
+    crest.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
     name.className = "app-world-club-name";
-    if (club.primaryName) {
-      name.textContent = club.primaryName;
-      th.append(abbr, name);
-    } else {
-      // No authoritative primary name is recorded: display only the approved club code.
-      abbr.removeAttribute("aria-hidden");
-      th.appendChild(abbr);
-    }
+    name.textContent = club.primaryName || club.abbr;
+    identity.append(crest, name);
+    th.appendChild(identity);
     tr.appendChild(th);
     for (let i = 0; i < 9; i++) tr.appendChild(unknown());
     return tr;

@@ -79,7 +79,7 @@ const detailAppend = function detailAppend(d){
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
  const rows=cs.map(c=>`                <tr data-world-club="${encode(c.countryId)}-${c.clubId}">
                   <td class="app-world-stat-unknown">—</td>
-                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span class="app-world-club-name">${encode(c.fullName)}</span></th>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" data-club-crest="${encode(c.countryId)}-${c.clubId}" aria-hidden="true"></span><span class="app-world-club-name">${encode(primaryName(c)||c.abbr)}</span></span></th>
 ${Array.from({length:9},()=> '                  <td class="app-world-stat-unknown">—</td>').join("\n")}
                 </tr>`).join("\n");
  return `

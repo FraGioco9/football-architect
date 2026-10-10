@@ -115,15 +115,17 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     assert.ok(club.primaryName,"Expected an approved primary club name");
     assert.equal(row.dataset.worldClub,club.countryId+"-"+club.clubId);
     assert.equal(row.children.length,11,division.id);
-    assert.equal(row.children[1].children[0].textContent,club.abbr);
-    if(club.primaryName){
-     assert.equal(row.children[1].children.length,2);
-     assert.equal(row.children[1].children[1].textContent,club.primaryName);
-     assert.notEqual(row.children[1].children[1].textContent,club.fullName);
-    }else{
-     assert.equal(row.children[1].children.length,1);
-     assert.equal(row.children[1].children[0].attrs["aria-hidden"],undefined);
-    }
+    assert.equal(row.children[1].children.length,1);
+    const identity=row.children[1].children[0];
+    assert.equal(identity.className,"app-world-club-identity");
+    assert.equal(identity.children.length,2);
+    const crest=identity.children[0],name=identity.children[1];
+    assert.equal(crest.className,"app-world-club-crest-placeholder");
+    assert.equal(crest.dataset.clubCrest,club.countryId+"-"+club.clubId);
+    assert.equal(crest.attrs["aria-hidden"],"true");
+    assert.equal(name.className,"app-world-club-name");
+    assert.equal(name.textContent,club.primaryName);
+    assert.notEqual(name.textContent,club.fullName);
     assert.equal(row.children.filter(cell=>cell.textContent==="—").length,10);
    }
    assert.equal(r.body.className,"app-body");
