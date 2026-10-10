@@ -1,0 +1,74 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {existsSync,readFileSync} from "node:fs";
+import {fileURLToPath} from "node:url";
+
+const read = path => readFileSync(new URL("../"+path,import.meta.url),"utf8");
+const catalogue = JSON.parse(read("data/divisions.json"));
+const indexPath = "app/world/divisions/index.html";
+const index = read(indexPath);
+const routes = catalogue.divisions.map(division => ({
+  division,
+  file:"app/world/divisions/"+division.id.toLowerCase()+"/index.html"
+}));
+
+test("UI-WORLD catalogue maps to 8 country sections and exactly 16 detail URLs",()=>{
+  assert.equal(catalogue.countries.length,8);
+  assert.equal(catalogue.divisions.length,16);
+  assert.equal(new Set(catalogue.divisions.map(division=>division.id)).size,16);
+  for(const country of catalogue.countries){
+    assert.ok(index.includes('id="world-country-'+country.id.toLowerCase()+'"'));
+    assert.equal(catalogue.divisions.filter(division=>division.countryId===country.id).length,2);
+  }
+  for(const {division,file} of routes){
+    assert.ok(existsSync(new URL("../"+file,import.meta.url)),file);
+    assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
+    const detail=read(file);
+    assert.ok(detail.includes('id="division-detail-name"'));
+    assert.ok(detail.includes(division.name.replaceAll("&","&amp;")),division.id);
+    assert.ok(detail.includes('class="app-division-mark app-division-mark-large"'));
+    assert.ok(detail.includes('data-app-i18n="competitionUnavailable"'));
+    assert.ok(detail.includes('<dd>'+division.capacity+'</dd>'));
+    assert.ok(detail.includes('href="../" data-app-i18n="allDivisions"'));
+    assert.equal((detail.match(/aria-current="page"/g)||[]).length,1);
+    assert.match(detail,/id="app-nav-divisions"[^>]*aria-current="page"/);
+    assert.doesNotMatch(detail,/class="(?:league-table|match-result|club-roster)"/);
+  }
+});
+
+test("UI-WORLD routes resolve every static asset and direct navigation destination",()=>{
+  const all=[indexPath,...routes.map(({file})=>file)];
+  for(const path of all){
+    const html=read(path),base=new URL("../"+path,import.meta.url);
+    for(const [,target] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
+      if(target.startsWith("#")||target.startsWith("data:"))continue;
+      assert.doesNotMatch(target,/^https?:/,"no external URL is needed");
+      const url=new URL(target,base);
+      const candidate=url.pathname.endsWith("/")?new URL("index.html",url):url;
+      assert.ok(existsSync(fileURLToPath(candidate)),path+" -> "+target);
+    }
+    assert.ok(html.includes('id="app-nav-world-title"'));
+    assert.ok(html.includes('id="app-nav-settings"'));
+    assert.ok(html.includes('id="app-search-trigger"'));
+    assert.ok(html.includes('data-app-i18n="navWorld"'));
+  }
+  assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
+});
+
+test("UI-WORLD uses five localized sets and CSS-only temporary badges",()=>{
+  const script=read("assets/app.js");
+  const css=read("assets/app.css");
+  const template=read("templates/app-page.html");
+  for(const lang of ["en","de","es","fr","it"]){
+    assert.match(script,new RegExp('(?:^|\\s)'+lang+': \\{'));
+  }
+  for(const key of ["navWorld","divisionIntro","allDivisions","divisionTier1","divisionTier2","crestPlaceholder","competitionUnavailable","competitionNotice"]){
+    assert.equal((script.match(new RegExp(key+':',"g"))||[]).length,5,key);
+  }
+  assert.match(template,/@@FA_WORLD_SECTION@@/);
+  assert.match(template,/@@FA_WORLD_LINK@@/);
+  assert.match(css,/\.app-division-mark\{[^}]*border:1px dashed/);
+  assert.match(css,/@media\(max-width:620px\)/);
+  assert.ok(index.includes('src="../../../assets/flags/it.svg"'));
+  assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
+});
