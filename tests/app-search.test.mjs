@@ -33,7 +33,8 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
   assert.match(css,/\.app-search-trigger span\{display:none\}/);
   assert.match(css,/\.app-search-dialog\{width:min\(520px,calc\(100vw - 28px\)\);max-width:520px;max-height:min\(78dvh,560px\)/);
   assert.match(css,/\.app-search-panel\{[^}]*max-height:min\(78dvh,560px\)/);
-  assert.match(css,/\.app-search-result:hover\{background:#2a4b48;box-shadow:inset 3px 0 #7eb7a5\}/);
+  assert.match(css,/\.app-body a\.app-search-result:hover\{background:#355e55;box-shadow:inset 0 0 0 1px #648f81\}/);
+  assert.match(css,/\.app-body a\.app-search-result:focus-visible\{background:#355e55;box-shadow:inset 0 0 0 1px #648f81\}/);
   assert.match(css,/\.app-search-trigger\.app-search-escape-return:focus-visible\{outline:none\}/);
   assert.match(css,/\.app-search-input-row:focus-within\{box-shadow:inset 0 -2px #718c83\}/);
   assert.doesNotMatch(css,/\.app-search-description\{/);
@@ -373,4 +374,19 @@ test("SEARCH-01 native cancel suppresses focus highlight just like the first Esc
   assert.equal(app.dialog.open,false);
   assert.equal(app.document.activeElement,app.trigger);
   assert.equal(app.trigger.classList.values.has("app-search-escape-return"),true);
+});
+
+
+test("SEARCH-01 full-row suggestion hover beats transparent base background and supports reduced motion",()=>{
+  const base=css.match(/\.app-body a\.app-search-result\{([^}]+)\}/)?.[1] ?? "";
+  const hover=css.match(/\.app-body a\.app-search-result:hover\{([^}]+)\}/)?.[1] ?? "";
+  const focus=css.match(/\.app-body a\.app-search-result:focus-visible\{([^}]+)\}/)?.[1] ?? "";
+  assert.match(base,/display:flex/);
+  assert.match(base,/background:transparent/);
+  assert.match(base,/transition:background-color 120ms ease,box-shadow 120ms ease/);
+  assert.match(hover,/background:#355e55/);
+  assert.match(hover,/box-shadow:inset 0 0 0 1px #648f81/);
+  assert.equal(focus,hover,"Keyboard-selected suggestion matches full-row mouse hover");
+  assert.doesNotMatch(hover,/inset 3px 0/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[\s\S]*?\.app-body a\.app-search-result\{transition:none\}/);
 });
