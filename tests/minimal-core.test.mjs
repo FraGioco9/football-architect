@@ -502,10 +502,10 @@ test('CAL-02.4: bilingual controls, selection styling, no match simulation and u
  const calendar=scheduleCompetitionFixtures('PT-1',2026);
  const it=calendarPage(meta,state,'it',calendar,{view:'month',filter:'club',month:'2026-08'});
  const en=calendarPage(meta,state,'en',calendar,{view:'round',filter:'all',month:'2026-08',round:1});
- assert.match(it,/Calendario partite/);
+ assert.match(it,/<h1 class="fa-page-title">Calendario<\/h1>/);
  assert.match(it,/La mia squadra/);
  assert.match(it,/Tutte le partite/);
- assert.match(en,/Match calendar/);
+ assert.match(en,/<h1 class="fa-page-title">Calendar<\/h1>/);
  assert.match(en,/All matches/);
  assert.match(en,/Rounds/);
  const shell=layout(it,'it',null,false,{route:'/calendar',meta,state,playing:false});
