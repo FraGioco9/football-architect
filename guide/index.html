@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101A1D">
+  <meta name="description" content="Learn about divisions and clubs in Football Architect.">
+  <title>Guide — Football Architect</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="stylesheet" href="../assets/landing.css">
+  <link rel="stylesheet" href="../assets/guide.css">
+  <script src="../assets/landing.js" defer></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header wrapper">
+      <a class="brand-mark" href="../" aria-label="Football Architect home">FA</a>
+      <div class="language-control" id="language-control">
+        <span class="sr-only" id="language-label" data-i18n="language">Language</span>
+        <button type="button" class="language-trigger" id="site-language" role="combobox"
+                aria-labelledby="language-label language-value" aria-haspopup="listbox"
+                aria-expanded="false" aria-controls="language-options">
+          <span id="language-value">English</span>
+          <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="language-menu" id="language-options" role="listbox" aria-labelledby="language-label" hidden>
+          <div class="language-option" role="option" id="language-en" data-language="en" aria-selected="true">English</div>
+          <div class="language-option" role="option" id="language-de" data-language="de" aria-selected="false">Deutsch</div>
+          <div class="language-option" role="option" id="language-es" data-language="es" aria-selected="false">Español</div>
+          <div class="language-option" role="option" id="language-fr" data-language="fr" aria-selected="false">Français</div>
+          <div class="language-option" role="option" id="language-it" data-language="it" aria-selected="false">Italiano</div>
+        </div>
+      </div>
+    </header>
+    <main class="guide-main wrapper" id="main-content">
+      <nav class="guide-nav" aria-label="Page navigation"><a href="../" data-i18n="home">Home</a></nav>
+      <h1 id="page-title" data-i18n="guideTitle">Guide</h1>
+      <div class="guide-layout">
+        <aside class="guide-sidebar" aria-label="Guide sections">
+          <nav class="guide-sidebar-nav" aria-label="Guide sections">
+            <a class="guide-sidebar-link" href="#divisions" data-guide-section="divisions" data-i18n="guideDivisionsHeading" aria-current="location">Divisions</a>
+            <a class="guide-sidebar-link" href="#clubs" data-guide-section="clubs" data-i18n="guideClubsHeading">Clubs</a>
+          </nav>
+        </aside>
+        <div class="guide-content">
+        <section class="guide-section" id="divisions" aria-labelledby="guide-divisions-heading">
+          <h2 id="guide-divisions-heading" data-i18n="guideDivisionsHeading">Divisions</h2>
+          <p data-i18n="guideDivisionsText1">Divisions are the competitions in which clubs are organized within each country. Every country has two levels: a first division and a second division.</p>
+          <p data-i18n="guideDivisionsText2">Each division is designed for 20 clubs. A division describes the level of competition; it does not define a club's identity.</p>
+        </section>
+        <section class="guide-section" id="clubs" aria-labelledby="guide-clubs-heading">
+          <h2 id="guide-clubs-heading" data-i18n="guideClubsHeading">Clubs</h2>
+          <p data-i18n="guideClubsText1">Clubs are the football teams in Football Architect. Each club has its own name, country and unique three-letter abbreviation.</p>
+          <p data-i18n="guideClubsText2">Clubs are the teams that take part in divisions. Their identity remains separate from the division in which they compete.</p>
+        </section>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer wrapper">
+      <span>Football Architect</span>
+      <span data-i18n="footer">Work in progress</span>
+    </footer>
+  </div>
+</body>
+</html>

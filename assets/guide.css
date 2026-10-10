@@ -1,0 +1,32 @@
+/* Game concepts guide: shared Graphite & Petrol design system. */
+.brand-mark{text-decoration:none}
+.guide-main{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;padding-block:45px 75px}
+.guide-nav{margin-bottom:24px}
+.guide-nav a{color:var(--muted);font-size:13px;text-decoration:none}
+.guide-nav a:hover{color:var(--text);text-decoration:underline}
+.guide-nav a:focus-visible,.brand-mark:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.guide-main h1{margin:0 0 28px;font-size:30px;font-weight:760;line-height:1.25;letter-spacing:-.035em}
+.guide-layout{display:grid;grid-template-columns:210px minmax(0,1fr);align-items:start;gap:clamp(20px,4vw,54px);width:100%;min-width:0}
+.guide-sidebar{position:sticky;top:24px;align-self:start;min-width:0}
+.guide-sidebar-nav{display:flex;flex-direction:column;gap:5px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.guide-sidebar-link{display:flex;align-items:center;min-height:44px;min-width:0;padding:10px 13px;border:1px solid transparent;border-radius:9px;color:var(--muted);font-size:14px;font-weight:650;text-decoration:none;overflow-wrap:anywhere}
+.guide-sidebar-link:hover{background:rgba(91,142,121,.12);color:var(--text)}
+.guide-sidebar-link[aria-current="location"]{border-color:var(--border);background:rgba(41,116,91,.21);color:var(--text)}
+.guide-sidebar-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.guide-content{width:100%;max-width:850px;min-width:0}
+.guide-section{padding-block:24px;border-top:1px solid var(--line);scroll-margin-top:24px}
+.guide-section h2{margin:0 0 14px;font-size:19px;font-weight:710;line-height:1.35}
+.guide-section p{max-width:76ch;margin:0 0 12px;color:var(--muted);font-size:15px;line-height:1.65;overflow-wrap:break-word}
+.guide-section p:last-child{margin-bottom:0}
+@media(max-width:700px){
+ .guide-main{padding-block:25px 46px}
+ .guide-nav{margin-bottom:20px}
+ .guide-main h1{font-size:26px;margin-bottom:22px}
+ .guide-layout{grid-template-columns:minmax(0,1fr);gap:18px}
+ .guide-sidebar{position:static}
+ .guide-sidebar-nav{flex-direction:row}
+ .guide-sidebar-link{flex:1;justify-content:center;text-align:center}
+ .guide-section{padding-block:20px}
+ .guide-section h2{font-size:18px}
+ .guide-section p{font-size:14px}
+}
