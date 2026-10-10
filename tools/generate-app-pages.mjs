@@ -44,7 +44,7 @@ const worldNav = (href, active) => '            <a class="fa-shell-link' + (acti
 const worldSection = (content, active) => '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"' +
   (active ? '' : ' hidden') + '>\n' +
   '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="divisions">Divisions</h1>\n' +
-  content + '\n        </section>';
+  (content ? content + '\n' : '') + '        </section>';
 const indexContent = root => {
   const countries = divisionData.countries.map(country => {
     const divisions = divisionData.divisions.filter(division => division.countryId === country.id);
