@@ -663,24 +663,24 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 ---
 
-## CLUB-01 — Riepilogo corrente delle tabelle fornite dall'utente (10 ottobre 2026)
+## CLUB-01 — Current summary of user-provided tables (10 October 2026)
 
-**Fonte più recente:** [registro di riconciliazione con tutte le 320 posizioni]( https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309 ). La tabella è stata **fornita direttamente dall'utente in questa conversazione**; il contenuto integrale è nel commento collegato, distinto dagli audit storici riportati sopra. I contatori nei paragrafi delle passate precedenti sono snapshot ormai **superati**.
+**Most recent source:** [320-position reconciliation register](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309). The user **directly supplied this table in the conversation**; the complete text is in the linked comment and must be distinguished from the older audits above. Counts in earlier passes are **superseded historical snapshots**.
 
-- **318/320 (99,375%)** denominazioni complete ricevute nel nuovo testo (IT,3–40 + tutti i 40 club di ENG, ES, DE, FR, PT, NL, BR).
-- **IT,2:** denominazione già **approvata esplicitamente**: `AC Rinascenti Bologna` / `Associazione Calcio Rinascenti Bologna` / `RIN`; Bologna e Stadio delle Fornaci invariati.
-- **IT,1:** `US Velaria Torino` / **`Unione Sportiva Velaria Torino`**, **confermato nel nuovo messaggio dell'utente del 10 ottobre 2026**. L'identità `(IT,1)` è mantenuta e il testo completo è ora fonte diretta, non più una candidatura documentale.
-- **4 discrepanze con decisioni successive**: `FR,27` FC Émaux (non Émail); `FR,33` CS Garrigues (non Garrigue); `PT,34` *Atlético Clube das Fontes de Caldas da Rainha* (non *das Caldas da Rainha*); `BR,16` *EC Falésia Clara / Esporte Clube Falésia Clara de João Pessoa* (non Cabo Branco). Prevalgono le decisioni più recenti; le versioni ricevute sono conservate come traccia nel commento.
-- **Testi `fullName` disponibili con fonte diretta dell'utente o approvazione puntuale: 320/320 (100%)**. Composizione: 318 righe nel precedente incollato, IT,1 confermato nel nuovo messaggio, IT,2 già approvato esplicitamente. **Nessun `fullName` privo di testo utente**. Non equivale all'approvazione formale dell'intero registro riconciliato.
-- **Fonte disponibile ≠ approvazione complessiva**: le 318 righe sono state fornite dall'utente, IT,1 è stato ora confermato e IT,2 era già approvato; tuttavia la presentazione dei dati non viene interpretata automaticamente come approvazione formale conclusiva di tutto il registro. **CLUB-01 rimane aperta soltanto per gate finale di convalida progettuale e controllo delle quattro eccezioni già gestite**.
-- **CLUB-02 invariata:** 320/320 sigle approvate e univoche, `IT,2 = RIN`; roadmap **implementativa 0/5 (0%)**. Nessuna modifica al codice, branch, PR, merge, deploy o database.
+- **318/320 (99.375%)** full names received in the new submission (IT,3–40 and all 40 clubs from ENG, ES, DE, FR, PT, NL, BR).
+- **IT,2:** existing **explicitly approved** name: `AC Rinascenti Bologna` / `Associazione Calcio Rinascenti Bologna` / `RIN`; Bologna and Stadio delle Fornaci unchanged.
+- **IT,1:** `US Velaria Torino` / **`Unione Sportiva Velaria Torino`**, **confirmed in the user's new message of 10 October 2026**. Identity `(IT,1)` remains unchanged and the full name is now supported by direct user input rather than only by an earlier documentary candidate.
+- **Four discrepancies versus later decisions:** `FR,27` FC Émaux (not Émail); `FR,33` CS Garrigues (not Garrigue); `PT,34` *Atlético Clube das Fontes de Caldas da Rainha* (not *das Caldas da Rainha*); `BR,16` *EC Falésia Clara / Esporte Clube Falésia Clara de João Pessoa* (not Cabo Branco). Later decisions prevail; original submitted variants are preserved as evidence in the linked comment.
+- **Full-name text available from direct user submission or individual approval: 320/320 (100%)**. Breakdown: 318 rows from the earlier submission, IT,1 confirmed in a later message, IT,2 previously explicitly approved. **No `fullName` lacks user-provided text**. This does not mean the reconciled register as a whole has been formally approved.
+- **Available source ≠ full approval:** the 318 rows were user-provided, IT,1 later confirmed, and IT,2 previously approved; however, merely submitting data cannot be treated as final formal approval of the entire register. **CLUB-01 remains open only for final design validation and review of the four already handled exceptions.**
+- **CLUB-02 unchanged:** 320/320 unique approved abbreviations, `IT,2 = RIN`; **implementation roadmap 0/5 (0%)**. No code, branch, PR, merge, deployment or database changes were made during the historical entry.
 
 
-### CLUB-01 — Conferma documentale IT,1 del 10 ottobre 2026
+### CLUB-01 — Documentary confirmation of IT,1 on 10 October 2026
 
-- **Nuova fonte primaria: messaggio esplicito dell'utente in questa conversazione.** Club `IT,1`: `name = US Velaria Torino`, `fullName = Unione Sportiva Velaria Torino`.
-- Il nome completo non è più una candidatura di una risposta storica: **è stato fornito direttamente dall'utente**. Il registro da 320 posizioni del [commento #6091538309](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309) va letto con questo **aggiornamento prevalente** rispetto alla nota storica sul club IT,1.
-- **Copertura documentale aggiornata: 320/320 `fullName` (100%)** con testo utente o approvazione individuale. Composizione verificabile: **318 + 1 (IT,1) + 1 (IT,2) = 320**.
-- **Invariate** le approvazioni successive: IT,2 = **AC Rinascenti Bologna / Associazione Calcio Rinascenti Bologna / RIN**; FR,27 = FC Émaux; FR,33 = CS Garrigues; PT,34 = *Atlético Clube das Fontes de Caldas da Rainha*; BR,16 = EC Falésia Clara.
-- **CLUB-01 ancora aperta** per l'approvazione formale finale del registro, senza interpretare la sola trascrizione come conferma dell'intero catalogo. **Roadmap implementativa invariata 0/5 (0%)**; nessun codice, branch, PR, merge, deploy o database modificato.
+- **New primary source: explicit user message in this conversation.** Club `IT,1`: `name = US Velaria Torino`, `fullName = Unione Sportiva Velaria Torino`.
+- The full name is no longer merely a historical-response candidate: **the user directly supplied it**. The 320-position register in [comment #6091538309](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309) must be read with this **later overriding update** to the historical IT,1 note.
+- **Updated documentary coverage: 320/320 `fullName` (100%)** with user-provided text or individual approval. Verifiable breakdown: **318 + 1 (IT,1) + 1 (IT,2) = 320**.
+- **Later approvals unchanged:** IT,2 = **AC Rinascenti Bologna / Associazione Calcio Rinascenti Bologna / RIN**; FR,27 = FC Émaux; FR,33 = CS Garrigues; PT,34 = *Atlético Clube das Fontes de Caldas da Rainha*; BR,16 = EC Falésia Clara.
+- **CLUB-01 still open** for final formal approval of the register; transcribing the text must not be mistaken for full catalogue approval. **Implementation roadmap unchanged at 0/5 (0%)**; no code, branch, PR, merge, deployment or database modifications during this historical audit.
 
