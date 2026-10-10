@@ -177,3 +177,13 @@ test("COMPETITIONS-06 keyboard and click controls still isolate one of six tabs"
  assert.equal(panels[5].hidden,false);
  assert.equal(panels.filter(p=>!p.hidden).length,1);
 });
+
+test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass validation",async()=>{
+ const {Script}=await import("node:vm");
+ const runtime=read("assets/competition-page.js");
+ assert.doesNotThrow(()=>new Script(runtime,{filename:"competition-page.js"}));
+ assert.ok(runtime.includes('routeId.toLowerCase()'));
+ assert.ok(runtime.includes("data.approved !== false"));
+ assert.ok(runtime.includes("clubs.size === 320"));
+ assert.ok(runtime.includes("start().catch(fail)"));
+});
