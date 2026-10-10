@@ -20,6 +20,8 @@ test("SEARCH-01 identical searchable top bar and native dialog on all three stat
     assert.ok(source.includes('src="'+(path==="app/index.html"?"../":"../../")+'assets/app-search.js" defer'));
     assert.match(source, /<div class="fa-shell-search">[\s\S]*?<div class="fa-shell-time"/);
     assert.doesNotMatch(source, /href="[^"]*#(?:calendar|settings)"/);
+    assert.match(source, /<dialog id="app-search-dialog"[^>]+aria-describedby="app-search-scope"/);
+    assert.match(source, /<p id="app-search-scope" class="sr-only">/);
   }
 });
 
@@ -29,6 +31,11 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
     "@keyframes app-search-out","@media(max-width:390px)",
     "@media(prefers-reduced-motion:reduce)"]) assert.ok(css.includes(key),key);
   assert.match(css,/\.app-search-trigger span\{display:none\}/);
+  assert.match(css,/\.app-search-dialog\{width:min\(460px,calc\(100vw - 28px\)\);max-width:460px;max-height:min\(72dvh,490px\)/);
+  assert.match(css,/\.app-search-panel\{[^}]*max-height:min\(72dvh,490px\)/);
+  assert.match(css,/\.app-search-result:hover\{background:#203c3d\}/);
+  assert.match(css,/\.app-search-input-row:focus-within\{box-shadow:inset 0 -2px #718c83\}/);
+  assert.doesNotMatch(css,/\.app-search-description\{/);
   assert.match(css,/\.fa-shell-search\{flex:0 1 330px;min-width:0\}/);
   assert.match(css,/@media\(min-width:1025px\)\{\.fa-shell-club,\.fa-shell-time\{flex:1 1 0\}\.fa-shell-time\{justify-content:flex-end\}\}/);
   assert.match(css,/@media\(max-width:1024px\)\{\s*\.fa-shell-search\{flex:0 0 38px\}/);
@@ -60,6 +67,8 @@ test("SEARCH-01 supports exactly five UI locales and avoids unimplemented data/s
   assert.doesNotMatch(script,/fetch\(|indexedDB|localStorage|sessionStorage|Ctrl\+K|metaKey|ctrlKey|fakeFixtures/);
   assert.match(script,/new MutationObserver\(translate\)/);
   assert.match(script,/normalize\("NFD"\)/);
+  assert.match(script,/trigger\.querySelector\("span"\)/);
+  assert.doesNotMatch(script,/link\.append\(kind,label,desc\)/);
   assert.match(script,/dialog\.showModal\(\)/);
   assert.match(script,/dialog\.addEventListener\("cancel"/);
   assert.match(script,/trigger\.focus\(\{preventScroll:true\}\)/);
@@ -80,6 +89,7 @@ function simulate(language="en"){
       click(){this.clicked=true;this.emit("click")},
       closest(selector){return selector==="a.app-search-result"&&this.tagName==="A"?this:null},
       querySelectorAll(selector){return selector==="a.app-search-result"?this.children.flatMap(n=>n.children).filter(n=>n.className==="app-search-result"):[]},
+      querySelector(selector){return selector==="span"?this.visibleLabel??null:null},
       showModal(){this.open=true},
       close(){this.open=false;this.emit("close")}
     };
@@ -122,6 +132,7 @@ function simulate(language="en"){
   runInNewContext(script,{document,window:{matchMedia(){return {matches:true}}},MutationObserver,
     setTimeout(){throw Error("reduced motion must not schedule closing animation")},clearTimeout(){}},{timeout:2000});
   const trigger=nodes["app-search-trigger"],dialog=nodes["app-search-dialog"],input=nodes["app-search-input"],list=nodes["app-search-results"];
+  trigger.visibleLabel={textContent:"Search the app"};
   const links=()=>list.querySelectorAll("a.app-search-result");
   return {nodes,labels,document,trigger,dialog,input,list,links,changeLanguage:()=>onLanguageChange()};
 }
@@ -298,4 +309,26 @@ test("SEARCH-01 Enter, native result clicks, and focus restoration remain functi
   app.list.emit("click",{target:result});
   assert.equal(app.dialog.open,false);
   assert.equal(app.document.activeElement,app.trigger);
+});
+
+test("SEARCH-01 compact results show only label and kind, with descriptions still searchable",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  const first=app.links()[0];
+  assert.equal(first.children.length,2);
+  assert.equal(first.children[0].className,"app-search-name");
+  assert.equal(first.children[1].className,"app-search-kind");
+  app.input.value="320 documented clubs";
+  app.input.emit("input");
+  assert.equal(app.links()[0].href,"/app/#world-heading");
+});
+
+test("SEARCH-01 translates the visible desktop search trigger",()=>{
+  const app=simulate();
+  app.document.documentElement.lang="it";
+  app.changeLanguage();
+  assert.equal(app.trigger.visibleLabel.textContent,"Cerca nell’app");
+  app.document.documentElement.lang="de";
+  app.changeLanguage();
+  assert.equal(app.trigger.visibleLabel.textContent,"App durchsuchen");
 });

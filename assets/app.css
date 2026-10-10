@@ -119,35 +119,36 @@
 /* HOME-02 SEARCH-01: shared responsive top-bar search and animated modal. */
 .fa-shell-search{flex:0 1 330px;min-width:0}
 @media(min-width:1025px){.fa-shell-club,.fa-shell-time{flex:1 1 0}.fa-shell-time{justify-content:flex-end}}
-.app-search-trigger{display:flex;align-items:center;gap:10px;width:100%;height:38px;min-width:0;padding:0 12px;border:1px solid #41655f;border-radius:10px;background:#17383a;color:#d6e8e1;font:inherit;font-size:12px;text-align:left;cursor:pointer}
-.app-search-trigger svg{flex:none;color:#8dcdb7}
-.app-search-trigger:hover{background:#214847;border-color:#6a9986}
+.app-search-trigger{display:flex;align-items:center;gap:10px;width:100%;height:38px;min-width:0;padding:0 12px;border:1px solid #365452;border-radius:10px;background:#152e31;color:#d9e7e0;font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.app-search-trigger svg{flex:none;color:#9dbab0}
+.app-search-trigger:hover{background:#1a3738;border-color:#506c64}
 .app-search-trigger span{overflow:hidden;min-width:0;text-overflow:ellipsis;white-space:nowrap}
-.app-search-trigger:focus-visible,.app-search-close:focus-visible,.app-search-input-row input:focus-visible,.app-search-result:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-search-dialog{width:min(560px,calc(100% - 28px));max-width:560px;max-height:min(78svh,600px);margin:auto;padding:0;border:0;background:transparent;color:#f2f7f4;overflow:visible}
-.app-search-dialog::backdrop{background:rgba(5,12,17,.76);animation:app-search-backdrop-in 180ms ease-out both}
-.app-search-panel{display:flex;flex-direction:column;max-height:min(78svh,600px);min-height:0;overflow:hidden;border:1px solid #45635e;border-radius:16px;background:#122a2e;box-shadow:0 24px 75px rgba(0,0,0,.46);animation:app-search-in 180ms cubic-bezier(.2,.8,.2,1) both}
-.app-search-input-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid #304f4b}
-.app-search-input-row>svg{flex:none;color:#8ccab4}
+.app-search-trigger:focus-visible,.app-search-close:focus-visible,.app-search-result:focus-visible{outline:2px solid #a2c0b4;outline-offset:2px}
+.app-search-dialog{width:min(460px,calc(100vw - 28px));max-width:460px;max-height:min(72dvh,490px);margin:auto;padding:0;border:0;background:transparent;color:#f2f7f4;overflow:visible}
+.app-search-dialog::backdrop{background:rgba(5,12,17,.65);animation:app-search-backdrop-in 160ms ease-out both}
+.app-search-panel{display:flex;flex-direction:column;max-height:min(72dvh,490px);min-height:0;overflow:hidden;border:1px solid #385451;border-radius:12px;background:#142b2e;box-shadow:0 18px 52px rgba(0,0,0,.34);animation:app-search-in 160ms ease-out both}
+.app-search-input-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #344e4b}
+.app-search-input-row:focus-within{box-shadow:inset 0 -2px #718c83}
+.app-search-input-row>svg{flex:none;color:#94b8aa}
 .app-search-input-row input{flex:1 1 auto;min-width:0;width:100%;height:39px;padding:0 2px;border:0;background:transparent;color:#f2f7f4;font:inherit;font-size:16px;outline:none;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.app-search-input-row input:focus-visible{outline:none}
 .app-search-input-row input::placeholder{color:#a1bdb4}
 .app-search-input-row input::-webkit-search-cancel-button{cursor:pointer}
-.app-search-close{display:grid;place-items:center;flex:none;width:38px;height:38px;padding:0;border:1px solid #476963;border-radius:9px;background:#1d3b3d;color:#edf8f0;cursor:pointer}
-.app-search-close:hover{background:#2b5050}
-.app-search-scope{margin:0;padding:13px 17px 7px;color:#b0c8bf;font-size:12px;line-height:1.4}
-.app-search-status{margin:0;padding:5px 17px;color:#9ab9ad;font-size:11px;font-weight:750}
-.app-search-results{display:grid;gap:4px;min-height:0;margin:0;padding:4px 9px 13px;overflow-y:auto;overscroll-behavior:contain;list-style:none;scrollbar-width:thin;scrollbar-color:#486f63 transparent}
+.app-search-close{display:grid;place-items:center;flex:none;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:#c8d8d0;cursor:pointer}
+.app-search-close:hover{background:#244040}
+.app-search-status{margin:0;padding:9px 13px 4px;color:#9eb7af;font-size:11px;font-weight:650}
+.app-search-results{display:grid;gap:2px;min-height:0;margin:0;padding:2px 7px 10px;overflow-y:auto;overscroll-behavior:contain;list-style:none;scrollbar-width:thin;scrollbar-color:#486f63 transparent}
 .app-search-results::-webkit-scrollbar{width:5px}
 .app-search-results::-webkit-scrollbar-track{background:transparent}
 .app-search-results::-webkit-scrollbar-thumb{background:#486f63;border-radius:9px}
 .app-search-results[hidden]{display:none}
 .app-search-results li{min-width:0}
-.app-body a.app-search-result{display:grid;gap:5px;min-width:0;padding:12px 13px;border:1px solid transparent;border-radius:10px;color:#f2f7f4;text-decoration:none}
-.app-search-result:hover,.app-search-result:focus-visible{background:#224742;border-color:#578d7b}
-.app-search-kind{color:#8dd8b9;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}
-.app-search-name{font-size:14px;line-height:1.2}
-.app-search-description{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:#c1d3cb;font-size:12px;line-height:1.45}
-.app-search-empty{margin:0;padding:24px 17px 27px;color:#c6d6d0;font-size:13px}
+.app-body a.app-search-result{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:42px;padding:9px 11px;border:0;border-radius:8px;background:transparent;color:#f2f7f4;text-decoration:none}
+.app-search-result:hover{background:#203c3d}
+.app-search-result:focus-visible{background:#253f3e}
+.app-search-kind{color:#9cafaa;font-size:11px;font-weight:600;white-space:nowrap}
+.app-search-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:650;line-height:1.35}
+.app-search-empty{margin:0;padding:18px 13px 20px;color:#c6d6d0;font-size:13px}
 .app-search-empty[hidden]{display:none}
 .app-search-dialog.is-closing .app-search-panel{animation:app-search-out 140ms ease-in both}
 .app-search-dialog.is-closing::backdrop{animation:app-search-backdrop-out 140ms ease-in both}
@@ -163,7 +164,7 @@
 @media(max-width:390px){
   .fa-shell-search{flex:0 0 34px}
   .app-search-trigger{width:34px;height:34px}
-  .app-search-panel,.app-search-dialog{max-height:82svh}
+  .app-search-panel,.app-search-dialog{max-height:calc(100dvh - 28px)}
 }
 @media(prefers-reduced-motion:reduce){
   .app-search-dialog::backdrop,.app-search-dialog.is-closing::backdrop,

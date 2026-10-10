@@ -70,10 +70,7 @@
       const label = document.createElement("strong");
       label.className = "app-search-name";
       label.textContent = item.label;
-      const desc = document.createElement("span");
-      desc.className = "app-search-description";
-      desc.textContent = item.detail;
-      link.append(kind,label,desc);
+      link.append(label,kind);
       li.append(link);
       return li;
     });
@@ -86,6 +83,8 @@
   function translate() {
     const strings = words();
     trigger.setAttribute("aria-label",strings.trigger);
+    const triggerText = trigger.querySelector("span");
+    if (triggerText) triggerText.textContent = strings.trigger;
     heading.textContent = strings.trigger;
     input.setAttribute("aria-label",strings.trigger);
     input.placeholder = strings.placeholder;
