@@ -18,6 +18,65 @@ The **Explore app preview** CTA is a native, five-language link to `/app/dashboa
 
 These static informational pages do not enable gameplay or deployment.
 
+### Reproducible local DEV (ENV-02)
+
+Use Windows PowerShell in the repository root (the directory containing `README.md`, `index.html`, `assets/`, and `tests/`). DEV is a local-only preview of the current static site and is **not** a playable game or a deployment. Python 3 with the Windows `py` launcher and **Node.js 22** are the only tools needed; no Docker, npm install, build, backend, or database is required.
+
+**Setup and start (terminal 1):**
+
+```powershell
+git rev-parse --show-toplevel
+py --version
+node --version
+py -m http.server 2000 --bind 127.0.0.1
+```
+
+Run from the repository root so URL paths resolve correctly. Keep terminal 1 open while browsing `http://127.0.0.1:2000/`. Stop only this server with **Ctrl+C**. Binding to `127.0.0.1` prevents LAN exposure; do not replace it with `0.0.0.0` for normal local DEV.
+
+**Static checks (terminal 2, same repository root; server not required):**
+
+```powershell
+node --check assets/landing.js
+node --check assets/app.js
+node --check assets/app-search.js
+node --test (Get-ChildItem .\tests\*.test.mjs | Select-Object -ExpandProperty FullName)
+```
+
+All five existing `tests/*.test.mjs` modules use the built-in Node test runner. Verify each command exits successfully; a CI result does not replace the local browser smoke test.
+
+**HTTP smoke test (terminal 2, while terminal 1 serves port 2000):**
+
+```powershell
+$origin = 'http://127.0.0.1:2000'
+$routes = @('/', '/guide/', '/app/', '/app/dashboard/', '/app/calendar/', '/app/settings/')
+foreach ($route in $routes) {
+  $response = Invoke-WebRequest -Uri ($origin + $route) -UseBasicParsing -ErrorAction Stop
+  if ($response.StatusCode -ne 200) { throw "Unexpected HTTP status: $route" }
+  Write-Output ('{0}: HTTP {1}' -f $route, $response.StatusCode)
+}
+try {
+  Invoke-WebRequest -Uri ($origin + '/missing-env02/') -UseBasicParsing -ErrorAction Stop | Out-Null
+  throw 'An unknown route unexpectedly succeeded'
+} catch {
+  if (-not $_.Exception.Response -or [int]$_.Exception.Response.StatusCode -ne 404) { throw }
+  Write-Output 'Unknown route: HTTP 404 (expected)'
+}
+```
+
+All six listed URLs return HTTP **200**; the deliberately missing route returns HTTP **404**. `/app/` serves static `app/index.html` with HTTP 200, then **redirects in the browser via JavaScript** to `/app/dashboard/` (with a no-JavaScript meta-refresh fallback): it is **not** an HTTP 3xx redirect. Also manually open and refresh Landing, Guide, Dashboard, Calendar, and Settings, and check their internal links, styles and language selector across the five supported languages.
+
+**Reset only the DEV language preference:** in the browser developer console at `http://127.0.0.1:2000/`, run:
+
+```javascript
+localStorage.removeItem('football-architect:language');
+location.reload();
+```
+
+This removes only the stored language for that browser origin; it does **not** delete other site data or browser storage. English is the default. If local storage is unavailable, the UI should still work with the in-memory/default language. There are no current career saves, IndexedDB records, or remote databases to reset.
+
+**Errors and fixtures:** if `py`/`node` is not recognized, check the local Python 3 launcher/Node.js 22 installation and PATH. If port 2000 is occupied, stop the existing process you own before retrying; do not kill unrelated processes or silently use another port. If pages or assets return 404, run the server from the repository root and check the exact case-sensitive paths and trailing slashes. Use the existing in-test DOM/localStorage mocks and canonical `data/divisions.json` and `data/clubs.json` as read-only catalogue fixtures; **no separate fixture folder, test data generation, career simulation, or reset script exists or is required**.
+
+
 ## Global application search (HOME-02 SEARCH-01)
 
 Dashboard, Calendar and Settings now share a single top-bar search trigger. On desktop it resembles a compact search field; on narrow screens it becomes a magnifier button without adding tooltips, shortcuts or secondary filters. It opens a native modal with a short Graphite & Petrol entrance/exit animation (disabled with reduced-motion), keyboard focus management, Escape, arrow navigation, Enter selection and a clear empty state.
