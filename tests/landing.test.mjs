@@ -23,7 +23,7 @@ function render(saved=null,deny=false){
    setItem(k,v){if(deny)throw Error("blocked");stored.set(k,v)}
  };
  runInNewContext(js,{document,window:{localStorage,location:{assign(url){navigated.push(url)}}}},{timeout:2000});
- return {stored,labels,document,select,status,statusMessage,close,app,guide};
+ return {stored,labels,document,select,status,statusMessage,close,app,guide,navigated};
 }
 test("semantic single-title layout and native five-language selector",()=>{
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
@@ -52,13 +52,13 @@ test("language changes all text without reload and persists under a shared key",
  const denied=render(null,true);denied.select.value="fr";denied.select.fire("change");
  assert.equal(denied.document.documentElement.lang,"fr");
 });
-test("unavailable app announces status; Guide navigates to the atlas",()=>{
+test("unavailable app notice and working Guide navigation",()=>{
  const r=render();r.app.fire("click");
  assert.equal(r.status.hidden,false);
  assert.match(r.statusMessage.textContent,/not available yet/);
  r.select.value="it";r.select.fire("change");
  assert.match(r.statusMessage.textContent,/non è ancora disponibile/);
- r.guide.fire("click");assert.match(r.statusMessage.textContent,/^La guida/);
+ r.guide.fire("click");assert.deepEqual(r.navigated,["./guide/"]);
  r.close.fire("click");assert.equal(r.status.hidden,true);
  r.select.value="en";r.select.fire("change");assert.equal(r.status.hidden,true);
  r.app.fire("click");assert.equal(r.status.hidden,false);

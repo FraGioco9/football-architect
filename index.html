@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#101A1D">
   <meta name="description" content="Football Architect — explore an alternative football world.">
   <title>Football Architect</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="./favicon.ico">
   <link rel="stylesheet" href="./assets/landing.css">
   <script src="./assets/landing.js" defer></script>
 </head>
@@ -32,7 +34,10 @@
           <button type="button" class="cta cta-primary" data-destination="app" data-i18n="enter">Enter the app</button>
           <button type="button" class="cta cta-secondary" data-destination="guide" data-i18n="guide">Guide</button>
         </div>
-        <p class="action-status" id="action-status" role="status" aria-live="polite" hidden></p>
+        <div class="action-status" id="action-status" role="status" aria-live="polite" hidden>
+          <span id="action-status-message"></span>
+          <button type="button" class="status-close" id="status-close" aria-label="Dismiss notice"><span aria-hidden="true">×</span></button>
+        </div>
       </section>
       <section class="statistics" aria-labelledby="statistics-heading">
         <h2 class="sr-only" id="statistics-heading" data-i18n="universe">Football world</h2>

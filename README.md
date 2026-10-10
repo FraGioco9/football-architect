@@ -1,45 +1,48 @@
-# Football Architect — World catalogues and static website
+# Football Architect — Division and club catalogues
 
-Football Architect currently documents a fictional football universe. This repository includes a static Landing and a World Guide, but **no playable game engine**, active careers, matches, account system or automatic deployment.
+**Current status:** This repository contains the division and club catalogues and a standalone static Landing and a separate World Guide. It does not include a game engine, internal Home, login, saves, matches, or automatic deployment.
 
-## Run locally
+## Run the static website locally
 
-From the repository directory, run:
+Start a local static server from the repository directory on Windows:
 
-    py -m http.server 2000
+```powershell
+py -m http.server 2000
+```
 
-Open http://127.0.0.1:2000/ for the Landing and http://127.0.0.1:2000/guide/ for the World Guide. The guide fetches local JSON, so **use HTTP rather than opening HTML with file://**. No npm install, Docker, bundler or external network is required.
+Then visit `http://127.0.0.1:2000` for the Landing and `http://127.0.0.1:2000/guide/` for the World Guide. The Guide requires HTTP to fetch the local JSON catalogues; opening HTML directly with `file://` will not work. No npm, Docker, or build step is needed. Run the full site contract tests using `node --test tests/*.test.mjs`.
 
-Run checks with:
+**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The native language dropdown uses the Graphite & Petrol theme, while its expanded picker may still follow browser and operating-system conventions.
 
-    node --test tests/*.test.mjs
+**Enter the app** shows a localized notice because the game is not yet available; **Guide** navigates to the real World Guide. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
 
-The interface defaults to English. Deutsch, Español, Français and Italiano are also available; both pages share the optional local preference key football-architect:language.
+## World Guide
 
-The Landing has two actions: **Enter the app** provides an honest unavailability message; **Guide** opens the real World Guide. Search the guide by documented name, country, stable ID or abbreviation and filter by country and entry type.
+The independent World Guide follows [roadmap #67](https://github.com/FraGioco9/football-architect/issues/67). Browse **8 countries, 16 divisions and 320 clubs** directly from the canonical JSON data. Search documented names, IDs, abbreviations and historical names; filter by country or catalogue type; expand club records. Club lists are grouped by country **without inventing current tier memberships**. Historical cities and stadiums appear only as **unverified historical references**, never as confirmed present-day facts. The eight country flags are displayed, while unproduced division/club emblems use transparent text placeholders. The Guide and Landing share five languages and the same Graphite & Petrol styling; English remains the initial language.
 
-## Canonical catalogues
+## Available project assets
 
-- [data/divisions.json](data/divisions.json): **8 countries and 16 named divisions**, two tiers per country and a documented capacity of 20 places per division. The division catalogue does not assign clubs to current tiers.
-- [data/clubs.json](data/clubs.json): **320 club identities**, 40 per country, keyed by countryId and clubId. All 320 full names are documented and all 320 abbreviations approved. Only explicitly approved short names are presented as such.
-- **160 historical first-division references** optionally contain former names, city and stadium. They are **historical, not verified current assignments** and must not be described as confirmed club locations or venues.
-- [assets/flags](assets/flags): SVG country flags from the licensed [flag-icons project](https://github.com/lipis/flag-icons). See [MIT licence](assets/flags/LICENSE). The interface uses only the eight relevant flags.
-- [docs/clubs/fullnames-source.md](docs/clubs/fullnames-source.md) and [docs/clubs/registry-history.md](docs/clubs/registry-history.md): source and audit history for club names.
-- [docs/divisions/design-direction.md](docs/divisions/design-direction.md): approved division identity design direction.
+- **8 countries and 16 divisions** in [data/divisions.json](data/divisions.json): two fictional tiers per country, with a target capacity of 20 clubs per tier. These divisions have not been integrated into gameplay.
+- **320 club identities** in [data/clubs.json](data/clubs.json), with stable `(countryId,clubId)` keys, documented full names, and approved unique `abbr` values.
+- **160 historical first-division references** (old names, cities, and stadiums) in `firstDivisionReference` for the first 20 clubs in each country. Historical names are not necessarily the latest approved identities.
+- **SVG flags and their [license](assets/flags/LICENSE)**, including the eight countries represented in the league catalogue.
+- The [320-club full-name source](docs/clubs/fullnames-source.md), [club abbreviations and reconciliation history](docs/clubs/registry-history.md), and [approved division design direction](docs/divisions/design-direction.md).
 
-## Artwork boundaries
+## Visual-identity status
 
-Final league and club emblem packs are not yet integrated into this website. The World Guide intentionally shows labelled placeholders, not fabricated badges. Design of **16 division emblems** and **320 club crests** is separate, tracked in [DIV-ASSET #60](https://github.com/FraGioco9/football-architect/issues/60) and [CLUB-ASSET #61](https://github.com/FraGioco9/football-architect/issues/61). The guide implementation follows [UI-GUIDE #67](https://github.com/FraGioco9/football-architect/issues/67) and does not change the canonical catalogues.
+The [DIV-ASSET roadmap #60](https://github.com/FraGioco9/football-architect/issues/60) and [CLUB-ASSET roadmap #61](https://github.com/FraGioco9/football-architect/issues/61) remain the design references. The complete set of 16 final division crests and 320 final club crests is not yet finished. Do not invent crests or unapproved information. All 320 club full names are documented, though some have not received final joint validation. The historical game implementation covered only 160 first-tier clubs; the remaining 160 are documented designs, not integrated gameplay.
 
-## Corrections to preserve
+## Club identity corrections to preserve
 
-- IT,1 — US Velaria Torino, VEL.
-- IT,2 — AC Rinascenti Bologna, RIN (not AC Felsina Bologna).
-- FR,27 — FC Émaux, EMX.
-- FR,33 — CS Garrigues, GRG.
-- PT,34 — AC Fontes, FTS.
-- BR,16 — EC Falésia Clara, FCL.
+- IT,1: **US Velaria Torino**, `VEL`
+- IT,2: **AC Rinascenti Bologna**, `RIN` (not AC Felsina Bologna)
+- FR,27: **FC Émaux**, `EMX`
+- FR,33: **CS Garrigues**, `GRG`
+- PT,34: **AC Fontes**, `FTS`
+- BR,16: **EC Falésia Clara**, `FCL`
 
-## Provenance
+## Provenance and reset
 
-This project was reset to catalogue-only data before the static website was added. Prior application PRs and branches remain in Git history but do not represent current runtime functionality. No CI workflow here deploys the site or modifies databases.
+- Historical `main` baseline: `72d16de4a3ad410dab84fd9d1f42007a187a98b1`.
+- Reconciliation records: [issue #61, full comment](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309) and [archive](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091598842).
+- The reset was a **new commit**, not a destructive rewriting of Git history. Old branches and PRs may remain accessible, but do not represent the current `main`.
