@@ -180,16 +180,278 @@
           </dl>
           <section class="app-panel app-world-empty">
             <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>
-            <p data-app-i18n="competitionNotice">Club allocations, standings, fixtures and results have not been implemented.</p>
+            <p data-app-i18n="competitionNotice">No active season: league positions, fixtures and results are not available.</p>
           </section>
           <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
             <span data-app-i18n="otherDivision">Other division in this country</span>
             <a href="../pt-1/"><strong>Liga Lusitana</strong><span data-app-i18n="divisionTier1">First division</span></a>
           </nav>
           <div class="app-world-sections">
-            <section class="app-panel app-world-section" aria-labelledby="division-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <p class="app-world-section-empty" data-app-i18n="standingsEmpty">No standings are available because no season has started.</p>
+            <section class="app-panel app-world-section app-world-standings" aria-labelledby="division-standings-heading">
+              <div class="app-world-standings-heading">
+                <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+                <span class="app-world-standings-count">20 / 20</span>
+              </div>
+              <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.</p>
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <tr data-world-club="PT-21">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BAL</span><span class="app-world-club-name">Sport Clube Barroalto de Barcelos</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-22">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MLT</span><span class="app-world-club-name">Futebol Clube Maralto de Matosinhos</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-23">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">PNH</span><span class="app-world-club-name">Atlético Clube dos Pinhais de Espinho</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-24">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MRE</span><span class="app-world-club-name">Grupo Desportivo Marevento da Póvoa de Varzim</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-25">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">CDR</span><span class="app-world-club-name">União Desportiva do Cais Dourado de Vila Nova de Gaia</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-26">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">TGV</span><span class="app-world-club-name">Futebol Clube Tâmegaviva de Amarante</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-27">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">TMA</span><span class="app-world-club-name">Sport Clube Termas Altas de Chaves</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-28">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">TUV</span><span class="app-world-club-name">Grupo Desportivo Tua Verde de Mirandela</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-29">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LMR</span><span class="app-world-club-name">Atlético Clube Lameiral de Lamego</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-30">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">SRF</span><span class="app-world-club-name">União Desportiva Serra Fria da Guarda</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-31">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LFC</span><span class="app-world-club-name">Grupo Desportivo Lanifício da Covilhã</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-32">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">DNM</span><span class="app-world-club-name">Futebol Clube Dunamar da Figueira da Foz</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-33">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">PCL</span><span class="app-world-club-name">Sport Clube Pedra Clara de Alcobaça</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-34">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FTS</span><span class="app-world-club-name">Atlético Clube das Fontes de Caldas da Rainha</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-35">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LNH</span><span class="app-world-club-name">Grupo Desportivo das Linhas de Torres Vedras</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-36">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MBR</span><span class="app-world-club-name">Futebol Clube Montebruma de Sintra</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-37">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">TJS</span><span class="app-world-club-name">União Desportiva Tejo Sul de Almada</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-38">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MOL</span><span class="app-world-club-name">Atlético Clube do Molhe de Sines</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-39">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FLS</span><span class="app-world-club-name">Sport Clube Falésia de Lagos</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="PT-40">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ARX</span><span class="app-world-club-name">Futebol Clube Arade de Portimão</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                </tbody>
+              </table>
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
               <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
@@ -197,7 +459,7 @@
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
               <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
-              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 planned places have no confirmed club assignments yet.</p>
+              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 clubs listed above represent a provisional allocation, not confirmed season participation.</p>
             </section>
           </div>
         </section>

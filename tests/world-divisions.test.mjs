@@ -121,3 +121,39 @@ test("COMPETITIONS-01 uses a trophy sidebar icon, no subtitle, and rounded flags
     }
   }
 });
+
+
+test("STANDINGS-01 includes all 320 clubs without claiming season results",()=>{
+  const clubs=JSON.parse(read("data/clubs.json")).clubs;
+  const seen=new Set();
+  for(const {division,file} of routes){
+    const html=read(file);
+    const expected=clubs.filter(club=>club.countryId===division.countryId &&
+      (division.tier===1?club.clubId<=20:club.clubId>20)).sort((a,b)=>a.clubId-b.clubId);
+    assert.equal(expected.length,20,division.id);
+    assert.equal((html.match(/<tr data-world-club="/g)||[]).length,20,file);
+    assert.ok(html.includes('<table class="app-world-standing-table">'),file);
+    assert.ok(html.includes('data-app-i18n="standingsCaption"'),file);
+    assert.ok(html.includes('data-app-i18n="standingsEmpty"'),file);
+    assert.ok(html.includes('data-app-i18n="clubsEmpty"'),file);
+    assert.doesNotMatch(html,/<td[^>]*>\d+<\/td>/,"no invented statistics");
+    let previous=-1;
+    for(const club of expected){
+      const key=club.countryId+"-"+club.clubId;
+      const position=html.indexOf('data-world-club="'+key+'"');
+      assert.ok(position>previous,division.id+" registry order "+key);
+      previous=position;
+      assert.ok(html.includes(club.fullName.replaceAll("&","&amp;").replaceAll("<","&lt;")),key);
+      assert.ok(html.includes('>'+club.abbr+'</span>'),key);
+      assert.ok(!seen.has(key),"duplicate "+key);
+      seen.add(key);
+      if(division.tier===1)assert.ok(club.firstDivisionReference,key);
+    }
+  }
+  assert.equal(seen.size,320);
+  const app=read("assets/app.js");
+  for(const key of ["standingsCaption","standingsPosition","standingsClub","standingsPlayed","standingsWon",
+    "standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference","standingsPoints"])
+    assert.equal((app.match(new RegExp(key+":","g"))||[]).length,5,key);
+  assert.match(read("assets/app.css"),/\.app-world-standing-table/);
+});

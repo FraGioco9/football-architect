@@ -180,16 +180,278 @@
           </dl>
           <section class="app-panel app-world-empty">
             <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>
-            <p data-app-i18n="competitionNotice">Club allocations, standings, fixtures and results have not been implemented.</p>
+            <p data-app-i18n="competitionNotice">No active season: league positions, fixtures and results are not available.</p>
           </section>
           <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
             <span data-app-i18n="otherDivision">Other division in this country</span>
             <a href="../de-2/"><strong>Vereinsliga</strong><span data-app-i18n="divisionTier2">Second division</span></a>
           </nav>
           <div class="app-world-sections">
-            <section class="app-panel app-world-section" aria-labelledby="division-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <p class="app-world-section-empty" data-app-i18n="standingsEmpty">No standings are available because no season has started.</p>
+            <section class="app-panel app-world-section app-world-standings" aria-labelledby="division-standings-heading">
+              <div class="app-world-standings-heading">
+                <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+                <span class="app-world-standings-count">20 / 20</span>
+              </div>
+              <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.</p>
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <tr data-world-club="DE-1">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MGR</span><span class="app-world-club-name">Sportverein Morgenrot Berlin</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-2">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HST</span><span class="app-world-club-name">Fußballclub Hafenstern Hamburg</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-3">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">SBW</span><span class="app-world-club-name">Turn- und Sportverein Silberwald München</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-4">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RHG</span><span class="app-world-club-name">Sport-Club Rheinglanz Köln</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-5">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HBL</span><span class="app-world-club-name">Verein für Bewegungsspiele Höhenblick Stuttgart</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-6">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LHD</span><span class="app-world-club-name">Sportverein Lindenhof Leipzig</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-7">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">EBG</span><span class="app-world-club-name">Dresdner Sport-Club Elbengrün</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-8">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">NDW</span><span class="app-world-club-name">Fußballclub Nordweide Bremen</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-9">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">EFD</span><span class="app-world-club-name">Turn- und Sportverein Eichenfeld Hannover</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-10">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">SHN</span><span class="app-world-club-name">Freiburger Sportverein Sonnenhain</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-11">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BGL</span><span class="app-world-club-name">Fußballclub Burglicht Nürnberg</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-12">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RBG</span><span class="app-world-club-name">Bonner Fußballverein Rheinbogen</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-13">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">WFD</span><span class="app-world-club-name">Sport-Club Westfelde Dortmund</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-14">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">KPH</span><span class="app-world-club-name">Essener Sportverein Kupferhain</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-15">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">AFD</span><span class="app-world-club-name">Düsseldorfer Fußballclub Auenfeld</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-16">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LCH</span><span class="app-world-club-name">Augsburger Turn- und Sportverein Lechhöhe</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-17">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FWD</span><span class="app-world-club-name">Kieler Sport-Club Fördewind</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-18">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RBT</span><span class="app-world-club-name">Mainzer Fußballverein Rebental</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-19">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HFT</span><span class="app-world-club-name">Rostocker Fußballclub Hafentor</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="DE-20">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">WKR</span><span class="app-world-club-name">Münsteraner Sportverein Waldkrone</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                </tbody>
+              </table>
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
               <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
@@ -197,7 +459,7 @@
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
               <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
-              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 planned places have no confirmed club assignments yet.</p>
+              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 clubs listed above represent a provisional allocation, not confirmed season participation.</p>
             </section>
           </div>
         </section>

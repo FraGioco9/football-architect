@@ -208,6 +208,30 @@ html{scroll-padding-top:72px}
 @media(max-width:620px){.app-world-grid{grid-template-columns:1fr}.app-world-hero{align-items:flex-start;gap:15px}.app-division-mark-large{width:72px;height:72px;min-width:72px;font-size:16px}.app-world-facts{grid-template-columns:1fr}.app-world-country h2{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.app-division-card{transition:none}}
 
+/* UI-WORLD: initial club allocation and unranked preseason standings. */
+.app-world-standings{gap:14px;min-height:0}
+.app-world-standings-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.app-world-standings-heading h2{margin:0}
+.app-world-standings-count{padding:5px 10px;border:1px solid #3d6559;border-radius:9px;background:#1b3c36;color:#c6ead8;font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
+.app-world-standings-note{margin:0;padding:12px 14px;border:1px solid #365a53;border-radius:9px;background:#152f2d;color:#c2d5cc;font-size:12px;line-height:1.65}
+.app-world-standing-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;color:var(--text)}
+.app-world-standing-table tr>*{padding:10px 7px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle;font-variant-numeric:tabular-nums}
+.app-world-standing-table thead th{background:#193637;color:#bed2ca;font-size:11px;font-weight:750;white-space:nowrap}
+.app-world-standing-table thead th:first-child{border-top-left-radius:9px}
+.app-world-standing-table thead th:last-child{border-top-right-radius:9px}
+.app-world-standing-table tr>*:first-child{width:44px}
+.app-world-standing-table tr>*:not(:first-child):not(:nth-child(2)){width:6%}
+.app-world-standing-table tbody tr:last-child>*{border-bottom:0}
+.app-world-standing-table tbody tr:hover{background:rgba(100,203,169,.045)}
+.app-world-standing-table .app-world-standing-name-head{text-align:left}
+.app-world-standing-table .app-world-standing-club{min-width:0;text-align:left;font-weight:650}
+.app-world-standing-club{display:flex;align-items:center;gap:10px}
+.app-world-club-code{display:grid;place-items:center;flex:none;min-width:38px;min-height:30px;padding:3px 5px;border:1px solid #40695e;border-radius:8px;background:#1a3b35;color:#b6e4cc;font-size:10px;font-weight:800}
+.app-world-club-name{min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.45}
+.app-world-standing-table .app-world-stat-unknown{color:#8ca9a0}
+@media(max-width:1100px){.app-world-standing-table tr>*:nth-child(7),.app-world-standing-table tr>*:nth-child(8),.app-world-standing-table tr>*:nth-child(9){display:none}}
+@media(max-width:620px){.app-world-standings{padding:13px 10px}.app-world-standing-table tr>*{padding:10px 4px}.app-world-standing-table tr>*:nth-child(n+4):not(:last-child){display:none}.app-world-standing-table tr>*:first-child{width:32px}.app-world-standing-table tr>*:nth-child(3){width:32px}.app-world-standing-table tr>*:last-child{width:39px}.app-world-standing-club{gap:6px}.app-world-club-code{min-width:30px;min-height:27px;font-size:9px}.app-world-club-name{font-size:11px}}
+
 /* UI-WORLD: complete division views without fabricated sporting records. */
 .app-world-related{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:18px 0;color:var(--muted);font-size:12px}
 .app-world-related>a{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 13px;border:1px solid #41695e;border-radius:10px;background:#173634;color:var(--text);font-size:12px}

@@ -36,6 +36,8 @@ const pages = {
 };
 
 const divisionData = JSON.parse(readFileSync(new URL("../data/divisions.json", import.meta.url), "utf8"));
+const clubData = JSON.parse(readFileSync(new URL("../data/clubs.json", import.meta.url), "utf8"));
+if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new Error("Expected 320 canonical club identities");
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
 const worldNav = (href, active) => '            <a class="fa-shell-link' + (active ? ' is-active' : '') +
@@ -64,19 +66,40 @@ const indexContent = root => {
   }).join("\n");
   return '          <div class="app-world-countries">\n' + countries + '\n          </div>';
 };
-const detailAppend = function detailAppend(division){
-  const other=divisionData.divisions.find(d=>d.countryId===division.countryId && d.id!==division.id);
-  if(!other)throw new Error("Missing counterpart: "+division.id);
-  const otherTier=other.tier===1?"divisionTier1":"divisionTier2";
-  return `
+const detailAppend = function newAppend(d) {
+ const other=divisionData.divisions.find(x=>x.countryId===d.countryId&&x.id!==d.id);
+ if(!other)throw new Error("Missing counterpart "+d.id);
+ const otherTier=other.tier===1?"divisionTier1":"divisionTier2";
+ const clubs=clubData.clubs.filter(c=>c.countryId===d.countryId&&(d.tier===1?c.clubId<=20:c.clubId>20)).sort((a,b)=>a.clubId-b.clubId);
+ if(clubs.length!==d.capacity||new Set(clubs.map(c=>c.clubId)).size!==d.capacity)throw new Error("Incomplete initial allocation "+d.id);
+ const headers=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"]].map(([key,value],index)=>'                  <th scope="col"'+(index===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+value+'</th>').join("\n");
+ const rows=clubs.map(c=>`                <tr data-world-club="${encode(c.countryId)}-${c.clubId}">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span class="app-world-club-name">${encode(c.fullName)}</span></th>${Array(8).fill('\n                  <td class="app-world-stat-unknown">—</td>').join("")}
+                </tr>`).join("\n");
+ return `
           <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
             <span data-app-i18n="otherDivision">Other division in this country</span>
             <a href="../${other.id.toLowerCase()}/"><strong>${encode(other.name)}</strong><span data-app-i18n="${otherTier}">${other.tier===1?"First division":"Second division"}</span></a>
           </nav>
           <div class="app-world-sections">
-            <section class="app-panel app-world-section" aria-labelledby="division-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <p class="app-world-section-empty" data-app-i18n="standingsEmpty">No standings are available because no season has started.</p>
+            <section class="app-panel app-world-section app-world-standings" aria-labelledby="division-standings-heading">
+              <div class="app-world-standings-heading">
+                <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+                <span class="app-world-standings-count">${clubs.length} / ${d.capacity}</span>
+              </div>
+              <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.</p>
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+${headers}
+                  </tr>
+                </thead>
+                <tbody>
+${rows}
+                </tbody>
+              </table>
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
               <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
@@ -84,7 +107,7 @@ const detailAppend = function detailAppend(division){
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
               <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
-              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 planned places have no confirmed club assignments yet.</p>
+              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 clubs listed above represent a provisional allocation, not confirmed season participation.</p>
             </section>
           </div>`;
 };
@@ -109,7 +132,7 @@ const detailContent = (division, root) => {
     '          </dl>\n' +
     '          <section class="app-panel app-world-empty">\n' +
     '            <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>\n' +
-    '            <p data-app-i18n="competitionNotice">Club allocations, standings, fixtures and results have not been implemented.</p>\n' +
+    '            <p data-app-i18n="competitionNotice">No active season: league positions, fixtures and results are not available.</p>\n' +
     '          </section>' + detailAppend(division);
 };
 const worldPageReplacements = (depth, division = null) => {

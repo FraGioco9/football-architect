@@ -180,16 +180,278 @@
           </dl>
           <section class="app-panel app-world-empty">
             <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>
-            <p data-app-i18n="competitionNotice">Club allocations, standings, fixtures and results have not been implemented.</p>
+            <p data-app-i18n="competitionNotice">No active season: league positions, fixtures and results are not available.</p>
           </section>
           <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
             <span data-app-i18n="otherDivision">Other division in this country</span>
             <a href="../fr-1/"><strong>Ligue des Sociétés</strong><span data-app-i18n="divisionTier1">First division</span></a>
           </nav>
           <div class="app-world-sections">
-            <section class="app-panel app-world-section" aria-labelledby="division-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <p class="app-world-section-empty" data-app-i18n="standingsEmpty">No standings are available because no season has started.</p>
+            <section class="app-panel app-world-section app-world-standings" aria-labelledby="division-standings-heading">
+              <div class="app-world-standings-heading">
+                <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+                <span class="app-world-standings-count">20 / 20</span>
+              </div>
+              <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.</p>
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <tr data-world-club="FR-21">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BSP</span><span class="app-world-club-name">Football Club Briseport du Havre</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-22">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">VPT</span><span class="app-world-club-name">Union Sportive du Vieux-Pont de Rouen</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-23">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ONV</span><span class="app-world-club-name">Association Sportive Orneval de Caen</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-24">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HND</span><span class="app-world-club-name">Cercle Sportif des Hunaudières du Mans</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-25">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FGV</span><span class="app-world-club-name">Sporting Club Forgeval de Saint-Étienne</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-26">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">VLC</span><span class="app-world-club-name">Association Sportive Volcanis de Clermont-Ferrand</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-27">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">EMX</span><span class="app-world-club-name">Football Club des Émaux de Limoges</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-28">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">UCL</span><span class="app-world-club-name">Union Sportive du Clain de Poitiers</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-29">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MVE</span><span class="app-world-club-name">Racing Club Marévent de La Rochelle</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-30">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ADL</span><span class="app-world-club-name">Association Sportive Adourline de Bayonne</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-31">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">GVC</span><span class="app-world-club-name">Football Club Gaveclair de Pau</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-32">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">TRM</span><span class="app-world-club-name">Union Sportive Tramontane de Perpignan</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-33">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">GRG</span><span class="app-world-club-name">Cercle Sportif des Garrigues de Nîmes</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-34">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RMP</span><span class="app-world-club-name">Stade des Remparts d’Avignon</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-35">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FTV</span><span class="app-world-club-name">Association Sportive Fontvive d’Aix-en-Provence</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-36">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LCB</span><span class="app-world-club-name">Football Club Lacbrume d’Annecy</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-37">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MLR</span><span class="app-world-club-name">Union Sportive Montlierre de Chambéry</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-38">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">DBV</span><span class="app-world-club-name">Sporting Club Doubsval de Besançon</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-39">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FLT</span><span class="app-world-club-name">Football Club de la Filature de Mulhouse</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="FR-40">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">AUC</span><span class="app-world-club-name">Association Sportive Aubeclaire de Troyes</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                </tbody>
+              </table>
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
               <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
@@ -197,7 +459,7 @@
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
               <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
-              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 planned places have no confirmed club assignments yet.</p>
+              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 clubs listed above represent a provisional allocation, not confirmed season participation.</p>
             </section>
           </div>
         </section>

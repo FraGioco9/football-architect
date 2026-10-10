@@ -180,16 +180,278 @@
           </dl>
           <section class="app-panel app-world-empty">
             <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>
-            <p data-app-i18n="competitionNotice">Club allocations, standings, fixtures and results have not been implemented.</p>
+            <p data-app-i18n="competitionNotice">No active season: league positions, fixtures and results are not available.</p>
           </section>
           <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
             <span data-app-i18n="otherDivision">Other division in this country</span>
             <a href="../nl-2/"><strong>Bondsklasse</strong><span data-app-i18n="divisionTier2">Second division</span></a>
           </nav>
           <div class="app-world-sections">
-            <section class="app-panel app-world-section" aria-labelledby="division-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <p class="app-world-section-empty" data-app-i18n="standingsEmpty">No standings are available because no season has started.</p>
+            <section class="app-panel app-world-section app-world-standings" aria-labelledby="division-standings-heading">
+              <div class="app-world-standings-heading">
+                <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+                <span class="app-world-standings-count">20 / 20</span>
+              </div>
+              <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.</p>
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <tr data-world-club="NL-1">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">WPT</span><span class="app-world-club-name">Amsterdamse Voetbalvereniging Waterpoort</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-2">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HVL</span><span class="app-world-club-name">Sportvereniging Havenlicht Rotterdam</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-3">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">GNV</span><span class="app-world-club-name">Utrechtse Voetbalvereniging Groenveld</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-4">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BLM</span><span class="app-world-club-name">Eindhovense Football Club Blauwmeer</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-5">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">NWD</span><span class="app-world-club-name">Groninger Voetbalvereniging Noorderwind</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-6">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">DUS</span><span class="app-world-club-name">Haarlemse Football Club Duinroos</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-7">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ZVB</span><span class="app-world-club-name">Bredase Sportvereniging Zilverbeek</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-8">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BSK</span><span class="app-world-club-name">Tilburgse Voetbalvereniging Boskant</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-9">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RVR</span><span class="app-world-club-name">Nijmeegse Football Club Rivieren</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-10">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HVR</span><span class="app-world-club-name">Arnhemse Sportvereniging Heuvelrand</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-11">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MLW</span><span class="app-world-club-name">Delftse Voetbalvereniging Molenwijk</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-12">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MLI</span><span class="app-world-club-name">Maastrichtse Football Club Maaslicht</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-13">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">WTR</span><span class="app-world-club-name">Leidse Voetbalvereniging Wetering</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-14">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ZHF</span><span class="app-world-club-name">Zwolse Sportvereniging Zandhof</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-15">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">IJR</span><span class="app-world-club-name">Deventer Football Club IJsselrand</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-16">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">VHK</span><span class="app-world-club-name">Enschedese Voetbalvereniging Veldhoek</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-17">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">DNR</span><span class="app-world-club-name">Apeldoornse Sportvereniging Dennenrust</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-18">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">PZT</span><span class="app-world-club-name">Amersfoortse Football Club Poortzicht</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-19">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">PDV</span><span class="app-world-club-name">Alkmaarse Voetbalvereniging Polderveen</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                <tr data-world-club="NL-20">
+                  <td class="app-world-stat-unknown">—</td>
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">WSW</span><span class="app-world-club-name">Leeuwarder Sportclub Westerwier</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                </tr>
+                </tbody>
+              </table>
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
               <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
@@ -197,7 +459,7 @@
             </section>
             <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
               <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
-              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 planned places have no confirmed club assignments yet.</p>
+              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 clubs listed above represent a provisional allocation, not confirmed season participation.</p>
             </section>
           </div>
         </section>
