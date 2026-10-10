@@ -322,7 +322,7 @@ test("SEARCH-01 compact results show only label and kind, with descriptions stil
   assert.equal(first.children[1].className,"app-search-kind");
   app.input.value="320 documented clubs";
   app.input.emit("input");
-  assert.equal(app.links()[0].href,"/app/#world-heading");
+  assert.equal(app.links()[0].href,"/app/dashboard/#world-heading");
 });
 
 test("SEARCH-01 translates the visible desktop search trigger",()=>{
