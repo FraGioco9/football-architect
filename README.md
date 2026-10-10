@@ -6,6 +6,24 @@ The current `main` branch is an **asset and identity-catalogue repository**, not
 
 The game-world baseline is **8 countries, 16 fictional division identities, and 320 documented fictional club identities**. Actual sports gameplay, current club-to-league allocations, finalized division/club SVG crests, and app integration are not provided by this branch.
 
+
+### Maintain the generated app pages
+
+`templates/app-page.html` is the shared source for the Dashboard, Calendar and Settings HTML shells. After editing the template or its page-specific replacement map in `tools/generate-app-pages.mjs`, regenerate the three checked-in pages from the repository root:
+
+```sh
+node tools/generate-app-pages.mjs
+```
+
+Generation **writes** `app/dashboard/index.html`, `app/calendar/index.html` and `app/settings/index.html`. To verify the checked-in pages against the template **without writing files**, run:
+
+```sh
+node tools/generate-app-pages.mjs --check
+node --test tests/*.test.mjs
+```
+
+The generator enforces byte-identical UTF-8 HTML in `--check` mode, which the Node.js 22 site-contract suite also tests. Review any generated HTML changes before committing. This is static generation only: it does not require npm, a build step, a backend, a deploy or a database, and the three direct app URLs remain unchanged.
+
 ## Local landing page
 
 The repository also provides a standalone static Landing page (`index.html`) and a short World Guide (`guide/index.html`) explaining Divisions and Clubs, styled in Graphite & Petrol. It is not a playable game. The current `main` branch also includes static application-shell previews at `/app/dashboard/`, `/app/calendar/`, and `/app/settings/`, without an active career runtime.
