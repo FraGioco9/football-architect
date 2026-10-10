@@ -71,7 +71,7 @@ test("responsive, keyboard focus, reduced motion and equal-width CTA contracts",
 
 test("site dropdown, non-reflow notices and favicon assets",()=>{
  assert.match(css,/appearance:\s*none/);
- assert.match(css,/\.language-control select option\s*\{[^}]*background:var\(--surface\)/s);
+ assert.match(css,/\.language-control select option\s*\{[^}]*background-color:var\(--surface\)/s);
  assert.match(css,/\.action-status\s*\{[^}]*position:fixed/s);
  assert.match(css,/\.action-status\[hidden\]\s*\{display:none\}/);
  assert.match(html,/<link rel="icon" type="image\/svg\+xml" href="\.\/favicon\.svg">/);
