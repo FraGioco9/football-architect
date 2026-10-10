@@ -3,7 +3,7 @@ on:
   push:
     branches: [feat/landing-static]
   pull_request:
-    paths: [index.html, assets/landing.css, assets/landing.js, tests/landing.test.mjs, .github/workflows/landing-checks.yml]
+    paths: [index.html, assets/landing.css, assets/landing.js, favicon.ico, favicon.svg, README.md, tests/landing.test.mjs, .github/workflows/landing-checks.yml]
   workflow_dispatch:
 permissions:
   contents: read
