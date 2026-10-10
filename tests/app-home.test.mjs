@@ -82,6 +82,20 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
   assert.doesNotMatch(css,/\.app-eyebrow|\.app-intro/);
 });
 
+test("HOME-02 TOPBAR-B sticky top bar and fragment scroll offsets", () => {
+  assert.match(css,/\.fa-shell-topbar\{position:sticky;top:0;z-index:20;flex-shrink:0;/);
+  assert.match(css,/\.fa-shell-sidebar\{[^}]*position:sticky;top:0;z-index:12/);
+  assert.match(css,/html\{scroll-padding-top:72px\}/);
+  assert.match(css,/@media\(max-width:720px\)\{\s*html\{scroll-padding-top:66px\}/);
+  assert.doesNotMatch(css,/\.fa-shell-(?:topbar|workspace)\{[^}]*overflow(?:-[xy])?:/);
+  for (const markup of Object.values(pages)) {
+    assert.match(markup,/<header class="fa-shell-topbar">/);
+    assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
+    assert.match(markup,/<a class="app-skip" href="#main-content"/);
+    assert.match(markup,/id="app-search-trigger"/);
+  }
+});
+
 test("HOME-01 retains bottom Settings sidebar, a clean top bar, and old shell widths", () => {
   for (const markup of Object.values(pages)) {
     const bar = markup.split('<header class="fa-shell-topbar">')[1].split("</header>")[0];
