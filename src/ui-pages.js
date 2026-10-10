@@ -59,7 +59,7 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
       <h2 class="fa-shell-nav-group-title" id="fa-shell-start-title">${tr(lang,'Inizio','Home')}</h2>
       <div class="fa-shell-nav-group-items">
        ${nav('career-dashboard','grid-pre-reset',tr(lang,'Dashboard','Dashboard'),dashboard)}
-       ${nav('fixture-open','calendar-pre-reset',tr(lang,'Calendario','Calendar'),!dashboard)}
+       ${nav('fixture-open','calendar-pre-reset',tr(lang,'Calendario','Calendar'),career.route==='/calendar')}
       </div>
      </section>
     </nav>
