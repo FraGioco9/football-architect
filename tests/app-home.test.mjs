@@ -64,7 +64,7 @@ test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destina
 test("HOME-01 has one global title and spacing system, with no page pretitle or subtitle", () => {
   for (const [view,markup] of Object.entries(pages)) {
     assert.doesNotMatch(markup,/class="app-eyebrow"|class="app-intro"/);
-    assert.match(markup, /class="app-main" id="main-content" tabindex="-1"/);
+    assert.match(markup, /<main class="app-main">/);
     for (const label of ["dashboard","calendar","settings"]) {
       assert.match(markup,new RegExp('<h1 class="app-page-title" id="'+label+'-title"'));
     }
@@ -170,8 +170,8 @@ test("HOME-01 selects the actual page from pathname, including after refresh and
       assert.equal(app.nodes["app-"+name].hidden,name!==current);
       assert.equal(app.nodes["app-nav-"+name].attributes["aria-current"],name===current?"page":undefined);
     }
-    // Fragments are no longer application routes. The skip link remains a normal focus anchor.
-    const fragmentApp=simulateApp(path,"#main-content");
+    // Fragments are not application routes. Existing section anchors remain supported.
+    const fragmentApp=simulateApp(path,"#world-heading");
     assert.equal(fragmentApp.nodes["app-"+current].hidden,false);
   }
   // Former hashes are ignored, not redirected or treated as routes.
@@ -213,4 +213,19 @@ test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
     runInNewContext(script,{window:{location:{search,hash,replace(path){redirects.push(path)}}}},{timeout:2000});
     assert.deepEqual(redirects,[expected]);
   }
+});
+
+
+test("HOME-03 removes app skip links while preserving semantic main and real section anchors",()=>{
+  for(const markup of Object.values(pages)){
+    assert.match(markup,/<main class="app-main">/);
+    assert.doesNotMatch(markup,/app-skip|href="#main-content"|id="main-content"|data-app-i18n="skip"|tabindex="-1"/);
+    assert.match(markup,/id="career-status-heading"/);
+    assert.match(markup,/id="world-heading"/);
+    assert.match(markup,/id="app-language-heading"/);
+    assert.match(markup,/id="app-search-heading" class="sr-only"/);
+    assert.match(markup,/id="app-search-scope" class="sr-only"/);
+  }
+  assert.doesNotMatch(css,/\.app-skip/);
+  assert.doesNotMatch(js,/skip:"/);
 });
