@@ -375,18 +375,18 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 
 ---
 
-## CLUB-01 — Ricognizione ES/DE/FR — seconda passata (10 ottobre 2026)
+## CLUB-01 — ES/DE/FR research, second pass (10 October 2026)
 
-**Operazione consentita:** ricognizione documentale e aggiornamento di questa issue; nessun codice, branch, PR, merge, deploy o database. **Baseline main immutata, verificata in sola lettura:** `72d16de4a3ad410dab84fd9d1f42007a187a98b1`.
+**Permitted activity:** documentary research and issue update; no code, branch, PR, merge, deployment or database changes. **Unchanged `main` baseline, read-only verified:** `72d16de4a3ad410dab84fd9d1f42007a187a98b1`.
 
-### Fonti consultate e criterio di prova
+### Sources consulted and evidence standard
 
-1. Ricerca di precedenti conversazioni del progetto Football Architect sulle proposte di **40 club per Paese**. Un riepilogo indicizzato ha identificato proposte dell'assistente del **9 ottobre 2026**: lista ES circa **22:39:45 UTC**, lista DE circa **22:41:56 UTC**, lista FR circa **22:45 UTC**; l'utente approvò le liste nei messaggi successivi. Il riepilogo espone **sette stringhe testuali** riportate sotto, ma **non consente di ispezionare l'intera tabella originaria**: trattarle come *recuperate con evidenza di riepilogo*, non come denominazioni complete formalmente convalidate una per una.
-2. Ricerca in documenti/progetti storici disponibili: trovate roadmap e materiali di Football Architect 2.0, ma **nessun registro completo delle 320 denominazioni approvate**; non sono state importate denominazioni di un universo precedente o differente.
-3. Ricerca nelle issue del repository di stringhe esatte (tra cui `Club Deportivo Alborada Madrid`, `Fußballclub Hafenstern Hamburg`, `Unión Deportiva Monteazul Valencia`): nessun documento indipendente contenente queste denominazioni. `Football Club des Émaux de Limoges` è già registrato qui tra le approvazioni esplicite; **non** viene contato di nuovo.
-4. Confronto delle sette stringhe con **Paese, ID e nome principale** già approvati: corrispondenze di identità 7/7, nessuna sostituzione dei nomi principali. La mancata disponibilità del testo integrale originale impedisce tuttora il gate finale.
+1. Searched prior Football Architect project conversations for **40-club-per-country** proposals. An indexed summary identified assistant proposals dated **9 October 2026**: ES around **22:39:45 UTC**, DE around **22:41:56 UTC**, FR around **22:45 UTC**; the user approved those lists in subsequent messages. The summary contained **seven text strings** shown below, but **the entire original tables could not be inspected**: classify them as *recovered from secondary summaries*, not as individually validated full names.
+2. Searched available historical project documents: found Football Architect 2.0 roadmaps and material, but **no complete register of the 320 approved full names**; no names were imported from an older or different game world.
+3. Searched repository issues for exact strings including `Club Deportivo Alborada Madrid`, `Fußballclub Hafenstern Hamburg` and `Unión Deportiva Monteazul Valencia`: no independent document with those names. `Football Club des Émaux de Limoges` had already been explicitly approved and **was not counted twice**.
+4. Compared all seven recovered names with the approved **country, ID and primary name**: 7/7 identity matches and no primary-name replacements. The original complete text was still unavailable, preventing final validation.
 
-### Sette denominazioni complete ritrovate nei riepiloghi storici (candidature documentali)
+### Seven full names found in historical summaries (documentary candidates)
 
 | ID | Nome principale approvato | Testo `fullName` recuperato | Traccia storica | Stato |
 |---|---|---|---|---|
@@ -398,15 +398,15 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 | `DE,2` | FC Hafenstern | **Fußballclub Hafenstern Hamburg** | Proposta 2026-10-09 22:41:56 UTC | Recuperato, **NON convalidato** |
 | `DE,3` | TSV Silberwald | **Turn- und Sportverein Silberwald München** | Proposta 2026-10-09 22:41:56 UTC | Recuperato, **NON convalidato** |
 
-**Nota di fedeltà:** la grafia `Futbol Club` per ES,2 è mantenuta esattamente come nel frammento recuperato, senza correggerla automaticamente in `Fútbol` o `Futbol Club` alternativo. Eventuali correzioni ortografiche richiedono confronto con la tabella originaria o nuova approvazione.
+**Fidelity note:** the spelling `Futbol Club` for ES,2 is retained exactly as found, without silently changing it to `Fútbol` or another spelling. Corrections require comparison with the original table or a new approval.
 
-### Francia (FR) — esito negativo circoscritto
+### France (FR) — limited negative result
 
-- La ricerca conferma soltanto l'esistenza della precedente proposta francese dei 40 club, **senza recuperare nuove righe `fullName` testuali**.
-- Restano con denominazione completa esplicitamente confermata `FR,27` **Football Club des Émaux de Limoges** e `FR,33` **Cercle Sportif des Garrigues de Nîmes**.
-- Gli **altri 38 `fullName` francesi rimangono senza fonte integrale verificabile**: non dedurli dai nomi brevi.
+- Search confirmed only that the earlier French 40-club proposal existed; **no new verbatim `fullName` rows were recovered**.
+- Explicitly confirmed full names remained `FR,27` **Football Club des Émaux de Limoges** and `FR,33` **Cercle Sportif des Garrigues de Nîmes**.
+- The **other 38 French `fullName` entries still lacked verifiable full-text sources**; do not derive them from short names.
 
-### Stato aggiornato e residui
+### Updated status and unresolved records
 
 | Paese | Confermati esplicitamente | Recuperati in ricognizioni (candidati da verificare) | Senza testo recuperato | Totale |
 |---|---:|---:|---:|---:|
@@ -420,22 +420,22 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 | BR | 1 | 10 | 29 | 40 |
 | **Totale** | **6** | **76** | **238** | **320** |
 
-- **7/245 (2,86%)** precedentemente senza testo sono ora *recuperati come candidati documentali*; **238/245** rimangono senza testo recuperato.
-- Totale **82/320 (25,625%)** con testo di denominazione estesa disponibile (**6 confermati** + **76 candidature recuperate e non pienamente convalidate**); nessun nuovo `fullName` è stato elevato arbitrariamente a confermato.
-- L'audit storico precedente (75/320) rimane visibile come fotografia della fase precedente; **questo riepilogo è quello aggiornato e prevale per i contatori**.
-- `IT,2` preservato integralmente: **AC Rinascenti Bologna / Associazione Calcio Rinascenti Bologna / RIN**, città **Bologna**, stadio **Stadio delle Fornaci**. Le altre 319 sigle rimangono immutate; 320/320 univoche.
-- **CLUB-01: APERTA. CLUB-02: progettazione approvata, integrazione runtime non completata. Roadmap implementativa: 0/5 (0%)**; nessuna checklist implementativa spuntata.
+- **7/245 (2.86%)** entries previously lacking text were *recovered as documentary candidates*; **238/245** still had no recovered text.
+- **82/320 (25.625%)** full-name texts then available (**6 confirmed** + **76 recovered but not fully validated candidates**); no new `fullName` was arbitrarily promoted to confirmed.
+- The earlier 75/320 audit remains visible as a prior snapshot; **this summary superseded its counters at the time**.
+- `IT,2` preserved in full: **AC Rinascenti Bologna / Associazione Calcio Rinascenti Bologna / RIN**, city **Bologna**, stadium **Stadio delle Fornaci**. Other 319 abbreviations unchanged; 320/320 globally unique.
+- **CLUB-01: OPEN. CLUB-02: design approved, runtime integration not complete. Implementation roadmap: 0/5 (0%)**; no implementation checklist items marked complete.
 
-**Prossima azione documentale raccomandata:** recuperare la tabella originale integra dei 40 club ES, DE e FR prima di convalidare le candidature o procedere a espansioni. In assenza di tale fonte, mantenere `PENDING_SOURCE` senza generare nomi automaticamente.
+**Recommended documentary action at that time:** recover the complete original ES, DE and FR 40-club tables before approving candidates or deriving names. Until then, retain `PENDING_SOURCE` and do not auto-generate names.
 
 
 ---
 
-## CLUB-01 — Terza passata: ricerca delle tabelle originali ES/DE/FR (10 ottobre 2026)
+## CLUB-01 — Third pass: search for original ES/DE/FR tables (10 October 2026)
 
-**Oggetto:** cercare i testi integrali delle **tre tabelle originarie da 40 club** (120 record ES/DE/FR) prima di assegnare altri `fullName`. **Esito: riferimenti alle tabelle originali rintracciati, ma le tabelle integrali NON recuperabili dalle fonti attualmente accessibili. Nessun `fullName` aggiunto o elevato di stato in questa passata.**
+**Objective:** locate all **three original 40-club tables** (120 ES/DE/FR records) before assigning more `fullName` values. **Result: references to the original tables found, but complete table texts were NOT retrievable from then-accessible sources. No `fullName` entry was added or promoted during this pass.**
 
-### A. Provenienza delle tabelle originali
+### A. Provenance of original tables
 
 | Paese | Fonte documentale rintracciata | Cosa è recuperabile | Cosa NON è recuperabile | Stato |
 |---|---|---|---|---|
@@ -443,16 +443,16 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 | **DE** | Precedente risposta Football Architect del **09/10/2026, ~22:41:56 UTC**, tabella *Meisterliga (ID 1–20)* + *Vereinsliga (ID 21–40)*; successiva approvazione dell'utente | Esistenza della tabella a 40 righe e **tre testi** `fullName` DE,1–3 già registrati | Testo completo delle altre 37 righe e copia integrale dell'originale | **PARZIALE / NON VALIDATO** |
 | **FR** | Precedente progettazione Football Architect del **09/10/2026**, nel contesto *Ligue des Sociétés* + *Ligue des Régions*, approvazione dei 40 club | Due `fullName` corretti e già **esplicitamente confermati**: FR,27 e FR,33 | Testo originario delle altre 38 righe e tabella integrale | **PARZIALE / 2 CONFERMATI** |
 
-**Qualità delle fonti:** le informazioni sulle risposte del 09/10 derivano dai **riferimenti cronologici e dai riepiloghi di conversazioni precedenti**, non da URL permanenti o da una copia integrale del messaggio originario. Confermano l'esistenza delle tabelle e le approvazioni di contesto, **non** consentono di attestare le singole stringhe `fullName` non visualizzabili. Nessun link a una tabella originale è stato identificato, dunque nessuno viene inventato.
+**Source quality:** records of the 9 October responses came from **chronological references and earlier conversation summaries**, not permanent URLs or complete original messages. These establish the tables' existence and contextual approvals, **not** the exact unseen `fullName` strings. No link to an original table was found or invented.
 
-### B. Verifiche supplementari riproducibili
+### B. Reproducible supplementary checks
 
-1. Ricerca nei **file del progetto e nella Library disponibili** su frasi esatte come `Club Deportivo Alborada Madrid`, `Sportverein Morgenrot Berlin`, `Union Sportive Équinoxe Paris`, `Futbol Club Mar de Cobre Barcelona`, `Ligue des Sociétés`: nessun catalogo originale a 40 righe ES/DE/FR identificato. I materiali storici Football Architect 2.0 emersi appartengono a precedenti versioni, non provano il catalogo CLUBS-320 attuale.
-2. Ricerca **GitHub Code Search** nel repository `FraGioco9/football-architect` per `fullName`, `Club Deportivo Alborada`, `Sportverein Morgenrot` e `Ligue des Sociétés`: **0 risultati per tutte e quattro le query**. La ricerca code non è prova dell'inesistenza di conversazioni o file non indicizzati.
-3. Ricerca nelle issue collegate: **#61** contiene i riepiloghi delle passate precedenti; **nessun commento** di issue #61 contiene una tabella originale aggiuntiva. Le issue collegate DIV/CAL non costituiscono la fonte delle denominazioni complete.
-4. `src/leagues.js` sul `main` **`72d16de4a3ad410dab84fd9d1f42007a187a98b1`** conserva le prime 20 squadre per Paese nel campo `name` e non contiene `fullName`. Le denominazioni storiche presenti nel codice non devono essere promosse a `fullName` senza approvazione.
+1. Searched **available project files and Library** for exact phrases including `Club Deportivo Alborada Madrid`, `Sportverein Morgenrot Berlin`, `Union Sportive Équinoxe Paris`, `Futbol Club Mar de Cobre Barcelona`, `Ligue des Sociétés`: no original 40-row ES/DE/FR catalogues found. Earlier Football Architect 2.0 materials belonged to previous versions and did not prove the current CLUBS-320 list.
+2. Searched **GitHub Code Search** in `FraGioco9/football-architect` for `fullName`, `Club Deportivo Alborada`, `Sportverein Morgenrot`, `Ligue des Sociétés`: **zero results for all four queries**. Code Search does not establish that unindexed files or conversations are absent.
+3. Inspected related issues: **#61** contained earlier research summaries; **no comment** provided an additional original table. Related DIV/CAL issues were not sources for full names.
+4. `src/leagues.js` on `main` **`72d16de4a3ad410dab84fd9d1f42007a187a98b1`** retained the first 20 clubs per country in `name` fields and contained no `fullName`. Historical code names must not be promoted to `fullName` without approval.
 
-### C. Perimetro ES/DE/FR rimasto irrisolto
+### C. Outstanding ES/DE/FR scope
 
 | Paese | `fullName` confermati | Testi recuperati non convalidati | Testi non recuperati | Copertura testuale |
 |---|---:|---:|---:|---:|
@@ -461,9 +461,9 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 | FR | 2 (ID 27,33) | 0 | **38** (ID 1–26, 28–32, 34–40) | **2/40 = 5,0%** |
 | **ES + DE + FR** | **2** | **7** | **111** | **9/120 = 7,5%** |
 
-I sette testi ES/DE erano **già conteggiati** nella seconda passata; non si contano nuovamente. Nessun contenuto `fullName` dedotto da prefissi `FC/SC/CD/VfB/TSV`, città, sigle o grafie analoghe.
+The seven ES/DE entries **had already been counted** in the second pass and were not counted again. No `fullName` was inferred from `FC/SC/CD/VfB/TSV` prefixes, cities, abbreviations or analogous spellings.
 
-### D. Situazione complessiva CLUB-01 (contatori autoritativi)
+### D. Overall CLUB-01 status (authoritative counters at that time)
 
 | Categoria | Club | Percentuale su 320 | Qualificazione |
 |---|---:|---:|---|
@@ -472,36 +472,36 @@ I sette testi ES/DE erano **già conteggiati** nella seconda passata; non si con
 | `fullName` **senza testo recuperabile** | **238** | **74,375%** | `PENDING_SOURCE`, non inventare |
 | **Totale** | **320** | **100%** | **Copertura testuale 82/320 = 25,625%** |
 
-**Delta rispetto alla seconda passata:** +0 confermati, +0 recuperati, −0 mancanti. Questi numeri rimangono invariati proprio perché le tabelle integrali non sono risultate accessibili; nessun avanzamento artificiale.
+**Change since second pass:** +0 confirmed, +0 recovered, −0 missing. Counts remained unchanged because the complete original tables were inaccessible; no artificial progress was reported.
 
-**Vincoli preservati e ricontrollati:** `IT,2 = AC Rinascenti Bologna / Associazione Calcio Rinascenti Bologna / RIN` (Bologna, Stadio delle Fornaci), altre 319 sigle invariate; registro `320/320` univoco. **CLUB-01 APERTA; checklist implementative 0/5 (0%)**. Non modificare nomi principali già approvati; nessuna implementazione o mutazione GitHub diversa da questo aggiornamento della issue #61.
+**Preserved and rechecked constraints:** `IT,2 = AC Rinascenti Bologna / Associazione Calcio Rinascenti Bologna / RIN` (Bologna, Stadio delle Fornaci), other 319 abbreviations unchanged; globally unique `320/320` register. **CLUB-01 OPEN; implementation checklists 0/5 (0%)**. Do not change approved primary names; no code or GitHub mutations beyond the authorized issue #61 text update.
 
-**Blocco documentale:** per completare la verifica dei 111 casi ES/DE/FR ancora senza testo occorre il contenuto originale delle tabelle, non soltanto il loro riferimento storico; fino a quel momento restano `PENDING_SOURCE` e non vanno ricreati per analogia.
+**Documentation blocker:** the original tables, not merely their historical references, were needed to verify the remaining 111 ES/DE/FR cases without text; until then they remained `PENDING_SOURCE` and must not be recreated by analogy.
 
 ---
 
-## CLUB-01 — Audit individuale delle 76 candidature (10 ottobre 2026)
+## CLUB-01 — Individual audit of 76 candidates (10 October 2026)
 
-**Perimetro:** controllo individuale di tutte le **76 stringhe `fullName` candidate** raccolte nei due inventari precedenti di questa issue. Confronto con `countryId + clubId`, nome principale indicato nei registri progettuali e `src/leagues.js` (sola lettura, `main` `72d16de4a3ad410dab84fd9d1f42007a187a98b1`). **Non** trasformare compatibilità testuale in approvazione.
+**Scope:** individually review all **76 candidate `fullName` strings** from the previous two issue inventories. Compare against `countryId + clubId`, the primary name in design registers and read-only `src/leagues.js` (`main` `72d16de4a3ad410dab84fd9d1f42007a187a98b1`). **Do not** equate textual compatibility with approval.
 
-### Criteri di classificazione
+### Classification criteria
 
-- **CONFERMATA (C):** fonte primaria accessibile con la stessa denominazione completa, associata al corretto club, e approvazione esplicita riconducibile a quella versione.
-- **INCOMPATIBILE (I):** contraddizione documentata con ID, nome principale o altra decisione finale approvata; una differenza dal vecchio `name` del codice **non** basta, perché nel catalogo progettuale sono già previste rinominazioni.
-- **PROVA INSUFFICIENTE (P):** stringa riportata soltanto in un riepilogo o nella stessa issue, senza tabella originale integrale verificabile; anche se nome e identità risultano coerenti, non è una validazione formale.
+- **CONFIRMED (C):** accessible primary source containing the same full name, associated with the correct club and an explicit approval applying to that version.
+- **INCOMPATIBLE (I):** documented conflict with ID, primary name or another final approved decision; a difference from the legacy code `name` alone is **not** enough, because planned renames already exist.
+- **INSUFFICIENT EVIDENCE (P):** string appears only in a summary or in the issue, without a verifiable complete original table; a matching identity is not formal validation.
 
-**Esito finale sui 76:** **0 C (0%) · 0 I (0%) · 76 P (100%)**. L'assenza di incompatibilità dimostrate **non significa che tutti i 76 nomi siano corretti**: significa soltanto che non è stata trovata una contraddizione nelle fonti consultabili.
+**Final result for all 76:** **0 C (0%) · 0 I (0%) · 76 P (100%)**. Lack of proven incompatibility **does not mean all 76 names are correct**; only that no contradictions were found in accessible sources.
 
-### Fonti ed evidenze disponibili
+### Available sources and evidence
 
-1. **R1 (69 righe):** testo della ricognizione precedente dell'issue #61 (69 candidature; riepiloghi di proposte storiche, senza originale integrale consultabile). Elenco testuale consultabile nella sezione *CLUB-01 — Ricognizione documentale supplementare* della stessa issue; la sua presenza non è una prova primaria indipendente.
-2. **R2 (7 righe):** testo della seconda passata dell'issue #61 (7 candidature ES/DE; riepilogo di proposte del 9 ottobre 2026, senza originale integrale consultabile). Elenco consultabile in *Ricognizione ES/DE/FR — seconda passata*; non equivale a accesso alle proposte originali.
-3. **Catalogo runtime:** `src/leagues.js` a `main` `72d16de4a3ad410dab84fd9d1f42007a187a98b1`: conferma **76/76** record preesistenti con l'ID implicito nell'ordine, la città e lo stadio originali. Non contiene il campo `fullName`: quindi non conferma nessuno dei 76 valori completi.
-4. **Ricerca delle fonti primarie:** nessuna copia integrale delle tabelle originarie e delle approvazioni puntuali reperita tramite le fonti conversazionali, documenti disponibili e GitHub già esaminate; nessun URL di fonte primaria inventato.
+1. **R1 (69 rows):** earlier issue #61 research text (69 candidates from historical proposal summaries, without fully accessible originals). The section *CLUB-01 — Supplementary documentary research* preserves the list, but is not independent primary-source proof.
+2. **R2 (7 rows):** second issue #61 pass (seven ES/DE candidates, based on 9 October 2026 proposal summaries, not complete originals). The *ES/DE/FR research, second pass* section lists them, but is not access to the original proposals.
+3. **Historical runtime catalogue:** `src/leagues.js` at `main` `72d16de4a3ad410dab84fd9d1f42007a187a98b1` confirmed original IDs/order, cities and stadiums for **76/76** pre-existing clubs. It had no `fullName` field and therefore validated none of the 76 full names.
+4. **Primary-source search:** no complete originals of the tables or individual approvals were found in consulted conversations, documents and GitHub sources; no primary-source URL was invented.
 
-### Registro di verifica nominativa — 76/76
+### Individual verification register — 76/76
 
-Legenda per ciascuna riga: **P = prova insufficiente**; **Identità OK = nome distintivo riconoscibile e ID valido; città e stadio originali presenti nel codice; non è un'approvazione del `fullName`**.
+Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable distinguishing name and valid ID; original city and stadium found in source code; not `fullName` approval**.
 
 <details><summary><strong>IT: 19 candidature — 0 confermate, 0 incompatibili, 19 prive di prova sufficiente</strong></summary>
 
@@ -628,7 +628,7 @@ Legenda per ciascuna riga: **P = prova insufficiente**; **Identità OK = nome di
 
 </details>
 
-### Conteggio per Paese — audit delle sole 76 candidature
+### Counts by country — audit of only the 76 candidates
 
 | Paese | Esaminate | C | I | P | Coverage audit |
 |---|---:|---:|---:|---:|---:|
@@ -642,23 +642,23 @@ Legenda per ciascuna riga: **P = prova insufficiente**; **Identità OK = nome di
 | BR | 10 | 0 | 0 | 10 | 100% |
 | **Totale** | **76** | **0** | **0** | **76** | **100%** |
 
-### Distinzione tra copertura documentale e approvazione
+### Distinction between documentary coverage and approval
 
-- **Verifica individuale delle candidature:** **76/76 (100%) esaminate**, di cui **0/76 formalmente convalidate**.
-- **Nomi completi già confermati al di fuori delle 76 candidature:** **6/320 (1,875%)**, invariati.
-- **Testo di nome completo disponibile:** **82/320 (25,625%)** = 6 confermati + 76 candidati non convalidati.
-- **Ancora senza testo recuperabile:** **238/320 (74,375%)**.
-- **In attesa di conferma formale o recupero:** **314/320 (98,125%)**.
-- **ROADMAP CLUBS-320 implementativa:** **0/5 (0%)**, checklist invariata.
+- **Individual review:** **76/76 (100%) candidates examined**, **0/76 formally validated**.
+- **Previously confirmed full names outside the 76 candidates:** **6/320 (1.875%)**, unchanged.
+- **Available full-name text:** **82/320 (25.625%)** = six confirmed + 76 unvalidated candidates.
+- **Still missing recoverable text:** **238/320 (74.375%)**.
+- **Awaiting formal confirmation or recovery:** **314/320 (98.125%)**.
+- **CLUBS-320 implementation roadmap:** **0/5 (0%)**, checklists unchanged.
 
-### Protezioni e passaggio successivo
+### Safeguards and next steps
 
-- `(IT,2)` resta **AC Rinascenti Bologna**, `fullName = Associazione Calcio Rinascenti Bologna`, `abbr = RIN`; città **Bologna**, stadio **Stadio delle Fornaci**. Il club non è incluso tra le 76 candidature non convalidate.
-- Le altre 319 sigle restano invariate; 320 sigle globalmente univoche approvate in CLUB-02.
-- **Non scrivere in codice le 76 candidature come `fullName` definitivi**: occorre reperire la fonte primaria o una nuova approvazione esplicita; non inventare espansioni.
-- Le 76 restano **PENDING_SOURCE** e CLUB-01 rimane **OPEN**. La prossima attività utile è reperire le tabelle originali o sottoporre le 76 stringhe esistenti a una convalida esplicita, **senza cambiare il contenuto delle proposte**.
+- `(IT,2)` remains **AC Rinascenti Bologna**, `fullName = Associazione Calcio Rinascenti Bologna`, `abbr = RIN`; city **Bologna**, stadium **Stadio delle Fornaci**. This club is not among the 76 unvalidated candidates.
+- The other 319 abbreviations remain unchanged; 320 globally unique abbreviations approved under CLUB-02.
+- **Do not write the 76 candidates into code as final `fullName` values** without primary-source recovery or a new explicit approval; never invent expansions.
+- All 76 remain **PENDING_SOURCE** and CLUB-01 remains **OPEN**. The next useful action was to recover original tables or submit the existing 76 strings for explicit approval **without altering the proposals**.
 
-**Policy rispettata:** unico aggiornamento autorizzato a issue #61; nessun commit, branch, PR, merge, deploy, database o modifica a codice/test.
+**Policy preserved during this historical audit:** only issue #61 text was updated; no commits, branches, PRs, merges, deployments, database or code/test changes.
 
 
 ---
