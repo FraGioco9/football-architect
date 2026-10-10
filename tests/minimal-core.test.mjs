@@ -566,7 +566,7 @@ test('GUIDE-ASSET: standalone bilingual atlas lists the exact 16 division catalo
   assert.doesNotMatch(page,/guide-question|guide-faq|guide-topic|data-action="new"|gameplay|how to start|come creare|FAQ|domande frequenti/i);
  }
  const it=guidePage('it'),en=guidePage('en');
- assert.match(it,/L'universo di Football Architect/);
+ assert.match(it,/L&#39;universo di Football Architect/);
  assert.match(it,/Emblema non ancora definito/);
  assert.match(it,/Seconda divisione definita nel catalogo/);
  assert.match(en,/The world of Football Architect/);
