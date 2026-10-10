@@ -31,6 +31,7 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
   assert.match(css,/\.app-search-trigger span\{display:none\}/);
   assert.match(css,/\.app-search-results\[hidden\]\{display:none\}/);
   assert.match(css,/\.app-search-dialog\.is-closing \.app-search-panel/);
+  assert.match(css,/-webkit-user-select:text;user-select:text;-webkit-touch-callout:default/);
   assert.doesNotMatch(css,/\.fa-shell-search\{[^}]*position:fixed/);
 });
 
