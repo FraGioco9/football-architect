@@ -65,6 +65,30 @@ const indexContent = root => {
   return '          <p class="app-world-lead" data-app-i18n="divisionIntro">Explore the 16 documented divisions across eight countries. No league season is running yet.</p>\n' +
     '          <div class="app-world-countries">\n' + countries + '\n          </div>';
 };
+const detailAppend = function detailAppend(division){
+  const other=divisionData.divisions.find(d=>d.countryId===division.countryId && d.id!==division.id);
+  if(!other)throw new Error("Missing counterpart: "+division.id);
+  const otherTier=other.tier===1?"divisionTier1":"divisionTier2";
+  return `
+          <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
+            <span data-app-i18n="otherDivision">Other division in this country</span>
+            <a href="../${other.id.toLowerCase()}/"><strong>${encode(other.name)}</strong><span data-app-i18n="${otherTier}">${other.tier===1?"First division":"Second division"}</span></a>
+          </nav>
+          <div class="app-world-sections">
+            <section class="app-panel app-world-section" aria-labelledby="division-standings-heading">
+              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+              <p class="app-world-section-empty" data-app-i18n="standingsEmpty">No standings are available because no season has started.</p>
+            </section>
+            <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
+              <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
+              <p class="app-world-section-empty" data-app-i18n="fixturesEmpty">No scheduled matches or results are available.</p>
+            </section>
+            <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
+              <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
+              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 planned places have no confirmed club assignments yet.</p>
+            </section>
+          </div>`;
+};
 const detailContent = (division, root) => {
   const country = countryById[division.countryId];
   if (!country) throw new Error("Unknown division country: " + division.countryId);
@@ -88,7 +112,7 @@ const detailContent = (division, root) => {
     '          <section class="app-panel app-world-empty">\n' +
     '            <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>\n' +
     '            <p data-app-i18n="competitionNotice">Club allocations, standings, fixtures and results have not been implemented.</p>\n' +
-    '          </section>';
+    '          </section>' + detailAppend(division);
 };
 const worldPageReplacements = (depth, division = null) => {
   const upToApp = "../".repeat(depth - 1);

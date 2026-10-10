@@ -204,3 +204,17 @@ html{scroll-padding-top:72px}
 .app-world-empty h2{margin-bottom:9px}
 @media(max-width:900px){.app-world-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.app-world-hero{align-items:flex-start;gap:15px}.app-division-mark-large{width:72px;height:72px;min-width:72px;font-size:16px}.app-world-facts{grid-template-columns:1fr}.app-world-country h2{font-size:15px}}
+
+/* UI-WORLD: complete division views without fabricated sporting records. */
+.app-world-related{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:18px 0;color:var(--muted);font-size:12px}
+.app-world-related>a{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 13px;border:1px solid #41695e;border-radius:10px;background:#173634;color:var(--text);font-size:12px}
+.app-world-related>a strong{font-weight:740}.app-world-related>a span{color:var(--muted);font-size:11px}
+.app-world-related>a:hover{background:#214740;border-color:#79bd9d}
+.app-world-related>a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.app-world-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.app-world-section{display:flex;flex-direction:column;gap:12px;min-height:156px}
+.app-world-section:first-child{grid-column:1/-1}
+.app-world-section h2{margin:0;font-size:17px}
+.app-world-section-empty{margin:0;padding:17px;border:1px dashed #52796e;border-radius:9px;background:#142b2a;color:var(--muted);font-size:12px;line-height:1.7}
+@media(max-width:720px){.app-world-sections{grid-template-columns:minmax(0,1fr)}.app-world-section:first-child{grid-column:auto}}
+@media(max-width:390px){.app-world-related{align-items:stretch;flex-direction:column}.app-world-related>a{justify-content:space-between}}
