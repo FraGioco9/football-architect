@@ -1,9 +1,9 @@
 name: Site checks
 on:
   push:
-    branches: [feat/landing-static, feat/world-guide-atlas]
+    branches: [main]
   pull_request:
-    paths: [index.html, guide/index.html, assets/landing.css, assets/landing.js, assets/guide.css, favicon.ico, favicon.svg, README.md, tests/landing.test.mjs, tests/guide.test.mjs, .github/workflows/landing-checks.yml]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,10 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Assert exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Verified source HEAD: $EXPECTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify syntax
-        run: node --check assets/landing.js
-      - name: Landing contracts
+      - name: Verify JavaScript syntax
+        run: |
+          node --check assets/landing.js
+          node --check assets/app.js
+          node --check assets/app-search.js
+      - name: Site contracts
         run: node --test tests/*.test.mjs
