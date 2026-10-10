@@ -6,6 +6,18 @@ The current `main` branch is an **asset and identity-catalogue repository**, not
 
 The game-world baseline is **8 countries, 16 fictional division identities, and 320 documented fictional club identities**. Actual sports gameplay, current club-to-league allocations, finalized division/club SVG crests, and app integration are not provided by this branch.
 
+## Local landing page
+
+The repository also provides a standalone static landing page (`index.html`), styled in Graphite & Petrol. It is not a playable game and does not include active Guide or Home routes.
+
+To preview locally on Windows, run `py -m http.server 2000 --bind 127.0.0.1` and open `http://127.0.0.1:2000/`. No npm, Docker, or build step is needed. Run `node --test tests/landing.test.mjs` for landing contract checks.
+
+English is the default language, with Deutsch, Español, Français, and Italiano selectable through a custom accessible dropdown. The language preference is persisted locally.
+
+The Enter the app and Guide buttons display localized notices. Notices auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart the countdown when interaction ends. They animate in over 200 ms and out over 180 ms, with reduced-motion support. The layout is responsive, reserves a scrollbar gutter, and prevents text selection.
+
+These static landing features do not enable gameplay or deployment.
+
 ## Current resources
 
 | Resource | Canonical source | Preserved facts |

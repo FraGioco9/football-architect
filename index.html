@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101A1D">
+  <meta name="description" content="Football Architect — explore an alternative football world.">
+  <title>Football Architect</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./assets/landing.css">
+  <script src="./assets/landing.js" defer></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header wrapper">
+      <div class="brand-mark" aria-hidden="true">FA</div>
+      <div class="language-control" id="language-control">
+        <span class="sr-only" id="language-label" data-i18n="language">Language</span>
+        <button type="button" class="language-trigger" id="site-language" role="combobox"
+                aria-labelledby="language-label language-value" aria-haspopup="listbox"
+                aria-expanded="false" aria-controls="language-options">
+          <span id="language-value">English</span>
+          <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="language-menu" id="language-options" role="listbox" aria-labelledby="language-label" hidden>
+          <div class="language-option" role="option" id="language-en" data-language="en" aria-selected="true">English</div>
+          <div class="language-option" role="option" id="language-de" data-language="de" aria-selected="false">Deutsch</div>
+          <div class="language-option" role="option" id="language-es" data-language="es" aria-selected="false">Español</div>
+          <div class="language-option" role="option" id="language-fr" data-language="fr" aria-selected="false">Français</div>
+          <div class="language-option" role="option" id="language-it" data-language="it" aria-selected="false">Italiano</div>
+        </div>
+      </div>
+    </header>
+    <main class="landing-main wrapper" id="main-content">
+      <section class="hero" aria-labelledby="page-title">
+        <h1 id="page-title">Football Architect</h1>
+        <p class="description" data-i18n="summary">Explore an alternative football world.</p>
+        <div class="actions">
+          <button type="button" class="cta cta-primary" data-destination="app" data-i18n="enter">Enter the app</button>
+          <button type="button" class="cta cta-secondary" data-destination="guide" data-i18n="guide">Guide</button>
+        </div>
+        <div class="action-status" id="action-status" role="status" aria-live="polite" hidden>
+          <span id="action-status-message"></span>
+          <button type="button" class="status-close" id="status-close" aria-label="Dismiss notice"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+      </section>
+      <section class="statistics" aria-labelledby="statistics-heading">
+        <h2 class="sr-only" id="statistics-heading" data-i18n="universe">Football world</h2>
+        <div class="stat"><strong class="number">8</strong><span data-i18n="countries">Countries</span></div>
+        <div class="stat"><strong class="number">16</strong><span data-i18n="divisions">Divisions</span></div>
+        <div class="stat"><strong class="number">320</strong><span data-i18n="clubs">Documented clubs</span></div>
+      </section>
+    </main>
+    <footer class="site-footer wrapper">
+      <span>Football Architect</span>
+      <span data-i18n="footer">Work in progress</span>
+    </footer>
+  </div>
+</body>
+</html>
