@@ -145,40 +145,100 @@ const worldPageReplacements = (depth, division = null) => {
     "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,root) : indexContent(root), true,division)
   };
 };
+// Shared competition shell: one markup source and one validated data manifest.
+// Small route files preserve deep links on local/static hosting.
+const sharedTemplate = function sharedTemplate(html) {
+ const first=divisionData.divisions[0],country=countryById[first.countryId];
+ const replaceOne=(before,after,label)=>{
+  if(html.split(before).length!==2)throw Error("Shared template contract changed: "+label);
+  html=html.replace(before,after);
+ };
+ replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
+ replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
+ replaceOne('data-app-aria="crestPlaceholder">'+encode(first.id)+'</span>','id="app-competition-badge" data-app-aria="crestPlaceholder">—</span>',"badge");
+ replaceOne('class="app-world-flag" alt="" src="../../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../../'+encode(country.flagAsset)+'"',"flag");
+ replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="">Country</span>',"country");
+ replaceOne('data-app-i18n="divisionTier1">First division</span>','id="app-competition-tier" data-app-i18n="divisionTier1">First division</span>',"tier");
+ replaceOne('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">—</dd>',"capacity");
+ replaceOne('data-app-i18n="tierLabel">Tier</dt><dd>'+first.tier+'</dd>','data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">—</dd>',"level");
+ const match=html.match(/(<tbody>\n)([\s\S]*?)(\n\s*<\/tbody>)/);
+ if(!match||!match[2].includes('data-world-club="'))throw Error("Cannot isolate shared standings rows");
+ html=html.replace(match[0],match[1].replace("<tbody>","<tbody id=\"app-standings-body\">")+match[3]);
+ return html;
+};
+const competitionRoute = d=>[
+ '<!doctype html>',
+ '<html lang="en">',
+ '<head>',
+ '  <meta charset="utf-8">',
+ '  <meta name="viewport" content="width=device-width,initial-scale=1">',
+ '  <meta name="theme-color" content="#101A1D">',
+ '  <meta name="fa-division" content="'+encode(d.id)+'">',
+ '  <title>'+encode(d.name)+' — Football Architect</title>',
+ '  <link rel="icon" href="../../../../favicon.svg" type="image/svg+xml">',
+ '  <link rel="stylesheet" href="../../../../assets/landing.css">',
+ '  <link rel="stylesheet" href="../../../../assets/app.css">',
+ '  <script src="../../../../assets/competition-page.js" defer></script>',
+ '</head>',
+ '<body class="app-body">',
+ '  <main id="main-content" class="app-main" role="status">Loading competition…</main>',
+ '</body>',
+ '</html>',
+ ''
+].join("\n");
+const competitionManifest = {
+ schemaVersion:1,approved:provisionalAssignments.approved,
+ divisions:divisionData.divisions.map(d=>{
+  const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
+  if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
+  return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
+   flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
+   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName}))};
+ })
+};
+if(competitionManifest.approved!==false)throw Error("Do not publish an approved competition allocation");
 const outputPages = [
-  ...Object.entries(pages).map(([name,replacements]) => ({
-    name, path: "app/" + name + "/index.html", depth:2,
-    replacements:{...replacements,
-      "@@FA_WORLD_LINK@@":worldNav("../world/competitions/",false),
-      "@@FA_WORLD_SECTION@@":worldSection("",false)}
-  })),
-  {name:"competitions",path:"app/world/competitions/index.html",depth:3,replacements:worldPageReplacements(3)},
-  ...divisionData.divisions.map(division => ({
-    name:division.id, path:"app/world/competitions/" + division.id.toLowerCase() + "/index.html",
-    depth:4, replacements:worldPageReplacements(4,division)
-  }))
+ ...Object.entries(pages).map(([name,replacements])=>({
+  name,path:"app/"+name+"/index.html",depth:2,
+  replacements:{...replacements,
+   "@@FA_WORLD_LINK@@":worldNav("../world/competitions/",false),
+   "@@FA_WORLD_SECTION@@":worldSection("",false)}
+ })),
+ {name:"competitions",path:"app/world/competitions/index.html",depth:3,replacements:worldPageReplacements(3)},
+ {name:"competition-shared",path:"app/world/competitions/_shared/index.html",depth:4,
+  replacements:worldPageReplacements(4,divisionData.divisions[0]),transform:sharedTemplate},
+ ...divisionData.divisions.map(division=>({
+  name:division.id,path:"app/world/competitions/"+division.id.toLowerCase()+"/index.html",
+  directContent:competitionRoute(division)
+ }))
 ];
-if (divisionData.countries.length !== 8 || divisionData.divisions.length !== 16 || outputPages.length !== 20)
-  throw new Error("Division catalogue cardinality changed; review the source data");
+if(divisionData.countries.length!==8||divisionData.divisions.length!==16||outputPages.length!==21)
+ throw Error("Division catalogue cardinality changed; review the source data");
 const check = process.argv.length === 3 && process.argv[2] === "--check";
-if (process.argv.length > (check ? 3 : 2)) throw new Error("Usage: node tools/generate-app-pages.mjs [--check]");
-for (const page of outputPages) {
-  // The base template refers to root files using ../../ (two levels from app/*/).
-  // Adjust those references before injecting the page-specific app routes and content.
-  let html = page.depth === 2 ? template : template.replaceAll("../../", "../".repeat(page.depth));
-  for (const [token, value] of Object.entries(page.replacements)) {
-    if (!html.includes(token)) throw new Error("Missing template token: " + token);
-    html = html.replaceAll(token,value);
+if(process.argv.length > (check ? 3 : 2))throw Error("Usage: node tools/generate-app-pages.mjs [--check]");
+const writeOutput=(path,content)=>{
+ const file=new URL("../"+path,import.meta.url);
+ if(check){
+  const current=readFileSync(file,"utf8");
+  if(Buffer.compare(Buffer.from(content,"utf8"),Buffer.from(current,"utf8"))!==0)
+   throw Error("Generated output differs from checked-in file: "+path);
+ }else{
+  mkdirSync(new URL("./",file),{recursive:true});
+  writeFileSync(file,content,"utf8");
+ }
+};
+for(const page of outputPages){
+ let html=page.directContent;
+ if(!html){
+  html=page.depth===2?template:template.replaceAll("../../","../".repeat(page.depth));
+  for(const [token,value] of Object.entries(page.replacements)){
+   if(!html.includes(token))throw Error("Missing template token: "+token);
+   html=html.replaceAll(token,value);
   }
-  if (/@@FA_(?:LINE_|WORLD_)/.test(html)) throw new Error("Unresolved template token in " + page.path);
-  const file = new URL("../" + page.path, import.meta.url);
-  if (check) {
-    const current = readFileSync(file,"utf8");
-    if (Buffer.compare(Buffer.from(html,"utf8"),Buffer.from(current,"utf8")) !== 0)
-      throw new Error("Generated HTML differs from checked-in file: " + page.path);
-  } else {
-    mkdirSync(new URL("./", file),{recursive:true});
-    writeFileSync(file,html,"utf8");
-  }
+  if(/@@FA_(?:LINE_|WORLD_)/.test(html))throw Error("Unresolved template token in "+page.path);
+  if(page.transform)html=page.transform(html);
+ }
+ writeOutput(page.path,html);
 }
-if (check) console.log("Static HTML matches checked-in pages: " + outputPages.length + "/" + outputPages.length + " (3 existing + 17 World)");
+writeOutput("app/world/competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 World), 1 competition manifest");
