@@ -1,0 +1,350 @@
+{
+  "schema": "football-architect-div-asset-design-v1",
+  "designApproved": true,
+  "designApprovals": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05"
+  ],
+  "designCompletionPct": 100,
+  "approvedSampleCount": 2,
+  "svgPlannedCount": 64,
+  "svgProducedCount": 0,
+  "implementedGame": false,
+  "fonts": {
+    "primary": "Roboto Slab Semibold 600",
+    "secondary": "IBM Plex Sans Condensed Medium 500"
+  },
+  "svg": {
+    "viewBox": "0 0 512 512",
+    "transparent": true,
+    "variants": [
+      "primary",
+      "compact",
+      "mono-dark",
+      "mono-light"
+    ]
+  },
+  "sampleImages": {
+    "IT1": {
+      "divisionId": "IT-1",
+      "fileName": "stemma_della_lega_federale_i.png",
+      "sha256": "bfd87c44cd029b0fac73cf077cb30ea64175cb2da68f7666ad61297acc976ede",
+      "githubUploaded": false
+    },
+    "IT2": {
+      "divisionId": "IT-2",
+      "fileName": "emblema_lega_delle_città_ii.png",
+      "sha256": "0d8569f841fd1e822a0ad7c5e7a2319d8664e33a334378f4bd075526778db1e7",
+      "githubUploaded": false
+    }
+  },
+  "divisions": [
+    {
+      "id": "IT-1",
+      "name": "Lega Federale",
+      "country": "Italia",
+      "tier": 1,
+      "mainSymbol": "nodo araldico di unione nel sigillo centrale",
+      "palette": {
+        "base": "#194D3A",
+        "light": "#F3E8CC",
+        "accent": "#B78B55"
+      },
+      "expectedSvg": [
+        "it-1-primary.svg",
+        "it-1-compact.svg",
+        "it-1-mono-dark.svg",
+        "it-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "IT-2",
+      "name": "Lega delle Città",
+      "country": "Italia",
+      "tier": 2,
+      "mainSymbol": "rosone formato da torri urbane astratte",
+      "palette": {
+        "base": "#405D4C",
+        "light": "#F1EADD",
+        "accent": "#E1B885"
+      },
+      "expectedSvg": [
+        "it-2-primary.svg",
+        "it-2-compact.svg",
+        "it-2-mono-dark.svg",
+        "it-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "ENG-1",
+      "name": "Crown League",
+      "country": "Inghilterra",
+      "tier": 1,
+      "mainSymbol": "corona stilizzata sul sigillo centrale",
+      "palette": {
+        "base": "#17304A",
+        "light": "#EEE4D2",
+        "accent": "#B99451"
+      },
+      "expectedSvg": [
+        "eng-1-primary.svg",
+        "eng-1-compact.svg",
+        "eng-1-mono-dark.svg",
+        "eng-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "ENG-2",
+      "name": "Shield League",
+      "country": "Inghilterra",
+      "tier": 2,
+      "mainSymbol": "scudo interno con partitura geometrica astratta",
+      "palette": {
+        "base": "#364C61",
+        "light": "#F0EAE0",
+        "accent": "#CFD7DA"
+      },
+      "expectedSvg": [
+        "eng-2-primary.svg",
+        "eng-2-compact.svg",
+        "eng-2-mono-dark.svg",
+        "eng-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "ES-1",
+      "name": "Liga de la Unión",
+      "country": "Spagna",
+      "tier": 1,
+      "mainSymbol": "sole/rosetta radiale di unione",
+      "palette": {
+        "base": "#8D2F2A",
+        "light": "#F6E9D2",
+        "accent": "#D0A45E"
+      },
+      "expectedSvg": [
+        "es-1-primary.svg",
+        "es-1-compact.svg",
+        "es-1-mono-dark.svg",
+        "es-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "ES-2",
+      "name": "Liga de las Regiones",
+      "country": "Spagna",
+      "tier": 2,
+      "mainSymbol": "mosaico quadrangolare di territori",
+      "palette": {
+        "base": "#86402E",
+        "light": "#F6E9D2",
+        "accent": "#E9B778"
+      },
+      "expectedSvg": [
+        "es-2-primary.svg",
+        "es-2-compact.svg",
+        "es-2-mono-dark.svg",
+        "es-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "DE-1",
+      "name": "Meisterliga",
+      "country": "Germania",
+      "tier": 1,
+      "mainSymbol": "stella centrale dell'eccellenza sportiva",
+      "palette": {
+        "base": "#242C31",
+        "light": "#EDEAE2",
+        "accent": "#9CA5AA"
+      },
+      "expectedSvg": [
+        "de-1-primary.svg",
+        "de-1-compact.svg",
+        "de-1-mono-dark.svg",
+        "de-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "DE-2",
+      "name": "Vereinsliga",
+      "country": "Germania",
+      "tier": 2,
+      "mainSymbol": "intreccio angolare di associazioni sportive",
+      "palette": {
+        "base": "#3C4A50",
+        "light": "#F1EFE8",
+        "accent": "#D7BD9C"
+      },
+      "expectedSvg": [
+        "de-2-primary.svg",
+        "de-2-compact.svg",
+        "de-2-mono-dark.svg",
+        "de-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "FR-1",
+      "name": "Ligue des Sociétés",
+      "country": "Francia",
+      "tier": 1,
+      "mainSymbol": "monogramma o sigillo associativo originale",
+      "palette": {
+        "base": "#243D6B",
+        "light": "#EFF0E7",
+        "accent": "#D59D93"
+      },
+      "expectedSvg": [
+        "fr-1-primary.svg",
+        "fr-1-compact.svg",
+        "fr-1-mono-dark.svg",
+        "fr-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "FR-2",
+      "name": "Ligue des Régions",
+      "country": "Francia",
+      "tier": 2,
+      "mainSymbol": "rosone territoriale radiale",
+      "palette": {
+        "base": "#3F5B75",
+        "light": "#F5F2EB",
+        "accent": "#D4AAA2"
+      },
+      "expectedSvg": [
+        "fr-2-primary.svg",
+        "fr-2-compact.svg",
+        "fr-2-mono-dark.svg",
+        "fr-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "PT-1",
+      "name": "Liga Lusitana",
+      "country": "Portogallo",
+      "tier": 1,
+      "mainSymbol": "rosa dei venti o sfera astratta stilizzata",
+      "palette": {
+        "base": "#713333",
+        "light": "#F4E9D9",
+        "accent": "#81B4AD"
+      },
+      "expectedSvg": [
+        "pt-1-primary.svg",
+        "pt-1-compact.svg",
+        "pt-1-mono-dark.svg",
+        "pt-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "PT-2",
+      "name": "Liga Atlântica",
+      "country": "Portogallo",
+      "tier": 2,
+      "mainSymbol": "onde geometriche atlantiche",
+      "palette": {
+        "base": "#285461",
+        "light": "#F3E9DE",
+        "accent": "#D7B49A"
+      },
+      "expectedSvg": [
+        "pt-2-primary.svg",
+        "pt-2-compact.svg",
+        "pt-2-mono-dark.svg",
+        "pt-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "NL-1",
+      "name": "Oranjeliga",
+      "country": "Paesi Bassi",
+      "tier": 1,
+      "mainSymbol": "leone astratto fortemente semplificato",
+      "palette": {
+        "base": "#A74C17",
+        "light": "#FFF0DC",
+        "accent": "#DFBF91"
+      },
+      "expectedSvg": [
+        "nl-1-primary.svg",
+        "nl-1-compact.svg",
+        "nl-1-mono-dark.svg",
+        "nl-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "NL-2",
+      "name": "Bondsklasse",
+      "country": "Paesi Bassi",
+      "tier": 2,
+      "mainSymbol": "intreccio lineare di connessioni",
+      "palette": {
+        "base": "#844A21",
+        "light": "#F5EBDD",
+        "accent": "#E7C497"
+      },
+      "expectedSvg": [
+        "nl-2-primary.svg",
+        "nl-2-compact.svg",
+        "nl-2-mono-dark.svg",
+        "nl-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "BR-1",
+      "name": "Liga das Associações",
+      "country": "Brasile",
+      "tier": 1,
+      "mainSymbol": "associazioni convergenti in un simbolo radiale",
+      "palette": {
+        "base": "#176347",
+        "light": "#F4EEDB",
+        "accent": "#E8C56D"
+      },
+      "expectedSvg": [
+        "br-1-primary.svg",
+        "br-1-compact.svg",
+        "br-1-mono-dark.svg",
+        "br-1-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    },
+    {
+      "id": "BR-2",
+      "name": "Liga das Regiões",
+      "country": "Brasile",
+      "tier": 2,
+      "mainSymbol": "stella multipartita, diversa dal mosaico ES-2",
+      "palette": {
+        "base": "#2D6C58",
+        "light": "#F9F5E8",
+        "accent": "#E5CC80"
+      },
+      "expectedSvg": [
+        "br-2-primary.svg",
+        "br-2-compact.svg",
+        "br-2-mono-dark.svg",
+        "br-2-mono-light.svg"
+      ],
+      "state": "concept-approved; SVG-not-produced"
+    }
+  ]
+}
