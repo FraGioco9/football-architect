@@ -1,5 +1,6 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
+import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
 
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8");
 const pages = {
@@ -38,6 +39,8 @@ const pages = {
 const divisionData = JSON.parse(readFileSync(new URL("../data/divisions.json", import.meta.url), "utf8"));
 const clubData = JSON.parse(readFileSync(new URL("../data/clubs.json", import.meta.url), "utf8"));
 if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new Error("Expected 320 canonical club identities");
+const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division-allocations.provisional.json", import.meta.url), "utf8"));
+const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
 const worldNav = (href, active) => '            <a class="fa-shell-link' + (active ? ' is-active' : '') +
@@ -70,7 +73,8 @@ const detailAppend = function newAppend(d) {
  const other=divisionData.divisions.find(x=>x.countryId===d.countryId&&x.id!==d.id);
  if(!other)throw new Error("Missing counterpart "+d.id);
  const otherTier=other.tier===1?"divisionTier1":"divisionTier2";
- const clubs=clubData.clubs.filter(c=>c.countryId===d.countryId&&(d.tier===1?c.clubId<=20:c.clubId>20)).sort((a,b)=>a.clubId-b.clubId);
+ const clubs=provisionalClubs.get(d.id);
+ if(!clubs)throw new Error("Missing provisional allocation "+d.id);
  if(clubs.length!==d.capacity||new Set(clubs.map(c=>c.clubId)).size!==d.capacity)throw new Error("Incomplete initial allocation "+d.id);
  const headers=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"]].map(([key,value],index)=>'                  <th scope="col"'+(index===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+value+'</th>').join("\n");
  const rows=clubs.map(c=>`                <tr data-world-club="${encode(c.countryId)}-${c.clubId}">

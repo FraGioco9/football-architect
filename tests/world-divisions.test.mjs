@@ -125,11 +125,13 @@ test("COMPETITIONS-01 uses a trophy sidebar icon, no subtitle, and rounded flags
 
 test("STANDINGS-01 includes all 320 clubs without claiming season results",()=>{
   const clubs=JSON.parse(read("data/clubs.json")).clubs;
+  const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
   const seen=new Set();
   for(const {division,file} of routes){
     const html=read(file);
-    const expected=clubs.filter(club=>club.countryId===division.countryId &&
-      (division.tier===1?club.clubId<=20:club.clubId>20)).sort((a,b)=>a.clubId-b.clubId);
+    const entry=allocation.allocations.find(entry=>entry.divisionId===division.id);
+    assert.ok(entry,division.id);
+    const expected=entry.clubIds.map(clubId=>clubs.find(club=>club.countryId===division.countryId&&club.clubId===clubId));
     assert.equal(expected.length,20,division.id);
     assert.equal((html.match(/<tr data-world-club="/g)||[]).length,20,file);
     assert.ok(html.includes('<table class="app-world-standing-table">'),file);
