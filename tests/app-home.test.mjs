@@ -239,3 +239,16 @@ test("WCAG-FIX-01 provides a keyboard skip link to the main landmark on each app
     assert.match(js,new RegExp(lang+': \\{\\s*skip:"'+label+'"'));
   }
 });
+
+test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
+  for (const markup of Object.values(pages)) {
+    assert.match(markup, /aria-label="Football Architect home" data-app-aria="brandHome"/);
+    assert.equal((markup.match(/data-app-aria="brandHome"/g) || []).length, 1);
+  }
+  for (const label of [
+    "Football Architect home", "Football Architect – Startseite",
+    "Inicio de Football Architect", "Accueil de Football Architect",
+    "Home di Football Architect"
+  ]) assert.ok(js.includes('brandHome:"' + label + '"'));
+  assert.match(js, /node\.setAttribute\("aria-label", strings\[node\.dataset\.appAria\]\)/);
+});
