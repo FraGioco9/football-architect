@@ -6,7 +6,7 @@
 - **8 Paesi, 16 divisioni** in [data/divisions.json](data/divisions.json): 2 livelli per Paese con nomi/ID fittizi approvati, capacità indicativa 20 club per livello; **nessuna divisione integrata nel gioco**.
 - **320 identità club** in [data/clubs.json](data/clubs.json), chiave stabile `(countryId,clubId)`, 320 nomi completi documentati e 320 sigle `abbr` approvate e univoche.
 - **160 dati storici di prima divisione** (vecchie denominazioni, città, stadi) nel campo `firstDivisionReference` dei primi 20 club per Paese. I vecchi nomi non sono automaticamente quelli approvati più recentemente.
-- **Otto bandiere** dei Paesi interessati, dal pack preesistente, più [licenza](assets/flags/LICENSE). Eliminati gli altri SVG del pack che non servono a questi cataloghi.
+- **271 bandiere SVG 4:3** del pack [lipis/flag-icons](https://github.com/lipis/flag-icons), disponibili localmente in [assets/flags](assets/flags), con [licenza MIT](assets/flags/LICENSE). Le otto bandiere dei Paesi interessati sono incluse; nessun formato quadrato `1x1`.
 - La documentazione integrale dei [320 nomi completi](docs/clubs/fullnames-source.md) e [320 sigle, riconciliazioni e audit](docs/clubs/registry-history.md), conservata senza modifiche alle fonti.
 - La [direzione artistica divisionale approvata](docs/divisions/design-direction.md).
 
