@@ -72,3 +72,26 @@ test("UI-WORLD uses five localized sets and CSS-only temporary badges",()=>{
   assert.ok(index.includes('src="../../../assets/flags/it.svg"'));
   assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
 });
+
+test("PAGE-COMPLETE-01 keeps the three sporting areas empty and offers same-country navigation",()=>{
+  const translations=read("assets/app.js");
+  const generator=read("tools/generate-app-pages.mjs");
+  const search=read("assets/app-search.js");
+  const keys=["otherDivision","relatedDivisions","standingsHeading","standingsEmpty",
+    "fixturesHeading","fixturesEmpty","clubsHeading","clubsEmpty"];
+  for(const key of keys) assert.equal((translations.match(new RegExp(key+":","g"))||[]).length,5,key);
+  for(const {division,file} of routes){
+    const html=read(file);
+    const counterpart=catalogue.divisions.find(d=>d.countryId===division.countryId&&d.id!==division.id);
+    assert.ok(counterpart);
+    assert.ok(html.includes('href="../'+counterpart.id.toLowerCase()+'/"'));
+    for(const id of ["division-standings-heading","division-fixtures-heading","division-clubs-heading"])
+      assert.ok(html.includes('id="'+id+'"'),file+" "+id);
+    for(const key of ["standingsEmpty","fixturesEmpty","clubsEmpty","otherDivision"])
+      assert.ok(html.includes('data-app-i18n="'+key+'"'),file+" "+key);
+    assert.doesNotMatch(html,/class="(?:league-table|match-result|club-roster)"/);
+    assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
+  }
+  assert.match(generator,/detailAppend\(division\)/);
+  assert.ok(search.includes('../data/divisions.json'));
+});

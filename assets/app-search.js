@@ -13,11 +13,11 @@
   if (![trigger,dialog,input,list,status,empty,closeButton,heading,scope].every(Boolean)) return;
 
   const translations = {
-    en: {trigger:"Search the app",placeholder:"Find a page or setting…",close:"Close search",scope:"Search available app pages and sections only.",empty:"No matching pages or sections.",page:"Page",section:"Section",results:"results",suggestions:"suggestions"},
-    de: {trigger:"App durchsuchen",placeholder:"Seite oder Einstellung suchen…",close:"Suche schließen",scope:"Nur verfügbare App-Seiten und Bereiche durchsuchen.",empty:"Keine passenden Seiten oder Bereiche.",page:"Seite",section:"Bereich",results:"Ergebnisse",suggestions:"Vorschläge"},
-    es: {trigger:"Buscar en la app",placeholder:"Buscar página o ajuste…",close:"Cerrar búsqueda",scope:"Busca solo páginas y secciones disponibles de la app.",empty:"No hay páginas ni secciones coincidentes.",page:"Página",section:"Sección",results:"resultados",suggestions:"sugerencias"},
-    fr: {trigger:"Rechercher dans l’app",placeholder:"Chercher une page ou un réglage…",close:"Fermer la recherche",scope:"Recherche limitée aux pages et sections disponibles.",empty:"Aucune page ou section correspondante.",page:"Page",section:"Section",results:"résultats",suggestions:"suggestions"},
-    it: {trigger:"Cerca nell’app",placeholder:"Cerca pagina o impostazione…",close:"Chiudi ricerca",scope:"Cerca solo nelle pagine e sezioni disponibili.",empty:"Nessuna pagina o sezione corrispondente.",page:"Pagina",section:"Sezione",results:"risultati",suggestions:"suggerimenti"}
+    en: {trigger:"Search the app",placeholder:"Find a page or setting…",close:"Close search",scope:"Search available app pages and sections only.",empty:"No matching pages or sections.",page:"Page",section:"Section",results:"results",suggestions:"suggestions",division:"Division"},
+    de: {trigger:"App durchsuchen",placeholder:"Seite oder Einstellung suchen…",close:"Suche schließen",scope:"Nur verfügbare App-Seiten und Bereiche durchsuchen.",empty:"Keine passenden Seiten oder Bereiche.",page:"Seite",section:"Bereich",results:"Ergebnisse",suggestions:"Vorschläge",division:"Liga"},
+    es: {trigger:"Buscar en la app",placeholder:"Buscar página o ajuste…",close:"Cerrar búsqueda",scope:"Busca solo páginas y secciones disponibles de la app.",empty:"No hay páginas ni secciones coincidentes.",page:"Página",section:"Sección",results:"resultados",suggestions:"sugerencias",division:"División"},
+    fr: {trigger:"Rechercher dans l’app",placeholder:"Chercher une page ou un réglage…",close:"Fermer la recherche",scope:"Recherche limitée aux pages et sections disponibles.",empty:"Aucune page ou section correspondante.",page:"Page",section:"Section",results:"résultats",suggestions:"suggestions",division:"Division"},
+    it: {trigger:"Cerca nell’app",placeholder:"Cerca pagina o impostazione…",close:"Chiudi ricerca",scope:"Cerca solo nelle pagine e sezioni disponibili.",empty:"Nessuna pagina o sezione corrispondente.",page:"Pagina",section:"Sezione",results:"risultati",suggestions:"suggerimenti",division:"Divisione"}
   };
   // Exact, real in-app destinations. Expand only when the underlying pages exist.
   const entries = [
@@ -31,6 +31,9 @@
     ["section","app-data-heading","dataText","/app/settings/#app-data-heading"],
     ["section","app-about-heading","aboutText","/app/settings/#app-about-heading"]
   ];
+  // Read canonical division identities from the same-origin static catalogue.
+  if (document.getElementById("divisions-title")) entries.push(["page","divisions-title","divisionIntro","/app/world/divisions/"]);
+  const divisionEntries = [];
   const fold = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase().trim();
   const words = () => translations[document.documentElement.lang] || translations.en;
   const links = () => [...list.querySelectorAll("a.app-search-result")];
@@ -49,7 +52,7 @@
   function render() {
     const query = fold(input.value);
     const strings = words();
-    const matches = entries.map(([kind,id,descriptionKey,href]) => {
+    const matches = [...entries.map(([kind,id,descriptionKey,href]) => {
       const label = document.getElementById(id)?.textContent?.trim() || "";
       const detail = document.querySelector('[data-app-i18n="' + descriptionKey + '"]')?.textContent?.trim() || "";
       const name = fold(label);
@@ -58,7 +61,16 @@
         : name === query ? 4 : name.startsWith(query) ? 3
         : name.includes(query) ? 2 : searchable.includes(query) ? 1 : 0;
       return {kind,label,detail,href,score};
-    }).filter(item => item.label && item.score > 0)
+    }), ...divisionEntries.map(item => {
+      const label = item.name;
+      const detail = [item.id,item.countryId,item.country.en,item.country.it].join(" ");
+      const name = fold(label);
+      const searchable = fold(label + " " + detail);
+      const score = !query ? 0 : name === query || fold(item.id) === query ? 4
+        : name.startsWith(query) ? 3
+        : name.includes(query) ? 2 : searchable.includes(query) ? 1 : 0;
+      return {kind:"division",label,detail,href:"/app/world/divisions/" + item.id.toLowerCase() + "/",score};
+    })].filter(item => item.label && item.score > 0)
       .sort((a,b) => b.score - a.score).slice(0,8);
     const nodes = matches.map(item => {
       const li = document.createElement("li");
@@ -193,4 +205,27 @@
   });
   new MutationObserver(translate).observe(document.documentElement,{attributes:true,attributeFilter:["lang"]});
   translate();
+  const sourceUrl = document.currentScript?.src;
+  if (sourceUrl && typeof fetch === "function") {
+    fetch(new URL("../data/divisions.json", sourceUrl), {credentials:"same-origin"})
+      .then(response => {
+        if (!response.ok) throw new Error("Division catalogue unavailable");
+        return response.json();
+      })
+      .then(catalogue => {
+        if (!catalogue || catalogue.countries?.length !== 8 || catalogue.divisions?.length !== 16) return;
+        const countries = new Map(catalogue.countries.map(country => [country.id,country]));
+        const ids = new Set();
+        const valid = catalogue.divisions.every(item => {
+          if (!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(item.id) ||
+              ids.has(item.id) || !countries.has(item.countryId) || typeof item.name !== "string") return false;
+          ids.add(item.id);
+          return true;
+        });
+        if (!valid || ids.size !== 16) return;
+        divisionEntries.push(...catalogue.divisions.map(item => ({...item,country:countries.get(item.countryId).name})));
+        if (dialog.open) render();
+      })
+      .catch(() => { /* Preserve normal page search when the catalogue cannot load. */ });
+  }
 })();
