@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101A1D">
+  <meta name="description" content="Football Architect — explore an alternative football world.">
+  <title>Football Architect</title>
+  <link rel="stylesheet" href="./assets/landing.css">
+  <script src="./assets/landing.js" defer></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header wrapper">
+      <div class="brand-mark" aria-hidden="true">FA</div>
+      <div class="language-control">
+        <label class="sr-only" for="site-language" data-i18n="language">Language</label>
+        <select id="site-language" name="language" autocomplete="off">
+          <option value="en" selected>English</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="it">Italiano</option>
+        </select>
+      </div>
+    </header>
+    <main class="landing-main wrapper" id="main-content">
+      <section class="hero" aria-labelledby="page-title">
+        <h1 id="page-title">Football Architect</h1>
+        <p class="description" data-i18n="summary">Explore an alternative football world.</p>
+        <div class="actions">
+          <button type="button" class="cta cta-primary" data-destination="app" data-i18n="enter">Enter the app</button>
+          <button type="button" class="cta cta-secondary" data-destination="guide" data-i18n="guide">Guide</button>
+        </div>
+        <p class="action-status" id="action-status" role="status" aria-live="polite" hidden></p>
+      </section>
+      <section class="statistics" aria-labelledby="statistics-heading">
+        <h2 class="sr-only" id="statistics-heading" data-i18n="universe">Football world</h2>
+        <div class="stat"><strong class="number">8</strong><span data-i18n="countries">Countries</span></div>
+        <div class="stat"><strong class="number">16</strong><span data-i18n="divisions">Divisions</span></div>
+        <div class="stat"><strong class="number">320</strong><span data-i18n="clubs">Documented clubs</span></div>
+      </section>
+    </main>
+    <footer class="site-footer wrapper">
+      <span>Football Architect</span>
+      <span data-i18n="footer">Work in progress</span>
+    </footer>
+  </div>
+</body>
+</html>

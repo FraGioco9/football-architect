@@ -1,6 +1,12 @@
 # Football Architect — Cataloghi divisioni e club
 
-**Reset del repository applicativo:** questo `main` contiene **solo materiale di identità per divisioni e club**, non un gioco installabile. Non ci sono server, interfaccia, salvataggi, calendario, simulazione, npm, test dell'app o workflow di deploy.
+**Stato:** il progetto conserva cataloghi di divisioni/club e una Landing statica, senza motore del gioco, Guide/Home interne, login, salvataggi, partite o deploy automatici.
+
+## Landing in locale
+
+Apri `index.html` direttamente o avvia su Windows `py -m http.server 2000` dalla cartella del repository, poi visita `http://127.0.0.1:2000`. Non occorrono build, npm o Docker. Test: `node --test tests/landing.test.mjs`.
+
+Lingua iniziale **English**, poi Deutsch, Español, Français, Italiano; la preferenza viene salvata localmente. I due pulsanti **Enter the app** e **Guide** annunciano la futura disponibilità delle destinazioni, senza aprire pagine inesistenti.
 
 ## Cosa rimane
 - **8 Paesi, 16 divisioni** in [data/divisions.json](data/divisions.json): 2 livelli per Paese con nomi/ID fittizi approvati, capacità indicativa 20 club per livello; **nessuna divisione integrata nel gioco**.
