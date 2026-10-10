@@ -123,14 +123,6 @@ The tracked GitHub Actions workflow is test-only, requests read-only repository 
 
 **External integration / anti-deploy risk: UNKNOWN.** Review available safeguards immediately before repository operations and document unresolved risk. The absence of a deployment job in the tracked workflow does **not** guarantee that unrelated integrations cannot deploy. Stop if required controls fail or the owner has not explicitly accepted residual UNKNOWN risk for the specific operation. A passing CI run or completed merge never grants deployment authorization.
 
-## World division directory (UI-WORLD #91)
-
-The application sidebar includes a **World → Competitions** entry with a custom trophy icon on Dashboard, Calendar, Settings and division routes. `/app/world/divisions/` lists the eight documented countries and 16 canonical divisions; each division has a directly loadable static route at `/app/world/divisions/<division-id-lowercase>/`. Division identifiers, official names, tiers and planned capacity come from `data/divisions.json`. Generic text badges deliberately stand in for unproduced crests, and country flags use the licensed `assets/flags/` set. Every division detail page has a canonical header, a temporary labelled badge, a link to its same-country counterpart, and dedicated **Standings**, **Fixtures and results**, and **Participating clubs** sections. These sections honestly report unavailable information until a playable season and confirmed club allocations exist; no matches, standings rows or club assignments are fabricated. Global Search loads the canonical static `data/divisions.json` from the same origin to offer division-name, country and ID results; existing page search remains usable if loading fails.
-
-The divisions index and division headers have no descriptive subtitles. Country flag images have rounded corners across the site.
-
-The same `node tools/generate-app-pages.mjs` source now generates 20 checked-in application documents (the original three plus 17 World pages). Use `--check` to verify them without writes. All World labels and empty-state messages support EN/DE/ES/FR/IT through the existing shared language preference.
-
 ## Global application search (HOME-02 SEARCH-01)
 
 Dashboard, Calendar and Settings now share a single top-bar search trigger. On desktop it resembles a compact search field; on narrow screens it becomes a magnifier button without adding tooltips, shortcuts or secondary filters. It opens a native modal with a short Graphite & Petrol entrance/exit animation (disabled with reduced-motion), keyboard focus management, Escape, arrow navigation, Enter selection and a clear empty state.
@@ -194,3 +186,11 @@ These corrections do not change any existing country/club identifiers, city/stad
 **No merge, deployment, database modification, or runtime asset integration is implied by these documentation changes.**
 
 Canonical Dashboard: `/app/dashboard/` (`app/dashboard/index.html`). The static `/app/` and `/app/index.html` entry points redirect to Dashboard with `window.location.replace`, preserving query strings and fragments. A no-JavaScript meta-refresh fallback is provided. Standard static servers normalize `/app/dashboard` to `/app/dashboard/`. Navigation and search use the canonical route directly.
+
+## World division directory (UI-WORLD #91)
+
+The application sidebar includes a **World → Competitions** entry with a custom trophy icon on Dashboard, Calendar, Settings and division routes. `/app/world/divisions/` lists the eight documented countries and 16 canonical divisions; each division has a directly loadable static route at `/app/world/divisions/<division-id-lowercase>/`. Division identifiers, official names, tiers and planned capacity come from `data/divisions.json`. Generic text badges deliberately stand in for unproduced crests, and country flags use the licensed `assets/flags/` set. Every division detail page has a canonical header, a temporary labelled badge, a link to its same-country counterpart, and dedicated **Standings**, **Fixtures and results**, and **Participating clubs** sections. These sections honestly report unavailable information until a playable season and confirmed club allocations exist; no matches, standings rows or club assignments are fabricated. Global Search loads the canonical static `data/divisions.json` from the same origin to offer division-name, country and ID results; existing page search remains usable if loading fails.
+
+The divisions index and division headers have no descriptive subtitles. Country flag images have rounded corners across the site.
+
+The same `node tools/generate-app-pages.mjs` source now generates 20 checked-in application documents (the original three plus 17 World pages). Use `--check` to verify them without writes. All World labels and empty-state messages support EN/DE/ES/FR/IT through the existing shared language preference.
