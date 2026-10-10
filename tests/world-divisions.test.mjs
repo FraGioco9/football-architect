@@ -240,6 +240,19 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  }
 });
 
+test("STANDINGS-RESPONSIVE-01 fixes sticky widths and keeps stats visible on narrow screens",()=>{
+ const css=read("assets/app.css");
+ assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:1020px;table-layout:fixed;"));
+ assert.ok(css.includes("tr>*:first-child{position:sticky;left:0;z-index:2;width:44px;min-width:44px;max-width:44px"));
+ assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:44px;z-index:2;width:298px;min-width:298px;max-width:298px"));
+ assert.ok(css.includes("tr>*:first-child{width:34px;min-width:34px;max-width:34px}"));
+ assert.ok(css.includes("tr>*:nth-child(2){left:34px;width:205px;min-width:205px;max-width:205px}"));
+ assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table tr>*:nth-child(2){width:178px;min-width:178px;max-width:178px}"));
+ assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
+ assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
+ assert.equal((manifest.divisions.flatMap(x=>x.clubs)).length,320);
+});
+
 test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{
  const canonical=clubs;
  const byId=new Map(canonical.map(c=>[c.countryId+":"+c.clubId,c]));
