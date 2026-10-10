@@ -35,6 +35,7 @@
   const words = () => translations[document.documentElement.lang] || translations.en;
   const links = () => [...list.querySelectorAll("a.app-search-result")];
   let closingTimer = null;
+  let suppressReturnFocusHighlight = false;
   // Closing on a backdrop click requires a matching pointer gesture, not only
   // a click retargeted to the dialog after an inside/outside drag.
   const backdropDragThreshold = 8;
@@ -96,6 +97,8 @@
   }
   function open() {
     if (dialog.open || closingTimer !== null) return;
+    suppressReturnFocusHighlight = false;
+    trigger.classList.remove("app-search-escape-return");
     input.value = "";
     translate();
     render();
@@ -109,8 +112,9 @@
     dialog.classList.remove("is-closing");
     if (dialog.open) dialog.close();
   }
-  function close() {
+  function close(fromEscape = false) {
     if (!dialog.open || closingTimer !== null) return;
+    suppressReturnFocusHighlight = fromEscape;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finishClose();
       return;
@@ -119,15 +123,16 @@
     closingTimer = setTimeout(finishClose,150);
   }
   trigger.addEventListener("click",open);
+  trigger.addEventListener("blur",() => trigger.classList.remove("app-search-escape-return"));
   closeButton.addEventListener("click",close);
   // Capture Escape before the native search input can consume it to clear text.
   dialog.addEventListener("keydown",event => {
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
-    close();
+    close(true);
   },true);
-  dialog.addEventListener("cancel",event => { event.preventDefault(); close(); });
+  dialog.addEventListener("cancel",event => { event.preventDefault(); close(true); });
   dialog.addEventListener("pointerdown",event => {
     validBackdropClick = false;
     backdropStart = event.target === dialog
@@ -157,7 +162,10 @@
     if (closingTimer !== null) clearTimeout(closingTimer);
     closingTimer = null;
     dialog.classList.remove("is-closing");
+    if (suppressReturnFocusHighlight) trigger.classList.add("app-search-escape-return");
+    else trigger.classList.remove("app-search-escape-return");
     trigger.focus({preventScroll:true});
+    suppressReturnFocusHighlight = false;
   });
   input.addEventListener("input",render);
   input.addEventListener("keydown",event => {

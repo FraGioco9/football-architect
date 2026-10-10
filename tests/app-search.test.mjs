@@ -31,9 +31,10 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
     "@keyframes app-search-out","@media(max-width:390px)",
     "@media(prefers-reduced-motion:reduce)"]) assert.ok(css.includes(key),key);
   assert.match(css,/\.app-search-trigger span\{display:none\}/);
-  assert.match(css,/\.app-search-dialog\{width:min\(460px,calc\(100vw - 28px\)\);max-width:460px;max-height:min\(72dvh,490px\)/);
-  assert.match(css,/\.app-search-panel\{[^}]*max-height:min\(72dvh,490px\)/);
-  assert.match(css,/\.app-search-result:hover\{background:#203c3d\}/);
+  assert.match(css,/\.app-search-dialog\{width:min\(520px,calc\(100vw - 28px\)\);max-width:520px;max-height:min\(78dvh,560px\)/);
+  assert.match(css,/\.app-search-panel\{[^}]*max-height:min\(78dvh,560px\)/);
+  assert.match(css,/\.app-search-result:hover\{background:#2a4b48;box-shadow:inset 3px 0 #7eb7a5\}/);
+  assert.match(css,/\.app-search-trigger\.app-search-escape-return:focus-visible\{outline:none\}/);
   assert.match(css,/\.app-search-input-row:focus-within\{box-shadow:inset 0 -2px #718c83\}/);
   assert.doesNotMatch(css,/\.app-search-description\{/);
   assert.match(css,/\.fa-shell-search\{flex:0 1 330px;min-width:0\}/);
@@ -331,4 +332,45 @@ test("SEARCH-01 translates the visible desktop search trigger",()=>{
   app.document.documentElement.lang="de";
   app.changeLanguage();
   assert.equal(app.trigger.visibleLabel.textContent,"App durchsuchen");
+});
+
+
+test("SEARCH-01 Escape retains trigger focus without its visible focus ring",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.input.value="calendar";
+  app.input.emit("input");
+  app.dialog.emit("keydown",{target:app.input,key:"Escape"});
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.document.activeElement,app.trigger);
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),true);
+  app.trigger.emit("blur");
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),false);
+});
+
+test("SEARCH-01 X and backdrop keep ordinary focus styling; reopening resets Escape suppression",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.dialog.emit("keydown",{target:app.input,key:"Escape"});
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),true);
+  app.trigger.emit("click");
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),false);
+  app.nodes["app-search-close"].emit("click");
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),false);
+  app.trigger.emit("click");
+  app.dialog.emit("pointerdown",{pointerId:1,clientX:10,clientY:10});
+  app.dialog.emit("pointerup",{pointerId:1,clientX:10,clientY:10});
+  app.dialog.emit("click");
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),false);
+});
+
+test("SEARCH-01 native cancel suppresses focus highlight just like the first Escape",()=>{
+  const app=simulate();
+  app.trigger.emit("click");
+  app.dialog.emit("cancel");
+  assert.equal(app.dialog.open,false);
+  assert.equal(app.document.activeElement,app.trigger);
+  assert.equal(app.trigger.classList.values.has("app-search-escape-return"),true);
 });
