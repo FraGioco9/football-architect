@@ -4,7 +4,7 @@ import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
-import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
+import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY,localToday} from '../src/simulation.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 import {searchCareer} from '../src/global-search.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
@@ -238,15 +238,18 @@ test('all eight countries and 160 teams remain available without game fixtures',
 test('pre-reset language combobox and SVG icon set are consistent in IT and EN',()=>{
  const it=layout(homePage({rows:[],activeId:null},'it'),'it','',true);
  const en=layout(homePage({rows:[],activeId:null},'en'),'en','',false);
- assert.match(it,/class="language-picker language-picker-home"/);
- assert.match(it,/class="language-combobox"/);
- assert.match(it,/role="combobox"/);
- assert.match(it,/aria-haspopup="listbox"/);
- assert.match(it,/aria-expanded="true"/);
- assert.match(it,/role="listbox"/);
- assert.match(it,/Italiano/);
- assert.match(it,/English/);
- assert.match(en,/aria-expanded="false"/);
+ const settingsIT=settingsPage('it',true),settingsEN=settingsPage('en',false);
+ assert.doesNotMatch(it,/class="language-picker language-picker-home"/);
+ assert.doesNotMatch(en,/data-action="language-toggle"/);
+ assert.match(settingsIT,/class="language-picker language-picker-home"/);
+ assert.match(settingsIT,/class="language-combobox"/);
+ assert.match(settingsIT,/role="combobox"/);
+ assert.match(settingsIT,/aria-haspopup="listbox"/);
+ assert.match(settingsIT,/aria-expanded="true"/);
+ assert.match(settingsIT,/role="listbox"/);
+ assert.match(settingsIT,/Italiano/);
+ assert.match(settingsIT,/English/);
+ assert.match(settingsEN,/aria-expanded="false"/);
  assert.doesNotMatch(en,/<select/);
  assert.match(it,/data-action="new"[^>]*>[\s\S]*?<svg/);
  assert.match(it,/data-action="settings"[^>]*>[\s\S]*?<svg/);
@@ -370,7 +373,8 @@ test('historic settings restores the two-column panels and keeps live features o
  assert.match(html,/class="settings-actions"/);
  assert.match(html,/class="settings-action"/);
  assert.match(html,/class="about-grid"/);
- assert.match(html,/data-action="language-focus"/);
+ assert.match(html,/data-action="language-toggle"/);
+ assert.doesNotMatch(html,/data-action="language-focus"/);
  assert.match(html,/data-action="careers"/);
  assert.match(html,/data-action="import"/);
  assert.match(settingsPage('en'),/Settings and saves/);
@@ -835,7 +839,9 @@ test('site calendar has month and year selectors, Monday-first grid, leap dates,
  assert.match(it,/role="grid"/);
  assert.match(it,/aria-expanded="true"/);
  assert.match(en,/Choose date of birth/);
- assert.match(en,/data-value="2026-10-10"[^>]* disabled/);
+ const day10=en.match(/data-value="2026-10-10"[^>]*>/)?.[0];
+ assert.ok(day10,'10 October day must be visible');
+ assert.equal(day10.includes(' disabled'), '2026-10-10'>localToday());
  assert.equal(birthDateLabel('2000-02-29','it'),'29/02/2000');
 });
 test('global selected/error visual contract only responds to a box click, not labels or hover',()=>{
@@ -1840,23 +1846,25 @@ test('CAL-02.4: dedicated route has HTTP 200 for GET/HEAD and never publishes ma
 });
 
 
-test('UX-SHELL: dashboard and calendar are the only career sidebar entries in IT/EN',()=>{
+test('UX-SHELL: Dashboard and Calendar remain under Home, Settings fixed at the bottom',()=>{
  const meta={countryId:'IT',clubId:2,managerName:'Test Manager'};
  const state=createSession('IT',2,'2026-10-08');
  for(const lang of ['it','en']){
   for(const route of ['/dashboard','/calendar','/simulation']){
    const html=layout('<h1>Content</h1>',lang,null,false,{route,meta,state,playing:false});
    assert.match(html,/class="shell fa-career-shell"/);
-   assert.equal((html.match(/class="fa-shell-link/g)||[]).length,2);
+   assert.equal((html.match(/class="fa-shell-link/g)||[]).length,3);
    assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
    assert.match(html,/data-action="career-dashboard"/);
    assert.match(html,/data-action="fixture-open"/);
    assert.match(html,/class="fa-shell-topbar"/);
    assert.match(html,/class="fa-shell-club"/);
    assert.match(html,/class="fa-shell-time"/);
-   assert.match(html,/data-action="language-toggle"/);
+   assert.doesNotMatch(html,/data-action="language-toggle"/);
+   assert.match(html,/class="fa-shell-settings-nav"/);
+   assert.match(html,/data-action="settings"/);
    assert.doesNotMatch(html,/data-action="(?:play-match|open-inbox|open-tactics|open-club)"/);
-   assert.equal((html.match(/<nav\b/g)||[]).length,1);
+   assert.equal((html.match(/<nav\b/g)||[]).length,2);
    assert.match(html,lang==='it'?/Calendario/:/Calendar/);
   }
  }
@@ -1905,7 +1913,8 @@ test('UX-SHELL historic navigation: exact pre-reset category and two outline ico
   assert.match(html,/FOOTBALL <b>ARCHITECT<\/b><small>MANAGER<\/small>/);
   assert.match(html,/data-action="career-dashboard"[^>]+aria-current="page"[^>]*>[\s\S]*?class="fa-icon"[\s\S]*?rect x="3" y="3" width="7"/);
   assert.match(html,/data-action="fixture-open"[^>]*>[\s\S]*?rect width="18" height="18" x="3" y="4"/);
-  assert.equal((html.match(/class="fa-shell-link/g)||[]).length,2);
+  assert.equal((html.match(/class="fa-shell-link/g)||[]).length,3);
+  assert.match(html,/class="fa-shell-settings-nav"/);
   assert.doesNotMatch(html,/data-action="(?:inbox|tactics|club|training|market|squad)"/);
  }
  const icons=readFileSync(new URL('../src/icons.js',import.meta.url),'utf8');
@@ -1950,6 +1959,8 @@ test('SHELL-SEARCH: continue/stop is in every active career topbar and search re
    assert.match(html,/class="fa-shell-primary"[\s\S]*?data-action="toggle"/);
    assert.equal((html.match(/data-action="toggle"/g)||[]).length,1);
    assert.match(html,playing?/Interrompi/:/Continua/);
+   assert.match(html,/data-action="global-search-open"/);
+   assert.match(html,/id="fa-global-search-dialog"/);
    assert.match(html,/id="fa-global-search-input"/);
    assert.match(html,/role="combobox"/);
    assert.match(html,/id="fa-global-search-results"/);
@@ -1966,7 +1977,8 @@ test('SHELL-SEARCH: continue/stop is in every active career topbar and search re
  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
  assert.match(css,/\.fa-shell-search\{position:relative/);
  assert.match(css,/@media\(max-width:1150px\)/);
- assert.match(css,/grid-template-areas:"club time language primary" "search search search search"/);
+ assert.match(css,/grid-template-areas:"club time primary" "search search search"/);
+ assert.match(css,/\.fa-global-search-dialog\.fa-site-dialog\[open\]\{display:flex\}/);
 });
 
 
@@ -1988,4 +2000,52 @@ test('SHELL-SEARCH: Continue and Stop topbar buttons have identical fixed dimens
  for(const declaration of ['width:128px','min-width:128px','max-width:128px','height:39px','min-height:39px','justify-content:center'])assert.ok(fixed.includes(declaration));
  assert.match(css,/\.fa-shell-primary \.btn\{width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px/);
  assert.match(css,/\.fa-shell-primary \.btn\{width:33px;min-width:33px;max-width:33px;height:34px;min-height:34px/);
+});
+
+
+test('SHELL-TOPBAR: global search opens a dialog and topbar ends in date then the same-size Continue control',()=>{
+ const state=createSession('IT',1,'2026-08-10'),meta={countryId:'IT',clubId:1};
+ for(const lang of ['it','en']){
+  for(const route of ['/dashboard','/calendar','/simulation','/settings']){
+   const markup=layout('Content',lang,null,false,{route,meta,state,playing:false});
+   const top=markup.match(/<header class="fa-shell-topbar">([\s\S]*?)<\/header>/)?.[1];
+   assert.ok(top);
+   assert.ok(top.indexOf('data-action="global-search-open"') < top.indexOf('class="fa-shell-time"'));
+   assert.ok(top.indexOf('class="fa-shell-time"') < top.indexOf('class="fa-shell-primary"'));
+   assert.ok(top.trimEnd().endsWith('</div>'));
+   assert.equal((top.match(/data-action="toggle"/g)||[]).length,1);
+   assert.doesNotMatch(top,/data-action="language-toggle"|id="fa-global-search-input"/);
+   assert.match(markup,/<dialog id="fa-global-search-dialog" class="fa-site-dialog fa-global-search-dialog"/);
+   assert.match(markup,/data-action="global-search-close"/);
+   assert.match(markup,/data-action="global-search-result"|fa-global-search-empty/);
+   assert.match(markup,/class="fa-shell-settings-nav"[\s\S]*?data-action="settings"/);
+   assert.equal((markup.match(/aria-current="page"/g)||[]).length,1);
+  }
+  const selected=layout(settingsPage(lang,true),lang,null,true,{route:'/settings',meta,state,playing:false});
+  assert.match(selected,/data-action="language-toggle"/);
+  assert.match(selected,/aria-expanded="true"/);
+  assert.match(selected,/data-action="settings"[^>]+aria-current="page"/);
+ }
+ const plain=layout('Menu','it');
+ assert.doesNotMatch(plain,/data-action="language-toggle"/);
+ assert.match(settingsPage('en',true),/data-action="language-option"/);
+});
+
+test('SHELL-TOPBAR: native search dialog inherits modal lock and stays stable while the timer saves',()=>{
+ const controller=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ for(const action of ['global-search-open','global-search-close','global-search-result'])
+  assert.ok(controller.includes("case '"+action+"'"));
+ assert.match(controller,/openSiteModal\(dialog,dialog\?\.querySelector\('#fa-global-search-input'\)\)/);
+ assert.match(controller,/function closeGlobalSearchDialog\(restoreFocus=false\)/);
+ assert.match(controller,/if\(!app\.querySelector\('#fa-global-search-dialog'\)\?\.open\)await render\(\)/);
+ assert.match(controller,/if\(dialog\.id==='fa-global-search-dialog'\)/);
+ assert.match(css,/\.fa-shell-settings-nav\{margin-top:auto/);
+ assert.match(css,/\.fa-shell-search-trigger\{width:100%/);
+ assert.match(css,/\.fa-global-search-dialog\.fa-site-dialog\{width:min\(560px/);
+ assert.match(css,/\.fa-shell-topbar\{display:grid;grid-template-columns:minmax\(0,1fr\) auto auto;grid-template-areas:"club time primary" "search search search"/);
+ const source=readFileSync(new URL('../src/ui-pages.js',import.meta.url),'utf8');
+ assert.ok(!source.includes('class="fa-shell-language"'));
+ assert.match(source,/settingsPage\(lang,languageOpen=false\)/);
+ assert.match(source,/settings-language[\s\S]*?languagePicker\(lang,languageOpen\)/);
 });
