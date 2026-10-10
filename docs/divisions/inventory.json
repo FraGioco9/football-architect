@@ -9,7 +9,7 @@
     "A05"
   ],
   "designCompletionPct": 100,
-  "approvedSampleCount": 2,
+  "approvedSampleCount": 4,
   "svgPlannedCount": 64,
   "svgProducedCount": 0,
   "implementedGame": false,
@@ -39,6 +39,23 @@
       "fileName": "emblema_lega_delle_città_ii.png",
       "sha256": "0d8569f841fd1e822a0ad7c5e7a2319d8664e33a334378f4bd075526778db1e7",
       "githubUploaded": false
+    },
+    "ENG1": {
+      "divisionId": "ENG-1",
+      "fileName": "emblema_della_crown_league_i.png",
+      "sha256": "8ff35e75fa7cfa4485f814e89abb6aefbef7eb293cf9d6c08cceb9508fa753fd",
+      "libraryPath": "/Football Architect/DIV-ASSET/emblema_della_crown_league_i.png",
+      "githubUploaded": false,
+      "approved": true
+    },
+    "ENG2": {
+      "divisionId": "ENG-2",
+      "fileName": "emblema_araldico_shield_league_ii.png",
+      "sha256": "b72d6a5ced753f65083d60c0f218d48a9d4b1299d5e14212f4dc398dcf806534",
+      "libraryPath": "/Football Architect/DIV-ASSET/emblema_araldico_shield_league_ii.png",
+      "githubUploaded": false,
+      "approved": true,
+      "revision": "second concept corrected for central inner-shield symmetry; only corrected version approved"
     }
   },
   "divisions": [
@@ -97,7 +114,7 @@
         "eng-1-mono-dark.svg",
         "eng-1-mono-light.svg"
       ],
-      "state": "concept-approved; SVG-not-produced"
+      "state": "concept-approved; visual-sample-approved; SVG-not-produced"
     },
     {
       "id": "ENG-2",
@@ -116,7 +133,7 @@
         "eng-2-mono-dark.svg",
         "eng-2-mono-light.svg"
       ],
-      "state": "concept-approved; SVG-not-produced"
+      "state": "concept-approved; visual-sample-approved; SVG-not-produced"
     },
     {
       "id": "ES-1",
