@@ -95,3 +95,24 @@ test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
   assert.doesNotMatch(html,/<script[^>]+guide\.js/);
 });
+
+test("ENG-ALL-ENGLISH-01 localizes Guide landmark names and document title", () => {
+  for (const key of ["brandHome", "guideNavigation", "guideSections"]) {
+    assert.match(html, new RegExp('data-i18n-aria="' + key + '"'));
+  }
+  assert.equal((html.match(/data-i18n-aria="guideSections"/g) || []).length, 2);
+  assert.match(js, /document\.title = copy\.guideTitle \+ " — Football Architect"/);
+  const words = {
+    en: ["Guide", "Page navigation", "Guide sections"],
+    de: ["Leitfaden", "Seitennavigation", "Leitfadenabschnitte"],
+    es: ["Guía", "Navegación de la página", "Secciones de la guía"],
+    fr: ["Guide", "Navigation de la page", "Sections du guide"],
+    it: ["Guida", "Navigazione della pagina", "Sezioni della guida"]
+  };
+  for (const [lang, [title, nav, sections]] of Object.entries(words)) {
+    assert.match(js, new RegExp('guideTitle:"' + title + '"'));
+    assert.ok(js.includes('guideNavigation:"' + nav + '"'));
+    assert.ok(js.includes('guideSections:"' + sections + '"'));
+    assert.ok(["en","de","es","fr","it"].includes(lang));
+  }
+});
