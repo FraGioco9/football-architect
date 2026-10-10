@@ -91,9 +91,16 @@ test("COMPETITIONS-02 preserves five languages, rounded flags and accessible foc
 
 test("COMPETITIONS-03 places title, logo, metadata and return button in one header on all pages",()=>{
  const css=read("assets/app.css");
- assert.ok(css.includes(".app-competition-header{display:flex"));
- assert.ok(css.includes(".app-competition-header{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin:0}"));
- assert.ok(css.includes(".app-competition-identity .app-page-title{margin:0;color:#f2f7f4;"));
+ assert.ok(css.includes(".app-competition-header{--app-competition-heading-size:var(--app-page-title-size)"));
+ assert.ok(css.includes("--app-competition-heading-size:var(--app-page-title-size)"));
+ assert.ok(css.includes("--app-competition-logo-size:calc(var(--app-competition-heading-size) * 1.2 + 29px)"));
+ assert.ok(css.includes(".app-competition-logo-placeholder-large{width:var(--app-competition-logo-size);height:var(--app-competition-logo-size)"));
+ assert.ok(css.includes(".app-competition-identity .app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-competition-heading-size)"));
+ assert.ok(css.includes("--app-competition-heading-size:clamp(20px,6vw,26px)"));
+ assert.ok(css.includes(".app-competition-identity{flex:1 1 calc(100% - var(--app-competition-logo-size) - 10px)"));
+ assert.ok(css.includes(".app-world-grid .app-competition-logo-placeholder{width:32px;height:32px"));
+ assert.ok(!css.includes(".app-competition-logo-placeholder-large{width:52px;height:52px"));
+
  assert.ok(!css.includes(".app-world-related"));
  assert.ok(css.includes(".app-competition-return:focus-visible"));
  for(const {division,file} of routes){
