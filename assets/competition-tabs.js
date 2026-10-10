@@ -5,7 +5,7 @@
   if (!tablist) return;
   const tabs = [...tablist.querySelectorAll('[role="tab"]')];
   const panels = tabs.map(tab => document.getElementById(tab.getAttribute("aria-controls")));
-  if (tabs.length !== 8 || panels.some(panel => !panel)) return;
+  if (tabs.length !== 6 || panels.some(panel => !panel)) return;
   function select(index, focus = false) {
     for (let i = 0; i < tabs.length; i++) {
       const active = i === index;

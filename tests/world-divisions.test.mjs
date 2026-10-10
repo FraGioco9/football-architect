@@ -50,13 +50,13 @@ test("COMPETITIONS-02 keeps direct routes and all local navigation targets resol
  }
 });
 
-test("COMPETITIONS-02 keeps 320 unique unranked clubs in simplified four-column tables",()=>{
+test("COMPETITIONS-02 preserves 320 unique provisional clubs across 11-column standings",()=>{
  const seen=new Set();
  for(const {division,file} of routes){
   const html=read(file),entry=allocation.allocations.find(e=>e.divisionId===division.id);
   assert.ok(entry);assert.equal(entry.clubIds.length,20);
   assert.ok(html.includes('<table class="app-world-standing-table">'));
-  assert.equal((html.match(/<th scope="col"/g)||[]).length,4);
+  assert.equal((html.match(/<th scope="col"/g)||[]).length,11);
   assert.equal((html.match(/<tr data-world-club="/g)||[]).length,20);
   assert.ok(html.includes('data-app-i18n="standingsEmpty"'));
   assert.ok(html.includes('href="../" data-app-i18n="allDivisions"'));
@@ -120,27 +120,25 @@ test("COMPETITIONS-03 places title, logo, metadata and return button in one head
  }
 });
 
-test("COMPETITIONS-04 implements eight navigable views on every detail page",()=>{
- const slugs=["standings","fixtures","clubs","players","stats","history","rules","awards"];
- const app=read("assets/app.js");
- const code=read("assets/competition-tabs.js");
- const css=read("assets/app.css");
- const expectedKeys=["competitionViews",...slugs.map(id=>"competitionTab"+id[0].toUpperCase()+id.slice(1)),"competitionClubsNote",
-  "competitionFixturesEmpty","competitionPlayersEmpty","competitionStatsEmpty","competitionHistoryEmpty","competitionRulesEmpty","competitionAwardsEmpty"];
- for(const key of expectedKeys)
-  assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
- assert.ok(code.includes('event.key === "ArrowRight"'));
- assert.ok(code.includes('event.key === "ArrowLeft"'));
- assert.ok(code.includes('event.key === "Home"'));
- assert.ok(code.includes('event.key === "End"'));
+test("COMPETITIONS-04 keeps six accessible views in all competition pages",()=>{
+ const slugs=["standings","fixtures","stats","history","rules","awards"];
+ const app=read("assets/app.js"),code=read("assets/competition-tabs.js"),css=read("assets/app.css");
+ const expectedKeys=["competitionViews",...slugs.map(id=>"competitionTab"+id[0].toUpperCase()+id.slice(1)),
+  "competitionFixturesEmpty","competitionStatsEmpty","competitionHistoryEmpty","competitionRulesEmpty","competitionAwardsEmpty",
+  "standingsForm","standingsTable"];
+ for(const key of expectedKeys)assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
+ for(const retired of ["competitionTabClubs","competitionTabPlayers","competitionClubsNote","competitionPlayersEmpty"])
+  assert.equal((app.match(new RegExp("\\b"+retired+":","g"))||[]).length,0,retired);
+ assert.ok(code.includes("tabs.length !== 6"));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key === "'+key+'"'));
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
  assert.ok(css.includes(".app-competition-tabs{display:flex"));
  for(const {division,file} of routes){
   const html=read(file);
-  assert.equal((html.match(/role="tab"/g)||[]).length,8,file);
-  assert.equal((html.match(/role="tabpanel"/g)||[]).length,8,file);
+  assert.equal((html.match(/role="tab"/g)||[]).length,6,file);
+  assert.equal((html.match(/role="tabpanel"/g)||[]).length,6,file);
   assert.equal((html.match(/role="tab"[^>]*aria-selected="true"/g)||[]).length,1,file);
-  assert.equal((html.match(/role="tab"[^>]*aria-selected="false"/g)||[]).length,7,file);
+  assert.equal((html.match(/role="tab"[^>]*aria-selected="false"/g)||[]).length,5,file);
   assert.ok(html.includes('role="tablist" aria-label="Competition views" data-app-aria="competitionViews"'),file);
   for(const slug of slugs){
    assert.ok(html.includes('id="competition-tab-'+slug+'"'),file);
@@ -148,22 +146,48 @@ test("COMPETITIONS-04 implements eight navigable views on every detail page",()=
    assert.ok(html.includes('id="competition-panel-'+slug+'"'),file);
    assert.ok(html.includes('aria-labelledby="competition-tab-'+slug+'"'),file);
   }
+  for(const old of ["clubs","players"]){
+   assert.ok(!html.includes('id="competition-tab-'+old+'"'),file);
+   assert.ok(!html.includes('id="competition-panel-'+old+'"'),file);
+  }
   assert.ok(html.includes('id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0"'),file);
   assert.ok(html.includes('id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden'),file);
   assert.ok(html.includes('src="../../../../assets/competition-tabs.js" defer'),file);
-  assert.equal((html.match(/<li data-world-club="/g)||[]).length,20,file);
+  assert.equal((html.match(/<li data-world-club="/g)||[]).length,0,file);
   assert.ok(html.includes('data-app-i18n="competitionRulesEmpty"'),file);
   assert.ok(html.includes('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+division.capacity+'</dd>'),file);
   assert.ok(html.includes('data-app-i18n="tierLabel">Tier</dt><dd>'+division.tier+'</dd>'),file);
-  assert.ok(!html.includes("2026 champion"),file);
  }
 });
 
-test("COMPETITIONS-04 keyboard and click controls isolate one selected tab",async()=>{
+test("COMPETITIONS-05 shows all key league statistics with no fabricated data",()=>{
+ const columns=["standingsPosition","standingsClub","standingsPlayed","standingsWon","standingsDrawn",
+  "standingsLost","standingsFor","standingsAgainst","standingsDifference","standingsPoints","standingsForm"];
+ const css=read("assets/app.css");
+ assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
+ assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
+ assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
+ assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:1030px"));
+ assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto;overflow-y:hidden;"));
+ for(const {division,file} of routes){
+  const html=read(file);
+  assert.ok(html.includes('role="region" aria-label="Standings statistics" data-app-aria="standingsTable"'),file);
+  assert.equal((html.match(/<th scope="col"/g)||[]).length,11,file);
+  for(const key of columns)assert.ok(html.includes('data-app-i18n="'+key+'"'),file+": "+key);
+  const rows=[...html.matchAll(/<tr data-world-club="([^"]+)">([\s\S]*?)<\/tr>/g)];
+  assert.equal(rows.length,20,file);
+  for(const [,id,body] of rows){
+   assert.equal((body.match(/<td class="app-world-stat-unknown">—<\/td>/g)||[]).length,10,id);
+   assert.equal((body.match(/<th scope="row" class="app-world-standing-club">/g)||[]).length,1,id);
+   assert.doesNotMatch(body,/<td[^>]*>\d+<\/td>/,id);
+  }
+ }
+});
+
+test("COMPETITIONS-05 keyboard and click controls isolate one of six selected tabs",async()=>{
  const {runInNewContext}=await import("node:vm");
- const tabs=Array.from({length:8},(_,i)=>{
-  const listeners={};
-  const selected={};
+ const tabs=Array.from({length:6},(_,i)=>{
+  const listeners={},selected={};
   return {
    listeners,selected,tabIndex:i===0?0:-1,focused:false,scrolled:false,
    classList:{toggle(name,on){selected[name]=on}},
@@ -177,24 +201,24 @@ test("COMPETITIONS-04 keyboard and click controls isolate one selected tab",asyn
  const panels=tabs.map(()=>({hidden:false}));
  const doc={
   querySelector(selector){return selector===".app-competition-tabs"?{querySelectorAll(){return tabs}}:null},
-  getElementById(id){const n=Number(id.slice("competition-panel-".length));return panels[n]??null}
+  getElementById(id){return panels[Number(id.slice("competition-panel-".length))]??null}
  };
  runInNewContext(read("assets/competition-tabs.js"),{document:doc});
- assert.deepEqual(panels.map(panel=>panel.hidden),[false,true,true,true,true,true,true,true]);
- tabs[5].listeners.click();
- assert.equal(tabs[5].selected["aria-selected"],"true");
+ assert.deepEqual(panels.map(p=>p.hidden),[false,true,true,true,true,true]);
+ tabs[3].listeners.click();
+ assert.equal(panels[3].hidden,false);
+ assert.equal(tabs[3].selected["aria-selected"],"true");
  assert.equal(tabs[0].selected["aria-selected"],"false");
- assert.equal(panels[5].hidden,false);
- assert.equal(panels[0].hidden,true);
  let prevented=false;
- tabs[5].listeners.keydown({key:"ArrowRight",preventDefault(){prevented=true}});
+ tabs[3].listeners.keydown({key:"ArrowRight",preventDefault(){prevented=true}});
  assert.ok(prevented);
- assert.equal(tabs[6].focused,true);
- assert.equal(tabs[6].scrolled,true);
- assert.equal(panels[6].hidden,false);
- tabs[6].listeners.keydown({key:"Home",preventDefault(){}});
+ assert.equal(tabs[4].focused,true);
+ assert.equal(tabs[4].scrolled,true);
+ assert.equal(panels[4].hidden,false);
+ tabs[4].listeners.keydown({key:"Home",preventDefault(){}});
  assert.equal(panels[0].hidden,false);
  tabs[0].listeners.keydown({key:"ArrowLeft",preventDefault(){}});
- assert.equal(panels[7].hidden,false);
- assert.equal(panels.filter(panel=>!panel.hidden).length,1);
+ assert.equal(panels[5].hidden,false);
+ tabs[5].listeners.keydown({key:"End",preventDefault(){}});
+ assert.equal(panels.filter(p=>!p.hidden).length,1);
 });

@@ -175,8 +175,6 @@
           <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
             <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-clubs" aria-controls="competition-panel-clubs" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabClubs">Clubs</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-players" aria-controls="competition-panel-players" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPlayers">Players</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
@@ -189,20 +187,35 @@
               <span class="app-world-standings-count">20 / 20</span>
             </div>
             <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional clubs. No standings until a season begins.</p>
-            <table class="app-world-standing-table">
-              <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
-              <thead>
-                <tr>
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
                   <th scope="col" data-app-i18n="standingsPosition">Pos</th>
                   <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
                   <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
                   <th scope="col" data-app-i18n="standingsPoints">Pts</th>
-                </tr>
-              </thead>
-              <tbody>
+                  <th scope="col" data-app-i18n="standingsForm">Form</th>
+                  </tr>
+                </thead>
+                <tbody>
                 <tr data-world-club="ES-1">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ALB</span><span class="app-world-club-name">Club Deportivo Alborada Madrid</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -211,10 +224,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MDC</span><span class="app-world-club-name">Futbol Club Mar de Cobre Barcelona</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-3">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MTA</span><span class="app-world-club-name">Unión Deportiva Monteazul Valencia</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -223,10 +250,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RBC</span><span class="app-world-club-name">Club Deportivo Ribera Clara Sevilla</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-5">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">AVS</span><span class="app-world-club-name">Club Atlético Viento Sur Málaga</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -235,10 +276,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">ENC</span><span class="app-world-club-name">Sociedad Deportiva Encinar Zaragoza</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-7">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HRZ</span><span class="app-world-club-name">Club Deportivo Harizti Bilbao</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -247,10 +302,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">IZA</span><span class="app-world-club-name">Unión Deportiva Izarra Donostia</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-9">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LMB</span><span class="app-world-club-name">Club de Fútbol Lumbre Granada</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -259,10 +328,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RBL</span><span class="app-world-club-name">Club Deportivo Robledal Valladolid</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-11">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BRV</span><span class="app-world-club-name">Unión Deportiva Bravura Salamanca</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -271,10 +354,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BRT</span><span class="app-world-club-name">Sociedade Deportiva Brétema da Coruña</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-13">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">CLZ</span><span class="app-world-club-name">Club Deportivo Calzada Córdoba</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -283,10 +380,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BHD</span><span class="app-world-club-name">Unión Deportiva Bahía Dorada Cádiz</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-15">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MVD</span><span class="app-world-club-name">Sociedad Deportiva Monteverde Oviedo</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -295,10 +406,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">PNC</span><span class="app-world-club-name">Racing Club Peñaclara Santander</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-17">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">AMA</span><span class="app-world-club-name">Club Atlético Almadraba Almería</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -307,10 +432,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">CIG</span><span class="app-world-club-name">Club Deportivo Cigarral Toledo</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="ES-19">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LVA</span><span class="app-world-club-name">Unión Deportiva Levantina Alicante</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -319,44 +458,22 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">VLD</span><span class="app-world-club-name">Sporting Club Valduna Gijón</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </section>
           </div>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
             <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
-          </section>
-          <section id="competition-panel-clubs" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-clubs" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabClubs">Clubs</h2>
-            <p class="app-competition-status" data-app-i18n="competitionClubsNote">Provisional allocation only; season participation is not confirmed.</p>
-            <ol class="app-competition-club-list">
-                <li data-world-club="ES-1"><span class="app-world-club-code" aria-hidden="true">ALB</span><span>Club Deportivo Alborada Madrid</span></li>
-                <li data-world-club="ES-2"><span class="app-world-club-code" aria-hidden="true">MDC</span><span>Futbol Club Mar de Cobre Barcelona</span></li>
-                <li data-world-club="ES-3"><span class="app-world-club-code" aria-hidden="true">MTA</span><span>Unión Deportiva Monteazul Valencia</span></li>
-                <li data-world-club="ES-4"><span class="app-world-club-code" aria-hidden="true">RBC</span><span>Club Deportivo Ribera Clara Sevilla</span></li>
-                <li data-world-club="ES-5"><span class="app-world-club-code" aria-hidden="true">AVS</span><span>Club Atlético Viento Sur Málaga</span></li>
-                <li data-world-club="ES-6"><span class="app-world-club-code" aria-hidden="true">ENC</span><span>Sociedad Deportiva Encinar Zaragoza</span></li>
-                <li data-world-club="ES-7"><span class="app-world-club-code" aria-hidden="true">HRZ</span><span>Club Deportivo Harizti Bilbao</span></li>
-                <li data-world-club="ES-8"><span class="app-world-club-code" aria-hidden="true">IZA</span><span>Unión Deportiva Izarra Donostia</span></li>
-                <li data-world-club="ES-9"><span class="app-world-club-code" aria-hidden="true">LMB</span><span>Club de Fútbol Lumbre Granada</span></li>
-                <li data-world-club="ES-10"><span class="app-world-club-code" aria-hidden="true">RBL</span><span>Club Deportivo Robledal Valladolid</span></li>
-                <li data-world-club="ES-11"><span class="app-world-club-code" aria-hidden="true">BRV</span><span>Unión Deportiva Bravura Salamanca</span></li>
-                <li data-world-club="ES-12"><span class="app-world-club-code" aria-hidden="true">BRT</span><span>Sociedade Deportiva Brétema da Coruña</span></li>
-                <li data-world-club="ES-13"><span class="app-world-club-code" aria-hidden="true">CLZ</span><span>Club Deportivo Calzada Córdoba</span></li>
-                <li data-world-club="ES-14"><span class="app-world-club-code" aria-hidden="true">BHD</span><span>Unión Deportiva Bahía Dorada Cádiz</span></li>
-                <li data-world-club="ES-15"><span class="app-world-club-code" aria-hidden="true">MVD</span><span>Sociedad Deportiva Monteverde Oviedo</span></li>
-                <li data-world-club="ES-16"><span class="app-world-club-code" aria-hidden="true">PNC</span><span>Racing Club Peñaclara Santander</span></li>
-                <li data-world-club="ES-17"><span class="app-world-club-code" aria-hidden="true">AMA</span><span>Club Atlético Almadraba Almería</span></li>
-                <li data-world-club="ES-18"><span class="app-world-club-code" aria-hidden="true">CIG</span><span>Club Deportivo Cigarral Toledo</span></li>
-                <li data-world-club="ES-19"><span class="app-world-club-code" aria-hidden="true">LVA</span><span>Unión Deportiva Levantina Alicante</span></li>
-                <li data-world-club="ES-20"><span class="app-world-club-code" aria-hidden="true">VLD</span><span>Sporting Club Valduna Gijón</span></li>
-            </ol>
-          </section>
-          <section id="competition-panel-players" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-players" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabPlayers">Players</h2>
-            <p class="app-competition-status" data-app-i18n="competitionPlayersEmpty">Player rosters are not available.</p>
           </section>
           <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabStats">Stats</h2>

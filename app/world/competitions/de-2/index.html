@@ -175,8 +175,6 @@
           <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
             <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-clubs" aria-controls="competition-panel-clubs" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabClubs">Clubs</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-players" aria-controls="competition-panel-players" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPlayers">Players</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
@@ -189,20 +187,35 @@
               <span class="app-world-standings-count">20 / 20</span>
             </div>
             <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional clubs. No standings until a season begins.</p>
-            <table class="app-world-standing-table">
-              <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
-              <thead>
-                <tr>
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
                   <th scope="col" data-app-i18n="standingsPosition">Pos</th>
                   <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
                   <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
                   <th scope="col" data-app-i18n="standingsPoints">Pts</th>
-                </tr>
-              </thead>
-              <tbody>
+                  <th scope="col" data-app-i18n="standingsForm">Form</th>
+                  </tr>
+                </thead>
+                <tbody>
                 <tr data-world-club="DE-21">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HVB</span><span class="app-world-club-name">Potsdamer Sportverein Havelblick</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -211,10 +224,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">BKS</span><span class="app-world-club-name">Lübecker Verein für Leibesübungen Backstein</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-23">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">EBW</span><span class="app-world-club-name">Magdeburger Sport-Club Elbwarte</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -223,10 +250,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">KMB</span><span class="app-world-club-name">Erfurter Fußballclub Krämerbrücke</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-25">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">SLB</span><span class="app-world-club-name">Jenaer Sportverein Saalebogen</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -235,10 +276,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">WRK</span><span class="app-world-club-name">Chemnitzer Sportgemeinschaft Werkhof</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-27">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">SZB</span><span class="app-world-club-name">Hallescher Fußballverein Salzbrücke</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -247,10 +302,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LNF</span><span class="app-world-club-name">Bielefelder Verein für Bewegungsspiele Leinenfeld</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-29">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">HSW</span><span class="app-world-club-name">Osnabrücker Sportverein Hasewiese</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -259,10 +328,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">LWT</span><span class="app-world-club-name">Braunschweiger Fußballclub Löwentor</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-31">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">FDH</span><span class="app-world-club-name">Kasseler Sport-Club Fuldahain</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -271,10 +354,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">QHF</span><span class="app-world-club-name">Wiesbadener Fußballverein Quellenhof</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-33">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MTH</span><span class="app-world-club-name">Darmstädter Sportverein Mathildenhöhe</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -283,10 +380,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">RWT</span><span class="app-world-club-name">Koblenzer Fußballclub Rheinwacht</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-35">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">MST</span><span class="app-world-club-name">Trierer Sportverein Moselstein</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -295,10 +406,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">STQ</span><span class="app-world-club-name">Saarbrücker Fußballclub Stahlquell</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-37">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">KHN</span><span class="app-world-club-name">Aachener Sportgemeinschaft Kohlenhain</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -307,10 +432,24 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">SWT</span><span class="app-world-club-name">Wuppertaler Sportverein Schwebetal</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
                 <tr data-world-club="DE-39">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">KPF</span><span class="app-world-club-name">Bochumer Verein für Leibesübungen Kumpelfeld</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
                 </tr>
@@ -319,44 +458,22 @@
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">DNW</span><span class="app-world-club-name">Regensburger Fußballclub Donauwerk</span></th>
                   <td class="app-world-stat-unknown">—</td>
                   <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </section>
           </div>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
             <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
-          </section>
-          <section id="competition-panel-clubs" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-clubs" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabClubs">Clubs</h2>
-            <p class="app-competition-status" data-app-i18n="competitionClubsNote">Provisional allocation only; season participation is not confirmed.</p>
-            <ol class="app-competition-club-list">
-                <li data-world-club="DE-21"><span class="app-world-club-code" aria-hidden="true">HVB</span><span>Potsdamer Sportverein Havelblick</span></li>
-                <li data-world-club="DE-22"><span class="app-world-club-code" aria-hidden="true">BKS</span><span>Lübecker Verein für Leibesübungen Backstein</span></li>
-                <li data-world-club="DE-23"><span class="app-world-club-code" aria-hidden="true">EBW</span><span>Magdeburger Sport-Club Elbwarte</span></li>
-                <li data-world-club="DE-24"><span class="app-world-club-code" aria-hidden="true">KMB</span><span>Erfurter Fußballclub Krämerbrücke</span></li>
-                <li data-world-club="DE-25"><span class="app-world-club-code" aria-hidden="true">SLB</span><span>Jenaer Sportverein Saalebogen</span></li>
-                <li data-world-club="DE-26"><span class="app-world-club-code" aria-hidden="true">WRK</span><span>Chemnitzer Sportgemeinschaft Werkhof</span></li>
-                <li data-world-club="DE-27"><span class="app-world-club-code" aria-hidden="true">SZB</span><span>Hallescher Fußballverein Salzbrücke</span></li>
-                <li data-world-club="DE-28"><span class="app-world-club-code" aria-hidden="true">LNF</span><span>Bielefelder Verein für Bewegungsspiele Leinenfeld</span></li>
-                <li data-world-club="DE-29"><span class="app-world-club-code" aria-hidden="true">HSW</span><span>Osnabrücker Sportverein Hasewiese</span></li>
-                <li data-world-club="DE-30"><span class="app-world-club-code" aria-hidden="true">LWT</span><span>Braunschweiger Fußballclub Löwentor</span></li>
-                <li data-world-club="DE-31"><span class="app-world-club-code" aria-hidden="true">FDH</span><span>Kasseler Sport-Club Fuldahain</span></li>
-                <li data-world-club="DE-32"><span class="app-world-club-code" aria-hidden="true">QHF</span><span>Wiesbadener Fußballverein Quellenhof</span></li>
-                <li data-world-club="DE-33"><span class="app-world-club-code" aria-hidden="true">MTH</span><span>Darmstädter Sportverein Mathildenhöhe</span></li>
-                <li data-world-club="DE-34"><span class="app-world-club-code" aria-hidden="true">RWT</span><span>Koblenzer Fußballclub Rheinwacht</span></li>
-                <li data-world-club="DE-35"><span class="app-world-club-code" aria-hidden="true">MST</span><span>Trierer Sportverein Moselstein</span></li>
-                <li data-world-club="DE-36"><span class="app-world-club-code" aria-hidden="true">STQ</span><span>Saarbrücker Fußballclub Stahlquell</span></li>
-                <li data-world-club="DE-37"><span class="app-world-club-code" aria-hidden="true">KHN</span><span>Aachener Sportgemeinschaft Kohlenhain</span></li>
-                <li data-world-club="DE-38"><span class="app-world-club-code" aria-hidden="true">SWT</span><span>Wuppertaler Sportverein Schwebetal</span></li>
-                <li data-world-club="DE-39"><span class="app-world-club-code" aria-hidden="true">KPF</span><span>Bochumer Verein für Leibesübungen Kumpelfeld</span></li>
-                <li data-world-club="DE-40"><span class="app-world-club-code" aria-hidden="true">DNW</span><span>Regensburger Fußballclub Donauwerk</span></li>
-            </ol>
-          </section>
-          <section id="competition-panel-players" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-players" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabPlayers">Players</h2>
-            <p class="app-competition-status" data-app-i18n="competitionPlayersEmpty">Player rosters are not available.</p>
           </section>
           <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabStats">Stats</h2>

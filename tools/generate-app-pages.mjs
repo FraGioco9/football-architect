@@ -64,13 +64,12 @@ const indexContent = function indexContent(root){
 const detailAppend = function detailAppend(d){
  const cs=provisionalClubs.get(d.id);
  if(!cs||cs.length!==d.capacity)throw Error("missing clubs "+d.id);
- const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsPoints","Pts"]]
+ const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
  const rows=cs.map(c=>`                <tr data-world-club="${encode(c.countryId)}-${c.clubId}">
                   <td class="app-world-stat-unknown">—</td>
                   <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span class="app-world-club-name">${encode(c.fullName)}</span></th>
-                  <td class="app-world-stat-unknown">—</td>
-                  <td class="app-world-stat-unknown">—</td>
+${Array.from({length:9},()=> '                  <td class="app-world-stat-unknown">—</td>').join("\n")}
                 </tr>`).join("\n");
  return `
           <section class="app-world-standings" aria-labelledby="division-standings-heading">
@@ -79,25 +78,25 @@ const detailAppend = function detailAppend(d){
               <span class="app-world-standings-count">${cs.length} / ${d.capacity}</span>
             </div>
             <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional clubs. No standings until a season begins.</p>
-            <table class="app-world-standing-table">
-              <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
-              <thead>
-                <tr>
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+              <table class="app-world-standing-table">
+                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
 ${cols}
-                </tr>
-              </thead>
-              <tbody>
+                  </tr>
+                </thead>
+                <tbody>
 ${rows}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </section>`;
 };
 const competitionTabs = function competitionTabs(d,standings) {
  const views=[
   ["standings","competitionTabStandings","Standings"],
   ["fixtures","competitionTabFixtures","Fixtures"],
-  ["clubs","competitionTabClubs","Clubs"],
-  ["players","competitionTabPlayers","Players"],
   ["stats","competitionTabStats","Stats"],
   ["history","competitionTabHistory","History"],
   ["rules","competitionTabRules","Rules"],
@@ -106,14 +105,9 @@ const competitionTabs = function competitionTabs(d,standings) {
  const nav=views.map(([id,key,label],i)=>
   `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`
  ).join("\n");
- const roster=provisionalClubs.get(d.id);
- if(!roster || roster.length!==d.capacity)throw new Error("Missing provisional clubs for tabs "+d.id);
- const clubs=roster.map(c=>
-  `                <li data-world-club="${encode(c.countryId)}-${c.clubId}"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span>${encode(c.fullName)}</span></li>`).join("\n");
- const emptyKeys={fixtures:"competitionFixturesEmpty",players:"competitionPlayersEmpty",stats:"competitionStatsEmpty",history:"competitionHistoryEmpty",awards:"competitionAwardsEmpty"};
+ const emptyKeys={fixtures:"competitionFixturesEmpty",stats:"competitionStatsEmpty",history:"competitionHistoryEmpty",awards:"competitionAwardsEmpty"};
  const messages={
   fixtures:"No scheduled matches or results are available.",
-  players:"Player rosters are not available.",
   stats:"Competition statistics are not available before matches are played.",
   history:"No completed seasons or past winners are available.",
   awards:"No season awards are available."
@@ -121,7 +115,6 @@ const competitionTabs = function competitionTabs(d,standings) {
  const panels=views.map(([id,key,label],i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
-  if(id==="clubs")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionClubsNote">Provisional allocation only; season participation is not confirmed.</p>\n            <ol class="app-competition-club-list">\n${clubs}\n            </ol>\n          </section>`;
   if(id==="rules")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>\n            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>${d.capacity}</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>${d.tier}</dd></div></dl>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
