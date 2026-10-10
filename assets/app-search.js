@@ -32,7 +32,7 @@
     ["section","app-about-heading","aboutText","/app/settings/#app-about-heading"]
   ];
   // Read canonical division identities from the same-origin static catalogue.
-  if (document.getElementById("divisions-title")) entries.push(["page","divisions-title","divisionIntro","/app/world/divisions/"]);
+  if (document.getElementById("divisions-title")) entries.push(["page","divisions-title","divisions","/app/world/divisions/"]);
   const divisionEntries = [];
   const fold = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase().trim();
   const words = () => translations[document.documentElement.lang] || translations.en;
