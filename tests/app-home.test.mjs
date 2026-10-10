@@ -26,7 +26,10 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
     assert.match(markup, /class="fa-shell-sidebar"/);
     assert.match(markup, /class="fa-shell-topbar"/);
     assert.match(markup, /id="app-calendar"/);
+    assert.match(markup, /id="app-nav-world-title"/);
+    assert.match(markup, /id="app-nav-divisions"/);
     assert.match(markup, /id="app-settings"/);
+    assert.match(markup, /id="app-divisions"/);
     const [dashboardLink,calendarLink,settingsLink] = expectedLinks[page];
     assert.ok(markup.includes('id="app-nav-dashboard" href="'+dashboardLink+'"'));
     assert.ok(markup.includes('id="app-nav-calendar" href="'+calendarLink+'"'));
@@ -66,11 +69,11 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
   for (const [view,markup] of Object.entries(pages)) {
     assert.doesNotMatch(markup,/class="app-eyebrow"|class="app-intro"/);
     assert.match(markup, /<main class="app-main" id="main-content" tabindex="-1">/);
-    for (const label of ["dashboard","calendar","settings"]) {
+    for (const label of ["dashboard","calendar","settings","divisions"]) {
       assert.match(markup,new RegExp('<h1 class="app-page-title" id="'+label+'-title"'));
     }
     assert.match(markup,new RegExp('<section id="app-'+view+'"[^>]*aria-labelledby="'+view+'-title"(?![^>]*hidden)'));
-    assert.equal((markup.match(/class="app-page-title"/g)||[]).length,3);
+    assert.equal((markup.match(/class="app-page-title"/g)||[]).length,4);
   }
   for(const token of ["--app-page-pad-inline","--app-page-pad-top","--app-page-pad-bottom","--app-page-section-gap","--app-page-title-size"]) {
     assert.ok(css.includes(token),token);
@@ -271,5 +274,5 @@ test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
 test("CLEAN-OPT generated app shells stay byte-identical to checked-in HTML", () => {
   const generator = fileURLToPath(new URL("../tools/generate-app-pages.mjs", import.meta.url));
   const output = execFileSync(process.execPath, [generator, "--check"], {encoding:"utf8"});
-  assert.match(output, /Static HTML matches checked-in pages: 3\/3/);
+  assert.match(output, /Static HTML matches checked-in pages: 20\/20/);
 });

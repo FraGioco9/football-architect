@@ -4,6 +4,18 @@
   const copies = {
     en: {
       skip:"Skip to main content",
+      navWorld:"World",
+      divisionIntro:"Explore the 16 documented divisions across eight countries. No league season is running yet.",
+      divisionTier1:"First division",
+      divisionTier2:"Second division",
+      allDivisions:"All divisions",
+      crestPlaceholder:"Temporary division badge",
+      placeholderNotice:"Temporary badge; final division identity artwork is not integrated.",
+      countryLabel:"Country",
+      tierLabel:"Tier",
+      capacityLabel:"Planned club places",
+      competitionUnavailable:"Competition not active",
+      competitionNotice:"Club allocations, standings, fixtures and results have not been implemented.",
       brandHome:"Football Architect home",
       sidebarLabel:"Career navigation",pagesLabel:"Career pages",navHome:"Home",
       dashboard:"Dashboard",calendar:"Calendar",noClub:"No club selected",noSeason:"No active season",
@@ -36,6 +48,18 @@
     },
     de: {
       skip:"Zum Hauptinhalt springen",
+      navWorld:"Welt",
+      divisionIntro:"Entdecke die 16 dokumentierten Ligen in acht Ländern. Der Ligabetrieb hat noch nicht begonnen.",
+      divisionTier1:"Erste Liga",
+      divisionTier2:"Zweite Liga",
+      allDivisions:"Alle Ligen",
+      crestPlaceholder:"Provisorisches Liga-Symbol",
+      placeholderNotice:"Vorläufiges Symbol; das endgültige Liga-Wappen ist noch nicht integriert.",
+      countryLabel:"Land",
+      tierLabel:"Stufe",
+      capacityLabel:"Geplante Vereinsplätze",
+      competitionUnavailable:"Wettbewerb noch nicht aktiv",
+      competitionNotice:"Vereinszuordnungen, Tabellen, Spielpläne und Ergebnisse sind noch nicht implementiert.",
       brandHome:"Football Architect – Startseite",
       sidebarLabel:"Karrierenavigation",pagesLabel:"Karriereseiten",navHome:"Start",
       dashboard:"Dashboard",calendar:"Kalender",noClub:"Kein Verein ausgewählt",noSeason:"Keine aktive Saison",
@@ -68,6 +92,18 @@
     },
     es: {
       skip:"Saltar al contenido principal",
+      navWorld:"Mundo",
+      divisionIntro:"Explora las 16 divisiones documentadas en ocho países. La competición aún no ha comenzado.",
+      divisionTier1:"Primera división",
+      divisionTier2:"Segunda división",
+      allDivisions:"Todas las divisiones",
+      crestPlaceholder:"Emblema provisional de división",
+      placeholderNotice:"Emblema provisional; el diseño definitivo de la división todavía no está integrado.",
+      countryLabel:"País",
+      tierLabel:"Nivel",
+      capacityLabel:"Plazas previstas para clubes",
+      competitionUnavailable:"Competición aún no activa",
+      competitionNotice:"Todavía no existen asignaciones de clubes, clasificaciones, calendarios ni resultados.",
       brandHome:"Inicio de Football Architect",
       sidebarLabel:"Navegación de carrera",pagesLabel:"Páginas de carrera",navHome:"Inicio",
       dashboard:"Panel",calendar:"Calendario",noClub:"Ningún club seleccionado",noSeason:"Sin temporada activa",
@@ -100,6 +136,18 @@
     },
     fr: {
       skip:"Aller au contenu principal",
+      navWorld:"Monde",
+      divisionIntro:"Découvrez les 16 divisions répertoriées dans huit pays. Aucune compétition n'est encore en cours.",
+      divisionTier1:"Première division",
+      divisionTier2:"Deuxième division",
+      allDivisions:"Toutes les divisions",
+      crestPlaceholder:"Emblème provisoire de division",
+      placeholderNotice:"Emblème provisoire ; le visuel définitif de cette division n'est pas intégré.",
+      countryLabel:"Pays",
+      tierLabel:"Niveau",
+      capacityLabel:"Places prévues pour les clubs",
+      competitionUnavailable:"Compétition inactive",
+      competitionNotice:"Les affectations de clubs, classements, calendriers et résultats ne sont pas encore disponibles.",
       brandHome:"Accueil de Football Architect",
       sidebarLabel:"Navigation de carrière",pagesLabel:"Pages de carrière",navHome:"Accueil",
       dashboard:"Tableau de bord",calendar:"Calendrier",noClub:"Aucun club sélectionné",noSeason:"Aucune saison active",
@@ -132,6 +180,18 @@
     },
     it: {
       skip:"Vai al contenuto principale",
+      navWorld:"Mondo",
+      divisionIntro:"Esplora le 16 divisioni documentate di otto Paesi. I campionati non sono ancora attivi.",
+      divisionTier1:"Prima divisione",
+      divisionTier2:"Seconda divisione",
+      allDivisions:"Tutte le divisioni",
+      crestPlaceholder:"Emblema provvisorio della divisione",
+      placeholderNotice:"Emblema temporaneo: la grafica definitiva della divisione non è ancora integrata.",
+      countryLabel:"Paese",
+      tierLabel:"Livello",
+      capacityLabel:"Posti club previsti",
+      competitionUnavailable:"Campionato non attivo",
+      competitionNotice:"Le assegnazioni dei club, le classifiche, i calendari e i risultati non sono ancora implementati.",
       brandHome:"Home di Football Architect",
       sidebarLabel:"Navigazione carriera",pagesLabel:"Pagine della carriera",navHome:"Inizio",
       dashboard:"Dashboard",calendar:"Calendario",noClub:"Nessun club selezionato",noSeason:"Nessuna stagione attiva",
@@ -163,15 +223,18 @@
       aboutText:"Football Architect presenta un universo calcistico alternativo con Paesi reali e club e divisioni inventati. Questa pagina è un'anteprima dell'interfaccia, non un gioco funzionante.",
     }
   };
+  const worldCountryNames = {"en":{"IT":"Italy","ENG":"England","ES":"Spain","DE":"Germany","FR":"France","PT":"Portugal","NL":"Netherlands","BR":"Brazil"},"de":{"IT":"Italien","ENG":"England","ES":"Spanien","DE":"Deutschland","FR":"Frankreich","PT":"Portugal","NL":"Niederlande","BR":"Brasilien"},"es":{"IT":"Italia","ENG":"Inglaterra","ES":"España","DE":"Alemania","FR":"Francia","PT":"Portugal","NL":"Países Bajos","BR":"Brasil"},"fr":{"IT":"Italie","ENG":"Angleterre","ES":"Espagne","DE":"Allemagne","FR":"France","PT":"Portugal","NL":"Pays-Bas","BR":"Brésil"},"it":{"IT":"Italia","ENG":"Inghilterra","ES":"Spagna","DE":"Germania","FR":"Francia","PT":"Portogallo","NL":"Paesi Bassi","BR":"Brasile"}};
   const words = [...document.querySelectorAll("[data-app-i18n]")];
   const accessible = [...document.querySelectorAll("[data-app-aria]")];
   const dashboard = document.getElementById("app-dashboard");
   const calendar = document.getElementById("app-calendar");
   const settings = document.getElementById("app-settings");
+  const divisions = document.getElementById("app-divisions");
   const links = {
     dashboard: document.getElementById("app-nav-dashboard"),
     calendar: document.getElementById("app-nav-calendar"),
-    settings: document.getElementById("app-nav-settings")
+    settings: document.getElementById("app-nav-settings"),
+    divisions: document.getElementById("app-nav-divisions")
   };
   function language() {
     return Object.hasOwn(copies, document.documentElement.lang) ? document.documentElement.lang : "en";
@@ -179,6 +242,7 @@
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
+    if (path.includes("/app/world/divisions")) return "divisions";
     if (path.endsWith("/app/calendar")) return "calendar";
     if (path.endsWith("/app/settings")) return "settings";
     if (path.endsWith("/app/dashboard")) return "dashboard";
@@ -192,14 +256,21 @@
     for (const node of accessible) {
       if (Object.hasOwn(strings, node.dataset.appAria)) node.setAttribute("aria-label", strings[node.dataset.appAria]);
     }
-    document.title = strings[activeView()] + " — Football Architect";
+    for (const node of document.querySelectorAll("[data-world-country]")) {
+      const countryName = worldCountryNames[language()]?.[node.dataset.worldCountry];
+      if (countryName) node.textContent = countryName;
+    }
+    const detail = document.getElementById("division-detail-name");
+    document.title = (activeView() === "divisions" && detail ? detail.textContent : strings[activeView()]) + " — Football Architect";
   }
   function renderView() {
     const current = activeView();
     dashboard.hidden = current !== "dashboard";
     calendar.hidden = current !== "calendar";
     settings.hidden = current !== "settings";
+    if (divisions) divisions.hidden = current !== "divisions";
     for (const [view, link] of Object.entries(links)) {
+      if (!link) continue;
       const selected = current === view;
       link.classList.toggle("is-active", selected);
       if (selected) link.setAttribute("aria-current", "page");

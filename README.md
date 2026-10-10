@@ -95,6 +95,12 @@ This removes only the stored language for that browser origin; it does **not** d
 **Errors and fixtures:** if `py`/`node` is not recognized, check the local Python 3 launcher/Node.js 22 installation and PATH. If port 2000 is occupied, stop the existing process you own before retrying; do not kill unrelated processes or silently use another port. If pages or assets return 404, run the server from the repository root and check the exact case-sensitive paths and trailing slashes. Use the existing in-test DOM/localStorage mocks and canonical `data/divisions.json` and `data/clubs.json` as read-only catalogue fixtures; **no separate fixture folder, test data generation, career simulation, or reset script exists or is required**.
 
 
+## World division directory (UI-WORLD #91)
+
+The application sidebar includes a **World → Divisions** entry on Dashboard, Calendar, Settings and division routes. `/app/world/divisions/` lists the eight documented countries and 16 canonical divisions; each division has a directly loadable static route at `/app/world/divisions/<division-id-lowercase>/`. Division identifiers, official names, tiers and planned capacity come from `data/divisions.json`. Generic text badges deliberately stand in for unproduced crests, and country flags use the licensed `assets/flags/` set. No table, club allocation, fixture or competition simulation is implied.
+
+The same `node tools/generate-app-pages.mjs` source now generates 20 checked-in application documents (the original three plus 17 World pages). Use `--check` to verify them without writes. All World labels and empty-state messages support EN/DE/ES/FR/IT through the existing shared language preference.
+
 ## Global application search (HOME-02 SEARCH-01)
 
 Dashboard, Calendar and Settings now share a single top-bar search trigger. On desktop it resembles a compact search field; on narrow screens it becomes a magnifier button without adding tooltips, shortcuts or secondary filters. It opens a native modal with a short Graphite & Petrol entrance/exit animation (disabled with reduced-motion), keyboard focus management, Escape, arrow navigation, Enter selection and a clear empty state.
