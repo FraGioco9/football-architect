@@ -365,7 +365,7 @@ export function settingsPage(lang,languageOpen=false){
  const option=(action,iconName,title,desc)=>`<button class="settings-action" type="button" data-action="${action}">
   ${icon(iconName,22)}<span><strong>${esc(title)}</strong><small>${esc(desc)}</small></span>${icon('chevron-right',17)}</button>`;
  return `<div class="restored-settings">
-  <header class="fa-settings-heading"><h1>${tr(lang,'Impostazioni','Settings')}</h1></header>
+  <header class="fa-page-heading fa-settings-heading"><h1 class="fa-page-title">${tr(lang,'Impostazioni','Settings')}</h1></header>
   <div class="settings-grid">
    <section class="settings-panel panel"><h2>${tr(lang,'Lingua','Language')}</h2>
     <div class="settings-language">${languagePicker(lang,languageOpen)}</div></section>

@@ -367,7 +367,7 @@ test('My Careers adopts the four-step wizard visual shell and preserves all save
 test('historic settings restores the two-column panels and keeps live features only',()=>{
  const html=settingsPage('it');
  assert.match(html,/class="restored-settings"/);
- assert.match(html,/<header class="fa-settings-heading"><h1>Impostazioni<\/h1><\/header>/);
+ assert.match(html,/<header class="fa-page-heading fa-settings-heading"><h1 class="fa-page-title">Impostazioni<\/h1><\/header>/);
  assert.match(html,/class="settings-grid"/);
  assert.match(html,/class="setting-fact"/);
  assert.match(html,/class="settings-actions"/);
@@ -377,7 +377,7 @@ test('historic settings restores the two-column panels and keeps live features o
  assert.doesNotMatch(html,/data-action="language-focus"/);
  assert.match(html,/data-action="careers"/);
  assert.match(html,/data-action="import"/);
- assert.match(settingsPage('en'),/<header class="fa-settings-heading"><h1>Settings<\/h1><\/header>/);
+ assert.match(settingsPage('en'),/<header class="fa-page-heading fa-settings-heading"><h1 class="fa-page-title">Settings<\/h1><\/header>/);
  assert.doesNotMatch(html,/Partite giocate|Personalità e spogliatoio|Risultati/);
 });
 test('historic page styling survives the three-step wizard without restoring match systems',()=>{
@@ -2054,10 +2054,10 @@ test('SHELL-TOPBAR: native search dialog inherits modal lock and stays stable wh
 test('SETTINGS-HEADER: small top-left title only, with no eyebrow or subtitle on either route',()=>{
  for(const lang of ['it','en']){
   const html=settingsPage(lang,true);
-  const heading=html.match(/<header class="fa-settings-heading">([\s\S]*?)<\/header>/)?.[1];
+  const heading=html.match(/<header class="fa-page-heading fa-settings-heading">([\s\S]*?)<\/header>/)?.[1];
   assert.ok(heading);
   assert.equal((heading.match(/<h1\b/g)||[]).length,1);
-  assert.equal(heading.trim(),'<h1>'+(lang==='it'?'Impostazioni':'Settings')+'</h1>');
+  assert.equal(heading.trim(),'<h1 class="fa-page-title">'+(lang==='it'?'Impostazioni':'Settings')+'</h1>');
   assert.doesNotMatch(html,/career-hub-heading|class="pretitle"|class="kicker"|Impostazioni e salvataggi|Settings and saves/);
   assert.match(html,/class="settings-grid"/);
   for(const action of ['language-toggle','careers','new','import'])assert.ok(html.includes('data-action="'+action+'"'),action);
