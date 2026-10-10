@@ -115,3 +115,56 @@
   .app-link{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.fa-shell-link,.app-link{transition:none}}
+
+/* HOME-02 SEARCH-01: shared responsive top-bar search and animated modal. */
+.fa-shell-search{flex:0 1 290px;min-width:0}
+.app-search-trigger{display:flex;align-items:center;gap:10px;width:100%;height:38px;min-width:0;padding:0 12px;border:1px solid #41655f;border-radius:10px;background:#17383a;color:#d6e8e1;font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.app-search-trigger svg{flex:none;color:#8dcdb7}
+.app-search-trigger:hover{background:#214847;border-color:#6a9986}
+.app-search-trigger span{overflow:hidden;min-width:0;text-overflow:ellipsis;white-space:nowrap}
+.app-search-trigger:focus-visible,.app-search-close:focus-visible,.app-search-input-row input:focus-visible,.app-search-result:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-search-dialog{width:min(560px,calc(100% - 28px));max-width:560px;max-height:min(78svh,600px);margin:auto;padding:0;border:0;background:transparent;color:#f2f7f4;overflow:visible}
+.app-search-dialog::backdrop{background:rgba(5,12,17,.76);animation:app-search-backdrop-in 180ms ease-out both}
+.app-search-panel{display:flex;flex-direction:column;max-height:min(78svh,600px);min-height:0;overflow:hidden;border:1px solid #45635e;border-radius:16px;background:#122a2e;box-shadow:0 24px 75px rgba(0,0,0,.46);animation:app-search-in 180ms cubic-bezier(.2,.8,.2,1) both}
+.app-search-input-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid #304f4b}
+.app-search-input-row>svg{flex:none;color:#8ccab4}
+.app-search-input-row input{flex:1 1 auto;min-width:0;width:100%;height:39px;padding:0 2px;border:0;background:transparent;color:#f2f7f4;font:inherit;font-size:16px;outline:none}
+.app-search-input-row input::placeholder{color:#a1bdb4}
+.app-search-input-row input::-webkit-search-cancel-button{cursor:pointer}
+.app-search-close{display:grid;place-items:center;flex:none;width:38px;height:38px;padding:0;border:1px solid #476963;border-radius:9px;background:#1d3b3d;color:#edf8f0;cursor:pointer}
+.app-search-close:hover{background:#2b5050}
+.app-search-scope{margin:0;padding:13px 17px 7px;color:#b0c8bf;font-size:12px;line-height:1.4}
+.app-search-status{margin:0;padding:5px 17px;color:#9ab9ad;font-size:11px;font-weight:750}
+.app-search-results{display:grid;gap:4px;min-height:0;margin:0;padding:4px 9px 13px;overflow-y:auto;overscroll-behavior:contain;list-style:none;scrollbar-width:thin;scrollbar-color:#486f63 transparent}
+.app-search-results::-webkit-scrollbar{width:5px}
+.app-search-results::-webkit-scrollbar-track{background:transparent}
+.app-search-results::-webkit-scrollbar-thumb{background:#486f63;border-radius:9px}
+.app-search-results[hidden]{display:none}
+.app-search-results li{min-width:0}
+.app-body a.app-search-result{display:grid;gap:5px;min-width:0;padding:12px 13px;border:1px solid transparent;border-radius:10px;color:#f2f7f4;text-decoration:none}
+.app-search-result:hover,.app-search-result:focus-visible{background:#224742;border-color:#578d7b}
+.app-search-kind{color:#8dd8b9;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}
+.app-search-name{font-size:14px;line-height:1.2}
+.app-search-description{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:#c1d3cb;font-size:12px;line-height:1.45}
+.app-search-empty{margin:0;padding:24px 17px 27px;color:#c6d6d0;font-size:13px}
+.app-search-empty[hidden]{display:none}
+.app-search-dialog.is-closing .app-search-panel{animation:app-search-out 140ms ease-in both}
+.app-search-dialog.is-closing::backdrop{animation:app-search-backdrop-out 140ms ease-in both}
+@keyframes app-search-in{from{opacity:0;transform:translateY(-10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes app-search-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
+@keyframes app-search-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes app-search-backdrop-out{from{opacity:1}to{opacity:0}}
+@media(max-width:1024px){
+  .fa-shell-search{flex:0 0 38px}
+  .app-search-trigger{width:38px;justify-content:center;padding:0}
+  .app-search-trigger span{display:none}
+}
+@media(max-width:390px){
+  .fa-shell-search{flex:0 0 34px}
+  .app-search-trigger{width:34px;height:34px}
+  .app-search-panel,.app-search-dialog{max-height:82svh}
+}
+@media(prefers-reduced-motion:reduce){
+  .app-search-dialog::backdrop,.app-search-dialog.is-closing::backdrop,
+  .app-search-panel,.app-search-dialog.is-closing .app-search-panel{animation:none!important}
+}
