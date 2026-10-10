@@ -40,6 +40,7 @@ function render(saved = null, deny = false) {
   const menu = element({ id: "language-options", hidden: true });
   const languageValue = element({ id: "language-value" });
   const status = element({ hidden: true });
+  status.contains = target => [status, close].includes(target);
   const statusMessage = element();
   const close = element();
   const app = element({ dataset: { destination: "app" } });
@@ -68,8 +69,27 @@ function render(saved = null, deny = false) {
     getItem(key) { if (deny) throw Error("storage denied"); return stored.get(key) ?? null; },
     setItem(key, value) { if (deny) throw Error("storage denied"); stored.set(key, value); }
   };
-  runInNewContext(js, { document, window: { localStorage } }, { timeout: 2000 });
-  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control };
+  let time = 0;
+  let nextTimerId = 1;
+  const timers = new Map();
+  const window = {
+    localStorage,
+    setTimeout(callback, delay) { const id = nextTimerId++; timers.set(id, { at: time + delay, callback }); return id; },
+    clearTimeout(id) { timers.delete(id); }
+  };
+  const advance = (milliseconds) => {
+    const end = time + milliseconds;
+    while (true) {
+      const due = [...timers].filter(([,timer]) => timer.at <= end).sort((a,b) => a[1].at - b[1].at)[0];
+      if (!due) break;
+      time = due[1].at;
+      timers.delete(due[0]);
+      due[1].callback();
+    }
+    time = end;
+  };
+  runInNewContext(js, { document, window }, { timeout: 2000 });
+  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, advance, timers };
 }
 
 test("semantic full-page landing and custom five-language listbox", () => {
@@ -192,4 +212,70 @@ test("both favicon formats remain valid and explicitly linked", () => {
   assert.equal(ico.readUInt16LE(2), 1);
   assert.ok(ico.length > 100);
   assert.match(readFileSync(new URL("../favicon.svg", import.meta.url), "utf8"), /<svg[^>]*viewBox="0 0 64 64"/);
+});
+
+
+test("landing copy has no selectable text, including Safari long-press selection", () => {
+  assert.match(css, /body,body \*\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/);
+  assert.match(css, /button:focus-visible/);
+});
+
+test("notice automatically disappears after five seconds, clearing its active timer", () => {
+  const r = render();
+  r.app.fire("click");
+  assert.equal(r.timers.size, 1);
+  r.advance(4999);
+  assert.equal(r.status.hidden, false);
+  r.advance(1);
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.timers.size, 0);
+});
+
+test("hover pauses the notice and leaving restores the full five-second timer", () => {
+  const r = render();
+  r.app.fire("click");
+  r.advance(3000);
+  r.status.fire("pointerenter", { pointerType: "mouse" });
+  assert.equal(r.timers.size, 0);
+  r.advance(20000);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("pointerleave", { pointerType: "mouse" });
+  r.advance(4999);
+  assert.equal(r.status.hidden, false);
+  r.advance(1);
+  assert.equal(r.status.hidden, true);
+});
+
+test("repeated actions reset the timer, explicit dismiss cancels it, and touch does not pause", () => {
+  const r = render();
+  r.app.fire("click");
+  r.advance(4500);
+  r.guide.fire("click");
+  assert.match(r.statusMessage.textContent, /guide is not available/);
+  r.advance(4999);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("pointerenter", { pointerType: "touch" });
+  r.advance(1);
+  assert.equal(r.status.hidden, true);
+  r.app.fire("click");
+  r.close.fire("click");
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.timers.size, 0);
+  r.advance(15000);
+  assert.equal(r.status.hidden, true);
+});
+
+test("keyboard focus pauses the notice until focus leaves, then resets countdown", () => {
+  const r = render();
+  r.app.fire("click");
+  r.advance(1000);
+  r.status.fire("focusin");
+  r.advance(10000);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("focusout", { relatedTarget: r.close });
+  r.advance(8000);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("focusout", { relatedTarget: null });
+  r.advance(5000);
+  assert.equal(r.status.hidden, true);
 });
