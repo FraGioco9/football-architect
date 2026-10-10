@@ -176,20 +176,20 @@
 
 ---
 
-## CLUB-01 — Audit read-only del catalogo approvato (10 ottobre 2026)
+## CLUB-01 — Read-only audit of the approved catalogue (10 October 2026)
 
-**Baseline verificata:** `main` `72d16de4a3ad410dab84fd9d1f42007a187a98b1`, `src/leagues.js`. Nessuna modifica al repository.
+**Verified baseline:** `main` `72d16de4a3ad410dab84fd9d1f42007a187a98b1`, `src/leagues.js`. No repository changes were made during this historical audit.
 
-### Risultati accertati
+### Confirmed findings
 
-- **320/320 nomi principali disponibili** nel registro CLUB-02, con **320 identità `countryId + clubId` distinte** e **0 duplicati globali** anche con normalizzazione Unicode/accenti e punteggiatura.
-- **160/160 associazioni originali `countryId + clubId + city`** identiche alle città approvate: **20/20 per ciascuno degli otto Paesi**. Nessuna città originale deve cambiare.
-- **160/160 stadi originali presenti** e associati a quegli stessi ID in `src/leagues.js`; non risultano necessarie sostituzioni degli stadi esistenti.
-- **11/160 nomi principali** dei club originali già identici alle denominazioni scelte; **149/160 sono rinominazioni progettuali** da applicare senza muovere ID, città o stadio (conteggi aggiornati dopo il ripristino di AC Rinascenti Bologna).
-- **160/160 nuove voci (ID 21–40)** non sono ancora presenti nel file sorgente; le loro città sono progettate nei cataloghi per Paese, ma non sono confrontabili con un originale di codice.
-- **0/320 campi `fullName` implementati nel catalogo statico attuale**: il codice contiene la singola proprietà `name`. I nomi completi già approvati in conversazione devono essere riportati in un registro completo verificabile **senza ricostruirli per inferenza**. Non è ancora possibile certificare l'unicità dei 320 `fullName` da un inventario integrale accessibile in questo audit.
+- **320/320 primary names available** in the CLUB-02 register, with **320 distinct `countryId + clubId` identities** and **zero global duplicates**, including after Unicode/accent and punctuation normalization.
+- **160/160 original `countryId + clubId + city` associations** match the approved cities: **20/20 in each of eight countries**. Original cities must not be changed.
+- **160/160 original stadiums present** and associated with the same IDs in `src/leagues.js`; existing stadiums did not require replacement.
+- **11/160 primary names** of original clubs already matched the selected names; **149/160 required planned renaming** without moving IDs, cities or stadiums (figures updated after restoring AC Rinascenti Bologna).
+- **160/160 new entries (IDs 21–40)** were not yet present in source code; their cities were designed in the country catalogues, but could not be compared with prior code.
+- **0/320 `fullName` fields implemented in the then-current static catalogue:** only the `name` property existed. Approved full names had to be recorded in a verifiable complete register **without inferring expansions**. Global uniqueness of all 320 `fullName` values could not yet be certified from a complete accessible inventory in that audit.
 
-### Riconciliazioni puntuali ad alta priorità
+### High-priority individual reconciliations
 
 | Chiave | Nome presente nel codice | Nome principale approvato | Città e stadio originali da conservare |
 |---|---|---|---|
@@ -200,38 +200,38 @@
 | `NL,15` | Deventer FC IJselrand | **FC IJsselrand** | Deventer — IJselrand Stadion (toponimo dello stadio lasciato intatto) |
 | `BR,16` | Esporte Clube Cabo Branco João Pessoa | **EC Falésia Clara** | João Pessoa — Estádio das Falésias |
 
-Le correzioni **FR,27 FC Émaux**, **FR,33 CS Garrigues** e **PT,34 AC Fontes** riguardano tre club nuovi (ID > 20), quindi non possono essere confrontate con record esistenti nel codice.
+Corrections **FR,27 FC Émaux**, **FR,33 CS Garrigues** and **PT,34 AC Fontes** refer to new clubs (IDs > 20) and therefore could not be compared with existing source-code entries.
 
-### Nomi completi recuperabili e approvati con evidenza esplicita
+### Recoverable full names explicitly approved
 
-- `IT,2`: **Associazione Calcio Rinascenti Bologna** — nome completo approvato il 10 ottobre 2026, sostituisce definitivamente *Associazione Calcio Felsina Bologna*.
+- `IT,2`: **Associazione Calcio Rinascenti Bologna** — full name approved on 10 October 2026, permanently superseding *Associazione Calcio Felsina Bologna*.
 - `IT,27`: Unione Sportiva Varesina.
 - `BR,16`: Esporte Clube Falésia Clara de João Pessoa.
 - `FR,27`: Football Club des Émaux de Limoges.
 - `FR,33`: Cercle Sportif des Garrigues de Nîmes.
 - `PT,34`: Atlético Clube das Fontes de Caldas da Rainha.
 
-I sei nomi completi validi citati sopra non costituiscono un registro completo di 320 denominazioni: **314 `fullName` restano da ricondurre o confermare** prima di chiudere il gate CLUB-01. Non inventare espansioni dei nomi senza approvazione.
+The six approved full names above did not constitute a complete 320-entry register: **314 `fullName` values still required recovery or confirmation** before closing CLUB-01. Do not invent name expansions without approval.
 
-**Conclusione:** controllo degli ID/città/stadi dei 160 club esistenti **PASS**; controllo dei 320 nomi principali e delle 320 sigle **PASS**; riconciliazione integrale `fullName` **PENDING**. CLUB-01 non chiuso; roadmap implementativa resta **0/5 (0%)**. La chiusura progettuale CLUB-02 non equivale a un'implementazione: checklist invariata.
-
-
-### Decisione integrativa CLUB-01 — 10 ottobre 2026
-
-**Nuova scelta esplicita dell'utente:** il club `(IT,2)` **mantiene il nome già presente in `src/leagues.js`: AC Rinascenti Bologna**. Scartata la rinomina progettuale precedente in AC Felsina Bologna.
-
-- **ID permanente:** `IT + 2`, invariato.
-- **Città:** Bologna, invariata.
-- **Stadio:** Stadio delle Fornaci, invariato.
-- **Sigla CLUB-02 definitiva:** `RIN`, approvata il 10 ottobre 2026, in sostituzione di `FEL`. Verifica di unicità ripetuta sull'intero registro: 320/320 codici distinti, 0 collisioni, 0 errori di formato; gli altri 319 codici restano invariati.
-- **Nome completo definitivamente approvato:** **Associazione Calcio Rinascenti Bologna**. La precedente formulazione *Associazione Calcio Felsina Bologna* è superata.
-- **Riconciliazione dei 160 club originali:** 11 nomi già allineati; 149 rinominazioni residue; 160/160 città e stadi originali presenti. Il gate CLUB-01 resta aperto.
-- **Nessuna modifica a codice, branch, PR, merge, deploy o database.**
+**Conclusion:** original ID/city/stadium verification for 160 existing clubs **PASS**; verification of 320 primary names and 320 abbreviations **PASS**; complete `fullName` reconciliation **PENDING**. CLUB-01 was not closed, and implementation remained **0/5 (0%)**. Design completion of CLUB-02 did not imply implementation; checklists were unchanged.
 
 
-### CLUB-02 — Approvazione conclusiva IT,2 del 10 ottobre 2026
+### Additional CLUB-01 decision — 10 October 2026
 
-Decisione finale dell'utente, prevalente su riferimenti storici precedenti:
+**New explicit user decision:** club `(IT,2)` **retains the name already present in `src/leagues.js`: AC Rinascenti Bologna**. The earlier proposed rename to AC Felsina Bologna was rejected.
+
+- **Permanent ID:** `IT + 2`, unchanged.
+- **City:** Bologna, unchanged.
+- **Stadium:** Stadio delle Fornaci, unchanged.
+- **Final CLUB-02 abbreviation:** `RIN`, approved on 10 October 2026 to replace `FEL`. Rechecking uniqueness across the complete register found 320/320 distinct codes, zero collisions and zero format errors; the other 319 codes were unchanged.
+- **Approved full name:** **Associazione Calcio Rinascenti Bologna**. The previous form *Associazione Calcio Felsina Bologna* was superseded.
+- **Reconciliation of 160 original clubs:** 11 primary names already aligned, 149 still to rename; all 160 original cities and stadiums present. CLUB-01 remained open.
+- **No code, branch, PR, merge, deployment or database changes.**
+
+
+### CLUB-02 — Final IT,2 approval on 10 October 2026
+
+The user's final decision, overriding earlier historical references:
 
 | Proprietà | Valore approvato |
 |---|---|
@@ -243,21 +243,21 @@ Decisione finale dell'utente, prevalente su riferimenti storici precedenti:
 | `city` | **Bologna** |
 | `stadium` | **Stadio delle Fornaci** |
 
-**Risultato gate progettuale CLUB-02:** 320/320 sigle esplicite approvate, 320/320 codici univoci a livello mondiale, 0 duplicati, 0 codici fuori formato `[A-Z]{3}`. `RIN` era libera prima della sostituzione; ora è assegnata soltanto a `(IT,2)`. `FEL` è dismessa e non assegnata ad alcun club. Altri 319 record invariati. **Non spuntare CLUB-02 come fase implementata** fino all'effettivo consumo runtime di `abbr` negli stemmi e nelle tabelle; implementazione CLUBS-320 ferma a 0/5. Audit CLUB-01: **6 nomi completi validati esplicitamente, 314 ancora da riconciliare**. Nessun codice, branch, PR, merge, deploy o database modificato.
+**CLUB-02 design gate result:** 320/320 explicit abbreviations approved; 320/320 globally unique codes; zero duplicates or codes outside `[A-Z]{3}`. `RIN` was unused before the change and is now assigned only to `(IT,2)`. `FEL` was retired and assigned to no club. Other 319 records unchanged. **Do not mark CLUB-02 implemented** until `abbr` is actually consumed by runtime crests and tables; CLUBS-320 implementation stayed at 0/5. CLUB-01 audit: **6 explicitly validated full names, 314 still to reconcile**. No code, branch, PR, merge, deployment or database changes.
 
 
 ---
 
-## CLUB-01 — Ricognizione documentale supplementare (10 ottobre 2026)
+## CLUB-01 — Supplementary documentary research (10 October 2026)
 
-**Ambito:** sola lettura delle fonti precedenti, aggiornamento esclusivo del testo issue #61. La baseline della verifica del codice rimane quella riportata nell'audit precedente; nessun commit, branch, PR, merge, deploy o database modificato.
+**Scope:** read-only review of prior sources, updating only issue #61 text. The code baseline remained the one recorded in the previous audit; no commits, branches, PRs, merges, deployments or database changes.
 
-### Classificazione delle prove
+### Evidence classification
 
-- **6/320 fullName CONFERMATI ESPLICITAMENTE** nelle decisioni finali o correzioni nominative già registrate.
-- **69/320 fullName RECUPERATI da precedenti risposte progettuali** (IT 1,3–20; ENG 1–20; PT 1–10; NL 1–10; BR 1–10). Le risposte recuperate indicano i valori sotto riportati, ma mancando un registro sorgente primario integralmente consultabile, tali righe restano **DA RICONCILIARE**, non vengono presentate come 69 nuove approvazioni dell'utente.
-- **245/320 fullName NON RECUPERATI** con documentazione inequivocabile. Il progetto conserva i loro 245 `name` principali approvati e le sigle, senza autoespandere le abbreviazioni.
-- **75/320 forme estese disponibili come evidenza o candidatura documentale** = 6 confermate + 69 recuperate (23,44% del catalogo). **Gate finale CLUB-01 ancora OPEN**; le 69 recuperate non equivalgono a convalida formale.
+- **6/320 `fullName` values EXPLICITLY CONFIRMED** by final decisions or recorded naming corrections.
+- **69/320 `fullName` values RECOVERED from earlier design responses** (IT 1,3–20; ENG 1–20; PT 1–10; NL 1–10; BR 1–10). Although earlier responses included the listed values, the absence of a fully accessible primary-source register meant those rows remained **PENDING RECONCILIATION**, not 69 new user approvals.
+- **245/320 `fullName` values NOT RECOVERED** from unequivocal documentation. Their 245 approved primary `name` values and abbreviations remained preserved; expansions were not invented.
+- **75/320 extended names available as evidence or documentary candidates** = 6 confirmed + 69 recovered (23.44% of catalogue). **Final CLUB-01 gate still OPEN**; recovered candidates did not equal formal validation.
 
 | Paese | Confermati | Recuperati (da riconciliare) | Senza fonte certa | Totale |
 |---|---:|---:|---:|---:|
@@ -271,7 +271,7 @@ Decisione finale dell'utente, prevalente su riferimenti storici precedenti:
 | BR | 1 | 10 | 29 | 40 |
 | **Totale** | **6** | **69** | **245** | **320** |
 
-### A. Sei denominazioni complete già confermate
+### A. Six previously confirmed full names
 
 | Identità | Nome principale | FullName confermato |
 |---|---|---|
@@ -282,9 +282,9 @@ Decisione finale dell'utente, prevalente su riferimenti storici precedenti:
 | `PT,34` | AC Fontes | **Atlético Clube das Fontes de Caldas da Rainha** |
 | `BR,16` | EC Falésia Clara | **Esporte Clube Falésia Clara de João Pessoa** |
 
-### B. 69 denominazioni recuperate da risposte precedenti — NON considerare definitivamente validate
+### B. 69 full names recovered from previous responses — NOT finally validated
 
-Le trascrizioni provengono da riepiloghi di precedenti risposte progettuali (Italia e Inghilterra 9 ottobre 2026 22:32–22:35 UTC; Portogallo 22:46, Paesi Bassi 22:47, Brasile 22:48 UTC). Poiché alcune altre fonti storiche presentano un **catalogo alternativo e incompatibile**, ogni riga qui sotto è associata all'esatto `countryId+clubId+name` del catalogo CLUBS-320, e non sono state importate denominazioni dei cataloghi alternativi. L'uso di queste stringhe come `fullName` definitivo richiede un riscontro con la fonte approvata.
+Transcriptions came from earlier design-response summaries (Italy and England, 9 October 2026, 22:32–22:35 UTC; Portugal 22:46, Netherlands 22:47, Brazil 22:48 UTC). Since some other historical sources contained an **incompatible alternative catalogue**, each row below was matched to the exact `countryId+clubId+name` key in CLUBS-320; names from alternative catalogues were not imported. Definitive use of these strings as `fullName` required corroboration against the approved source.
 
 <details><summary>Elenco recuperato — 69 associazioni</summary>
 
@@ -362,15 +362,15 @@ Le trascrizioni provengono da riepiloghi di precedenti risposte progettuali (Ita
 
 </details>
 
-### C. Residui e criteri di chiusura
+### C. Remaining records and closure criteria
 
-- Le **245** associazioni rimanenti sono già identificabili univocamente dal registro CLUB-02 `countryId+clubId+abbr`, ma **non hanno una trascrizione `fullName` sufficientemente comprovata** in questa ricognizione. Segnare `fullName=PENDING_SOURCE` nello stato progettuale, non nel codice.
-- Non inferire `fullName` da prefissi `AC/US/FC`, nomi corti, città, denominazioni legacy di `src/leagues.js` o nomi del catalogo alternativo. Tali dati possono essere candidati, non approvazioni.
-- Conservare definitivamente `(IT,2): name=AC Rinascenti Bologna; fullName=Associazione Calcio Rinascenti Bologna; abbr=RIN; city=Bologna; stadium=Stadio delle Fornaci`.
-- Mantenere 320 sigle univoche approvate e 0 collisioni, senza modificarle.
-- **Checklist/roadmap implementativa invariata: 0/5 (0%)**. CLUB-01 non chiusa: 69 candidature ancora da riconciliare e 245 denominazioni senza fonte conclusiva.
+- The remaining **245** associations were already uniquely identifiable by CLUB-02 `countryId+clubId+abbr`, but lacked a **sufficiently substantiated `fullName` transcription** in this snapshot. Mark `fullName=PENDING_SOURCE` in design tracking, not in code.
+- Do not infer `fullName` from `AC/US/FC` prefixes, short names, cities, legacy `src/leagues.js` names or alternative catalogues. Such data can provide candidates, not approvals.
+- Permanently preserve `(IT,2): name=AC Rinascenti Bologna; fullName=Associazione Calcio Rinascenti Bologna; abbr=RIN; city=Bologna; stadium=Stadio delle Fornaci`.
+- Preserve 320 approved unique abbreviations with zero collisions; do not alter them.
+- **Implementation roadmap/checklist unchanged: 0/5 (0%)**. CLUB-01 remained open: 69 candidates to reconcile and 245 full names without conclusive sources.
 
-**Decisione operativa:** non creare nomi completi nuovi o sovrascrivere quelli approvati. In assenza del testo originale delle restanti denominazioni, non dichiarare `320/320 fullName` completati.
+**Operational decision:** do not create new full names or overwrite approved names. Without original text for remaining entries, do not claim `320/320 fullName` completion.
 
 
 ---
