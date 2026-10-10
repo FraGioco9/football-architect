@@ -21,11 +21,11 @@
   };
   // Exact, real in-app destinations. Expand only when the underlying pages exist.
   const entries = [
-    ["page","dashboard-title","careerStatusText","/app/"],
+    ["page","dashboard-title","careerStatusText","/app/dashboard/"],
     ["page","calendar-title","calendarStatusText","/app/calendar/"],
     ["page","settings-title","languageHelp","/app/settings/"],
-    ["section","career-status-heading","careerStatusText","/app/#career-status-heading"],
-    ["section","world-heading","worldText","/app/#world-heading"],
+    ["section","career-status-heading","careerStatusText","/app/dashboard/#career-status-heading"],
+    ["section","world-heading","worldText","/app/dashboard/#world-heading"],
     ["section","app-language-heading","languageHelp","/app/settings/#app-language-heading"],
     ["section","app-career-heading","dataText","/app/settings/#app-career-heading"],
     ["section","app-data-heading","dataText","/app/settings/#app-data-heading"],

@@ -4,7 +4,7 @@ import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 
 const read = file => readFileSync(new URL("../"+file,import.meta.url),"utf8");
-const pages = ["app/index.html","app/calendar/index.html","app/settings/index.html"];
+const pages = ["app/dashboard/index.html","app/calendar/index.html","app/settings/index.html"];
 const html = Object.fromEntries(pages.map(path => [path,read(path)]));
 const script = read("assets/app-search.js");
 const css = read("assets/app.css");
@@ -17,7 +17,7 @@ test("SEARCH-01 identical searchable top bar and native dialog on all three stat
     assert.match(source, /<dialog id="app-search-dialog"[^>]+aria-labelledby="app-search-heading"/);
     assert.match(source, /aria-haspopup="dialog" aria-controls="app-search-dialog"/);
     assert.match(source, /role="status" aria-live="polite"/);
-    assert.ok(source.includes('src="'+(path==="app/index.html"?"../":"../../")+'assets/app-search.js" defer'));
+    assert.ok(source.includes('src="'+"../../"+'assets/app-search.js" defer'));
     assert.match(source, /<div class="fa-shell-search">[\s\S]*?<div class="fa-shell-time"/);
     assert.doesNotMatch(source, /href="[^"]*#(?:calendar|settings)"/);
     assert.match(source, /<dialog id="app-search-dialog"[^>]+aria-describedby="app-search-scope"/);
@@ -34,7 +34,7 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
   assert.match(css,/\.app-search-dialog\{width:min\(520px,calc\(100vw - 28px\)\);max-width:520px;max-height:min\(78dvh,560px\)/);
   assert.match(css,/\.app-search-panel\{[^}]*max-height:min\(78dvh,560px\)/);
   assert.match(css,/\.app-body a\.app-search-result:hover\{background:#355e55;box-shadow:inset 0 0 0 1px #648f81\}/);
-  assert.match(css,/\.app-body a\.app-search-result:focus-visible\{background:#355e55;box-shadow:inset 0 0 0 1px #648f81\}/);
+  assert.match(css,/\.app-body a\.app-search-result:focus-visible\{background:#355e55;box-shadow:none;outline:none\}/);
   assert.match(css,/\.app-search-trigger\.app-search-escape-return:focus-visible\{outline:none\}/);
   assert.match(css,/\.app-search-input-row:focus-within\{box-shadow:inset 0 -2px #718c83\}/);
   assert.doesNotMatch(css,/\.app-search-description\{/);
@@ -52,7 +52,7 @@ test("SEARCH-01 search destinations are limited to real internal routes and head
   assert.equal(destinations.length,9);
   const known=new Set(pages);
   for(const [,kind,id,description,url] of destinations){
-    assert.match(url,/^\/app\/(?:calendar\/|settings\/)?(?:#[a-z-]+)?$/);
+    assert.match(url,/^\/app\/(?:dashboard\/|calendar\/|settings\/)(?:#[a-z-]+)?$/);
     const [pathname,fragment] = url.slice(1).split("#");
     const file=pathname+"index.html";
     assert.ok(known.has(file),url);
@@ -144,7 +144,7 @@ test("SEARCH-01 opens with three real page suggestions, focuses input, and close
   app.trigger.emit("click");
   assert.equal(app.dialog.open,true);
   assert.equal(app.document.activeElement,app.input);
-  assert.deepEqual(app.links().map(a=>a.href),["/app/","/app/calendar/","/app/settings/"]);
+  assert.deepEqual(app.links().map(a=>a.href),["/app/dashboard/","/app/calendar/","/app/settings/"]);
   app.dialog.emit("cancel");
   assert.equal(app.dialog.open,false);
   assert.equal(app.document.activeElement,app.trigger);
@@ -386,7 +386,17 @@ test("SEARCH-01 full-row suggestion hover beats transparent base background and 
   assert.match(base,/transition:background-color 120ms ease,box-shadow 120ms ease/);
   assert.match(hover,/background:#355e55/);
   assert.match(hover,/box-shadow:inset 0 0 0 1px #648f81/);
-  assert.equal(focus,hover,"Keyboard-selected suggestion matches full-row mouse hover");
+  assert.match(focus,/background:#355e55/,"Keyboard focus keeps full-row highlight");
+  assert.match(focus,/box-shadow:none;outline:none/,"Arrow focus shows no border");
+  assert.notEqual(focus,hover,"Only pointer hover retains inset outline");
   assert.doesNotMatch(hover,/inset 3px 0/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[\s\S]*?\.app-body a\.app-search-result\{transition:none\}/);
+});
+
+
+test("SEARCH-01 uses direct canonical Dashboard suggestions and anchors",()=>{
+  assert.doesNotMatch(script,/"\/app\/(?:#|")/);
+  for(const href of ["/app/dashboard/","/app/dashboard/#career-status-heading","/app/dashboard/#world-heading"]){
+    assert.ok(script.includes('"'+href+'"'),"Missing canonical Dashboard destination: "+href);
+  }
 });
