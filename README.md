@@ -95,6 +95,34 @@ This removes only the stored language for that browser origin; it does **not** d
 **Errors and fixtures:** if `py`/`node` is not recognized, check the local Python 3 launcher/Node.js 22 installation and PATH. If port 2000 is occupied, stop the existing process you own before retrying; do not kill unrelated processes or silently use another port. If pages or assets return 404, run the server from the repository root and check the exact case-sensitive paths and trailing slashes. Use the existing in-test DOM/localStorage mocks and canonical `data/divisions.json` and `data/clubs.json` as read-only catalogue fixtures; **no separate fixture folder, test data generation, career simulation, or reset script exists or is required**.
 
 
+## Pull request workflow (PR-ONLY)
+
+Football Architect follows a minimal, owner-authorized workflow:
+
+**Temporary branch → Pull Request → exact-head CI → review → separately authorized squash merge → post-merge CI.**
+
+1. **Branch and changes:** Verify the current `main` SHA before starting. Create a short-lived branch only with explicit owner authorization. Modify only authorized files and behavior.
+2. **Pull Request:** Target `main`; write PR titles, descriptions, commits and documentation in English. Record the exact PR HEAD and base SHAs, changed files, and expected behavior.
+3. **Exact-head CI:** Use the existing GitHub Actions test-only workflow, which checks out and asserts the PR HEAD SHA, checks JavaScript syntax, and runs Node.js 22 site contract tests. An outdated, missing or failed run does not establish merge readiness.
+4. **Review:** Recheck the exact PR HEAD, current `main`, diff scope, CI outcome and mergeability. Report PASS, FAIL and UNKNOWN distinctly, including unverified browser and external-integration risks.
+5. **Squash merge:** Obtain a **separate, explicit authorization** for the specific PR. Immediately revalidate the approved SHA, CI and mergeability; stop if any required gate changes. Do not delete branches without separate authorization.
+6. **Post-merge CI:** Verify the new `main` SHA and the corresponding CI run. Report failures, skipped checks and incomplete runs accurately; never claim PASS before completion.
+
+### Environment and deployment restrictions
+
+- **DEV:** Existing local-only preview; start manually when authorized.
+- **PREVIEW:** No automatic deployment or creation.
+- **STAGING:** No automatic deployment or promotion.
+- **PRODUCTION:** No automatic deployment or publication.
+
+**Branch/PR creation, squash merge and deployment are three independent authorization decisions.** Authorization of any one never authorizes the others. No hosting, Vercel, Railway, DNS, billing, secrets or database operations are permitted by this policy. Any hosted release requires its own explicit authorization and security review.
+
+### Residual external integration risk
+
+The tracked GitHub Actions workflow is test-only, requests read-only repository permissions and verifies the source SHA. It contains no deployment steps. However, external GitHub Apps, webhooks, hosting-provider subscriptions and inaccessible administrative settings are not fully certified.
+
+**External integration / anti-deploy risk: UNKNOWN.** Review available safeguards immediately before repository operations and document unresolved risk. The absence of a deployment job in the tracked workflow does **not** guarantee that unrelated integrations cannot deploy. Stop if required controls fail or the owner has not explicitly accepted residual UNKNOWN risk for the specific operation. A passing CI run or completed merge never grants deployment authorization.
+
 ## World division directory (UI-WORLD #91)
 
 The application sidebar includes a **World → Competitions** entry with a custom trophy icon on Dashboard, Calendar, Settings and division routes. `/app/world/divisions/` lists the eight documented countries and 16 canonical divisions; each division has a directly loadable static route at `/app/world/divisions/<division-id-lowercase>/`. Division identifiers, official names, tiers and planned capacity come from `data/divisions.json`. Generic text badges deliberately stand in for unproduced crests, and country flags use the licensed `assets/flags/` set. Every division detail page has a canonical header, a temporary labelled badge, a link to its same-country counterpart, and dedicated **Standings**, **Fixtures and results**, and **Participating clubs** sections. These sections honestly report unavailable information until a playable season and confirmed club allocations exist; no matches, standings rows or club assignments are fabricated. Global Search loads the canonical static `data/divisions.json` from the same origin to offer division-name, country and ID results; existing page search remains usable if loading fails.
