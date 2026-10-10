@@ -124,7 +124,7 @@ const competitionTabs = function competitionTabs(d,standings) {
   if(id==="rules")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>\n            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>${d.capacity}</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>${d.tier}</dd></div></dl>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
- return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n${panels}\n          <script src="../../../../assets/competition-tabs.js" defer></script>`;
+ return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n${panels}\n          <script src="../../../assets/competition-tabs.js" defer></script>`;
 };
 const detailContent = function detailContent(d,root){
  const c=countryById[d.countryId];
@@ -167,7 +167,7 @@ const sharedTemplate = function sharedTemplate(html) {
  replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
  replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
  replaceOne('data-app-aria="crestPlaceholder">'+encode(first.id)+'</span>','id="app-competition-badge" data-app-aria="crestPlaceholder">—</span>',"badge");
- replaceOne('class="app-world-flag" alt="" src="../../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../../'+encode(country.flagAsset)+'"',"flag");
+ replaceOne('class="app-world-flag" alt="" src="../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../../'+encode(country.flagAsset)+'"',"flag");
  replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="">Country</span>',"country");
  replaceOne('data-app-i18n="divisionTier1">First division</span>','id="app-competition-tier" data-app-i18n="divisionTier1">First division</span>',"tier");
  replaceOne('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">—</dd>',"capacity");
@@ -186,10 +186,10 @@ const competitionRoute = d=>[
  '  <meta name="theme-color" content="#101A1D">',
  '  <meta name="fa-division" content="'+encode(d.id)+'">',
  '  <title>'+encode(d.name)+' — Football Architect</title>',
- '  <link rel="icon" href="../../../../favicon.svg" type="image/svg+xml">',
- '  <link rel="stylesheet" href="../../../../assets/landing.css">',
- '  <link rel="stylesheet" href="../../../../assets/app.css">',
- '  <script src="../../../../assets/competition-page.js" defer></script>',
+ '  <link rel="icon" href="../../../favicon.svg" type="image/svg+xml">',
+ '  <link rel="stylesheet" href="../../../assets/landing.css">',
+ '  <link rel="stylesheet" href="../../../assets/app.css">',
+ '  <script src="../../../assets/competition-page.js" defer></script>',
  '</head>',
  '<body class="app-body">',
  '  <main id="main-content" class="app-main" role="status">Loading competition…</main>',
@@ -212,14 +212,14 @@ const outputPages = [
  ...Object.entries(pages).map(([name,replacements])=>({
   name,path:"app/"+name+"/index.html",depth:2,
   replacements:{...replacements,
-   "@@FA_WORLD_LINK@@":worldNav("../world/competitions/",false),
+   "@@FA_WORLD_LINK@@":worldNav("../competitions/",false),
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
- {name:"competitions",path:"app/world/competitions/index.html",depth:3,replacements:worldPageReplacements(3)},
- {name:"competition-shared",path:"app/world/competitions/_shared/index.html",depth:4,
-  replacements:worldPageReplacements(4,divisionData.divisions[0]),transform:sharedTemplate},
+ {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2)},
+ {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
+  replacements:worldPageReplacements(3,divisionData.divisions[0]),transform:sharedTemplate},
  ...divisionData.divisions.map(division=>({
-  name:division.id,path:"app/world/competitions/"+division.id.toLowerCase()+"/index.html",
+  name:division.id,path:"app/competitions/"+division.id.toLowerCase()+"/index.html",
   directContent:competitionRoute(division)
  }))
 ];
@@ -251,5 +251,5 @@ for(const page of outputPages){
  }
  writeOutput(page.path,html);
 }
-writeOutput("app/world/competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
-if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 World), 1 competition manifest");
+writeOutput("app/competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest");

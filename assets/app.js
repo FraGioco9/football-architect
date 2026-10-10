@@ -412,7 +412,7 @@
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
-    if (path.includes("/app/world/competitions")) return "divisions";
+    if (path.includes("/app/competitions")) return "divisions";
     if (path.endsWith("/app/calendar")) return "calendar";
     if (path.endsWith("/app/settings")) return "settings";
     if (path.endsWith("/app/dashboard")) return "dashboard";

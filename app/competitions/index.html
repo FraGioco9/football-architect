@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
   <meta name="description" content="Football Architect — career workspace shell.">
-  <title>Calendar — Football Architect</title>
+  <title>Competitions — Football Architect</title>
   <link rel="icon" type="image/png" sizes="32x32" href="../../assets/brand/favicon-32.png">
   <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="../../favicon.ico">
@@ -33,7 +33,7 @@
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               <span data-app-i18n="dashboard">Dashboard</span>
             </a>
-            <a class="fa-shell-link is-active" id="app-nav-calendar" href="./" data-app-view="calendar" aria-current="page" aria-label="Calendar" data-app-aria="calendar">
+            <a class="fa-shell-link" id="app-nav-calendar" href="../calendar/" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
               <span data-app-i18n="calendar">Calendar</span>
             </a>
@@ -42,7 +42,7 @@
         <section class="fa-shell-nav-group" aria-labelledby="app-nav-world-title">
           <h2 class="fa-shell-nav-group-title" id="app-nav-world-title" data-app-i18n="navWorld">World</h2>
           <div class="fa-shell-nav-group-items">
-            <a class="fa-shell-link" id="app-nav-divisions" href="../competitions/" data-app-view="divisions" aria-label="Competitions" data-app-aria="navCompetitions">
+            <a class="fa-shell-link is-active" id="app-nav-divisions" href="./" data-app-view="divisions" aria-current="page" aria-label="Competitions" data-app-aria="navCompetitions">
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4M12 14v4M8 21h8M9 18h6v3H9Z"/></svg>
               <span data-app-i18n="navCompetitions">Competitions</span>
             </a>
@@ -105,7 +105,7 @@
             </section>
           </div>
         </section>
-        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title">
+        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>
           <h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>
           <div class="app-panel app-calendar-empty">
             <h2 data-app-i18n="calendarStatus">Schedule not available</h2>
@@ -163,8 +163,66 @@
             </section>
           </div>
         </section>
-        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title" hidden>
+        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">
           <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>
+          <div class="app-world-countries">
+            <section class="app-world-country" aria-labelledby="world-country-it">
+              <h2 id="world-country-it"><img class="app-world-flag" alt="" src="../../assets/flags/it.svg" width="28" height="20"> <span data-world-country="IT">Italy</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./it-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">IT-1</span><span class="app-division-card-copy"><strong>Lega Federale</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./it-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">IT-2</span><span class="app-division-card-copy"><strong>Lega delle Città</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-eng">
+              <h2 id="world-country-eng"><img class="app-world-flag" alt="" src="../../assets/flags/gb-eng.svg" width="28" height="20"> <span data-world-country="ENG">England</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./eng-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">ENG-1</span><span class="app-division-card-copy"><strong>Crown League</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./eng-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">ENG-2</span><span class="app-division-card-copy"><strong>Shield League</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-es">
+              <h2 id="world-country-es"><img class="app-world-flag" alt="" src="../../assets/flags/es.svg" width="28" height="20"> <span data-world-country="ES">Spain</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./es-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">ES-1</span><span class="app-division-card-copy"><strong>Liga de la Unión</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./es-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">ES-2</span><span class="app-division-card-copy"><strong>Liga de las Regiones</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-de">
+              <h2 id="world-country-de"><img class="app-world-flag" alt="" src="../../assets/flags/de.svg" width="28" height="20"> <span data-world-country="DE">Germany</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./de-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">DE-1</span><span class="app-division-card-copy"><strong>Meisterliga</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./de-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">DE-2</span><span class="app-division-card-copy"><strong>Vereinsliga</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-fr">
+              <h2 id="world-country-fr"><img class="app-world-flag" alt="" src="../../assets/flags/fr.svg" width="28" height="20"> <span data-world-country="FR">France</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./fr-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">FR-1</span><span class="app-division-card-copy"><strong>Ligue des Sociétés</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./fr-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">FR-2</span><span class="app-division-card-copy"><strong>Ligue des Régions</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-pt">
+              <h2 id="world-country-pt"><img class="app-world-flag" alt="" src="../../assets/flags/pt.svg" width="28" height="20"> <span data-world-country="PT">Portugal</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./pt-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">PT-1</span><span class="app-division-card-copy"><strong>Liga Lusitana</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./pt-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">PT-2</span><span class="app-division-card-copy"><strong>Liga Atlântica</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-nl">
+              <h2 id="world-country-nl"><img class="app-world-flag" alt="" src="../../assets/flags/nl.svg" width="28" height="20"> <span data-world-country="NL">Netherlands</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./nl-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">NL-1</span><span class="app-division-card-copy"><strong>Oranjeliga</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./nl-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">NL-2</span><span class="app-division-card-copy"><strong>Bondsklasse</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+            <section class="app-world-country" aria-labelledby="world-country-br">
+              <h2 id="world-country-br"><img class="app-world-flag" alt="" src="../../assets/flags/br.svg" width="28" height="20"> <span data-world-country="BR">Brazil</span></h2>
+              <div class="app-world-grid">
+                <a class="app-division-card" href="./br-1/"><span class="app-competition-logo-placeholder" aria-hidden="true">BR-1</span><span class="app-division-card-copy"><strong>Liga das Associações</strong><small data-app-i18n="divisionTier1">First division</small></span></a>
+                <a class="app-division-card" href="./br-2/"><span class="app-competition-logo-placeholder" aria-hidden="true">BR-2</span><span class="app-division-card-copy"><strong>Liga das Regiões</strong><small data-app-i18n="divisionTier2">Second division</small></span></a>
+              </div>
+            </section>
+          </div>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>

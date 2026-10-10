@@ -9,10 +9,10 @@ const countries=JSON.parse(read("data/divisions.json")).countries;
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
 const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
-const manifest=JSON.parse(read("app/world/competitions/_shared/manifest.json"));
-const shared=read("app/world/competitions/_shared/index.html");
-const index=read("app/world/competitions/index.html");
-const routes=divisions.map(d=>({division:d,file:"app/world/competitions/"+d.id.toLowerCase()+"/index.html"}));
+const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
+const shared=read("app/competitions/_shared/index.html");
+const index=read("app/competitions/index.html");
+const routes=divisions.map(d=>({division:d,file:"app/competitions/"+d.id.toLowerCase()+"/index.html"}));
 const cols=["standingsPosition","standingsClub","standingsPlayed","standingsWon",
  "standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference",
  "standingsPoints","standingsForm"];
@@ -24,7 +24,9 @@ test("COMPETITIONS-06 keeps the index and 16 deep links",()=>{
  assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
  assert.ok(index.includes('data-app-i18n="navCompetitions">Competitions'));
  assert.ok(index.includes("<title>Competitions — Football Architect</title>"));
+ assert.ok(!index.includes("world/competitions/"));
  assert.ok(!existsSync(new URL("../app/world/divisions/index.html",import.meta.url)));
+ assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
@@ -34,8 +36,8 @@ test("COMPETITIONS-06 keeps the index and 16 deep links",()=>{
 
 test("COMPETITIONS-06 replaces 16 full documents with tiny route entries",()=>{
  const common=["app/dashboard/index.html","app/calendar/index.html",
-  "app/settings/index.html","app/world/competitions/index.html",
-  "app/world/competitions/_shared/index.html"];
+  "app/settings/index.html","app/competitions/index.html",
+  "app/competitions/_shared/index.html"];
  for(const file of [...common,...routes.map(r=>r.file)]){
   const html=read(file),base=new URL("../"+file,import.meta.url);
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
@@ -51,7 +53,7 @@ test("COMPETITIONS-06 replaces 16 full documents with tiny route entries",()=>{
   assert.ok(html.length<1200,"route must remain small: "+file);
   assert.ok(html.includes('<meta name="fa-division" content="'+division.id+'">'),file);
   assert.ok(html.includes('<title>'+division.name.replaceAll("&","&amp;")+' — Football Architect</title>'),file);
-  assert.ok(html.includes('src="../../../../assets/competition-page.js" defer'),file);
+  assert.ok(html.includes('src="../../../assets/competition-page.js" defer'),file);
   assert.ok(html.includes('role="status">Loading competition'),file);
   assert.ok(!html.includes('class="app-world-standing-table"'),file);
   assert.ok(!html.includes('class="fa-career-shell"'),file);
@@ -194,7 +196,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
 
 
 test("COMPETITIONS-08 removes all provisional standings filters and highlights points",()=>{
- const page=read("app/world/competitions/_shared/index.html");
+ const page=read("app/competitions/_shared/index.html");
  const css=read("assets/app.css"),app=read("assets/app.js"),tabs=read("assets/competition-tabs.js");
  const generator=read("tools/generate-app-pages.mjs");
  for(const text of ["app-standing-filters","app-standing-filter-status","No match data for the selected filters",
@@ -218,7 +220,7 @@ test("COMPETITIONS-08 removes all provisional standings filters and highlights p
 test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club",()=>{
  const css=read("assets/app.css"),renderer=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
- const page=read("app/world/competitions/_shared/index.html");
+ const page=read("app/competitions/_shared/index.html");
  assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
  assert.ok(css.includes(".app-world-club-crest-placeholder::before{content:\"\";"));
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
@@ -240,17 +242,20 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  }
 });
 
-test("STANDINGS-RESPONSIVE-01 fixes sticky widths and keeps stats visible on narrow screens",()=>{
+test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky columns",()=>{
  const css=read("assets/app.css");
- assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:1020px;table-layout:fixed;"));
- assert.ok(css.includes("tr>*:first-child{position:sticky;left:0;z-index:2;width:44px;min-width:44px;max-width:44px"));
- assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:44px;z-index:2;width:298px;min-width:298px;max-width:298px"));
- assert.ok(css.includes("tr>*:first-child{width:34px;min-width:34px;max-width:34px}"));
- assert.ok(css.includes("tr>*:nth-child(2){left:34px;width:205px;min-width:205px;max-width:205px}"));
- assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table tr>*:nth-child(2){width:178px;min-width:178px;max-width:178px}"));
- assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
+ assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:820px;table-layout:fixed;"));
+ assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:46px"));
+ assert.ok(css.includes(".app-world-standing-table thead th{height:36px"));
+ assert.ok(css.includes("tr>*:first-child{position:sticky;left:0;z-index:2;width:38px;min-width:38px;max-width:38px"));
+ assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:38px;z-index:2;width:232px;min-width:232px;max-width:232px"));
+ assert.ok(css.includes("tr>*:first-child{width:30px;min-width:30px;max-width:30px}"));
+ assert.ok(css.includes("tr>*:nth-child(2){left:30px;width:178px;min-width:178px;max-width:178px}"));
+ assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table tr>*:nth-child(2){width:158px;min-width:158px;max-width:158px}"));
+ assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
+ assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
- assert.equal((manifest.divisions.flatMap(x=>x.clubs)).length,320);
+ assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,320);
 });
 
 test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{

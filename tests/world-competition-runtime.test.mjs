@@ -7,8 +7,8 @@ import {runInNewContext} from "node:vm";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const source=read("assets/competition-page.js");
-const manifest=JSON.parse(read("app/world/competitions/_shared/manifest.json"));
-const sharedHtml=read("app/world/competitions/_shared/index.html");
+const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
+const sharedHtml=read("app/competitions/_shared/index.html");
 const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
@@ -30,7 +30,7 @@ function node(tag){
 async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetchFailure=false}){
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
- const path="/app/world/competitions/"+selected.toLowerCase()+ending;
+ const path="/app/competitions/"+selected.toLowerCase()+ending;
  const initial=node("main");
  fields.set("main-content",initial);
  const body=node("body");
@@ -63,9 +63,9 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   const u=new URL(url);
   requested.push(u.pathname);
   if(fetchFailure)return {ok:false};
-  if(u.pathname==="/app/world/competitions/_shared/index.html")
+  if(u.pathname==="/app/competitions/_shared/index.html")
    return {ok:true,text:async()=>shell};
-  if(u.pathname==="/app/world/competitions/_shared/manifest.json")
+  if(u.pathname==="/app/competitions/_shared/manifest.json")
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
@@ -93,8 +93,8 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
   for(const ending of ["/","/index.html"]){
    const r=await simulate({division,ending});
    assert.deepEqual(r.requested,[
-    "/app/world/competitions/_shared/index.html",
-    "/app/world/competitions/_shared/manifest.json"
+    "/app/competitions/_shared/index.html",
+    "/app/competitions/_shared/manifest.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/landing.js","/assets/app.js",
