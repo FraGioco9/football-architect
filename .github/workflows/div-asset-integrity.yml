@@ -1,0 +1,209 @@
+name: DIV-ASSET exact-head integrity
+
+on:
+  push:
+    branches:
+      - docs/div-asset-approved-a01-a05-p01
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/divisions/**'
+      - '.github/workflows/div-asset-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    if: github.event_name != 'pull_request' || github.head_ref == 'docs/div-asset-approved-a01-a05-p01'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check immutable DIV-ASSET records and assets
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node <<'NODE'
+          'use strict';
+          const assert = require('node:assert/strict');
+          const { createHash } = require('node:crypto');
+          const { readFileSync } = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+          
+          const baseline = '59276912876be4bfbe5d56eacabe2005759a6e8e';
+          const docs = {
+            'docs/divisions/README.md': '69b369b463c41618e9b54debc924b522bb320f5e',
+            'docs/divisions/concepts.md': 'd2699cf315b0e45c2736e8ed5b05297cccfa7071',
+            'docs/divisions/design-direction.md': '8a7ef9302101b9508961dddd423aedb1a2cd019e',
+            'docs/divisions/design-review.md': '4d8b570396a20c148a8c50621d028804a1784b34',
+            'docs/divisions/inventory.json': 'f05ea3ac0f3d4398877a410f99e00cf03643791c',
+            'docs/divisions/p01-visual-brief.md': '8aabd935dc52d2b29f94b0374b9445062e5d7e31',
+            'docs/divisions/p02-visual-brief.md': 'f213db4a168aa9f1c3f85de2727e2b55a6137974',
+            'docs/divisions/palettes-and-type.md': '62c7bded67c9461fd05fd8806e53452d43ccb82b',
+            'docs/divisions/production-log.md': 'e66cabbb48436ae373334b346b4bf33eefe97e1f',
+            'docs/divisions/technical-spec.md': 'd9ca17817413f0fde1286b0bbf6ca8a91f6f9f81'
+          };
+          const approvedColors = {
+            'IT-1': ['#194D3A', '#F3E8CC', '#B78B55'],
+            'IT-2': ['#405D4C', '#F1EADD', '#E1B885'],
+            'ENG-1': ['#17304A', '#EEE4D2', '#B99451'],
+            'ENG-2': ['#364C61', '#F0EAE0', '#CFD7DA'],
+            'ES-1': ['#8D2F2A', '#F6E9D2', '#D0A45E'],
+            'ES-2': ['#86402E', '#F6E9D2', '#E9B778'],
+            'DE-1': ['#242C31', '#EDEAE2', '#9CA5AA'],
+            'DE-2': ['#3C4A50', '#F1EFE8', '#D7BD9C'],
+            'FR-1': ['#243D6B', '#EFF0E7', '#D59D93'],
+            'FR-2': ['#3F5B75', '#F5F2EB', '#D4AAA2'],
+            'PT-1': ['#713333', '#F4E9D9', '#81B4AD'],
+            'PT-2': ['#285461', '#F3E9DE', '#D7B49A'],
+            'NL-1': ['#A74C17', '#FFF0DC', '#DFBF91'],
+            'NL-2': ['#844A21', '#F5EBDD', '#E7C497'],
+            'BR-1': ['#176347', '#F4EEDB', '#E8C56D'],
+            'BR-2': ['#2D6C58', '#F9F5E8', '#E5CC80']
+          };
+          const approvedPNG = {
+            IT1: ['IT-1', 'stemma_della_lega_federale_i.png', 'bfd87c44cd029b0fac73cf077cb30ea64175cb2da68f7666ad61297acc976ede'],
+            IT2: ['IT-2', 'emblema_lega_delle_città_ii.png', '0d8569f841fd1e822a0ad7c5e7a2319d8664e33a334378f4bd075526778db1e7'],
+            ENG1: ['ENG-1', 'emblema_della_crown_league_i.png', '8ff35e75fa7cfa4485f814e89abb6aefbef7eb293cf9d6c08cceb9508fa753fd'],
+            ENG2: ['ENG-2', 'emblema_araldico_shield_league_ii.png', 'b72d6a5ced753f65083d60c0f218d48a9d4b1299d5e14212f4dc398dcf806534']
+          };
+          function git(...args) {
+            return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).trimEnd();
+          }
+          function tree(commit) {
+            const entries = new Map();
+            const listing = execFileSync('git', ['ls-tree', '-r', '-z', commit], { encoding: 'utf8' });
+            for (const entry of listing.split('\0')) {
+              if (!entry) continue;
+              const tab = entry.indexOf('\t');
+              assert(tab > 0, 'Malformed Git tree entry');
+              const metadata = entry.slice(0, tab).split(' ');
+              entries.set(entry.slice(tab + 1), metadata[2]);
+            }
+            return entries;
+          }
+          function blobSHA(path) {
+            const bytes = readFileSync(path);
+            return createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex');
+          }
+          function json(path) {
+            return JSON.parse(readFileSync(path, 'utf8'));
+          }
+          function pass(name) {
+            console.log('PASS ' + name);
+          }
+          const head = git('rev-parse', 'HEAD');
+          assert.equal(head, process.env.EXPECTED_HEAD, 'Checkout must match the actual event source HEAD');
+          git('merge-base', '--is-ancestor', baseline, 'HEAD');
+          const baseTree = tree(baseline);
+          const headTree = tree('HEAD');
+          const expectedAdded = new Set([...Object.keys(docs).filter(p => !baseTree.has(p)), '.github/workflows/div-asset-integrity.yml']);
+          const changed = git('-c', 'core.quotepath=false', 'diff', '--name-status', baseline, 'HEAD')
+            .split('\n').filter(Boolean).map(line => line.split('\t'));
+          assert.equal(changed.length, 10, 'Only nine approved documents and one workflow may change');
+          assert.equal(expectedAdded.size, 10);
+          for (const [status, path] of changed) {
+            assert.equal(status, 'A', 'Only new files permitted: ' + path);
+            assert(expectedAdded.has(path), 'Unexpected path: ' + path);
+          }
+          for (const [path, sha] of baseTree) {
+            assert.equal(headTree.get(path), sha, 'Original Git blob changed: ' + path);
+            assert.equal(blobSHA(path), sha, 'Working file changed: ' + path);
+          }
+          assert.equal(headTree.size, baseTree.size + 10, 'File inventory has changed unexpectedly');
+          pass('Exact-head immutable baseline, diff 9 docs + 1 check-only workflow, original-source preservation');
+          
+          for (const [path, sha] of Object.entries(docs)) {
+            assert.equal(headTree.get(path), sha, 'Approved document SHA differs: ' + path);
+            assert.equal(blobSHA(path), sha, 'Approved document bytes differ: ' + path);
+            if (path.endsWith('.md')) assert(readFileSync(path, 'utf8').startsWith('# '), 'English document header missing: ' + path);
+          }
+          pass('All ten approved DIV-ASSET documents byte-identical');
+          
+          const clubData = json('data/clubs.json');
+          const divisionData = json('data/divisions.json');
+          const inv = json('docs/divisions/inventory.json');
+          assert.equal(inv.githubDocumentationLanguage, 'en');
+          assert.equal(inv.designApproved, true);
+          assert.deepEqual(inv.designApprovals, ['A01','A02','A03','A04','A05']);
+          assert.equal(inv.designCompletionPct, 100);
+          assert.equal(inv.implementedGame, false);
+          assert.equal(inv.divisions.length, 16);
+          assert.equal(divisionData.divisions.length, 16);
+          const countries = new Set();
+          for (let i = 0; i < inv.divisions.length; i++) {
+            const item = inv.divisions[i], source = divisionData.divisions[i];
+            assert.equal(item.id, source.id, 'Division ID drift');
+            assert.equal(item.name, source.name, 'Original-language division name drift');
+            assert.equal(item.tier, source.tier, 'Division tier drift');
+            countries.add(source.countryId);
+            assert.deepEqual(Object.values(item.palette), approvedColors[item.id], 'Approved palette drift: ' + item.id);
+            assert.deepEqual(item.expectedSvg, ['primary','compact','mono-dark','mono-light']
+              .map(variant => item.id.toLowerCase() + '-' + variant + '.svg'), 'SVG variants drift: ' + item.id);
+          }
+          assert.equal(countries.size, 8);
+          assert.equal(Object.keys(approvedColors).length, 16);
+          pass('16 native-language division names, 8 countries, and 48 exact approved HEX values');
+          
+          assert.equal(inv.approvedSampleCount, 4);
+          assert.equal(Object.keys(inv.sampleImages).length, 4);
+          for (const [key, expected] of Object.entries(approvedPNG)) {
+            const sample = inv.sampleImages[key];
+            assert(sample, 'Missing approved PNG fingerprint: ' + key);
+            assert.deepEqual([sample.divisionId, sample.fileName, sample.sha256], expected);
+            assert.equal(sample.githubUploaded, false, 'Approved PNG binaries must not be claimed as uploaded');
+          }
+          assert.equal(inv.sampleImages.ENG2.approved, true);
+          assert.match(inv.sampleImages.ENG2.revision, /corrected.*symmetry/i);
+          pass('Four approved PNG SHA-256 values and corrected ENG-2 revision');
+          
+          const svgNames = inv.divisions.flatMap(item => item.expectedSvg);
+          assert.equal(inv.svgPlannedCount, 64);
+          assert.equal(svgNames.length, 64);
+          assert.equal(new Set(svgNames).size, 64);
+          assert.equal(inv.svgProducedCount, 0);
+          assert.equal(divisionData.masterSvgCount, 0);
+          pass('64 unique planned SVG names; 0 incorrectly claimed as produced');
+          
+          assert.equal(clubData.count, 320);
+          assert.equal(clubData.clubs.length, 320);
+          const clubKeys = new Set(), abbr = new Set(), counts = new Map();
+          for (const club of clubData.clubs) {
+            const key = club.countryId + ':' + club.clubId;
+            assert(!clubKeys.has(key), 'Duplicate club key: ' + key);
+            assert.match(club.abbr, /^[A-Z]{3}$/, 'Invalid abbreviation: ' + key);
+            assert(club.fullName && typeof club.fullName === 'string', 'Missing club full name: ' + key);
+            clubKeys.add(key);
+            abbr.add(club.abbr);
+            counts.set(club.countryId, (counts.get(club.countryId) || 0) + 1);
+          }
+          assert.equal(clubKeys.size, 320);
+          assert.equal(abbr.size, 320);
+          assert.equal(counts.size, 8);
+          for (const count of counts.values()) assert.equal(count, 40);
+          assert.equal(clubData.clubs.filter(x => x.firstDivisionReference).length, 160);
+          assert.equal(clubData.clubs.filter(x => x.approvedShortName).length, 6);
+          pass('320 canonical club identities, names, unique abbreviations, and historical approvals');
+          
+          const selectFlags = paths => [...paths].filter(p => /^assets\/flags\/[^/]+\.svg$/.test(p)).sort();
+          const flagPaths = selectFlags(headTree.keys());
+          assert.equal(flagPaths.length, 271);
+          assert.deepEqual(flagPaths, selectFlags(baseTree.keys()));
+          for (const path of flagPaths) assert.equal(blobSHA(path), baseTree.get(path), 'Flag SVG changed: ' + path);
+          const license = readFileSync('assets/flags/LICENSE','utf8');
+          assert.match(license, /^The MIT License \(MIT\)/);
+          for (const path of ['assets/flags/LICENSE', 'docs/clubs/fullnames-source.md', 'docs/clubs/registry-history.md',
+            'docs/clubs/README.md', 'docs/clubs/fullnames-reference.en.md', 'docs/clubs/registry-audit.en.md']) {
+            assert.equal(blobSHA(path), baseTree.get(path), 'Licensed or historic source altered: ' + path);
+          }
+          pass('271 identical SVG flags, original MIT license, and untouched historical sources');
+          console.log('ALL DIV-ASSET EXACT-HEAD INTEGRITY GATES PASS on ' + head);
+          NODE
