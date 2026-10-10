@@ -117,7 +117,8 @@
 @media(prefers-reduced-motion:reduce){.fa-shell-link,.app-link{transition:none}}
 
 /* HOME-02 SEARCH-01: shared responsive top-bar search and animated modal. */
-.fa-shell-search{flex:0 1 290px;min-width:0}
+.fa-shell-search{flex:0 1 330px;min-width:0}
+@media(min-width:1025px){.fa-shell-club,.fa-shell-time{flex:1 1 0}.fa-shell-time{justify-content:flex-end}}
 .app-search-trigger{display:flex;align-items:center;gap:10px;width:100%;height:38px;min-width:0;padding:0 12px;border:1px solid #41655f;border-radius:10px;background:#17383a;color:#d6e8e1;font:inherit;font-size:12px;text-align:left;cursor:pointer}
 .app-search-trigger svg{flex:none;color:#8dcdb7}
 .app-search-trigger:hover{background:#214847;border-color:#6a9986}
