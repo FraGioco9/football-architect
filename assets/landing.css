@@ -22,7 +22,11 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .site-shell{min-height:100vh;min-height:100svh;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
 .wrapper{width:100%;max-width:none;margin-inline:auto;padding-inline:clamp(18px,3.5vw,64px)}
 .site-header{display:flex;justify-content:space-between;align-items:center;gap:20px;padding-block:30px 16px}
-.brand-mark{display:grid;place-items:center;width:43px;height:43px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:15px;font-weight:760;letter-spacing:-.04em;user-select:none}
+.brand-mark{display:inline-flex;align-items:center;justify-content:flex-start;flex:none;width:260px;max-width:calc(100vw - 222px);height:79px;min-height:44px;border-radius:10px;text-decoration:none}
+.brand-mark:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.brand-image{display:block;max-width:100%;object-fit:contain;object-position:left center}
+.brand-image-wide{width:100%;height:100%}
+.brand-image-symbol{display:none}
 .language-control{display:flex;align-items:center;position:relative;min-width:0;z-index:30}
 .language-trigger{display:flex;justify-content:space-between;align-items:center;gap:16px;min-width:164px;min-height:44px;max-width:100%;padding:9px 12px 9px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);cursor:pointer;text-align:left;transition:background-color 120ms ease,border-color 120ms ease}
 .language-trigger:hover,.language-trigger[aria-expanded="true"]{background:#1C3031;border-color:#66857A}
@@ -62,7 +66,9 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(max-width:600px){
   .wrapper{padding-inline:18px}
   .site-header{padding-block:20px 12px}
-  .brand-mark{width:40px;height:40px}
+  .brand-mark{width:44px;height:44px;max-width:44px}
+  .brand-image-wide{display:none}
+  .brand-image-symbol{display:block;width:44px;height:44px}
   .language-trigger{min-width:148px}
   .language-menu{min-width:148px}
   .action-status{inset-inline:max(18px,env(safe-area-inset-left)) max(18px,env(safe-area-inset-right));inset-block-end:max(18px,env(safe-area-inset-bottom));width:auto}
