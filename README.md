@@ -2,23 +2,21 @@
 
 ## Current repository status
 
-This feature branch adds a **standalone static Landing page** to Football Architect's **asset and identity catalogues**. It does not provide a playable football-management game. It does not contain the former game runtime, app server, career saves, active scheduling/simulation, npm application commands, or a deployment workflow. Earlier application versions remain accessible in Git history and historical pull requests, but must **not** be presented as part of the current mainline.
+The current `main` branch is an **asset and identity-catalogue repository**, not a playable football-management game. It does not contain the former game runtime, app server, career saves, active scheduling/simulation, npm application commands, or a deployment workflow. Earlier application versions remain accessible in Git history and historical pull requests, but must **not** be presented as part of the current mainline.
 
-The game-world baseline is **8 countries, 16 fictional division identities, and 320 documented fictional club identities**. The static Landing provides a localized introduction and two currently unavailable Guide / app actions; it does not add those unfinished destinations. Actual sports gameplay, current club-to-league allocations, finalized division/club SVG crests, and app integration are not provided by this branch.
+The game-world baseline is **8 countries, 16 fictional division identities, and 320 documented fictional club identities**. Actual sports gameplay, current club-to-league allocations, finalized division/club SVG crests, and app integration are not provided by this branch.
 
-## Run the landing page locally
+## Local landing page
 
-Open `index.html` directly, or start a local static server from the repository directory on Windows:
+The repository also provides a standalone static landing page (`index.html`), styled in Graphite & Petrol. It is not a playable game and does not include active Guide or Home routes.
 
-```powershell
-py -m http.server 2000
-```
+To preview locally on Windows, run `py -m http.server 2000 --bind 127.0.0.1` and open `http://127.0.0.1:2000/`. No npm, Docker, or build step is needed. Run `node --test tests/landing.test.mjs` for landing contract checks.
 
-Then visit `http://127.0.0.1:2000`. No npm, Docker, or build step is needed. Run the landing contract tests using `node --test tests/landing.test.mjs`.
+English is the default language, with Deutsch, Español, Français, and Italiano selectable through a custom accessible dropdown. The language preference is persisted locally.
 
-**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The custom Graphite & Petrol language dropdown uses the same surface, border, and typography as the site. It supports mouse, touch, and keyboard (arrows, Home/End, Enter/Space, Escape), with an accessible listbox and persistent language selection.
+The Enter the app and Guide buttons display localized notices. Notices auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart the countdown when interaction ends. They animate in over 200 ms and out over 180 ms, with reduced-motion support. The layout is responsive, reserves a scrollbar gutter, and prevents text selection.
 
-The **Enter the app** and **Guide** buttons show a localized notice that those destinations are not yet available rather than navigating to missing pages. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. They fade in with a subtle 8px rise (200 ms) and fade out over 180 ms without changing the page layout; reduced-motion preferences disable the visual animation. They auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart a full five-second countdown when the pointer or focus leaves. New notices reset the countdown, including when a new action interrupts the exit transition. The landing spans the available viewport width with responsive side padding, reserves a stable scrollbar gutter where supported, and uses a transparent scrollbar track with a subtle thumb. Text selection and iOS long-press text callouts are disabled on the static landing; interactive focus indicators remain available. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
+These static landing features do not enable gameplay or deployment.
 
 ## Current resources
 
