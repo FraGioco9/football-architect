@@ -5,7 +5,7 @@
   const SUPPORTED = ["en","de","es","fr","it"];
   const messages = {
     en: {
-      language:"Language",summary:"Explore an alternative football world.",
+      language:"Language",dismiss:"Dismiss notice",summary:"Explore an alternative football world.",
       enter:"Enter the app",guide:"Guide",universe:"Football world",
       countries:"Countries",divisions:"Divisions",clubs:"Documented clubs",
       footer:"Work in progress",
@@ -13,7 +13,7 @@
       unavailableGuide:"The guide is not available yet. This area is being designed."
     },
     de: {
-      language:"Sprache",summary:"Entdecke eine alternative Fußballwelt.",
+      language:"Sprache",dismiss:"Hinweis schließen",summary:"Entdecke eine alternative Fußballwelt.",
       enter:"App öffnen",guide:"Leitfaden",universe:"Fußballwelt",
       countries:"Länder",divisions:"Ligen",clubs:"Dokumentierte Vereine",
       footer:"In Entwicklung",
@@ -21,7 +21,7 @@
       unavailableGuide:"Der Leitfaden ist noch nicht verfügbar. Dieser Bereich wird entwickelt."
     },
     es: {
-      language:"Idioma",summary:"Explora un universo futbolístico alternativo.",
+      language:"Idioma",dismiss:"Cerrar aviso",summary:"Explora un universo futbolístico alternativo.",
       enter:"Entrar en la aplicación",guide:"Guía",universe:"Mundo del fútbol",
       countries:"Países",divisions:"Divisiones",clubs:"Clubes documentados",
       footer:"En desarrollo",
@@ -29,7 +29,7 @@
       unavailableGuide:"La guía aún no está disponible. Esta sección está en desarrollo."
     },
     fr: {
-      language:"Langue",summary:"Explorez un univers footballistique alternatif.",
+      language:"Langue",dismiss:"Fermer le message",summary:"Explorez un univers footballistique alternatif.",
       enter:"Accéder à l’application",guide:"Guide",universe:"Univers du football",
       countries:"Pays",divisions:"Divisions",clubs:"Clubs répertoriés",
       footer:"En développement",
@@ -37,7 +37,7 @@
       unavailableGuide:"Le guide n’est pas encore disponible. Cette section est en cours de conception."
     },
     it: {
-      language:"Lingua",summary:"Esplora un universo calcistico alternativo.",
+      language:"Lingua",dismiss:"Chiudi avviso",summary:"Esplora un universo calcistico alternativo.",
       enter:"Entra nell'app",guide:"Guida",universe:"Mondo calcistico",
       countries:"Paesi",divisions:"Divisioni",clubs:"Club documentati",
       footer:"In sviluppo",
@@ -47,6 +47,8 @@
   };
   const select = document.getElementById("site-language");
   const status = document.getElementById("action-status");
+  const statusMessage = document.getElementById("action-status-message");
+  const statusClose = document.getElementById("status-close");
   const labels = [...document.querySelectorAll("[data-i18n]")];
   const actions = [...document.querySelectorAll("[data-destination]")];
   const valid = (language) => SUPPORTED.includes(language) ? language : "en";
@@ -56,13 +58,13 @@
     const copy = messages[language];
     document.documentElement.lang = language;
     select.value = language;
+    statusClose.setAttribute("aria-label",copy.dismiss);
     for (const node of labels) {
       const key = node.dataset.i18n;
       if (Object.hasOwn(copy,key)) node.textContent = copy[key];
     }
-    if (lastAction) {
-      status.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
-      status.hidden = false;
+    if (lastAction && !status.hidden) {
+      statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
     }
   }
 
@@ -79,9 +81,13 @@
     button.addEventListener("click", () => {
       lastAction = button.dataset.destination;
       const copy = messages[valid(select.value)];
-      status.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
+      statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
       status.hidden = false;
     });
   }
+  statusClose.addEventListener("click", () => {
+    status.hidden = true;
+    lastAction = null;
+  });
   translate(initial);
 })();
