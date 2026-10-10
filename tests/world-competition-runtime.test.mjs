@@ -112,6 +112,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(rows.length,20,division.id);
    for(let i=0;i<20;i++){
     const row=rows[i],club=division.clubs[i];
+    assert.ok(club.primaryName,"Expected an approved primary club name");
     assert.equal(row.dataset.worldClub,club.countryId+"-"+club.clubId);
     assert.equal(row.children.length,11,division.id);
     assert.equal(row.children[1].children[0].textContent,club.abbr);

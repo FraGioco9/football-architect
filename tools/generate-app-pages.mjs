@@ -44,7 +44,7 @@ const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisional
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
 const primaryReference = JSON.parse(readFileSync(new URL("../data/club-primary-names.documented.json",import.meta.url),"utf8"));
-if(primaryReference.schemaVersion!==1 || Object.keys(primaryReference.names??{}).length!==76)throw Error("Primary-name reference mismatch");
+if(primaryReference.schemaVersion!==1 || Object.keys(primaryReference.names??{}).length!==315)throw Error("Primary-name reference mismatch");
 const namesById=new Map(clubData.clubs.map(club=>[club.countryId+":"+club.clubId,club]));
 for(const [key,name] of Object.entries(primaryReference.names)){
  const club=namesById.get(key);
@@ -52,6 +52,7 @@ for(const [key,name] of Object.entries(primaryReference.names)){
   throw Error("Undocumented or conflicting primary club name "+key);
 }
 const primaryName=club=>club.approvedShortName||primaryReference.names[club.countryId+":"+club.clubId]||null;
+if(clubData.clubs.some(club=>!primaryName(club)))throw Error("Incomplete approved primary-name registry");
 
 const worldNav = function worldNav(href,active){
  return '            <a class="fa-shell-link'+(active?' is-active':'')+'" id="app-nav-divisions" href="'+href+'" data-app-view="divisions"'+(active?' aria-current="page"':'')+' aria-label="Competitions" data-app-aria="navCompetitions">';

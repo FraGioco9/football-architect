@@ -217,7 +217,7 @@ test("COMPETITIONS-08 uses only documented primary names, never inferred shorten
  const canonical=clubs;
  const byId=new Map(canonical.map(c=>[c.countryId+":"+c.clubId,c]));
  const explicit=canonical.filter(c=>c.approvedShortName);
- assert.equal(Object.keys(primaryNames).length,76);
+ assert.equal(Object.keys(primaryNames).length,315);
  assert.equal(explicit.length,6);
  let named=0,abbreviationOnly=0;
  for(const d of manifest.divisions){
@@ -229,12 +229,45 @@ test("COMPETITIONS-08 uses only documented primary names, never inferred shorten
    if(c.primaryName)named++;else abbreviationOnly++;
   }
  }
- assert.equal(named,81);
- assert.equal(abbreviationOnly,239);
+ assert.equal(named,320);
+ assert.equal(abbreviationOnly,0);
  for(const [key,name] of Object.entries(primaryNames)){
   assert.ok(byId.has(key),key);
   assert.ok(typeof name==="string"&&name.trim(),key);
   const source=byId.get(key);
   if(source.approvedShortName)assert.equal(name,source.approvedShortName,key);
  }
+});
+
+test("CLUB-PRIMARY-239-01 preserves six reconciliations and an independent A03 audit",()=>{
+ const catalog=read("data/clubs.json");
+ const source=JSON.parse(catalog).clubs;
+ const primary=JSON.parse(read("data/club-primary-names.documented.json"));
+ const unique=new Set();
+ assert.equal(primary.schemaVersion,1);
+ assert.equal(Object.keys(primary.names).length,315);
+ assert.equal(source.length,320);
+ const expectedSix={
+  "IT:1":"US Velaria Torino","IT:2":"AC Rinascenti Bologna",
+  "FR:27":"FC Émaux","FR:33":"CS Garrigues",
+  "PT:34":"AC Fontes","BR:16":"EC Falésia Clara"
+ };
+ assert.deepEqual(Object.fromEntries(source.filter(c=>c.approvedShortName)
+   .map(c=>[c.countryId+":"+c.clubId,c.approvedShortName])),expectedSix);
+ for(const c of source){
+  const key=c.countryId+":"+c.clubId,name=c.approvedShortName||primary.names[key];
+  assert.ok(typeof name==="string"&&name.trim(),key);
+  const normalized=name.normalize("NFKD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
+  assert.ok(!unique.has(normalized),"Duplicate primary label: "+name);
+  unique.add(normalized);
+ }
+ assert.equal(unique.size,320);
+ const audit=read("docs/clubs/a03-label-variants.en.md");
+ const differences=[...audit.matchAll(/^\|\s*((?:ENG|ES|DE)-\d{2})\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|/gm)];
+ assert.equal(differences.length,41);
+ assert.equal(differences.filter(x=>x[1].startsWith("ENG-")).length,2);
+ assert.equal(differences.filter(x=>x[1].startsWith("ES-")).length,19);
+ assert.equal(differences.filter(x=>x[1].startsWith("DE-")).length,20);
+ assert.equal(new Set(differences.map(x=>x[1])).size,41);
+ assert.ok(!audit.includes("AC Felsina Bologna"));
 });
