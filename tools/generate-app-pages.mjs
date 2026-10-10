@@ -43,6 +43,16 @@ const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
+const primaryReference = JSON.parse(readFileSync(new URL("../data/club-primary-names.documented.json",import.meta.url),"utf8"));
+if(primaryReference.schemaVersion!==1 || Object.keys(primaryReference.names??{}).length!==76)throw Error("Primary-name reference mismatch");
+const namesById=new Map(clubData.clubs.map(club=>[club.countryId+":"+club.clubId,club]));
+for(const [key,name] of Object.entries(primaryReference.names)){
+ const club=namesById.get(key);
+ if(!club || typeof name!=="string" || !name.trim() || (club.approvedShortName && club.approvedShortName!==name))
+  throw Error("Undocumented or conflicting primary club name "+key);
+}
+const primaryName=club=>club.approvedShortName||primaryReference.names[club.countryId+":"+club.clubId]||null;
+
 const worldNav = function worldNav(href,active){
  return '            <a class="fa-shell-link'+(active?' is-active':'')+'" id="app-nav-divisions" href="'+href+'" data-app-view="divisions"'+(active?' aria-current="page"':'')+' aria-label="Competitions" data-app-aria="navCompetitions">';
 };
@@ -61,23 +71,6 @@ const indexContent = function indexContent(root){
  }).join("\n");
  return '          <div class="app-world-countries">\n'+cards+'\n          </div>';
 };
-const standingsFilters = function standingsFilters(){
- const group=(kind,key,label,options)=>{
-  const buttons=options.map(([value,textKey,text],i)=>'                  <button type="button" class="app-standing-filter-button'+(i===0?' is-active':'')+'" data-standing-filter="'+kind+'" data-standing-value="'+value+'" aria-pressed="'+(i===0?'true':'false')+'" data-app-i18n="'+textKey+'">'+text+'</button>').join("\n");
-  return '              <div class="app-standing-filter-group" role="group" aria-labelledby="standing-filter-'+kind+'-label">\n'+
-   '                <span class="app-standing-filter-label" id="standing-filter-'+kind+'-label" data-app-i18n="'+key+'">'+label+'</span>\n'+
-   '                <div class="app-standing-filter-options">\n'+buttons+'\n                </div>\n              </div>';
- };
- return '            <div class="app-standing-filters" role="group" aria-label="Standings filters" data-app-aria="standingFilters">\n'+
-  group("leg","standingFilterLeg","Leg",[
-   ["all","standingFilterAll","All"],["first","standingFilterFirst","First leg"],["second","standingFilterSecond","Second leg"]])+'\n'+
-  group("venue","standingFilterVenue","Venue",[
-   ["all","standingFilterAll","All"],["home","standingFilterHome","Home"],["away","standingFilterAway","Away"]])+'\n'+
-  group("form","standingFilterForm","Form",[
-   ["all","standingFilterAll","All"],["last5","standingFilterLast5","Last 5"],["last10","standingFilterLast10","Last 10"]])+'\n'+
-  '            </div>\n'+
-  '            <p class="app-standing-filter-status" id="app-standing-filter-status" role="status" data-app-i18n="standingFilterUnavailable" hidden>No match data for the selected filters.</p>\n';
-};
 const detailAppend = function detailAppend(d){
  const cs=provisionalClubs.get(d.id);
  if(!cs||cs.length!==d.capacity)throw Error("missing clubs "+d.id);
@@ -90,7 +83,7 @@ ${Array.from({length:9},()=> '                  <td class="app-world-stat-unknow
                 </tr>`).join("\n");
  return `
           <div class="app-world-standings">
-${standingsFilters()}            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
                 <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
                 <thead>
@@ -210,7 +203,7 @@ const competitionManifest = {
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
-   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName}))};
+   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c)}))};
  })
 };
 if(competitionManifest.approved!==false)throw Error("Do not publish an approved competition allocation");

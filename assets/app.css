@@ -232,16 +232,3 @@ html{scroll-padding-top:72px}
 .app-competition-facts dt{color:var(--muted);font-size:11px}
 .app-competition-facts dd{margin:5px 0 0;font-weight:700;font-size:14px}
 @media(max-width:620px){.app-competition-tab{padding:10px 12px;font-size:12px}}
-
-/* Competition standings: shared points emphasis and responsive scope selectors. */
-.app-standing-filters{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px 22px;margin:0 0 14px}
-.app-standing-filter-group{display:flex;flex-direction:column;gap:7px;min-width:0}
-.app-standing-filter-label{color:var(--muted);font-size:11px;font-weight:700}
-.app-standing-filter-options{display:flex;flex-wrap:nowrap;gap:4px;align-items:center}
-.app-standing-filter-button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
-.app-standing-filter-button:hover{background:#27443e;color:var(--text)}
-.app-standing-filter-button.is-active{background:#21483d;color:#e6ffed;border-color:#508d75}
-.app-standing-filter-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-standing-filter-status{margin:0 0 12px;color:var(--muted);font-size:12px}
-.app-standing-filter-status[hidden]{display:none}
-@media(max-width:620px){.app-standing-filters{gap:11px 14px}.app-standing-filter-button{padding:7px 9px;font-size:11px}}

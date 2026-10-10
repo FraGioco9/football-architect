@@ -19,6 +19,7 @@ function node(tag){
  const n={
   tagName:tag,children,attrs,dataset:{},className:"",textContent:"",
   appendChild(item){children.push(item);return item},
+  removeAttribute(name){delete attrs[name]},
   append(...items){children.push(...items)},
   replaceChildren(...items){children.splice(0,children.length,...items)},
   setAttribute(name,value){attrs[name]=value}
@@ -114,7 +115,14 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     assert.equal(row.dataset.worldClub,club.countryId+"-"+club.clubId);
     assert.equal(row.children.length,11,division.id);
     assert.equal(row.children[1].children[0].textContent,club.abbr);
-    assert.equal(row.children[1].children[1].textContent,club.fullName);
+    if(club.primaryName){
+     assert.equal(row.children[1].children.length,2);
+     assert.equal(row.children[1].children[1].textContent,club.primaryName);
+     assert.notEqual(row.children[1].children[1].textContent,club.fullName);
+    }else{
+     assert.equal(row.children[1].children.length,1);
+     assert.equal(row.children[1].children[0].attrs["aria-hidden"],undefined);
+    }
     assert.equal(row.children.filter(cell=>cell.textContent==="—").length,10);
    }
    assert.equal(r.body.className,"app-body");
@@ -127,7 +135,8 @@ test("SHARED-QA-01: invalid, approved or unavailable data fails closed",async()=
  const approved=structuredClone(manifest);approved.approved=true;
  const repeated=structuredClone(manifest);repeated.divisions[1].clubs[0]=repeated.divisions[0].clubs[0];
  const short=structuredClone(manifest);short.divisions[0].clubs.pop();
- for(const options of [{data:approved},{data:repeated},{data:short},{fetchFailure:true},
+ const badName=structuredClone(manifest);badName.divisions[0].clubs[0].primaryName=42;
+ for(const options of [{data:approved},{data:repeated},{data:short},{data:badName},{fetchFailure:true},
   {shell:"<html><body class=\"app-body\"></body></html>"}]){
   const r=await simulate({division:manifest.divisions[0],...options});
   assert.equal(r.loaded.length,0,"no scripts should execute after a validation error");

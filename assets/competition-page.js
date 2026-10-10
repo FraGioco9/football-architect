@@ -37,7 +37,8 @@
         if (club.countryId !== d.countryId || !Number.isInteger(club.clubId) ||
             club.clubId <= previous || clubs.has(key) ||
             typeof club.fullName !== "string" || !club.fullName ||
-            typeof club.abbr !== "string" || !club.abbr) return false;
+            typeof club.abbr !== "string" || !club.abbr ||
+            !(club.primaryName === null || (typeof club.primaryName === "string" && !!club.primaryName.trim()))) return false;
         clubs.add(key);
         previous = club.clubId;
       }
@@ -63,8 +64,14 @@
     abbr.textContent = club.abbr;
     const name = document.createElement("span");
     name.className = "app-world-club-name";
-    name.textContent = club.fullName;
-    th.append(abbr, name);
+    if (club.primaryName) {
+      name.textContent = club.primaryName;
+      th.append(abbr, name);
+    } else {
+      // No authoritative primary name is recorded: display only the approved club code.
+      abbr.removeAttribute("aria-hidden");
+      th.appendChild(abbr);
+    }
     tr.appendChild(th);
     for (let i = 0; i < 9; i++) tr.appendChild(unknown());
     return tr;

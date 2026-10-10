@@ -8,6 +8,7 @@ const divisions=JSON.parse(read("data/divisions.json")).divisions;
 const countries=JSON.parse(read("data/divisions.json")).countries;
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
+const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
 const manifest=JSON.parse(read("app/world/competitions/_shared/manifest.json"));
 const shared=read("app/world/competitions/_shared/index.html");
 const index=read("app/world/competitions/index.html");
@@ -78,7 +79,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
    const club=clubs.find(c=>c.countryId===record.countryId&&c.clubId===record.clubId);
    const key=record.countryId+"-"+record.clubId;
    assert.ok(club,key);
-   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName});
+   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.approvedShortName||primaryNames[record.countryId+":"+record.clubId]||null});
    assert.ok(!seen.has(key),"duplicate "+key);
    seen.add(key);
   }
@@ -188,80 +189,51 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  assert.ok(runtime.includes("start().catch(fail)"));
 });
 
-test("COMPETITIONS-07 highlights points and exposes shared, translated standings filters",()=>{
+
+test("COMPETITIONS-08 removes all provisional standings filters and highlights points",()=>{
  const page=read("app/world/competitions/_shared/index.html");
- const css=read("assets/app.css"),app=read("assets/app.js");
- const groups={leg:["all","first","second"],venue:["all","home","away"],form:["all","last5","last10"]};
- const labels=["standingFilters","standingFilterLeg","standingFilterVenue","standingFilterForm",
-  "standingFilterAll","standingFilterFirst","standingFilterSecond","standingFilterHome",
-  "standingFilterAway","standingFilterLast5","standingFilterLast10","standingFilterUnavailable"];
- for(const key of labels)
-  assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
- for(const [group,values] of Object.entries(groups)){
-  for(const value of values){
-   assert.equal((page.match(new RegExp('data-standing-filter="'+group+'" data-standing-value="'+value+'"',"g"))||[]).length,1,group+":"+value);
-  }
+ const css=read("assets/app.css"),app=read("assets/app.js"),tabs=read("assets/competition-tabs.js");
+ const generator=read("tools/generate-app-pages.mjs");
+ for(const text of ["app-standing-filters","app-standing-filter-status","No match data for the selected filters",
+  "data-standing-filter=","standing-filter-options"]){
+  assert.ok(!page.includes(text),text);
+  assert.ok(!generator.includes(text),text);
+  assert.ok(!css.includes(text),text);
+  assert.ok(!tabs.includes(text),text);
  }
- assert.equal((page.match(/class="app-standing-filter-group"/g)||[]).length,3);
- assert.equal((page.match(/aria-pressed="true"/g)||[]).length,3);
- assert.equal((page.match(/aria-pressed="false"/g)||[]).length,6);
- assert.ok(page.includes('id="app-standing-filter-status" role="status" data-app-i18n="standingFilterUnavailable" hidden'));
+ for(const key of ["standingFilters","standingFilterLeg","standingFilterVenue",
+ "standingFilterForm","standingFilterAll","standingFilterFirst","standingFilterSecond",
+ "standingFilterHome","standingFilterAway","standingFilterLast5","standingFilterLast10","standingFilterUnavailable"]){
+  assert.ok(!app.includes(key+":"),key);
+ }
  assert.ok(page.includes('data-app-i18n="standingsPoints">Pts</th>'));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
- assert.ok(css.includes(".app-standing-filter-button:focus-visible"));
- assert.ok(css.includes("@media(max-width:620px){.app-standing-filters"));
- for(const division of divisions){
-  const route=read("app/world/competitions/"+division.id.toLowerCase()+"/index.html");
-  assert.ok(!route.includes("app-standing-filters"),division.id);
- }
+ assert.equal((page.match(/role="tab"/g)||[]).length,6);
+ assert.equal((page.match(/<th scope="col"/g)||[]).length,11);
 });
 
-test("COMPETITIONS-07 scopes filter selections without fabricating match data",async()=>{
- const {runInNewContext}=await import("node:vm");
- const selected={},labels={},groups=["leg","venue","form"];
- const buttons=groups.flatMap(group=>(group==="leg"?["all","first","second"]:group==="venue"?["all","home","away"]:["all","last5","last10"]).map(value=>{
-  const events={},state={active:value==="all",pressed:value==="all"?"true":"false"};
-  const button={
-   dataset:{standingFilter:group,standingValue:value},events,state,
-   classList:{toggle(name,on){if(name==="is-active")state.active=on}},
-   setAttribute(name,v){if(name==="aria-pressed")state.pressed=v},
-   addEventListener(name,fn){events[name]=fn}
-  };
-  labels[group+":"+value]=button;
-  return button;
- }));
- const tabs=Array.from({length:6},(_,i)=>{
-  const attrs={},events={};
-  return {events,tabIndex:i===0?0:-1,classList:{toggle(){}},getAttribute(){return "panel-"+i},
-   setAttribute(name,value){attrs[name]=value},addEventListener(name,fn){events[name]=fn}};
- });
- const panels=Array.from({length:6},()=>({hidden:false})),status={hidden:true};
- const document={
-  querySelector(selector){
-   if(selector===".app-competition-tabs")return {querySelectorAll(){return tabs}};
-   if(selector===".app-standing-filters")return {querySelectorAll(){return buttons}};
-   return null;
-  },
-  getElementById(id){
-   return id==="app-standing-filter-status"?status:panels[Number(id.replace("panel-",""))]??null;
+test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{
+ const canonical=clubs;
+ const byId=new Map(canonical.map(c=>[c.countryId+":"+c.clubId,c]));
+ const explicit=canonical.filter(c=>c.approvedShortName);
+ assert.equal(Object.keys(primaryNames).length,76);
+ assert.equal(explicit.length,6);
+ let named=0,abbreviationOnly=0;
+ for(const d of manifest.divisions){
+  for(const c of d.clubs){
+   const key=c.countryId+":"+c.clubId,source=byId.get(key);
+   assert.ok(source);
+   assert.equal(c.primaryName,source.approvedShortName||primaryNames[key]||null,key);
+   assert.equal(c.fullName,source.fullName,key);
+   if(c.primaryName)named++;else abbreviationOnly++;
   }
- };
- runInNewContext(read("assets/competition-tabs.js"),{document});
- labels["leg:first"].events.click();
- assert.equal(labels["leg:first"].state.pressed,"true");
- assert.equal(labels["leg:all"].state.pressed,"false");
- assert.equal(status.hidden,false);
- labels["venue:away"].events.click();
- labels["form:last5"].events.click();
- assert.equal(labels["venue:away"].state.active,true);
- assert.equal(labels["form:last5"].state.active,true);
- assert.equal(labels["leg:first"].state.active,true);
- labels["leg:all"].events.click();
- labels["venue:all"].events.click();
- assert.equal(status.hidden,false);
- labels["form:all"].events.click();
- assert.equal(status.hidden,true);
- for(const group of groups)
-  assert.equal(buttons.filter(b=>b.dataset.standingFilter===group&&b.state.pressed==="true").length,1,group);
- assert.equal(panels.filter(x=>!x.hidden).length,1);
+ }
+ assert.equal(named,81);
+ assert.equal(abbreviationOnly,239);
+ for(const [key,name] of Object.entries(primaryNames)){
+  assert.ok(byId.has(key),key);
+  assert.ok(typeof name==="string"&&name.trim(),key);
+  const source=byId.get(key);
+  if(source.approvedShortName)assert.equal(name,source.approvedShortName,key);
+ }
 });
