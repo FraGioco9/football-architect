@@ -1,89 +1,89 @@
-## ARCHIVIO CLUBS-320 — roadmap anagrafica precedente (prima del passaggio a CLUB-ASSET)
+## CLUBS-320 ARCHIVE — Previous club registry roadmap (before CLUB-ASSET)
 
-> Questa è una copia integrale del precedente testo dell'issue #61, salvata per **conservare audit, 320 sigle approvate e decisioni nominative**. È storico e **NON costituisce più la roadmap operativa**. Il nuovo perimetro dell'issue #61 è esclusivamente grafico, come DIV-ASSET #60. La trascrizione delle 320 denominazioni complete riconciliate resta nel [registro dedicato](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309).
+> This is a preserved copy of the former issue #61 text, retained to **protect audit evidence, 320 approved abbreviations and naming decisions**. It is historical and **is no longer the operational roadmap**. Issue #61 now exclusively covers graphics, as does DIV-ASSET #60. The reconciled transcription of all 320 full names is available in the [dedicated register](https://github.com/FraGioco9/football-architect/issues/61#issuecomment-6091538309).
 
 ---
 
-# Roadmap CLUBS-320 — Anagrafica e identità dei 320 club
+# CLUBS-320 Roadmap — Registry and identities of all 320 clubs
 
-> **Ambito esclusivo:** i club di Football Architect, il catalogo statico, le denominazioni, le sigle e le loro caratteristiche identitarie. **Non** comprende regole o appartenenze stagionali delle divisioni, calendari, partite, classifiche, promozioni/retrocessioni, playout o salvataggi.
+> **Exclusive scope:** Football Architect clubs, the static catalogue, names, abbreviations and identity attributes. It does **not** cover seasonal division affiliation or rules, fixtures, matches, tables, promotion/relegation, playoffs or saves.
 >
-> **Stato iniziale roadmap:** **0/5 fasi implementate (0%)**. La progettazione dei **320 nomi principali** è già stata approvata (100%), ma non equivale a un catalogo implementato o a 320 schede complete.
+> **Initial roadmap status:** **0/5 phases implemented (0%)**. Design of the **320 primary names** has been approved (100%), but this does not mean the catalogue is implemented or that 320 complete club records exist.
 
-## Perimetro e decisioni approvate
+## Scope and approved decisions
 
-- **8 Paesi:** IT, ENG, ES, DE, FR, PT, NL, BR.
-- **40 club fittizi per Paese**, **320 totali**.
-- Per ogni Paese: `clubId` numerici **1–40**, stabili; identità permanente composta da `countryId + clubId`. **Nessun cambio di ID** per ragioni sportive.
-- **Primi 20 club:** preservare l'associazione tra ID e **città originale** già presente in `src/leagues.js`, oltre agli **stadi esistenti** salvo decisione successiva.
-- **Club 21–40:** nuovi club già progettati per ciascun Paese; i dati anagrafici mancanti devono essere progettati, non generati in modo arbitrario.
-- Nomi **principali e completi** approvati nelle discussioni progettuali: utilizzare entrambe le forme, non ricostruire automaticamente il nome completo da quello breve.
-- **Correzioni approvate:** `(BR,16)` **EC Falésia Clara** / **Esporte Clube Falésia Clara de João Pessoa**; `(FR,27)` **FC Émaux** / **Football Club des Émaux de Limoges**; `(FR,33)` **CS Garrigues** / **Cercle Sportif des Garrigues de Nîmes**; `(PT,34)` **AC Fontes** / **Atlético Clube das Fontes de Caldas da Rainha**.
-- Conservare espressamente **AC Rinascenti Bologna** (IT,2, come nel catalogo già presente nel codice) e **US Varesina**. La preferenza successiva del 10 ottobre 2026 sostituisce l'approvazione precedente di AC Felsina Bologna.
-- Denominazioni e abbreviazioni coerenti con la tradizione linguistica del rispettivo Paese.
-- Nessuna retrocompatibilità richiesta con le vecchie carriere: requisito di **SAVE-V2**, non attività di questa issue.
+- **8 countries:** IT, ENG, ES, DE, FR, PT, NL, BR.
+- **40 fictional clubs per country**, **320 total**.
+- For each country, stable numeric `clubId` values **1–40**; permanent identity is `countryId + clubId`. **Never change IDs** for sporting reasons.
+- **First 20 clubs:** preserve the ID-to-**original city** association already present in `src/leagues.js`, and preserve **existing stadiums** unless a later decision changes them.
+- **Clubs 21–40:** 20 new clubs already designed for each country; missing registry data must be designed rather than generated arbitrarily.
+- Use both approved **primary and full names** from the design discussions; never derive the full name automatically from the short name.
+- **Approved corrections:** `(BR,16)` **EC Falésia Clara** / **Esporte Clube Falésia Clara de João Pessoa**; `(FR,27)` **FC Émaux** / **Football Club des Émaux de Limoges**; `(FR,33)` **CS Garrigues** / **Cercle Sportif des Garrigues de Nîmes**; `(PT,34)` **AC Fontes** / **Atlético Clube das Fontes de Caldas da Rainha**.
+- Explicitly retain **AC Rinascenti Bologna** (IT,2, as in the existing source catalogue) and **US Varesina**. The later preference from 10 October 2026 supersedes the previous approval of AC Felsina Bologna.
+- Club names and abbreviations must be consistent with the linguistic traditions of their respective countries.
+- No backward compatibility with old careers is required: that belongs to **SAVE-V2**, not this issue.
 
-## Roadmap incrementale — SOLO CLUB
+## Incremental roadmap — CLUBS ONLY
 
-- [ ] **CLUB-01 — Consolidamento catalogo e denominazioni (P0)**
-  - Preparare un unico inventario dei 320 club con `countryId`, `clubId`, `name`, `fullName`, città, stadio originario (ove esistente) e città proposta per i nuovi club.
-  - Confrontare la posizione 1–20 di ciascun Paese con il catalogo reale del repository; non cambiare gli ID e le città già presenti.
-  - Verificare unicità dei nomi principali e completi, normalizzazione Unicode/diacritici, coerenza locale e le quattro correzioni approvate.
-  - **Gate:** 320/320 record riconciliati e approvati; 160 associazioni ID/città preservate; nessuna collisione o campo essenziale irrisolto.
+- [ ] **CLUB-01 — Consolidate catalogue and names (P0)**
+  - Prepare one inventory of all 320 clubs with `countryId`, `clubId`, `name`, `fullName`, city, original stadium (where available) and proposed city for new clubs.
+  - Compare entries 1–20 in each country against the actual repository catalogue, preserving existing IDs and cities.
+  - Verify uniqueness of primary and full names, Unicode/diacritic normalization, country/language consistency and the four approved corrections.
+  - **Gate:** 320/320 records reconciled and approved; 160 ID/city associations preserved; no collisions or unresolved required fields.
 
-- [ ] **CLUB-02 — Sigle univoche (P0)**
-  - Definire il campo esplicito `abbr` di **3 lettere latine maiuscole** per ogni club, senza derivarlo dalle iniziali del nome a runtime.
-  - Verificare l'unicità su **tutti i 320 club** (non soltanto all'interno del Paese), riconoscibilità e stabilità della sigla.
-  - **Gate:** 320/320 sigle assegnate e approvate, 0 duplicati; stemmi testuali e tabelle utilizzano il valore esplicito.
+- [ ] **CLUB-02 — Unique abbreviations (P0)**
+  - Define an explicit `abbr` value of **three uppercase Latin letters** for each club, without deriving it from name initials at runtime.
+  - Verify uniqueness across **all 320 clubs**, not only within each country, as well as recognizability and abbreviation stability.
+  - **Gate:** 320/320 abbreviations assigned and approved, zero duplicates; text crests and tables use the explicit value.
 
-- [ ] **CLUB-03 — Identità, storia e caratteristiche statiche (P0)**
-  - Definire/validare per ogni club: `stadium`, `colors`, `founded`, `capacity`, `reputation`, `identityType` e breve `history` fittizia.
-  - Riutilizzare gli stadi dei 160 club esistenti; completare quelli dei nuovi club. Non inventare dati in fase di integrazione senza una decisione progettuale.
-  - Preservare coerenza geografica e linguistica; evitare duplicazioni evidenti di identità o riferimenti non desiderati a società reali.
-  - **Gate:** 320/320 schede complete, valori validati e stadi originali conservati.
+- [ ] **CLUB-03 — Identity, history and static properties (P0)**
+  - Define/validate each club's `stadium`, `colors`, `founded`, `capacity`, `reputation`, `identityType` and a short fictional `history`.
+  - Reuse the original stadiums of the 160 existing clubs; complete stadium details for new clubs. Do not invent data at integration time without a design decision.
+  - Preserve geographic and linguistic consistency; avoid obvious identity duplicates or unwanted references to real clubs.
+  - **Gate:** 320/320 complete records, validated values and original stadiums retained.
 
-- [ ] **CLUB-04 — Integrazione minima del catalogo nel gioco (P0)**
-  - Integrare i 320 record nei moduli esistenti (principalmente `src/leagues.js` e i soli consumer anagrafici necessari), riutilizzando l'architettura corrente e mantenendo il repository essenziale.
-  - Rendere disponibili `getClub(countryId, clubId)` e `getCountryClubs(countryId)` per l'intero catalogo.
-  - Visualizzare il nome principale negli elenchi, il nome completo nei dettagli e la sigla esplicita nei crest.
-  - Rappresentare il **livello iniziale** soltanto come dato di catalogo o associazione iniziale, senza implementare l'appartenenza corrente né la logica sportiva.
-  - **Gate:** 320 club leggibili e ricercabili; nessun duplicato; nessuna implementazione di calendari, divisioni dinamiche o SAVE-V2 in questa fase.
+- [ ] **CLUB-04 — Minimal catalogue integration into the game (P0)**
+  - Integrate all 320 records into existing modules (primarily `src/leagues.js` and only necessary identity consumers), reusing the architecture and keeping the repository lean.
+  - Make `getClub(countryId, clubId)` and `getCountryClubs(countryId)` available for the full catalogue.
+  - Show the primary name in lists, full name in details and explicit abbreviation on crests.
+  - Represent the **initial tier** only as a catalogue value or initial association; do not implement current division membership or sporting logic.
+  - **Gate:** 320 readable/searchable clubs, no duplicates and no fixtures, dynamic division or SAVE-V2 implementation in this phase.
 
-- [ ] **CLUB-05 — Verifica e pulizia finale (P1)**
-  - Eseguire controlli automatici dei 320 record, ID, città, sigle, colori, stadi e dati statici; verificare visualizzazione IT/EN, ricerca/selezione e responsive.
-  - Confermare invarianti e diff minimo, CI sulla **HEAD esatta**, mergeability e policy **anti-deploy** prima di proporre qualunque merge.
-  - Rimuovere solo eventuali duplicazioni o codice anagrafico effettivamente obsoleto, senza eliminazioni speculative.
-  - **Gate:** integrità 320/320, controlli e regressioni PASS, nessun cambiamento funzionale estraneo all'ambito club.
+- [ ] **CLUB-05 — Final verification and cleanup (P1)**
+  - Automatically check all 320 records, IDs, cities, abbreviations, colors, stadiums and static data; verify IT/EN display, search/selection and responsive layouts.
+  - Confirm invariants, minimal diff, CI on the **exact HEAD**, mergeability and **anti-deployment** policy before proposing a merge.
+  - Remove only confirmed duplication or obsolete registry code, without speculative deletion.
+  - **Gate:** 320/320 integrity, passing checks and regressions; no unrelated functional changes.
 
-## Confini con le roadmap collegate
+## Boundaries with related roadmaps
 
-- **DIV-16 — [Issue #60](https://github.com/FraGioco9/football-architect/issues/60):** struttura delle divisioni, iscrizioni stagionali, classifiche, promozioni e REG-01/REG-01.5. Questa issue definisce il *club*, non la sua divisione corrente.
-- **CAL:** programmazione e calendario delle partite, incluso il riposo.
-- **SAVE-V2:** carriere, IndexedDB, persistenza e import/export.
-- **MATCH:** motore delle partite, risultati, supplementari e rigori.
-- Nessuna duplicazione delle regole REG-01/REG-01.5 o delle relative implementazioni.
+- **DIV-16 — [Issue #60](https://github.com/FraGioco9/football-architect/issues/60):** division structure, seasonal registrations, standings, promotion and REG-01/REG-01.5. This issue defines the *club*, not its current division.
+- **CAL:** match scheduling and calendar, including bye weeks.
+- **SAVE-V2:** careers, IndexedDB, persistence and import/export.
+- **MATCH:** match engine, results, extra time and penalties.
+- Do not duplicate REG-01/REG-01.5 rules or their implementations.
 
-## Metodo operativo
+## Working method
 
-- Procedere **una fase alla volta**, proponendo separatamente le decisioni ancora aperte e le eventuali implementazioni.
-- Aggiornare la checklist e la percentuale solo dopo il completamento verificato della rispettiva fase.
-- **Questa issue è soltanto roadmap e tracciamento**: la sua creazione **non autorizza** modifiche al codice, branch, PR, merge, deploy o database.
-- **Prossimo passo consigliato:** completare la riconciliazione documentale di **CLUB-01 in sola lettura** (nomi completi e città dei 160 club nuovi).
+- Proceed **one phase at a time**, separately proposing remaining decisions and any implementations.
+- Update checklists and percentages only after verified completion of the applicable phase.
+- **This issue is only a roadmap and tracking record**: its creation **does not authorize** code, branch, PR, merge, deployment or database changes.
+- **Recommended next step at that time:** complete the **read-only CLUB-01 documentary reconciliation** (full names and cities for the 160 new clubs).
 
-## Avanzamento
+## Progress
 
-**0/5 fasi implementate = 0%.**  
-**Progettazione nomi principali: 320/320 = 100%.**  
-**Sigle: 320/320 progettate e approvate, con `IT,2: RIN` definitivo (sostituisce `FEL`); integrazione non implementata.**  
-**Schede statiche complete: da consolidare/verificare.**
+**0/5 phases implemented = 0%.**  
+**Primary-name design: 320/320 = 100%.**  
+**Abbreviations: 320/320 designed and approved, with `IT,2: RIN` final (replacing `FEL`); integration not implemented.**  
+**Complete static records: pending consolidation/verification.**
 
 ---
 
-## CLUB-02 — Registro di 320 sigle APPROVATE (progettazione conclusa)
+## CLUB-02 — Register of 320 APPROVED abbreviations (design completed)
 
-**Progettazione APPROVATA dall'utente il 10 ottobre 2026.** 8 Paesi × 40 club; 320 codici, tutti di 3 lettere ASCII maiuscole, **0 duplicati globali** e **0 errori di formato**. Il registro seguente usa la chiave `countryId + clubId` e l'ordine dei nomi principali già approvati, per non confondere le sigle con gli ID di divisione. Il registro XLSX/CSV integrale con nomi principali e controlli di unicità è disponibile nella conversazione relativa a CLUB-02.
+**Design APPROVED by the user on 10 October 2026.** Eight countries × 40 clubs; 320 codes, all three uppercase ASCII letters, with **zero global duplicates** and **zero format errors**. The register below uses the `countryId + clubId` key and the ordering of already approved primary names to distinguish abbreviations from division IDs. The complete XLSX/CSV register with names and uniqueness checks is available in the CLUB-02 conversation.
 
-<details><summary>Registro completo proposto (320 associazioni countryId / clubId / abbr)</summary>
+<details><summary>Full proposed register (320 countryId / clubId / abbr associations)</summary>
 
 **IT**
 
@@ -167,11 +167,11 @@
 
 </details>
 
-**Esempi verificabili:** `(IT,2) AC Rinascenti Bologna → RIN` (**sigla aggiornata e approvata il 10 ottobre 2026; FEL sostituita**); `(IT,27) US Varesina → VAR`; `(DE,2) FC Hafenstern → HST`; `(DE,19) FC Hafentor → HFT`; `(NL,15) FC IJsselrand → IJR`; `(NL,40) FC IJsselpoort → IJP`; `(BR,16) EC Falésia Clara → FCL`; `(FR,27) FC Émaux → EMX`; `(FR,33) CS Garrigues → GRG`; `(PT,34) AC Fontes → FTS`.
+**Verifiable examples:** `(IT,2) AC Rinascenti Bologna → RIN` (**abbreviation updated and approved on 10 October 2026; FEL superseded**); `(IT,27) US Varesina → VAR`; `(DE,2) FC Hafenstern → HST`; `(DE,19) FC Hafentor → HFT`; `(NL,15) FC IJsselrand → IJR`; `(NL,40) FC IJsselpoort → IJP`; `(BR,16) EC Falésia Clara → FCL`; `(FR,27) FC Émaux → EMX`; `(FR,33) CS Garrigues → GRG`; `(PT,34) AC Fontes → FTS`.
 
-**Vincoli:** `abbr` è un attributo statico esplicito, univoco mondialmente, non calcolato dalle iniziali; non sostituisce l'identità `countryId + clubId`. Nessuna modifica al catalogo sorgente o al rendering è inclusa in questa progettazione.
+**Constraints:** `abbr` is an explicit, globally unique static attribute, not derived from initials, and does not replace the `countryId + clubId` identity. This design involves no source catalogue or rendering changes.
 
-**Avanzamento:** sigle **320/320 (100%) APPROVATE**; **0 duplicati**, **0 errori di formato**, **320 nomi principali distinti anche dopo normalizzazione Unicode/diacritici**. Roadmap implementativa **0/5 (0%)**: checkbox CLUB-02 intenzionalmente non spuntata perché il gate include l'impiego runtime della sigla esplicita negli stemmi e nelle tabelle, ancora da implementare. Nessun codice, branch, PR, merge, deploy o database modificato.
+**Progress:** **320/320 (100%) abbreviations APPROVED**, **zero duplicates**, **zero format errors**, **320 distinct primary names even after Unicode/diacritic normalization**. Implementation roadmap **0/5 (0%)**: CLUB-02 checklist intentionally unchecked because the implementation gate requires runtime consumption of explicit `abbr` values in crests and tables. No code, branch, PR, merge, deployment or database modifications were authorized.
 
 
 ---
