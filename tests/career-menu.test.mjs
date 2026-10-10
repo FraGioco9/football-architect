@@ -4,7 +4,7 @@ import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {LEAGUES,getLeagueClubs} from '../src/leagues.js';
-import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY} from '../src/simulation.js';
+import {createSession,advanceSession,advanceMinutes,sessionTime,validSession,SAVE_KEY,localToday} from '../src/simulation.js';
 import {nextScheduledClubFixture,createFixtureCalendarCache} from '../src/fixture-calendar.js';
 import {CAREER_DB,EXPORT_FORMAT,openCareerDatabase,readCatalog,bestCareer,createCareer,selectCareer,saveCareer,renameCareer,deleteCareer,exportCareer,parseCareerImport} from '../src/career-store.js';
 import {layout,homePage,managerPage,countryPage,championshipPage,teamsPage,careersPage,settingsPage,simulationPage,calendarPage,countryFlag} from '../src/ui-pages.js';
