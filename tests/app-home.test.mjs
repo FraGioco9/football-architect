@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync, existsSync} from "node:fs";
 import {fileURLToPath} from "node:url";
+import {execFileSync} from "node:child_process";
 import {runInNewContext} from "node:vm";
 
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
@@ -265,4 +266,10 @@ test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
     "Home di Football Architect"
   ]) assert.ok(js.includes('brandHome:"' + label + '"'));
   assert.match(js, /node\.setAttribute\("aria-label", strings\[node\.dataset\.appAria\]\)/);
+});
+
+test("CLEAN-OPT generated app shells stay byte-identical to checked-in HTML", () => {
+  const generator = fileURLToPath(new URL("../tools/generate-app-pages.mjs", import.meta.url));
+  const output = execFileSync(process.execPath, [generator, "--check"], {encoding:"utf8"});
+  assert.match(output, /Static HTML matches checked-in pages: 3\/3/);
 });
