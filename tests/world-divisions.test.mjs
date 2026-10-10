@@ -58,7 +58,14 @@ test("COMPETITIONS-02 preserves 320 unique provisional clubs across 11-column st
   assert.ok(html.includes('<table class="app-world-standing-table">'));
   assert.equal((html.match(/<th scope="col"/g)||[]).length,11);
   assert.equal((html.match(/<tr data-world-club="/g)||[]).length,20);
-  assert.ok(html.includes('data-app-i18n="standingsEmpty"'));
+  assert.ok(!html.includes('data-app-i18n="standingsEmpty"'),file);
+  assert.ok(!html.includes('data-app-i18n="standingsHeading"'),file);
+  assert.ok(!html.includes('class="app-world-standings-heading"'),file);
+  assert.ok(!html.includes('class="app-world-standings-count"'),file);
+  assert.ok(!html.includes('class="app-world-standings-note"'),file);
+  assert.ok(!html.includes('division-standings-heading'),file);
+  assert.ok(html.includes('<div class="app-world-standings">'),file);
+  assert.ok(html.includes('data-app-i18n="competitionTabStandings">Standings</button>'),file);
   assert.ok(html.includes('href="../" data-app-i18n="allDivisions"'));
   const other=divisions.find(d=>d.countryId===division.countryId&&d.id!==division.id);
   assert.ok(!html.includes('href="../'+other.id.toLowerCase()+'/"'),file);
@@ -164,6 +171,7 @@ test("COMPETITIONS-05 shows all key league statistics with no fabricated data",(
  const columns=["standingsPosition","standingsClub","standingsPlayed","standingsWon","standingsDrawn",
   "standingsLost","standingsFor","standingsAgainst","standingsDifference","standingsPoints","standingsForm"];
  const css=read("assets/app.css");
+ for(const cls of [".app-world-standings-heading",".app-world-standings-count",".app-world-standings-note"])assert.ok(!css.includes(cls),cls);
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));

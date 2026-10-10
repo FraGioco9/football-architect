@@ -72,12 +72,7 @@ const detailAppend = function detailAppend(d){
 ${Array.from({length:9},()=> '                  <td class="app-world-stat-unknown">—</td>').join("\n")}
                 </tr>`).join("\n");
  return `
-          <section class="app-world-standings" aria-labelledby="division-standings-heading">
-            <div class="app-world-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <span class="app-world-standings-count">${cs.length} / ${d.capacity}</span>
-            </div>
-            <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional clubs. No standings until a season begins.</p>
+          <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
                 <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
@@ -91,7 +86,7 @@ ${rows}
                 </tbody>
               </table>
             </div>
-          </section>`;
+          </div>`;
 };
 const competitionTabs = function competitionTabs(d,standings) {
  const views=[

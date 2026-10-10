@@ -181,12 +181,7 @@
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
           </div>
           <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
-          <section class="app-world-standings" aria-labelledby="division-standings-heading">
-            <div class="app-world-standings-heading">
-              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-              <span class="app-world-standings-count">20 / 20</span>
-            </div>
-            <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional clubs. No standings until a season begins.</p>
+          <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
                 <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
@@ -469,7 +464,7 @@
                 </tbody>
               </table>
             </div>
-          </section>
+          </div>
           </div>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
