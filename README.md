@@ -1,6 +1,6 @@
 # Football Architect — Division and club catalogues
 
-**Current status:** This repository contains the division and club catalogues and a standalone static Landing and a short Guide explaining divisions and clubs. It does not include a game engine, an internal Home, login, saves, matches or automatic deployment.
+**Current status:** This repository contains the division and club catalogues and a static Landing and a short Guide explaining divisions and clubs. It does not include a game engine, internal Home, login, saves, matches or automatic deployment.
 
 ## Run the website locally
 
@@ -14,11 +14,11 @@ Then visit `http://127.0.0.1:2000/` for the Landing or `http://127.0.0.1:2000/gu
 
 **English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The custom Graphite & Petrol language dropdown uses the same surface, border, and typography as the site. It supports mouse, touch, and keyboard (arrows, Home/End, Enter/Space, Escape), with an accessible listbox and persistent language selection.
 
-**Enter the app** shows a localized unavailability notice. **Guide** opens the dedicated explanation page. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The landing spans the available viewport width with responsive side padding, reserves a stable scrollbar gutter where supported, and uses a transparent scrollbar track with a subtle thumb. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
+**Enter the app** shows a localized unavailable-app notice; **Guide** opens the dedicated explanation page. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. They fade in with a subtle 8px rise (200 ms) and fade out over 180 ms without changing the page layout; reduced-motion preferences disable the visual animation. They auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart a full five-second countdown when the pointer or focus leaves. New notices reset the countdown, including when a new action interrupts the exit transition. The landing spans the available viewport width with responsive side padding, reserves a stable scrollbar gutter where supported, and uses a transparent scrollbar track with a subtle thumb. Text selection and iOS long-press text callouts are disabled on the static landing; interactive focus indicators remain available. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
 
 ## Guide
 
-The [Guide](guide/index.html) currently explains only two game-world concepts: **Divisions** (country-specific competitions with first and second tiers, each designed for 20 clubs) and **Clubs** (football teams with persistent identities independent of divisions). It is a simple informational page, **not** an asset explorer, club registry, search interface or claim that gameplay is implemented. The Landing and Guide use the same English-default language selector and shared preference. See [UI-GUIDE roadmap #67](https://github.com/FraGioco9/football-architect/issues/67).
+The [Guide](guide/index.html) currently explains only **Divisions** (country competitions with first/second tiers of 20 planned places) and **Clubs** (teams with persistent identities independent of their competition). A left sidebar navigates between the two explanations and highlights the selected entry. At 320/390px it becomes compact horizontal navigation above the text. The same English-default five-language selector and saved language preference are shared with the Landing. This is **not** an asset directory or club catalogue. See [roadmap #67](https://github.com/FraGioco9/football-architect/issues/67).
 
 ## Available project assets
 

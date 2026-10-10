@@ -3,6 +3,8 @@
   "use strict";
   const STORAGE_KEY = "football-architect:language";
   const SUPPORTED = ["en","de","es","fr","it"];
+  const TOAST_DURATION_MS = 5000;
+  const TOAST_EXIT_MS = 180;
   const messages = {
     en: {
       language:"Language",dismiss:"Dismiss notice",summary:"Explore an alternative football world.",
@@ -99,6 +101,57 @@
   let language = "en";
   let activeIndex = 0;
   let lastAction = null;
+  let toastTimer = null;
+  let toastExitTimer = null;
+  let toastHovered = false;
+  let toastFocused = false;
+
+  function cancelToastTimer() {
+    if (toastTimer !== null) {
+      window.clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+  }
+
+  function finishToastDismiss() {
+    toastExitTimer = null;
+    status.hidden = true;
+    status.classList.remove("toast-exit");
+    lastAction = null;
+    toastHovered = false;
+    toastFocused = false;
+  }
+
+  function dismissToast() {
+    cancelToastTimer();
+    if (status.hidden || status.classList.contains("toast-exit")) return;
+    status.classList.add("toast-exit");
+    // Reduced motion also removes the exit delay so hiding is immediate.
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishToastDismiss();
+    } else {
+      toastExitTimer = window.setTimeout(finishToastDismiss, TOAST_EXIT_MS);
+    }
+  }
+
+  function showToast() {
+    if (toastExitTimer !== null) {
+      window.clearTimeout(toastExitTimer);
+      toastExitTimer = null;
+    }
+    status.classList.remove("toast-exit");
+    status.hidden = false;
+    scheduleToastDismiss();
+  }
+
+  function scheduleToastDismiss() {
+    cancelToastTimer();
+    if (status.hidden || status.classList.contains("toast-exit") || toastHovered || toastFocused) return;
+    toastTimer = window.setTimeout(() => {
+      toastTimer = null;
+      dismissToast();
+    }, TOAST_DURATION_MS);
+  }
 
   function translate(value, persist = false) {
     language = valid(value);
@@ -199,14 +252,51 @@
       lastAction = button.dataset.destination;
       const copy = messages[language];
       statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
-      status.hidden = false;
+      showToast();
       closeMenu();
     });
   }
-  if (statusClose) statusClose.addEventListener("click", () => {
-    status.hidden = true;
-    lastAction = null;
+  // Mouse/pen hover pauses the countdown; leaving restarts the full duration.
+  // Ignore touch pointerenter so an iPhone tap cannot suspend the toast indefinitely.
+  if (status) status.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "touch") return;
+    toastHovered = true;
+    cancelToastTimer();
   });
+  if (status) status.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "touch") return;
+    toastHovered = false;
+    scheduleToastDismiss();
+  });
+  // Keep a toast available while its dismiss button has keyboard focus.
+  if (status) status.addEventListener("focusin", () => {
+    toastFocused = true;
+    cancelToastTimer();
+  });
+  if (status) status.addEventListener("focusout", (event) => {
+    if (status.contains(event.relatedTarget)) return;
+    toastFocused = false;
+    scheduleToastDismiss();
+  });
+  if (statusClose) statusClose.addEventListener("click", dismissToast);
+
+  // Highlight the Guide section selected by click or URL hash.
+  const guideLinks = [...document.querySelectorAll("[data-guide-section]")];
+  if (guideLinks.length) {
+    const knownSections = new Set(guideLinks.map(link => link.dataset.guideSection));
+    function setCurrentGuideSection(id) {
+      const active = knownSections.has(id) ? id : "divisions";
+      for (const link of guideLinks) {
+        if (link.dataset.guideSection === active) link.setAttribute("aria-current", "location");
+        else link.removeAttribute("aria-current");
+      }
+    }
+    for (const link of guideLinks) {
+      link.addEventListener("click", () => setCurrentGuideSection(link.dataset.guideSection));
+    }
+    window.addEventListener("hashchange", () => setCurrentGuideSection(window.location.hash.slice(1)));
+    setCurrentGuideSection(window.location.hash.slice(1));
+  }
 
   let initial = "en";
   try { initial = valid(window.localStorage.getItem(STORAGE_KEY)); }

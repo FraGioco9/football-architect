@@ -10,7 +10,13 @@ const languages = ["en", "de", "es", "fr", "it"];
 const optionMatches = [...html.matchAll(/<div class="language-option" role="option" id="([^"]+)" data-language="([^"]+)" aria-selected="(?:true|false)">([^<]+)<\/div>/g)];
 
 function element(properties = {}) {
+  const classes = new Set();
   return {
+    classList: {
+      add(value) { classes.add(value); },
+      remove(value) { classes.delete(value); },
+      contains(value) { return classes.has(value); }
+    },
     id: properties.id ?? "",
     dataset: properties.dataset ?? {},
     textContent: properties.textContent ?? "",
@@ -31,7 +37,7 @@ function element(properties = {}) {
   };
 }
 
-function render(saved = null, deny = false) {
+function render(saved = null, deny = false, reducedMotion = false) {
   const stored = new Map();
   const navigation = [];
   if (saved !== null) stored.set("football-architect:language", saved);
@@ -41,6 +47,7 @@ function render(saved = null, deny = false) {
   const menu = element({ id: "language-options", hidden: true });
   const languageValue = element({ id: "language-value" });
   const status = element({ hidden: true });
+  status.contains = target => [status, close].includes(target);
   const statusMessage = element();
   const close = element();
   const app = element({ dataset: { destination: "app" } });
@@ -69,8 +76,32 @@ function render(saved = null, deny = false) {
     getItem(key) { if (deny) throw Error("storage denied"); return stored.get(key) ?? null; },
     setItem(key, value) { if (deny) throw Error("storage denied"); stored.set(key, value); }
   };
-  runInNewContext(js, { document, window: { localStorage, location: { assign(url) { navigation.push(url); } } } }, { timeout: 2000 });
-  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, navigation };
+  let time = 0;
+  let nextTimerId = 1;
+  const timers = new Map();
+  const window = {
+    localStorage,
+    setTimeout(callback, delay) { const id = nextTimerId++; timers.set(id, { at: time + delay, callback }); return id; },
+    clearTimeout(id) { timers.delete(id); },
+    location: { assign(href) { navigation.push(href); } },
+    matchMedia(query) {
+      assert.equal(query, "(prefers-reduced-motion: reduce)");
+      return { matches: reducedMotion };
+    }
+  };
+  const advance = (milliseconds) => {
+    const end = time + milliseconds;
+    while (true) {
+      const due = [...timers].filter(([,timer]) => timer.at <= end).sort((a,b) => a[1].at - b[1].at)[0];
+      if (!due) break;
+      time = due[1].at;
+      timers.delete(due[0]);
+      due[1].callback();
+    }
+    time = end;
+  };
+  runInNewContext(js, { document, window }, { timeout: 2000 });
+  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, advance, timers, navigation };
 }
 
 test("semantic full-page landing and custom five-language listbox", () => {
@@ -165,6 +196,8 @@ test("dismissible multilingual notice does not change menu or page flow", () => 
   assert.deepEqual(r.navigation, ["./guide/"]);
   assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
   r.close.fire("click");
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
   assert.equal(r.status.hidden, true);
   assert.equal(r.close.getAttribute("aria-label"), "Chiudi avviso");
   assert.match(css, /\.action-status\{position:fixed/);
@@ -194,4 +227,102 @@ test("both favicon formats remain valid and explicitly linked", () => {
   assert.equal(ico.readUInt16LE(2), 1);
   assert.ok(ico.length > 100);
   assert.match(readFileSync(new URL("../favicon.svg", import.meta.url), "utf8"), /<svg[^>]*viewBox="0 0 64 64"/);
+});
+
+
+test("landing copy has no selectable text, including Safari long-press selection", () => {
+  assert.match(css, /body,body \*\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/);
+  assert.match(css, /button:focus-visible/);
+});
+
+test("notice automatically disappears after five seconds, clearing its active timer", () => {
+  const r = render();
+  r.app.fire("click");
+  assert.equal(r.timers.size, 1);
+  r.advance(4999);
+  assert.equal(r.status.hidden, false);
+  r.advance(1);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  assert.equal(r.status.hidden, false);
+  r.advance(179);
+  assert.equal(r.status.hidden, false);
+  r.advance(1);
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.timers.size, 0);
+});
+
+test("hover pauses the notice and leaving restores the full five-second timer", () => {
+  const r = render();
+  r.app.fire("click");
+  r.advance(3000);
+  r.status.fire("pointerenter", { pointerType: "mouse" });
+  assert.equal(r.timers.size, 0);
+  r.advance(20000);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("pointerleave", { pointerType: "mouse" });
+  r.advance(4999);
+  assert.equal(r.status.hidden, false);
+  r.advance(1);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
+  assert.equal(r.status.hidden, true);
+});
+
+test("repeated actions reset the timer, explicit dismiss cancels it, and touch does not pause", () => {
+  const r = render();
+  r.app.fire("click");
+  r.advance(4500);
+  r.app.fire("click");
+  assert.match(r.statusMessage.textContent, /app is not available/);
+  r.advance(4999);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("pointerenter", { pointerType: "touch" });
+  r.advance(1);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  // New CTA during exit revives the toast and cancels the old hide callback.
+  r.app.fire("click");
+  assert.equal(r.status.classList.contains("toast-exit"), false);
+  r.advance(180);
+  assert.equal(r.status.hidden, false);
+  r.close.fire("click");
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.timers.size, 0);
+  r.advance(15000);
+  assert.equal(r.status.hidden, true);
+});
+
+test("keyboard focus pauses the notice until focus leaves, then resets countdown", () => {
+  const r = render();
+  r.app.fire("click");
+  r.advance(1000);
+  r.status.fire("focusin");
+  r.advance(10000);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("focusout", { relatedTarget: r.close });
+  r.advance(8000);
+  assert.equal(r.status.hidden, false);
+  r.status.fire("focusout", { relatedTarget: null });
+  r.advance(5000);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
+  assert.equal(r.status.hidden, true);
+});
+
+test("toast animation uses a small opacity/translate transition without reflow", () => {
+  assert.match(css, /@keyframes toast-enter\{from\{opacity:0;transform:translateY\(8px\)\}/);
+  assert.match(css, /@keyframes toast-exit\{from\{opacity:1;transform:translateY\(0\)\}/);
+  assert.match(css, /\.action-status:not\(\[hidden\]\)\{animation:toast-enter 200ms ease-out both\}/);
+  assert.match(css, /\.action-status\.toast-exit\{animation:toast-exit 180ms ease-in both;pointer-events:none\}/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+});
+
+test("reduced motion hides without an exit-animation delay", () => {
+  const r = render(null, false, true);
+  r.app.fire("click");
+  r.close.fire("click");
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.status.classList.contains("toast-exit"), false);
+  assert.equal(r.timers.size, 0);
 });

@@ -17,18 +17,20 @@ function mock(dataset = {}, content = "") {
 }
 function render(saved = null) {
   const controls = options.map(o => mock({language:o[2]},o[3]));
+  const guideLinks = ["divisions","clubs"].map(id=>mock({guideSection:id},id));
   controls.forEach((c,i)=>c.id=options[i][1]);
   const labels=[...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>mock({i18n:m[1]}));
   const trigger=mock(), menu=mock(),value=mock(),container=mock();menu.hidden=true;
   container.contains=element => [container,trigger,menu,...controls].includes(element);
   const ids={"language-control":container,"site-language":trigger,"language-value":value,"language-options":menu};
   const document={documentElement:{lang:"en"},getElementById:id=>ids[id]||null,
-    querySelectorAll:selector=>selector==="[data-language]"?controls:selector==="[data-i18n]"?labels:selector==="[data-destination]"?[]:[],
+    querySelectorAll:selector=>selector==="[data-language]"?controls:selector==="[data-i18n]"?labels:selector==="[data-destination]"?[]:selector==="[data-guide-section]"?guideLinks:[],
     addEventListener(){}};
   const store = new Map(saved === null ? [] : [["football-architect:language",saved]]);
-  const window={localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)}};
+  const callbacks = {};
+  const window={localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},location:{hash:""},addEventListener:(k,cb)=>{callbacks[k]=cb;}};
   runInNewContext(js,{document,window},{timeout:2000});
-  return {document,controls,labels,trigger,menu,value,store};
+  return {document,controls,labels,trigger,menu,value,store,guideLinks,window,callbacks};
 }
 test("simple concept guide has only Divisions and Clubs",()=>{
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
@@ -61,11 +63,34 @@ test("same Landing language menu supports all five translations on Guide",()=>{
   assert.equal(render("de").labels.find(l=>l.dataset.i18n==="guideClubsHeading").textContent,"Vereine");
   assert.equal(render("unsupported").document.documentElement.lang,"en");
 });
+test("sidebar links, selection and hash navigation are synchronized",()=>{
+  assert.match(html,/<aside class="guide-sidebar"/);
+  assert.match(html,/<nav class="guide-sidebar-nav"/);
+  for(const id of ["divisions","clubs"]){
+    assert.match(html,new RegExp('href="#'+id+'" data-guide-section="'+id+'"'));
+    assert.match(html,new RegExp('<section class="guide-section" id="'+id+'"'));
+  }
+  const r=render();
+  assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
+  assert.equal(r.guideLinks[1].attributes["aria-current"],undefined);
+  r.guideLinks[1].fire("click");
+  assert.equal(r.guideLinks[1].attributes["aria-current"],"location");
+  assert.equal(r.guideLinks[0].attributes["aria-current"],undefined);
+  r.window.location.hash="#divisions";
+  r.callbacks.hashchange();
+  assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
+  r.window.location.hash="#unknown";
+  r.callbacks.hashchange();
+  assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
+});
 test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.match(html,/href="\.\.\/"/);
   assert.match(html,/src="\.\.\/assets\/landing\.js"/);
   assert.match(html,/href="\.\.\/favicon\.ico"/);
-  assert.match(css,/max-width:600px/);
+  assert.match(css,/max-width:700px/);
+  assert.match(css,/position:sticky/);
+  assert.match(css,/grid-template-columns:210px minmax\(0,1fr\)/);
+  assert.match(css,/guide-sidebar-link\[aria-current="location"\]/);
   assert.match(css,/focus-visible/);
   assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
   assert.doesNotMatch(html,/<script[^>]+guide\.js/);
