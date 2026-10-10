@@ -10,7 +10,13 @@ const languages = ["en", "de", "es", "fr", "it"];
 const optionMatches = [...html.matchAll(/<div class="language-option" role="option" id="([^"]+)" data-language="([^"]+)" aria-selected="(?:true|false)">([^<]+)<\/div>/g)];
 
 function element(properties = {}) {
+  const classes = new Set();
   return {
+    classList: {
+      add(value) { classes.add(value); },
+      remove(value) { classes.delete(value); },
+      contains(value) { return classes.has(value); }
+    },
     id: properties.id ?? "",
     dataset: properties.dataset ?? {},
     textContent: properties.textContent ?? "",
@@ -31,7 +37,7 @@ function element(properties = {}) {
   };
 }
 
-function render(saved = null, deny = false) {
+function render(saved = null, deny = false, reducedMotion = false) {
   const stored = new Map();
   if (saved !== null) stored.set("football-architect:language", saved);
   const options = optionMatches.map(match => element({ id: match[1], dataset: { language: match[2] }, textContent: match[3] }));
@@ -75,7 +81,11 @@ function render(saved = null, deny = false) {
   const window = {
     localStorage,
     setTimeout(callback, delay) { const id = nextTimerId++; timers.set(id, { at: time + delay, callback }); return id; },
-    clearTimeout(id) { timers.delete(id); }
+    clearTimeout(id) { timers.delete(id); },
+    matchMedia(query) {
+      assert.equal(query, "(prefers-reduced-motion: reduce)");
+      return { matches: reducedMotion };
+    }
   };
   const advance = (milliseconds) => {
     const end = time + milliseconds;
@@ -183,6 +193,8 @@ test("dismissible multilingual notice does not change menu or page flow", () => 
   r.guide.fire("click");
   assert.match(r.statusMessage.textContent, /^La guida/);
   r.close.fire("click");
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
   assert.equal(r.status.hidden, true);
   assert.equal(r.close.getAttribute("aria-label"), "Chiudi avviso");
   assert.match(css, /\.action-status\{position:fixed/);
@@ -227,6 +239,11 @@ test("notice automatically disappears after five seconds, clearing its active ti
   r.advance(4999);
   assert.equal(r.status.hidden, false);
   r.advance(1);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  assert.equal(r.status.hidden, false);
+  r.advance(179);
+  assert.equal(r.status.hidden, false);
+  r.advance(1);
   assert.equal(r.status.hidden, true);
   assert.equal(r.timers.size, 0);
 });
@@ -243,6 +260,8 @@ test("hover pauses the notice and leaving restores the full five-second timer", 
   r.advance(4999);
   assert.equal(r.status.hidden, false);
   r.advance(1);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
   assert.equal(r.status.hidden, true);
 });
 
@@ -256,9 +275,15 @@ test("repeated actions reset the timer, explicit dismiss cancels it, and touch d
   assert.equal(r.status.hidden, false);
   r.status.fire("pointerenter", { pointerType: "touch" });
   r.advance(1);
-  assert.equal(r.status.hidden, true);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  // New CTA during exit revives the toast and cancels the old hide callback.
   r.app.fire("click");
+  assert.equal(r.status.classList.contains("toast-exit"), false);
+  r.advance(180);
+  assert.equal(r.status.hidden, false);
   r.close.fire("click");
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
   assert.equal(r.status.hidden, true);
   assert.equal(r.timers.size, 0);
   r.advance(15000);
@@ -277,5 +302,24 @@ test("keyboard focus pauses the notice until focus leaves, then resets countdown
   assert.equal(r.status.hidden, false);
   r.status.fire("focusout", { relatedTarget: null });
   r.advance(5000);
+  assert.equal(r.status.classList.contains("toast-exit"), true);
+  r.advance(180);
   assert.equal(r.status.hidden, true);
+});
+
+test("toast animation uses a small opacity/translate transition without reflow", () => {
+  assert.match(css, /@keyframes toast-enter\{from\{opacity:0;transform:translateY\(8px\)\}/);
+  assert.match(css, /@keyframes toast-exit\{from\{opacity:1;transform:translateY\(0\)\}/);
+  assert.match(css, /\.action-status:not\(\[hidden\]\)\{animation:toast-enter 200ms ease-out both\}/);
+  assert.match(css, /\.action-status\.toast-exit\{animation:toast-exit 180ms ease-in both;pointer-events:none\}/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+});
+
+test("reduced motion hides without an exit-animation delay", () => {
+  const r = render(null, false, true);
+  r.app.fire("click");
+  r.close.fire("click");
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.status.classList.contains("toast-exit"), false);
+  assert.equal(r.timers.size, 0);
 });
