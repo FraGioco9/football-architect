@@ -503,14 +503,14 @@ main:has(.restored-onboarding),main:has(.restored-careers),main:has(.restored-se
 :root{
  --fa-page-width:1200px;
  --fa-page-gutter:clamp(16px,3.4vw,34px);
- --fa-page-top:clamp(24px,4vw,46px);
+ --fa-page-top:clamp(16px,2vw,24px);
  --fa-page-bottom:clamp(36px,6vw,60px);
- --fa-title-size:clamp(30px,4.6vw,50px);
+ --fa-title-size:25px;
  --fa-title-leading:1.1;
  --fa-title-weight:820;
  --fa-body-size:14px;
  --fa-body-leading:1.6;
- --fa-heading-gap:clamp(22px,3vw,34px);
+ --fa-heading-gap:18px;
  --fa-panel-padding:clamp(16px,2.4vw,24px);
  --fa-section-size:19px;
  --fa-label-size:11px;
@@ -1527,9 +1527,9 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
 .fa-shell-language .language-picker{width:148px;flex-basis:148px}
 .fa-shell-primary{flex:none}
 .fa-shell-primary .btn{width:128px;min-width:128px;max-width:128px;height:39px;min-height:39px;flex:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;font-size:12px;white-space:nowrap}
-.fa-shell-workspace>.fa-page-main,.fa-shell-workspace>footer{width:min(100%,var(--fa-page-width));padding-inline:var(--fa-page-gutter);margin-inline:auto}
-.fa-shell-workspace>.fa-page-main{flex:1 0 auto;min-width:0;padding-top:var(--fa-page-top);padding-bottom:var(--fa-page-bottom);font-size:var(--fa-body-size);line-height:var(--fa-body-leading)}
-.fa-shell-workspace>footer{margin-top:auto}
+.fa-shell-scroll-area>.fa-page-main,.fa-shell-scroll-area>footer{width:min(100%,var(--fa-page-width));padding-inline:var(--fa-page-gutter);margin-inline:auto}
+.fa-shell-scroll-area>.fa-page-main{flex:1 0 auto;min-width:0;padding-top:var(--fa-page-top);padding-bottom:var(--fa-page-bottom);font-size:var(--fa-body-size);line-height:var(--fa-body-leading)}
+.fa-shell-scroll-area>footer{margin-top:auto}
 .fa-career-shell .fa-fixture-calendar{min-width:0}
 @media(max-width:1024px){
  .fa-career-shell{grid-template-columns:180px minmax(0,1fr)}
@@ -1684,3 +1684,48 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
  .fa-page-main .restored-settings .settings-actions{padding:14px 15px}
  .fa-page-main .restored-settings .settings-actions{padding-top:7px}
 }
+
+
+/* UX-FOUNDATION: one page title, aligned at top left without overline or subtitle. */
+:root{--fa-title-size:25px;--fa-heading-gap:18px;--fa-page-top:clamp(16px,2vw,24px)}
+.fa-page-main .fa-page-heading{margin:0 0 var(--fa-heading-gap);padding:0;text-align:left}
+.fa-page-main .fa-page-heading .fa-page-title,
+.fa-page-main .fa-page-heading h1{
+ margin:0;padding:0;font-size:var(--fa-title-size);font-weight:760;
+ line-height:1.2;letter-spacing:-.03em;text-align:left;
+}
+.fa-page-main .fa-page-heading>.kicker,
+.fa-page-main .fa-page-heading>.pretitle,
+.fa-page-main .fa-page-heading>p{display:none}
+.fa-page-main .wizard-page .onboard-header .fa-page-title,
+.fa-page-main .restored-settings .fa-settings-heading h1{
+ margin:0;font-size:var(--fa-title-size);line-height:1.2;
+}
+.wizard-page .wizard-step-counter{
+ color:#a8c8be;font-size:11px;font-weight:760;white-space:nowrap;
+ padding:8px 6px;align-self:center;
+}
+@media(max-width:550px){
+ :root{--fa-title-size:22px;--fa-heading-gap:14px}
+ .fa-page-main .fa-page-heading .fa-page-title,
+ .fa-page-main .fa-page-heading h1,
+ .fa-page-main .wizard-page .onboard-header .fa-page-title,
+ .fa-page-main .restored-settings .fa-settings-heading h1{font-size:var(--fa-title-size);margin:0}
+}
+
+/* UX-SCROLL: career-only scroll starts beneath the fixed topbar. */
+html:has(.fa-career-shell){
+ height:100%;overflow:hidden;scrollbar-gutter:auto;
+}
+html:has(.fa-career-shell) body{height:100%;overflow:hidden}
+.fa-career-shell{height:100dvh;min-height:0;overflow:hidden}
+.fa-career-shell .fa-shell-sidebar{position:relative;top:auto;height:100dvh}
+.fa-career-shell .fa-shell-workspace{height:100dvh;min-height:0;overflow:hidden}
+.fa-career-shell .fa-shell-topbar{flex:none}
+.fa-shell-scroll-area{
+ flex:1 1 auto;min-height:0;min-width:0;
+ display:flex;flex-direction:column;
+ overflow-y:auto;overflow-x:hidden;
+ overscroll-behavior-y:contain;scrollbar-gutter:stable;
+}
+html.fa-modal-open .fa-shell-scroll-area{overflow-y:hidden}

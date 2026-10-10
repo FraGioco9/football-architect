@@ -157,6 +157,7 @@ async function render(){
   }
   if(ticket!==sequence)return;
   const snapshot=focusSnapshot(),samePage=lastRenderedRoute===page;
+  const oldContentScroll=app.querySelector('.fa-shell-scroll-area')?.scrollTop??0;
   let inner;
   if(page==='/new-career')inner=managerPage(draft,lang,{open:pickerOpen,month:pickerMonth??initialCalendarMonth(draft.managerProfile.birthDate),jump:pickerView});
   else if(page==='/new-career/country')inner=countryPage(draft,lang);
@@ -176,6 +177,8 @@ async function render(){
   closeRenameDialog(false);
   closeDeleteDialog(false);
   app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen,loaded&&CAREER_ROUTES.has(page)?{route:page,meta:loaded.meta,state:loaded.state,playing:timer!==null,searchQuery,searchResults:searchHits}:null);
+  const contentScroll=app.querySelector('.fa-shell-scroll-area');
+  if(contentScroll&&samePage)contentScroll.scrollTop=oldContentScroll;
   app.querySelectorAll('.fa-site-dialog').forEach(dialog=>{
    dialog.addEventListener('close',()=>{
     if(dialog.id==='fa-global-search-dialog'){

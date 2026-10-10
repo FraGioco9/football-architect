@@ -93,8 +93,10 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
      </div>
      <div id="fa-global-search-results" class="fa-global-search-results" role="listbox" aria-label="${tr(lang,'Risultati ricerca','Search results')}">${searchOpen?renderGlobalSearchResults(searchResults,lang):'<p class="fa-global-search-empty">'+tr(lang,'Cerca una pagina o una partita programmata.','Search for a page or a scheduled match.')+'</p>'}</div>
     </dialog>
-    <main id="content" class="fa-page-main">${renderFeedback(message,lang)}${inner}</main>
-    <footer>FOOTBALL ARCHITECT · ${tr(lang,'OFFLINE · GIOCATORE SINGOLO','OFFLINE · SINGLE PLAYER')}</footer>
+    <div class="fa-shell-scroll-area" role="region" aria-label="${tr(lang,'Contenuto della carriera','Career content')}">
+     <main id="content" class="fa-page-main">${renderFeedback(message,lang)}${inner}</main>
+     <footer>FOOTBALL ARCHITECT · ${tr(lang,'OFFLINE · GIOCATORE SINGOLO','OFFLINE · SINGLE PLAYER')}</footer>
+    </div>
    </div>
   </div>`;
  }
@@ -108,8 +110,7 @@ const option=(action,symbol,title,desc)=>`<button class="menu-option" type="butt
  <span class="option-icon" aria-hidden="true">${icon(symbol,21)}</span><span class="option-copy"><strong>${esc(title)}</strong><small>${esc(desc)}</small></span><span class="menu-chevron">${icon('chevron-right',18)}</span></button>`;
 export function homePage(catalog,lang){
  const active=bestCareer(catalog),meta=active?.meta,team=meta&&club(meta.countryId,meta.clubId);
- return `<section class="hero fa-page-heading"><span class="kicker">${tr(lang,'IL TUO MONDO CALCISTICO','YOUR FOOTBALL WORLD')}</span>
- <h1 class="fa-page-title">${tr(lang,'Benvenuto in Football Architect','Welcome to Football Architect')}</h1><p>${tr(lang,'Ogni carriera è una storia diversa. Scegli una squadra e costruisci il tuo percorso.','Every career tells a different story. Choose a club and build your journey.')}</p></section>
+ return `<section class="hero fa-page-heading"><h1 class="fa-page-title">Football Architect</h1></section>
  <div class="menu-stack">${active?`<section class="panel active-career" aria-label="${tr(lang,'Ultima carriera','Last career')}"><span class="kicker active-label">${icon('clock',15)} ${tr(lang,'ULTIMA CARRIERA','LAST CAREER')}</span>
  <div class="active-details">${crest(team)}<div><h2>${esc(team?.name??'—')}</h2><p>${meta.careerName&&meta.careerName!==team?.name?esc(meta.careerName)+' · ':''}${esc(meta.managerName)} · ${esc(tr(lang,'Stagione ','Season ')+seasonNumber(active.state))}</p>
  <p>${esc(fmtGameDate(active.state.date,lang,sessionTime(active.state)))} · ${tr(lang,'Salvata','Saved')} ${esc(fmtDate(meta.updatedAt,lang,true))}</p></div></div>
@@ -128,9 +129,9 @@ function wizardFrame(content,lang,step,titleIt,titleEn){
  <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
  <div class="onboard-wrap">
   <header class="onboard-header fa-page-heading">
-   <span class="pretitle wizard-step-label">${tr(lang,'NUOVA CARRIERA','NEW CAREER')} · ${tr(lang,'PASSAGGIO','STEP')} ${step}/4</span>
    <h1 class="fa-page-title">${tr(lang,titleIt,titleEn)}</h1>
    <div class="wizard-topline">
+    <span class="wizard-step-counter" aria-label="${tr(lang,'Passaggio','Step')} ${step} ${tr(lang,'di','of')} 4">${step}/4</span>
     ${step>1?button('setup-back',tr(lang,'Indietro','Back'),'ghost wizard-back'):''}
     ${button('cancel-setup',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}
    </div>
@@ -312,7 +313,6 @@ export function careersPage(catalog,lang,currentCareerId=null){
   <div class="onboarding-orb ob-one"></div><div class="onboarding-orb ob-two"></div>
   <div class="onboard-wrap">
    <header class="onboard-header fa-page-heading">
-    <span class="pretitle wizard-step-label">${tr(lang,'SALVATAGGI LOCALI','LOCAL SAVES')}</span>
     <h1 class="fa-page-title">${tr(lang,'Le mie carriere','My careers')}</h1>
     <div class="wizard-topline">${button('cancel-setup',tr(lang,'Menu','Menu'),'ghost wizard-cancel')}</div>
    </header>
@@ -407,8 +407,7 @@ export function simulationPage(meta,state,lang,playing,nextFixture=null){
   {id:'offseason',date:calendar.offseasonStart,it:'Pausa estiva',en:'Summer break'}
  ];
  return `<section class="heading fa-page-heading">
- <span class="kicker">${tr(lang,'CARRIERA','CAREER')}</span><h1 class="fa-page-title">${tr(lang,'Dashboard','Dashboard')}</h1>
- <p>${esc(c?.name??'—')} · ${esc(meta.managerName)} · <span class="career-country-flag" aria-hidden="true">${countryFlag(l.id)}</span> ${esc(l.country[lang])}</p></section>
+ <h1 class="fa-page-title">${tr(lang,'Dashboard','Dashboard')}</h1></section>
  <div class="metrics"><section class="panel"><span class="kicker">${tr(lang,'DATA DI GIOCO','GAME DATE')}</span><h2>${esc(fmtGameDate(state.date,lang,sessionTime(state)))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'STAGIONE','SEASON')}</span><h2>${esc(tr(lang,'Stagione ','Season ')+seasonNumber(state))}</h2></section>
  <section class="panel"><span class="kicker">${tr(lang,'GIORNI TRASCORSI','DAYS ELAPSED')}</span><h2>${state.daysElapsed.toLocaleString(lang==='en'?'en-GB':'it-IT')}</h2></section></div>
@@ -521,9 +520,7 @@ export function calendarPage(meta,state,lang,calendar,options={}){
    '<h2>'+tr(lang,'Giornata ','Round ')+round+' / 38 · '+esc(calendar.seasonYear+'/'+String((calendar.seasonYear+1)%100).padStart(2,'0'))+'</h2>'+
    '<button type="button" class="fa-fixture-nav" data-action="fixture-round-next" aria-label="'+tr(lang,'Giornata successiva','Next round')+'">'+icon('chevron-right',18)+'</button></div>';
  return '<section class="heading fa-page-heading">'+
-  '<span class="kicker">'+tr(lang,'CARRIERA','CAREER')+'</span>'+
-  '<h1 class="fa-page-title">'+tr(lang,'Calendario partite','Match calendar')+'</h1>'+
-  '<p>'+esc(c?.name??'—')+' · '+esc(league.country[lang])+'</p></section>'+
+  '<h1 class="fa-page-title">'+tr(lang,'Calendario','Calendar')+'</h1></section>'+
   '<section class="panel fa-fixture-calendar" aria-labelledby="fa-fixture-calendar-title">'+
   '<h2 id="fa-fixture-calendar-title" class="fa-fixture-heading">'+tr(lang,'Calendario','Calendar')+'</h2>'+
   '<div class="fa-fixture-toolbar"><div class="fa-fixture-switch" role="group" aria-label="'+tr(lang,'Visualizzazione','View')+'">'+

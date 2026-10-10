@@ -289,7 +289,7 @@ test('four separate new career pages require manager, country, championship and 
  const db=await setup(),blank={managerName:'',countryId:null,clubId:null,query:''};
  const manager=managerPage(blank,'it');
  assert.match(manager,/class="onboard-header fa-page-heading"/);
- assert.match(manager,/PASSAGGIO 1\/4/);
+ assert.ok(manager.includes('class="wizard-step-counter"')&&manager.includes('>1/4</span>'));
  assert.match(manager,/Scegli il tuo allenatore/);
  assert.match(manager,/id="manager-form"/);
  assert.match(manager,/id="manager-first-name"/);
@@ -302,7 +302,7 @@ test('four separate new career pages require manager, country, championship and 
  assert.match(manager,/<h1 class="fa-page-title">[\s\S]*?<div class="wizard-topline">[\s\S]*?data-action="cancel-setup"/);
  const chosen={managerName:'Ada Coach',countryId:'IT',championshipId:'IT',clubId:2,query:''};
  const country=countryPage(blank,'it');
- assert.match(country,/PASSAGGIO 2\/4/);
+ assert.ok(country.includes('class="wizard-step-counter"')&&country.includes('>2/4</span>'));
  assert.equal((country.match(/data-action="country"/g)||[]).length,8);
  assert.match(country,/data-action="country-next" disabled/);
  assert.doesNotMatch(country,/<table class="club-table"|id="manager-form"/);
@@ -310,7 +310,7 @@ test('four separate new career pages require manager, country, championship and 
  assert.match(selectedCountry,/aria-pressed="true"/);
  assert.doesNotMatch(selectedCountry,/data-action="country-next" disabled/);
  const league=championshipPage({...chosen,championshipId:null,clubId:null},'it');
- assert.match(league,/PASSAGGIO 3\/4/);
+ assert.ok(league.includes('class="wizard-step-counter"')&&league.includes('>3/4</span>'));
  assert.equal((league.match(/data-action="championship" /g)||[]).length,1);
  assert.match(league,/data-action="championship-next" disabled/);
  assert.doesNotMatch(league,/<table class="club-table"|id="manager-form"/);
@@ -318,7 +318,7 @@ test('four separate new career pages require manager, country, championship and 
  assert.match(selectedLeague,/aria-pressed="true"/);
  assert.doesNotMatch(selectedLeague,/data-action="championship-next" disabled/);
  const team=teamsPage({...chosen,championshipId:'IT',clubId:null},'it');
- assert.match(team,/PASSAGGIO 4\/4/);
+ assert.ok(team.includes('class="wizard-step-counter"')&&team.includes('>4/4</span>'));
  assert.match(team,/class="wizard-no-club"/);
  assert.match(team,/data-action="start-career" disabled/);
  assert.match(team,/<table class="club-table"/);
@@ -620,13 +620,14 @@ test('wizard routes keep the input draft in memory and do not create a premature
 test('all four setup screens have a high cancel button and consistent heading geometry',()=>{
  const draft={managerName:'Ada Manager',countryId:'IT',clubId:4};
  for(const [step,page] of [[1,managerPage(draft,'it')],[2,countryPage(draft,'it')],[3,championshipPage({...draft,championshipId:'IT'},'it')],[4,teamsPage(draft,'it')]]){
-  assert.match(page,new RegExp('PASSAGGIO '+step+'/4'));
+  assert.ok(page.includes('class="wizard-step-counter"')&&page.includes('>'+step+'/4</span>'));
   assert.match(page,/<div class="wizard-topline">/);
   const cancel=page.indexOf('data-action="cancel-setup"');
   const heading=page.indexOf('<h1 class="fa-page-title">');
   assert.ok(cancel>heading,'Controls follow the title in DOM');
   assert.doesNotMatch(page.match(/<header class="onboard-header fa-page-heading">([\s\S]*?)<\/header>/)?.[1]??'',/<p\b/,'No wizard header subtitle');
-  assert.match(page,/<span class="pretitle wizard-step-label">/);
+  assert.match(page,/<span class="wizard-step-counter"/);
+  assert.doesNotMatch(page,/class="pretitle wizard-step-label"/);
   assert.equal((page.match(/<h1\b/g)||[]).length,1);
   if(step>1)assert.match(page,/data-action="setup-back"/);
   else assert.doesNotMatch(page,/data-action="setup-back"/);
@@ -673,10 +674,10 @@ test('wizard H1 has shared spacing and no header subtitles',()=>{
   championshipPage({managerName:'Ada',countryId:'IT',championshipId:'IT',clubId:null},'it'),
   teamsPage({managerName:'Ada',countryId:'IT',championshipId:'IT',clubId:2},'it')
  ]){
-  const kicker=page.indexOf('class="pretitle wizard-step-label"');
   const title=page.indexOf('<h1 class="fa-page-title">');
   const buttons=page.indexOf('class="wizard-topline"',title);
-  assert.ok(kicker>=0&&title>kicker&&buttons>title);
+  const counter=page.indexOf('class="wizard-step-counter"',buttons);
+  assert.ok(title>=0&&buttons>title&&counter>buttons);
   const header=page.match(/<header class="onboard-header fa-page-heading">([\s\S]*?)<\/header>/)?.[1]??'';
   assert.doesNotMatch(header,/<p\b/);
  }
@@ -1278,7 +1279,7 @@ test('all four new-career steps have title but no subtitle in IT and EN',()=>{
   for(let i=0;i<pages.length;i++){
    const header=pages[i].match(/<header class="onboard-header fa-page-heading">([\s\S]*?)<\/header>/)?.[1];
    assert.ok(header);
-   assert.match(header,new RegExp((lang==='it'?'PASSAGGIO ':'STEP ')+(i+1)+'/4'));
+   assert.ok(header.includes('class="wizard-step-counter"')&&header.includes('>'+(i+1)+'/4</span>'));
    assert.match(header,/<h1 class="fa-page-title">/);
    assert.doesNotMatch(header,/<p\b/);
    assert.match(header,/<div class="wizard-topline">/);
@@ -2073,4 +2074,53 @@ test('SETTINGS-HEADER: small top-left title only, with no eyebrow or subtitle on
  assert.match(sheet,/\.fa-page-main \.restored-settings \.fa-settings-heading h1\{[^}]*font-size:25px/);
  assert.match(sheet,/@media\(max-width:550px\)\{\s*\.fa-page-main \.restored-settings \.fa-settings-heading\{margin-bottom:14px\}/);
  assert.match(sheet,/\.settings-panel:has\(\.language-picker\)\{position:relative;z-index:2;overflow:visible\}/);
+});
+
+
+test('UX-SCROLL: career content scrolls below topbar without moving toolbar or sidebar',()=>{
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+ const meta={countryId:'IT',clubId:1},state=createSession('IT',1,'2026-08-10');
+ for(const route of ['/dashboard','/calendar','/settings','/simulation']){
+  const html=layout('<section><h1>Page</h1></section>','it',null,false,{route,meta,state,playing:false});
+  const topbar=html.indexOf('class="fa-shell-topbar"'),scroll=html.indexOf('class="fa-shell-scroll-area"');
+  const main=html.indexOf('id="content" class="fa-page-main"'),footer=html.indexOf('<footer>');
+  assert.ok(topbar>=0&&scroll>topbar&&main>scroll&&footer>main);
+  assert.match(html,/class="fa-shell-scroll-area" role="region"/);
+  assert.ok(html.indexOf('</header>',topbar)<scroll);
+ }
+ assert.match(css,/html:has\(\.fa-career-shell\)\{\s*height:100%;overflow:hidden;scrollbar-gutter:auto;/);
+ assert.match(css,/\.fa-career-shell \.fa-shell-workspace\{height:100dvh;min-height:0;overflow:hidden\}/);
+ assert.match(css,/\.fa-shell-scroll-area\{[\s\S]*?overflow-y:auto;overflow-x:hidden;/);
+ assert.match(css,/html\.fa-modal-open \.fa-shell-scroll-area\{overflow-y:hidden\}/);
+ assert.match(js,/oldContentScroll=app\.querySelector\('\.fa-shell-scroll-area'\)\?\.scrollTop\?\?0/);
+ assert.match(js,/if\(contentScroll&&samePage\)contentScroll\.scrollTop=oldContentScroll/);
+});
+
+test('UX-TITLES: each page H1 is top-left, without any eyebrow or subtitle in IT/EN',()=>{
+ const pages=[
+  lang=>homePage({rows:[],activeId:null},lang),
+  lang=>managerPage({managerProfile:blankManagerProfile()},lang),
+  lang=>countryPage({countryId:null},lang),
+  lang=>championshipPage({countryId:'IT',championshipId:null},lang),
+  lang=>teamsPage({countryId:'IT',championshipId:'IT',clubId:null},lang),
+  lang=>careersPage({rows:[],activeId:null},lang),
+  lang=>settingsPage(lang),
+  lang=>simulationPage({countryId:'IT',clubId:1,managerName:'Tester'},createSession('IT',1,'2026-08-10'),lang,false),
+  lang=>calendarPage({countryId:'IT',clubId:1},createSession('IT',1,'2026-08-10'),lang,createFixtureCalendarCache(4)('IT-1',2026))
+ ];
+ for(const lang of ['it','en'])for(const make of pages){
+  const html=make(lang);
+  const header=html.match(/<(?:section|header) class="[^"]*fa-page-heading[^"]*">([\s\S]*?)<\/(?:section|header)>/)?.[1];
+  assert.ok(header,'missing header '+lang);
+  assert.equal((header.match(/<h1\b/g)||[]).length,1);
+  assert.match(header,/<h1 class="fa-page-title">/);
+  assert.doesNotMatch(header,/<p\b|class="pretitle|class="kicker|wizard-step-label/);
+  assert.equal((html.match(/<h1\b/g)||[]).length,1);
+ }
+ const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+ assert.match(css,/--fa-title-size:25px/);
+ assert.match(css,/--fa-heading-gap:18px/);
+ assert.match(css,/--fa-page-top:clamp\(16px,2vw,24px\)/);
+ assert.match(css,/@media\(max-width:550px\)\{\s*:root\{--fa-title-size:22px;/);
 });
