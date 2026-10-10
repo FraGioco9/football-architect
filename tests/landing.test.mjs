@@ -226,3 +226,21 @@ test("HOME-ENTRY-01 does not enable gameplay in the static Dashboard", () => {
   assert.match(app, /No active career/);
   assert.match(html, /href="\.\/app\/dashboard\/"/);
 });
+
+test("ENG-ALL-ENGLISH-01 keeps default English and localizes the landmark brand name", () => {
+  const page = html.match(/aria-label="Football Architect home" data-i18n-aria="brandHome"/g) || [];
+  assert.equal(page.length, 1);
+  const names = {
+    en: "Football Architect home",
+    de: "Football Architect – Startseite",
+    es: "Inicio de Football Architect",
+    fr: "Accueil de Football Architect",
+    it: "Home di Football Architect"
+  };
+  for (const [lang, name] of Object.entries(names)) {
+    assert.match(js, new RegExp('brandHome:"' + name + '"'));
+    assert.ok(languages.includes(lang));
+  }
+  assert.match(js, /querySelectorAll\("\[data-i18n-aria\]"\)/);
+  assert.match(js, /node\.setAttribute\("aria-label", copy\[key\]\)/);
+});
