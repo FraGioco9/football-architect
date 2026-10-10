@@ -1,0 +1,186 @@
+{
+  "schema": "football-architect-divisions-v1",
+  "sourceIssue": 60,
+  "implementedGame": false,
+  "masterSvgCount": 0,
+  "countries": [
+    {
+      "id": "IT",
+      "name": {
+        "it": "Italia",
+        "en": "Italy"
+      },
+      "flagAsset": "assets/flags/it.svg"
+    },
+    {
+      "id": "ENG",
+      "name": {
+        "it": "Inghilterra",
+        "en": "England"
+      },
+      "flagAsset": "assets/flags/gb-eng.svg"
+    },
+    {
+      "id": "ES",
+      "name": {
+        "it": "Spagna",
+        "en": "Spain"
+      },
+      "flagAsset": "assets/flags/es.svg"
+    },
+    {
+      "id": "DE",
+      "name": {
+        "it": "Germania",
+        "en": "Germany"
+      },
+      "flagAsset": "assets/flags/de.svg"
+    },
+    {
+      "id": "FR",
+      "name": {
+        "it": "Francia",
+        "en": "France"
+      },
+      "flagAsset": "assets/flags/fr.svg"
+    },
+    {
+      "id": "PT",
+      "name": {
+        "it": "Portogallo",
+        "en": "Portugal"
+      },
+      "flagAsset": "assets/flags/pt.svg"
+    },
+    {
+      "id": "NL",
+      "name": {
+        "it": "Paesi Bassi",
+        "en": "Netherlands"
+      },
+      "flagAsset": "assets/flags/nl.svg"
+    },
+    {
+      "id": "BR",
+      "name": {
+        "it": "Brasile",
+        "en": "Brazil"
+      },
+      "flagAsset": "assets/flags/br.svg"
+    }
+  ],
+  "divisions": [
+    {
+      "id": "IT-1",
+      "countryId": "IT",
+      "tier": 1,
+      "name": "Lega Federale",
+      "capacity": 20
+    },
+    {
+      "id": "IT-2",
+      "countryId": "IT",
+      "tier": 2,
+      "name": "Lega delle Città",
+      "capacity": 20
+    },
+    {
+      "id": "ENG-1",
+      "countryId": "ENG",
+      "tier": 1,
+      "name": "Crown League",
+      "capacity": 20
+    },
+    {
+      "id": "ENG-2",
+      "countryId": "ENG",
+      "tier": 2,
+      "name": "Shield League",
+      "capacity": 20
+    },
+    {
+      "id": "ES-1",
+      "countryId": "ES",
+      "tier": 1,
+      "name": "Liga de la Unión",
+      "capacity": 20
+    },
+    {
+      "id": "ES-2",
+      "countryId": "ES",
+      "tier": 2,
+      "name": "Liga de las Regiones",
+      "capacity": 20
+    },
+    {
+      "id": "DE-1",
+      "countryId": "DE",
+      "tier": 1,
+      "name": "Meisterliga",
+      "capacity": 20
+    },
+    {
+      "id": "DE-2",
+      "countryId": "DE",
+      "tier": 2,
+      "name": "Vereinsliga",
+      "capacity": 20
+    },
+    {
+      "id": "FR-1",
+      "countryId": "FR",
+      "tier": 1,
+      "name": "Ligue des Sociétés",
+      "capacity": 20
+    },
+    {
+      "id": "FR-2",
+      "countryId": "FR",
+      "tier": 2,
+      "name": "Ligue des Régions",
+      "capacity": 20
+    },
+    {
+      "id": "PT-1",
+      "countryId": "PT",
+      "tier": 1,
+      "name": "Liga Lusitana",
+      "capacity": 20
+    },
+    {
+      "id": "PT-2",
+      "countryId": "PT",
+      "tier": 2,
+      "name": "Liga Atlântica",
+      "capacity": 20
+    },
+    {
+      "id": "NL-1",
+      "countryId": "NL",
+      "tier": 1,
+      "name": "Oranjeliga",
+      "capacity": 20
+    },
+    {
+      "id": "NL-2",
+      "countryId": "NL",
+      "tier": 2,
+      "name": "Bondsklasse",
+      "capacity": 20
+    },
+    {
+      "id": "BR-1",
+      "countryId": "BR",
+      "tier": 1,
+      "name": "Liga das Associações",
+      "capacity": 20
+    },
+    {
+      "id": "BR-2",
+      "countryId": "BR",
+      "tier": 2,
+      "name": "Liga das Regiões",
+      "capacity": 20
+    }
+  ]
+}
