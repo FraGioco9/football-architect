@@ -8,7 +8,7 @@ The game-world baseline is **8 countries, 16 fictional division identities, and 
 
 ## Local landing page
 
-The repository also provides a standalone static Landing page (`index.html`) and a short World Guide (`guide/index.html`) explaining Divisions and Clubs, styled in Graphite & Petrol. It is not a playable game and does not include an active internal Home.
+The repository also provides a standalone static Landing page (`index.html`) and a short World Guide (`guide/index.html`) explaining Divisions and Clubs, styled in Graphite & Petrol. It is not a playable game. The HOME-01 branch also provides a static application-shell preview at `/app/`, without an active career runtime.
 
 To preview locally on Windows, run `py -m http.server 2000 --bind 127.0.0.1`; open `http://127.0.0.1:2000/` for the Landing or `http://127.0.0.1:2000/guide/` for the Guide. No npm, Docker, or build step is needed. Run `node --test tests/*.test.mjs` for all site contract checks.
 
@@ -17,6 +17,14 @@ English is the default language, with Deutsch, Español, Français, and Italiano
 The **Enter the app** button displays a localized unavailability notice; the **Guide** button navigates to `/guide/`. Notices auto-dismiss after five seconds, pause on mouse/pen hover or keyboard focus, and restart the countdown when interaction ends. They animate in over 200 ms and out over 180 ms, with reduced-motion support. The layout is responsive, reserves a scrollbar gutter, and prevents text selection.
 
 These static informational pages do not enable gameplay or deployment.
+
+## App shell preview (HOME-01)
+
+Open `http://127.0.0.1:2000/app/` after starting the same static file server. This standalone application Home is an early **visual shell**, restored from the historical UX-SHELL PR #59 and its pre-reset design reference PR #32. The sidebar uses the original Home category, Dashboard and Calendar icons, desktop/tablet widths of 210/180 px and mobile rails of 58/52 px. The top bar keeps club, career date/phase and the Continue control, with explicit unavailable/disabled states while no career runtime exists. A standalone **Settings** page at `/app/settings/` (static `app/settings/index.html`) restores the historical Settings and saves layout. Its single Settings entry is pinned to the bottom of the sidebar, with no category heading. Direct links and refresh work without client-side route fallback. The five-language selector appears **only inside Settings**, not in the app top bar; the existing site preference remains shared with Landing and Guide on the same browser/device. Career, save management and data operations are shown as unavailable until their runtime exists.
+
+Calendar is a directly loadable static page at `/app/calendar/` (`app/calendar/index.html`), and Settings opens `/app/settings/`. Both work after refresh, without hash routes or legacy redirects. Dashboard, Calendar and Settings share a single app-wide page-title and spacing system: one top-left title, no page pretitle or subtitle, and consistent content gutters. Calendar displays an honest empty state, not invented fixtures. HOME-01 no longer interprets `#calendar` or `#settings` as page routes; normal in-page accessibility anchors (for example, `#main-content`) remain available. The app uses the shared language preference and the approved branding. The Landing **Enter the app** action intentionally retains its unavailability notice until application integration is explicitly approved; open the preview URL directly for review.
+
+No career data, IndexedDB writes, scheduling, simulation, automatic redirects, deployment or remote database work is added. Check the page's shell contracts with `node --test tests/app-home.test.mjs` (or all site tests with `node --test tests/*.test.mjs`).
 
 ## Guide
 
