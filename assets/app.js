@@ -3,6 +3,7 @@
   "use strict";
   const copies = {
     en: {
+      skip:"Skip to main content",
       sidebarLabel:"Career navigation",pagesLabel:"Career pages",navHome:"Home",
       dashboard:"Dashboard",calendar:"Calendar",noClub:"No club selected",noSeason:"No active season",
       timeLabel:"Career date and phase",continue:"Continue",
@@ -33,6 +34,7 @@
       aboutText:"Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.",
     },
     de: {
+      skip:"Zum Hauptinhalt springen",
       sidebarLabel:"Karrierenavigation",pagesLabel:"Karriereseiten",navHome:"Start",
       dashboard:"Dashboard",calendar:"Kalender",noClub:"Kein Verein ausgewählt",noSeason:"Keine aktive Saison",
       timeLabel:"Karrieredatum und Phase",continue:"Weiter",
@@ -63,6 +65,7 @@
       aboutText:"Football Architect zeigt eine alternative Fußballwelt mit realen Ländern sowie fiktiven Vereinen und Ligen. Dies ist eine Vorschau der Oberfläche, kein spielbares Spiel.",
     },
     es: {
+      skip:"Saltar al contenido principal",
       sidebarLabel:"Navegación de carrera",pagesLabel:"Páginas de carrera",navHome:"Inicio",
       dashboard:"Panel",calendar:"Calendario",noClub:"Ningún club seleccionado",noSeason:"Sin temporada activa",
       timeLabel:"Fecha y fase de la carrera",continue:"Continuar",
@@ -93,6 +96,7 @@
       aboutText:"Football Architect presenta un mundo futbolístico alternativo con países reales, clubes y divisiones ficticios. Esta página es una vista previa, no un juego funcional.",
     },
     fr: {
+      skip:"Aller au contenu principal",
       sidebarLabel:"Navigation de carrière",pagesLabel:"Pages de carrière",navHome:"Accueil",
       dashboard:"Tableau de bord",calendar:"Calendrier",noClub:"Aucun club sélectionné",noSeason:"Aucune saison active",
       timeLabel:"Date et phase de carrière",continue:"Continuer",
@@ -123,6 +127,7 @@
       aboutText:"Football Architect présente un univers footballistique alternatif avec de vrais pays et des clubs et divisions fictifs. Cette page est un aperçu de l’interface, pas un jeu jouable.",
     },
     it: {
+      skip:"Vai al contenuto principale",
       sidebarLabel:"Navigazione carriera",pagesLabel:"Pagine della carriera",navHome:"Inizio",
       dashboard:"Dashboard",calendar:"Calendario",noClub:"Nessun club selezionato",noSeason:"Nessuna stagione attiva",
       timeLabel:"Data e fase della carriera",continue:"Continua",
