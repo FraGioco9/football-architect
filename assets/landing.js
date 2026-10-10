@@ -5,7 +5,7 @@
   const SUPPORTED = ["en","de","es","fr","it"];
   const messages = {
     en: {
-      language:"Language",summary:"Explore an alternative football world.",
+      language:"Language",brandHome:"Football Architect home",guideNavigation:"Page navigation",guideSections:"Guide sections",summary:"Explore an alternative football world.",
       enter:"Explore app preview",guide:"Guide",universe:"Football world",
       countries:"Countries",divisions:"Divisions",clubs:"Documented clubs",
       footer:"Work in progress",
@@ -19,7 +19,7 @@
       guideClubsText2:"Clubs are the teams that take part in divisions. Their identity remains separate from the division in which they compete."
     },
     de: {
-      language:"Sprache",summary:"Entdecke eine alternative Fußballwelt.",
+      language:"Sprache",brandHome:"Football Architect – Startseite",guideNavigation:"Seitennavigation",guideSections:"Leitfadenabschnitte",summary:"Entdecke eine alternative Fußballwelt.",
       enter:"App-Vorschau öffnen",guide:"Leitfaden",universe:"Fußballwelt",
       countries:"Länder",divisions:"Ligen",clubs:"Dokumentierte Vereine",
       footer:"In Entwicklung",
@@ -33,7 +33,7 @@
       guideClubsText2:"Vereine nehmen an Ligawettbewerben teil. Ihre Identität bleibt unabhängig von der Liga, in der sie spielen."
     },
     es: {
-      language:"Idioma",summary:"Explora un universo futbolístico alternativo.",
+      language:"Idioma",brandHome:"Inicio de Football Architect",guideNavigation:"Navegación de la página",guideSections:"Secciones de la guía",summary:"Explora un universo futbolístico alternativo.",
       enter:"Explorar vista previa de la app",guide:"Guía",universe:"Mundo del fútbol",
       countries:"Países",divisions:"Divisiones",clubs:"Clubes documentados",
       footer:"En desarrollo",
@@ -47,7 +47,7 @@
       guideClubsText2:"Los clubes participan en las divisiones, pero su identidad es independiente de la división en la que compiten."
     },
     fr: {
-      language:"Langue",summary:"Explorez un univers footballistique alternatif.",
+      language:"Langue",brandHome:"Accueil de Football Architect",guideNavigation:"Navigation de la page",guideSections:"Sections du guide",summary:"Explorez un univers footballistique alternatif.",
       enter:"Explorer l’aperçu de l’app",guide:"Guide",universe:"Univers du football",
       countries:"Pays",divisions:"Divisions",clubs:"Clubs répertoriés",
       footer:"En développement",
@@ -61,7 +61,7 @@
       guideClubsText2:"Les clubs participent aux divisions, mais leur identité reste indépendante de la division dans laquelle ils évoluent."
     },
     it: {
-      language:"Lingua",summary:"Esplora un universo calcistico alternativo.",
+      language:"Lingua",brandHome:"Home di Football Architect",guideNavigation:"Navigazione della pagina",guideSections:"Sezioni della guida",summary:"Esplora un universo calcistico alternativo.",
       enter:"Esplora l’anteprima dell’app",guide:"Guida",universe:"Mondo calcistico",
       countries:"Paesi",divisions:"Divisioni",clubs:"Club documentati",
       footer:"In sviluppo",
@@ -81,6 +81,7 @@
   const menu = document.getElementById("language-options");
   const options = [...document.querySelectorAll("[data-language]")];
   const labels = [...document.querySelectorAll("[data-i18n]")];
+  const accessible = [...document.querySelectorAll("[data-i18n-aria]")];
   const actions = [...document.querySelectorAll("[data-destination]")];
   const valid = (value) => SUPPORTED.includes(value) ? value : "en";
   let language = "en";
@@ -97,6 +98,11 @@
       const key = node.dataset.i18n;
       if (Object.hasOwn(copy, key)) node.textContent = copy[key];
     }
+    for (const node of accessible) {
+      const key = node.dataset.i18nAria;
+      if (Object.hasOwn(copy, key)) node.setAttribute("aria-label", copy[key]);
+    }
+    if (labels.some(node => node.dataset.i18n === "guideTitle")) document.title = copy.guideTitle + " — Football Architect";
     if (persist) {
       try { window.localStorage.setItem(STORAGE_KEY, language); }
       catch { /* Language remains active if storage is unavailable. */ }

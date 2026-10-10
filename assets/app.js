@@ -4,6 +4,7 @@
   const copies = {
     en: {
       skip:"Skip to main content",
+      brandHome:"Football Architect home",
       sidebarLabel:"Career navigation",pagesLabel:"Career pages",navHome:"Home",
       dashboard:"Dashboard",calendar:"Calendar",noClub:"No club selected",noSeason:"No active season",
       timeLabel:"Career date and phase",continue:"Continue",
@@ -35,6 +36,7 @@
     },
     de: {
       skip:"Zum Hauptinhalt springen",
+      brandHome:"Football Architect – Startseite",
       sidebarLabel:"Karrierenavigation",pagesLabel:"Karriereseiten",navHome:"Start",
       dashboard:"Dashboard",calendar:"Kalender",noClub:"Kein Verein ausgewählt",noSeason:"Keine aktive Saison",
       timeLabel:"Karrieredatum und Phase",continue:"Weiter",
@@ -66,6 +68,7 @@
     },
     es: {
       skip:"Saltar al contenido principal",
+      brandHome:"Inicio de Football Architect",
       sidebarLabel:"Navegación de carrera",pagesLabel:"Páginas de carrera",navHome:"Inicio",
       dashboard:"Panel",calendar:"Calendario",noClub:"Ningún club seleccionado",noSeason:"Sin temporada activa",
       timeLabel:"Fecha y fase de la carrera",continue:"Continuar",
@@ -97,6 +100,7 @@
     },
     fr: {
       skip:"Aller au contenu principal",
+      brandHome:"Accueil de Football Architect",
       sidebarLabel:"Navigation de carrière",pagesLabel:"Pages de carrière",navHome:"Accueil",
       dashboard:"Tableau de bord",calendar:"Calendrier",noClub:"Aucun club sélectionné",noSeason:"Aucune saison active",
       timeLabel:"Date et phase de carrière",continue:"Continuer",
@@ -128,6 +132,7 @@
     },
     it: {
       skip:"Vai al contenuto principale",
+      brandHome:"Home di Football Architect",
       sidebarLabel:"Navigazione carriera",pagesLabel:"Pagine della carriera",navHome:"Inizio",
       dashboard:"Dashboard",calendar:"Calendario",noClub:"Nessun club selezionato",noSeason:"Nessuna stagione attiva",
       timeLabel:"Data e fase della carriera",continue:"Continua",

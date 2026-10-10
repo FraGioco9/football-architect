@@ -22,8 +22,10 @@ function render(saved = null) {
   const labels=[...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>mock({i18n:m[1]}));
   const trigger=mock(), menu=mock(),value=mock(),container=mock();menu.hidden=true;
   container.contains=element => [container,trigger,menu,...controls].includes(element);
-  const ids={"language-control":container,"site-language":trigger,"language-value":value,"language-options":menu};
-  const document={documentElement:{lang:"en"},getElementById:id=>ids[id]||null,
+  const ids={"language-control":container,"site-language":trigger,"language-value":value,"language-options":menu,
+    "page-title":labels.find(label=>label.dataset.i18n==="guideTitle")};
+  const document={documentElement:{lang:"en"},title:html.match(/<title>([^<]+)<\/title>/)?.[1]??"",
+    getElementById:id=>ids[id]||null,
     querySelectorAll:selector=>selector==="[data-language]"?controls:selector==="[data-i18n]"?labels:selector==="[data-destination]"?[]:selector==="[data-guide-section]"?guideLinks:[],
     addEventListener(){}};
   const store = new Map(saved === null ? [] : [["football-architect:language",saved]]);
@@ -94,4 +96,40 @@ test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.match(css,/focus-visible/);
   assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
   assert.doesNotMatch(html,/<script[^>]+guide\.js/);
+});
+
+test("ENG-ALL-ENGLISH-01 localizes Guide landmark names and document title", () => {
+  for (const key of ["brandHome", "guideNavigation", "guideSections"]) {
+    assert.match(html, new RegExp('data-i18n-aria="' + key + '"'));
+  }
+  assert.equal((html.match(/data-i18n-aria="guideSections"/g) || []).length, 2);
+  assert.match(js, /document\.title = copy\.guideTitle \+ " — Football Architect"/);
+  const words = {
+    en: ["Guide", "Page navigation", "Guide sections"],
+    de: ["Leitfaden", "Seitennavigation", "Leitfadenabschnitte"],
+    es: ["Guía", "Navegación de la página", "Secciones de la guía"],
+    fr: ["Guide", "Navigation de la page", "Sections du guide"],
+    it: ["Guida", "Navigazione della pagina", "Sezioni della guida"]
+  };
+  for (const [lang, [title, nav, sections]] of Object.entries(words)) {
+    assert.match(js, new RegExp('guideTitle:"' + title + '"'));
+    assert.ok(js.includes('guideNavigation:"' + nav + '"'));
+    assert.ok(js.includes('guideSections:"' + sections + '"'));
+    assert.ok(["en","de","es","fr","it"].includes(lang));
+  }
+});
+
+test("TITLE-FIX-01 localizes the Guide browser title on load and each language change", () => {
+  assert.match(html, /<h1 id="page-title" data-i18n="guideTitle">Guide<\/h1>/);
+  const titles = { en:"Guide", de:"Leitfaden", es:"Guía", fr:"Guide", it:"Guida" };
+  const r = render();
+  for (const [lang, title] of Object.entries(titles)) {
+    r.trigger.fire("click");
+    r.controls.find(option => option.dataset.language === lang).fire("click");
+    assert.equal(r.document.documentElement.lang, lang);
+    assert.equal(r.document.title, title + " — Football Architect", "selected " + lang);
+    const stored = render(lang);
+    assert.equal(stored.document.documentElement.lang, lang);
+    assert.equal(stored.document.title, title + " — Football Architect", "saved " + lang);
+  }
 });

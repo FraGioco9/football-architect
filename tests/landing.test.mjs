@@ -51,10 +51,12 @@ function render(saved = null, deny = false) {
   control.contains = target => [control, trigger, menu, ...options].includes(target);
   const byId = {
     "language-control": control, "site-language": trigger, "language-value": languageValue,
-    "language-options": menu
+    "language-options": menu,
+    "page-title": element({ id: "page-title", textContent: "Football Architect" })
   };
   const document = {
     documentElement: { lang: "en" },
+    title: html.match(/<title>([^<]+)<\/title>/)?.[1] ?? "",
     listeners: {},
     getElementById(id) { return byId[id] ?? null; },
     querySelectorAll(query) {
@@ -225,4 +227,36 @@ test("HOME-ENTRY-01 does not enable gameplay in the static Dashboard", () => {
   assert.match(dashboard, /class="app-continue" type="button" disabled/);
   assert.match(app, /No active career/);
   assert.match(html, /href="\.\/app\/dashboard\/"/);
+});
+
+test("ENG-ALL-ENGLISH-01 keeps default English and localizes the landmark brand name", () => {
+  const page = html.match(/aria-label="Football Architect home" data-i18n-aria="brandHome"/g) || [];
+  assert.equal(page.length, 1);
+  const names = {
+    en: "Football Architect home",
+    de: "Football Architect – Startseite",
+    es: "Inicio de Football Architect",
+    fr: "Accueil de Football Architect",
+    it: "Home di Football Architect"
+  };
+  for (const [lang, name] of Object.entries(names)) {
+    assert.match(js, new RegExp('brandHome:"' + name + '"'));
+    assert.ok(languages.includes(lang));
+  }
+  assert.match(js, /querySelectorAll\("\[data-i18n-aria\]"\)/);
+  assert.match(js, /node\.setAttribute\("aria-label", copy\[key\]\)/);
+});
+
+test("TITLE-FIX-01 preserves the Landing browser title in all five languages at load and on selection", () => {
+  assert.match(html, /<h1 id="page-title">Football Architect<\/h1>/);
+  const r = render();
+  for (const lang of languages) {
+    r.trigger.fire("click");
+    r.options.find(option => option.dataset.language === lang).fire("click");
+    assert.equal(r.document.documentElement.lang, lang);
+    assert.equal(r.document.title, "Football Architect", "selected " + lang);
+    const stored = render(lang);
+    assert.equal(stored.document.documentElement.lang, lang);
+    assert.equal(stored.document.title, "Football Architect", "saved " + lang);
+  }
 });

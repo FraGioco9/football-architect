@@ -70,3 +70,20 @@ test("desktop horizontal logo fits its SVG viewBox without clipping", () => {
   assert.match(css,/\.brand-image\{[^}]*object-fit:contain/);
   assert.ok(260+164+20+2*22<=601, "desktop header still fits at 601px breakpoint");
 });
+
+test("ENG-ALL-ENGLISH-01 keeps historic narrative and catalog metadata in English", () => {
+  const archive = read("docs/clubs/registry-history.md");
+  const source = read("docs/clubs/fullnames-source.md");
+  const catalog = JSON.parse(read("data/clubs.json"));
+  assert.match(archive, /CLUBS-320 ARCHIVE — Previous club registry roadmap/);
+  assert.match(source, /CLUB-01 — User-provided `fullName` tables/);
+  assert.match(source, /Updated documentation gate/);
+  assert.match(archive, /Current summary of user-provided tables/);
+  assert.match(archive, /Individual verification register — 76\/76/);
+  assert.match(archive, /IT,2 = AC Rinascenti Bologna/);
+  assert.equal(catalog.clubs.length, 320);
+  assert.match(catalog.notes, /All 320 fullName entries are documented/);
+  for (const historical of [source, archive]) {
+    assert.doesNotMatch(historical, /(?:Fonte primaria|Ricognizione documentale|Stato aggiornato|denominazioni complete ricevute|Nessuna modifica a codice)/);
+  }
+});

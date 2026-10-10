@@ -1,7 +1,7 @@
 {
   "schema": "football-architect-club-identities-v1",
   "source": "issue-61-comment-6091538309 + issue-61-comment-6091598842",
-  "notes": "320 fullName documentati e 320 abbr formalmente approvate. Solo le sei denominazioni breve incluse in approvedShortName sono state riconciliate puntualmente qui; il registro completo dei nomi principali approvati è nella storia della progettazione. Le denominazioni legacy dei club 1-20 sono riferimenti storici, non sostituiscono decisioni più recenti.",
+  "notes": "All 320 fullName entries are documented and all 320 abbreviations are formally approved. Only the six short names included in approvedShortName have been individually reconciled here; the complete record of approved primary names is preserved in the design history. Legacy names for clubs 1–20 are historical references and do not override later decisions.",
   "count": 320,
   "clubs": [
     {
