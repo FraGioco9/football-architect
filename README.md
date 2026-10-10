@@ -18,6 +18,12 @@ The **Enter the app** button displays a localized unavailability notice; the **G
 
 These static informational pages do not enable gameplay or deployment.
 
+## Global application search (HOME-02 SEARCH-01)
+
+Dashboard, Calendar and Settings now share a single top-bar search trigger. On desktop it resembles a compact search field; on narrow screens it becomes a magnifier button without adding tooltips, shortcuts or secondary filters. It opens a native modal with a short Graphite & Petrol entrance/exit animation (disabled with reduced-motion), keyboard focus management, Escape, arrow navigation, Enter selection and a clear empty state.
+
+The search covers **only currently available in-app pages and sections**, using their existing localized labels: `/app/`, `/app/calendar/`, `/app/settings/` and real heading anchors. It matches case- and accent-insensitively, suggests the three pages for an empty query, and follows all five existing language choices (English default). There is no saved query history, backend call or invented search result for unimplemented player, club, fixture or career screens. New destinations require an explicit catalog entry and an existing route. This feature is tracked by [HOME-02 SEARCH-01 issue #76](https://github.com/FraGioco9/football-architect/issues/76).
+
 ## App shell preview (HOME-01)
 
 Open `http://127.0.0.1:2000/app/` after starting the same static file server. This standalone application Home is an early **visual shell**, restored from the historical UX-SHELL PR #59 and its pre-reset design reference PR #32. The sidebar uses the original Home category, Dashboard and Calendar icons, desktop/tablet widths of 210/180 px and mobile rails of 58/52 px. The top bar keeps club, career date/phase and the Continue control, with explicit unavailable/disabled states while no career runtime exists. A standalone **Settings** page at `/app/settings/` (static `app/settings/index.html`) restores the historical Settings and saves layout. Its single Settings entry is pinned to the bottom of the sidebar, with no category heading. Direct links and refresh work without client-side route fallback. The five-language selector appears **only inside Settings**, not in the app top bar; the existing site preference remains shared with Landing and Guide on the same browser/device. Career, save management and data operations are shown as unavailable until their runtime exists.
