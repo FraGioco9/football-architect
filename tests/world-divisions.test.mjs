@@ -139,8 +139,8 @@ test("COMPETITIONS-04 implements eight navigable views on every detail page",()=
   const html=read(file);
   assert.equal((html.match(/role="tab"/g)||[]).length,8,file);
   assert.equal((html.match(/role="tabpanel"/g)||[]).length,8,file);
-  assert.equal((html.match(/aria-selected="true"/g)||[]).length,1,file);
-  assert.equal((html.match(/aria-selected="false"/g)||[]).length,7,file);
+  assert.equal((html.match(/role="tab"[^>]*aria-selected="true"/g)||[]).length,1,file);
+  assert.equal((html.match(/role="tab"[^>]*aria-selected="false"/g)||[]).length,7,file);
   assert.ok(html.includes('role="tablist" aria-label="Competition views" data-app-aria="competitionViews"'),file);
   for(const slug of slugs){
    assert.ok(html.includes('id="competition-tab-'+slug+'"'),file);
