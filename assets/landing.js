@@ -3,6 +3,7 @@
   "use strict";
   const STORAGE_KEY = "football-architect:language";
   const SUPPORTED = ["en","de","es","fr","it"];
+  const TOAST_DURATION_MS = 5000;
   const messages = {
     en: {
       language:"Language",dismiss:"Dismiss notice",summary:"Explore an alternative football world.",
@@ -59,6 +60,31 @@
   let language = "en";
   let activeIndex = 0;
   let lastAction = null;
+  let toastTimer = null;
+  let toastHovered = false;
+  let toastFocused = false;
+
+  function cancelToastTimer() {
+    if (toastTimer !== null) {
+      window.clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+  }
+
+  function dismissToast() {
+    cancelToastTimer();
+    status.hidden = true;
+    lastAction = null;
+  }
+
+  function scheduleToastDismiss() {
+    cancelToastTimer();
+    if (status.hidden || toastHovered || toastFocused) return;
+    toastTimer = window.setTimeout(() => {
+      toastTimer = null;
+      dismissToast();
+    }, TOAST_DURATION_MS);
+  }
 
   function translate(value, persist = false) {
     language = valid(value);
@@ -156,13 +182,33 @@
       const copy = messages[language];
       statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
       status.hidden = false;
+      scheduleToastDismiss();
       closeMenu();
     });
   }
-  statusClose.addEventListener("click", () => {
-    status.hidden = true;
-    lastAction = null;
+  // Mouse/pen hover pauses the countdown; leaving restarts the full duration.
+  // Ignore touch pointerenter so an iPhone tap cannot suspend the toast indefinitely.
+  status.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "touch") return;
+    toastHovered = true;
+    cancelToastTimer();
   });
+  status.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "touch") return;
+    toastHovered = false;
+    scheduleToastDismiss();
+  });
+  // Keep a toast available while its dismiss button has keyboard focus.
+  status.addEventListener("focusin", () => {
+    toastFocused = true;
+    cancelToastTimer();
+  });
+  status.addEventListener("focusout", (event) => {
+    if (status.contains(event.relatedTarget)) return;
+    toastFocused = false;
+    scheduleToastDismiss();
+  });
+  statusClose.addEventListener("click", dismissToast);
 
   let initial = "en";
   try { initial = valid(window.localStorage.getItem(STORAGE_KEY)); }
