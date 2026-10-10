@@ -12,9 +12,9 @@ py -m http.server 2000
 
 Then visit `http://127.0.0.1:2000`. No npm, Docker, or build step is needed. Run the landing contract tests using `node --test tests/landing.test.mjs`.
 
-**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The native language dropdown uses the Graphite & Petrol theme, while its expanded picker may still follow browser and operating-system conventions.
+**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The custom Graphite & Petrol language dropdown uses the same surface, border, and typography as the site. It supports mouse, touch, and keyboard (arrows, Home/End, Enter/Space, Escape), with an accessible listbox and persistent language selection.
 
-The **Enter the app** and **Guide** buttons show a localized notice that those destinations are not yet available rather than navigating to missing pages. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
+The **Enter the app** and **Guide** buttons show a localized notice that those destinations are not yet available rather than navigating to missing pages. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The landing spans the available viewport width with responsive side padding, reserves a stable scrollbar gutter where supported, and uses a transparent scrollbar track with a subtle thumb. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
 
 ## Available project assets
 
