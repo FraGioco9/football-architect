@@ -6,7 +6,7 @@ import {runInNewContext} from "node:vm";
 
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const paths = {
-  dashboard: "app/index.html",
+  dashboard: "app/dashboard/index.html",
   calendar: "app/calendar/index.html",
   settings: "app/settings/index.html"
 };
@@ -16,9 +16,9 @@ const js = read("assets/app.js");
 
 test("HOME-01 uses canonical static pages rather than legacy hash routing", () => {
   const expectedLinks = {
-    dashboard: ["../app/","calendar/","settings/"],
-    calendar: ["../","./","../settings/"],
-    settings: ["../","../calendar/","./"]
+    dashboard: ["./","../calendar/","../settings/"],
+    calendar: ["../dashboard/","./","../settings/"],
+    settings: ["../dashboard/","../calendar/","./"]
   };
   for (const [page,markup] of Object.entries(pages)) {
     assert.match(markup, /class="fa-career-shell"/);
@@ -38,6 +38,7 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
   assert.doesNotMatch(js, /#calendar|#settings|hashchange|window\.location\.hash|location\.replace/);
   assert.match(js, /path\.endsWith\("\/app\/calendar"\)/);
   assert.match(js, /path\.endsWith\("\/app\/settings"\)/);
+  assert.match(js, /path\.endsWith\("\/app\/dashboard"\)/);
 });
 
 test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destination links", () => {
@@ -160,7 +161,7 @@ function simulateApp(pathname,fragment="") {
 
 test("HOME-01 selects the actual page from pathname, including after refresh and unrelated URL fragments", () => {
   const locations=[
-    ["/app/","dashboard"],["/app/calendar/","calendar"],["/app/settings/","settings"],
+    ["/app/dashboard/","dashboard"],["/app/dashboard","dashboard"],["/app/calendar/","calendar"],["/app/settings/","settings"],
     ["/app/calendar","calendar"],["/app/settings","settings"]
   ];
   for(const [path,current] of locations) {
@@ -174,8 +175,8 @@ test("HOME-01 selects the actual page from pathname, including after refresh and
     assert.equal(fragmentApp.nodes["app-"+current].hidden,false);
   }
   // Former hashes are ignored, not redirected or treated as routes.
-  assert.equal(simulateApp("/app/","#calendar").nodes["app-dashboard"].hidden,false);
-  assert.equal(simulateApp("/app/","#settings").nodes["app-dashboard"].hidden,false);
+  assert.equal(simulateApp("/app/dashboard/","#calendar").nodes["app-dashboard"].hidden,false);
+  assert.equal(simulateApp("/app/dashboard/","#settings").nodes["app-dashboard"].hidden,false);
 });
 
 test("HOME-01 translates all three page titles across five supported languages", () => {
@@ -185,7 +186,7 @@ test("HOME-01 translates all three page titles across five supported languages",
     settings:{en:"Settings",de:"Einstellungen",es:"Ajustes",fr:"Paramètres",it:"Impostazioni"}
   };
   for (const [view,labels] of Object.entries(titles)) {
-    const app=simulateApp(view==="dashboard"?"/app/":"/app/"+view+"/");
+    const app=simulateApp(view==="dashboard"?"/app/dashboard/":"/app/"+view+"/");
     for(const [lang,title] of Object.entries(labels)) {
       app.document.documentElement.lang=lang;
       app.changed();
@@ -193,5 +194,23 @@ test("HOME-01 translates all three page titles across five supported languages",
       assert.ok(app.translated.some(x=>x.dataset.appI18n===view&&x.textContent===title));
       assert.ok(app.labeled.some(x=>x.dataset.appAria==="continueDisabled"&&x.attributes["aria-label"]));
     }
+  }
+});
+
+
+test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
+  const redirect=read("app/index.html");
+  const dashboard=read("app/dashboard/index.html");
+  assert.match(redirect,/window\.location\.replace\("\.\/dashboard\/" \+ window\.location\.search \+ window\.location\.hash\)/);
+  assert.match(redirect,/<noscript><meta http-equiv="refresh" content="0;url=dashboard\/"><\/noscript>/);
+  assert.match(redirect,/href="dashboard\/"/);
+  assert.doesNotMatch(redirect,/class="fa-career-shell"/);
+  assert.match(dashboard,/id="app-dashboard"/);
+  const script=redirect.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(script);
+  for(const [search,hash,expected] of [["","","./dashboard/"],["?lang=it","#world-heading","./dashboard/?lang=it#world-heading"]]){
+    const redirects=[];
+    runInNewContext(script,{window:{location:{search,hash,replace(path){redirects.push(path)}}}},{timeout:2000});
+    assert.deepEqual(redirects,[expected]);
   }
 });

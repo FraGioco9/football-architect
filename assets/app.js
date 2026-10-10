@@ -171,6 +171,7 @@
     const path = (window.location.pathname || "").replace(/\/+$/, "");
     if (path.endsWith("/app/calendar")) return "calendar";
     if (path.endsWith("/app/settings")) return "settings";
+    if (path.endsWith("/app/dashboard")) return "dashboard";
     return "dashboard";
   }
   function renderLanguage() {
