@@ -124,7 +124,7 @@
   }
   trigger.addEventListener("click",open);
   trigger.addEventListener("blur",() => trigger.classList.remove("app-search-escape-return"));
-  closeButton.addEventListener("click",close);
+  closeButton.addEventListener("click",() => close());
   // Capture Escape before the native search input can consume it to clear text.
   dialog.addEventListener("keydown",event => {
     if (event.key !== "Escape") return;
