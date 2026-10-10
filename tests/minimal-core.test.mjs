@@ -542,32 +542,42 @@ test('UX-SHELL: routes and source avoid restoring pre-reset match engine',()=>{
  assert.doesNotMatch(server,/\/match\/\d|\/squad|\/training|\/tactics/);
 });
 
-test('game guide explains gameplay mechanics rather than onboarding or UI operations',async()=>{
+test('GUIDE-ASSET: standalone bilingual atlas lists the exact 16 division catalog entries without invented crests',async()=>{
  const {guidePage}=await import('../src/game-guide.js');
- const it=guidePage('it'),en=guidePage('en');
- for(const page of [it,en]){
-  assert.match(page,/class="game-guide"/);
+ for(const lang of ['it','en']){
+  const page=guidePage(lang);
+  assert.match(page,/class="game-guide guide-asset-page"/);
+  assert.match(page,/id="guide-divisions"/);
   assert.match(page,/data-action="home"/);
-  assert.match(page,/<nav class="guide-nav panel"/);
-  assert.equal((page.match(/class="guide-topic-heading"/g)||[]).length,6);
-  assert.equal((page.match(/<details class="guide-question"/g)||[]).length,4);
-  for(const id of ['world','seasons','time','league','fixtures','market']){
-   assert.ok(page.includes('id="guide-'+id+'"'));
-   assert.ok(page.includes('href="#guide-'+id+'"'));
+  assert.equal((page.match(/class="guide-country-group"/g)||[]).length,8);
+  assert.equal((page.match(/class="guide-division-card"/g)||[]).length,16);
+  assert.equal((page.match(/class="guide-unassigned-crest"/g)||[]).length,16);
+  for(const country of COUNTRIES){
+   assert.ok(page.includes('id="guide-country-'+country.id+'"'),country.id);
+   assert.ok(page.includes('href="#guide-country-'+country.id+'"'),country.id);
+   assert.ok(page.includes(country.country[lang]),country.id);
   }
-  assert.doesNotMatch(page,/guide-start|guide-step|guide-saves|guide-offline|guide-new-career/i);
-  assert.doesNotMatch(page,/IndexedDB|JSON|browser data|salvatagg|save files|import|export|first name|cognome|birth date|data di nascita|click|clicca|menu a tendina/i);
+  for(const division of COMPETITIONS){
+   assert.ok(page.includes('id="guide-division-'+division.id+'"'),division.id);
+   assert.ok(page.includes(division.name),division.name);
+   assert.ok(page.includes('<code>'+division.id+'</code>'),division.id);
+  }
   assert.ok(!page.includes('undefined'));
+  assert.doesNotMatch(page,/guide-question|guide-faq|guide-topic|data-action="new"|gameplay|how to start|come creare|FAQ|domande frequenti/i);
  }
- assert.match(it,/Come funziona Football Architect/);
- assert.match(it,/38 giornate/);
- assert.match(it,/72 ore di riposo/);
- assert.match(it,/non producono ancora risultati/);
- assert.match(en,/How Football Architect works/);
- assert.match(en,/38 rounds/);
- assert.match(en,/72 hours of rest/);
- assert.match(en,/do not yet produce results/);
+ const it=guidePage('it'),en=guidePage('en');
+ assert.match(it,/L'universo di Football Architect/);
+ assert.match(it,/Emblema non ancora definito/);
+ assert.match(it,/Seconda divisione definita nel catalogo/);
+ assert.match(en,/The world of Football Architect/);
+ assert.match(en,/Crest not yet defined/);
+ assert.match(en,/without assigned clubs and not yet playable/);
+ assert.match(it,/src="\/assets\/flags\/it\.svg"/);
+ assert.match(en,/src="\/assets\/flags\/gb-eng\.svg"/);
+ const italy2=COMPETITIONS.find(c=>c.id==='IT-2');
+ assert.deepEqual({tier:italy2.tier,capacity:italy2.capacity,clubCount:italy2.clubCount},{tier:2,capacity:20,clubCount:0});
 });
+
 test('guide is routable, linked and served by the strict static file allowlist',()=>{
  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
