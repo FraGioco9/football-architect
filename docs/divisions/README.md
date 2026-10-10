@@ -17,8 +17,8 @@ Questa cartella conserva decisioni, palette, concept e inventario per la **sola 
 
 ## Importante: stato file immagine
 
-I campioni PNG P01 **sono stati generati e approvati nella conversazione**, ma **non sono ancora salvati come file binari in questo branch**; vedi SHA-256 e registro in [production-log.md](production-log.md). Sono conservati in una copia separata scaricabile dalla conversazione fino al caricamento esplicito su GitHub. Non dire che i 64 SVG esistono: **0/64 prodotti**.
+I campioni PNG P01 **sono stati generati e approvati nella conversazione** e **conservati come originali nella Libreria persistente di ChatGPT**, nella cartella personale `/Football Architect/DIV-ASSET/`. I file PNG **non sono ancora presenti come blob binari in questo branch GitHub**. Nomi, dimensioni e SHA-256 di entrambi sono in [production-log.md](production-log.md). Non dire che i 64 SVG esistono: **0/64 prodotti**.
 
 ## Procedura per le prossime approvazioni
 
-Ogni nuova approvazione P02+ aggiornerà su questo branch `production-log.md` e, se necessario, `inventory.json`, più il file grafico effettivo quando disponibile un meccanismo di upload binario. **Non sostituire** uno stemma campione approvato senza una nuova approvazione. Niente modifiche all'app, deploy, DB o merge automatici.
+Ogni nuova approvazione P02+ aggiornerà su questo branch `production-log.md` e, se necessario, `inventory.json`, salvando ogni immagine generata e approvata anche nella Libreria persistente, finché l'upload binario su GitHub non sia possibile. **Non sostituire** uno stemma campione approvato senza una nuova approvazione. Niente modifiche all'app, deploy, DB o merge automatici.
