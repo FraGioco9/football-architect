@@ -3,7 +3,7 @@ on:
   push:
     branches: [feat/landing-static, feat/world-guide-atlas]
   pull_request:
-    paths: [index.html, guide/index.html, assets/landing.css, assets/landing.js, assets/guide.css, assets/guide.js, favicon.ico, favicon.svg, README.md, tests/landing.test.mjs, tests/guide.test.mjs, .github/workflows/landing-checks.yml]
+    paths: [index.html, guide/index.html, assets/landing.css, assets/landing.js, assets/guide.css, favicon.ico, favicon.svg, README.md, tests/landing.test.mjs, tests/guide.test.mjs, .github/workflows/landing-checks.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,8 +16,6 @@ jobs:
         with:
           node-version: '22'
       - name: Verify syntax
-        run: |
-          node --check assets/landing.js
-          node --check assets/guide.js
+        run: node --check assets/landing.js
       - name: Landing contracts
         run: node --test tests/*.test.mjs

@@ -1,24 +1,24 @@
 # Football Architect — Division and club catalogues
 
-**Current status:** This repository contains the division and club catalogues and a standalone static Landing and a separate World Guide. It does not include a game engine, internal Home, login, saves, matches, or automatic deployment.
+**Current status:** This repository contains the division and club catalogues and a standalone static Landing and a short Guide explaining divisions and clubs. It does not include a game engine, an internal Home, login, saves, matches or automatic deployment.
 
-## Run the static website locally
+## Run the website locally
 
-Start a local static server from the repository directory on Windows:
+Open `index.html` directly, or start a local static server from the repository directory on Windows:
 
 ```powershell
 py -m http.server 2000
 ```
 
-Then visit `http://127.0.0.1:2000` for the Landing and `http://127.0.0.1:2000/guide/` for the World Guide. The Guide requires HTTP to fetch the local JSON catalogues; opening HTML directly with `file://` will not work. No npm, Docker, or build step is needed. Run the full site contract tests using `node --test tests/*.test.mjs`.
+Then visit `http://127.0.0.1:2000/` for the Landing or `http://127.0.0.1:2000/guide/` for the Guide. No npm, Docker, or build step is needed. Run the site contract tests using `node --test tests/*.test.mjs`.
 
-**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The native language dropdown uses the Graphite & Petrol theme, while its expanded picker may still follow browser and operating-system conventions.
+**English is the default on a first visit.** Deutsch, Español, Français, and Italiano remain available in that order. On return visits the site restores a supported value previously saved under `football-architect:language`. The custom Graphite & Petrol language dropdown uses the same surface, border, and typography as the site. It supports mouse, touch, and keyboard (arrows, Home/End, Enter/Space, Escape), with an accessible listbox and persistent language selection.
 
-**Enter the app** shows a localized notice because the game is not yet available; **Guide** navigates to the real World Guide. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
+**Enter the app** shows a localized unavailability notice. **Guide** opens the dedicated explanation page. Notices are fixed and dismissible; showing or hiding them never moves the existing boxes. The landing spans the available viewport width with responsive side padding, reserves a stable scrollbar gutter where supported, and uses a transparent scrollbar track with a subtle thumb. The root `favicon.ico` and `favicon.svg` are provided. A 404 for Chrome DevTools `/.well-known/appspecific/com.chrome.devtools.json` is harmless; a 304 response for CSS is normal cache revalidation.
 
-## World Guide
+## Guide
 
-The independent World Guide follows [roadmap #67](https://github.com/FraGioco9/football-architect/issues/67). Browse **8 countries, 16 divisions and 320 clubs** directly from the canonical JSON data. Search documented names, IDs, abbreviations and historical names; filter by country or catalogue type; expand club records. Club lists are grouped by country **without inventing current tier memberships**. Historical cities and stadiums appear only as **unverified historical references**, never as confirmed present-day facts. The eight country flags are displayed, while unproduced division/club emblems use transparent text placeholders. The Guide and Landing share five languages and the same Graphite & Petrol styling; English remains the initial language.
+The [Guide](guide/index.html) currently explains only two game-world concepts: **Divisions** (country-specific competitions with first and second tiers, each designed for 20 clubs) and **Clubs** (football teams with persistent identities independent of divisions). It is a simple informational page, **not** an asset explorer, club registry, search interface or claim that gameplay is implemented. The Landing and Guide use the same English-default language selector and shared preference. See [UI-GUIDE roadmap #67](https://github.com/FraGioco9/football-architect/issues/67).
 
 ## Available project assets
 

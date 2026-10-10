@@ -1,85 +1,197 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
-import {runInNewContext} from "node:vm";
-const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
-const css=readFileSync(new URL("../assets/landing.css",import.meta.url),"utf8");
-const js=readFileSync(new URL("../assets/landing.js",import.meta.url),"utf8");
-function render(saved=null,deny=false){
- const stored=new Map(),navigated=[];
- if(saved!==null)stored.set("football-architect:language",saved);
- const labels=[...html.matchAll(/data-i18n="([^"]+)"/g)].map(x=>({dataset:{i18n:x[1]},textContent:""}));
- const control=(destination)=>({dataset:{destination},events:{},addEventListener(name,fn){this.events[name]=fn},fire(name){this.events[name]()}});
- const select=control(null),status={hidden:true},statusMessage={textContent:""},close=control(null),app=control("app"),guide=control("guide");
- close.setAttribute=function(name,value){this[name]=value};
- select.value="en";
- const document={
-   documentElement:{lang:"en"},
-   getElementById(id){return id==="site-language"?select:id==="action-status"?status:id==="action-status-message"?statusMessage:id==="status-close"?close:null},
-   querySelectorAll(query){return query==="[data-i18n]"?labels:query==="[data-destination]"?[app,guide]:[]}
- };
- const localStorage={
-   getItem(k){if(deny)throw Error("blocked");return stored.get(k)??null},
-   setItem(k,v){if(deny)throw Error("blocked");stored.set(k,v)}
- };
- runInNewContext(js,{document,window:{localStorage,location:{assign(url){navigated.push(url)}}}},{timeout:2000});
- return {stored,labels,document,select,status,statusMessage,close,app,guide,navigated};
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+
+const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const css = readFileSync(new URL("../assets/landing.css", import.meta.url), "utf8");
+const js = readFileSync(new URL("../assets/landing.js", import.meta.url), "utf8");
+const languages = ["en", "de", "es", "fr", "it"];
+const optionMatches = [...html.matchAll(/<div class="language-option" role="option" id="([^"]+)" data-language="([^"]+)" aria-selected="(?:true|false)">([^<]+)<\/div>/g)];
+
+function element(properties = {}) {
+  return {
+    id: properties.id ?? "",
+    dataset: properties.dataset ?? {},
+    textContent: properties.textContent ?? "",
+    hidden: properties.hidden ?? false,
+    listeners: {},
+    attributes: {},
+    focusCount: 0,
+    addEventListener(name, callback) { this.listeners[name] = callback; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    removeAttribute(name) { delete this.attributes[name]; },
+    getAttribute(name) { return this.attributes[name]; },
+    focus() { this.focusCount++; },
+    fire(name, props = {}) {
+      const event = { key: "", target: this, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...props };
+      this.listeners[name]?.(event);
+      return event;
+    }
+  };
 }
-test("semantic single-title layout and native five-language selector",()=>{
- assert.equal((html.match(/<h1\b/g)||[]).length,1);
- assert.match(html,/<h1 id="page-title">Football Architect<\/h1>/);
- assert.deepEqual([...html.matchAll(/<option value="(\w+)"/g)].map(m=>m[1]),["en","de","es","fr","it"]);
- assert.match(html,/<select id="site-language"/);
- assert.match(html,/<html lang="en">/);
- assert.match(html,/role="status" aria-live="polite"/);
- assert.doesNotMatch(html,/href="\/(?:app|guide)"/);
- for(const n of ["8","16","320"])assert.match(html,new RegExp('class="number">'+n+'<'));
-});
-test("default, restored, invalid, inaccessible storage",()=>{
- assert.equal(render().select.value,"en");
- assert.equal(render("de").labels.find(x=>x.dataset.i18n==="enter").textContent,"App öffnen");
- assert.equal(render("unlisted").select.value,"en");
- assert.equal(render(null,true).select.value,"en");
-});
-test("language changes all text without reload and persists under a shared key",()=>{
- const r=render();
- for(const lang of ["de","es","fr","it","en"]){
-   r.select.value=lang;r.select.fire("change");
-   assert.equal(r.document.documentElement.lang,lang);
-   assert.equal(r.stored.get("football-architect:language"),lang);
-   for(const label of r.labels)assert.ok(label.textContent.length>0);
- }
- const denied=render(null,true);denied.select.value="fr";denied.select.fire("change");
- assert.equal(denied.document.documentElement.lang,"fr");
-});
-test("unavailable app notice and working Guide navigation",()=>{
- const r=render();r.app.fire("click");
- assert.equal(r.status.hidden,false);
- assert.match(r.statusMessage.textContent,/not available yet/);
- r.select.value="it";r.select.fire("change");
- assert.match(r.statusMessage.textContent,/non è ancora disponibile/);
- r.guide.fire("click");assert.deepEqual(r.navigated,["./guide/"]);
- r.close.fire("click");assert.equal(r.status.hidden,true);
- r.select.value="en";r.select.fire("change");assert.equal(r.status.hidden,true);
- r.app.fire("click");assert.equal(r.status.hidden,false);
- assert.equal(r.close["aria-label"],"Dismiss notice");
-});
-test("responsive, keyboard focus, reduced motion and equal-width CTA contracts",()=>{
- for(const match of [/max-width:600px/,/\.cta\{width:100%\}/,/focus-visible/,/min-height:44px/,/prefers-reduced-motion:reduce/,/#101A1D/,/#216E56/,/width:260px/])assert.match(css,match);
- assert.doesNotMatch(css,/overflow-x:\s*hidden/);
+
+function render(saved = null, deny = false) {
+  const stored = new Map();
+  const navigation = [];
+  if (saved !== null) stored.set("football-architect:language", saved);
+  const options = optionMatches.map(match => element({ id: match[1], dataset: { language: match[2] }, textContent: match[3] }));
+  const labels = [...html.matchAll(/data-i18n="([^"]+)"/g)].map(match => element({ dataset: { i18n: match[1] } }));
+  const trigger = element({ id: "site-language" });
+  const menu = element({ id: "language-options", hidden: true });
+  const languageValue = element({ id: "language-value" });
+  const status = element({ hidden: true });
+  const statusMessage = element();
+  const close = element();
+  const app = element({ dataset: { destination: "app" } });
+  const guide = element({ dataset: { destination: "guide" } });
+  const control = element();
+  control.contains = target => [control, trigger, menu, ...options].includes(target);
+  const byId = {
+    "language-control": control, "site-language": trigger, "language-value": languageValue,
+    "language-options": menu, "action-status": status, "action-status-message": statusMessage,
+    "status-close": close
+  };
+  const document = {
+    documentElement: { lang: "en" },
+    listeners: {},
+    getElementById(id) { return byId[id] ?? null; },
+    querySelectorAll(query) {
+      if (query === "[data-language]") return options;
+      if (query === "[data-i18n]") return labels;
+      if (query === "[data-destination]") return [app, guide];
+      return [];
+    },
+    addEventListener(name, callback) { this.listeners[name] = callback; },
+    fire(name, payload) { this.listeners[name]?.(payload); }
+  };
+  const localStorage = {
+    getItem(key) { if (deny) throw Error("storage denied"); return stored.get(key) ?? null; },
+    setItem(key, value) { if (deny) throw Error("storage denied"); stored.set(key, value); }
+  };
+  runInNewContext(js, { document, window: { localStorage, location: { assign(url) { navigation.push(url); } } } }, { timeout: 2000 });
+  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, navigation };
+}
+
+test("semantic full-page landing and custom five-language listbox", () => {
+  assert.equal((html.match(/<h1\b/g) || []).length, 1);
+  assert.match(html, /<html lang="en">/);
+  assert.deepEqual(optionMatches.map(match => match[2]), languages);
+  assert.match(html, /id="site-language" role="combobox"/);
+  assert.match(html, /aria-haspopup="listbox"/);
+  assert.match(html, /aria-expanded="false" aria-controls="language-options"/);
+  assert.match(html, /role="listbox" aria-labelledby="language-label" hidden/);
+  assert.doesNotMatch(html, /<select\b/);
+  for (const n of ["8", "16", "320"]) assert.match(html, new RegExp('class="number">' + n + '<'));
 });
 
-test("site dropdown, non-reflow notices and favicon assets",()=>{
- assert.match(css,/appearance:\s*none/);
- assert.match(css,/\.language-control select option\s*\{[^}]*background(?:-color)?:var\(--surface\)/s);
- assert.match(css,/\.action-status\s*\{[^}]*position:fixed/s);
- assert.match(css,/\.action-status\[hidden\]\s*\{display:none\}/);
- assert.match(html,/<link rel="icon" type="image\/svg\+xml" href="\.\/favicon\.svg">/);
- assert.match(html,/<link rel="alternate icon" type="image\/x-icon" href="\.\/favicon\.ico">/);
- assert.match(html,/<button type="button" class="status-close" id="status-close"/);
- const ico=readFileSync(new URL("../favicon.ico",import.meta.url));
- assert.equal(ico.readUInt16LE(0),0);
- assert.equal(ico.readUInt16LE(2),1);
- assert.ok(ico.length>100);
- assert.match(readFileSync(new URL("../favicon.svg",import.meta.url),"utf8"),/<svg[^>]*viewBox="0 0 64 64"/);
+test("first visit defaults to English; saved, invalid and denied preferences behave", () => {
+  assert.equal(render().document.documentElement.lang, "en");
+  assert.equal(render().languageValue.textContent, "English");
+  assert.equal(render("de").languageValue.textContent, "Deutsch");
+  assert.equal(render("unsupported").document.documentElement.lang, "en");
+  assert.equal(render(null, true).document.documentElement.lang, "en");
+});
+
+test("pointer choice updates five languages, selection and persisted preference", () => {
+  const r = render();
+  for (const [index, language] of languages.entries()) {
+    r.trigger.fire("click");
+    assert.equal(r.menu.hidden, false);
+    assert.equal(r.trigger.getAttribute("aria-expanded"), "true");
+    r.options[index].fire("click");
+    assert.equal(r.document.documentElement.lang, language);
+    assert.equal(r.stored.get("football-architect:language"), language);
+    assert.equal(r.languageValue.textContent, r.options[index].textContent);
+    assert.equal(r.menu.hidden, true);
+    assert.equal(r.trigger.getAttribute("aria-expanded"), "false");
+    assert.ok(r.trigger.focusCount > 0);
+    for (const [optionIndex, option] of r.options.entries()) {
+      assert.equal(option.getAttribute("aria-selected"), String(optionIndex === index));
+    }
+    for (const label of r.labels) assert.ok(label.textContent.length > 0);
+  }
+  const denied = render(null, true);
+  denied.trigger.fire("click");
+  denied.options[3].fire("click");
+  assert.equal(denied.document.documentElement.lang, "fr");
+});
+
+test("keyboard arrows, Home, End, Enter, Space and Escape are supported", () => {
+  const r = render();
+  const down = r.trigger.fire("keydown", { key: "ArrowDown" });
+  assert.equal(down.defaultPrevented, true);
+  assert.equal(r.menu.hidden, false);
+  assert.equal(r.trigger.getAttribute("aria-activedescendant"), "language-de");
+  r.trigger.fire("keydown", { key: "End" });
+  assert.equal(r.trigger.getAttribute("aria-activedescendant"), "language-it");
+  r.trigger.fire("keydown", { key: "Home" });
+  assert.equal(r.trigger.getAttribute("aria-activedescendant"), "language-en");
+  r.trigger.fire("keydown", { key: "ArrowUp" });
+  assert.equal(r.trigger.getAttribute("aria-activedescendant"), "language-it");
+  r.trigger.fire("keydown", { key: "Enter" });
+  assert.equal(r.document.documentElement.lang, "it");
+  assert.equal(r.menu.hidden, true);
+  r.trigger.fire("keydown", { key: " " });
+  assert.equal(r.menu.hidden, false);
+  r.trigger.fire("keydown", { key: "Escape" });
+  assert.equal(r.menu.hidden, true);
+  assert.equal(r.trigger.getAttribute("aria-activedescendant"), undefined);
+});
+
+test("outside pointer press, Tab and Escape dismiss without changing the language", () => {
+  const r = render("fr");
+  r.trigger.fire("click");
+  r.document.fire("pointerdown", { target: element() });
+  assert.equal(r.menu.hidden, true);
+  assert.equal(r.document.documentElement.lang, "fr");
+  r.trigger.fire("click");
+  r.trigger.fire("keydown", { key: "Tab" });
+  assert.equal(r.menu.hidden, true);
+  r.trigger.fire("click");
+  r.document.fire("keydown", { key: "Escape" });
+  assert.equal(r.menu.hidden, true);
+});
+
+test("dismissible multilingual notice does not change menu or page flow", () => {
+  const r = render();
+  r.app.fire("click");
+  assert.equal(r.status.hidden, false);
+  assert.match(r.statusMessage.textContent, /not available yet/);
+  r.trigger.fire("click");
+  r.options[4].fire("click");
+  assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
+  r.guide.fire("click");
+  assert.deepEqual(r.navigation, ["./guide/"]);
+  assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
+  r.close.fire("click");
+  assert.equal(r.status.hidden, true);
+  assert.equal(r.close.getAttribute("aria-label"), "Chiudi avviso");
+  assert.match(css, /\.action-status\{position:fixed/);
+  assert.match(css, /\.status-close svg\{display:block;width:16px;height:16px;margin:auto\}/);
+  assert.match(html, /class="status-close" id="status-close"[^>]*><svg/);
+});
+
+test("full-width layout, discreet highlights, transparent scrollbar and responsive controls", () => {
+  for (const pattern of [
+    /scrollbar-gutter:stable/, /scrollbar-color:var\(--scroll-thumb\) transparent/,
+    /-webkit-scrollbar-track\{background:transparent\}/,
+    /\.wrapper\{width:100%;max-width:none/,
+    /\.statistics\{display:grid;width:100%/,
+    /\.language-menu\{position:absolute/, /\.language-menu\[hidden\]\{display:none\}/,
+    /\.language-option\[aria-selected="true"\]/,
+    /focus-visible/, /min-height:44px/, /max-width:600px/,
+    /prefers-reduced-motion:reduce/
+  ]) assert.match(css, pattern);
+  assert.doesNotMatch(css, /overflow-x:\s*hidden/);
+});
+
+test("both favicon formats remain valid and explicitly linked", () => {
+  assert.match(html, /href="\.\/favicon\.ico"/);
+  assert.match(html, /href="\.\/favicon\.svg"/);
+  const ico = readFileSync(new URL("../favicon.ico", import.meta.url));
+  assert.equal(ico.readUInt16LE(0), 0);
+  assert.equal(ico.readUInt16LE(2), 1);
+  assert.ok(ico.length > 100);
+  assert.match(readFileSync(new URL("../favicon.svg", import.meta.url), "utf8"), /<svg[^>]*viewBox="0 0 64 64"/);
 });

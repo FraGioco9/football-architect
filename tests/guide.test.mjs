@@ -1,67 +1,72 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync,existsSync} from "node:fs";
-const read = file => readFileSync(new URL("../"+file,import.meta.url),"utf8");
-const html=read("guide/index.html");
-const js=read("assets/guide.js");
-const css=read("assets/guide.css");
-const divisions=JSON.parse(read("data/divisions.json"));
-const catalogue=JSON.parse(read("data/clubs.json"));
-
-test("the atlas uses actual catalogue inventory and unique stable IDs",()=>{
- assert.equal(divisions.countries.length,8);
- assert.equal(divisions.divisions.length,16);
- assert.equal(catalogue.count,320);
- assert.equal(catalogue.clubs.length,320);
- const countryIds=divisions.countries.map(c=>c.id);
- assert.equal(new Set(countryIds).size,8);
- assert.equal(new Set(divisions.divisions.map(d=>d.id)).size,16);
- assert.equal(new Set(catalogue.clubs.map(c=>c.countryId+"-"+c.clubId)).size,320);
- for(const country of divisions.countries){
-   assert.equal(divisions.divisions.filter(d=>d.countryId===country.id).length,2);
-   assert.equal(catalogue.clubs.filter(c=>c.countryId===country.id).length,40);
-   assert.ok(existsSync(new URL("../"+country.flagAsset,import.meta.url)));
- }
- for(const d of divisions.divisions){
-   assert.ok([1,2].includes(d.tier));
-   assert.equal(d.capacity,20);
- }
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+const read = p => readFileSync(new URL("../"+p, import.meta.url), "utf8");
+const html = read("guide/index.html");
+const css = read("assets/guide.css");
+const js = read("assets/landing.js");
+const source = JSON.parse(read("data/divisions.json"));
+const clubs = JSON.parse(read("data/clubs.json")).clubs;
+const options = [...html.matchAll(/<div class="language-option" role="option" id="([^"]+)" data-language="([^"]+)" aria-selected="(?:true|false)">([^<]+)<\/div>/g)];
+function mock(dataset = {}, content = "") {
+  return { dataset, textContent:content, hidden:false, listeners:{},attributes:{},
+    addEventListener(name,fn){this.listeners[name]=fn;},setAttribute(k,v){this.attributes[k]=v;},
+    removeAttribute(k){delete this.attributes[k];},focus(){},fire(name,ev={}){this.listeners[name]?.({key:"",preventDefault(){},...ev});}
+  };
+}
+function render(saved = null) {
+  const controls = options.map(o => mock({language:o[2]},o[3]));
+  controls.forEach((c,i)=>c.id=options[i][1]);
+  const labels=[...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>mock({i18n:m[1]}));
+  const trigger=mock(), menu=mock(),value=mock(),container=mock();menu.hidden=true;
+  container.contains=element => [container,trigger,menu,...controls].includes(element);
+  const ids={"language-control":container,"site-language":trigger,"language-value":value,"language-options":menu};
+  const document={documentElement:{lang:"en"},getElementById:id=>ids[id]||null,
+    querySelectorAll:selector=>selector==="[data-language]"?controls:selector==="[data-i18n]"?labels:selector==="[data-destination]"?[]:[],
+    addEventListener(){}};
+  const store = new Map(saved === null ? [] : [["football-architect:language",saved]]);
+  const window={localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)}};
+  runInNewContext(js,{document,window},{timeout:2000});
+  return {document,controls,labels,trigger,menu,value,store};
+}
+test("simple concept guide has only Divisions and Clubs",()=>{
+  assert.equal((html.match(/<h1\b/g)||[]).length,1);
+  assert.equal((html.match(/<section class="guide-section"/g)||[]).length,2);
+  assert.equal((html.match(/<h2\b/g)||[]).length,2);
+  for(const key of ["guideDivisionsHeading","guideDivisionsText1","guideDivisionsText2","guideClubsHeading","guideClubsText1","guideClubsText2"]) assert.match(html,new RegExp('data-i18n="'+key+'"'));
+  assert.doesNotMatch(html,/catalog-search|country-filter|type-filter|atlas-results|country-index|documented clubs|data\/clubs\.json|data\/divisions\.json/i);
+  assert.doesNotMatch(js,/fetch\(|querySelectorAll\("\.club/);
 });
-test("club names and historical references keep their provenance",()=>{
- assert.equal(catalogue.clubs.filter(c=>c.firstDivisionReference).length,160);
- assert.equal(catalogue.clubs.filter(c=>c.abbr && /^[A-Z]{3}$/.test(c.abbr)).length,320);
- assert.equal(new Set(catalogue.clubs.map(c=>c.abbr)).size,320);
- const expected=[["IT",1,"VEL","US Velaria Torino"],["IT",2,"RIN","AC Rinascenti Bologna"],["FR",27,"EMX","FC Émaux"],["FR",33,"GRG","CS Garrigues"],["PT",34,"FTS","AC Fontes"],["BR",16,"FCL","EC Falésia Clara"]];
- for(const [countryId,clubId,abbr,short] of expected){
-   const club=catalogue.clubs.find(c=>c.countryId===countryId&&c.clubId===clubId);
-   assert.ok(club);
-   assert.equal(club.abbr,abbr);
-   assert.equal(club.approvedShortName,short);
- }
+test("division and club definitions follow documented design scope",()=>{
+  assert.equal(source.countries.length,8);
+  assert.equal(source.divisions.length,16);
+  assert.ok(source.divisions.every(d=>d.capacity===20&&[1,2].includes(d.tier)));
+  assert.equal(clubs.length,320);
+  assert.ok(clubs.every(c=>/^[A-Z]{3}$/.test(c.abbr)));
 });
-test("guide is a separate accessible route with native filtering",()=>{
- assert.equal((html.match(/<h1\b/g)||[]).length,1);
- assert.match(html,/<html lang="en">/);
- assert.match(html,/href="\.\.\/assets\/guide\.css"/);
- assert.match(html,/src="\.\.\/assets\/guide\.js"/);
- assert.match(html,/<main\b[^>]*id="main-content"/);
- assert.match(html,/id="catalog-search" type="search"/);
- assert.match(html,/id="country-filter"/);
- assert.match(html,/id="type-filter"/);
- assert.match(html,/id="result-summary" role="status" aria-live="polite"/);
- assert.deepEqual([...html.matchAll(/<option value="(en|de|es|fr|it)"/g)].map(m=>m[1]),["en","de","es","fr","it"]);
+test("same Landing language menu supports all five translations on Guide",()=>{
+  assert.deepEqual(options.map(o=>o[2]),["en","de","es","fr","it"]);
+  const r=render();
+  assert.equal(r.document.documentElement.lang,"en");
+  assert.equal(r.value.textContent,"English");
+  assert.match(r.labels.find(l=>l.dataset.i18n==="guideDivisionsText1").textContent,/first division/);
+  for(const [i,lang] of ["en","de","es","fr","it"].entries()){
+    r.trigger.fire("click");
+    r.controls[i].fire("click");
+    assert.equal(r.document.documentElement.lang,lang);
+    assert.equal(r.store.get("football-architect:language"),lang);
+    for(const label of r.labels)assert.ok(label.textContent.length>0,label.dataset.i18n);
+  }
+  assert.equal(render("de").labels.find(l=>l.dataset.i18n==="guideClubsHeading").textContent,"Vereine");
+  assert.equal(render("unsupported").document.documentElement.lang,"en");
 });
-test("shared language, verified data fetch, no fabricated division assignments or untrusted HTML",()=>{
- for(const word of ["football-architect:language","../data/divisions.json","../data/clubs.json","approvedShortName","firstDivisionReference","legacyTitle","noAssignment","emblemPending","loadError","changeLanguage","normalize(","typeSelect.value","countrySelect.value","search.value"]) assert.ok(js.includes(word),word);
- assert.match(js,/const languages = \["en", "de", "es", "fr", "it"\]/);
- assert.match(js,/language:"en"/);
- assert.match(js,/\.textContent\s*=/);
- assert.doesNotMatch(js,/\.innerHTML\s*=/);
- assert.doesNotMatch(js,/localStorage\.clear|indexedDB|window\.open/);
- assert.doesNotMatch(html,/src="https?:\/\//);
-});
-test("responsive and focus-visible styling without internal scroll containers",()=>{
- for(const rule of ["max-width:900px","max-width:600px","focus-visible",".division-grid",".club-list",".country-index",".atlas-filters"]) assert.ok(css.includes(rule),rule);
- assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
- assert.doesNotMatch(css,/overflow-x:\s*hidden/);
+test("navigation, responsive layout and no duplicate language logic",()=>{
+  assert.match(html,/href="\.\.\/"/);
+  assert.match(html,/src="\.\.\/assets\/landing\.js"/);
+  assert.match(html,/href="\.\.\/favicon\.ico"/);
+  assert.match(css,/max-width:600px/);
+  assert.match(css,/focus-visible/);
+  assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
+  assert.doesNotMatch(html,/<script[^>]+guide\.js/);
 });

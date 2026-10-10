@@ -15,15 +15,23 @@
   <div class="site-shell">
     <header class="site-header wrapper">
       <div class="brand-mark" aria-hidden="true">FA</div>
-      <div class="language-control">
-        <label class="sr-only" for="site-language" data-i18n="language">Language</label>
-        <select id="site-language" name="language" autocomplete="off">
-          <option value="en" selected>English</option>
-          <option value="de">Deutsch</option>
-          <option value="es">Español</option>
-          <option value="fr">Français</option>
-          <option value="it">Italiano</option>
-        </select>
+      <div class="language-control" id="language-control">
+        <span class="sr-only" id="language-label" data-i18n="language">Language</span>
+        <button type="button" class="language-trigger" id="site-language" role="combobox"
+                aria-labelledby="language-label language-value" aria-haspopup="listbox"
+                aria-expanded="false" aria-controls="language-options">
+          <span id="language-value">English</span>
+          <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="language-menu" id="language-options" role="listbox" aria-labelledby="language-label" hidden>
+          <div class="language-option" role="option" id="language-en" data-language="en" aria-selected="true">English</div>
+          <div class="language-option" role="option" id="language-de" data-language="de" aria-selected="false">Deutsch</div>
+          <div class="language-option" role="option" id="language-es" data-language="es" aria-selected="false">Español</div>
+          <div class="language-option" role="option" id="language-fr" data-language="fr" aria-selected="false">Français</div>
+          <div class="language-option" role="option" id="language-it" data-language="it" aria-selected="false">Italiano</div>
+        </div>
       </div>
     </header>
     <main class="landing-main wrapper" id="main-content">
@@ -36,7 +44,7 @@
         </div>
         <div class="action-status" id="action-status" role="status" aria-live="polite" hidden>
           <span id="action-status-message"></span>
-          <button type="button" class="status-close" id="status-close" aria-label="Dismiss notice"><span aria-hidden="true">×</span></button>
+          <button type="button" class="status-close" id="status-close" aria-label="Dismiss notice"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
       </section>
       <section class="statistics" aria-labelledby="statistics-heading">
