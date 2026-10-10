@@ -13,6 +13,8 @@ html::-webkit-scrollbar,.language-menu::-webkit-scrollbar{width:9px}
 html::-webkit-scrollbar-track,.language-menu::-webkit-scrollbar-track{background:transparent}
 html::-webkit-scrollbar-thumb,.language-menu::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border:2px solid transparent;background-clip:padding-box;border-radius:10px}
 body{min-width:0;margin:0;background:var(--background);color:var(--text);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+/* Static landing copy is intentionally non-selectable, including on iOS Safari. */
+body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button{font:inherit}
 button{cursor:pointer}
 button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
