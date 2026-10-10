@@ -191,13 +191,13 @@
 
 ### High-priority individual reconciliations
 
-| Chiave | Nome presente nel codice | Nome principale approvato | Città e stadio originali da conservare |
+| Key | Source-code name | Approved primary name | Original city and stadium to preserve |
 |---|---|---|---|
-| `IT,2` | AC Rinascenti Bologna | **AC Rinascenti Bologna (invariato)** | Bologna — Stadio delle Fornaci |
+| `IT,2` | AC Rinascenti Bologna | **AC Rinascenti Bologna (unchanged)** | Bologna — Stadio delle Fornaci |
 | `IT,3` | SC Portuale Genova | **FC Portuale Genova** | Genova — Campo di San Vento |
 | `IT,14` | US Partenope Nuova Napoli | **US Partenope Napoli** | Napoli — Stadio di Pietramare |
 | `ES,12` | SC Brétema Coruña | **SD Brétema** | A Coruña — Campo da Brétema |
-| `NL,15` | Deventer FC IJselrand | **FC IJsselrand** | Deventer — IJselrand Stadion (toponimo dello stadio lasciato intatto) |
+| `NL,15` | Deventer FC IJselrand | **FC IJsselrand** | Deventer — IJselrand Stadion (original stadium place name preserved) |
 | `BR,16` | Esporte Clube Cabo Branco João Pessoa | **EC Falésia Clara** | João Pessoa — Estádio das Falésias |
 
 Corrections **FR,27 FC Émaux**, **FR,33 CS Garrigues** and **PT,34 AC Fontes** refer to new clubs (IDs > 20) and therefore could not be compared with existing source-code entries.
@@ -233,7 +233,7 @@ The six approved full names above did not constitute a complete 320-entry regist
 
 The user's final decision, overriding earlier historical references:
 
-| Proprietà | Valore approvato |
+| Property | Approved value |
 |---|---|
 | `countryId` | `IT` |
 | `clubId` | `2` |
@@ -255,11 +255,11 @@ The user's final decision, overriding earlier historical references:
 ### Evidence classification
 
 - **6/320 `fullName` values EXPLICITLY CONFIRMED** by final decisions or recorded naming corrections.
-- **69/320 `fullName` values RECOVERED from earlier design responses** (IT 1,3–20; ENG 1–20; PT 1–10; NL 1–10; BR 1–10). Although earlier responses included the listed values, the absence of a fully accessible primary-source register meant those rows remained **PENDING RECONCILIATION**, not 69 new user approvals.
+- **69/320 `fullName` values RECOVERED from earlier design responses** (IT 1.3–20; ENG 1–20; PT 1–10; NL 1–10; BR 1–10). Although earlier responses included the listed values, the absence of a fully accessible primary-source register meant those rows remained **PENDING RECONCILIATION**, not 69 new user approvals.
 - **245/320 `fullName` values NOT RECOVERED** from unequivocal documentation. Their 245 approved primary `name` values and abbreviations remained preserved; expansions were not invented.
 - **75/320 extended names available as evidence or documentary candidates** = 6 confirmed + 69 recovered (23.44% of catalogue). **Final CLUB-01 gate still OPEN**; recovered candidates did not equal formal validation.
 
-| Paese | Confermati | Recuperati (da riconciliare) | Senza fonte certa | Totale |
+| Country | Confirmed | Recovered (to reconcile) | No reliable source | Total |
 |---|---:|---:|---:|---:|
 | IT | 2 | 19 | 19 | 40 |
 | ENG | 0 | 20 | 20 | 40 |
@@ -269,11 +269,11 @@ The user's final decision, overriding earlier historical references:
 | PT | 1 | 10 | 29 | 40 |
 | NL | 0 | 10 | 30 | 40 |
 | BR | 1 | 10 | 29 | 40 |
-| **Totale** | **6** | **69** | **245** | **320** |
+| **Total** | **6** | **69** | **245** | **320** |
 
 ### A. Six previously confirmed full names
 
-| Identità | Nome principale | FullName confermato |
+| Identity | Primary name | Confirmed FullName |
 |---|---|---|
 | `IT,2` | AC Rinascenti Bologna | **Associazione Calcio Rinascenti Bologna** |
 | `IT,27` | US Varesina | **Unione Sportiva Varesina** |
@@ -286,9 +286,9 @@ The user's final decision, overriding earlier historical references:
 
 Transcriptions came from earlier design-response summaries (Italy and England, 9 October 2026, 22:32–22:35 UTC; Portugal 22:46, Netherlands 22:47, Brazil 22:48 UTC). Since some other historical sources contained an **incompatible alternative catalogue**, each row below was matched to the exact `countryId+clubId+name` key in CLUBS-320; names from alternative catalogues were not imported. Definitive use of these strings as `fullName` required corroboration against the approved source.
 
-<details><summary>Elenco recuperato — 69 associazioni</summary>
+<details><summary>Recovered list — 69 associations</summary>
 
-| Identità | Nome principale CLUBS-320 | FullName recuperato (da verificare) |
+| Identity | CLUBS-320 primary name | Recovered FullName (to verify) |
 |---|---|---|
 | `IT,1` | US Velaria Torino | Unione Sportiva Velaria Torino |
 | `IT,3` | FC Portuale Genova | Football Club Portuale Genova |
@@ -388,15 +388,15 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 
 ### Seven full names found in historical summaries (documentary candidates)
 
-| ID | Nome principale approvato | Testo `fullName` recuperato | Traccia storica | Stato |
+| ID | Approved primary name | Recovered `fullName` text | Historical evidence | Status |
 |---|---|---|---|---|
-| `ES,1` | CD Alborada | **Club Deportivo Alborada Madrid** | Proposta 2026-10-09 22:39:45 UTC | Recuperato, **NON convalidato** |
-| `ES,2` | FC Mar de Cobre | **Futbol Club Mar de Cobre Barcelona** | Proposta 2026-10-09 22:39:45 UTC | Recuperato, **NON convalidato** |
-| `ES,3` | UD Monteazul | **Unión Deportiva Monteazul Valencia** | Proposta 2026-10-09 22:39:45 UTC | Recuperato, **NON convalidato** |
-| `ES,4` | CD Ribera Clara | **Club Deportivo Ribera Clara Sevilla** | Proposta 2026-10-09 22:39:45 UTC | Recuperato, **NON convalidato** |
-| `DE,1` | SV Morgenrot | **Sportverein Morgenrot Berlin** | Proposta 2026-10-09 22:41:56 UTC | Recuperato, **NON convalidato** |
-| `DE,2` | FC Hafenstern | **Fußballclub Hafenstern Hamburg** | Proposta 2026-10-09 22:41:56 UTC | Recuperato, **NON convalidato** |
-| `DE,3` | TSV Silberwald | **Turn- und Sportverein Silberwald München** | Proposta 2026-10-09 22:41:56 UTC | Recuperato, **NON convalidato** |
+| `ES,1` | CD Alborada | **Club Deportivo Alborada Madrid** | Proposal 2026-10-09 22:39:45 UTC | Recovered, **NOT validated** |
+| `ES,2` | FC Mar de Cobre | **Futbol Club Mar de Cobre Barcelona** | Proposal 2026-10-09 22:39:45 UTC | Recovered, **NOT validated** |
+| `ES,3` | UD Monteazul | **Unión Deportiva Monteazul Valencia** | Proposal 2026-10-09 22:39:45 UTC | Recovered, **NOT validated** |
+| `ES,4` | CD Ribera Clara | **Club Deportivo Ribera Clara Sevilla** | Proposal 2026-10-09 22:39:45 UTC | Recovered, **NOT validated** |
+| `DE,1` | SV Morgenrot | **Sportverein Morgenrot Berlin** | Proposal 2026-10-09 22:41:56 UTC | Recovered, **NOT validated** |
+| `DE,2` | FC Hafenstern | **Fußballclub Hafenstern Hamburg** | Proposal 2026-10-09 22:41:56 UTC | Recovered, **NOT validated** |
+| `DE,3` | TSV Silberwald | **Turn- und Sportverein Silberwald München** | Proposal 2026-10-09 22:41:56 UTC | Recovered, **NOT validated** |
 
 **Fidelity note:** the spelling `Futbol Club` for ES,2 is retained exactly as found, without silently changing it to `Fútbol` or another spelling. Corrections require comparison with the original table or a new approval.
 
@@ -408,7 +408,7 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 
 ### Updated status and unresolved records
 
-| Paese | Confermati esplicitamente | Recuperati in ricognizioni (candidati da verificare) | Senza testo recuperato | Totale |
+| Country | Explicitly confirmed | Recovered in research (candidates to verify) | No recovered text | Total |
 |---|---:|---:|---:|---:|
 | IT | 2 | 19 | 19 | 40 |
 | ENG | 0 | 20 | 20 | 40 |
@@ -418,7 +418,7 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 | PT | 1 | 10 | 29 | 40 |
 | NL | 0 | 10 | 30 | 40 |
 | BR | 1 | 10 | 29 | 40 |
-| **Totale** | **6** | **76** | **238** | **320** |
+| **Total** | **6** | **76** | **238** | **320** |
 
 - **7/245 (2.86%)** entries previously lacking text were *recovered as documentary candidates*; **238/245** still had no recovered text.
 - **82/320 (25.625%)** full-name texts then available (**6 confirmed** + **76 recovered but not fully validated candidates**); no new `fullName` was arbitrarily promoted to confirmed.
@@ -437,11 +437,11 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 
 ### A. Provenance of original tables
 
-| Paese | Fonte documentale rintracciata | Cosa è recuperabile | Cosa NON è recuperabile | Stato |
+| Country | Documentary source found | Recoverable evidence | Unavailable evidence | Status |
 |---|---|---|---|---|
-| **ES** | Precedente risposta Football Architect del **09/10/2026, ~22:39:45 UTC**, tabella *Liga de la Unión (ID 1–20)* + *Liga de las Regiones (ID 21–40)*; successiva approvazione dell'utente | Esistenza della tabella a 40 righe e **quattro testi** `fullName` ES,1–4 già registrati nella seconda passata | Testo completo delle altre 36 righe e copia integrale dell'originale | **PARZIALE / NON VALIDATO** |
-| **DE** | Precedente risposta Football Architect del **09/10/2026, ~22:41:56 UTC**, tabella *Meisterliga (ID 1–20)* + *Vereinsliga (ID 21–40)*; successiva approvazione dell'utente | Esistenza della tabella a 40 righe e **tre testi** `fullName` DE,1–3 già registrati | Testo completo delle altre 37 righe e copia integrale dell'originale | **PARZIALE / NON VALIDATO** |
-| **FR** | Precedente progettazione Football Architect del **09/10/2026**, nel contesto *Ligue des Sociétés* + *Ligue des Régions*, approvazione dei 40 club | Due `fullName` corretti e già **esplicitamente confermati**: FR,27 e FR,33 | Testo originario delle altre 38 righe e tabella integrale | **PARZIALE / 2 CONFERMATI** |
+| **ES** | Earlier Football Architect response on **9 October 2026, ~22:39:45 UTC**, *Liga de la Unión (IDs 1–20)* and *Liga de las Regiones (IDs 21–40)*; later approved by the user | Existence of the 40-row table and **four** recovered `fullName` texts (ES,1–4) | Other 36 full texts and the complete original table | **PARTIAL / NOT VALIDATED** |
+| **DE** | Earlier Football Architect response on **9 October 2026, ~22:41:56 UTC**, *Meisterliga (IDs 1–20)* and *Vereinsliga (IDs 21–40)*; later approved by the user | Existence of the 40-row table and **three** recovered `fullName` texts (DE,1–3) | Other 37 full texts and the complete original table | **PARTIAL / NOT VALIDATED** |
+| **FR** | Earlier Football Architect design on **9 October 2026**, *Ligue des Sociétés* and *Ligue des Régions*; 40 clubs approved | Two **explicitly confirmed** `fullName` values, FR,27 and FR,33 | Other 38 full texts and the complete original table | **PARTIAL / 2 CONFIRMED** |
 
 **Source quality:** records of the 9 October responses came from **chronological references and earlier conversation summaries**, not permanent URLs or complete original messages. These establish the tables' existence and contextual approvals, **not** the exact unseen `fullName` strings. No link to an original table was found or invented.
 
@@ -454,23 +454,23 @@ Transcriptions came from earlier design-response summaries (Italy and England, 9
 
 ### C. Outstanding ES/DE/FR scope
 
-| Paese | `fullName` confermati | Testi recuperati non convalidati | Testi non recuperati | Copertura testuale |
+| Country | Confirmed `fullName` | Unvalidated recovered text | Unrecovered text | Text coverage |
 |---|---:|---:|---:|---:|
-| ES | 0 | 4 | **36** (ID 5–40) | **4/40 = 10,0%** |
-| DE | 0 | 3 | **37** (ID 4–40) | **3/40 = 7,5%** |
-| FR | 2 (ID 27,33) | 0 | **38** (ID 1–26, 28–32, 34–40) | **2/40 = 5,0%** |
-| **ES + DE + FR** | **2** | **7** | **111** | **9/120 = 7,5%** |
+| ES | 0 | 4 | **36** (ID 5–40) | **4/40 = 10.0%** |
+| DE | 0 | 3 | **37** (ID 4–40) | **3/40 = 7.5%** |
+| FR | 2 (ID 27.33) | 0 | **38** (ID 1–26, 28–32, 34–40) | **2/40 = 5.0%** |
+| **ES + DE + FR** | **2** | **7** | **111** | **9/120 = 7.5%** |
 
 The seven ES/DE entries **had already been counted** in the second pass and were not counted again. No `fullName` was inferred from `FC/SC/CD/VfB/TSV` prefixes, cities, abbreviations or analogous spellings.
 
 ### D. Overall CLUB-01 status (authoritative counters at that time)
 
-| Categoria | Club | Percentuale su 320 | Qualificazione |
+| Category | Clubs | Percentage of 320 | Classification |
 |---|---:|---:|---|
-| Testo completo esplicitamente **confermato** | **6** | **1,875%** | Riutilizzabile come decisione approvata |
-| Testo recuperato, **da riconciliare** con originale integrale | **76** | **23,750%** | Candidato, non approvazione specifica |
-| `fullName` **senza testo recuperabile** | **238** | **74,375%** | `PENDING_SOURCE`, non inventare |
-| **Totale** | **320** | **100%** | **Copertura testuale 82/320 = 25,625%** |
+| Full name **explicitly confirmed** | **6** | **1.875%** | Reusable as an approved decision |
+| Recovered text **to reconcile** with the complete original | **76** | **23.750%** | Candidate, not an individual approval |
+| `fullName` **without recoverable text** | **238** | **74.375%** | `PENDING_SOURCE`, do not invent |
+| **Total** | **320** | **100%** | **Text coverage 82/320 = 25.625%** |
 
 **Change since second pass:** +0 confirmed, +0 recovered, −0 missing. Counts remained unchanged because the complete original tables were inaccessible; no artificial progress was reported.
 
@@ -503,9 +503,9 @@ The seven ES/DE entries **had already been counted** in the second pass and were
 
 Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable distinguishing name and valid ID; original city and stadium found in source code; not `fullName` approval**.
 
-<details><summary><strong>IT: 19 candidature — 0 confermate, 0 incompatibili, 19 prive di prova sufficiente</strong></summary>
+<details><summary><strong>IT: 19 candidates — 0 confirmed, 0 incompatible, 19 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `IT,1` | US Velaria Torino | Unione Sportiva Velaria Torino | R1 | OK | **P** |
 | `IT,3` | FC Portuale Genova | Football Club Portuale Genova | R1 | OK | **P** |
@@ -529,9 +529,9 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 </details>
 
-<details><summary><strong>ENG: 20 candidature — 0 confermate, 0 incompatibili, 20 prive di prova sufficiente</strong></summary>
+<details><summary><strong>ENG: 20 candidates — 0 confirmed, 0 incompatible, 20 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `ENG,1` | Southwick FC | Southwick Football Club | R1 | OK | **P** |
 | `ENG,2` | Crownbridge AFC | Crownbridge Association Football Club | R1 | OK | **P** |
@@ -556,9 +556,9 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 </details>
 
-<details><summary><strong>ES: 4 candidature — 0 confermate, 0 incompatibili, 4 prive di prova sufficiente</strong></summary>
+<details><summary><strong>ES: 4 candidates — 0 confirmed, 0 incompatible, 4 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `ES,1` | CD Alborada | Club Deportivo Alborada Madrid | R2 | OK | **P** |
 | `ES,2` | FC Mar de Cobre | Futbol Club Mar de Cobre Barcelona | R2 | OK | **P** |
@@ -567,9 +567,9 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 </details>
 
-<details><summary><strong>DE: 3 candidature — 0 confermate, 0 incompatibili, 3 prive di prova sufficiente</strong></summary>
+<details><summary><strong>DE: 3 candidates — 0 confirmed, 0 incompatible, 3 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `DE,1` | SV Morgenrot | Sportverein Morgenrot Berlin | R2 | OK | **P** |
 | `DE,2` | FC Hafenstern | Fußballclub Hafenstern Hamburg | R2 | OK | **P** |
@@ -577,9 +577,9 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 </details>
 
-<details><summary><strong>PT: 10 candidature — 0 confermate, 0 incompatibili, 10 prive di prova sufficiente</strong></summary>
+<details><summary><strong>PT: 10 candidates — 0 confirmed, 0 incompatible, 10 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `PT,1` | SC Miradouro | Sport Clube Miradouro de Lisboa | R1 | OK | **P** |
 | `PT,2` | FC Ribeiralta | Futebol Clube Ribeiralta do Porto | R1 | OK | **P** |
@@ -594,9 +594,9 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 </details>
 
-<details><summary><strong>NL: 10 candidature — 0 confermate, 0 incompatibili, 10 prive di prova sufficiente</strong></summary>
+<details><summary><strong>NL: 10 candidates — 0 confirmed, 0 incompatible, 10 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `NL,1` | VV Waterpoort | Amsterdamse Voetbalvereniging Waterpoort | R1 | OK | **P** |
 | `NL,2` | SV Havenlicht | Sportvereniging Havenlicht Rotterdam | R1 | OK | **P** |
@@ -611,9 +611,9 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 </details>
 
-<details><summary><strong>BR: 10 candidature — 0 confermate, 0 incompatibili, 10 prive di prova sufficiente</strong></summary>
+<details><summary><strong>BR: 10 candidates — 0 confirmed, 0 incompatible, 10 with insufficient evidence</strong></summary>
 
-| Club ID | Nome principale approvato | Denominazione candidata `fullName` | Fonte | Identità | Classe |
+| Club ID | Approved primary name | Candidate `fullName` | Source | Identity | Class |
 |---|---|---|---|---|---|
 | `BR,1` | AC Marés | Atlético Clube Sol das Marés do Rio de Janeiro | R1 | OK | **P** |
 | `BR,2` | AA Vila Brilhante | Associação Atlética Vila Brilhante de São Paulo | R1 | OK | **P** |
@@ -630,7 +630,7 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 
 ### Counts by country — audit of only the 76 candidates
 
-| Paese | Esaminate | C | I | P | Coverage audit |
+| Country | Reviewed | C | I | P | Audit coverage |
 |---|---:|---:|---:|---:|---:|
 | IT | 19 | 0 | 0 | 19 | 100% |
 | ENG | 20 | 0 | 0 | 20 | 100% |
@@ -640,7 +640,7 @@ Legend for each row: **P = insufficient evidence**; **Identity OK = recognizable
 | PT | 10 | 0 | 0 | 10 | 100% |
 | NL | 10 | 0 | 0 | 10 | 100% |
 | BR | 10 | 0 | 0 | 10 | 100% |
-| **Totale** | **76** | **0** | **0** | **76** | **100%** |
+| **Total** | **76** | **0** | **0** | **76** | **100%** |
 
 ### Distinction between documentary coverage and approval
 
