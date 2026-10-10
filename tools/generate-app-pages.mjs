@@ -55,7 +55,7 @@ const worldSection = function worldSection(content,active,division=null){
 const indexContent = function indexContent(root){
  const cards=divisionData.countries.map(c=>{
   const links=divisionData.divisions.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+encode(d.id)+'</span><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+

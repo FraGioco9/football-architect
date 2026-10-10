@@ -21,7 +21,12 @@ test("COMPETITIONS-02 lists eight countries, sixteen compact links and no old ro
  assert.ok(!existsSync(new URL("../app/world/divisions/index.html",import.meta.url)));
  for(const country of countries)assert.ok(index.includes('id="world-country-'+country.id.toLowerCase()+'"'));
  for(const {division} of routes)assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'));
- assert.doesNotMatch(index,/app-division-mark|app-world-hero|app-world-facts/);
+ assert.doesNotMatch(index,/app-world-hero|app-world-facts/);
+ assert.equal((index.match(/class="app-competition-logo-placeholder"/g)||[]).length,16);
+ for(const {division} of routes){
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);
+ }
+ assert.match(read("assets/app.css"),/\.app-competition-logo-placeholder\{/);
 });
 
 test("COMPETITIONS-02 keeps direct routes and all local navigation targets resolving",()=>{
