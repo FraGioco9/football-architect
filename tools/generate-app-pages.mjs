@@ -92,6 +92,41 @@ ${rows}
             </table>
           </section>`;
 };
+const competitionTabs = function competitionTabs(d,standings) {
+ const views=[
+  ["standings","competitionTabStandings","Standings"],
+  ["fixtures","competitionTabFixtures","Fixtures"],
+  ["clubs","competitionTabClubs","Clubs"],
+  ["players","competitionTabPlayers","Players"],
+  ["stats","competitionTabStats","Stats"],
+  ["history","competitionTabHistory","History"],
+  ["rules","competitionTabRules","Rules"],
+  ["awards","competitionTabAwards","Awards"]
+ ];
+ const nav=views.map(([id,key,label],i)=>
+  `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`
+ ).join("\n");
+ const roster=provisionalClubs.get(d.id);
+ if(!roster || roster.length!==d.capacity)throw new Error("Missing provisional clubs for tabs "+d.id);
+ const clubs=roster.map(c=>
+  `                <li data-world-club="${encode(c.countryId)}-${c.clubId}"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span>${encode(c.fullName)}</span></li>`).join("\n");
+ const emptyKeys={fixtures:"competitionFixturesEmpty",players:"competitionPlayersEmpty",stats:"competitionStatsEmpty",history:"competitionHistoryEmpty",awards:"competitionAwardsEmpty"};
+ const messages={
+  fixtures:"No scheduled matches or results are available.",
+  players:"Player rosters are not available.",
+  stats:"Competition statistics are not available before matches are played.",
+  history:"No completed seasons or past winners are available.",
+  awards:"No season awards are available."
+ };
+ const panels=views.map(([id,key,label],i)=>{
+  const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
+  if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
+  if(id==="clubs")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionClubsNote">Provisional allocation only; season participation is not confirmed.</p>\n            <ol class="app-competition-club-list">\n${clubs}\n            </ol>\n          </section>`;
+  if(id==="rules")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>\n            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>${d.capacity}</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>${d.tier}</dd></div></dl>\n          </section>`;
+  return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
+ }).join("\n");
+ return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n${panels}\n          <script src="../../../../assets/competition-tabs.js" defer></script>`;
+};
 const detailContent = function detailContent(d,root){
  const c=countryById[d.countryId];
  if(!c)throw Error("unknown detail "+d.id);
@@ -103,7 +138,7 @@ const detailContent = function detailContent(d,root){
  '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
  '            </div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>\n'+
- '          </header>\n'+detailAppend(d);
+ '          </header>\n'+competitionTabs(d,detailAppend(d));
 };
 const worldPageReplacements = (depth, division = null) => {
   const upToApp = "../".repeat(depth - 1);

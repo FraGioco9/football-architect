@@ -119,3 +119,82 @@ test("COMPETITIONS-03 places title, logo, metadata and return button in one head
   assert.equal((html.match(/<h1 class="app-page-title" id="divisions-title"/g)||[]).length,1,file);
  }
 });
+
+test("COMPETITIONS-04 implements eight navigable views on every detail page",()=>{
+ const slugs=["standings","fixtures","clubs","players","stats","history","rules","awards"];
+ const app=read("assets/app.js");
+ const code=read("assets/competition-tabs.js");
+ const css=read("assets/app.css");
+ const expectedKeys=["competitionViews",...slugs.map(id=>"competitionTab"+id[0].toUpperCase()+id.slice(1)),"competitionClubsNote",
+  "competitionFixturesEmpty","competitionPlayersEmpty","competitionStatsEmpty","competitionHistoryEmpty","competitionRulesEmpty","competitionAwardsEmpty"];
+ for(const key of expectedKeys)
+  assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
+ assert.ok(code.includes('event.key === "ArrowRight"'));
+ assert.ok(code.includes('event.key === "ArrowLeft"'));
+ assert.ok(code.includes('event.key === "Home"'));
+ assert.ok(code.includes('event.key === "End"'));
+ assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
+ assert.ok(css.includes(".app-competition-tabs{display:flex"));
+ for(const {division,file} of routes){
+  const html=read(file);
+  assert.equal((html.match(/role="tab"/g)||[]).length,8,file);
+  assert.equal((html.match(/role="tabpanel"/g)||[]).length,8,file);
+  assert.equal((html.match(/aria-selected="true"/g)||[]).length,1,file);
+  assert.equal((html.match(/aria-selected="false"/g)||[]).length,7,file);
+  assert.ok(html.includes('role="tablist" aria-label="Competition views" data-app-aria="competitionViews"'),file);
+  for(const slug of slugs){
+   assert.ok(html.includes('id="competition-tab-'+slug+'"'),file);
+   assert.ok(html.includes('aria-controls="competition-panel-'+slug+'"'),file);
+   assert.ok(html.includes('id="competition-panel-'+slug+'"'),file);
+   assert.ok(html.includes('aria-labelledby="competition-tab-'+slug+'"'),file);
+  }
+  assert.ok(html.includes('id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0"'),file);
+  assert.ok(html.includes('id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden'),file);
+  assert.ok(html.includes('src="../../../../assets/competition-tabs.js" defer'),file);
+  assert.equal((html.match(/<li data-world-club="/g)||[]).length,20,file);
+  assert.ok(html.includes('data-app-i18n="competitionRulesEmpty"'),file);
+  assert.ok(html.includes('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+division.capacity+'</dd>'),file);
+  assert.ok(html.includes('data-app-i18n="tierLabel">Tier</dt><dd>'+division.tier+'</dd>'),file);
+  assert.ok(!html.includes("2026 champion"),file);
+ }
+});
+
+test("COMPETITIONS-04 keyboard and click controls isolate one selected tab",async()=>{
+ const {runInNewContext}=await import("node:vm");
+ const tabs=Array.from({length:8},(_,i)=>{
+  const listeners={};
+  const selected={};
+  return {
+   listeners,selected,tabIndex:i===0?0:-1,focused:false,scrolled:false,
+   classList:{toggle(name,on){selected[name]=on}},
+   getAttribute(name){return name==="aria-controls"?"competition-panel-"+i:null},
+   setAttribute(name,value){selected[name]=value},
+   addEventListener(name,listener){listeners[name]=listener},
+   focus(){this.focused=true},
+   scrollIntoView(){this.scrolled=true}
+  };
+ });
+ const panels=tabs.map(()=>({hidden:false}));
+ const doc={
+  querySelector(selector){return selector===".app-competition-tabs"?{querySelectorAll(){return tabs}}:null},
+  getElementById(id){const n=Number(id.slice("competition-panel-".length));return panels[n]??null}
+ };
+ runInNewContext(read("assets/competition-tabs.js"),{document:doc});
+ assert.deepEqual(panels.map(panel=>panel.hidden),[false,true,true,true,true,true,true,true]);
+ tabs[5].listeners.click();
+ assert.equal(tabs[5].selected["aria-selected"],"true");
+ assert.equal(tabs[0].selected["aria-selected"],"false");
+ assert.equal(panels[5].hidden,false);
+ assert.equal(panels[0].hidden,true);
+ let prevented=false;
+ tabs[5].listeners.keydown({key:"ArrowRight",preventDefault(){prevented=true}});
+ assert.ok(prevented);
+ assert.equal(tabs[6].focused,true);
+ assert.equal(tabs[6].scrolled,true);
+ assert.equal(panels[6].hidden,false);
+ tabs[6].listeners.keydown({key:"Home",preventDefault(){}});
+ assert.equal(panels[0].hidden,false);
+ tabs[0].listeners.keydown({key:"ArrowLeft",preventDefault(){}});
+ assert.equal(panels[7].hidden,false);
+ assert.equal(panels.filter(panel=>!panel.hidden).length,1);
+});

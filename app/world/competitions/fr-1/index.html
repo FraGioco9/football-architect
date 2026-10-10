@@ -172,7 +172,17 @@
             </div>
             <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>
           </header>
-
+          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
+            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-clubs" aria-controls="competition-panel-clubs" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabClubs">Clubs</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-players" aria-controls="competition-panel-players" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPlayers">Players</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
+          </div>
+          <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
           <section class="app-world-standings" aria-labelledby="division-standings-heading">
             <div class="app-world-standings-heading">
               <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
@@ -313,6 +323,59 @@
               </tbody>
             </table>
           </section>
+          </div>
+          <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
+            <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+          </section>
+          <section id="competition-panel-clubs" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-clubs" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabClubs">Clubs</h2>
+            <p class="app-competition-status" data-app-i18n="competitionClubsNote">Provisional allocation only; season participation is not confirmed.</p>
+            <ol class="app-competition-club-list">
+                <li data-world-club="FR-1"><span class="app-world-club-code" aria-hidden="true">EQX</span><span>Union Sportive Équinoxe Paris</span></li>
+                <li data-world-club="FR-2"><span class="app-world-club-code" aria-hidden="true">MCL</span><span>Football Club Montclair Lyon</span></li>
+                <li data-world-club="FR-3"><span class="app-world-club-code" aria-hidden="true">AZL</span><span>Sporting Club Azurline Marseille</span></li>
+                <li data-world-club="FR-4"><span class="app-world-club-code" aria-hidden="true">ECT</span><span>Stade de l’Éclat Toulouse</span></li>
+                <li data-world-club="FR-5"><span class="app-world-club-code" aria-hidden="true">BLR</span><span>Association Sportive Belrive Bordeaux</span></li>
+                <li data-world-club="FR-6"><span class="app-world-club-code" aria-hidden="true">AVL</span><span>Football Club Aveline Nantes</span></li>
+                <li data-world-club="FR-7"><span class="app-world-club-code" aria-hidden="true">CLB</span><span>Union Sportive Clairbois Lille</span></li>
+                <li data-world-club="FR-8"><span class="app-world-club-code" aria-hidden="true">BML</span><span>Racing Club Brumelune Strasbourg</span></li>
+                <li data-world-club="FR-9"><span class="app-world-club-code" aria-hidden="true">EMR</span><span>Étoile Sportive Méridienne Nice</span></li>
+                <li data-world-club="FR-10"><span class="app-world-club-code" aria-hidden="true">CHT</span><span>Stade Chanterive Rennes</span></li>
+                <li data-world-club="FR-11"><span class="app-world-club-code" aria-hidden="true">VRM</span><span>Cercle Sportif Vermeil Montpellier</span></li>
+                <li data-world-club="FR-12"><span class="app-world-club-code" aria-hidden="true">VLF</span><span>Association Sportive Valfleuri Dijon</span></li>
+                <li data-world-club="FR-13"><span class="app-world-club-code" aria-hidden="true">CTX</span><span>Union Sportive des Coteaux Reims</span></li>
+                <li data-world-club="FR-14"><span class="app-world-club-code" aria-hidden="true">ARD</span><span>Cercle Sportif Ardoise Angers</span></li>
+                <li data-world-club="FR-15"><span class="app-world-club-code" aria-hidden="true">PNR</span><span>Football Club Pennaroc Brest</span></li>
+                <li data-world-club="FR-16"><span class="app-world-club-code" aria-hidden="true">BLD</span><span>Sporting Club Belledonne Grenoble</span></li>
+                <li data-world-club="FR-17"><span class="app-world-club-code" aria-hidden="true">TNL</span><span>Union Sportive des Tonneliers Tours</span></li>
+                <li data-world-club="FR-18"><span class="app-world-club-code" aria-hidden="true">VBR</span><span>Football Club Valbrume Amiens</span></li>
+                <li data-world-club="FR-19"><span class="app-world-club-code" aria-hidden="true">MSL</span><span>Association Sportive Mosellane Metz</span></li>
+                <li data-world-club="FR-20"><span class="app-world-club-code" aria-hidden="true">OLR</span><span>Olympique du Loiret Orléans</span></li>
+            </ol>
+          </section>
+          <section id="competition-panel-players" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-players" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabPlayers">Players</h2>
+            <p class="app-competition-status" data-app-i18n="competitionPlayersEmpty">Player rosters are not available.</p>
+          </section>
+          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabStats">Stats</h2>
+            <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
+          </section>
+          <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabHistory">History</h2>
+            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">No completed seasons or past winners are available.</p>
+          </section>
+          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabRules">Rules</h2>
+            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>
+            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>20</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>1</dd></div></dl>
+          </section>
+          <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabAwards">Awards</h2>
+            <p class="app-competition-status" data-app-i18n="competitionAwardsEmpty">No season awards are available.</p>
+          </section>
+          <script src="../../../../assets/competition-tabs.js" defer></script>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>

@@ -212,3 +212,24 @@ html{scroll-padding-top:72px}
 .app-world-stat-unknown{color:var(--muted)}
 @media(max-width:1024px){.app-world-countries{grid-template-columns:1fr}}
 @media(max-width:620px){.app-competition-header{gap:10px;--app-competition-heading-size:clamp(20px,6vw,26px)}.app-competition-logo-placeholder-large{font-size:12px}.app-competition-identity{flex:1 1 calc(100% - var(--app-competition-logo-size) - 10px)}.app-competition-return{margin-left:auto;min-height:36px}.app-world-country,.app-world-standings{padding:12px}.app-division-card{padding:8px;gap:8px}.app-world-grid .app-competition-logo-placeholder{width:32px;height:32px;font-size:9px}.app-world-standing-table tr>*{padding:9px 4px}.app-world-standing-table tr>*:first-child{width:28px}.app-world-standing-table tr>*:nth-child(3),.app-world-standing-table tr>*:nth-child(4){width:34px}.app-world-club-code{margin-right:6px}.app-world-club-name{font-size:11px}}
+
+/* Eight competition views share the same page and never fabricate data. */
+.app-competition-tabs{display:flex;gap:5px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
+.app-competition-tabs::-webkit-scrollbar{height:5px}
+.app-competition-tabs::-webkit-scrollbar-track{background:transparent}
+.app-competition-tab{flex:none;border:0;border-radius:8px;padding:10px 14px;min-height:40px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:650;white-space:nowrap;cursor:pointer}
+.app-competition-tab:hover{color:var(--text);background:rgba(100,203,169,.08)}
+.app-competition-tab.is-active{color:var(--text);background:#21483d}
+.app-competition-tab:focus-visible,.app-competition-panel:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-competition-panel{margin-top:14px;min-width:0}
+.app-competition-panel[hidden]{display:none}
+.app-competition-panel>.app-world-standings{margin-top:0}
+.app-competition-panel>h2{margin:0 0 12px;font-size:17px;font-weight:750}
+.app-competition-status{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.app-competition-club-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 22px;list-style:none;margin:16px 0 0;padding:0}
+.app-competition-club-list li{display:flex;align-items:center;gap:8px;min-height:45px;padding:7px 2px;border-bottom:1px solid var(--line);min-width:0;font-size:12px;overflow-wrap:anywhere}
+.app-competition-club-list .app-world-club-code{flex:none;margin-right:2px}
+.app-competition-facts{display:flex;flex-wrap:wrap;gap:22px;margin:18px 0 0}
+.app-competition-facts dt{color:var(--muted);font-size:11px}
+.app-competition-facts dd{margin:5px 0 0;font-weight:700;font-size:14px}
+@media(max-width:620px){.app-competition-tab{padding:10px 12px;font-size:12px}.app-competition-club-list{grid-template-columns:1fr}}

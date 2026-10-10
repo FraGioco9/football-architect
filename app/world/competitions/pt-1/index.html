@@ -172,7 +172,17 @@
             </div>
             <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>
           </header>
-
+          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
+            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-clubs" aria-controls="competition-panel-clubs" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabClubs">Clubs</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-players" aria-controls="competition-panel-players" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPlayers">Players</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
+          </div>
+          <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
           <section class="app-world-standings" aria-labelledby="division-standings-heading">
             <div class="app-world-standings-heading">
               <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
@@ -313,6 +323,59 @@
               </tbody>
             </table>
           </section>
+          </div>
+          <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
+            <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+          </section>
+          <section id="competition-panel-clubs" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-clubs" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabClubs">Clubs</h2>
+            <p class="app-competition-status" data-app-i18n="competitionClubsNote">Provisional allocation only; season participation is not confirmed.</p>
+            <ol class="app-competition-club-list">
+                <li data-world-club="PT-1"><span class="app-world-club-code" aria-hidden="true">MIR</span><span>Sport Clube Miradouro de Lisboa</span></li>
+                <li data-world-club="PT-2"><span class="app-world-club-code" aria-hidden="true">RBA</span><span>Futebol Clube Ribeiralta do Porto</span></li>
+                <li data-world-club="PT-3"><span class="app-world-club-code" aria-hidden="true">CRV</span><span>Atlético Clube Carvalho de Braga</span></li>
+                <li data-world-club="PT-4"><span class="app-world-club-code" aria-hidden="true">MDV</span><span>União Desportiva Mondeverde de Coimbra</span></li>
+                <li data-world-club="PT-5"><span class="app-world-club-code" aria-hidden="true">SSN</span><span>Sporting Clube Sol Nascente de Faro</span></li>
+                <li data-world-club="PT-6"><span class="app-world-club-code" aria-hidden="true">MRC</span><span>Atlético Clube Maré Clara de Aveiro</span></li>
+                <li data-world-club="PT-7"><span class="app-world-club-code" aria-hidden="true">ALJ</span><span>Grupo Desportivo Alentejar de Évora</span></li>
+                <li data-world-club="PT-8"><span class="app-world-club-code" aria-hidden="true">SRM</span><span>Futebol Clube Serramar de Setúbal</span></li>
+                <li data-world-club="PT-9"><span class="app-world-club-code" aria-hidden="true">MTB</span><span>União Desportiva Montebrilho de Guimarães</span></li>
+                <li data-world-club="PT-10"><span class="app-world-club-code" aria-hidden="true">ASV</span><span>Clube Académico Serra Nova de Viseu</span></li>
+                <li data-world-club="PT-11"><span class="app-world-club-code" aria-hidden="true">PNB</span><span>Sport Clube Pinhal Nobre de Leiria</span></li>
+                <li data-world-club="PT-12"><span class="app-world-club-code" aria-hidden="true">MAT</span><span>Clube Marítimo Atlante do Funchal</span></li>
+                <li data-world-club="PT-13"><span class="app-world-club-code" aria-hidden="true">UPL</span><span>Grupo União Desportiva da Planície de Beja</span></li>
+                <li data-world-club="PT-14"><span class="app-world-club-code" aria-hidden="true">VDM</span><span>Atlético Clube Vila do Monte de Vila Real</span></li>
+                <li data-world-club="PT-15"><span class="app-world-club-code" aria-hidden="true">CVD</span><span>Sporting Clube Costa Verde de Viana do Castelo</span></li>
+                <li data-world-club="PT-16"><span class="app-world-club-code" aria-hidden="true">SRO</span><span>Futebol Clube Portalegrense do Serrado</span></li>
+                <li data-world-club="PT-17"><span class="app-world-club-code" aria-hidden="true">RBJ</span><span>União Desportiva Ribatejana de Santarém</span></li>
+                <li data-world-club="PT-18"><span class="app-world-club-code" aria-hidden="true">VLA</span><span>Sport Clube Albicastrense Valealto</span></li>
+                <li data-world-club="PT-19"><span class="app-world-club-code" aria-hidden="true">MTN</span><span>Atlético Clube Montesinho de Bragança</span></li>
+                <li data-world-club="PT-20"><span class="app-world-club-code" aria-hidden="true">TPL</span><span>Futebol Clube Templário Novo de Tomar</span></li>
+            </ol>
+          </section>
+          <section id="competition-panel-players" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-players" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabPlayers">Players</h2>
+            <p class="app-competition-status" data-app-i18n="competitionPlayersEmpty">Player rosters are not available.</p>
+          </section>
+          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabStats">Stats</h2>
+            <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
+          </section>
+          <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabHistory">History</h2>
+            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">No completed seasons or past winners are available.</p>
+          </section>
+          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabRules">Rules</h2>
+            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>
+            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>20</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>1</dd></div></dl>
+          </section>
+          <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabAwards">Awards</h2>
+            <p class="app-competition-status" data-app-i18n="competitionAwardsEmpty">No season awards are available.</p>
+          </section>
+          <script src="../../../../assets/competition-tabs.js" defer></script>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
