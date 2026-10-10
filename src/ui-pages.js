@@ -39,12 +39,12 @@ export function renderGlobalSearchResults(results,lang){
   '<span class="fa-global-search-result-detail">'+esc(item.detail)+'</span></button>').join('');
 }
 export function layout(inner,lang,message=null,languageOpen=false,career=null){
- if(career&&(career.route==='/dashboard'||career.route==='/simulation'||career.route==='/calendar')){
+ if(career&&['/dashboard','/simulation','/calendar','/settings'].includes(career.route)){
   const meta=career.meta,state=career.state,playing=Boolean(career.playing);
   const c=club(meta.countryId,meta.clubId),phase=seasonCalendar(state.date,state.startedAt).phase;
   const phaseName=phase==='preseason'?tr(lang,'Prestagione','Preseason'):
    phase==='season'?tr(lang,'Stagione','Season'):tr(lang,'Pausa estiva','Summer break');
-  const dashboard=career.route!=='/calendar';
+  const dashboard=career.route==='/dashboard'||career.route==='/simulation';
   const nav=(action,name,label,active)=>`<button type="button" class="fa-shell-link${active?' is-active':''}" data-action="${action}" aria-label="${label}" ${active?'aria-current="page"':''}>${icon(name,18)}<span>${label}</span></button>`;
   const action=button('toggle',playing?tr(lang,'Interrompi','Stop'):tr(lang,'Continua','Continue'),playing?'warning':'primary');
   const searchQuery=String(career.searchQuery??'');
@@ -63,25 +63,36 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
       </div>
      </section>
     </nav>
+    <nav class="fa-shell-settings-nav" aria-label="${tr(lang,'Impostazioni carriera','Career settings')}">
+     ${nav('settings','settings',tr(lang,'Impostazioni','Settings'),career.route==='/settings')}
+    </nav>
    </aside>
    <div class="fa-shell-workspace">
     <header class="fa-shell-topbar">
      <div class="fa-shell-club" title="${esc(c?.name??'—')}">${crest(c)}<strong>${esc(c?.name??'—')}</strong></div>
+     <div class="fa-shell-search">
+      <button type="button" class="fa-shell-search-trigger" data-action="global-search-open" aria-haspopup="dialog" aria-controls="fa-global-search-dialog">
+       ${icon('search',17)}<span>${tr(lang,'Cerca pagine e partite','Search pages and matches')}</span>
+      </button>
+     </div>
      <div class="fa-shell-time" aria-label="${tr(lang,'Data e fase della carriera','Career date and phase')}">
       ${icon('calendar',15)}<span class="fa-shell-date-full">${esc(fmtGameDate(state.date,lang,sessionTime(state)))}</span>
       <span class="fa-shell-date-short">${esc(shortDate)} · ${esc(sessionTime(state))}</span>
       <span class="fa-shell-phase">· ${esc(phaseName)}</span>
      </div>
-     <div class="fa-shell-search" data-global-search>
-      <label class="fa-shell-search-label" for="fa-global-search-input">${tr(lang,'Ricerca globale','Global search')}</label>
-      <div class="fa-shell-search-field">${icon('search',16)}
-       <input id="fa-global-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="fa-global-search-results" aria-expanded="${String(searchOpen)}" autocomplete="off" spellcheck="false" maxlength="80" placeholder="${tr(lang,'Cerca pagine e partite','Search pages and matches')}" value="${esc(searchQuery)}">
-      </div>
-      <div id="fa-global-search-results" class="fa-global-search-results" role="listbox" aria-label="${tr(lang,'Risultati ricerca','Search results')}" ${searchOpen?'':'hidden'}>${searchOpen?renderGlobalSearchResults(searchResults,lang):''}</div>
-     </div>
-     <div class="fa-shell-language">${languagePicker(lang,languageOpen)}</div>
      <div class="fa-shell-primary">${action}</div>
     </header>
+    <dialog id="fa-global-search-dialog" class="fa-site-dialog fa-global-search-dialog" aria-labelledby="fa-global-search-title">
+     <div class="fa-global-search-dialog-head">
+      <h2 id="fa-global-search-title">${icon('search',19)} ${tr(lang,'Ricerca globale','Global search')}</h2>
+      <button type="button" class="fa-global-search-close" data-action="global-search-close" aria-label="${tr(lang,'Chiudi ricerca','Close search')}">${icon('x',18)}</button>
+     </div>
+     <label class="fa-shell-search-label" for="fa-global-search-input">${tr(lang,'Cerca pagine e partite','Search pages and matches')}</label>
+     <div class="fa-shell-search-field">${icon('search',16)}
+      <input id="fa-global-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="fa-global-search-results" aria-expanded="${String(searchOpen)}" autocomplete="off" spellcheck="false" maxlength="80" placeholder="${tr(lang,'Cerca pagine e partite','Search pages and matches')}" value="${esc(searchQuery)}">
+     </div>
+     <div id="fa-global-search-results" class="fa-global-search-results" role="listbox" aria-label="${tr(lang,'Risultati ricerca','Search results')}">${searchOpen?renderGlobalSearchResults(searchResults,lang):'<p class="fa-global-search-empty">'+tr(lang,'Cerca una pagina o una partita programmata.','Search for a page or a scheduled match.')+'</p>'}</div>
+    </dialog>
     <main id="content" class="fa-page-main">${renderFeedback(message,lang)}${inner}</main>
     <footer>FOOTBALL ARCHITECT · ${tr(lang,'OFFLINE · GIOCATORE SINGOLO','OFFLINE · SINGLE PLAYER')}</footer>
    </div>
@@ -89,7 +100,7 @@ export function layout(inner,lang,message=null,languageOpen=false,career=null){
  }
  return `<div class="shell"><a href="#content" class="skip">${tr(lang,'Vai al contenuto','Skip to content')}</a>
  <header class="top"><a class="brand" href="/" data-action="home"><span class="brand-symbol">${icon('shield',22)}</span><span>FOOTBALL <b>ARCHITECT</b><small>BUILD YOUR LEGACY</small></span></a>
- <div class="header-actions">${languagePicker(lang,languageOpen)}</div></header>
+ </header>
  <main id="content" class="fa-page-main">${renderFeedback(message,lang)}${inner}</main>
  <footer>FOOTBALL ARCHITECT · ${tr(lang,'OFFLINE · GIOCATORE SINGOLO','OFFLINE · SINGLE PLAYER')}</footer></div>`;
 }
@@ -349,7 +360,7 @@ export function careersPage(catalog,lang,currentCareerId=null){
   </div>
  </div>`;
 }
-export function settingsPage(lang){
+export function settingsPage(lang,languageOpen=false){
  const info=(title,detail)=>`<div class="setting-fact"><span>${esc(title)}</span><b>${esc(detail)}</b></div>`;
  const option=(action,iconName,title,desc)=>`<button class="settings-action" type="button" data-action="${action}">
   ${icon(iconName,22)}<span><strong>${esc(title)}</strong><small>${esc(desc)}</small></span>${icon('chevron-right',17)}</button>`;
@@ -359,7 +370,7 @@ export function settingsPage(lang){
   <div class="settings-grid">
    <section class="settings-panel panel"><h2>${tr(lang,'Lingua','Language')}</h2>
     <div class="settings-language"><div class="setting-fact"><span>${tr(lang,'LINGUA ATTUALE','CURRENT LANGUAGE')}</span><b>${lang==='en'?'English':'Italiano'}</b></div>
-    <button class="btn secondary" data-action="language-focus" type="button">${icon('flag',17)} ${tr(lang,'Cambia lingua','Change language')}</button></div></section>
+    ${languagePicker(lang,languageOpen)}</div></section>
    <section class="settings-panel panel"><h2>${tr(lang,'La tua carriera','Your career')}</h2>
     ${info(tr(lang,'SALVATAGGI','SAVES'),tr(lang,'IndexedDB locale','Local IndexedDB'))}
     ${info(tr(lang,'ACCOUNT','ACCOUNT'),tr(lang,'Non richiesto','Not required'))}

@@ -1618,3 +1618,47 @@ html.fa-modal-open::-webkit-scrollbar{display:none;width:0;height:0}
  .fa-global-search-results{max-height:50dvh}
 }
 @media(prefers-reduced-motion:reduce){.fa-global-search-result{transition:none}}
+
+
+/* SHELL-TOPBAR: search invokes native popup; date sits directly before the right-aligned CTA. */
+.fa-shell-topbar{display:flex;align-items:center;gap:clamp(8px,1.25vw,18px)}
+.fa-shell-club{flex:0 1 195px}
+.fa-shell-search{position:relative;flex:1 1 auto;max-width:none;min-width:0;z-index:auto}
+.fa-shell-search-trigger{width:100%;min-width:0;min-height:38px;display:flex;align-items:center;gap:9px;border:1px solid var(--fa-box-border);border-radius:10px;background:#132a2f;color:#a8c9bf;padding:8px 12px;text-align:left}
+.fa-shell-search-trigger:hover,.fa-shell-search-trigger:focus-visible{border-color:var(--fa-selection-border);background:#1a3737}
+.fa-shell-search-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.fa-shell-time{margin-left:auto;flex:none}
+.fa-shell-primary{margin-left:0;flex:none}
+.fa-shell-sidebar{justify-content:flex-start}
+.fa-shell-settings-nav{margin-top:auto;padding:12px 9px 18px;border-top:1px solid #294a49}
+.fa-shell-settings-nav .fa-shell-link{width:100%}
+.fa-global-search-dialog.fa-site-dialog{width:min(560px,calc(100% - 24px));max-width:560px;max-height:min(640px,calc(100dvh - 32px));padding:20px;overflow:hidden;display:none;flex-direction:column;gap:14px}
+.fa-global-search-dialog.fa-site-dialog[open]{display:flex}
+.fa-global-search-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fa-global-search-dialog-head h2{display:flex;align-items:center;gap:10px;font-size:18px;line-height:1.3;margin:0}
+.fa-global-search-close{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid var(--fa-box-border);border-radius:9px;background:var(--fa-box-surface);color:#e5f4ed}
+.fa-global-search-close:hover{border-color:var(--fa-selection-border)}
+.fa-global-search-dialog .fa-shell-search-field{flex:none;min-height:44px}
+.fa-global-search-dialog .fa-shell-search-field input{height:42px}
+.fa-global-search-dialog .fa-global-search-results{position:static;flex:1;min-height:60px;max-height:min(420px,55dvh);width:100%;border:0;border-radius:8px;box-shadow:none;background:transparent;overflow:auto;padding:0}
+.fa-global-search-dialog .fa-global-search-results::-webkit-scrollbar{width:6px}
+.fa-global-search-dialog .fa-global-search-results::-webkit-scrollbar-track{background:transparent}
+.fa-global-search-dialog .fa-global-search-results::-webkit-scrollbar-thumb{border-radius:10px;background:#3b605b}
+.restored-settings .settings-language .language-picker{width:min(260px,100%);flex:none}
+.restored-settings .settings-language .language-combobox{width:100%}
+@media(max-width:1150px){
+ .fa-shell-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"club time primary" "search search search";gap:8px}
+ .fa-shell-search{grid-area:search;min-width:0;max-width:none;width:100%}
+ .fa-shell-time{grid-area:time;margin-left:0}
+ .fa-shell-primary{grid-area:primary;justify-self:end}
+}
+@media(max-width:720px){
+ .fa-shell-settings-nav{padding:9px 7px 12px}
+ .fa-shell-settings-nav .fa-shell-link{width:44px;height:35px;min-height:35px;justify-content:center;padding:0}
+ .fa-shell-topbar{grid-template-columns:minmax(0,1fr) auto auto;gap:6px}
+ .fa-global-search-dialog.fa-site-dialog{padding:14px}
+}
+@media(max-width:390px){
+ .fa-shell-settings-nav{padding:9px 4px 12px}
+ .fa-shell-topbar{gap:4px}
+}

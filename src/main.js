@@ -11,7 +11,7 @@ import {isNationalityCode,initialCalendarMonth,shiftCalendarMonth,closestSelectI
 
 const app=document.getElementById('app');
 const ROUTES=new Set(['/','/new-career','/new-career/country','/new-career/league','/new-career/team','/careers','/settings','/simulation','/dashboard','/calendar']);
-const CAREER_ROUTES=new Set(['/simulation','/dashboard','/calendar']);
+const CAREER_ROUTES=new Set(['/simulation','/dashboard','/calendar','/settings']);
 let db=null,catalog={rows:[],activeId:null},loaded=null,lang='it';
 const newDraft=()=>({managerName:'',managerProfile:blankManagerProfile(),countryId:null,championshipId:null,clubId:null,query:''});
 let draft=newDraft();
@@ -111,6 +111,7 @@ function navigate(url){
  if(!(CAREER_ROUTES.has(path())&&CAREER_ROUTES.has(url)))stop();
  searchQuery='';searchHits=[];
  if(url!=='/careers')careersFromSimulationId=null;
+ closeGlobalSearchDialog(false);
  languageMenuOpen=false;feedbackState=null;pickerOpen=null;selectedBoxId=null;
  closeRenameDialog(false);closeDeleteDialog(false);
  history.pushState({},'',url);void render();
@@ -126,7 +127,7 @@ function updateGlobalSearch(){
  const input=app.querySelector('#fa-global-search-input');
  if(!input||!list)return;
  const shown=Boolean(searchQuery.trim());
- list.hidden=!shown;list.innerHTML=shown?renderGlobalSearchResults(searchHits,lang):'';
+ list.innerHTML=shown?renderGlobalSearchResults(searchHits,lang):'<p class="fa-global-search-empty">'+tr(lang,'Cerca una pagina o una partita programmata.','Search for a page or a scheduled match.')+'</p>';
  input.setAttribute('aria-expanded',String(shown));
 }
 function fail(error){stop();feedbackState=fromError(error);void render();}
@@ -162,7 +163,7 @@ async function render(){
   else if(page==='/new-career/league')inner=championshipPage(draft,lang);
   else if(page==='/new-career/team')inner=teamsPage(draft,lang);
   else if(page==='/careers')inner=careersPage(catalog,lang,careersFromSimulationId);
-  else if(page==='/settings')inner=settingsPage(lang);
+  else if(page==='/settings')inner=settingsPage(lang,languageMenuOpen);
   else if((page==='/simulation'||page==='/dashboard')&&loaded)inner=simulationPage(loaded.meta,loaded.state,lang,timer!==null,nextScheduledClubFixture(loaded.state,fixtureCalendarFor));
   else if(page==='/calendar'&&loaded){
    const ui=fixturePageState();
@@ -171,11 +172,16 @@ async function render(){
   }
   else inner=homePage(catalog,lang);
   searchHits=loaded&&CAREER_ROUTES.has(page)?currentSearchResults():[];
+  closeGlobalSearchDialog(false);
   closeRenameDialog(false);
   closeDeleteDialog(false);
   app.innerHTML=layout(inner,lang,feedbackState,languageMenuOpen,loaded&&CAREER_ROUTES.has(page)?{route:page,meta:loaded.meta,state:loaded.state,playing:timer!==null,searchQuery,searchResults:searchHits}:null);
   app.querySelectorAll('.fa-site-dialog').forEach(dialog=>{
    dialog.addEventListener('close',()=>{
+    if(dialog.id==='fa-global-search-dialog'){
+     searchQuery='';searchHits=[];
+     app.querySelector('[data-action="global-search-open"]')?.focus({preventScroll:true});
+    }
     releaseSiteModalLock();
     dialog.querySelector('.fa-interactive-box')?.classList.remove('fa-control-selected');
    });
@@ -213,7 +219,11 @@ async function advanceClock(minutes){
   const saved=await saveCareer(db,current.meta.id,next,{
    expectedDays:current.state.daysElapsed,expectedTime:sessionTime(current.state)
   });
-  if(loaded?.meta.id===current.meta.id){loaded=saved;await render();}
+  if(loaded?.meta.id===current.meta.id){
+   loaded=saved;
+   // A native search popup must keep its focus and contents while the clock ticks.
+   if(!app.querySelector('#fa-global-search-dialog')?.open)await render();
+  }
  }catch(e){fail(e);}finally{busy=false;}
 }
 async function advance(days){return advanceClock(days*1440);}
@@ -255,6 +265,13 @@ function closeRenameDialog(restoreFocus=false){
   const trigger=[...app.querySelectorAll('[data-action="rename"]')].find(x=>x.dataset.id===originalId);
   trigger?.focus({preventScroll:true});
  }
+}
+function closeGlobalSearchDialog(restoreFocus=false){
+ const dialog=app.querySelector('#fa-global-search-dialog');
+ if(dialog?.open)dialog.close();
+ searchQuery='';searchHits=[];
+ if(dialog?.open!==true)releaseSiteModalLock();
+ if(restoreFocus)app.querySelector('[data-action="global-search-open"]')?.focus({preventScroll:true});
 }
 function closeDeleteDialog(restoreFocus=false){
  const dialog=app.querySelector('#career-delete-dialog');
@@ -311,6 +328,13 @@ async function handle(action,element){
   case 'career-dashboard':navigate('/dashboard');break;
   case 'fixture-open':navigate('/calendar');break;
   case 'fixture-back':navigate('/dashboard');break;
+  case 'global-search-open':{
+   searchQuery='';searchHits=[];updateGlobalSearch();
+   const dialog=app.querySelector('#fa-global-search-dialog');
+   openSiteModal(dialog,dialog?.querySelector('#fa-global-search-input'));
+   break;
+  }
+  case 'global-search-close':closeGlobalSearchDialog(true);if(!busy)void render();break;
   case 'global-search-result':{
    const index=Number(element.dataset.index);
    const result=Number.isInteger(index)&&index>=0?searchHits[index]:null;
@@ -501,9 +525,6 @@ async function handle(action,element){
  }
 }
 document.addEventListener('click',event=>{
- if(searchQuery&&!event.target.closest?.('[data-global-search]')){
-  searchQuery='';updateGlobalSearch();
- }
  if(pickerOpen&&!event.target.closest?.('[data-fa-picker]')){
   pickerOpen=null;pickerView='days';selectedBoxId=null;
   app.querySelectorAll('.fa-control-selected').forEach(el=>el.classList.remove('fa-control-selected'));
@@ -526,7 +547,7 @@ document.addEventListener('keydown',event=>{
  const searchInput=event.target.closest?.('#fa-global-search-input');
  const searchResult=event.target.closest?.('.fa-global-search-result');
  if(searchInput){
-  if(event.key==='Escape'){event.preventDefault();searchQuery='';updateGlobalSearch();return;}
+  if(event.key==='Escape'){event.preventDefault();closeGlobalSearchDialog(true);if(!busy)void render();return;}
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
    const options=[...app.querySelectorAll('.fa-global-search-result')];
    if(options.length){event.preventDefault();options[event.key==='ArrowDown'?0:options.length-1].focus({preventScroll:true});}
@@ -540,7 +561,7 @@ document.addEventListener('keydown',event=>{
  }
  if(searchResult){
   if(event.key==='Escape'){
-   event.preventDefault();searchQuery='';updateGlobalSearch();app.querySelector('#fa-global-search-input')?.focus({preventScroll:true});return;
+   event.preventDefault();closeGlobalSearchDialog(true);if(!busy)void render();return;
   }
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
    event.preventDefault();
@@ -834,7 +855,7 @@ document.addEventListener('keydown',event=>{
 
 window.addEventListener('popstate',()=>{
  if(!(CAREER_ROUTES.has(lastRenderedRoute)&&CAREER_ROUTES.has(path())))stop();
- searchQuery='';searchHits=[];careersFromSimulationId=null;
+ closeGlobalSearchDialog(false);searchQuery='';searchHits=[];careersFromSimulationId=null;
  closeRenameDialog(false);closeDeleteDialog(false);void render();
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&timer!==null){stop();void render();}});
