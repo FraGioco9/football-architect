@@ -1,8 +1,6 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {readFileSync, writeFileSync} from "node:fs";
-import {fileURLToPath} from "node:url";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8");
 const pages = {
   "dashboard": {
