@@ -1,0 +1,84 @@
+/* GUIDE-01–06: catalog-first atlas, shared with the Landing Graphite & Petrol design. */
+a{color:inherit}
+a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.brand-mark{text-decoration:none}
+.guide-main{padding-block:24px 72px;min-width:0}
+.breadcrumb{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin:0 0 20px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb a:hover{color:var(--focus);text-decoration:underline}
+.guide-main h1{font-size:28px;line-height:1.2;letter-spacing:-.025em;font-weight:750;margin:0 0 27px}
+.atlas-statistics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 36px}
+.atlas-stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 20px;min-width:0}
+.atlas-stat strong{display:block;font-variant-numeric:tabular-nums;font-size:25px;line-height:1.25}
+.atlas-stat span{color:var(--muted);font-size:12px}
+.atlas-tools{padding:0 0 28px;border-bottom:1px solid var(--line)}
+.guide-main h2{font-size:17px;line-height:1.4;margin:0;font-weight:700}
+.atlas-filters{display:grid;grid-template-columns:minmax(200px,2fr) repeat(2,minmax(150px,1fr));gap:12px;margin-top:16px}
+.atlas-filters label{display:flex;flex-direction:column;gap:7px;min-width:0;color:var(--muted);font-size:12px;font-weight:650}
+.atlas-filters input,.atlas-filters select{width:100%;min-width:0;min-height:44px;padding:10px 13px;color:var(--text);border:1px solid var(--border);border-radius:10px;background:var(--surface);font-size:14px}
+.atlas-filters input::placeholder{color:var(--muted);opacity:1}
+.atlas-filters input:hover,.atlas-filters select:hover{border-color:var(--focus)}
+.atlas-filters select{cursor:pointer}
+.atlas-notice{margin:16px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
+.atlas-directory{padding-top:28px}
+.directory-heading{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px 20px}
+#result-summary{margin:0;min-height:22px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.country-index{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 25px}
+.country-index[hidden]{display:none}
+.country-index a{display:inline-flex;align-items:center;min-height:36px;padding:7px 12px;text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:9px;font-size:12px}
+.country-index a:hover{border-color:var(--focus)}
+.atlas-results{display:flex;flex-direction:column;gap:38px;margin-top:23px}
+.country-section{min-width:0;scroll-margin-top:24px}
+.country-heading{display:flex;gap:11px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:15px}
+.country-heading img{width:36px;height:27px;object-fit:cover;border:1px solid var(--line);border-radius:3px;flex:none}
+.country-heading h3{margin:0;font-size:19px;font-weight:720;line-height:1.3}
+.country-count{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.group-heading{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.065em;font-weight:700;margin:18px 0 10px}
+.division-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.division-card{display:flex;align-items:flex-start;gap:15px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}
+.emblem-placeholder{display:flex;justify-content:center;align-items:center;flex:none;width:48px;height:54px;border:1px dashed var(--border);border-radius:9px;color:var(--muted);font-size:11px;font-weight:700}
+.division-copy{flex:1;min-width:0}
+.division-copy h4{font-size:15px;line-height:1.4;margin:0 0 8px;font-weight:700;overflow-wrap:anywhere}
+.division-meta{display:flex;gap:6px 12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.division-note{font-size:11px;color:var(--muted);margin-top:9px}
+.club-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.club-details{background:var(--surface);border:1px solid var(--line);border-radius:11px;min-width:0;overflow:clip}
+.club-details[open]{border-color:var(--border)}
+.club-details summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:11px;min-height:68px;padding:11px 14px}
+.club-details summary::-webkit-details-marker{display:none}
+.club-details summary:hover{background:#203738}
+.club-emblem{display:grid;place-items:center;flex:none;width:36px;height:39px;border:1px dashed var(--border);border-radius:7px;color:var(--muted);font-size:10px}
+.club-heading{min-width:0;flex:1}
+.club-name{display:block;font-size:13px;font-weight:680;line-height:1.35;overflow-wrap:anywhere}
+.club-sub{display:block;color:var(--muted);font-size:11px;margin-top:4px;overflow-wrap:anywhere}
+.club-caret{color:var(--muted);font-size:16px;transform:rotate(0deg)}
+.club-details[open] .club-caret{transform:rotate(90deg)}
+.club-expanded{border-top:1px solid var(--line);padding:13px 15px 16px}
+.club-expanded dl{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr);gap:8px 12px;font-size:12px;line-height:1.45;margin:0}
+.club-expanded dt{color:var(--muted)}
+.club-expanded dd{margin:0;overflow-wrap:anywhere}
+.historical-label{margin:16px 0 10px;color:var(--muted);font-size:12px;font-weight:650}
+.empty-state,.atlas-error{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:23px;color:var(--muted);font-size:14px}
+.atlas-error{border-color:#ab6262;color:var(--text)}
+@media(max-width:900px){
+  .atlas-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .atlas-filters label:first-child{grid-column:1/-1}
+}
+@media(max-width:600px){
+  .guide-main{padding-block:18px 42px}
+  .guide-main h1{font-size:24px;margin-bottom:21px}
+  .atlas-statistics{gap:8px;margin-bottom:28px}
+  .atlas-stat{padding:12px 10px}
+  .atlas-stat strong{font-size:22px}
+  .atlas-stat span{font-size:11px}
+  .atlas-filters{grid-template-columns:minmax(0,1fr)}
+  .atlas-filters label:first-child{grid-column:auto}
+  .country-heading h3{font-size:17px}
+  .country-count{font-size:11px}
+  .division-grid,.club-list{grid-template-columns:minmax(0,1fr)}
+  .atlas-results{gap:32px}
+  .directory-heading{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  .club-caret{transition:none}
+}

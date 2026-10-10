@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101A1D">
+  <meta name="description" content="Explore the documented countries, divisions and clubs of Football Architect.">
+  <title>World Guide — Football Architect</title>
+  <link rel="stylesheet" href="../assets/landing.css">
+  <link rel="stylesheet" href="../assets/guide.css">
+  <script src="../assets/guide.js" defer></script>
+</head>
+<body>
+  <div class="site-shell atlas-shell">
+    <header class="site-header wrapper">
+      <a class="brand-mark" href="../" aria-label="Football Architect home">FA</a>
+      <div class="language-control">
+        <label class="sr-only" for="site-language" data-i18n="language">Language</label>
+        <select id="site-language" name="language" autocomplete="off">
+          <option value="en" selected>English</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="it">Italiano</option>
+        </select>
+      </div>
+    </header>
+    <main class="guide-main wrapper" id="main-content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../" data-i18n="home">Home</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page" data-i18n="guide">World guide</span>
+      </nav>
+      <h1 id="page-title" data-i18n="guide">World guide</h1>
+      <section class="atlas-statistics" aria-label="Atlas inventory">
+        <div class="atlas-stat"><strong>8</strong><span data-i18n="countries">Countries</span></div>
+        <div class="atlas-stat"><strong>16</strong><span data-i18n="divisions">Divisions</span></div>
+        <div class="atlas-stat"><strong>320</strong><span data-i18n="clubs">Documented clubs</span></div>
+      </section>
+      <section class="atlas-tools" aria-labelledby="browse-heading">
+        <h2 id="browse-heading" data-i18n="browse">Browse the atlas</h2>
+        <div class="atlas-filters">
+          <label for="catalog-search">
+            <span data-i18n="searchLabel">Search</span>
+            <input id="catalog-search" type="search" autocomplete="off" placeholder="Search names, IDs or abbreviations">
+          </label>
+          <label for="country-filter">
+            <span data-i18n="countryLabel">Country</span>
+            <select id="country-filter"><option value="" data-i18n="allCountries">All countries</option></select>
+          </label>
+          <label for="type-filter">
+            <span data-i18n="categoryLabel">Category</span>
+            <select id="type-filter">
+              <option value="all" data-i18n="allEntries">All entries</option>
+              <option value="division" data-i18n="divisions">Divisions</option>
+              <option value="club" data-i18n="clubs">Documented clubs</option>
+            </select>
+          </label>
+        </div>
+        <p class="atlas-notice" data-i18n="scopeNote">Clubs are listed by country, not assigned to a current division. Historical city and stadium records are unverified.</p>
+      </section>
+      <section class="atlas-directory" aria-labelledby="results-heading">
+        <div class="directory-heading">
+          <h2 id="results-heading" data-i18n="directory">Directory</h2>
+          <p id="result-summary" role="status" aria-live="polite" aria-atomic="true">Loading the atlas…</p>
+        </div>
+        <nav id="country-index" class="country-index" aria-label="Jump to country" hidden></nav>
+        <div id="atlas-results" class="atlas-results"></div>
+      </section>
+    </main>
+    <footer class="site-footer wrapper">
+      <span>Football Architect</span>
+      <span data-i18n="footer">Work in progress</span>
+    </footer>
+  </div>
+</body>
+</html>
