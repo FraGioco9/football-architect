@@ -37,7 +37,7 @@ function element(properties = {}) {
   };
 }
 
-function render(saved = null, deny = false, reducedMotion = false) {
+function render(saved = null, deny = false) {
   const stored = new Map();
   const navigation = [];
   if (saved !== null) stored.set("football-architect:language", saved);
@@ -46,18 +46,12 @@ function render(saved = null, deny = false, reducedMotion = false) {
   const trigger = element({ id: "site-language" });
   const menu = element({ id: "language-options", hidden: true });
   const languageValue = element({ id: "language-value" });
-  const status = element({ hidden: true });
-  status.contains = target => [status, close].includes(target);
-  const statusMessage = element();
-  const close = element();
-  const app = element({ dataset: { destination: "app" } });
   const guide = element({ dataset: { destination: "guide" } });
   const control = element();
   control.contains = target => [control, trigger, menu, ...options].includes(target);
   const byId = {
     "language-control": control, "site-language": trigger, "language-value": languageValue,
-    "language-options": menu, "action-status": status, "action-status-message": statusMessage,
-    "status-close": close
+    "language-options": menu
   };
   const document = {
     documentElement: { lang: "en" },
@@ -66,7 +60,7 @@ function render(saved = null, deny = false, reducedMotion = false) {
     querySelectorAll(query) {
       if (query === "[data-language]") return options;
       if (query === "[data-i18n]") return labels;
-      if (query === "[data-destination]") return [app, guide];
+      if (query === "[data-destination]") return [guide];
       return [];
     },
     addEventListener(name, callback) { this.listeners[name] = callback; },
@@ -76,32 +70,9 @@ function render(saved = null, deny = false, reducedMotion = false) {
     getItem(key) { if (deny) throw Error("storage denied"); return stored.get(key) ?? null; },
     setItem(key, value) { if (deny) throw Error("storage denied"); stored.set(key, value); }
   };
-  let time = 0;
-  let nextTimerId = 1;
-  const timers = new Map();
-  const window = {
-    localStorage,
-    setTimeout(callback, delay) { const id = nextTimerId++; timers.set(id, { at: time + delay, callback }); return id; },
-    clearTimeout(id) { timers.delete(id); },
-    location: { assign(href) { navigation.push(href); } },
-    matchMedia(query) {
-      assert.equal(query, "(prefers-reduced-motion: reduce)");
-      return { matches: reducedMotion };
-    }
-  };
-  const advance = (milliseconds) => {
-    const end = time + milliseconds;
-    while (true) {
-      const due = [...timers].filter(([,timer]) => timer.at <= end).sort((a,b) => a[1].at - b[1].at)[0];
-      if (!due) break;
-      time = due[1].at;
-      timers.delete(due[0]);
-      due[1].callback();
-    }
-    time = end;
-  };
+  const window = { localStorage, location: { assign(href) { navigation.push(href); } } };
   runInNewContext(js, { document, window }, { timeout: 2000 });
-  return { stored, document, trigger, menu, languageValue, options, labels, status, statusMessage, close, app, guide, control, advance, timers, navigation };
+  return { stored, document, trigger, menu, languageValue, options, labels, guide, control, navigation };
 }
 
 test("semantic full-page landing and custom five-language listbox", () => {
@@ -184,25 +155,29 @@ test("outside pointer press, Tab and Escape dismiss without changing the languag
   assert.equal(r.menu.hidden, true);
 });
 
-test("dismissible multilingual notice does not change menu or page flow", () => {
-  const r = render();
-  r.app.fire("click");
-  assert.equal(r.status.hidden, false);
-  assert.match(r.statusMessage.textContent, /not available yet/);
-  r.trigger.fire("click");
-  r.options[4].fire("click");
-  assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
+test("HOME-ENTRY-01 exposes a native, no-JavaScript Dashboard preview link", () => {
+  assert.match(html, /<a class="cta cta-primary" href="\.\/app\/dashboard\/" data-i18n="enter">Explore app preview<\/a>/);
+  assert.doesNotMatch(html, /data-destination="app"|id="action-status"|action-status-message|status-close/);
+  assert.doesNotMatch(js, /unavailableApp|unavailableGuide|toastTimer|statusMessage|showToast/);
+  assert.match(css, /a\.cta:focus-visible\{outline:2px solid var\(--focus\);outline-offset:2px\}/);
+});
+
+test("HOME-ENTRY-01 renders the preview CTA in all five languages", () => {
+  const captions = ["Explore app preview","App-Vorschau öffnen","Explorar vista previa de la app","Explorer l’aperçu de l’app","Esplora l’anteprima dell’app"];
+  for (const [index, language] of languages.entries()) {
+    const r = render(language);
+    assert.equal(r.document.documentElement.lang, language);
+    assert.equal(r.labels.find(label => label.dataset.i18n === "enter").textContent, captions[index]);
+    assert.deepEqual(r.navigation, []);
+  }
+});
+
+test("HOME-ENTRY-01 preserves Guide navigation and keyboard language controls", () => {
+  const r = render("it");
   r.guide.fire("click");
   assert.deepEqual(r.navigation, ["./guide/"]);
-  assert.match(r.statusMessage.textContent, /non è ancora disponibile/);
-  r.close.fire("click");
-  assert.equal(r.status.classList.contains("toast-exit"), true);
-  r.advance(180);
-  assert.equal(r.status.hidden, true);
-  assert.equal(r.close.getAttribute("aria-label"), "Chiudi avviso");
-  assert.match(css, /\.action-status\{position:fixed/);
-  assert.match(css, /\.status-close svg\{display:block;width:16px;height:16px;margin:auto\}/);
-  assert.match(html, /class="status-close" id="status-close"[^>]*><svg/);
+  assert.match(js, /button\.dataset\.destination !== "guide"/);
+  assert.match(html, /data-destination="guide"/);
 });
 
 test("full-width layout, discreet highlights, transparent scrollbar and responsive controls", () => {
@@ -233,96 +208,21 @@ test("both favicon formats remain valid and explicitly linked", () => {
 test("landing copy has no selectable text, including Safari long-press selection", () => {
   assert.match(css, /body,body \*\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/);
   assert.match(css, /button:focus-visible/);
+  assert.match(css, /a\.cta:focus-visible/);
 });
 
-test("notice automatically disappears after five seconds, clearing its active timer", () => {
-  const r = render();
-  r.app.fire("click");
-  assert.equal(r.timers.size, 1);
-  r.advance(4999);
-  assert.equal(r.status.hidden, false);
-  r.advance(1);
-  assert.equal(r.status.classList.contains("toast-exit"), true);
-  assert.equal(r.status.hidden, false);
-  r.advance(179);
-  assert.equal(r.status.hidden, false);
-  r.advance(1);
-  assert.equal(r.status.hidden, true);
-  assert.equal(r.timers.size, 0);
-});
-
-test("hover pauses the notice and leaving restores the full five-second timer", () => {
-  const r = render();
-  r.app.fire("click");
-  r.advance(3000);
-  r.status.fire("pointerenter", { pointerType: "mouse" });
-  assert.equal(r.timers.size, 0);
-  r.advance(20000);
-  assert.equal(r.status.hidden, false);
-  r.status.fire("pointerleave", { pointerType: "mouse" });
-  r.advance(4999);
-  assert.equal(r.status.hidden, false);
-  r.advance(1);
-  assert.equal(r.status.classList.contains("toast-exit"), true);
-  r.advance(180);
-  assert.equal(r.status.hidden, true);
-});
-
-test("repeated actions reset the timer, explicit dismiss cancels it, and touch does not pause", () => {
-  const r = render();
-  r.app.fire("click");
-  r.advance(4500);
-  r.app.fire("click");
-  assert.match(r.statusMessage.textContent, /app is not available/);
-  r.advance(4999);
-  assert.equal(r.status.hidden, false);
-  r.status.fire("pointerenter", { pointerType: "touch" });
-  r.advance(1);
-  assert.equal(r.status.classList.contains("toast-exit"), true);
-  // New CTA during exit revives the toast and cancels the old hide callback.
-  r.app.fire("click");
-  assert.equal(r.status.classList.contains("toast-exit"), false);
-  r.advance(180);
-  assert.equal(r.status.hidden, false);
-  r.close.fire("click");
-  assert.equal(r.status.classList.contains("toast-exit"), true);
-  r.advance(180);
-  assert.equal(r.status.hidden, true);
-  assert.equal(r.timers.size, 0);
-  r.advance(15000);
-  assert.equal(r.status.hidden, true);
-});
-
-test("keyboard focus pauses the notice until focus leaves, then resets countdown", () => {
-  const r = render();
-  r.app.fire("click");
-  r.advance(1000);
-  r.status.fire("focusin");
-  r.advance(10000);
-  assert.equal(r.status.hidden, false);
-  r.status.fire("focusout", { relatedTarget: r.close });
-  r.advance(8000);
-  assert.equal(r.status.hidden, false);
-  r.status.fire("focusout", { relatedTarget: null });
-  r.advance(5000);
-  assert.equal(r.status.classList.contains("toast-exit"), true);
-  r.advance(180);
-  assert.equal(r.status.hidden, true);
-});
-
-test("toast animation uses a small opacity/translate transition without reflow", () => {
-  assert.match(css, /@keyframes toast-enter\{from\{opacity:0;transform:translateY\(8px\)\}/);
-  assert.match(css, /@keyframes toast-exit\{from\{opacity:1;transform:translateY\(0\)\}/);
-  assert.match(css, /\.action-status:not\(\[hidden\]\)\{animation:toast-enter 200ms ease-out both\}/);
-  assert.match(css, /\.action-status\.toast-exit\{animation:toast-exit 180ms ease-in both;pointer-events:none\}/);
+test("HOME-ENTRY-01 removes unused toast logic and retains responsive layout", () => {
+  assert.doesNotMatch(html, /action-status|status-close/);
+  assert.doesNotMatch(css, /action-status|status-close|toast-enter|toast-exit/);
+  assert.doesNotMatch(js, /TOAST_DURATION_MS|TOAST_EXIT_MS|showToast|dismissToast/);
+  assert.match(css, /\.cta\{[^}]*text-decoration:none;cursor:pointer/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
-test("reduced motion hides without an exit-animation delay", () => {
-  const r = render(null, false, true);
-  r.app.fire("click");
-  r.close.fire("click");
-  assert.equal(r.status.hidden, true);
-  assert.equal(r.status.classList.contains("toast-exit"), false);
-  assert.equal(r.timers.size, 0);
+test("HOME-ENTRY-01 does not enable gameplay in the static Dashboard", () => {
+  const dashboard = readFileSync(new URL("../app/dashboard/index.html", import.meta.url), "utf8");
+  const app = readFileSync(new URL("../assets/app.js", import.meta.url), "utf8");
+  assert.match(dashboard, /class="app-continue" type="button" disabled/);
+  assert.match(app, /No active career/);
+  assert.match(html, /href="\.\/app\/dashboard\/"/);
 });

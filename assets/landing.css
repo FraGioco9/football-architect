@@ -42,22 +42,13 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .hero h1{margin:0;font-size:32px;font-weight:760;line-height:1.2;letter-spacing:-.035em;overflow-wrap:break-word}
 .description{margin:24px 0 0;max-width:620px;color:var(--muted);font-size:15px;line-height:1.6}
 .actions{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin-top:34px}
-.cta{display:inline-flex;justify-content:center;align-items:center;width:260px;max-width:100%;min-height:44px;padding:11px 17px;border:1px solid transparent;border-radius:10px;color:#fff;font-size:14px;font-weight:650;line-height:1.4;text-align:center;white-space:normal;overflow-wrap:anywhere;transition:background-color 140ms ease,border-color 140ms ease}
+.cta{display:inline-flex;justify-content:center;align-items:center;width:260px;max-width:100%;min-height:44px;padding:11px 17px;border:1px solid transparent;border-radius:10px;color:#fff;text-decoration:none;cursor:pointer;font-size:14px;font-weight:650;line-height:1.4;text-align:center;white-space:normal;overflow-wrap:anywhere;transition:background-color 140ms ease,border-color 140ms ease}
 .cta-primary{background:var(--primary)}
 .cta-primary:hover{background:#25755B}
 .cta-secondary{background:transparent;border-color:var(--border);color:var(--text)}
 .cta-secondary:hover{background:rgba(255,255,255,.035);border-color:#678378}
 .cta:active{filter:brightness(1.07)}
-.action-status{position:fixed;inset-inline-end:max(24px,env(safe-area-inset-right));inset-block-end:max(24px,env(safe-area-inset-bottom));z-index:20;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;width:min(420px,calc(100vw - 36px));margin:0;padding:14px 14px 14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.5;overflow-wrap:anywhere;box-shadow:0 10px 26px rgba(0,0,0,.23)}
-/* Opacity and a small vertical lift keep notices subtle without reflow. */
-@keyframes toast-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes toast-exit{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(8px)}}
-.action-status:not([hidden]){animation:toast-enter 200ms ease-out both}
-.action-status.toast-exit{animation:toast-exit 180ms ease-in both;pointer-events:none}
-.status-close{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;padding:0;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
-.status-close:hover{border-color:var(--border);background:rgba(255,255,255,.04);color:var(--text)}
-.status-close svg{display:block;width:16px;height:16px;margin:auto}
-.action-status[hidden]{display:none}
+a.cta:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .statistics{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:66px;padding-top:26px;border-top:1px solid var(--line)}
 .stat{min-width:0}
 .stat .number{display:block;font-size:26px;font-weight:730;letter-spacing:-.025em;line-height:1.25;font-variant-numeric:tabular-nums}
@@ -71,7 +62,6 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
   .brand-image-symbol{display:block;width:44px;height:44px}
   .language-trigger{min-width:148px}
   .language-menu{min-width:148px}
-  .action-status{inset-inline:max(18px,env(safe-area-inset-left)) max(18px,env(safe-area-inset-right));inset-block-end:max(18px,env(safe-area-inset-bottom));width:auto}
   .landing-main{padding-block:36px 44px}
   .hero h1{font-size:26px}
   .description{margin-top:18px;font-size:14px}

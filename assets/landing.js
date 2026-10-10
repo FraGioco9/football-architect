@@ -3,16 +3,12 @@
   "use strict";
   const STORAGE_KEY = "football-architect:language";
   const SUPPORTED = ["en","de","es","fr","it"];
-  const TOAST_DURATION_MS = 5000;
-  const TOAST_EXIT_MS = 180;
   const messages = {
     en: {
-      language:"Language",dismiss:"Dismiss notice",summary:"Explore an alternative football world.",
-      enter:"Enter the app",guide:"Guide",universe:"Football world",
+      language:"Language",summary:"Explore an alternative football world.",
+      enter:"Explore app preview",guide:"Guide",universe:"Football world",
       countries:"Countries",divisions:"Divisions",clubs:"Documented clubs",
       footer:"Work in progress",
-      unavailableApp:"The app is not available yet. This area is being designed.",
-      unavailableGuide:"The guide is not available yet. This area is being designed.",
       guideTitle:"Guide",
       home:"Home",
       guideDivisionsHeading:"Divisions",
@@ -23,12 +19,10 @@
       guideClubsText2:"Clubs are the teams that take part in divisions. Their identity remains separate from the division in which they compete."
     },
     de: {
-      language:"Sprache",dismiss:"Hinweis schließen",summary:"Entdecke eine alternative Fußballwelt.",
-      enter:"App öffnen",guide:"Leitfaden",universe:"Fußballwelt",
+      language:"Sprache",summary:"Entdecke eine alternative Fußballwelt.",
+      enter:"App-Vorschau öffnen",guide:"Leitfaden",universe:"Fußballwelt",
       countries:"Länder",divisions:"Ligen",clubs:"Dokumentierte Vereine",
       footer:"In Entwicklung",
-      unavailableApp:"Die App ist noch nicht verfügbar. Dieser Bereich wird entwickelt.",
-      unavailableGuide:"Der Leitfaden ist noch nicht verfügbar. Dieser Bereich wird entwickelt.",
       guideTitle:"Leitfaden",
       home:"Startseite",
       guideDivisionsHeading:"Ligen",
@@ -39,12 +33,10 @@
       guideClubsText2:"Vereine nehmen an Ligawettbewerben teil. Ihre Identität bleibt unabhängig von der Liga, in der sie spielen."
     },
     es: {
-      language:"Idioma",dismiss:"Cerrar aviso",summary:"Explora un universo futbolístico alternativo.",
-      enter:"Entrar en la aplicación",guide:"Guía",universe:"Mundo del fútbol",
+      language:"Idioma",summary:"Explora un universo futbolístico alternativo.",
+      enter:"Explorar vista previa de la app",guide:"Guía",universe:"Mundo del fútbol",
       countries:"Países",divisions:"Divisiones",clubs:"Clubes documentados",
       footer:"En desarrollo",
-      unavailableApp:"La aplicación aún no está disponible. Esta sección está en desarrollo.",
-      unavailableGuide:"La guía aún no está disponible. Esta sección está en desarrollo.",
       guideTitle:"Guía",
       home:"Inicio",
       guideDivisionsHeading:"Divisiones",
@@ -55,12 +47,10 @@
       guideClubsText2:"Los clubes participan en las divisiones, pero su identidad es independiente de la división en la que compiten."
     },
     fr: {
-      language:"Langue",dismiss:"Fermer le message",summary:"Explorez un univers footballistique alternatif.",
-      enter:"Accéder à l’application",guide:"Guide",universe:"Univers du football",
+      language:"Langue",summary:"Explorez un univers footballistique alternatif.",
+      enter:"Explorer l’aperçu de l’app",guide:"Guide",universe:"Univers du football",
       countries:"Pays",divisions:"Divisions",clubs:"Clubs répertoriés",
       footer:"En développement",
-      unavailableApp:"L’application n’est pas encore disponible. Cette section est en cours de conception.",
-      unavailableGuide:"Le guide n’est pas encore disponible. Cette section est en cours de conception.",
       guideTitle:"Guide",
       home:"Accueil",
       guideDivisionsHeading:"Divisions",
@@ -71,12 +61,10 @@
       guideClubsText2:"Les clubs participent aux divisions, mais leur identité reste indépendante de la division dans laquelle ils évoluent."
     },
     it: {
-      language:"Lingua",dismiss:"Chiudi avviso",summary:"Esplora un universo calcistico alternativo.",
-      enter:"Entra nell'app",guide:"Guida",universe:"Mondo calcistico",
+      language:"Lingua",summary:"Esplora un universo calcistico alternativo.",
+      enter:"Esplora l’anteprima dell’app",guide:"Guida",universe:"Mondo calcistico",
       countries:"Paesi",divisions:"Divisioni",clubs:"Club documentati",
       footer:"In sviluppo",
-      unavailableApp:"L'app non è ancora disponibile. Questa sezione è in progettazione.",
-      unavailableGuide:"La guida non è ancora disponibile. Questa sezione è in progettazione.",
       guideTitle:"Guida",
       home:"Home",
       guideDivisionsHeading:"Divisioni",
@@ -92,67 +80,11 @@
   const languageValue = document.getElementById("language-value");
   const menu = document.getElementById("language-options");
   const options = [...document.querySelectorAll("[data-language]")];
-  const status = document.getElementById("action-status");
-  const statusMessage = document.getElementById("action-status-message");
-  const statusClose = document.getElementById("status-close");
   const labels = [...document.querySelectorAll("[data-i18n]")];
   const actions = [...document.querySelectorAll("[data-destination]")];
   const valid = (value) => SUPPORTED.includes(value) ? value : "en";
   let language = "en";
   let activeIndex = 0;
-  let lastAction = null;
-  let toastTimer = null;
-  let toastExitTimer = null;
-  let toastHovered = false;
-  let toastFocused = false;
-
-  function cancelToastTimer() {
-    if (toastTimer !== null) {
-      window.clearTimeout(toastTimer);
-      toastTimer = null;
-    }
-  }
-
-  function finishToastDismiss() {
-    toastExitTimer = null;
-    status.hidden = true;
-    status.classList.remove("toast-exit");
-    lastAction = null;
-    toastHovered = false;
-    toastFocused = false;
-  }
-
-  function dismissToast() {
-    cancelToastTimer();
-    if (status.hidden || status.classList.contains("toast-exit")) return;
-    status.classList.add("toast-exit");
-    // Reduced motion also removes the exit delay so hiding is immediate.
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      finishToastDismiss();
-    } else {
-      toastExitTimer = window.setTimeout(finishToastDismiss, TOAST_EXIT_MS);
-    }
-  }
-
-  function showToast() {
-    if (toastExitTimer !== null) {
-      window.clearTimeout(toastExitTimer);
-      toastExitTimer = null;
-    }
-    status.classList.remove("toast-exit");
-    status.hidden = false;
-    scheduleToastDismiss();
-  }
-
-  function scheduleToastDismiss() {
-    cancelToastTimer();
-    if (status.hidden || status.classList.contains("toast-exit") || toastHovered || toastFocused) return;
-    toastTimer = window.setTimeout(() => {
-      toastTimer = null;
-      dismissToast();
-    }, TOAST_DURATION_MS);
-  }
-
   function translate(value, persist = false) {
     language = valid(value);
     const copy = messages[language];
@@ -161,13 +93,9 @@
     for (const option of options) {
       option.setAttribute("aria-selected", String(option.dataset.language === language));
     }
-    if (statusClose) statusClose.setAttribute("aria-label", copy.dismiss);
     for (const node of labels) {
       const key = node.dataset.i18n;
       if (Object.hasOwn(copy, key)) node.textContent = copy[key];
-    }
-    if (lastAction && status && statusMessage && !status.hidden) {
-      statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
     }
     if (persist) {
       try { window.localStorage.setItem(STORAGE_KEY, language); }
@@ -243,43 +171,11 @@
     if (event.key === "Escape" && !menu.hidden) closeMenu(true);
   });
 
+  // The preview is a native link; only the Guide button needs scripted navigation.
   for (const button of actions) {
-    button.addEventListener("click", () => {
-      if (button.dataset.destination === "guide") {
-        window.location.assign("./guide/");
-        return;
-      }
-      lastAction = button.dataset.destination;
-      const copy = messages[language];
-      statusMessage.textContent = lastAction === "app" ? copy.unavailableApp : copy.unavailableGuide;
-      showToast();
-      closeMenu();
-    });
+    if (button.dataset.destination !== "guide") continue;
+    button.addEventListener("click", () => window.location.assign("./guide/"));
   }
-  // Mouse/pen hover pauses the countdown; leaving restarts the full duration.
-  // Ignore touch pointerenter so an iPhone tap cannot suspend the toast indefinitely.
-  if (status) status.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "touch") return;
-    toastHovered = true;
-    cancelToastTimer();
-  });
-  if (status) status.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "touch") return;
-    toastHovered = false;
-    scheduleToastDismiss();
-  });
-  // Keep a toast available while its dismiss button has keyboard focus.
-  if (status) status.addEventListener("focusin", () => {
-    toastFocused = true;
-    cancelToastTimer();
-  });
-  if (status) status.addEventListener("focusout", (event) => {
-    if (status.contains(event.relatedTarget)) return;
-    toastFocused = false;
-    scheduleToastDismiss();
-  });
-  if (statusClose) statusClose.addEventListener("click", dismissToast);
-
   // Highlight the Guide section selected by click or URL hash.
   const guideLinks = [...document.querySelectorAll("[data-guide-section]")];
   if (guideLinks.length) {
