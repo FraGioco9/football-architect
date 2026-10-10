@@ -93,8 +93,8 @@ ${rows}
           </section>`;
 };
 const detailContent = function detailContent(d,root){
- const c=countryById[d.countryId],other=divisionData.divisions.find(x=>x.countryId===d.countryId&&x.id!==d.id);
- if(!c||!other)throw Error("unknown detail "+d.id);
+ const c=countryById[d.countryId];
+ if(!c)throw Error("unknown detail "+d.id);
  const level=d.tier===1?"divisionTier1":"divisionTier2";
  return '          <header class="app-competition-header">\n'+
  '            <span class="app-competition-logo-placeholder app-competition-logo-placeholder-large" role="img" aria-label="Temporary division badge" data-app-aria="crestPlaceholder">'+encode(d.id)+'</span>\n'+
@@ -103,8 +103,7 @@ const detailContent = function detailContent(d,root){
  '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
  '            </div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>\n'+
- '          </header>\n'+
- '          <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions"><a href="../'+other.id.toLowerCase()+'/">'+encode(other.name)+'</a></nav>'+detailAppend(d);
+ '          </header>\n'+detailAppend(d);
 };
 const worldPageReplacements = (depth, division = null) => {
   const upToApp = "../".repeat(depth - 1);

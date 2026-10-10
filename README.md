@@ -189,7 +189,7 @@ Canonical Dashboard: `/app/dashboard/` (`app/dashboard/index.html`). The static 
 
 ## Competitions directory (UI-WORLD #91)
 
-The **World → Competitions** sidebar item opens `/app/world/competitions/`. The index is a compact country-grouped list linking to 16 detail pages at `/app/world/competitions/<division-id-lowercase>/`. These replace the old `/app/world/divisions/` preview URLs without a legacy redirect. Each detail has its own title, country and tier, a same-country counterpart link, and a four-column table for 20 clubs.
+The **World → Competitions** sidebar item opens `/app/world/competitions/`. The index is a compact country-grouped list linking to 16 detail pages at `/app/world/competitions/<division-id-lowercase>/`. These replace the old `/app/world/divisions/` preview URLs without a legacy redirect. Each detail presents its competition name, temporary badge, country and tier directly below the shared top bar, a back-to-Competitions action, and a four-column table for 20 clubs; no sibling-division link is shown.
 
 Allocations are strictly **provisional**, read from [the unapproved 320-club register](data/division-allocations.provisional.json) (160 historical first-tier references plus 160 derived second-tier placements). Club order is the registry order, not ranking; position, played matches and points have no values until gameplay exists. No fixtures or results are invented. Country flags and all five languages are retained. The canonical division and club catalogues are unchanged.
 

@@ -61,7 +61,8 @@ test("COMPETITIONS-02 keeps 320 unique unranked clubs in simplified four-column 
   assert.ok(html.includes('data-app-i18n="standingsEmpty"'));
   assert.ok(html.includes('href="../" data-app-i18n="allDivisions"'));
   const other=divisions.find(d=>d.countryId===division.countryId&&d.id!==division.id);
-  assert.ok(html.includes('href="../'+other.id.toLowerCase()+'/"'));
+  assert.ok(!html.includes('href="../'+other.id.toLowerCase()+'/"'),file);
+  assert.ok(!html.includes('class="app-world-related"'),file);
   assert.doesNotMatch(html,/app-world-hero|app-world-facts|division-fixtures-heading|division-clubs-heading/);
   assert.doesNotMatch(html,/<td[^>]*>\d+<\/td>/,"no fabricated stats");
   for(const id of entry.clubIds){
@@ -91,6 +92,9 @@ test("COMPETITIONS-02 preserves five languages, rounded flags and accessible foc
 test("COMPETITIONS-03 places title, logo, metadata and return button in one header on all pages",()=>{
  const css=read("assets/app.css");
  assert.ok(css.includes(".app-competition-header{display:flex"));
+ assert.ok(css.includes(".app-competition-header{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin:0}"));
+ assert.ok(css.includes(".app-competition-identity .app-page-title{margin:0;color:#f2f7f4;"));
+ assert.ok(!css.includes(".app-world-related"));
  assert.ok(css.includes(".app-competition-return:focus-visible"));
  for(const {division,file} of routes){
   const html=read(file);

@@ -184,20 +184,17 @@ html{scroll-padding-top:72px}
 .app-division-card{display:flex;align-items:center;gap:11px;min-width:0;min-height:54px;padding:9px 12px;border-radius:8px}
 .app-competition-logo-placeholder{display:grid;place-items:center;flex:none;width:36px;height:36px;border:1px dashed #567e70;border-radius:9px;background:#1d3532;color:#b6d9c7;font-size:10px;font-weight:750;letter-spacing:-.015em}
 .app-division-card:hover{background:#24433d}
-.app-division-card:focus-visible,.app-world-back a:focus-visible,.app-world-related a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-division-card:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-division-card-copy{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;width:100%;min-width:0}
 .app-division-card-copy strong{font-size:14px;font-weight:700;color:var(--text);overflow-wrap:anywhere}
 .app-division-card-copy small{font-size:11px;color:var(--muted)}
-.app-competition-header{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-top:var(--app-page-section-gap)}
+.app-competition-header{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin:0}
 .app-competition-logo-placeholder-large{width:68px;height:68px;border-radius:13px;font-size:15px}
 .app-competition-identity{flex:1 1 260px;min-width:0;align-self:center}
-.app-competition-identity .app-page-title{margin:0;font-size:var(--app-page-title-size);line-height:1.2;overflow-wrap:anywhere}
+.app-competition-identity .app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-page-title-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;overflow-wrap:anywhere}
 .app-world-detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0 0;color:var(--muted);font-size:12px}
 .app-competition-return{display:inline-flex;align-items:center;justify-content:center;flex:none;min-height:38px;padding:8px 13px;margin-left:auto;white-space:nowrap;border-radius:9px;text-decoration:none}
-.app-competition-return:focus-visible,.app-world-related a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.app-world-related a{color:#a2dcc3!important}
-.app-world-related{margin:4px 0 22px;font-size:12px}
-.app-world-related a{text-decoration:underline;text-underline-offset:3px}
+.app-competition-return:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .app-world-standings{min-width:0;margin-top:12px;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
 .app-world-standings-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .app-world-standings-heading h2{margin:0;font-size:16px}
