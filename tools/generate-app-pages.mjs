@@ -43,106 +43,68 @@ const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
-const worldNav = (href, active) => '            <a class="fa-shell-link' + (active ? ' is-active' : '') +
-  '" id="app-nav-divisions" href="' + href + '" data-app-view="divisions"' +
-  (active ? ' aria-current="page"' : '') + ' aria-label="Competitions" data-app-aria="navCompetitions">';
-const worldSection = (content, active) => '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"' +
-  (active ? '' : ' hidden') + '>\n' +
-  '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="divisions">Divisions</h1>\n' +
-  (content ? content + '\n' : '') + '        </section>';
-const indexContent = root => {
-  const countries = divisionData.countries.map(country => {
-    const divisions = divisionData.divisions.filter(division => division.countryId === country.id);
-    const cards = divisions.map(division =>
-      '                <a class="app-division-card" href="./' + division.id.toLowerCase() + '/">\n' +
-      '                  <span class="app-division-mark" aria-hidden="true">' + encode(division.id) + '</span>\n' +
-      '                  <span class="app-division-card-copy"><strong>' + encode(division.name) +
-      '</strong><small data-app-i18n="' + (division.tier === 1 ? 'divisionTier1' : 'divisionTier2') + '">' +
-      (division.tier === 1 ? 'First division' : 'Second division') + '</small></span>\n' +
-      '                  <svg class="fa-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 5 7 7-7 7"/></svg>\n' +
-      '                </a>').join("\n");
-    return '            <section class="app-world-country" aria-labelledby="world-country-' + country.id.toLowerCase() + '">\n' +
-      '              <h2 id="world-country-' + country.id.toLowerCase() + '"><img class="app-world-flag" alt="" src="' +
-      root + encode(country.flagAsset) + '" width="28" height="20"> <span data-world-country="' + country.id + '">' +
-      encode(country.name.en) + '</span></h2>\n              <div class="app-world-grid">\n' + cards +
-      '\n              </div>\n            </section>';
-  }).join("\n");
-  return '          <div class="app-world-countries">\n' + countries + '\n          </div>';
+const worldNav = function worldNav(href,active){
+ return '            <a class="fa-shell-link'+(active?' is-active':'')+'" id="app-nav-divisions" href="'+href+'" data-app-view="divisions"'+(active?' aria-current="page"':'')+' aria-label="Competitions" data-app-aria="navCompetitions">';
 };
-const detailAppend = function newAppend(d) {
- const other=divisionData.divisions.find(x=>x.countryId===d.countryId&&x.id!==d.id);
- if(!other)throw new Error("Missing counterpart "+d.id);
- const otherTier=other.tier===1?"divisionTier1":"divisionTier2";
- const clubs=provisionalClubs.get(d.id);
- if(!clubs)throw new Error("Missing provisional allocation "+d.id);
- if(clubs.length!==d.capacity||new Set(clubs.map(c=>c.clubId)).size!==d.capacity)throw new Error("Incomplete initial allocation "+d.id);
- const headers=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"]].map(([key,value],index)=>'                  <th scope="col"'+(index===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+value+'</th>').join("\n");
- const rows=clubs.map(c=>`                <tr data-world-club="${encode(c.countryId)}-${c.clubId}">
+const worldSection = function worldSection(content,active,division=null){
+ const h=division
+ ? '          <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(division.name)+'</span></h1>\n'
+ : '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>\n';
+ return '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"'+(active?'':' hidden')+'>\n'+h+(content?content+'\n':'')+'        </section>';
+};
+const indexContent = function indexContent(root){
+ const cards=divisionData.countries.map(c=>{
+  const links=divisionData.divisions.filter(d=>d.countryId===c.id).map(d=>
+ '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ ).join("\n");
+ return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
+ '              <h2 id="world-country-'+c.id.toLowerCase()+'"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
+ '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
+ }).join("\n");
+ return '          <div class="app-world-countries">\n'+cards+'\n          </div>';
+};
+const detailAppend = function detailAppend(d){
+ const cs=provisionalClubs.get(d.id);
+ if(!cs||cs.length!==d.capacity)throw Error("missing clubs "+d.id);
+ const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsPoints","Pts"]]
+ .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
+ const rows=cs.map(c=>`                <tr data-world-club="${encode(c.countryId)}-${c.clubId}">
                   <td class="app-world-stat-unknown">—</td>
-                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span class="app-world-club-name">${encode(c.fullName)}</span></th>${Array(8).fill('\n                  <td class="app-world-stat-unknown">—</td>').join("")}
+                  <th scope="row" class="app-world-standing-club"><span class="app-world-club-code" aria-hidden="true">${encode(c.abbr)}</span><span class="app-world-club-name">${encode(c.fullName)}</span></th>
+                  <td class="app-world-stat-unknown">—</td>
+                  <td class="app-world-stat-unknown">—</td>
                 </tr>`).join("\n");
  return `
-          <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions">
-            <span data-app-i18n="otherDivision">Other division in this country</span>
-            <a href="../${other.id.toLowerCase()}/"><strong>${encode(other.name)}</strong><span data-app-i18n="${otherTier}">${other.tier===1?"First division":"Second division"}</span></a>
-          </nav>
-          <div class="app-world-sections">
-            <section class="app-panel app-world-section app-world-standings" aria-labelledby="division-standings-heading">
-              <div class="app-world-standings-heading">
-                <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
-                <span class="app-world-standings-count">${clubs.length} / ${d.capacity}</span>
-              </div>
-              <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.</p>
-              <table class="app-world-standing-table">
-                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
-                <thead>
-                  <tr>
-${headers}
-                  </tr>
-                </thead>
-                <tbody>
+          <section class="app-world-standings" aria-labelledby="division-standings-heading">
+            <div class="app-world-standings-heading">
+              <h2 id="division-standings-heading" data-app-i18n="standingsHeading">Standings</h2>
+              <span class="app-world-standings-count">${cs.length} / ${d.capacity}</span>
+            </div>
+            <p class="app-world-standings-note" data-app-i18n="standingsEmpty">Provisional clubs. No standings until a season begins.</p>
+            <table class="app-world-standing-table">
+              <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+              <thead>
+                <tr>
+${cols}
+                </tr>
+              </thead>
+              <tbody>
 ${rows}
-                </tbody>
-              </table>
-            </section>
-            <section class="app-panel app-world-section" aria-labelledby="division-fixtures-heading">
-              <h2 id="division-fixtures-heading" data-app-i18n="fixturesHeading">Fixtures and results</h2>
-              <p class="app-world-section-empty" data-app-i18n="fixturesEmpty">No scheduled matches or results are available.</p>
-            </section>
-            <section class="app-panel app-world-section" aria-labelledby="division-clubs-heading">
-              <h2 id="division-clubs-heading" data-app-i18n="clubsHeading">Participating clubs</h2>
-              <p class="app-world-section-empty" data-app-i18n="clubsEmpty">The 20 clubs listed above represent a provisional allocation, not confirmed season participation.</p>
-            </section>
-          </div>`;
+              </tbody>
+            </table>
+          </section>`;
 };
-const detailContent = (division, root) => {
-  const country = countryById[division.countryId];
-  if (!country) throw new Error("Unknown division country: " + division.countryId);
-  const level = division.tier === 1 ? "divisionTier1" : "divisionTier2";
-  return '          <p class="app-world-back"><a href="../" data-app-i18n="allDivisions">All divisions</a></p>\n' +
-    '          <div class="app-panel app-world-hero">\n' +
-    '            <span class="app-division-mark app-division-mark-large" role="img" aria-label="Temporary division placeholder" data-app-aria="crestPlaceholder">' + encode(division.id) + '</span>\n' +
-    '            <div class="app-world-hero-copy">\n' +
-    '              <p class="app-world-meta"><img class="app-world-flag" alt="" src="' + root + encode(country.flagAsset) +
-    '" width="28" height="20"> <span data-world-country="' + division.countryId + '">' + encode(country.name.en) +
-    '</span> · <span data-app-i18n="' + level + '">' +
-    (division.tier === 1 ? "First division" : "Second division") + '</span></p>\n' +
-    '              <h2 id="division-detail-name">' + encode(division.name) + '</h2>\n' +
-    '            </div>\n          </div>\n' +
-    '          <dl class="app-world-facts">\n' +
-    '            <div><dt data-app-i18n="countryLabel">Country</dt><dd data-world-country="' + division.countryId + '">' + encode(country.name.en) + '</dd></div>\n' +
-    '            <div><dt data-app-i18n="tierLabel">Tier</dt><dd>' + division.tier + '</dd></div>\n' +
-    '            <div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>' + division.capacity + '</dd></div>\n' +
-    '          </dl>\n' +
-    '          <section class="app-panel app-world-empty">\n' +
-    '            <h2 data-app-i18n="competitionUnavailable">Competition not active</h2>\n' +
-    '            <p data-app-i18n="competitionNotice">No active season: league positions, fixtures and results are not available.</p>\n' +
-    '          </section>' + detailAppend(division);
+const detailContent = function detailContent(d,root){
+ const c=countryById[d.countryId],other=divisionData.divisions.find(x=>x.countryId===d.countryId&&x.id!==d.id);
+ if(!c||!other)throw Error("unknown detail "+d.id);
+ return '          <p class="app-world-back"><a href="../" data-app-i18n="allDivisions">All competitions</a></p>\n'+
+ '          <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
+ '          <nav class="app-world-related" aria-label="Other division in this country" data-app-aria="relatedDivisions"><a href="../'+other.id.toLowerCase()+'/">'+encode(other.name)+'</a></nav>'+detailAppend(d);
 };
 const worldPageReplacements = (depth, division = null) => {
   const upToApp = "../".repeat(depth - 1);
   const root = "../".repeat(depth);
-  const title = division ? division.name : "Divisions";
+  const title = division ? division.name : "Competitions";
   return {
     "@@FA_LINE_008@@": "  <title>" + encode(title) + " — Football Architect</title>",
     "@@FA_LINE_032@@": '            <a class="fa-shell-link" id="app-nav-dashboard" href="' + upToApp + 'dashboard/" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">',
@@ -153,19 +115,19 @@ const worldPageReplacements = (depth, division = null) => {
     "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="' + upToApp + 'dashboard/" data-app-i18n="backDashboard">Back to Dashboard</a>',
     "@@FA_LINE_107@@": '        <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>',
     "@@FA_WORLD_LINK@@": worldNav(division ? "../" : "./", true),
-    "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,root) : indexContent(root), true)
+    "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,root) : indexContent(root), true,division)
   };
 };
 const outputPages = [
   ...Object.entries(pages).map(([name,replacements]) => ({
     name, path: "app/" + name + "/index.html", depth:2,
     replacements:{...replacements,
-      "@@FA_WORLD_LINK@@":worldNav("../world/divisions/",false),
+      "@@FA_WORLD_LINK@@":worldNav("../world/competitions/",false),
       "@@FA_WORLD_SECTION@@":worldSection("",false)}
   })),
-  {name:"divisions",path:"app/world/divisions/index.html",depth:3,replacements:worldPageReplacements(3)},
+  {name:"competitions",path:"app/world/competitions/index.html",depth:3,replacements:worldPageReplacements(3)},
   ...divisionData.divisions.map(division => ({
-    name:division.id, path:"app/world/divisions/" + division.id.toLowerCase() + "/index.html",
+    name:division.id, path:"app/world/competitions/" + division.id.toLowerCase() + "/index.html",
     depth:4, replacements:worldPageReplacements(4,division)
   }))
 ];

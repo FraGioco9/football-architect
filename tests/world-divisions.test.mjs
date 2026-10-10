@@ -3,159 +3,82 @@ import assert from "node:assert/strict";
 import {existsSync,readFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 
-const read = path => readFileSync(new URL("../"+path,import.meta.url),"utf8");
-const catalogue = JSON.parse(read("data/divisions.json"));
-const indexPath = "app/world/divisions/index.html";
-const index = read(indexPath);
-const routes = catalogue.divisions.map(division => ({
-  division,
-  file:"app/world/divisions/"+division.id.toLowerCase()+"/index.html"
-}));
+const read=file=>readFileSync(new URL("../"+file,import.meta.url),"utf8");
+const divisions=JSON.parse(read("data/divisions.json")).divisions;
+const countries=JSON.parse(read("data/divisions.json")).countries;
+const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
+const clubs=JSON.parse(read("data/clubs.json")).clubs;
+const indexPath="app/world/competitions/index.html";
+const index=read(indexPath);
+const routes=divisions.map(d=>({division:d,file:"app/world/competitions/"+d.id.toLowerCase()+"/index.html"}));
 
-test("UI-WORLD catalogue maps to 8 country sections and exactly 16 detail URLs",()=>{
-  assert.equal(catalogue.countries.length,8);
-  assert.equal(catalogue.divisions.length,16);
-  assert.equal(new Set(catalogue.divisions.map(division=>division.id)).size,16);
-  for(const country of catalogue.countries){
-    assert.ok(index.includes('id="world-country-'+country.id.toLowerCase()+'"'));
-    assert.equal(catalogue.divisions.filter(division=>division.countryId===country.id).length,2);
-  }
-  for(const {division,file} of routes){
-    assert.ok(existsSync(new URL("../"+file,import.meta.url)),file);
-    assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-    const detail=read(file);
-    assert.ok(detail.includes('id="division-detail-name"'));
-    assert.ok(detail.includes(division.name.replaceAll("&","&amp;")),division.id);
-    assert.ok(detail.includes('class="app-division-mark app-division-mark-large"'));
-    assert.ok(detail.includes('data-app-i18n="competitionUnavailable"'));
-    assert.ok(detail.includes('<dd>'+division.capacity+'</dd>'));
-    assert.ok(detail.includes('href="../" data-app-i18n="allDivisions"'));
-    assert.equal((detail.match(/aria-current="page"/g)||[]).length,1);
-    assert.match(detail,/id="app-nav-divisions"[^>]*aria-current="page"/);
-    assert.doesNotMatch(detail,/class="(?:league-table|match-result|club-roster)"/);
-  }
+test("COMPETITIONS-02 lists eight countries, sixteen compact links and no old route",()=>{
+ assert.equal(countries.length,8);
+ assert.equal(divisions.length,16);
+ assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
+ assert.ok(index.includes('data-app-i18n="navCompetitions">Competitions'));
+ assert.ok(index.includes("<title>Competitions — Football Architect</title>"));
+ assert.ok(!existsSync(new URL("../app/world/divisions/index.html",import.meta.url)));
+ for(const country of countries)assert.ok(index.includes('id="world-country-'+country.id.toLowerCase()+'"'));
+ for(const {division} of routes)assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'));
+ assert.doesNotMatch(index,/app-division-mark|app-world-hero|app-world-facts/);
 });
 
-test("UI-WORLD routes resolve every static asset and direct navigation destination",()=>{
-  const all=[indexPath,...routes.map(({file})=>file)];
-  for(const path of all){
-    const html=read(path),base=new URL("../"+path,import.meta.url);
-    for(const [,target] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
-      if(target.startsWith("#")||target.startsWith("data:"))continue;
-      assert.doesNotMatch(target,/^https?:/,"no external URL is needed");
-      const url=new URL(target,base);
-      const candidate=url.pathname.endsWith("/")?new URL("index.html",url):url;
-      assert.ok(existsSync(fileURLToPath(candidate)),path+" -> "+target);
-    }
-    assert.ok(html.includes('id="app-nav-world-title"'));
-    assert.ok(html.includes('id="app-nav-settings"'));
-    assert.ok(html.includes('id="app-search-trigger"'));
-    assert.ok(html.includes('data-app-i18n="navWorld"'));
+test("COMPETITIONS-02 keeps direct routes and all local navigation targets resolving",()=>{
+ const pages=["app/dashboard/index.html","app/calendar/index.html","app/settings/index.html",indexPath,...routes.map(x=>x.file)];
+ for(const file of pages){
+  const html=read(file),base=new URL("../"+file,import.meta.url);
+  for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
+   if(href.startsWith("#")||href.startsWith("data:"))continue;
+   assert.doesNotMatch(href,/^https?:/);
+   const path=new URL(href,base),candidate=path.pathname.endsWith("/")?new URL("index.html",path):path;
+   assert.ok(existsSync(fileURLToPath(candidate)),file+" -> "+href);
   }
-  assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
+  assert.ok(html.includes('data-app-i18n="navCompetitions">Competitions'));
+  assert.ok(html.includes('id="app-nav-divisions"'));
+  assert.ok(html.includes('id="app-search-trigger"'));
+ }
+ for(const {division,file} of routes){
+  assert.ok(existsSync(new URL("../"+file,import.meta.url)));
+  assert.ok(!existsSync(new URL("../app/world/divisions/"+division.id.toLowerCase()+"/index.html",import.meta.url)));
+  assert.ok(read(file).includes("id=\"division-detail-name\""));
+ }
 });
 
-test("UI-WORLD uses five localized sets and CSS-only temporary badges",()=>{
-  const script=read("assets/app.js");
-  const css=read("assets/app.css");
-  const template=read("templates/app-page.html");
-  for(const lang of ["en","de","es","fr","it"]){
-    assert.match(script,new RegExp('(?:^|\\s)'+lang+': \\{'));
+test("COMPETITIONS-02 keeps 320 unique unranked clubs in simplified four-column tables",()=>{
+ const seen=new Set();
+ for(const {division,file} of routes){
+  const html=read(file),entry=allocation.allocations.find(e=>e.divisionId===division.id);
+  assert.ok(entry);assert.equal(entry.clubIds.length,20);
+  assert.ok(html.includes('<table class="app-world-standing-table">'));
+  assert.equal((html.match(/<th scope="col"/g)||[]).length,4);
+  assert.equal((html.match(/<tr data-world-club="/g)||[]).length,20);
+  assert.ok(html.includes('data-app-i18n="standingsEmpty"'));
+  assert.ok(html.includes('href="../" data-app-i18n="allDivisions"'));
+  const other=divisions.find(d=>d.countryId===division.countryId&&d.id!==division.id);
+  assert.ok(html.includes('href="../'+other.id.toLowerCase()+'/"'));
+  assert.doesNotMatch(html,/app-world-hero|app-world-facts|division-fixtures-heading|division-clubs-heading/);
+  assert.doesNotMatch(html,/<td[^>]*>\d+<\/td>/,"no fabricated stats");
+  for(const id of entry.clubIds){
+   const club=clubs.find(c=>c.countryId===division.countryId&&c.clubId===id),key=division.countryId+"-"+id;
+   assert.ok(club);assert.ok(html.includes('data-world-club="'+key+'"'));
+   assert.ok(html.includes(club.fullName.replaceAll("&","&amp;")));
+   assert.ok(!seen.has(key),"duplicate club "+key);
+   seen.add(key);
   }
-  for(const key of ["navWorld","divisionIntro","allDivisions","divisionTier1","divisionTier2","crestPlaceholder","competitionUnavailable","competitionNotice"]){
-    assert.equal((script.match(new RegExp(key+':',"g"))||[]).length,5,key);
-  }
-  assert.match(template,/@@FA_WORLD_SECTION@@/);
-  assert.match(template,/@@FA_WORLD_LINK@@/);
-  assert.match(css,/\.app-division-mark\{[^}]*border:1px dashed/);
-  assert.match(css,/@media\(max-width:620px\)/);
-  assert.ok(index.includes('src="../../../assets/flags/it.svg"'));
-  assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
+ }
+ assert.equal(seen.size,320);
 });
 
-test("PAGE-COMPLETE-01 keeps the three sporting areas empty and offers same-country navigation",()=>{
-  const translations=read("assets/app.js");
-  const generator=read("tools/generate-app-pages.mjs");
-  const search=read("assets/app-search.js");
-  const keys=["otherDivision","relatedDivisions","standingsHeading","standingsEmpty",
-    "fixturesHeading","fixturesEmpty","clubsHeading","clubsEmpty"];
-  for(const key of keys) assert.equal((translations.match(new RegExp(key+":","g"))||[]).length,5,key);
-  for(const {division,file} of routes){
-    const html=read(file);
-    const counterpart=catalogue.divisions.find(d=>d.countryId===division.countryId&&d.id!==division.id);
-    assert.ok(counterpart);
-    assert.ok(html.includes('href="../'+counterpart.id.toLowerCase()+'/"'));
-    for(const id of ["division-standings-heading","division-fixtures-heading","division-clubs-heading"])
-      assert.ok(html.includes('id="'+id+'"'),file+" "+id);
-    for(const key of ["standingsEmpty","fixturesEmpty","clubsEmpty","otherDivision"])
-      assert.ok(html.includes('data-app-i18n="'+key+'"'),file+" "+key);
-    assert.doesNotMatch(html,/class="(?:league-table|match-result|club-roster)"/);
-    assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
-  }
-  assert.match(generator,/detailAppend\(division\)/);
-  assert.ok(search.includes('../data/divisions.json'));
-});
-
-test("COMPETITIONS-01 uses a trophy sidebar icon, no subtitle, and rounded flags",()=>{
-  const app=read("assets/app.js");
-  const css=read("assets/app.css");
-  const sharedCss=read("assets/landing.css");
-  const template=read("templates/app-page.html");
-  const generator=read("tools/generate-app-pages.mjs");
-  assert.equal((app.match(/navCompetitions:/g)||[]).length,5,"five translated sidebar labels");
-  assert.ok(template.includes('data-app-i18n="navCompetitions">Competitions'));
-  assert.ok(template.includes('M7 4h10v5a5 5 0 0 1-10 0V4Z'),"original trophy icon");
-  assert.ok(generator.includes('data-app-aria="navCompetitions"'));
-  assert.ok(css.includes('border-radius:6px}'));
-  assert.ok(sharedCss.includes('img[src*="assets/flags/"]{border-radius:6px}'));
-  assert.ok(!generator.includes("app-world-lead"),"index has no introductory subtitle");
-  for(const path of ["app/dashboard/index.html","app/calendar/index.html","app/settings/index.html",indexPath,...routes.map(x=>x.file)]){
-    const html=read(path);
-    assert.ok(html.includes('data-app-i18n="navCompetitions">Competitions'),path);
-    assert.ok(html.includes('data-app-aria="navCompetitions"'),path);
-    assert.ok(html.includes('M7 4h10v5a5 5 0 0 1-10 0V4Z'),path);
-    if(path===indexPath) assert.ok(!html.includes("app-world-lead"),path);
-    else if(path.startsWith("app/world/divisions/")){
-      assert.ok(!html.includes('data-app-i18n="placeholderNotice"'),path);
-      assert.ok(html.includes('data-app-i18n="competitionNotice"'),path);
-    }
-  }
-});
-
-
-test("STANDINGS-01 includes all 320 clubs without claiming season results",()=>{
-  const clubs=JSON.parse(read("data/clubs.json")).clubs;
-  const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
-  const seen=new Set();
-  for(const {division,file} of routes){
-    const html=read(file);
-    const entry=allocation.allocations.find(entry=>entry.divisionId===division.id);
-    assert.ok(entry,division.id);
-    const expected=entry.clubIds.map(clubId=>clubs.find(club=>club.countryId===division.countryId&&club.clubId===clubId));
-    assert.equal(expected.length,20,division.id);
-    assert.equal((html.match(/<tr data-world-club="/g)||[]).length,20,file);
-    assert.ok(html.includes('<table class="app-world-standing-table">'),file);
-    assert.ok(html.includes('data-app-i18n="standingsCaption"'),file);
-    assert.ok(html.includes('data-app-i18n="standingsEmpty"'),file);
-    assert.ok(html.includes('data-app-i18n="clubsEmpty"'),file);
-    assert.doesNotMatch(html,/<td[^>]*>\d+<\/td>/,"no invented statistics");
-    let previous=-1;
-    for(const club of expected){
-      const key=club.countryId+"-"+club.clubId;
-      const position=html.indexOf('data-world-club="'+key+'"');
-      assert.ok(position>previous,division.id+" registry order "+key);
-      previous=position;
-      assert.ok(html.includes(club.fullName.replaceAll("&","&amp;").replaceAll("<","&lt;")),key);
-      assert.ok(html.includes('>'+club.abbr+'</span>'),key);
-      assert.ok(!seen.has(key),"duplicate "+key);
-      seen.add(key);
-      if(division.tier===1)assert.ok(club.firstDivisionReference,key);
-    }
-  }
-  assert.equal(seen.size,320);
-  const app=read("assets/app.js");
-  for(const key of ["standingsCaption","standingsPosition","standingsClub","standingsPlayed","standingsWon",
-    "standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference","standingsPoints"])
-    assert.equal((app.match(new RegExp(key+":","g"))||[]).length,5,key);
-  assert.match(read("assets/app.css"),/\.app-world-standing-table/);
+test("COMPETITIONS-02 preserves five languages, rounded flags and accessible focus",()=>{
+ const app=read("assets/app.js"),css=read("assets/app.css"),template=read("templates/app-page.html"),search=read("assets/app-search.js");
+ for(const lang of ["en","de","es","fr","it"])assert.ok(app.includes("    "+lang+": {"),lang);
+ assert.equal((app.match(/navCompetitions:/g)||[]).length,5);
+ assert.ok(template.includes('data-app-i18n="navCompetitions">Competitions'));
+ assert.ok(css.includes("border-radius:6px}"));
+ assert.ok(css.includes(".app-division-card:focus-visible"));
+ assert.match(css,/@media\(max-width:620px\)/);
+ assert.ok(search.includes('../data/divisions.json'));
+ assert.ok(search.includes("/app/world/competitions/"));
+ assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
 });

@@ -9,7 +9,7 @@
       divisionIntro:"Explore the 16 documented divisions across eight countries. No league season is running yet.",
       divisionTier1:"First division",
       divisionTier2:"Second division",
-      allDivisions:"All divisions",
+      allDivisions:"All competitions",
       crestPlaceholder:"Temporary division badge",
       placeholderNotice:"Temporary badge; final division identity artwork is not integrated.",
       countryLabel:"Country",
@@ -20,7 +20,7 @@
       otherDivision:"Other division in this country",
       relatedDivisions:"Other division in this country",
       standingsHeading:"Standings",
-      standingsEmpty:"Provisional initial allocation, shown in registry order. Positions and match statistics are not available before the season begins.",
+      standingsEmpty:"Provisional clubs. No standings until a season begins.",
       standingsCaption:"Provisional club list; no active league standings yet.",
       standingsPosition:"Pos",
       standingsClub:"Club",
@@ -73,7 +73,7 @@
       divisionIntro:"Entdecke die 16 dokumentierten Ligen in acht Ländern. Der Ligabetrieb hat noch nicht begonnen.",
       divisionTier1:"Erste Liga",
       divisionTier2:"Zweite Liga",
-      allDivisions:"Alle Ligen",
+      allDivisions:"Alle Wettbewerbe",
       crestPlaceholder:"Provisorisches Liga-Symbol",
       placeholderNotice:"Vorläufiges Symbol; das endgültige Liga-Wappen ist noch nicht integriert.",
       countryLabel:"Land",
@@ -84,7 +84,7 @@
       otherDivision:"Weitere Liga in diesem Land",
       relatedDivisions:"Weitere Liga in diesem Land",
       standingsHeading:"Tabelle",
-      standingsEmpty:"Vorläufige Einteilung in Registerreihenfolge. Vor Saisonbeginn gibt es keine Tabellenplätze oder Spielstatistiken.",
+      standingsEmpty:"Vorläufige Vereine. Eine Tabelle gibt es erst nach Saisonbeginn.",
       standingsCaption:"Vorläufige Vereinsliste; noch keine aktive Ligatabelle.",
       standingsPosition:"Pl",
       standingsClub:"Verein",
@@ -137,7 +137,7 @@
       divisionIntro:"Explora las 16 divisiones documentadas en ocho países. La competición aún no ha comenzado.",
       divisionTier1:"Primera división",
       divisionTier2:"Segunda división",
-      allDivisions:"Todas las divisiones",
+      allDivisions:"Todas las competiciones",
       crestPlaceholder:"Emblema provisional de división",
       placeholderNotice:"Emblema provisional; el diseño definitivo de la división todavía no está integrado.",
       countryLabel:"País",
@@ -148,7 +148,7 @@
       otherDivision:"Otra división de este país",
       relatedDivisions:"Otra división de este país",
       standingsHeading:"Clasificación",
-      standingsEmpty:"Asignación inicial provisional en orden de registro. No hay posiciones ni estadísticas de partidos hasta que comience la temporada.",
+      standingsEmpty:"Clubes provisionales. No habrá clasificación hasta el inicio de la temporada.",
       standingsCaption:"Lista provisional de clubes; todavía no hay clasificación activa.",
       standingsPosition:"Pos",
       standingsClub:"Club",
@@ -201,7 +201,7 @@
       divisionIntro:"Découvrez les 16 divisions répertoriées dans huit pays. Aucune compétition n'est encore en cours.",
       divisionTier1:"Première division",
       divisionTier2:"Deuxième division",
-      allDivisions:"Toutes les divisions",
+      allDivisions:"Toutes les compétitions",
       crestPlaceholder:"Emblème provisoire de division",
       placeholderNotice:"Emblème provisoire ; le visuel définitif de cette division n'est pas intégré.",
       countryLabel:"Pays",
@@ -212,7 +212,7 @@
       otherDivision:"Autre division du pays",
       relatedDivisions:"Autre division du pays",
       standingsHeading:"Classement",
-      standingsEmpty:"Répartition initiale provisoire, dans l'ordre du registre. Aucun rang ni statistique avant le début de saison.",
+      standingsEmpty:"Clubs provisoires. Aucun classement avant le début de saison.",
       standingsCaption:"Liste provisoire des clubs ; aucun classement de championnat actif.",
       standingsPosition:"Pos",
       standingsClub:"Club",
@@ -265,7 +265,7 @@
       divisionIntro:"Esplora le 16 divisioni documentate di otto Paesi. I campionati non sono ancora attivi.",
       divisionTier1:"Prima divisione",
       divisionTier2:"Seconda divisione",
-      allDivisions:"Tutte le divisioni",
+      allDivisions:"Tutte le competizioni",
       crestPlaceholder:"Emblema provvisorio della divisione",
       placeholderNotice:"Emblema temporaneo: la grafica definitiva della divisione non è ancora integrata.",
       countryLabel:"Paese",
@@ -276,7 +276,7 @@
       otherDivision:"Altra divisione del Paese",
       relatedDivisions:"Altra divisione del Paese",
       standingsHeading:"Classifica",
-      standingsEmpty:"Assegnazione iniziale provvisoria, in ordine di registro. Posizioni e statistiche non sono disponibili prima dell'inizio della stagione.",
+      standingsEmpty:"Club provvisori. La classifica sarà disponibile dall’inizio della stagione.",
       standingsCaption:"Elenco provvisorio dei club; classifica del campionato non ancora attiva.",
       standingsPosition:"Pos",
       standingsClub:"Club",
@@ -342,7 +342,7 @@
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
-    if (path.includes("/app/world/divisions")) return "divisions";
+    if (path.includes("/app/world/competitions")) return "divisions";
     if (path.endsWith("/app/calendar")) return "calendar";
     if (path.endsWith("/app/settings")) return "settings";
     if (path.endsWith("/app/dashboard")) return "dashboard";
@@ -362,7 +362,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    document.title = (activeView() === "divisions" && detail ? detail.textContent : strings[activeView()]) + " — Football Architect";
+    document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
   }
   function renderView() {
     const current = activeView();

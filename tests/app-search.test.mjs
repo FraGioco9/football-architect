@@ -50,9 +50,9 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
 test("SEARCH-01 search destinations are limited to real internal routes and heading anchors",()=>{
   const destinations=[...script.matchAll(/\["(page|section)","([^"]+)","([^"]+)","([^"]+)"\]/g)];
   assert.equal(destinations.length,10);
-  const known=new Set([...pages,"app/world/divisions/index.html"]);
+  const known=new Set([...pages,"app/world/competitions/index.html"]);
   for(const [,kind,id,description,url] of destinations){
-    assert.match(url,/^\/app\/(?:dashboard\/|calendar\/|settings\/|world\/divisions\/)(?:#[a-z-]+)?$/);
+    assert.match(url,/^\/app\/(?:dashboard\/|calendar\/|settings\/|world\/competitions\/)(?:#[a-z-]+)?$/);
     const [pathname,fragment] = url.slice(1).split("#");
     const file=pathname+"index.html";
     assert.ok(known.has(file),url);
@@ -104,7 +104,7 @@ function simulate(language="en",worldCatalogue=null){
     "app-language-heading","app-career-heading","app-data-heading","app-about-heading"];
   const nodes=Object.fromEntries(ids.map(id=>[id,el(id)]));
   const labels={
-    "dashboard-title":"Dashboard","calendar-title":"Calendar","settings-title":"Settings","divisions-title":"Divisions",
+    "dashboard-title":"Dashboard","calendar-title":"Calendar","settings-title":"Settings","divisions-title":"Competitions",
     "career-status-heading":"Career status","world-heading":"World foundations",
     "app-language-heading":"Language","app-career-heading":"Your career",
     "app-data-heading":"Data management","app-about-heading":"About the game"
@@ -150,7 +150,7 @@ test("SEARCH-01 opens with four real page suggestions, focuses input, and closes
   app.trigger.emit("click");
   assert.equal(app.dialog.open,true);
   assert.equal(app.document.activeElement,app.input);
-  assert.deepEqual(app.links().map(a=>a.href),["/app/dashboard/","/app/calendar/","/app/settings/","/app/world/divisions/"]);
+  assert.deepEqual(app.links().map(a=>a.href),["/app/dashboard/","/app/calendar/","/app/settings/","/app/world/competitions/"]);
   app.dialog.emit("cancel");
   assert.equal(app.dialog.open,false);
   assert.equal(app.document.activeElement,app.trigger);
@@ -414,18 +414,18 @@ test("UI-WORLD resolves all canonical divisions by name and identifier",async()=
   assert.deepEqual(app.requestedUrls,["http://127.0.0.1:2000/data/divisions.json"]);
   app.trigger.emit("click");
   for(const [query,path] of [
-    ["pt-1","/app/world/divisions/pt-1/"],
-    ["atlantica","/app/world/divisions/pt-2/"],
-    ["liga lusitana","/app/world/divisions/pt-1/"],
-    ["bondsklasse","/app/world/divisions/nl-2/"]
+    ["pt-1","/app/world/competitions/pt-1/"],
+    ["atlantica","/app/world/competitions/pt-2/"],
+    ["liga lusitana","/app/world/competitions/pt-1/"],
+    ["bondsklasse","/app/world/competitions/nl-2/"]
   ]){
     app.input.value=query;
     app.input.emit("input");
     assert.equal(app.links()[0]?.href,path,query);
   }
-  app.input.value="divisions";
+  app.input.value="competitions";
   app.input.emit("input");
-  assert.ok(app.links().some(link=>link.href==="/app/world/divisions/"));
+  assert.ok(app.links().some(link=>link.href==="/app/world/competitions/"));
   app.input.value="unlikely-missing-game-data";
   app.input.emit("input");
   assert.equal(app.links().length,0);
