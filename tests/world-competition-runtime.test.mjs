@@ -18,12 +18,16 @@ const ids=["app-divisions","app-competition-badge","app-competition-flag",
 function node(tag){
  const children=[],attrs={};
  const n={
-  tagName:tag,children,attrs,dataset:{},className:"",textContent:"",
+  tagName:tag,children,attrs,dataset:{},className:"",textContent:"",style:{},
+  offsetWidth:300,offsetHeight:124,events:{},
   appendChild(item){children.push(item);return item},
   removeAttribute(name){delete attrs[name]},
   append(...items){children.push(...items)},
   replaceChildren(...items){children.splice(0,children.length,...items)},
-  setAttribute(name,value){attrs[name]=value}
+  setAttribute(name,value){attrs[name]=value},
+  addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
+  emit(name,event={}){for(const fn of this.events[name]??[])fn(event)},
+  getBoundingClientRect(){return this.rect??{left:150,right:166,top:220,bottom:236,width:16,height:16}}
  };
  return n;
 }
@@ -45,6 +49,9 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   }
  });
  const document={
+  events:{},activeElement:null,
+  addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
+  emit(name,event){for(const fn of this.events[name]??[])fn(event)},
   currentScript:{src:root+"/assets/competition-page.js"},
   head:{
    appendChild(script){
@@ -83,11 +90,14 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
    };
   }
  }
- runInNewContext(source,{document,window:{location},DOMParser:FakeDOMParser,URL,fetch:fakeFetch});
+ const window={location,innerWidth:390,innerHeight:600,events:{},
+  addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
+  emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
+ runInNewContext(source,{document,window,DOMParser:FakeDOMParser,URL,fetch:fakeFetch});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
- return {document,fields,loaded,requested,body};
+ return {document,fields,loaded,requested,body,window};
 }
 
 test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async()=>{
@@ -146,6 +156,11 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
       form.children.map(dot=>dot.className.split(" ").find(cls=>/^app-world-form-[wdl]$/.test(cls)).slice(-1).toUpperCase()),
       ["W","D","W","W","W"],"demo order must be newest first");
      for(const [index,dot] of form.children.entries()){
+      assert.equal(dot.tagName,"button");
+      assert.equal(dot.type,"button");
+      assert.ok(dot.events.focus?.length);
+      assert.ok(dot.events.click?.length);
+      assert.ok(dot.events.pointerenter?.length);
       assert.match(dot.className,/app-world-form-(w|d|l)/);
       assert.ok(dot.dataset.appI18n);
       assert.ok(dot.dataset.appAria);
@@ -161,6 +176,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(r.fields.get("app-standings-demo").hidden,division.id!=="IT-1");
    assert.equal(r.fields.get("app-standings-caption").dataset.appI18n,
     division.id==="IT-1"?"standingsDemoCaption":undefined);
+   assert.equal(r.body.children.filter(node=>node.attrs.role==="tooltip").length,preview?1:0);
    assert.equal(r.body.className,"app-body");
    assert.ok(!r.body.children.some(child=>child.attrs.role==="alert"));
   }
@@ -192,6 +208,68 @@ test("DEMO-IT1: illustrative ranking is internally consistent and isolated",asyn
  assert.equal(other.fields.get("app-standings-demo").hidden,true);
  assert.ok(other.fields.get("app-standings-body").children.every(
   row=>row.children.filter(cell=>cell.textContent==="—").length===10));
+});
+
+test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and dismissal",async()=>{
+ const r=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1")});
+ const tooltip=r.body.children.find(child=>child.attrs.role==="tooltip");
+ assert.ok(tooltip,"one tooltip is outside both scrolling containers");
+ assert.equal(tooltip.id,"app-world-form-tooltip");
+ assert.equal(tooltip.hidden,true);
+ const rows=r.fields.get("app-standings-body").children;
+ const squares=rows[0].children[10].children[0].children;
+ assert.equal(squares.length,5);
+ const newest=squares[0],oldest=squares[4];
+ const metadata=tooltip.children[0],scoreline=tooltip.children[1],context=tooltip.children[2];
+ assert.equal(metadata.children[0].dataset.appI18n,"standingsTooltipDemo");
+ assert.equal(metadata.children[1].children[0].dataset.appI18n,"standingsTooltipRound");
+ assert.equal(context.children[2].dataset.appI18n,"standingsTooltipDisclaimer");
+ newest.emit("pointerenter",{pointerType:"mouse"});
+ assert.equal(tooltip.hidden,false);
+ assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
+ assert.equal(metadata.children[1].children[1].textContent,"19");
+ assert.equal(scoreline.children[1].textContent,"2 – 1");
+ assert.ok(scoreline.children[0].textContent);
+ assert.ok(scoreline.children[2].textContent);
+ assert.notEqual(scoreline.children[0].textContent,scoreline.children[2].textContent);
+ assert.notEqual(context.children[0].hidden,context.children[1].hidden);
+ assert.ok(Number.parseInt(tooltip.style.left,10)>=8);
+ assert.ok(Number.parseInt(tooltip.style.top,10)>=8);
+ // Reselecting the oldest sample updates the round and keeps a single description.
+ oldest.emit("focus");
+ assert.equal(newest.attrs["aria-describedby"],undefined);
+ assert.equal(oldest.attrs["aria-describedby"],"app-world-form-tooltip");
+ assert.equal(metadata.children[1].children[1].textContent,"15");
+ oldest.emit("blur");
+ assert.equal(tooltip.hidden,true);
+ assert.equal(oldest.attrs["aria-describedby"],undefined);
+ // A tap opens and a second tap on the same button closes.
+ newest.emit("pointerdown",{pointerType:"touch"});
+ newest.emit("focus");
+ newest.emit("click");
+ assert.equal(tooltip.hidden,false);
+ newest.emit("pointerdown",{pointerType:"touch"});
+ newest.emit("click");
+ assert.equal(tooltip.hidden,true);
+ newest.emit("focus");
+ let stopped=false;
+ r.document.emit("keydown",{key:"Escape",stopPropagation(){stopped=true}});
+ assert.ok(stopped);
+ assert.equal(tooltip.hidden,true);
+ newest.emit("focus");
+ r.document.emit("pointerdown",{target:rows[0]});
+ assert.equal(tooltip.hidden,true);
+ // Fixed portal stays within the viewport despite a button next to an edge.
+ newest.rect={left:375,right:390,top:3,bottom:19,width:15,height:16};
+ newest.emit("focus");
+ assert.equal(tooltip.style.left,"82px");
+ assert.equal(tooltip.style.top,"27px");
+ r.window.emit("resize");
+ assert.equal(tooltip.hidden,false);
+ newest.rect={left:400,right:416,top:220,bottom:236,width:16,height:16};
+ r.window.emit("scroll");
+ assert.equal(tooltip.hidden,true,"off-screen tooltip dismissed");
+ assert.equal(newest.attrs["aria-describedby"],undefined);
 });
 
 test("SHARED-QA-01: invalid, approved or unavailable data fails closed",async()=>{
