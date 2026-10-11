@@ -279,6 +279,7 @@
     parsed.querySelectorAll("script").forEach(script => script.remove());
     document.body.innerHTML = parsed.body.innerHTML;
     document.body.className = parsed.body.className;
+    window.faThemeRebind?.(); // Rebind theme controls and branding after shared-shell hydration.
     document.getElementById("division-detail-name").textContent = division.name;
     document.getElementById("app-competition-badge").textContent = division.id;
     document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset;

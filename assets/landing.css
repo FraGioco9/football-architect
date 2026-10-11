@@ -78,3 +78,18 @@ a.cta:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* Rounded national flags throughout the static site. */
 img[src*="assets/flags/"]{border-radius:6px}
+
+/* UI-THEME #96: original dark palette is unchanged. */
+:root[data-theme="light"]{
+ color-scheme:light;--background:#F4F7F4;--surface:#FFFFFF;
+ --primary:#17664E;--primary-hover:#12523F;--text:#172C27;--muted:#496259;
+ --border:#A8BFB4;--line:#DCE6E0;--focus:#075A45;--scroll-thumb:#91A99E;
+}
+html[data-theme="light"] .language-trigger:hover,
+html[data-theme="light"] .language-trigger[aria-expanded="true"]{background:#EAF2ED;border-color:#5D8776}
+html[data-theme="light"] .language-menu{box-shadow:0 10px 24px rgba(28,49,41,.13)}
+html[data-theme="light"] .language-option[aria-selected="true"]{background:#DCEEE4}
+html[data-theme="light"] .language-option[data-active="true"],
+html[data-theme="light"] .language-option:hover{background:#E4F1E9}
+html[data-theme="light"] .cta-primary:hover{background:var(--primary-hover)}
+html[data-theme="light"] .cta-secondary:hover{background:#EAF1ED;border-color:#7C9B8D}
