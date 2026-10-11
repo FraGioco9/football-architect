@@ -209,19 +209,20 @@ html{scroll-padding-top:72px}
 .app-world-form-l{background:#98504d}
 .app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}
 .app-world-form-dot:focus-visible{outline:2px solid #effff4;outline-offset:2px}
-.app-world-form-tooltip{position:fixed;z-index:80;display:flex;flex-direction:column;justify-content:space-between;gap:7px;width:min(310px,calc(100vw - 16px));height:128px;max-height:calc(100dvh - 16px);overflow:hidden;pointer-events:none;padding:12px 14px;border:1px solid #537369;border-radius:12px;background:#142b2e;color:#f2f7f4;box-shadow:0 16px 40px rgba(0,0,0,.38);font-size:11px;line-height:1.4;animation:app-world-tooltip-in 170ms ease-out both}
+/* Viewport-scaled, content-independent 155:64 border-box proportions. */
+.app-world-form-tooltip{--app-form-tooltip-width:clamp(240px,80vw,350px);position:fixed;z-index:80;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;gap:clamp(5px,1.8vw,8px);width:var(--app-form-tooltip-width);height:calc(var(--app-form-tooltip-width) * 0.4129032258064516);aspect-ratio:155/64;overflow:hidden;pointer-events:none;padding:clamp(9px,3vw,13.5px) clamp(10px,3.4vw,15.8px);border:1px solid #537369;border-radius:clamp(9px,3.1vw,13px);background:#142b2e;color:#f2f7f4;box-shadow:0 16px 40px rgba(0,0,0,.38);font-size:clamp(10px,2.8vw,12.5px);line-height:1.4;animation:app-world-tooltip-in 170ms ease-out both}
 .app-world-form-tooltip[hidden]{display:none}
 .app-world-form-tooltip.is-closing{animation:app-world-tooltip-out 130ms ease-in both}
 @keyframes app-world-tooltip-in{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes app-world-tooltip-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(4px) scale(.985)}}
 @media(prefers-reduced-motion:reduce){.app-world-form-tooltip,.app-world-form-tooltip.is-closing{animation:none!important}}
-.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:flex-end;min-height:14px;color:#b5c9c1;font-size:10px;font-weight:650}
-.app-world-form-tooltip-round{display:inline-flex;gap:5px;white-space:nowrap}
-.app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px;min-height:36px}
+.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:flex-end;min-height:clamp(11px,3.6vw,16px);color:#b5c9c1;font-size:clamp(9px,2.5vw,11.3px);font-weight:650}
+.app-world-form-tooltip-round{display:inline-flex;gap:clamp(3px,1.3vw,6px);white-space:nowrap}
+.app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:clamp(6px,2.3vw,10px);min-height:clamp(26px,9vw,40px)}
 .app-world-form-tooltip-team{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .app-world-form-tooltip-team:last-child{text-align:right}
-.app-world-form-tooltip-score{font-size:18px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
-.app-world-form-tooltip-context{display:flex;justify-content:center;margin-top:0;padding-top:8px;border-top:1px solid #34524d;color:#b5c9c1;font-size:10px}
+.app-world-form-tooltip-score{font-size:clamp(15px,4.5vw,20.3px);font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+.app-world-form-tooltip-context{display:flex;justify-content:center;margin-top:0;padding-top:clamp(6px,2.05vw,9px);border-top:1px solid #34524d;color:#b5c9c1;font-size:clamp(9px,2.5vw,11.3px)}
 .app-world-form-tooltip-context [hidden]{display:none}
 /* Shared competition standings: dedicated crest slot for every club. */
 .app-world-standings{width:100%;max-width:100%;min-width:0;margin-top:0;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
