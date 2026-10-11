@@ -49,14 +49,14 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
 
 test("SEARCH-01 search destinations are limited to real internal routes and heading anchors",()=>{
   const destinations=[...script.matchAll(/\["(page|section)","([^"]+)","([^"]+)","([^"]+)"\]/g)];
-  assert.equal(destinations.length,9);
-  const known=new Set(pages);
+  assert.equal(destinations.length,10);
+  const known=new Set([...pages,"app/competitions/index.html"]);
   for(const [,kind,id,description,url] of destinations){
-    assert.match(url,/^\/app\/(?:dashboard\/|calendar\/|settings\/)(?:#[a-z-]+)?$/);
+    assert.match(url,/^\/app\/(?:dashboard\/|calendar\/|settings\/|competitions\/)(?:#[a-z-]+)?$/);
     const [pathname,fragment] = url.slice(1).split("#");
     const file=pathname+"index.html";
     assert.ok(known.has(file),url);
-    const target=html[file];
+    const target=html[file] ?? read(file);
     assert.ok(target.includes('id="'+id+'"'),id);
     assert.ok(target.includes('data-app-i18n="'+description+'"'),description);
     if(fragment) assert.ok(target.includes('id="'+fragment+'"'),fragment);
@@ -66,7 +66,8 @@ test("SEARCH-01 search destinations are limited to real internal routes and head
 
 test("SEARCH-01 supports exactly five UI locales and avoids unimplemented data/search shortcuts",()=>{
   for(const lang of ["en","de","es","fr","it"]) assert.match(script,new RegExp("\\b"+lang+": \\{trigger:"));
-  assert.doesNotMatch(script,/fetch\(|indexedDB|localStorage|sessionStorage|Ctrl\+K|metaKey|ctrlKey|fakeFixtures/);
+  assert.doesNotMatch(script,/indexedDB|localStorage|sessionStorage|Ctrl\+K|metaKey|ctrlKey|fakeFixtures/);
+  assert.ok(script.includes('new URL("../data/divisions.json", sourceUrl)'));
   assert.match(script,/new MutationObserver\(translate\)/);
   assert.match(script,/normalize\("NFD"\)/);
   assert.match(script,/trigger\.querySelector\("span"\)/);
@@ -76,7 +77,7 @@ test("SEARCH-01 supports exactly five UI locales and avoids unimplemented data/s
   assert.match(script,/trigger\.focus\(\{preventScroll:true\}\)/);
 });
 
-function simulate(language="en"){
+function simulate(language="en",worldCatalogue=null){
   const listeners=new Map();
   const el=(id,tag="DIV")=>{
     const e={
@@ -99,11 +100,11 @@ function simulate(language="en"){
   };
   const ids=["app-search-trigger","app-search-dialog","app-search-input","app-search-results",
     "app-search-status","app-search-empty","app-search-close","app-search-heading","app-search-scope",
-    "dashboard-title","calendar-title","settings-title","career-status-heading","world-heading",
+    "dashboard-title","calendar-title","settings-title","divisions-title","career-status-heading","world-heading",
     "app-language-heading","app-career-heading","app-data-heading","app-about-heading"];
   const nodes=Object.fromEntries(ids.map(id=>[id,el(id)]));
   const labels={
-    "dashboard-title":"Dashboard","calendar-title":"Calendar","settings-title":"Settings",
+    "dashboard-title":"Dashboard","calendar-title":"Calendar","settings-title":"Settings","divisions-title":"Competitions",
     "career-status-heading":"Career status","world-heading":"World foundations",
     "app-language-heading":"Language","app-career-heading":"Your career",
     "app-data-heading":"Data management","app-about-heading":"About the game"
@@ -118,7 +119,7 @@ function simulate(language="en"){
   };
   Object.entries(labels).forEach(([key,value])=>nodes[key].textContent=value);
   const document={
-    documentElement:{lang:language},activeElement:null,
+    documentElement:{lang:language},currentScript:worldCatalogue?{src:"http://127.0.0.1:2000/assets/app-search.js"}:null,activeElement:null,
     getElementById(id){return nodes[id]??null},
     querySelector(selector){
       const m=selector.match(/^\[data-app-i18n="([^"]+)"\]$/);
@@ -131,24 +132,29 @@ function simulate(language="en"){
     constructor(callback){onLanguageChange=callback}
     observe(element,options){assert.equal(element,document.documentElement);assert.deepEqual([...options.attributeFilter],["lang"])}
   }
-  runInNewContext(script,{document,window:{matchMedia(){return {matches:true}}},MutationObserver,
+  const requestedUrls=[];
+  const fetchCatalogue=worldCatalogue?async url=>{
+    requestedUrls.push(String(url));
+    return {ok:true,json:async()=>worldCatalogue};
+  }:undefined;
+  runInNewContext(script,{document,window:{matchMedia(){return {matches:true}}},MutationObserver,URL,fetch:fetchCatalogue,
     setTimeout(){throw Error("reduced motion must not schedule closing animation")},clearTimeout(){}},{timeout:2000});
   const trigger=nodes["app-search-trigger"],dialog=nodes["app-search-dialog"],input=nodes["app-search-input"],list=nodes["app-search-results"];
   trigger.visibleLabel={textContent:"Search the app"};
   const links=()=>list.querySelectorAll("a.app-search-result");
-  return {nodes,labels,document,trigger,dialog,input,list,links,changeLanguage:()=>onLanguageChange()};
+  return {nodes,labels,document,trigger,dialog,input,list,links,requestedUrls,changeLanguage:()=>onLanguageChange()};
 }
 
-test("SEARCH-01 opens with three real page suggestions, focuses input, and closes back to trigger",()=>{
+test("SEARCH-01 opens with four real page suggestions, focuses input, and closes back to trigger",()=>{
   const app=simulate();
   app.trigger.emit("click");
   assert.equal(app.dialog.open,true);
   assert.equal(app.document.activeElement,app.input);
-  assert.deepEqual(app.links().map(a=>a.href),["/app/dashboard/","/app/calendar/","/app/settings/"]);
+  assert.deepEqual(app.links().map(a=>a.href),["/app/dashboard/","/app/calendar/","/app/settings/","/app/competitions/"]);
   app.dialog.emit("cancel");
   assert.equal(app.dialog.open,false);
   assert.equal(app.document.activeElement,app.trigger);
-  assert.equal(app.nodes["app-search-status"].textContent,"3 suggestions");
+  assert.equal(app.nodes["app-search-status"].textContent,"4 suggestions");
 });
 
 test("SEARCH-01 filters immediately, matches accents, and reports empty results",()=>{
@@ -399,4 +405,28 @@ test("SEARCH-01 uses direct canonical Dashboard suggestions and anchors",()=>{
   for(const href of ["/app/dashboard/","/app/dashboard/#career-status-heading","/app/dashboard/#world-heading"]){
     assert.ok(script.includes('"'+href+'"'),"Missing canonical Dashboard destination: "+href);
   }
+});
+
+test("UI-WORLD resolves all canonical divisions by name and identifier",async()=>{
+  const catalogue=JSON.parse(read("data/divisions.json"));
+  const app=simulate("en",catalogue);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(app.requestedUrls,["http://127.0.0.1:2000/data/divisions.json"]);
+  app.trigger.emit("click");
+  for(const [query,path] of [
+    ["pt-1","/app/competitions/pt-1/"],
+    ["atlantica","/app/competitions/pt-2/"],
+    ["liga lusitana","/app/competitions/pt-1/"],
+    ["bondsklasse","/app/competitions/nl-2/"]
+  ]){
+    app.input.value=query;
+    app.input.emit("input");
+    assert.equal(app.links()[0]?.href,path,query);
+  }
+  app.input.value="competitions";
+  app.input.emit("input");
+  assert.ok(app.links().some(link=>link.href==="/app/competitions/"));
+  app.input.value="unlikely-missing-game-data";
+  app.input.emit("input");
+  assert.equal(app.links().length,0);
 });

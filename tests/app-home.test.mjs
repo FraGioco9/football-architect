@@ -26,7 +26,10 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
     assert.match(markup, /class="fa-shell-sidebar"/);
     assert.match(markup, /class="fa-shell-topbar"/);
     assert.match(markup, /id="app-calendar"/);
+    assert.match(markup, /id="app-nav-world-title"/);
+    assert.match(markup, /id="app-nav-divisions"/);
     assert.match(markup, /id="app-settings"/);
+    assert.match(markup, /id="app-divisions"/);
     const [dashboardLink,calendarLink,settingsLink] = expectedLinks[page];
     assert.ok(markup.includes('id="app-nav-dashboard" href="'+dashboardLink+'"'));
     assert.ok(markup.includes('id="app-nav-calendar" href="'+calendarLink+'"'));
@@ -37,9 +40,9 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
     assert.match(markup,new RegExp('id="app-nav-'+page+'"[^>]*aria-current="page"'));
   }
   assert.doesNotMatch(js, /#calendar|#settings|hashchange|window\.location\.hash|location\.replace/);
-  assert.match(js, /path\.endsWith\("\/app\/calendar"\)/);
-  assert.match(js, /path\.endsWith\("\/app\/settings"\)/);
-  assert.match(js, /path\.endsWith\("\/app\/dashboard"\)/);
+  assert.ok(js.includes(String.raw`replace(/^\/app(?=\/|$)/,"")`));
+  for(const route of ["calendar","settings","dashboard"])
+    assert.ok(js.includes('path === "/'+route+'"'),route);
 });
 
 test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destination links", () => {
@@ -66,11 +69,11 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
   for (const [view,markup] of Object.entries(pages)) {
     assert.doesNotMatch(markup,/class="app-eyebrow"|class="app-intro"/);
     assert.match(markup, /<main class="app-main" id="main-content" tabindex="-1">/);
-    for (const label of ["dashboard","calendar","settings"]) {
+    for (const label of ["dashboard","calendar","settings","divisions"]) {
       assert.match(markup,new RegExp('<h1 class="app-page-title" id="'+label+'-title"'));
     }
     assert.match(markup,new RegExp('<section id="app-'+view+'"[^>]*aria-labelledby="'+view+'-title"(?![^>]*hidden)'));
-    assert.equal((markup.match(/class="app-page-title"/g)||[]).length,3);
+    assert.equal((markup.match(/class="app-page-title"/g)||[]).length,4);
   }
   for(const token of ["--app-page-pad-inline","--app-page-pad-top","--app-page-pad-bottom","--app-page-section-gap","--app-page-title-size"]) {
     assert.ok(css.includes(token),token);
@@ -83,14 +86,22 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
   assert.doesNotMatch(css,/\.app-eyebrow|\.app-intro/);
 });
 
-test("HOME-02 TOPBAR-B sticky top bar and fragment scroll offsets", () => {
+test("HOME-02 TOPBAR-B keeps the topbar above the shared inset scroll area", () => {
   assert.match(css,/\.fa-shell-topbar\{position:sticky;top:0;z-index:20;flex-shrink:0;/);
   assert.match(css,/\.fa-shell-sidebar\{[^}]*position:sticky;top:0;z-index:12/);
   assert.match(css,/html\{scroll-padding-top:72px\}/);
   assert.match(css,/@media\(max-width:720px\)\{\s*html\{scroll-padding-top:66px\}/);
-  assert.doesNotMatch(css,/\.fa-shell-(?:topbar|workspace)\{[^}]*overflow(?:-[xy])?:/);
+  assert.doesNotMatch(css,/\.fa-shell-topbar\{[^}]*overflow(?:-[xy])?:/);
+  assert.match(css,/html:has\(>body\.app-body\)\{overflow:hidden;scrollbar-gutter:auto\}/);
+  assert.match(css,/\.app-body\{[^}]*height:100dvh;overflow:hidden;/);
+  assert.match(css,/\.fa-career-shell\{[^}]*height:100dvh;overflow:hidden\}/);
+  assert.match(css,/\.fa-shell-workspace\{[^}]*height:100%;overflow:hidden\}/);
+  assert.match(css,/\.fa-shell-content-scroll\{[^}]*min-height:0;overflow-y:auto;[^}]*scrollbar-width:thin;/);
+  assert.match(css,/\.fa-shell-content-scroll::-webkit-scrollbar-track\{background:transparent\}/);
   for (const markup of Object.values(pages)) {
     assert.match(markup,/<header class="fa-shell-topbar">/);
+    assert.match(markup,/<\/header>\s*<div class="fa-shell-content-scroll">\s*<main class="app-main"/);
+    assert.match(markup,/<\/main>\s*<footer class="app-footer">[^]*?<\/footer>\s*<\/div>\s*<\/div>/);
     assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
     assert.match(markup,/<a class="app-skip" href="#main-content"/);
     assert.match(markup,/id="app-search-trigger"/);
@@ -271,5 +282,23 @@ test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
 test("CLEAN-OPT generated app shells stay byte-identical to checked-in HTML", () => {
   const generator = fileURLToPath(new URL("../tools/generate-app-pages.mjs", import.meta.url));
   const output = execFileSync(process.execPath, [generator, "--check"], {encoding:"utf8"});
-  assert.match(output, /Static HTML matches checked-in pages: 3\/3/);
+  assert.match(output, /Static HTML matches checked-in pages: 21\/21/);
+});
+
+test("APP-HOST-URL-01: production app subdomain and local static preview routes",()=>{
+ const source=read("assets/app.js");
+ const match=source.match(/  function appHref\(route\) \{[\s\S]*?\n  \}/);
+ assert.ok(match,"shared app URL resolver exists");
+ const resolve=(hostname,pathname,protocol="https:")=>
+  runInNewContext(match[0]+"\nappHref("+JSON.stringify(pathname)+")",
+   {window:{location:{hostname,protocol}}});
+ for(const [host,path,expected] of [
+  ["football.example","/app/dashboard/","https://app.football.example/dashboard/"],
+  ["www.football.example","/app/competitions/it-1/","https://app.football.example/competitions/it-1/"],
+  ["app.football.example","/app/competitions/it-1/","/competitions/it-1/"],
+  ["app.football.example","/app/settings/#app-language-heading","/settings/#app-language-heading"],
+  ["localhost","/app/competitions/it-1/","/app/competitions/it-1/"],
+  ["192.168.1.90","/app/calendar/","/app/calendar/"],
+  ["football-architect.vercel.app","/app/calendar/","/app/calendar/"]
+ ]) assert.equal(resolve(host,path),expected,host);
 });

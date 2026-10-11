@@ -75,3 +75,6 @@ a.cta:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+/* Rounded national flags throughout the static site. */
+img[src*="assets/flags/"]{border-radius:6px}
