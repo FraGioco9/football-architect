@@ -93,7 +93,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(png.readUInt32BE(20),h,label+" height");
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
-      if(["desktop dark settings","desktop light settings","iPhone light standings",
+      if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
           "mobile dark search","mobile light tooltip fixture"].includes(label)){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
@@ -134,9 +134,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.ok(table.logo?.endsWith("-"+theme+".svg"),name+" async logo");
         await snap(name+" "+theme+" standings",w,h);
         // Normal public standings contain no actual match form: CSS-only diagnostic tooltip fixture.
-        const tooltip=await run("(()=>{const t=document.createElement('div');t.className='app-world-form-tooltip';t.style.left='12px';t.style.top='90px';t.textContent='Matchday 19 · Sample 2–1 Example';document.body.appendChild(t);const s=getComputedStyle(t);return {fg:s.color,bg:s.backgroundColor,width:t.getBoundingClientRect().width}})()");
+        const tooltip=await run("(()=>{const t=document.createElement('div');t.className='app-world-form-tooltip';t.style.left=Math.max(12,Math.round((innerWidth-Math.min(350,innerWidth*.8))/2))+'px';t.style.top=Math.round(innerHeight*.38)+'px';t.innerHTML='<div class=\"app-world-form-tooltip-meta\">Matchday 19</div><div class=\"app-world-form-tooltip-scoreline\"><span class=\"app-world-form-tooltip-team\">Sample FC</span><strong class=\"app-world-form-tooltip-score\">2–1</strong><span class=\"app-world-form-tooltip-team\">Example FC</span></div><div class=\"app-world-form-tooltip-context\">Diagnostic match result</div>';document.body.appendChild(t);const s=getComputedStyle(t);return {fg:s.color,bg:s.backgroundColor,width:t.getBoundingClientRect().width}})()");
         assert.ok(tooltip.width>0);assert.ok(ratio(tooltip.fg,tooltip.bg)>=4.5);
         assert.equal(tooltip.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)");
+        await delay(240); // Wait for the documented 170ms entrance animation before capturing.
         await snap(name+" "+theme+" tooltip fixture",w,h);
         checks.push(name+"/"+theme);
       }
