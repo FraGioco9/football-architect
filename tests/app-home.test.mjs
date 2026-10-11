@@ -40,9 +40,9 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
     assert.match(markup,new RegExp('id="app-nav-'+page+'"[^>]*aria-current="page"'));
   }
   assert.doesNotMatch(js, /#calendar|#settings|hashchange|window\.location\.hash|location\.replace/);
-  assert.match(js, /path\.endsWith\("\/app\/calendar"\)/);
-  assert.match(js, /path\.endsWith\("\/app\/settings"\)/);
-  assert.match(js, /path\.endsWith\("\/app\/dashboard"\)/);
+  assert.ok(js.includes('replace(/^\/app(?=\/|$)/,"")'));
+  for(const route of ["calendar","settings","dashboard"])
+    assert.ok(js.includes('path === "/'+route+'"'),route);
 });
 
 test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destination links", () => {
