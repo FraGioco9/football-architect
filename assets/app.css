@@ -204,7 +204,7 @@ html{scroll-padding-top:72px}
 .app-world-demo-note{margin:0 0 12px;padding:9px 12px;border:1px dashed #6a9f83;border-radius:9px;background:rgba(100,203,169,.065);color:#c9e7d8;font-size:11.5px;line-height:1.5}
 .app-world-demo-note[hidden]{display:none}
 .app-world-stat-value{font-weight:650}
-.app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+.app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:800;line-height:1;color:#f7fbf8}
 .app-world-form-w{background:#237c59}
 .app-world-form-d{background:#667b82}
