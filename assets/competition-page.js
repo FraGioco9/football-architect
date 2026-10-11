@@ -74,6 +74,7 @@
     D:["standingsDemoFormDraw","Draw","standingsDemoDrawLetter"],
     L:["standingsDemoFormLoss","Loss","standingsDemoLossLetter"]
   };
+  const demoFormTriggers = [];
   function createStandingsRow(club, sample = null, position = null) {
     const tr = document.createElement("tr");
     tr.dataset.worldClub = club.countryId + "-" + club.clubId;
@@ -118,14 +119,15 @@
         const result = form[i];
         const isLatest = i === form.length - 1;
         const [ariaKey,english,letterKey] = formLabels[result];
-        const dot = document.createElement("span");
+        const dot = document.createElement("button");
+        dot.type = "button";
         dot.className = "app-world-form-dot app-world-form-" + result.toLowerCase() +
           (isLatest ? " app-world-form-last" : "");
         dot.dataset.appAria = isLatest ? ariaKey + "Latest" : ariaKey;
         dot.dataset.appI18n = letterKey;
-        dot.setAttribute("role","img");
         dot.setAttribute("aria-label",isLatest ? english + " — latest match" : english);
         dot.textContent = result;
+        demoFormTriggers.push({button:dot,club,result,round:15+i});
         strip.appendChild(dot);
       }
       formCell.appendChild(strip);
@@ -134,6 +136,115 @@
       for (let i = 0; i < 9; i++) tr.appendChild(unknown());
     }
     return tr;
+  }
+
+  // Temporary IT-1 fixture details are never written to the canonical manifest.
+  // A fixed, document-level tooltip stays visible above both nested scroll regions.
+  function attachFormTooltips(clubs) {
+    if (!demoFormTriggers.length) return;
+    const tooltip = document.createElement("div");
+    tooltip.id = "app-world-form-tooltip";
+    tooltip.className = "app-world-form-tooltip";
+    tooltip.setAttribute("role","tooltip");
+    tooltip.hidden = true;
+    const item = (tag,cls,value,key) => {
+      const el = document.createElement(tag);
+      el.className = cls;
+      el.textContent = value;
+      if (key) el.dataset.appI18n = key;
+      return el;
+    };
+    const header = item("div","app-world-form-tooltip-meta","");
+    const demo = item("span","app-world-form-tooltip-demo","DEMO · Fictional fixture","standingsTooltipDemo");
+    const round = item("span","app-world-form-tooltip-round","");
+    const roundLabel = item("span","","Matchday","standingsTooltipRound");
+    const number = item("strong","","");
+    round.append(roundLabel,number);
+    header.append(demo,round);
+    const match = item("div","app-world-form-tooltip-scoreline","");
+    const homeName = item("span","app-world-form-tooltip-team","");
+    const score = item("strong","app-world-form-tooltip-score","");
+    const awayName = item("span","app-world-form-tooltip-team","");
+    match.append(homeName,score,awayName);
+    const footer = item("div","app-world-form-tooltip-context","");
+    const home = item("span","","Home","standingsTooltipHome");
+    const away = item("span","","Away","standingsTooltipAway");
+    const disclaimer = item("span","","Illustrative score · Not a real match","standingsTooltipDisclaimer");
+    footer.append(home,away,disclaimer);
+    tooltip.append(header,match,footer);
+    document.body.appendChild(tooltip);
+    const opponents = [...clubs.values()];
+    let active = null, wasOpenOnPress = false;
+    function close() {
+      if (active) active.removeAttribute("aria-describedby");
+      active = null;
+      tooltip.hidden = true;
+    }
+    function place() {
+      if (!active || tooltip.hidden) return;
+      const rect = active.getBoundingClientRect();
+      const width = window.innerWidth, height = window.innerHeight;
+      if (rect.bottom < 0 || rect.top > height || rect.right < 0 || rect.left > width) {
+        close();
+        return;
+      }
+      const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124;
+      const left = Math.max(8,Math.min(rect.left + rect.width / 2 - w / 2,width-w-8));
+      const top = rect.top >= h + 12 ? rect.top-h-8 : rect.bottom+8;
+      tooltip.style.left = Math.round(left)+"px";
+      tooltip.style.top = Math.round(Math.max(8,Math.min(top,height-h-8)))+"px";
+    }
+    function open(entry) {
+      if (active && active !== entry.button) active.removeAttribute("aria-describedby");
+      const others = opponents.filter(c => c.clubId !== entry.club.clubId);
+      const opponent = others[(entry.club.clubId + entry.round*3) % others.length];
+      const isHome = (entry.club.clubId + entry.round) % 2 === 0;
+      const own = entry.result === "W" ? 2 : entry.result === "D" ? 1 : 0;
+      const against = entry.result === "W" ? 1 : entry.result === "D" ? 1 : 2;
+      homeName.textContent = (isHome ? entry.club : opponent).primaryName;
+      awayName.textContent = (isHome ? opponent : entry.club).primaryName;
+      score.textContent = (isHome ? own : against)+" – "+(isHome ? against : own);
+      number.textContent = String(entry.round);
+      home.hidden = !isHome;
+      away.hidden = isHome;
+      active = entry.button;
+      active.setAttribute("aria-describedby",tooltip.id);
+      tooltip.hidden = false;
+      place();
+    }
+    for (const entry of demoFormTriggers) {
+      const button = entry.button;
+      button.addEventListener("pointerenter",event => {
+        if (event.pointerType === "mouse" || event.pointerType === "pen") open(entry);
+      });
+      button.addEventListener("pointerleave",event => {
+        if ((event.pointerType === "mouse" || event.pointerType === "pen") &&
+            active === button && document.activeElement !== button) close();
+      });
+      button.addEventListener("focus",() => open(entry));
+      button.addEventListener("blur",() => { if (active === button) close(); });
+      button.addEventListener("pointerdown",event => {
+        wasOpenOnPress = (event.pointerType === "touch" || event.pointerType === "pen") && active === button;
+      });
+      button.addEventListener("click",() => {
+        if (wasOpenOnPress && active === button) close();
+        else open(entry);
+        wasOpenOnPress = false;
+      });
+    }
+    document.addEventListener("pointerdown",event => {
+      if (active && event.target !== active) close();
+    });
+    document.addEventListener("keydown",event => {
+      if (event.key === "Escape" && active) {
+        close();
+        event.stopPropagation();
+      }
+    });
+    window.addEventListener("resize",place);
+    window.addEventListener("scroll",place,{passive:true});
+    document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
+    document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
   }
   function loadScript(url) {
     return new Promise((resolve,reject) => {
@@ -187,6 +298,7 @@
         throw Error("Invalid IT-1 visual demo");
       tbody.replaceChildren(...it1Demo.map((sample,i) =>
         createStandingsRow(clubs.get(sample[0]),sample,i+1)));
+      attachFormTooltips(clubs);
       document.getElementById("app-standings-demo").hidden = false;
       const caption = document.getElementById("app-standings-caption");
       caption.dataset.appI18n = "standingsDemoCaption";
