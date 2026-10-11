@@ -319,3 +319,12 @@ test("CLUB-PRIMARY-239-01 preserves six reconciliations and an independent A03 a
  assert.equal(it02?.primaryName,"AC Rinascenti Bologna");
  assert.equal(it02?.abbr,"RIN");
 });
+
+test("COMPETITIONS-ROUTE-02 resolves flags from the three-level competition path",()=>{
+ const shared=read("app/competitions/_shared/index.html"),loader=read("assets/competition-page.js");
+ const generator=read("tools/generate-app-pages.mjs");
+ assert.ok(shared.includes('id="app-competition-flag" alt="" src="../../../assets/flags/it.svg"'));
+ assert.ok(!shared.includes('id="app-competition-flag" alt="" src="../../../../'));
+ assert.ok(loader.includes('document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset'));
+ assert.ok(generator.includes('id="app-competition-flag" alt="" src="../../../'));
+});

@@ -106,7 +106,7 @@
     document.body.className = parsed.body.className;
     document.getElementById("division-detail-name").textContent = division.name;
     document.getElementById("app-competition-badge").textContent = division.id;
-    document.getElementById("app-competition-flag").src = "../../../../" + division.flagAsset;
+    document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset;
     const country = document.getElementById("app-competition-country");
     country.dataset.worldCountry = division.countryId;
     country.textContent = division.countryName;

@@ -102,7 +102,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
    assert.equal(r.fields.get("app-competition-badge").textContent,division.id);
-   assert.equal(r.fields.get("app-competition-flag").src,"../../../../"+division.flagAsset);
+   assert.equal(r.fields.get("app-competition-flag").src,"../../../"+division.flagAsset);
    assert.equal(r.fields.get("app-competition-country").dataset.worldCountry,division.countryId);
    assert.equal(r.fields.get("app-competition-tier").dataset.appI18n,
     division.tier===1?"divisionTier1":"divisionTier2");

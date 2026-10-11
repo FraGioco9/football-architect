@@ -167,7 +167,7 @@ const sharedTemplate = function sharedTemplate(html) {
  replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
  replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
  replaceOne('data-app-aria="crestPlaceholder">'+encode(first.id)+'</span>','id="app-competition-badge" data-app-aria="crestPlaceholder">—</span>',"badge");
- replaceOne('class="app-world-flag" alt="" src="../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../../'+encode(country.flagAsset)+'"',"flag");
+ replaceOne('class="app-world-flag" alt="" src="../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../'+encode(country.flagAsset)+'"',"flag");
  replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="">Country</span>',"country");
  replaceOne('data-app-i18n="divisionTier1">First division</span>','id="app-competition-tier" data-app-i18n="divisionTier1">First division</span>',"tier");
  replaceOne('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">—</dd>',"capacity");
