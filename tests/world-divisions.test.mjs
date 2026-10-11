@@ -100,7 +100,7 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",
  assert.ok(shared.includes('id="division-detail-name">Competition</span>'));
  for(const id of ["app-competition-badge","app-competition-flag","app-competition-country",
   "app-competition-tier","app-competition-capacity","app-competition-level","app-standings-body",
-  "app-standings-demo","app-standings-caption"]){
+  "app-standings-caption"]){
   assert.ok(shared.includes('id="'+id+'"'),id);
  }
  assert.ok(shared.includes('data-app-i18n="navCompetitions">Competitions'));
@@ -131,24 +131,32 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  const renderer=read("assets/competition-page.js"),css=read("assets/app.css");
  for(const lang of ["en","de","es","fr","it"])assert.ok(app.includes("    "+lang+": {"));
  assert.equal((app.match(/navCompetitions:/g)||[]).length,5);
- for(const key of ["standingsForm","standingsTable","competitionViews","standingsDemoNotice",
-  "standingsDemoCaption","standingsDemoWinLetter","standingsDemoDrawLetter",
-  "standingsDemoLossLetter","standingsDemoFormWin","standingsDemoFormDraw",
-  "standingsDemoFormLoss","standingsDemoFormWinLatest","standingsDemoFormDrawLatest",
-  "standingsDemoFormLossLatest","standingsTooltipDemo","standingsTooltipRound",
-  "standingsTooltipHome","standingsTooltipAway","standingsTooltipDisclaimer"]){
+ for(const key of ["standingsForm","standingsTable","competitionViews","standingsFilledCaption",
+  "standingsDemoWinLetter","standingsDemoDrawLetter","standingsDemoLossLetter",
+  "standingsDemoFormWin","standingsDemoFormDraw","standingsDemoFormLoss",
+  "standingsDemoFormWinLatest","standingsDemoFormDrawLatest","standingsDemoFormLossLatest",
+  "standingsTooltipRound","standingsTooltipHome","standingsTooltipAway"]){
   assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
  }
- assert.ok(shared.includes('id="app-standings-demo" data-app-i18n="standingsDemoNotice" hidden'));
  assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="standingsCaption"'));
  assert.ok(renderer.includes('routeId === "IT-1"'));
- assert.ok(css.includes(".app-world-demo-note[hidden]{display:none}"));
+ assert.ok(!shared.includes('app-standings-demo'));
+ assert.ok(!read("tools/generate-app-pages.mjs").includes("app-standings-demo"));
+ for(const text of [shared,read("tools/generate-app-pages.mjs"),app,renderer,css]){
+  assert.ok(!/DEMO [—·]|DÉMO [—·]|Illustrative score|Not a real match|app-world-demo-note|standingsDemoNotice|standingsTooltipDisclaimer/.test(text),"no visible demo markers");
+ }
  assert.ok(css.includes(".app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;"));
  assert.ok(css.includes(".app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:3px;"));
  assert.ok(css.includes(".app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}"));
- assert.ok(css.includes(".app-world-form-tooltip{position:fixed;z-index:80;"));
+ assert.ok(css.includes(".app-world-form-tooltip{position:fixed;z-index:80;display:flex;flex-direction:column;"));
+ assert.ok(css.includes("width:min(310px,calc(100vw - 16px));height:128px;max-height:calc(100dvh - 16px);overflow:hidden;"));
+ assert.ok(css.includes("pointer-events:none;padding:12px 14px;border:1px solid #537369"));
  assert.ok(css.includes(".app-world-form-tooltip[hidden]{display:none}"));
- assert.ok(css.includes("pointer-events:none;padding:11px 13px;border:1px solid #537369"));
+ assert.ok(css.includes(".app-world-form-tooltip.is-closing{animation:app-world-tooltip-out 130ms ease-in both}"));
+ assert.ok(css.includes("@keyframes app-world-tooltip-in{from{opacity:0;transform:translateY(6px) scale(.97)}"));
+ assert.ok(css.includes("@keyframes app-world-tooltip-out{from{opacity:1;transform:translateY(0) scale(1)}"));
+ assert.ok(css.includes("@media(prefers-reduced-motion:reduce){.app-world-form-tooltip,.app-world-form-tooltip.is-closing{animation:none!important}"));
+ assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"));
  assert.ok(renderer.includes('tooltip.setAttribute("role","tooltip")'));
  assert.ok(renderer.includes('document.body.appendChild(tooltip)'));
  assert.ok(renderer.includes('active.setAttribute("aria-describedby",tooltip.id)'));
