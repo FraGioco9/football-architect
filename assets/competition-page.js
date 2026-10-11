@@ -83,9 +83,9 @@
       td.textContent = "—";
       return td;
     };
-    const stat = (value,className="app-world-stat-value") => {
+    const stat = value => {
       const td = document.createElement("td");
-      td.className = className;
+      td.className = "app-world-stat-value";
       td.textContent = String(value);
       return td;
     };
@@ -109,9 +109,7 @@
       const [id,w,d,l,gf,ga,form] = sample;
       const diff = gf - ga;
       const values = [19,w,d,l,gf,ga,diff > 0 ? "+" + diff : diff,3*w+d];
-      values.forEach((value,i) => tr.appendChild(stat(value,i === 6 && diff !== 0
-        ? "app-world-stat-value " + (diff > 0 ? "app-world-stat-positive" : "app-world-stat-negative")
-        : "app-world-stat-value")));
+      values.forEach(value => tr.appendChild(stat(value)));
       const formCell = document.createElement("td");
       const strip = document.createElement("span");
       strip.className = "app-world-form-strip";
