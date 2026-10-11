@@ -244,20 +244,20 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
 
 test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky columns",()=>{
  const css=read("assets/app.css");
- assert.ok(css.includes(".app-world-standing-table{width:680px;min-width:680px;table-layout:fixed;"));
- assert.ok(css.includes(".app-world-standings{width:fit-content;max-width:100%;"));
+ assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:680px;table-layout:fixed;"));
+ assert.ok(css.includes(".app-world-standings{width:100%;max-width:100%;"));
   assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:42px;min-width:42px;max-width:42px}"));
   assert.ok(css.includes(".app-world-standing-table tr>*:last-child{width:74px;min-width:74px;max-width:74px}"));
-  assert.ok(css.includes(".app-world-standing-table{width:586px;min-width:586px}"));
+  assert.ok(css.includes(".app-world-standing-table{min-width:586px}"));
   assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:38px;min-width:38px;max-width:38px}"));
-  assert.ok(css.includes(".app-world-standing-table{width:566px;min-width:566px}"));
+  assert.ok(css.includes(".app-world-standing-table{min-width:566px}"));
   assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:46px"));
  assert.ok(css.includes(".app-world-standing-table thead th{height:36px"));
  assert.ok(css.includes("tr>*:first-child{position:sticky;left:0;z-index:2;width:38px;min-width:38px;max-width:38px"));
- assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:38px;z-index:2;width:232px;min-width:232px;max-width:232px"));
+ assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:38px;z-index:2;width:auto;min-width:232px"));
  assert.ok(css.includes("tr>*:first-child{width:30px;min-width:30px;max-width:30px}"));
- assert.ok(css.includes("tr>*:nth-child(2){left:30px;width:178px;min-width:178px;max-width:178px}"));
- assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{width:566px;min-width:566px}.app-world-standing-table tr>*:nth-child(2){width:158px;min-width:158px;max-width:158px}"));
+ assert.ok(css.includes("tr>*:nth-child(2){left:30px;min-width:178px}"));
+ assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:566px}.app-world-standing-table tr>*:nth-child(2){min-width:158px}"));
  assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
  assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
