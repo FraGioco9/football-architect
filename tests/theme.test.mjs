@@ -43,7 +43,7 @@ function boot(value,blocked=false) {
     addEventListener:(type,callback)=>events[type]=callback
   };
   runInNewContext(source,{window,document},{timeout:1000});
-  return {attrs,buttons,img,events,storage};
+  return {attrs,buttons,img,events,storage,window};
 }
 
 test("theme defaults to dark, with invalid or inaccessible saved values",()=>{
@@ -77,6 +77,8 @@ test("saved Light applies before document-ready, persists, and follows other tab
   assert.equal(s.attrs["data-theme"],"light");
   assert.equal(s.storage.get("football-architect:theme"),"dark");
   assert.equal(s.buttons[1].attrs["aria-pressed"],"true");
+  assert.equal(typeof s.window.faThemeRebind,"function");
+  assert.doesNotThrow(()=>s.window.faThemeRebind());
 });
 
 test("all published static pages bootstrap theme ahead of their first stylesheet",()=>{
@@ -105,4 +107,13 @@ test("Settings theme control is accessible and localized in all five languages",
   assert.match(read("assets/landing.css"),/:root\[data-theme="light"\]/);
   assert.match(read("assets/app.css"),/html\[data-theme="light"\] \.app-search-panel/);
   assert.match(read("assets/app.css"),/\.app-theme-choice:focus-visible/);
+});
+
+test("late competition hydration explicitly rebinds stored-theme brand and controls",()=>{
+  assert.match(read("assets/competition-page.js"),/window\\.faThemeRebind\\?\\.\\(\\)/);
+  const state=boot("light");
+  state.events.DOMContentLoaded();
+  state.window.faThemeRebind();
+  assert.equal(state.img.src,"../../assets/brand/symbol-light.svg");
+  assert.equal(state.buttons[1].attrs["aria-pressed"],"true");
 });

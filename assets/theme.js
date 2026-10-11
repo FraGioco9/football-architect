@@ -30,6 +30,8 @@
         catch { /* Theme remains active in the current document. */ }
       });
   }
+  // The competition renderer inserts its shared body after DOMContentLoaded.
+  window.faThemeRebind = ready;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready, {once:true});
   else ready();
   window.addEventListener("storage", event => {
