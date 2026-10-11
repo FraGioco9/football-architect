@@ -161,26 +161,6 @@
         }
         const panel = element("div","app-world-mobile-panel");
         panel.appendChild(stats);
-        if (row.recent.length) {
-          const title = element("h3","app-world-mobile-matches-title","Recent matches");
-          title.dataset.appI18n = "standingsMobileMatches";
-          const matches = element("ol","app-world-mobile-matches");
-          for (const game of row.recent) {
-            const opponent = clubs.get(game.isHome ? game.awayId : game.homeId);
-            if (!opponent || !Number.isInteger(game.homeGoals) ||
-                !Number.isInteger(game.awayGoals)) throw Error("Invalid mobile match");
-            const match = element("li","app-world-mobile-match");
-            const round = element("span","","Matchday");
-            round.dataset.appI18n = "standingsTooltipRound";
-            const venue = element("span","",game.isHome ? "Home" : "Away");
-            venue.dataset.appI18n = game.isHome ? "standingsTooltipHome" : "standingsTooltipAway";
-            match.append(round,element("span","",String(game.round)),
-              element("span","",opponent.primaryName),
-              element("strong","",game.homeGoals+" – "+game.awayGoals),venue);
-            matches.appendChild(match);
-          }
-          panel.append(title,matches);
-        }
         details.append(summary,panel);
         li.appendChild(details);
         return li;

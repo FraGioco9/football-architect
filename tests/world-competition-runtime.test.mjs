@@ -163,7 +163,10 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    r.window.emit("resize");
    assert.equal(mobileRows[0].children[0].tagName,"details");
    assert.equal(mobileRows[0].children[0].children[0].tagName,"summary");
-   assert.equal(mobileRows[0].children[0].children[1].children[0].children.length,8);
+   const detailsPanel=mobileRows[0].children[0].children[1];
+   assert.equal(detailsPanel.children.length,1,"mobile expansion includes stats only");
+   assert.equal(detailsPanel.children[0].className,"app-world-mobile-stats");
+   assert.equal(detailsPanel.children[0].children.length,8);
    assert.equal(mobileRows[0].children[0].children[0].children[2].textContent,"—");
    const preview=false; // ordinary pages never render sample results
    const clubs=preview ? new Map(division.clubs.map(c=>[c.clubId,c])) : null;

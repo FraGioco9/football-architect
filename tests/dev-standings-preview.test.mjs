@@ -237,7 +237,7 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   for (const id of ["app-standings-compact-list","app-standings-full"])
     assert.ok(runtime.includes('id="'+id+'"'),id);
   assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
-  for (const key of ["standingsMobileRecent","standingsMobileDetails","standingsMobileMatches"])
+  for (const key of ["standingsMobileRecent","standingsMobileDetails"])
     assert.equal(localization.split(key+":").length,6,"five localizations for "+key);
   for (const removed of ["app-standings-layout-switch","app-standings-show-compact",
     "app-standings-show-full"]) assert.ok(!runtime.includes(removed));
@@ -245,6 +245,14 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   assert.ok(css.includes("@media(max-width:620px){.app-world-standing-scroll{display:none!important}"));
   assert.ok(css.includes("@media(min-width:621px){.app-world-compact{display:none!important}}"));
   assert.ok(runtime.includes("function createMobileStandings()"));
+  assert.ok(runtime.includes('element("dl","app-world-mobile-stats")'));
+  assert.ok(runtime.includes('for (const game of row.recent) {'),"five form indicators preserved");
+  for (const absent of ["app-world-mobile-matches","app-world-mobile-match",
+    "standingsMobileMatches","Recent matches"]) {
+    assert.ok(!runtime.includes(absent),"removed from mobile rendering: "+absent);
+    assert.ok(!css.includes(absent),"removed from CSS: "+absent);
+  }
+  assert.ok(!localization.includes("standingsMobileMatches:"));
   assert.ok(runtime.includes("window.faStandingsMobile = mobile"));
   assert.ok(runtime.includes("const commitMobile = mobile.prepare(provisional)"));
   assert.ok(client.includes("const commitMobile = mobile.prepare(rows)"));
