@@ -51,6 +51,143 @@
     L:["standingsDemoFormLoss","Loss","standingsDemoLossLetter"]
   };
   const demoFormTriggers = [];
+
+  // Both presentations receive the same validated row model, never parsed table text.
+  function createMobileStandings() {
+    const list = document.getElementById("app-standings-compact-list");
+    const compact = document.getElementById("app-standings-compact");
+    const full = document.getElementById("app-standings-full");
+    const switcher = document.getElementById("app-standings-layout-switch");
+    const compactButton = document.getElementById("app-standings-show-compact");
+    const fullButton = document.getElementById("app-standings-show-full");
+    if (![list,compact,full,switcher,compactButton,fullButton].every(Boolean))
+      throw Error("Incomplete mobile standings layout");
+    const fields = [
+      ["played","standingsPlayed","P"],["won","standingsWon","W"],
+      ["drawn","standingsDrawn","D"],["lost","standingsLost","L"],
+      ["gf","standingsFor","GF"],["ga","standingsAgainst","GA"],
+      ["gd","standingsDifference","GD"],["pts","standingsPoints","Pts"]
+    ];
+    const formKeys = {W:"standingsDemoFormWin",D:"standingsDemoFormDraw",L:"standingsDemoFormLoss"};
+    const element = (tag, cls = "", value = "") => {
+      const el = document.createElement(tag);
+      el.className = cls;
+      el.textContent = String(value);
+      return el;
+    };
+    const translation = (key, fallback, cls = "sr-only") => {
+      const el = element("span",cls,fallback);
+      el.dataset.appI18n = key;
+      return el;
+    };
+    let mode = "compact";
+    const breakpoint = window.matchMedia?.("(max-width: 620px)");
+    function updateVisibility() {
+      const mobile = breakpoint ? breakpoint.matches : window.innerWidth <= 620;
+      const showCompact = mobile && mode === "compact";
+      switcher.hidden = !mobile;
+      compact.hidden = !showCompact;
+      full.hidden = showCompact;
+      compactButton.setAttribute("aria-pressed", String(showCompact));
+      fullButton.setAttribute("aria-pressed", String(!showCompact));
+    }
+    compactButton.addEventListener("click", () => { mode = "compact"; updateVisibility(); });
+    fullButton.addEventListener("click", () => { mode = "full"; updateVisibility(); });
+    if (breakpoint?.addEventListener) breakpoint.addEventListener("change", updateVisibility);
+    window.addEventListener("resize", updateVisibility);
+    function prepare(rows) {
+      if (!Array.isArray(rows) || rows.length !== 20)
+        throw Error("Incomplete mobile standings model");
+      const identities = new Set();
+      const clubs = new Map(rows.map(row => [row.club?.clubId,row.club]));
+      const items = rows.map((row,index) => {
+        const club = row.club;
+        const id = club?.countryId + "-" + club?.clubId;
+        if (!club || !(club.primaryName || club.abbr) || !Number.isInteger(club.clubId) ||
+            identities.has(id) || !club.countryId || !Array.isArray(row.recent) ||
+            (row.recent.length !== 0 && row.recent.length !== 5))
+          throw Error("Invalid mobile standings identity or form");
+        identities.add(id);
+        const li = element("li","app-world-mobile-item");
+        li.dataset.worldClub = id;
+        const details = element("details","app-world-mobile-details");
+        const summary = element("summary","app-world-mobile-summary");
+        const pos = element("span","app-world-mobile-position",
+          row.position == null ? (row.played == null ? "—" : String(index + 1)) :
+            String(row.position));
+        const name = element("span","app-world-mobile-name",club.primaryName || club.abbr);
+        const points = element("span","app-world-mobile-points",
+          row.pts == null ? "—" : String(row.pts));
+        const form = element("span","app-world-mobile-form");
+        form.appendChild(translation("standingsMobileRecent","Recent form"));
+        if (!row.recent.length) {
+          form.appendChild(element("span","app-world-mobile-no-form","—"));
+        } else {
+          for (const game of row.recent) {
+            if (!Object.hasOwn(formKeys,game.result) ||
+                !Number.isInteger(game.round) || !clubs.has(game.homeId) ||
+                !clubs.has(game.awayId)) throw Error("Invalid mobile fixture metadata");
+            const mark = element("span","app-world-form-dot app-world-form-" +
+              game.result.toLowerCase(),game.result);
+            mark.setAttribute("aria-hidden","true");
+            form.append(mark,translation(formKeys[game.result],
+              game.result === "W" ? "Win" : game.result === "D" ? "Draw" : "Loss"));
+          }
+        }
+        const ptsLabel = translation("standingsPoints","Pts ");
+        points.appendChild(ptsLabel);
+        summary.append(pos,name,points,form,
+          translation("standingsMobileDetails","Club statistics"));
+        const stats = element("dl","app-world-mobile-stats");
+        for (const [field,key,fallback] of fields) {
+          const item = element("div","app-world-mobile-stat");
+          const label = element("dt","",fallback);
+          label.dataset.appI18n = key;
+          const value = row[field];
+          if (value != null && (!Number.isInteger(value) || (field !== "gd" && value < 0)))
+            throw Error("Invalid mobile standings statistic");
+          const formatted = value == null ? "—" :
+            field === "gd" && value > 0 ? "+"+value : String(value);
+          item.append(label,element("dd","",formatted));
+          stats.appendChild(item);
+        }
+        const panel = element("div","app-world-mobile-panel");
+        panel.appendChild(stats);
+        if (row.recent.length) {
+          const title = element("h3","app-world-mobile-matches-title","Recent matches");
+          title.dataset.appI18n = "standingsMobileMatches";
+          const matches = element("ol","app-world-mobile-matches");
+          for (const game of row.recent) {
+            const opponent = clubs.get(game.isHome ? game.awayId : game.homeId);
+            if (!opponent || !Number.isInteger(game.homeGoals) ||
+                !Number.isInteger(game.awayGoals)) throw Error("Invalid mobile match");
+            const match = element("li","app-world-mobile-match");
+            const round = element("span","","Matchday");
+            round.dataset.appI18n = "standingsTooltipRound";
+            const venue = element("span","",game.isHome ? "Home" : "Away");
+            venue.dataset.appI18n = game.isHome ? "standingsTooltipHome" : "standingsTooltipAway";
+            match.append(round,element("span","",String(game.round)),
+              element("span","",opponent.primaryName),
+              element("strong","",game.homeGoals+" – "+game.awayGoals),venue);
+            matches.appendChild(match);
+          }
+          panel.append(title,matches);
+        }
+        details.append(summary,panel);
+        li.appendChild(details);
+        return li;
+      });
+      if (identities.size !== 20) throw Error("Invalid mobile standings size");
+      return () => {
+        list.replaceChildren(...items);
+        updateVisibility();
+        window.faAppRenderLanguage?.();
+      };
+    }
+    updateVisibility();
+    return Object.freeze({prepare});
+  }
+
   function createStandingsRow(club, sample = null, position = null) {
     const tr = document.createElement("tr");
     tr.dataset.worldClub = club.countryId + "-" + club.clubId;
@@ -291,8 +428,16 @@
     document.getElementById("app-competition-capacity").textContent = String(division.capacity);
     document.getElementById("app-competition-level").textContent = String(division.tier);
     const tbody = document.getElementById("app-standings-body");
-    // All public competition pages have unknown sports statistics.
-    tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
+    const mobile = createMobileStandings();
+    const provisional = division.clubs.map(club => ({
+      club,position:null,played:null,won:null,drawn:null,lost:null,
+      gf:null,ga:null,gd:null,pts:null,recent:[]
+    }));
+    const commitMobile = mobile.prepare(provisional);
+    // Public statistics remain unknown in both presentations.
+    tbody.replaceChildren(...provisional.map(row => createStandingsRow(row.club)));
+    commitMobile();
+    window.faStandingsMobile = mobile;
     for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js"])
       await loadScript(script);
   }

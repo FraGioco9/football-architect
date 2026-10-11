@@ -226,3 +226,27 @@ test("DEV-L10N + interactions: 5 languages, 100 results, semantic tooltips and e
     assert.ok(client.includes(property),property);
   assert.ok(client.includes("sessionStorage.removeItem(FLAG)"));
 });
+
+test("UX-01A: complete and compact views share one validated standings model", () => {
+  const html = read("app/competitions/_shared/index.html").toString();
+  const runtime = read("assets/competition-page.js").toString();
+  const css = read("assets/app.css").toString();
+  const localization = read("assets/app.js").toString();
+  assert.ok(html.includes('id="app-standings-compact-list"'));
+  assert.ok(html.includes('id="app-standings-full"'));
+  assert.ok(html.includes('id="app-standings-show-compact"'));
+  assert.ok(html.includes('id="app-standings-show-full"'));
+  for (const key of ["standingsMobileMode","standingsMobileCompact","standingsMobileFull",
+    "standingsMobileRecent","standingsMobileDetails","standingsMobileMatches"])
+    assert.equal(localization.split(key+":").length,6,"five localizations for "+key);
+  assert.ok(runtime.includes("function createMobileStandings()"));
+  assert.ok(runtime.includes("window.faStandingsMobile = mobile"));
+  assert.ok(runtime.includes("const commitMobile = mobile.prepare(provisional)"));
+  assert.ok(client.includes("const commitMobile = mobile.prepare(rows)"));
+  assert.ok(client.indexOf("const commitMobile = mobile.prepare(rows)") <
+    client.indexOf("tbody.replaceChildren(fragment)"));
+  assert.ok(client.indexOf("tbody.replaceChildren(fragment)") < client.indexOf("commitMobile();"));
+  assert.ok(css.includes("@media(max-width:360px)"));
+  assert.ok(css.includes(".app-world-standings [hidden]"));
+  assert.ok(!read("app/competitions/_shared/manifest.json").toString().includes("standingsPreview"));
+});

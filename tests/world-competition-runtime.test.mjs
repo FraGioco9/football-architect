@@ -19,6 +19,8 @@ const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
+ "app-standings-layout-switch","app-standings-show-compact","app-standings-show-full",
+ "app-standings-compact","app-standings-compact-list","app-standings-full",
  "app-search-dialog","division-detail-name"];
 
 function node(tag){
@@ -146,6 +148,28 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(r.fields.get("app-competition-level").textContent,String(division.tier));
    const rows=r.fields.get("app-standings-body").children;
    assert.equal(rows.length,20,division.id);
+   const mobileRows=r.fields.get("app-standings-compact-list").children;
+   assert.equal(mobileRows.length,20,"mobile rows match canonical table");
+   assert.deepEqual(mobileRows.map(x=>x.dataset.worldClub),
+     rows.map(x=>x.dataset.worldClub));
+   assert.equal(r.fields.get("app-standings-full").hidden,true);
+   assert.equal(r.fields.get("app-standings-compact").hidden,false);
+   r.fields.get("app-standings-show-full").emit("click");
+   assert.equal(r.fields.get("app-standings-full").hidden,false);
+   assert.equal(r.fields.get("app-standings-compact").hidden,true);
+   r.fields.get("app-standings-show-compact").emit("click");
+   assert.equal(r.fields.get("app-standings-compact").hidden,false);
+   r.window.innerWidth=800;
+   r.window.emit("resize");
+   assert.equal(r.fields.get("app-standings-full").hidden,false);
+   assert.equal(r.fields.get("app-standings-layout-switch").hidden,true);
+   r.window.innerWidth=390;
+   r.window.emit("resize");
+   assert.equal(r.fields.get("app-standings-compact").hidden,false);
+   assert.equal(mobileRows[0].children[0].tagName,"details");
+   assert.equal(mobileRows[0].children[0].children[0].tagName,"summary");
+   assert.equal(mobileRows[0].children[0].children[1].children[0].children.length,8);
+   assert.equal(mobileRows[0].children[0].children[0].children[2].textContent,"—");
    const preview=false; // ordinary pages never render sample results
    const clubs=preview ? new Map(division.clubs.map(c=>[c.clubId,c])) : null;
    for(let i=0;i<20;i++){

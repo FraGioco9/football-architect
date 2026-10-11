@@ -183,7 +183,14 @@
           </div>
           <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
           <div class="app-world-standings">
-            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+            <div class="app-world-layout-switch" id="app-standings-layout-switch"
+                 role="group" aria-label="Standings view" data-app-aria="standingsMobileMode" hidden>
+              <button type="button" id="app-standings-show-compact" data-app-i18n="standingsMobileCompact"
+                      aria-pressed="true">Compact</button>
+              <button type="button" id="app-standings-show-full" data-app-i18n="standingsMobileFull"
+                      aria-pressed="false">Full table</button>
+            </div>
+            <div class="app-world-standing-scroll" id="app-standings-full" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
                 <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
                 <thead>
@@ -205,6 +212,9 @@
 
                 </tbody>
               </table>
+            </div>
+            <div class="app-world-compact" id="app-standings-compact" hidden>
+              <ol class="app-world-mobile-list" id="app-standings-compact-list"></ol>
             </div>
           </div>
           </div>
