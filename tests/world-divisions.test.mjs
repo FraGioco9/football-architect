@@ -142,7 +142,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="standingsCaption"'));
  assert.ok(renderer.includes('routeId === "IT-1"'));
  assert.ok(css.includes(".app-world-demo-note[hidden]{display:none}"));
- assert.ok(css.includes(".app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:7px;"));
+ assert.ok(css.includes(".app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;"));
  assert.ok(css.includes(".app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;border-radius:3px;"));
  assert.ok(css.includes(".app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}"));
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
