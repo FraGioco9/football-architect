@@ -257,7 +257,7 @@ html{scroll-padding-top:72px}
 .app-competition-tabs{display:flex;gap:5px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
 .app-competition-tabs::-webkit-scrollbar{height:5px}
 .app-competition-tabs::-webkit-scrollbar-track{background:transparent}
-.app-competition-tab{flex:none;border:0;border-radius:8px;padding:10px 14px;min-height:40px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:650;white-space:nowrap;cursor:pointer}
+.app-competition-tab{flex:0 0 150px;box-sizing:border-box;width:150px;min-width:150px;max-width:150px;overflow:hidden;text-overflow:ellipsis;text-align:center;border:0;border-radius:8px;padding:10px 12px;min-height:40px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:650;white-space:nowrap;cursor:pointer}
 .app-competition-tab:hover{color:var(--text);background:rgba(100,203,169,.08)}
 .app-competition-tab.is-active{color:var(--text);background:#21483d}
 .app-competition-tab:focus-visible,.app-competition-panel:focus-visible{outline:2px solid var(--focus);outline-offset:2px}

@@ -387,3 +387,12 @@ test("COMPETITIONS-ROUTE-02 resolves flags from the three-level competition path
  assert.ok(loader.includes('document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset'));
  assert.ok(generator.includes('id="app-competition-flag" alt="" src="../../../'));
 });
+
+test("COMPETITION-TABS-UNIFORM-01: all six tabs have identical widths in five languages",()=>{
+ const css=read("assets/app.css"),app=read("assets/app.js");
+ assert.ok(css.includes(".app-competition-tab{flex:0 0 150px;box-sizing:border-box;width:150px;min-width:150px;max-width:150px;"));
+ assert.ok(css.includes("overflow:hidden;text-overflow:ellipsis;text-align:center"));
+ assert.ok(css.includes(".app-competition-tabs{display:flex;gap:5px;overflow-x:auto"));
+ for(const key of ["Standings","Fixtures","Stats","History","Rules","Awards"])
+  assert.equal((app.match(new RegExp("competitionTab"+key+":","g"))||[]).length,5,key);
+});

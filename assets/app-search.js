@@ -76,7 +76,7 @@
       const li = document.createElement("li");
       const link = document.createElement("a");
       link.className = "app-search-result";
-      link.href = item.href;
+      link.href = typeof window.faAppHref === "function" ? window.faAppHref(item.href) : item.href;
       const kind = document.createElement("span");
       kind.className = "app-search-kind";
       kind.textContent = strings[item.kind];

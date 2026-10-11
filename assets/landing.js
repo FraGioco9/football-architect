@@ -177,6 +177,15 @@
     if (event.key === "Escape" && !menu.hidden) closeMenu(true);
   });
 
+  // Public CTA uses app.<domain>; local and unconfigured previews keep /app.
+  const previewHost = (window.location?.hostname || "").toLowerCase();
+  const preview = [...document.querySelectorAll('a[href="./app/dashboard/"]')][0];
+  if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
+      !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(previewHost) &&
+      !/\.(?:local|localhost|vercel\.app|github\.io)$/.test(previewHost)) {
+    const host = previewHost.startsWith("www.") ? previewHost.slice(4) : previewHost;
+    preview.href = (window.location.protocol || "https:") + "//app." + host + "/dashboard/";
+  }
   // The preview is a native link; only the Guide button needs scripted navigation.
   for (const button of actions) {
     if (button.dataset.destination !== "guide") continue;

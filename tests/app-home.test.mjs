@@ -284,3 +284,21 @@ test("CLEAN-OPT generated app shells stay byte-identical to checked-in HTML", ()
   const output = execFileSync(process.execPath, [generator, "--check"], {encoding:"utf8"});
   assert.match(output, /Static HTML matches checked-in pages: 21\/21/);
 });
+
+test("APP-HOST-URL-01: production app subdomain and local static preview routes",()=>{
+ const source=read("assets/app.js");
+ const match=source.match(/  function appHref\(route\) \{[\s\S]*?\n  \}/);
+ assert.ok(match,"shared app URL resolver exists");
+ const resolve=(hostname,pathname,protocol="https:")=>
+  runInNewContext(match[0]+"\nappHref("+JSON.stringify(pathname)+")",
+   {window:{location:{hostname,protocol}}});
+ for(const [host,path,expected] of [
+  ["football.example","/app/dashboard/","https://app.football.example/dashboard/"],
+  ["www.football.example","/app/competitions/it-1/","https://app.football.example/competitions/it-1/"],
+  ["app.football.example","/app/competitions/it-1/","/competitions/it-1/"],
+  ["app.football.example","/app/settings/#app-language-heading","/settings/#app-language-heading"],
+  ["localhost","/app/competitions/it-1/","/app/competitions/it-1/"],
+  ["192.168.1.90","/app/calendar/","/app/calendar/"],
+  ["football-architect.vercel.app","/app/calendar/","/app/calendar/"]
+ ]) assert.equal(resolve(host,path),expected,host);
+});
