@@ -94,8 +94,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone light standings",
-          "mobile dark search","mobile light tooltip fixture"].includes(label))
-        console.log("FA_VISUAL_FRAME|"+label+"|"+out.data);
+          "mobile dark search","mobile light tooltip fixture"].includes(label)){
+        const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
+        const chunks=preview.data.match(/.{1,4096}/g)||[];
+        chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
+      }
       screenshots++;
     };
     await cmd("Page.enable");await cmd("Runtime.enable");
