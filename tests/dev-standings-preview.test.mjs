@@ -232,10 +232,12 @@ test("UX-01A: complete and compact views share one validated standings model", (
   const runtime = read("assets/competition-page.js").toString();
   const css = read("assets/app.css").toString();
   const localization = read("assets/app.js").toString();
-  assert.ok(html.includes('id="app-standings-compact-list"'));
-  assert.ok(html.includes('id="app-standings-full"'));
-  assert.ok(html.includes('id="app-standings-show-compact"'));
-  assert.ok(html.includes('id="app-standings-show-full"'));
+  // The shared HTML remains generator-owned and byte-identical.
+  assert.ok(!html.includes('id="app-standings-compact-list"'));
+  for (const id of ["app-standings-compact-list","app-standings-full",
+    "app-standings-show-compact","app-standings-show-full"])
+    assert.ok(runtime.includes('id="'+id+'"'),id);
+  assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
   for (const key of ["standingsMobileMode","standingsMobileCompact","standingsMobileFull",
     "standingsMobileRecent","standingsMobileDetails","standingsMobileMatches"])
     assert.equal(localization.split(key+":").length,6,"five localizations for "+key);

@@ -52,6 +52,33 @@
   };
   const demoFormTriggers = [];
 
+
+  // The shared HTML is a checked-in generated artifact; inject mobile shell only in memory.
+  function withMobileShell(html) {
+    const open = '<div class="app-world-standings">';
+    const close = '</table>\n            </div>\n          </div>';
+    if (html.split(open).length !== 2 || html.split(close).length !== 2)
+      throw Error("Unexpected shared standings markup");
+    const controls = [
+      '<div class="app-world-layout-switch" id="app-standings-layout-switch" role="group"',
+      ' aria-label="Standings view" data-app-aria="standingsMobileMode" hidden>',
+      '<button type="button" id="app-standings-show-compact"',
+      ' data-app-i18n="standingsMobileCompact" aria-pressed="true">Compact</button>',
+      '<button type="button" id="app-standings-show-full"',
+      ' data-app-i18n="standingsMobileFull" aria-pressed="false">Full table</button>',
+      '</div>'
+    ].join("");
+    const compact = [
+      '<div class="app-world-compact" id="app-standings-compact" hidden>',
+      '<ol class="app-world-mobile-list" id="app-standings-compact-list"></ol>',
+      '</div>'
+    ].join("");
+    return html.replace(open,open+controls)
+      .replace('<div class="app-world-standing-scroll" role="region"',
+        '<div class="app-world-standing-scroll" id="app-standings-full" role="region"')
+      .replace(close,'</table>\n            </div>'+compact+'\n          </div>');
+  }
+
   // Both presentations receive the same validated row model, never parsed table text.
   function createMobileStandings() {
     const list = document.getElementById("app-standings-compact-list");
@@ -414,7 +441,7 @@
     if (required.some(id => !parsed.getElementById(id))) throw Error("Incomplete shared page");
     // Inert parsed scripts are discarded; load shared scripts only after content is ready.
     parsed.querySelectorAll("script").forEach(script => script.remove());
-    document.body.innerHTML = parsed.body.innerHTML;
+    document.body.innerHTML = withMobileShell(parsed.body.innerHTML);
     document.body.className = parsed.body.className;
     document.getElementById("division-detail-name").textContent = division.name;
     document.getElementById("app-competition-badge").textContent = division.id;
@@ -435,7 +462,7 @@
     }));
     const commitMobile = mobile.prepare(provisional);
     // Public statistics remain unknown in both presentations.
-    tbody.replaceChildren(...provisional.map(row => createStandingsRow(row.club)));
+    tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
     commitMobile();
     window.faStandingsMobile = mobile;
     for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js"])
