@@ -110,7 +110,7 @@ test("Settings theme control is accessible and localized in all five languages",
 });
 
 test("late competition hydration explicitly rebinds stored-theme brand and controls",()=>{
-  assert.match(read("assets/competition-page.js"),/window\\.faThemeRebind\\?\\.\\(\\)/);
+  assert.ok(read("assets/competition-page.js").includes("window.faThemeRebind?.()"));
   const state=boot("light");
   state.events.DOMContentLoaded();
   state.window.faThemeRebind();
