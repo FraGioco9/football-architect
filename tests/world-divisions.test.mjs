@@ -148,7 +148,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;"));
  assert.ok(css.includes(".app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:3px;"));
  assert.ok(css.includes(".app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}"));
- assert.ok(css.includes(".app-world-form-tooltip{position:fixed;z-index:80;display:flex;flex-direction:column;"));
+ assert.ok(css.includes(".app-world-form-tooltip{--app-form-tooltip-width:clamp(240px,80vw,350px);position:fixed;z-index:80;box-sizing:border-box;display:flex;flex-direction:column;"));
  assert.ok(css.includes("--app-form-tooltip-width:clamp(240px,80vw,350px);"));
  assert.ok(css.includes("box-sizing:border-box;display:flex;flex-direction:column;"));
  assert.ok(css.includes("width:var(--app-form-tooltip-width);height:calc(var(--app-form-tooltip-width) * 0.4129032258064516);aspect-ratio:155/64;overflow:hidden;"));
