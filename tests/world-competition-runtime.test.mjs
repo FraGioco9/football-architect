@@ -12,7 +12,7 @@ const sharedHtml=read("app/competitions/_shared/index.html");
 const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
- "app-competition-level","app-standings-body","app-standings-demo","app-standings-caption",
+ "app-competition-level","app-standings-body","app-standings-caption",
  "app-search-dialog","division-detail-name"];
 
 function node(tag){
@@ -45,7 +45,7 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   set(value){
    bodyMarkup=value;
    for(const id of ids)fields.set(id,node("div"));
-   fields.get("app-standings-demo").hidden=true;
+
   }
  });
  const document={
@@ -173,9 +173,8 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
      assert.equal(row.children.filter(cell=>cell.textContent==="—").length,10);
     }
    }
-   assert.equal(r.fields.get("app-standings-demo").hidden,division.id!=="IT-1");
    assert.equal(r.fields.get("app-standings-caption").dataset.appI18n,
-    division.id==="IT-1"?"standingsDemoCaption":undefined);
+    division.id==="IT-1"?"standingsFilledCaption":undefined);
    assert.equal(r.body.children.filter(node=>node.attrs.role==="tooltip").length,preview?1:0);
    assert.equal(r.body.className,"app-body");
    assert.ok(!r.body.children.some(child=>child.attrs.role==="alert"));
@@ -203,9 +202,9 @@ test("DEMO-IT1: illustrative ranking is internally consistent and isolated",asyn
  assert.equal(wins,losses);
  assert.equal(goalsFor,goalsAgainst);
  assert.equal(draws%2,0);
- assert.ok(!preview.fields.get("app-standings-demo").hidden);
+ assert.ok(!preview.bodyMarkup?.includes("app-standings-demo"));
  const other=await simulate({division:manifest.divisions.find(d=>d.id==="IT-2")});
- assert.equal(other.fields.get("app-standings-demo").hidden,true);
+ assert.equal(other.fields.get("app-standings-caption").dataset.appI18n,undefined);
  assert.ok(other.fields.get("app-standings-body").children.every(
   row=>row.children.filter(cell=>cell.textContent==="—").length===10));
 });
@@ -221,13 +220,13 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(squares.length,5);
  const newest=squares[0],oldest=squares[4];
  const metadata=tooltip.children[0],scoreline=tooltip.children[1],context=tooltip.children[2];
- assert.equal(metadata.children[0].dataset.appI18n,"standingsTooltipDemo");
- assert.equal(metadata.children[1].children[0].dataset.appI18n,"standingsTooltipRound");
- assert.equal(context.children[2].dataset.appI18n,"standingsTooltipDisclaimer");
+ assert.equal(metadata.children.length,1);
+ assert.equal(metadata.children[0].children[0].dataset.appI18n,"standingsTooltipRound");
+ assert.equal(context.children.length,2);
  newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
- assert.equal(metadata.children[1].children[1].textContent,"19");
+ assert.equal(metadata.children[0].children[1].textContent,"19");
  assert.equal(scoreline.children[1].textContent,"1 – 2");
  assert.ok(scoreline.children[0].textContent);
  assert.ok(scoreline.children[2].textContent);
@@ -239,8 +238,12 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  oldest.emit("focus");
  assert.equal(newest.attrs["aria-describedby"],undefined);
  assert.equal(oldest.attrs["aria-describedby"],"app-world-form-tooltip");
- assert.equal(metadata.children[1].children[1].textContent,"15");
+ assert.equal(metadata.children[0].children[1].textContent,"15");
  oldest.emit("blur");
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ assert.equal(tooltip.hidden,false,"closing animation must complete before hiding");
+ assert.equal(tooltip.attrs["aria-hidden"],"true");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
  assert.equal(tooltip.hidden,true);
  assert.equal(oldest.attrs["aria-describedby"],undefined);
  // A tap opens and a second tap on the same button closes.
@@ -250,14 +253,20 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(tooltip.hidden,false);
  newest.emit("pointerdown",{pointerType:"touch"});
  newest.emit("click");
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
  assert.equal(tooltip.hidden,true);
  newest.emit("focus");
  let stopped=false;
  r.document.emit("keydown",{key:"Escape",stopPropagation(){stopped=true}});
  assert.ok(stopped);
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
  assert.equal(tooltip.hidden,true);
  newest.emit("focus");
  r.document.emit("pointerdown",{target:rows[0]});
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
  assert.equal(tooltip.hidden,true);
  // Fixed portal stays within the viewport despite a button next to an edge.
  newest.rect={left:375,right:390,top:3,bottom:19,width:15,height:16};
@@ -268,6 +277,8 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(tooltip.hidden,false);
  newest.rect={left:400,right:416,top:220,bottom:236,width:16,height:16};
  r.window.emit("scroll");
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing","off-screen tooltip animates out");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
  assert.equal(tooltip.hidden,true,"off-screen tooltip dismissed");
  assert.equal(newest.attrs["aria-describedby"],undefined);
 });
