@@ -228,7 +228,7 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
  assert.equal(metadata.children[1].children[1].textContent,"19");
- assert.equal(scoreline.children[1].textContent,"2 – 1");
+ assert.equal(scoreline.children[1].textContent,"1 – 2");
  assert.ok(scoreline.children[0].textContent);
  assert.ok(scoreline.children[2].textContent);
  assert.notEqual(scoreline.children[0].textContent,scoreline.children[2].textContent);
