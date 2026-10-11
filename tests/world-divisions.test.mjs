@@ -393,6 +393,20 @@ test("COMPETITION-TABS-UNIFORM-01: all six tabs have identical widths in five la
  assert.ok(css.includes(".app-competition-tab{flex:0 0 150px;box-sizing:border-box;width:150px;min-width:150px;max-width:150px;"));
  assert.ok(css.includes("overflow:hidden;text-overflow:ellipsis;text-align:center"));
  assert.ok(css.includes(".app-competition-tabs{display:flex;gap:5px;overflow-x:auto"));
+ assert.ok(css.includes("@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:clamp(108px,30vw,136px)}"));
+ assert.ok(css.includes(".app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 6px;font-size:clamp(10px,2.7vw,11.5px)"));
+ const mobileWidth=vw=>Math.max(108,Math.min(vw*.3,136));
+ assert.equal(mobileWidth(320),108);
+ assert.equal(mobileWidth(390),117);
+ assert.equal(mobileWidth(620),136);
  for(const key of ["Standings","Fixtures","Stats","History","Rules","Awards"])
   assert.equal((app.match(new RegExp("competitionTab"+key+":","g"))||[]).length,5,key);
+});
+
+test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",()=>{
+ const css=read("assets/app.css"),shared=read("app/competitions/_shared/index.html");
+ assert.ok(css.includes(".app-competition-return{display:inline-flex;"),"desktop link unchanged");
+ assert.ok(css.includes("@media(max-width:620px){.app-competition-header{"));
+ assert.ok(css.includes(".app-competition-return{display:none}"),"hidden on mobile");
+ assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="../"'));
 });
