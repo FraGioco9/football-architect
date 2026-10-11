@@ -45,7 +45,36 @@
     }
     return ids.size === 16 && clubs.size === 320;
   }
-  function createStandingsRow(club) {
+  // Visual-only, deterministic 19-match demo for IT-1; NEVER part of the canonical manifest.
+  // Order is a fictional league ranking, not the source club registry order.
+  const it1Demo = [
+    [4,14,2,3,33,13,"WWWDW"],
+    [7,12,2,5,40,16,"LWWLW"],
+    [2,10,6,3,32,18,"WLDDL"],
+    [13,9,7,3,31,19,"WDWWD"],
+    [5,10,2,7,30,23,"WWWWW"],
+    [11,8,7,4,24,14,"DLWLW"],
+    [15,8,6,5,28,20,"WWWLD"],
+    [1,9,2,8,26,24,"WLLDW"],
+    [9,8,4,7,28,28,"LLDWL"],
+    [14,8,4,7,24,27,"LLLWW"],
+    [17,8,3,8,35,32,"WDLWW"],
+    [8,7,6,6,21,21,"LWWLD"],
+    [6,7,5,7,26,22,"LLDWL"],
+    [20,6,7,6,30,26,"DWLLD"],
+    [3,6,4,9,24,31,"WLLDD"],
+    [10,5,2,12,21,39,"LWWWD"],
+    [16,4,5,10,19,40,"LDLLL"],
+    [18,4,4,11,13,21,"LWDWL"],
+    [12,2,5,12,17,38,"DDLLL"],
+    [19,2,3,14,16,46,"DLLLL"]
+  ];
+  const formLabels = {
+    W:["standingsDemoFormWin","Win","standingsDemoWinLetter"],
+    D:["standingsDemoFormDraw","Draw","standingsDemoDrawLetter"],
+    L:["standingsDemoFormLoss","Loss","standingsDemoLossLetter"]
+  };
+  function createStandingsRow(club, sample = null, position = null) {
     const tr = document.createElement("tr");
     tr.dataset.worldClub = club.countryId + "-" + club.clubId;
     const unknown = () => {
@@ -54,7 +83,13 @@
       td.textContent = "—";
       return td;
     };
-    tr.appendChild(unknown());
+    const stat = (value,className="app-world-stat-value") => {
+      const td = document.createElement("td");
+      td.className = className;
+      td.textContent = String(value);
+      return td;
+    };
+    tr.appendChild(sample ? stat(position) : unknown());
     const th = document.createElement("th");
     th.scope = "row";
     th.className = "app-world-standing-club";
@@ -70,7 +105,32 @@
     identity.append(crest, name);
     th.appendChild(identity);
     tr.appendChild(th);
-    for (let i = 0; i < 9; i++) tr.appendChild(unknown());
+    if (sample) {
+      const [id,w,d,l,gf,ga,form] = sample;
+      const diff = gf - ga;
+      const values = [19,w,d,l,gf,ga,diff > 0 ? "+" + diff : diff,3*w+d];
+      values.forEach((value,i) => tr.appendChild(stat(value,i === 6 && diff !== 0
+        ? "app-world-stat-value " + (diff > 0 ? "app-world-stat-positive" : "app-world-stat-negative")
+        : "app-world-stat-value")));
+      const formCell = document.createElement("td");
+      const strip = document.createElement("span");
+      strip.className = "app-world-form-strip";
+      for (const result of form) {
+        const [ariaKey,english,letterKey] = formLabels[result];
+        const dot = document.createElement("span");
+        dot.className = "app-world-form-dot app-world-form-" + result.toLowerCase();
+        dot.dataset.appAria = ariaKey;
+        dot.dataset.appI18n = letterKey;
+        dot.setAttribute("role","img");
+        dot.setAttribute("aria-label",english);
+        dot.textContent = result;
+        strip.appendChild(dot);
+      }
+      formCell.appendChild(strip);
+      tr.appendChild(formCell);
+    } else {
+      for (let i = 0; i < 9; i++) tr.appendChild(unknown());
+    }
     return tr;
   }
   function loadScript(url) {
@@ -98,7 +158,8 @@
     const parsed = new DOMParser().parseFromString(shellMarkup,"text/html");
     const required = ["app-divisions","app-competition-badge","app-competition-flag",
       "app-competition-country","app-competition-tier","app-competition-capacity",
-      "app-competition-level","app-standings-body","app-search-dialog"];
+      "app-competition-level","app-standings-body","app-standings-demo",
+      "app-standings-caption","app-search-dialog"];
     if (required.some(id => !parsed.getElementById(id))) throw Error("Incomplete shared page");
     // Inert parsed scripts are discarded; load shared scripts only after content is ready.
     parsed.querySelectorAll("script").forEach(script => script.remove());
@@ -116,7 +177,21 @@
     document.getElementById("app-competition-capacity").textContent = String(division.capacity);
     document.getElementById("app-competition-level").textContent = String(division.tier);
     const tbody = document.getElementById("app-standings-body");
-    tbody.replaceChildren(...division.clubs.map(createStandingsRow));
+    if (routeId === "IT-1") {
+      const clubs = new Map(division.clubs.map(club => [club.clubId,club]));
+      if (clubs.size !== 20 || it1Demo.length !== 20 ||
+          it1Demo.some(([id,w,d,l,gf,ga,form]) => !clubs.has(id) || w+d+l !== 19 ||
+            gf < 0 || ga < 0 || !/^[WDL]{5}$/.test(form)))
+        throw Error("Invalid IT-1 visual demo");
+      tbody.replaceChildren(...it1Demo.map((sample,i) =>
+        createStandingsRow(clubs.get(sample[0]),sample,i+1)));
+      document.getElementById("app-standings-demo").hidden = false;
+      const caption = document.getElementById("app-standings-caption");
+      caption.dataset.appI18n = "standingsDemoCaption";
+      caption.textContent = "Demonstration standings only; no matches have been played.";
+    } else {
+      tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
+    }
     for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js"])
       await loadScript(script);
   }
