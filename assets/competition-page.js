@@ -195,15 +195,27 @@
       if (!active || tooltip.hidden) return;
       const rect = active.getBoundingClientRect();
       const width = window.innerWidth, height = window.innerHeight;
-      if (rect.bottom < 0 || rect.top > height || rect.right < 0 || rect.left > width) {
+      // Measure the shared, responsive topbar on every reposition. A tooltip
+      // must never cross its lower edge, including while the page scrolls.
+      const topbarBottom = Math.max(0,document.querySelector(".fa-shell-topbar")
+        ?.getBoundingClientRect().bottom ?? 0);
+      const topLimit = Math.max(8,topbarBottom+8), bottomLimit = height-8;
+      const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124;
+      if (rect.bottom <= topbarBottom || rect.top >= height || rect.right <= 0 ||
+          rect.left >= width || bottomLimit-topLimit < h) {
         close();
         return;
       }
-      const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124;
       const left = Math.max(8,Math.min(rect.left + rect.width / 2 - w / 2,width-w-8));
-      const top = rect.top >= h + 12 ? rect.top-h-8 : rect.bottom+8;
+      const above = rect.top-h-8;
+      const below = rect.bottom+8;
+      // Prefer a fully clear side; if neither fits, constrain the tooltip
+      // within the usable content viewport without covering the topbar.
+      const top = above >= topLimit ? above :
+        below+h <= bottomLimit ? below :
+        (rect.top-topLimit >= bottomLimit-rect.bottom ? topLimit : bottomLimit-h);
       tooltip.style.left = Math.round(left)+"px";
-      tooltip.style.top = Math.round(Math.max(8,Math.min(top,height-h-8)))+"px";
+      tooltip.style.top = Math.round(Math.max(topLimit,Math.min(top,bottomLimit-h)))+"px";
     }
     function open(entry) {
       if (active && active !== entry.button) active.removeAttribute("aria-describedby");
