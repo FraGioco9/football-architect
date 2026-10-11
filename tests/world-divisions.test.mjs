@@ -244,8 +244,14 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
 
 test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky columns",()=>{
  const css=read("assets/app.css");
- assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:820px;table-layout:fixed;"));
- assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:46px"));
+ assert.ok(css.includes(".app-world-standing-table{width:680px;min-width:680px;table-layout:fixed;"));
+ assert.ok(css.includes(".app-world-standings{width:fit-content;max-width:100%;"));
+  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:42px;min-width:42px;max-width:42px}"));
+  assert.ok(css.includes(".app-world-standing-table tr>*:last-child{width:74px;min-width:74px;max-width:74px}"));
+  assert.ok(css.includes(".app-world-standing-table{width:586px;min-width:586px}"));
+  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:38px;min-width:38px;max-width:38px}"));
+  assert.ok(css.includes(".app-world-standing-table{width:566px;min-width:566px}"));
+  assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:46px"));
  assert.ok(css.includes(".app-world-standing-table thead th{height:36px"));
  assert.ok(css.includes("tr>*:first-child{position:sticky;left:0;z-index:2;width:38px;min-width:38px;max-width:38px"));
  assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:38px;z-index:2;width:232px;min-width:232px;max-width:232px"));
