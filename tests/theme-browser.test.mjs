@@ -91,7 +91,12 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(png.subarray(0,8).toString("hex"),"89504e470d0a1a0a",label);
       assert.equal(png.readUInt32BE(16),w,label+" width");
       assert.equal(png.readUInt32BE(20),h,label+" height");
-      assert.ok(png.length>1200,label+" nonempty screenshot");screenshots++;
+      assert.ok(png.length>1200,label+" nonempty screenshot");
+      // CI renders selected public-only screenshots for human review through job logs.
+      if(["desktop dark settings","desktop light settings","iPhone light standings",
+          "mobile dark search","mobile light tooltip fixture"].includes(label))
+        console.log("FA_VISUAL_FRAME|"+label+"|"+out.data);
+      screenshots++;
     };
     await cmd("Page.enable");await cmd("Runtime.enable");
     const checks=[];
