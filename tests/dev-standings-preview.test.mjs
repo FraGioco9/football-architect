@@ -1,0 +1,226 @@
+// DEV-GATE-01..06 and deterministic multi-division regression coverage.
+// Run via Node's built-in test runner; no npm install or manual workflow needed.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { request } from "node:http";
+import { once } from "node:events";
+import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
+import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
+import { isAllowlistedPublicPath, planPublicFiles, stagePublicArtifact,
+  assertPublicArtifact } from "../tools/publication-guard.mjs";
+
+const ROOT = new URL("../", import.meta.url);
+const read = path => readFileSync(new URL(path, ROOT));
+const manifest = JSON.parse(read("app/competitions/_shared/manifest.json"));
+const hash = bytes => createHash("sha256").update(bytes).digest("hex");
+const client = read("tools/dev-standings-preview-client.mjs").toString();
+const serverSource = read("tools/dev-standings-preview.mjs").toString();
+const clientName = "/__fa_dev__/standings-client.mjs";
+const dataName = "/__fa_dev__/standings-data.mjs";
+const allIds = manifest.divisions.map(d => d.id);
+
+test("DEV-LEAGUES: deterministic complete 16x20 standings and 3,040 real fixture objects", () => {
+  assert.equal(manifest.approved, false);
+  assert.equal(allIds.length, 16);
+  const snapshots = [];
+  const clubIdentities = new Set();
+  let totalGames = 0;
+  for (const division of manifest.divisions) {
+    const model = createPreviewStandings(division);
+    const second = createPreviewStandings(division);
+    assert.deepEqual(second, model, division.id + " must be deterministic");
+    assert.equal(model.rows.length, 20);
+    assert.equal(model.fixtures.length, 190);
+    assert.deepEqual(new Set(model.fixtures.map(f => f.round)).size, 19);
+    const pairs = new Set();
+    for (let day = 1; day <= 19; day++) {
+      const matches = model.fixtures.filter(f => f.round === day);
+      assert.equal(matches.length, 10);
+      const dayClubs = matches.flatMap(m => [m.homeId, m.awayId]);
+      assert.equal(new Set(dayClubs).size, 20);
+    }
+    for (const match of model.fixtures) {
+      assert.ok(match.homeGoals >= 0 && match.awayGoals >= 0);
+      const key = [match.homeId, match.awayId].sort((a, b) => a-b).join("/");
+      assert.ok(!pairs.has(key), "pair must be played once");
+      pairs.add(key);
+    }
+    let wins = 0, losses = 0, gf = 0, ga = 0, draws = 0;
+    const previous = model.rows.map(x => [x.pts, x.gd, x.gf, x.club.clubId]);
+    assert.deepEqual(previous, [...previous].sort((a, b) =>
+      b[0]-a[0] || b[1]-a[1] || b[2]-a[2] || a[3]-b[3]));
+    for (const row of model.rows) {
+      const id = division.id + ":" + row.club.clubId;
+      assert.ok(!clubIdentities.has(id));
+      clubIdentities.add(id);
+      assert.equal(row.played, 19);
+      assert.equal(row.won + row.drawn + row.lost, 19);
+      assert.equal(row.pts, 3 * row.won + row.drawn);
+      assert.equal(row.gd, row.gf - row.ga);
+      assert.equal(row.recent.length, 5);
+      assert.deepEqual(row.recent.map(x=>x.round), [19,18,17,16,15]);
+      wins += row.won;
+      losses += row.lost;
+      draws += row.drawn;
+      gf += row.gf;
+      ga += row.ga;
+      for (const recent of row.recent) {
+        const game = model.fixtures.find(x=>x.round===recent.round &&
+          x.homeId===recent.homeId && x.awayId===recent.awayId);
+        assert.ok(game);
+        const home = recent.homeId===row.club.clubId;
+        assert.equal(recent.isHome, home);
+        assert.equal(recent.result, (home ?
+          game.homeGoals > game.awayGoals ? "W" : game.homeGoals < game.awayGoals ? "L" : "D" :
+          game.awayGoals > game.homeGoals ? "W" : game.awayGoals < game.homeGoals ? "L" : "D"));
+      }
+    }
+    assert.equal(wins, losses);
+    assert.equal(draws % 2, 0);
+    assert.equal(gf, ga);
+    totalGames += model.fixtures.length;
+    snapshots.push(model);
+  }
+  assert.equal(totalGames, 3040);
+  assert.equal(clubIdentities.size, 320);
+  assert.equal(snapshots.length, 16);
+});
+
+test("DEV-GATE-01: published artifact excludes all preview sources and private fixtures", () => {
+  const preview = ["tools/dev-standings-preview.mjs",
+    "tools/dev-standings-preview-client.mjs","tools/dev-standings-preview-data.mjs",
+    "tests/dev-standings-preview.test.mjs","tests/fixtures/it-1-demo.mjs"];
+  for (const path of preview) assert.equal(isAllowlistedPublicPath(path), false, path);
+  const publicFiles = planPublicFiles();
+  for (const path of preview) assert.ok(!publicFiles.includes(path));
+  assert.ok(publicFiles.includes("app/competitions/it-1/index.html"));
+  const folder = mkdtempSync(join(tmpdir(), "fa-standings-dev-"));
+  try {
+    const artifact = join(folder, "public");
+    stagePublicArtifact(new URL("../", import.meta.url).pathname, artifact);
+    assert.deepEqual(assertPublicArtifact(artifact, {
+      sourceRoot: new URL("../", import.meta.url).pathname
+    }), publicFiles);
+  } finally { rmSync(folder, { recursive: true, force: true }); }
+});
+
+test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchanged", async () => {
+  const files = ["assets/competition-page.js", "assets/app.css",
+    "app/competitions/it-1/index.html","app/competitions/_shared/manifest.json",
+    "data/divisions.json","data/clubs.json","data/division-allocations.provisional.json"];
+  const before = files.map(f => hash(read(f)));
+  for (const division of manifest.divisions) createPreviewStandings(division);
+  assert.deepEqual(files.map(f => hash(read(f))), before);
+  assert.equal(manifest.approved, false);
+  const privateClient = client + serverSource;
+  assert.ok(privateClient.includes("sessionStorage"));
+  assert.ok(!/\blocalStorage\b|\bindexedDB\b/.test(privateClient));
+  assert.ok(!/\bwriteFile(?:Sync)?\b|\bappendFile(?:Sync)?\b/.test(privateClient));
+});
+
+test("DEV-GATE-03: ordinary public standings do not import or serve DEV fixtures", () => {
+  for (const division of manifest.divisions) {
+    const html = read("app/competitions/" + division.id.toLowerCase() +
+      "/index.html").toString();
+    assert.ok(!html.includes("__fa_dev__"));
+    assert.ok(!html.includes("standingsPreview"));
+    assert.ok(!html.includes("standings-client"));
+  }
+  const publicRuntime = read("assets/competition-page.js").toString();
+  assert.ok(!publicRuntime.includes("__fa_dev__"));
+  assert.ok(!publicRuntime.includes("standingsPreview"));
+  assert.ok(!publicRuntime.includes("it1Demo"));
+});
+
+test("DEV-GATE-06: malformed and incomplete models are rejected without partial results", () => {
+  const division = manifest.divisions[0];
+  for (const bad of [null, {}, {...division, clubs:[]},
+    {...division, id:"FAKE-1"},
+    {...division, clubs:[...division.clubs.slice(0,19),division.clubs[0]]},
+    {...division, clubs:division.clubs.map(x=>({...x, primaryName:""}))}]) {
+    assert.throws(()=>createPreviewStandings(bad));
+  }
+  assert.ok(client.includes("fragment.childNodes.length !== 20"));
+  assert.ok(client.includes("tbody.replaceChildren(fragment)"));
+  assert.ok(client.includes('manifest.approved !== false'));
+});
+
+async function withServer(callback) {
+  const server = createPreviewServer();
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const port = server.address().port;
+  function get(path, { host = "127.0.0.1:2000", method = "GET" } = {}) {
+    return new Promise((resolve, reject) => {
+      const req = request({ host:"127.0.0.1",port,method,path,headers:{ Host:host } }, res => {
+        const chunks = [];
+        res.on("data", x => chunks.push(x));
+        res.on("end",()=>resolve({status:res.statusCode,headers:res.headers,
+          body:Buffer.concat(chunks).toString()}));
+      });
+      req.on("error",reject);
+      req.end();
+    });
+  }
+  try {
+    assert.equal(server.address().address, "127.0.0.1");
+    await callback(get);
+  } finally { await new Promise((ok,fail)=>server.close(e=>e?fail(e):ok())); }
+}
+
+test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal", async () => {
+  await withServer(async get => {
+    for (const path of ["/%2e%2e/data/clubs.json","/../data/clubs.json",
+      "/tests/fixtures/it-1-demo.mjs","/tools/dev-standings-preview-data.mjs",
+      "/.github/workflows/landing-checks.yml","//example.com/app/competitions/it-1/"]) {
+      assert.notEqual((await get(path)).status, 200, path);
+    }
+    assert.equal((await get("/app/competitions/it-1/",{host:"attacker.example:2000"})).status,403);
+    assert.equal((await get("/app/competitions/it-1/",{host:"localhost:2000"})).status,403);
+    assert.equal((await get("/app/competitions/it-1/",{method:"POST"})).status,405);
+    assert.equal((await get("/app/competitions/it-1/",{method:"HEAD"})).body,"");
+  });
+});
+
+test("DEV-GATE-01/03: only DEV responses inject private scripts; static source stays clean", async () => {
+  await withServer(async get => {
+    const page = await get("/app/competitions/it-1/?standingsPreview=on");
+    assert.equal(page.status,200);
+    assert.equal(page.headers["cache-control"],"no-store");
+    assert.equal(page.body.split(clientName).length,2);
+    assert.ok(page.body.includes("<script type=\"module\""));
+    const indexPage = await get("/app/competitions/eng-2/index.html");
+    assert.equal(indexPage.status,200);
+    assert.equal(indexPage.body.split(clientName).length,2);
+    const regular = await get("/");
+    assert.equal(regular.status,200);
+    assert.ok(!regular.body.includes(clientName));
+    for (const virtual of [clientName,dataName]) {
+      const result = await get(virtual);
+      assert.equal(result.status,200);
+      assert.match(result.headers["content-type"],/javascript/);
+      assert.ok(result.body.length > 300);
+    }
+    for (const division of manifest.divisions) {
+      assert.equal((await get("/app/competitions/" +
+        division.id.toLowerCase() + "/")).status,200);
+    }
+  });
+});
+
+test("DEV-L10N + interactions: 5 languages, 100 results, semantic tooltips and exit", () => {
+  for(const lang of ["en","de","es","fr","it"])
+    assert.match(client, new RegExp("\\b"+lang+": \\{ badge:"));
+  assert.ok(client.includes("entries.length !== 100"));
+  assert.ok(client.includes('new MutationObserver(translate)'));
+  for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
+    assert.ok(client.includes('"'+event+'"'),event);
+  for(const property of ["game.homeGoals","game.awayGoals","game.homeId","game.awayId",
+    "game.round","game.isHome"])
+    assert.ok(client.includes(property),property);
+  assert.ok(client.includes("sessionStorage.removeItem(FLAG)"));
+});
