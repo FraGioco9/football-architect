@@ -143,7 +143,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
      assert.equal(form.className,"app-world-form-strip");
      assert.equal(form.children.length,5);
      if(i===0)assert.deepEqual(
-      form.children.map(dot=>dot.className.match(/app-world-form-(w|d|l)/)[1].toUpperCase()),
+      form.children.map(dot=>dot.className.split(" ").find(cls=>/^app-world-form-[wdl]$/.test(cls)).slice(-1).toUpperCase()),
       ["W","D","W","W","W"],"demo order must be newest first");
      for(const [index,dot] of form.children.entries()){
       assert.match(dot.className,/app-world-form-(w|d|l)/);
