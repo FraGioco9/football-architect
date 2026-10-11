@@ -99,7 +99,8 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",
  assert.ok(shared.includes('id="app-search-dialog"'));
  assert.ok(shared.includes('id="division-detail-name">Competition</span>'));
  for(const id of ["app-competition-badge","app-competition-flag","app-competition-country",
-  "app-competition-tier","app-competition-capacity","app-competition-level","app-standings-body"]){
+  "app-competition-tier","app-competition-capacity","app-competition-level","app-standings-body",
+  "app-standings-demo","app-standings-caption"]){
   assert.ok(shared.includes('id="'+id+'"'),id);
  }
  assert.ok(shared.includes('data-app-i18n="navCompetitions">Competitions'));
@@ -130,9 +131,17 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  const renderer=read("assets/competition-page.js"),css=read("assets/app.css");
  for(const lang of ["en","de","es","fr","it"])assert.ok(app.includes("    "+lang+": {"));
  assert.equal((app.match(/navCompetitions:/g)||[]).length,5);
- for(const key of ["standingsForm","standingsTable","competitionViews"]){
+ for(const key of ["standingsForm","standingsTable","competitionViews","standingsDemoNotice",
+  "standingsDemoCaption","standingsDemoWinLetter","standingsDemoDrawLetter",
+  "standingsDemoLossLetter","standingsDemoFormWin","standingsDemoFormDraw",
+  "standingsDemoFormLoss"]){
   assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
  }
+ assert.ok(shared.includes('id="app-standings-demo" data-app-i18n="standingsDemoNotice" hidden'));
+ assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="standingsCaption"'));
+ assert.ok(renderer.includes('routeId === "IT-1"'));
+ assert.ok(css.includes(".app-world-demo-note[hidden]{display:none}"));
+ assert.ok(css.includes(".app-world-form-strip{display:inline-flex"));
  assert.ok(renderer.includes("data.approved !== false"));
  assert.ok(renderer.includes("clubs.size === 320"));
  assert.ok(renderer.includes('document.createElement("tr")'));
