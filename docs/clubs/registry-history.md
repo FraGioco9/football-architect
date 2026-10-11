@@ -19,7 +19,7 @@
 - **Clubs 21–40:** 20 new clubs already designed for each country; missing registry data must be designed rather than generated arbitrarily.
 - Use both approved **primary and full names** from the design discussions; never derive the full name automatically from the short name.
 - **Approved corrections:** `(BR,16)` **EC Falésia Clara** / **Esporte Clube Falésia Clara de João Pessoa**; `(FR,27)` **FC Émaux** / **Football Club des Émaux de Limoges**; `(FR,33)` **CS Garrigues** / **Cercle Sportif des Garrigues de Nîmes**; `(PT,34)` **AC Fontes** / **Atlético Clube das Fontes de Caldas da Rainha**.
-- Explicitly retain **AC Rinascenti Bologna** (IT,2, as in the existing source catalogue) and **US Varesina**. The later preference from 10 October 2026 supersedes the previous approval of AC Felsina Bologna.
+- Explicitly retain **AC Rinascenti Bologna** (IT,2, as in the existing source catalogue) and **US Varesina**.
 - Club names and abbreviations must be consistent with the linguistic traditions of their respective countries.
 - No backward compatibility with old careers is required: that belongs to **SAVE-V2**, not this issue.
 
@@ -204,7 +204,7 @@ Corrections **FR,27 FC Émaux**, **FR,33 CS Garrigues** and **PT,34 AC Fontes** 
 
 ### Recoverable full names explicitly approved
 
-- `IT,2`: **Associazione Calcio Rinascenti Bologna** — full name approved on 10 October 2026, permanently superseding *Associazione Calcio Felsina Bologna*.
+- `IT,2`: **Associazione Calcio Rinascenti Bologna** — full name approved on 10 October 2026.
 - `IT,27`: Unione Sportiva Varesina.
 - `BR,16`: Esporte Clube Falésia Clara de João Pessoa.
 - `FR,27`: Football Club des Émaux de Limoges.
@@ -218,13 +218,13 @@ The six approved full names above did not constitute a complete 320-entry regist
 
 ### Additional CLUB-01 decision — 10 October 2026
 
-**New explicit user decision:** club `(IT,2)` **retains the name already present in `src/leagues.js`: AC Rinascenti Bologna**. The earlier proposed rename to AC Felsina Bologna was rejected.
+**Explicit user decision:** club `(IT,2)` **retains the name already present in `src/leagues.js`: AC Rinascenti Bologna**.
 
 - **Permanent ID:** `IT + 2`, unchanged.
 - **City:** Bologna, unchanged.
 - **Stadium:** Stadio delle Fornaci, unchanged.
-- **Final CLUB-02 abbreviation:** `RIN`, approved on 10 October 2026 to replace `FEL`. Rechecking uniqueness across the complete register found 320/320 distinct codes, zero collisions and zero format errors; the other 319 codes were unchanged.
-- **Approved full name:** **Associazione Calcio Rinascenti Bologna**. The previous form *Associazione Calcio Felsina Bologna* was superseded.
+- **Final CLUB-02 abbreviation:** `RIN`, approved on 10 October 2026. Rechecking uniqueness across the complete register found 320/320 distinct codes, zero collisions and zero format errors; the other 319 codes were unchanged.
+- **Approved full name:** **Associazione Calcio Rinascenti Bologna**.
 - **Reconciliation of 160 original clubs:** 11 primary names already aligned, 149 still to rename; all 160 original cities and stadiums present. CLUB-01 remained open.
 - **No code, branch, PR, merge, deployment or database changes.**
 

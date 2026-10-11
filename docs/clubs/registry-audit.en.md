@@ -24,7 +24,7 @@ The pre-reset historical audit counted **11 of 160** first-tier primary names ma
 | Stable key | Approved current identity | Non-authoritative earlier wording or correction |
 |---|---|---|
 | `IT,1` | **US Velaria Torino** · `Unione Sportiva Velaria Torino` · `VEL` | Its full name was initially recorded as a historical candidate, but was **subsequently confirmed directly by the user** |
-| `IT,2` | **AC Rinascenti Bologna** · `Associazione Calcio Rinascenti Bologna` · `RIN` | Do **not** use AC Felsina Bologna, Associazione Calcio Felsina Bologna or `FEL`; the original Bologna and Stadio delle Fornaci remain unchanged |
+| `IT,2` | **AC Rinascenti Bologna** · `Associazione Calcio Rinascenti Bologna` · `RIN` | Confirmed name and abbreviation; Bologna and Stadio delle Fornaci remain unchanged |
 | `FR,27` | **FC Émaux** · `Football Club des Émaux de Limoges` · `EMX` | Replaces the superseded short name **FC Émail** |
 | `FR,33` | **CS Garrigues** · `Cercle Sportif des Garrigues de Nîmes` · `GRG` | Replaces the superseded short name **CS Garrigue** |
 | `PT,34` | **AC Fontes** · `Atlético Clube das Fontes de Caldas da Rainha` · `FTS` | Replaces `Atlético Clube das Fontes das Caldas da Rainha` |

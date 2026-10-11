@@ -167,7 +167,7 @@ The [Guide](guide/index.html) currently explains only **Divisions** (country com
 | Stable club key | Approved short name | Approved abbreviation |
 |---|---|---|
 | `IT,1` | **US Velaria Torino** | `VEL` |
-| `IT,2` | **AC Rinascenti Bologna** (not AC Felsina Bologna) | `RIN` (not `FEL`) |
+| `IT,2` | **AC Rinascenti Bologna** | `RIN` |
 | `FR,27` | **FC Émaux** | `EMX` |
 | `FR,33` | **CS Garrigues** | `GRG` |
 | `PT,34` | **AC Fontes** | `FTS` |
@@ -186,3 +186,11 @@ These corrections do not change any existing country/club identifiers, city/stad
 **No merge, deployment, database modification, or runtime asset integration is implied by these documentation changes.**
 
 Canonical Dashboard: `/app/dashboard/` (`app/dashboard/index.html`). The static `/app/` and `/app/index.html` entry points redirect to Dashboard with `window.location.replace`, preserving query strings and fragments. A no-JavaScript meta-refresh fallback is provided. Standard static servers normalize `/app/dashboard` to `/app/dashboard/`. Navigation and search use the canonical route directly.
+
+## Competitions directory (UI-WORLD #91)
+
+The 16 competition URLs remain directly accessible on static hosting (including a local Python HTTP server). Each has only a small route entry page; one shared HTML shell at `app/competitions/_shared/index.html`, one generated validated manifest and `assets/competition-page.js` render the actual detail. The source generator is `tools/generate-app-pages.mjs`; avoid copying layout or league data into per-competition files. The shared manifest is derived exclusively from the canonical division, club and provisional allocation catalogues. Main-name display now covers all 320 clubs using the 315 documented A02 primary-name entries in `data/club-primary-names.documented.json` together with six reconciled `approvedShortName` values (one overlap). The historical A03 label differences for 41 clubs remain isolated in `docs/clubs/a03-label-variants.en.md` and do not override A02 labels. All original `fullName` values remain unchanged in canonical data. The **Competitions** sidebar item opens `/app/competitions/`. The index is a compact country-grouped list linking to 16 detail pages at `/app/competitions/<division-id-lowercase>/`. These replace the old `/app/world/divisions/` preview URLs without a legacy redirect. Each detail presents its competition name, temporary badge, country and tier directly below the shared top bar, a back-to-Competitions action, and six same-page views: **Standings, Fixtures, Stats, History, Rules and Awards**. Standings presents the 20 provisional club identities in an 11-column table (position, club, played, won, drawn, lost, goals for, goals against, goal difference, highlighted points and form). Every compact club row reserves a neutral crest placeholder (26×28 px desktop; 24×26 px mobile) next to its documented primary name; the placeholder is decorative and can later be replaced with an approved logo without adding per-competition HTML files. other views show unavailable data, except Rules, which also displays known tier and planned capacity. No sibling-division link is shown. Tabs support keyboard navigation, horizontal mobile scrolling and all five interface languages.
+
+Allocations are strictly **provisional**, read from [the unapproved 320-club register](data/division-allocations.provisional.json) (160 historical first-tier references plus 160 derived second-tier placements). Club order is the registry order, not ranking; position, played matches and points have no values until gameplay exists. No fixtures or results are invented. Country flags and all five languages are retained. The canonical division and club catalogues are unchanged.
+
+The shared generator produces 20 checked-in app pages. Run `node tools/generate-app-pages.mjs --check` to verify byte-identical HTML.
