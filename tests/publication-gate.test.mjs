@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync} from "node:fs";
+import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
 import {tmpdir} from "node:os";
 import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact} from "../tools/publication-guard.mjs";
 
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
+ assert.ok(files.includes("assets/theme.js"),"runtime theme bootstrap must be public");
  assert.equal(files.filter(p=>/^app\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(p)).length,16);
  for(const path of ["tests/fixtures/it-1-demo.mjs","tests/world-competition-runtime.test.mjs",
                     "tools/publication-guard.mjs","data/division-allocations.provisional.json"])
@@ -24,6 +25,13 @@ test("PUBLIC-02: reject repository-root hosting and injected test files",()=>{
  try{
   const destination=join(root,"public");
   const files=stagePublicArtifact(repositoryRoot,destination);
+  assert.deepEqual(assertPublicArtifact(destination),files);
+  const themePath=join(destination,"assets","theme.js");
+  assert.ok(existsSync(themePath),"staged artifact contains theme bootstrap");
+  unlinkSync(themePath);
+  assert.throws(()=>assertPublicArtifact(destination),/Public artifact does not match exact approved manifest/);
+  assert.throws(()=>planPublicFiles(destination),/Required public asset missing: assets\/theme\.js/);
+  writeFileSync(themePath,readFileSync(join(repositoryRoot,"assets","theme.js")));
   assert.deepEqual(assertPublicArtifact(destination),files);
   const injected=join(destination,"tests","fixtures","it-1-demo.mjs");
   mkdirSync(join(destination,"tests","fixtures"),{recursive:true});

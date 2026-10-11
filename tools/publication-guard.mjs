@@ -9,7 +9,8 @@ const required=[
  "index.html","guide/index.html","app/index.html","app/dashboard/index.html",
  "app/calendar/index.html","app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
- "assets/competition-page.js","assets/competition-tabs.js","data/divisions.json"
+ "assets/competition-page.js","assets/competition-tabs.js","assets/theme.js",
+ "data/divisions.json"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"app/competitions/"+country+"-"+tier+"/index.html"));
@@ -19,7 +20,7 @@ const rootFiles=new Set(["index.html","favicon.ico","favicon.svg","guide/index.h
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","app.js","app.css",
- "app-search.js","competition-page.js","competition-tabs.js"]);
+ "app-search.js","competition-page.js","competition-tabs.js","theme.js"]);
 
 export function isAllowlistedPublicPath(path) {
  if(rootFiles.has(path)||divisions.includes(path))return true;

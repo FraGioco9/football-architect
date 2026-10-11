@@ -100,10 +100,12 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
   const publicFiles = planPublicFiles();
   for (const path of preview) assert.ok(!publicFiles.includes(path));
   assert.ok(publicFiles.includes("app/competitions/it-1/index.html"));
+  assert.ok(publicFiles.includes("assets/theme.js"),"theme bootstrap must be published");
   const folder = mkdtempSync(join(tmpdir(), "fa-standings-dev-"));
   try {
     const artifact = join(folder, "public");
     stagePublicArtifact(ROOT_PATH, artifact);
+    assert.ok(readFileSync(join(artifact,"assets/theme.js"),"utf8").includes("football-architect:theme"));
     assert.deepEqual(assertPublicArtifact(artifact, {
       sourceRoot: ROOT_PATH
     }), publicFiles);
@@ -111,7 +113,7 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
 });
 
 test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchanged", async () => {
-  const files = ["assets/competition-page.js", "assets/app.css",
+  const files = ["assets/competition-page.js", "assets/app.css", "assets/theme.js",
     "app/competitions/it-1/index.html","app/competitions/_shared/manifest.json",
     "data/divisions.json","data/clubs.json","data/division-allocations.provisional.json"];
   const before = files.map(f => hash(read(f)));
@@ -201,6 +203,14 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     const regular = await get("/");
     assert.equal(regular.status,200);
     assert.ok(!regular.body.includes(clientName));
+    assert.ok(regular.body.includes("assets/theme.js"),"landing bootstraps theme");
+    const theme=await get("/assets/theme.js");
+    assert.equal(theme.status,200,"DEV loopback must serve required public runtime");
+    assert.match(theme.headers["content-type"],/javascript/);
+    assert.equal(theme.headers["cache-control"],"no-store");
+    assert.ok(theme.body.includes("football-architect:theme"));
+    assert.ok(theme.body.includes("data-theme"));
+    assert.ok(!theme.body.includes("__fa_dev__"));
     for (const virtual of [clientName,dataName]) {
       const result = await get(virtual);
       assert.equal(result.status,200);
