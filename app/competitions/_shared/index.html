@@ -182,10 +182,11 @@
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
           </div>
           <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
+          <p class="app-world-demo-note" id="app-standings-demo" data-app-i18n="standingsDemoNotice" hidden>DEMO — Illustrative standings after 19 fictional matches. All statistics are samples; club placements remain provisional.</p>
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
-                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
                 <thead>
                   <tr>
                   <th scope="col" data-app-i18n="standingsPosition">Pos</th>
