@@ -45,30 +45,6 @@
     }
     return ids.size === 16 && clubs.size === 320;
   }
-  // Visual-only, deterministic 19-match demo for IT-1; NEVER part of the canonical manifest.
-  // Order is a fictional league ranking, not the source club registry order.
-  const it1Demo = [
-    [4,14,2,3,33,13,"WWWDW"],
-    [7,12,2,5,40,16,"LWWLW"],
-    [2,10,6,3,32,18,"WLDDL"],
-    [13,9,7,3,31,19,"WDWWD"],
-    [5,10,2,7,30,23,"WWWWW"],
-    [11,8,7,4,24,14,"DLWLW"],
-    [15,8,6,5,28,20,"WWWLD"],
-    [1,9,2,8,26,24,"WLLDW"],
-    [9,8,4,7,28,28,"LLDWL"],
-    [14,8,4,7,24,27,"LLLWW"],
-    [17,8,3,8,35,32,"WDLWW"],
-    [8,7,6,6,21,21,"LWWLD"],
-    [6,7,5,7,26,22,"LLDWL"],
-    [20,6,7,6,30,26,"DWLLD"],
-    [3,6,4,9,24,31,"WLLDD"],
-    [10,5,2,12,21,39,"LWWWD"],
-    [16,4,5,10,19,40,"LDLLL"],
-    [18,4,4,11,13,21,"LWDWL"],
-    [12,2,5,12,17,38,"DDLLL"],
-    [19,2,3,14,16,46,"DLLLL"]
-  ];
   const formLabels = {
     W:["standingsDemoFormWin","Win","standingsDemoWinLetter"],
     D:["standingsDemoFormDraw","Draw","standingsDemoDrawLetter"],
@@ -138,7 +114,7 @@
     return tr;
   }
 
-  // Temporary IT-1 fixture details are never written to the canonical manifest.
+  // Form tooltips are regression-tested against isolated Node fixtures.
   // A fixed, document-level tooltip stays visible above both nested scroll regions.
   function attachFormTooltips(clubs) {
     if (!demoFormTriggers.length) return;
@@ -315,21 +291,8 @@
     document.getElementById("app-competition-capacity").textContent = String(division.capacity);
     document.getElementById("app-competition-level").textContent = String(division.tier);
     const tbody = document.getElementById("app-standings-body");
-    if (routeId === "IT-1") {
-      const clubs = new Map(division.clubs.map(club => [club.clubId,club]));
-      if (clubs.size !== 20 || it1Demo.length !== 20 ||
-          it1Demo.some(([id,w,d,l,gf,ga,form]) => !clubs.has(id) || w+d+l !== 19 ||
-            gf < 0 || ga < 0 || !/^[WDL]{5}$/.test(form)))
-        throw Error("Invalid IT-1 visual demo");
-      tbody.replaceChildren(...it1Demo.map((sample,i) =>
-        createStandingsRow(clubs.get(sample[0]),sample,i+1)));
-      attachFormTooltips(clubs);
-      const caption = document.getElementById("app-standings-caption");
-      caption.dataset.appI18n = "standingsFilledCaption";
-      caption.textContent = "League standings and recent form.";
-    } else {
-      tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
-    }
+    // All public competition pages have unknown sports statistics.
+    tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
     for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js"])
       await loadScript(script);
   }

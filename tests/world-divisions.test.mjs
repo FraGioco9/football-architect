@@ -139,7 +139,10 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
   assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
  }
  assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="standingsCaption"'));
- assert.ok(renderer.includes('routeId === "IT-1"'));
+ assert.ok(!renderer.includes('routeId === "IT-1"'));
+ assert.ok(!renderer.includes("it1Demo"));
+ assert.ok(!renderer.includes("__faFixtureHooks"));
+ assert.ok(renderer.includes("tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)))"));
  assert.ok(!shared.includes('app-standings-demo'));
  assert.ok(!read("tools/generate-app-pages.mjs").includes("app-standings-demo"));
  for(const text of [shared,read("tools/generate-app-pages.mjs"),app,renderer,css]){

@@ -4,9 +4,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
+import {it1Demo} from "./fixtures/it-1-demo.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const source=read("assets/competition-page.js");
+// The hook exists only in this Node VM, never in the browser-served code.
+const marker="  start().catch(fail);";
+assert.equal(source.split(marker).length,2);
+const demoSource=source.replace(marker,
+  "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
 const sharedHtml=read("app/competitions/_shared/index.html");
 const root="http://127.0.0.1:2000";
@@ -32,7 +38,7 @@ function node(tag){
  return n;
 }
 
-async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetchFailure=false}){
+async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetchFailure=false,demo=false}){
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
  const path="/app/competitions/"+selected.toLowerCase()+ending;
@@ -98,10 +104,23 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
  const window={location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(source,{document,window,DOMParser:FakeDOMParser,URL,fetch:fakeFetch});
+ runInNewContext(demo?demoSource:source,{document,window,DOMParser:FakeDOMParser,URL,fetch:fakeFetch});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
+ if(demo){
+  assert.equal(selected,"IT-1");
+  assert.ok(window.__faFixtureHooks,"VM-only hooks must be present");
+  const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+  assert.equal(it1Demo.length,20);
+  const rows=it1Demo.map((sample,index)=>
+   window.__faFixtureHooks.createStandingsRow(clubs.get(sample[0]),sample,index+1));
+  fields.get("app-standings-body").replaceChildren(...rows);
+  window.__faFixtureHooks.attachFormTooltips(clubs);
+  const caption=fields.get("app-standings-caption");
+  caption.dataset.appI18n="standingsFilledCaption";
+  caption.textContent="League standings and recent form.";
+ }
  return {document,fields,loaded,requested,body,window};
 }
 
@@ -127,7 +146,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(r.fields.get("app-competition-level").textContent,String(division.tier));
    const rows=r.fields.get("app-standings-body").children;
    assert.equal(rows.length,20,division.id);
-   const preview=division.id==="IT-1";
+   const preview=false; // ordinary pages never render sample results
    const clubs=preview ? new Map(division.clubs.map(c=>[c.clubId,c])) : null;
    for(let i=0;i<20;i++){
     const row=rows[i],club=preview ? clubs.get(Number(row.dataset.worldClub.split("-")[1])) : division.clubs[i];
@@ -178,17 +197,16 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
      assert.equal(row.children.filter(cell=>cell.textContent==="—").length,10);
     }
    }
-   assert.equal(r.fields.get("app-standings-caption").dataset.appI18n,
-    division.id==="IT-1"?"standingsFilledCaption":undefined);
-   assert.equal(r.body.children.filter(node=>node.attrs.role==="tooltip").length,preview?1:0);
+   assert.equal(r.fields.get("app-standings-caption").dataset.appI18n,undefined);
+   assert.equal(r.body.children.filter(node=>node.attrs.role==="tooltip").length,0);
    assert.equal(r.body.className,"app-body");
    assert.ok(!r.body.children.some(child=>child.attrs.role==="alert"));
   }
  }
 });
 
-test("DEMO-IT1: illustrative ranking is internally consistent and isolated",async()=>{
- const preview=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1")});
+test("DEMO-IT1: isolated fixture ranking is internally consistent",async()=>{
+ const preview=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1"),demo:true});
  const rows=preview.fields.get("app-standings-body").children;
  assert.equal(rows.length,20);
  assert.deepEqual([...rows].map(row=>Number(row.children[0].textContent)),
@@ -215,7 +233,7 @@ test("DEMO-IT1: illustrative ranking is internally consistent and isolated",asyn
 });
 
 test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and dismissal",async()=>{
- const r=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1")});
+ const r=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1"),demo:true});
  const tooltip=r.body.children.find(child=>child.attrs.role==="tooltip");
  assert.ok(tooltip,"one tooltip is outside both scrolling containers");
  assert.equal(tooltip.id,"app-world-form-tooltip");
