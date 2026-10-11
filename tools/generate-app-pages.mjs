@@ -83,10 +83,11 @@ const detailAppend = function detailAppend(d){
 ${Array.from({length:9},()=> '                  <td class="app-world-stat-unknown">—</td>').join("\n")}
                 </tr>`).join("\n");
  return `
+          <p class="app-world-demo-note" id="app-standings-demo" data-app-i18n="standingsDemoNotice" hidden>DEMO — Illustrative standings after 19 fictional matches. All statistics are samples; club placements remain provisional.</p>
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
-                <caption class="sr-only" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
                 <thead>
                   <tr>
 ${cols}
