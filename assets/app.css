@@ -274,7 +274,7 @@ html{scroll-padding-top:72px}
 .app-world-mobile-form{grid-area:form;display:flex;align-items:center;gap:3px;min-width:0}
 .app-world-mobile-form .app-world-form-dot{width:16px;height:16px;cursor:default}
 .app-world-mobile-no-form{font-size:13px;color:var(--muted)}
-.app-world-mobile-panel{padding:2px 9px 12px}
+.app-world-mobile-panel{display:flex;flex-direction:column;justify-content:center;min-height:160px;padding:12px 9px}
 .app-world-mobile-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0}
 .app-world-mobile-stat{min-width:0;padding:7px 2px;text-align:center;background:rgba(100,203,169,.045);border:1px solid var(--line);border-radius:7px;font-variant-numeric:tabular-nums}
 .app-world-mobile-stat dt{color:var(--muted);font-size:10px;font-weight:700}
