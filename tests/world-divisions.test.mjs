@@ -135,7 +135,8 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
   "standingsDemoCaption","standingsDemoWinLetter","standingsDemoDrawLetter",
   "standingsDemoLossLetter","standingsDemoFormWin","standingsDemoFormDraw",
   "standingsDemoFormLoss","standingsDemoFormWinLatest","standingsDemoFormDrawLatest",
-  "standingsDemoFormLossLatest"]){
+  "standingsDemoFormLossLatest","standingsTooltipDemo","standingsTooltipRound",
+  "standingsTooltipHome","standingsTooltipAway","standingsTooltipDisclaimer"]){
   assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
  }
  assert.ok(shared.includes('id="app-standings-demo" data-app-i18n="standingsDemoNotice" hidden'));
@@ -143,8 +144,16 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('routeId === "IT-1"'));
  assert.ok(css.includes(".app-world-demo-note[hidden]{display:none}"));
  assert.ok(css.includes(".app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;"));
- assert.ok(css.includes(".app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;border-radius:3px;"));
+ assert.ok(css.includes(".app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:3px;"));
  assert.ok(css.includes(".app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}"));
+ assert.ok(css.includes(".app-world-form-tooltip{position:fixed;z-index:80;"));
+ assert.ok(css.includes(".app-world-form-tooltip[hidden]{display:none}"));
+ assert.ok(css.includes("pointer-events:none;padding:11px 13px;border:1px solid #537369"));
+ assert.ok(renderer.includes('tooltip.setAttribute("role","tooltip")'));
+ assert.ok(renderer.includes('document.body.appendChild(tooltip)'));
+ assert.ok(renderer.includes('active.setAttribute("aria-describedby",tooltip.id)'));
+ assert.ok(renderer.includes('attachFormTooltips(clubs)'));
+ assert.ok(renderer.includes('if (event.key === "Escape" && active)'));
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("for (let i = form.length - 1; i >= 0; i--)"));
  assert.ok(renderer.includes("data.approved !== false"));
