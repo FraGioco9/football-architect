@@ -86,14 +86,22 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
   assert.doesNotMatch(css,/\.app-eyebrow|\.app-intro/);
 });
 
-test("HOME-02 TOPBAR-B sticky top bar and fragment scroll offsets", () => {
+test("HOME-02 TOPBAR-B keeps the topbar above the shared inset scroll area", () => {
   assert.match(css,/\.fa-shell-topbar\{position:sticky;top:0;z-index:20;flex-shrink:0;/);
   assert.match(css,/\.fa-shell-sidebar\{[^}]*position:sticky;top:0;z-index:12/);
   assert.match(css,/html\{scroll-padding-top:72px\}/);
   assert.match(css,/@media\(max-width:720px\)\{\s*html\{scroll-padding-top:66px\}/);
-  assert.doesNotMatch(css,/\.fa-shell-(?:topbar|workspace)\{[^}]*overflow(?:-[xy])?:/);
+  assert.doesNotMatch(css,/\.fa-shell-topbar\{[^}]*overflow(?:-[xy])?:/);
+  assert.match(css,/html:has\(>body\.app-body\)\{overflow:hidden;scrollbar-gutter:auto\}/);
+  assert.match(css,/\.app-body\{[^}]*height:100dvh;overflow:hidden;/);
+  assert.match(css,/\.fa-career-shell\{[^}]*height:100dvh;overflow:hidden\}/);
+  assert.match(css,/\.fa-shell-workspace\{[^}]*height:100%;overflow:hidden\}/);
+  assert.match(css,/\.fa-shell-content-scroll\{[^}]*min-height:0;overflow-y:auto;[^}]*scrollbar-width:thin;/);
+  assert.match(css,/\.fa-shell-content-scroll::-webkit-scrollbar-track\{background:transparent\}/);
   for (const markup of Object.values(pages)) {
     assert.match(markup,/<header class="fa-shell-topbar">/);
+    assert.match(markup,/<\/header>\s*<div class="fa-shell-content-scroll">\s*<main class="app-main"/);
+    assert.match(markup,/<\/main>\s*<footer class="app-footer">[^]*?<\/footer>\s*<\/div>\s*<\/div>/);
     assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
     assert.match(markup,/<a class="app-skip" href="#main-content"/);
     assert.match(markup,/id="app-search-trigger"/);
