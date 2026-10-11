@@ -257,7 +257,7 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:38px;z-index:2;width:232px;min-width:232px;max-width:232px"));
  assert.ok(css.includes("tr>*:first-child{width:30px;min-width:30px;max-width:30px}"));
  assert.ok(css.includes("tr>*:nth-child(2){left:30px;width:178px;min-width:178px;max-width:178px}"));
- assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table tr>*:nth-child(2){width:158px;min-width:158px;max-width:158px}"));
+ assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{width:566px;min-width:566px}.app-world-standing-table tr>*:nth-child(2){width:158px;min-width:158px;max-width:158px}"));
  assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
  assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
