@@ -155,12 +155,11 @@
       return el;
     };
     const header = item("div","app-world-form-tooltip-meta","");
-    const demo = item("span","app-world-form-tooltip-demo","DEMO · Fictional fixture","standingsTooltipDemo");
     const round = item("span","app-world-form-tooltip-round","");
     const roundLabel = item("span","","Matchday","standingsTooltipRound");
     const number = item("strong","","");
     round.append(roundLabel,number);
-    header.append(demo,round);
+    header.appendChild(round);
     const match = item("div","app-world-form-tooltip-scoreline","");
     const homeName = item("span","app-world-form-tooltip-team","");
     const score = item("strong","app-world-form-tooltip-score","");
@@ -169,16 +168,28 @@
     const footer = item("div","app-world-form-tooltip-context","");
     const home = item("span","","Home","standingsTooltipHome");
     const away = item("span","","Away","standingsTooltipAway");
-    const disclaimer = item("span","","Illustrative score · Not a real match","standingsTooltipDisclaimer");
-    footer.append(home,away,disclaimer);
+    footer.append(home,away);
     tooltip.append(header,match,footer);
     document.body.appendChild(tooltip);
     const opponents = [...clubs.values()];
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
     let active = null, wasOpenOnPress = false;
+    tooltip.addEventListener("animationend",event => {
+      if (event.target === tooltip && event.animationName === "app-world-tooltip-out" && !active) {
+        tooltip.hidden = true;
+        tooltip.className = "app-world-form-tooltip";
+      }
+    });
     function close() {
       if (active) active.removeAttribute("aria-describedby");
       active = null;
-      tooltip.hidden = true;
+      tooltip.setAttribute("aria-hidden","true");
+      if (tooltip.hidden || reduceMotion) {
+        tooltip.hidden = true;
+        tooltip.className = "app-world-form-tooltip";
+      } else {
+        tooltip.className = "app-world-form-tooltip is-closing";
+      }
     }
     function place() {
       if (!active || tooltip.hidden) return;
@@ -209,6 +220,8 @@
       away.hidden = isHome;
       active = entry.button;
       active.setAttribute("aria-describedby",tooltip.id);
+      tooltip.removeAttribute("aria-hidden");
+      tooltip.className = "app-world-form-tooltip";
       tooltip.hidden = false;
       place();
     }
@@ -271,7 +284,7 @@
     const parsed = new DOMParser().parseFromString(shellMarkup,"text/html");
     const required = ["app-divisions","app-competition-badge","app-competition-flag",
       "app-competition-country","app-competition-tier","app-competition-capacity",
-      "app-competition-level","app-standings-body","app-standings-demo",
+      "app-competition-level","app-standings-body",
       "app-standings-caption","app-search-dialog"];
     if (required.some(id => !parsed.getElementById(id))) throw Error("Incomplete shared page");
     // Inert parsed scripts are discarded; load shared scripts only after content is ready.
@@ -299,10 +312,9 @@
       tbody.replaceChildren(...it1Demo.map((sample,i) =>
         createStandingsRow(clubs.get(sample[0]),sample,i+1)));
       attachFormTooltips(clubs);
-      document.getElementById("app-standings-demo").hidden = false;
       const caption = document.getElementById("app-standings-caption");
-      caption.dataset.appI18n = "standingsDemoCaption";
-      caption.textContent = "Demonstration standings only; no matches have been played.";
+      caption.dataset.appI18n = "standingsFilledCaption";
+      caption.textContent = "League standings and recent form.";
     } else {
       tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
     }
