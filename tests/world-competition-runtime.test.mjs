@@ -39,6 +39,9 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
  const initial=node("main");
  fields.set("main-content",initial);
  const body=node("body");
+ const topbar=node("header");
+ topbar.rect={left:0,right:390,top:0,bottom:60,width:390,height:60};
+ fields.set("fa-shell-topbar",topbar);
  let bodyMarkup="";
  Object.defineProperty(body,"innerHTML",{
   get(){return bodyMarkup},
@@ -62,7 +65,9 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   },
   body,
   querySelector(selector){
-   return selector==='meta[name="fa-division"]'?{content:selected}:null;
+   if(selector==='meta[name="fa-division"]')return {content:selected};
+   if(selector===".fa-shell-topbar")return topbar;
+   return null;
   },
   getElementById(id){return fields.get(id)??null},
   createElement(tag){return node(tag)}
@@ -268,14 +273,47 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
  tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
  assert.equal(tooltip.hidden,true);
- // Fixed portal stays within the viewport despite a button next to an edge.
- newest.rect={left:375,right:390,top:3,bottom:19,width:15,height:16};
+ // A trigger near the topbar must open below it, never across the header.
+ newest.rect={left:375,right:390,top:146,bottom:162,width:15,height:16};
  newest.emit("focus");
  assert.equal(tooltip.style.left,"82px");
- assert.equal(tooltip.style.top,"27px");
+ assert.equal(tooltip.style.top,"170px");
+ assert.ok(Number.parseInt(tooltip.style.top,10)>=r.fields.get("fa-shell-topbar").rect.bottom+8);
  r.window.emit("resize");
  assert.equal(tooltip.hidden,false);
+ // Responsive topbar heights are measured dynamically on each scroll/resize.
+ r.fields.get("fa-shell-topbar").rect.bottom=78;
+ newest.rect={left:150,right:166,top:220,bottom:236,width:16,height:16};
+ r.window.emit("scroll");
+ assert.equal(tooltip.style.top,"88px");
+ assert.ok(Number.parseInt(tooltip.style.top,10)>=78+8);
+ // At the very top, the trigger is occluded by the fixed header.
+ newest.rect={left:150,right:166,top:28,bottom:44,width:16,height:16};
+ r.window.emit("scroll");
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
+ assert.equal(tooltip.hidden,true);
+ assert.equal(newest.attrs["aria-describedby"],undefined);
+ // A short viewport which cannot fit the full fixed-height tooltip fails closed.
+ r.window.innerHeight=200;
+ newest.rect={left:150,right:166,top:105,bottom:121,width:16,height:16};
+ newest.emit("focus");
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
+ assert.equal(tooltip.hidden,true);
+ r.window.innerHeight=600;
+ r.fields.get("fa-shell-topbar").rect.bottom=60;
+ // At narrow and desktop widths the horizontal position stays within bounds.
+ for (const viewport of [320,390,1280]) {
+  r.window.innerWidth=viewport;
+  newest.rect={left:viewport-15,right:viewport,top:146,bottom:162,width:15,height:16};
+  newest.emit("focus");
+  assert.equal(tooltip.style.top,"170px");
+  assert.ok(Number.parseInt(tooltip.style.left,10)>=8);
+  assert.ok(Number.parseInt(tooltip.style.left,10)+tooltip.offsetWidth<=viewport-8);
+ }
  newest.rect={left:400,right:416,top:220,bottom:236,width:16,height:16};
+ r.window.innerWidth=390;
  r.window.emit("scroll");
  assert.equal(tooltip.className,"app-world-form-tooltip is-closing","off-screen tooltip animates out");
  tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
