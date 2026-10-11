@@ -180,7 +180,9 @@
   // Public CTA uses app.<domain>; local and unconfigured previews keep /app.
   const previewHost = (window.location?.hostname || "").toLowerCase();
   const preview = [...document.querySelectorAll('a[href="./app/dashboard/"]')][0];
-  if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
+  if (preview && previewHost.startsWith("app.")) {
+    preview.href = "/dashboard/";
+  } else if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
       !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(previewHost) &&
       !/\.(?:local|localhost|vercel\.app|github\.io)$/.test(previewHost)) {
     const host = previewHost.startsWith("www.") ? previewHost.slice(4) : previewHost;
