@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../../assets/brand/favicon-32.png">
   <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="../../favicon.ico">
+  <script src="../../assets/theme.js"></script>
   <link rel="stylesheet" href="../../assets/landing.css">
   <link rel="stylesheet" href="../../assets/app.css">
   <script src="../../assets/landing.js" defer></script>
@@ -139,6 +140,16 @@
                             <div class="language-option" role="option" id="language-it" data-language="it" aria-selected="false">Italiano</div>
                           </div>
                         </div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-theme-heading">
+              <h2 id="app-theme-heading" data-app-i18n="themeHeading">Appearance</h2>
+              <div class="app-settings-panel-content">
+                <p class="app-settings-hint" data-app-i18n="themeHelp">Choose the site theme. It applies across the website and app on this device.</p>
+                <div class="app-theme-choices" role="group" aria-labelledby="app-theme-heading">
+                  <button type="button" class="app-theme-choice" id="theme-dark" data-theme-choice="dark" aria-pressed="true" data-app-i18n="themeDark">Dark</button>
+                  <button type="button" class="app-theme-choice" id="theme-light" data-theme-choice="light" aria-pressed="false" data-app-i18n="themeLight">Light</button>
+                </div>
               </div>
             </section>
             <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">

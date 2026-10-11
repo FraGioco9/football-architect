@@ -187,6 +187,7 @@ const competitionRoute = d=>[
  '  <meta name="fa-division" content="'+encode(d.id)+'">',
  '  <title>'+encode(d.name)+' — Football Architect</title>',
  '  <link rel="icon" href="../../../favicon.svg" type="image/svg+xml">',
+ '  <script src="../../../assets/theme.js"></script>',
  '  <link rel="stylesheet" href="../../../assets/landing.css">',
  '  <link rel="stylesheet" href="../../../assets/app.css">',
  '  <script src="../../../assets/competition-page.js" defer></script>',
