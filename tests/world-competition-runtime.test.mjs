@@ -12,7 +12,8 @@ const sharedHtml=read("app/competitions/_shared/index.html");
 const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
- "app-competition-level","app-standings-body","app-search-dialog","division-detail-name"];
+ "app-competition-level","app-standings-body","app-standings-demo","app-standings-caption",
+ "app-search-dialog","division-detail-name"];
 
 function node(tag){
  const children=[],attrs={};
@@ -40,6 +41,7 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   set(value){
    bodyMarkup=value;
    for(const id of ids)fields.set(id,node("div"));
+   fields.get("app-standings-demo").hidden=true;
   }
  });
  const document={
@@ -110,8 +112,10 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(r.fields.get("app-competition-level").textContent,String(division.tier));
    const rows=r.fields.get("app-standings-body").children;
    assert.equal(rows.length,20,division.id);
+   const preview=division.id==="IT-1";
+   const clubs=preview ? new Map(division.clubs.map(c=>[c.clubId,c])) : null;
    for(let i=0;i<20;i++){
-    const row=rows[i],club=division.clubs[i];
+    const row=rows[i],club=preview ? clubs.get(Number(row.dataset.worldClub.split("-")[1])) : division.clubs[i];
     assert.ok(club.primaryName,"Expected an approved primary club name");
     assert.equal(row.dataset.worldClub,club.countryId+"-"+club.clubId);
     assert.equal(row.children.length,11,division.id);
@@ -126,12 +130,60 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     assert.equal(name.className,"app-world-club-name");
     assert.equal(name.textContent,club.primaryName);
     assert.notEqual(name.textContent,club.fullName);
-    assert.equal(row.children.filter(cell=>cell.textContent==="—").length,10);
+    if(preview){
+     assert.equal(row.children[0].textContent,String(i+1));
+     assert.equal(row.children[2].textContent,"19");
+     const numbers=row.children.slice(3,10).map(cell=>Number(cell.textContent));
+     const [w,d,l,gf,ga,gd,pts]=numbers;
+     assert.equal(w+d+l,19);
+     assert.equal(gd,gf-ga);
+     assert.equal(pts,3*w+d);
+     const form=row.children[10].children[0];
+     assert.equal(form.className,"app-world-form-strip");
+     assert.equal(form.children.length,5);
+     for(const dot of form.children){
+      assert.match(dot.className,/app-world-form-(w|d|l)/);
+      assert.ok(dot.dataset.appI18n);
+      assert.ok(dot.dataset.appAria);
+     }
+    }else{
+     assert.equal(row.children.filter(cell=>cell.textContent==="—").length,10);
+    }
    }
+   assert.equal(r.fields.get("app-standings-demo").hidden,division.id!=="IT-1");
+   assert.equal(r.fields.get("app-standings-caption").dataset.appI18n,
+    division.id==="IT-1"?"standingsDemoCaption":undefined);
    assert.equal(r.body.className,"app-body");
    assert.ok(!r.body.children.some(child=>child.attrs.role==="alert"));
   }
  }
+});
+
+test("DEMO-IT1: illustrative ranking is internally consistent and isolated",async()=>{
+ const preview=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1")});
+ const rows=preview.fields.get("app-standings-body").children;
+ assert.equal(rows.length,20);
+ assert.deepEqual([...rows].map(row=>Number(row.children[0].textContent)),
+  Array.from({length:20},(_,i)=>i+1));
+ const idsSeen=new Set(rows.map(row=>row.dataset.worldClub));
+ assert.equal(idsSeen.size,20);
+ let wins=0,losses=0,goalsFor=0,goalsAgainst=0,draws=0;
+ let previousPoints=Infinity;
+ for(const row of rows){
+  const numbers=row.children.slice(3,10).map(cell=>Number(cell.textContent));
+  const [w,d,l,gf,ga,gd,points]=numbers;
+  wins+=w;draws+=d;losses+=l;goalsFor+=gf;goalsAgainst+=ga;
+  assert.ok(points<=previousPoints,"demo is ranked by sample points");
+  previousPoints=points;
+ }
+ assert.equal(wins,losses);
+ assert.equal(goalsFor,goalsAgainst);
+ assert.equal(draws%2,0);
+ assert.ok(!preview.fields.get("app-standings-demo").hidden);
+ const other=await simulate({division:manifest.divisions.find(d=>d.id==="IT-2")});
+ assert.equal(other.fields.get("app-standings-demo").hidden,true);
+ assert.ok(other.fields.get("app-standings-body").children.every(
+  row=>row.children.filter(cell=>cell.textContent==="—").length===10));
 });
 
 test("SHARED-QA-01: invalid, approved or unavailable data fails closed",async()=>{
