@@ -227,20 +227,23 @@ test("DEV-L10N + interactions: 5 languages, 100 results, semantic tooltips and e
   assert.ok(client.includes("sessionStorage.removeItem(FLAG)"));
 });
 
-test("UX-01A: complete and compact views share one validated standings model", () => {
+test("UX-01A: mobile compact-only and desktop full table share one validated model", () => {
   const html = read("app/competitions/_shared/index.html").toString();
   const runtime = read("assets/competition-page.js").toString();
   const css = read("assets/app.css").toString();
   const localization = read("assets/app.js").toString();
   // The shared HTML remains generator-owned and byte-identical.
   assert.ok(!html.includes('id="app-standings-compact-list"'));
-  for (const id of ["app-standings-compact-list","app-standings-full",
-    "app-standings-show-compact","app-standings-show-full"])
+  for (const id of ["app-standings-compact-list","app-standings-full"])
     assert.ok(runtime.includes('id="'+id+'"'),id);
   assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
-  for (const key of ["standingsMobileMode","standingsMobileCompact","standingsMobileFull",
-    "standingsMobileRecent","standingsMobileDetails","standingsMobileMatches"])
+  for (const key of ["standingsMobileRecent","standingsMobileDetails","standingsMobileMatches"])
     assert.equal(localization.split(key+":").length,6,"five localizations for "+key);
+  for (const removed of ["app-standings-layout-switch","app-standings-show-compact",
+    "app-standings-show-full"]) assert.ok(!runtime.includes(removed));
+  assert.ok(!css.includes(".app-world-layout-switch"));
+  assert.ok(css.includes("@media(max-width:620px){.app-world-standing-scroll{display:none!important}"));
+  assert.ok(css.includes("@media(min-width:621px){.app-world-compact{display:none!important}}"));
   assert.ok(runtime.includes("function createMobileStandings()"));
   assert.ok(runtime.includes("window.faStandingsMobile = mobile"));
   assert.ok(runtime.includes("const commitMobile = mobile.prepare(provisional)"));

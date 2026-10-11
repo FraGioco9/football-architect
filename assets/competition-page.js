@@ -59,21 +59,12 @@
     const close = '</table>\n            </div>\n          </div>';
     if (html.split(open).length !== 2 || html.split(close).length !== 2)
       throw Error("Unexpected shared standings markup");
-    const controls = [
-      '<div class="app-world-layout-switch" id="app-standings-layout-switch" role="group"',
-      ' aria-label="Standings view" data-app-aria="standingsMobileMode" hidden>',
-      '<button type="button" id="app-standings-show-compact"',
-      ' data-app-i18n="standingsMobileCompact" aria-pressed="true">Compact</button>',
-      '<button type="button" id="app-standings-show-full"',
-      ' data-app-i18n="standingsMobileFull" aria-pressed="false">Full table</button>',
-      '</div>'
-    ].join("");
     const compact = [
       '<div class="app-world-compact" id="app-standings-compact" hidden>',
       '<ol class="app-world-mobile-list" id="app-standings-compact-list"></ol>',
       '</div>'
     ].join("");
-    return html.replace(open,open+controls)
+    return html
       .replace('<div class="app-world-standing-scroll" role="region"',
         '<div class="app-world-standing-scroll" id="app-standings-full" role="region"')
       .replace(close,'</table>\n            </div>'+compact+'\n          </div>');
@@ -84,10 +75,7 @@
     const list = document.getElementById("app-standings-compact-list");
     const compact = document.getElementById("app-standings-compact");
     const full = document.getElementById("app-standings-full");
-    const switcher = document.getElementById("app-standings-layout-switch");
-    const compactButton = document.getElementById("app-standings-show-compact");
-    const fullButton = document.getElementById("app-standings-show-full");
-    if (![list,compact,full,switcher,compactButton,fullButton].every(Boolean))
+    if (![list,compact,full].every(Boolean))
       throw Error("Incomplete mobile standings layout");
     const fields = [
       ["played","standingsPlayed","P"],["won","standingsWon","W"],
@@ -107,19 +95,12 @@
       el.dataset.appI18n = key;
       return el;
     };
-    let mode = "compact";
     const breakpoint = window.matchMedia?.("(max-width: 620px)");
     function updateVisibility() {
       const mobile = breakpoint ? breakpoint.matches : window.innerWidth <= 620;
-      const showCompact = mobile && mode === "compact";
-      switcher.hidden = !mobile;
-      compact.hidden = !showCompact;
-      full.hidden = showCompact;
-      compactButton.setAttribute("aria-pressed", String(showCompact));
-      fullButton.setAttribute("aria-pressed", String(!showCompact));
+      compact.hidden = !mobile;
+      full.hidden = mobile;
     }
-    compactButton.addEventListener("click", () => { mode = "compact"; updateVisibility(); });
-    fullButton.addEventListener("click", () => { mode = "full"; updateVisibility(); });
     if (breakpoint?.addEventListener) breakpoint.addEventListener("change", updateVisibility);
     window.addEventListener("resize", updateVisibility);
     function prepare(rows) {
