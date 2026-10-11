@@ -205,11 +205,23 @@ html{scroll-padding-top:72px}
 .app-world-demo-note[hidden]{display:none}
 .app-world-stat-value{font-weight:650}
 .app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
-.app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:800;line-height:1;color:#f7fbf8}
+.app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:3px;font:inherit;font-size:9px;font-weight:800;line-height:1;color:#f7fbf8;cursor:pointer}
 .app-world-form-w{background:#237c59}
 .app-world-form-d{background:#667b82}
 .app-world-form-l{background:#98504d}
 .app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}
+.app-world-form-dot:focus-visible{outline:2px solid #effff4;outline-offset:2px}
+.app-world-form-tooltip{position:fixed;z-index:80;width:min(310px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow-y:auto;pointer-events:none;padding:11px 13px;border:1px solid #537369;border-radius:12px;background:#142b2e;color:#f2f7f4;box-shadow:0 16px 40px rgba(0,0,0,.38);font-size:11px;line-height:1.4}
+.app-world-form-tooltip[hidden]{display:none}
+.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px 10px;margin-bottom:10px;color:#b5c9c1;font-size:10px;font-weight:650}
+.app-world-form-tooltip-demo{color:#9ce8ce}
+.app-world-form-tooltip-round{display:inline-flex;gap:4px}
+.app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px}
+.app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;font-weight:700}
+.app-world-form-tooltip-team:last-child{text-align:right}
+.app-world-form-tooltip-score{font-size:18px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+.app-world-form-tooltip-context{display:flex;flex-wrap:wrap;gap:4px 9px;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:1px solid #34524d;color:#b5c9c1;font-size:10px}
+.app-world-form-tooltip-context [hidden]{display:none}
 /* Shared competition standings: dedicated crest slot for every club. */
 .app-world-standings{width:100%;max-width:100%;min-width:0;margin-top:0;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
 .app-world-standing-scroll{max-width:100%;overflow-x:auto;overflow-y:hidden;border-radius:12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
