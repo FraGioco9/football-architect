@@ -134,14 +134,18 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  for(const key of ["standingsForm","standingsTable","competitionViews","standingsDemoNotice",
   "standingsDemoCaption","standingsDemoWinLetter","standingsDemoDrawLetter",
   "standingsDemoLossLetter","standingsDemoFormWin","standingsDemoFormDraw",
-  "standingsDemoFormLoss"]){
+  "standingsDemoFormLoss","standingsDemoFormWinLatest","standingsDemoFormDrawLatest",
+  "standingsDemoFormLossLatest"]){
   assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
  }
  assert.ok(shared.includes('id="app-standings-demo" data-app-i18n="standingsDemoNotice" hidden'));
  assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="standingsCaption"'));
  assert.ok(renderer.includes('routeId === "IT-1"'));
  assert.ok(css.includes(".app-world-demo-note[hidden]{display:none}"));
- assert.ok(css.includes(".app-world-form-strip{display:inline-flex"));
+ assert.ok(css.includes(".app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:3px;"));
+ assert.ok(css.includes(".app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;border-radius:3px;"));
+ assert.ok(css.includes(".app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}"));
+ assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("data.approved !== false"));
  assert.ok(renderer.includes("clubs.size === 320"));
  assert.ok(renderer.includes('document.createElement("tr")'));
@@ -257,13 +261,13 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
 
 test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky columns",()=>{
  const css=read("assets/app.css");
- assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:714px;table-layout:fixed;"));
+ assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:742px;table-layout:fixed;"));
  assert.ok(css.includes(".app-world-standings{width:100%;max-width:100%;"));
   assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:55px;min-width:55px;max-width:55px}"));
-  assert.ok(css.includes(".app-world-standing-table tr>*:last-child{width:88px;min-width:88px;max-width:88px}"));
-  assert.ok(css.includes(".app-world-standing-table{min-width:644px}"));
+  assert.ok(css.includes(".app-world-standing-table tr>*:last-child{width:116px;min-width:116px;max-width:116px}"));
+  assert.ok(css.includes(".app-world-standing-table{min-width:672px}"));
   assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:50px;min-width:50px;max-width:50px}"));
-  assert.ok(css.includes(".app-world-standing-table{min-width:634px}"));
+  assert.ok(css.includes(".app-world-standing-table{min-width:662px}"));
   assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:40px"));
  assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:38px}"));
  assert.ok(!css.includes(".app-world-stat-positive"));
@@ -275,7 +279,7 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.ok(css.includes("tr>*:nth-child(2){position:sticky;left:38px;z-index:2;width:auto;min-width:148px"));
  assert.ok(css.includes("tr>*:first-child{width:30px;min-width:30px;max-width:30px}"));
  assert.ok(css.includes("tr>*:nth-child(2){left:30px;min-width:126px}"));
- assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:634px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}"));
+ assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:662px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}"));
  assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
  assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
