@@ -40,7 +40,7 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
     assert.match(markup,new RegExp('id="app-nav-'+page+'"[^>]*aria-current="page"'));
   }
   assert.doesNotMatch(js, /#calendar|#settings|hashchange|window\.location\.hash|location\.replace/);
-  assert.ok(js.includes('replace(/^\/app(?=\/|$)/,"")'));
+  assert.ok(js.includes(String.raw`replace(/^\/app(?=\/|$)/,"")`));
   for(const route of ["calendar","settings","dashboard"])
     assert.ok(js.includes('path === "/'+route+'"'),route);
 });
