@@ -8,12 +8,14 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
+import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
 import { isAllowlistedPublicPath, planPublicFiles, stagePublicArtifact,
   assertPublicArtifact } from "../tools/publication-guard.mjs";
 
 const ROOT = new URL("../", import.meta.url);
+const ROOT_PATH = fileURLToPath(ROOT);
 const read = path => readFileSync(new URL(path, ROOT));
 const manifest = JSON.parse(read("app/competitions/_shared/manifest.json"));
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -101,9 +103,9 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
   const folder = mkdtempSync(join(tmpdir(), "fa-standings-dev-"));
   try {
     const artifact = join(folder, "public");
-    stagePublicArtifact(new URL("../", import.meta.url).pathname, artifact);
+    stagePublicArtifact(ROOT_PATH, artifact);
     assert.deepEqual(assertPublicArtifact(artifact, {
-      sourceRoot: new URL("../", import.meta.url).pathname
+      sourceRoot: ROOT_PATH
     }), publicFiles);
   } finally { rmSync(folder, { recursive: true, force: true }); }
 });
