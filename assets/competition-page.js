@@ -113,8 +113,8 @@
       const formCell = document.createElement("td");
       const strip = document.createElement("span");
       strip.className = "app-world-form-strip";
-      // Form runs from oldest on the left to the latest match on the right.
-      for (let i = 0; i < form.length; i++) {
+      // Latest result is displayed first (left); keep sample records unchanged.
+      for (let i = form.length - 1; i >= 0; i--) {
         const result = form[i];
         const isLatest = i === form.length - 1;
         const [ariaKey,english,letterKey] = formLabels[result];
