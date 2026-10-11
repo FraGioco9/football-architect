@@ -390,15 +390,15 @@ test("COMPETITIONS-ROUTE-02 resolves flags from the three-level competition path
 
 test("COMPETITION-TABS-UNIFORM-01: all six tabs have identical widths in five languages",()=>{
  const css=read("assets/app.css"),app=read("assets/app.js");
- assert.ok(css.includes(".app-competition-tab{flex:0 0 150px;box-sizing:border-box;width:150px;min-width:150px;max-width:150px;"));
+ assert.ok(css.includes(".app-competition-tab{flex:0 0 112px;box-sizing:border-box;width:112px;min-width:112px;max-width:112px;"));
  assert.ok(css.includes("overflow:hidden;text-overflow:ellipsis;text-align:center"));
- assert.ok(css.includes(".app-competition-tabs{display:flex;gap:5px;overflow-x:auto"));
- assert.ok(css.includes("@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:clamp(108px,30vw,136px)}"));
- assert.ok(css.includes(".app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 6px;font-size:clamp(10px,2.7vw,11.5px)"));
- const mobileWidth=vw=>Math.max(108,Math.min(vw*.3,136));
- assert.equal(mobileWidth(320),108);
- assert.equal(mobileWidth(390),117);
- assert.equal(mobileWidth(620),136);
+ assert.ok(css.includes(".app-competition-tabs{display:flex;gap:4px;overflow-x:auto"));
+ assert.ok(css.includes("@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:clamp(92px,24.5vw,108px)}"));
+ assert.ok(css.includes(".app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)"));
+ const mobileWidth=vw=>Math.max(92,Math.min(vw*.245,108));
+ assert.equal(mobileWidth(320),92);
+ assert.ok(Math.abs(mobileWidth(390)-95.55)<.01);
+ assert.equal(mobileWidth(620),108);
  for(const key of ["Standings","Fixtures","Stats","History","Rules","Awards"])
   assert.equal((app.match(new RegExp("competitionTab"+key+":","g"))||[]).length,5,key);
 });
