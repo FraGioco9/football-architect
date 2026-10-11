@@ -113,14 +113,18 @@
       const formCell = document.createElement("td");
       const strip = document.createElement("span");
       strip.className = "app-world-form-strip";
-      for (const result of form) {
+      // Form runs from oldest on the left to the latest match on the right.
+      for (let i = 0; i < form.length; i++) {
+        const result = form[i];
+        const isLatest = i === form.length - 1;
         const [ariaKey,english,letterKey] = formLabels[result];
         const dot = document.createElement("span");
-        dot.className = "app-world-form-dot app-world-form-" + result.toLowerCase();
-        dot.dataset.appAria = ariaKey;
+        dot.className = "app-world-form-dot app-world-form-" + result.toLowerCase() +
+          (isLatest ? " app-world-form-last" : "");
+        dot.dataset.appAria = isLatest ? ariaKey + "Latest" : ariaKey;
         dot.dataset.appI18n = letterKey;
         dot.setAttribute("role","img");
-        dot.setAttribute("aria-label",english);
+        dot.setAttribute("aria-label",isLatest ? english + " — latest match" : english);
         dot.textContent = result;
         strip.appendChild(dot);
       }
