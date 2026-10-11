@@ -137,6 +137,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
      const [w,d,l,gf,ga,gd,pts]=numbers;
      assert.equal(w+d+l,19);
      assert.equal(gd,gf-ga);
+     assert.equal(row.children[8].className,"app-world-stat-value");
      assert.equal(pts,3*w+d);
      const form=row.children[10].children[0];
      assert.equal(form.className,"app-world-form-strip");
