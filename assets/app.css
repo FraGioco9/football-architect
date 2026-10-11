@@ -201,8 +201,6 @@ html{scroll-padding-top:72px}
 .app-competition-return{display:inline-flex;align-items:center;justify-content:center;flex:none;min-height:38px;padding:8px 13px;margin-left:auto;white-space:nowrap;border-radius:9px;text-decoration:none}
 .app-competition-return:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 /* IT-1 demonstration: temporary numbers only, not official match or league data. */
-.app-world-demo-note{margin:0 0 12px;padding:9px 12px;border:1px dashed #6a9f83;border-radius:9px;background:rgba(100,203,169,.065);color:#c9e7d8;font-size:11.5px;line-height:1.5}
-.app-world-demo-note[hidden]{display:none}
 .app-world-stat-value{font-weight:650}
 .app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:3px;font:inherit;font-size:9px;font-weight:800;line-height:1;color:#f7fbf8;cursor:pointer}
@@ -211,16 +209,19 @@ html{scroll-padding-top:72px}
 .app-world-form-l{background:#98504d}
 .app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}
 .app-world-form-dot:focus-visible{outline:2px solid #effff4;outline-offset:2px}
-.app-world-form-tooltip{position:fixed;z-index:80;width:min(310px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow-y:auto;pointer-events:none;padding:11px 13px;border:1px solid #537369;border-radius:12px;background:#142b2e;color:#f2f7f4;box-shadow:0 16px 40px rgba(0,0,0,.38);font-size:11px;line-height:1.4}
+.app-world-form-tooltip{position:fixed;z-index:80;display:flex;flex-direction:column;justify-content:space-between;gap:7px;width:min(310px,calc(100vw - 16px));height:128px;max-height:calc(100dvh - 16px);overflow:hidden;pointer-events:none;padding:12px 14px;border:1px solid #537369;border-radius:12px;background:#142b2e;color:#f2f7f4;box-shadow:0 16px 40px rgba(0,0,0,.38);font-size:11px;line-height:1.4;animation:app-world-tooltip-in 170ms ease-out both}
 .app-world-form-tooltip[hidden]{display:none}
-.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px 10px;margin-bottom:10px;color:#b5c9c1;font-size:10px;font-weight:650}
-.app-world-form-tooltip-demo{color:#9ce8ce}
-.app-world-form-tooltip-round{display:inline-flex;gap:4px}
-.app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px}
-.app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;font-weight:700}
+.app-world-form-tooltip.is-closing{animation:app-world-tooltip-out 130ms ease-in both}
+@keyframes app-world-tooltip-in{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes app-world-tooltip-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(4px) scale(.985)}}
+@media(prefers-reduced-motion:reduce){.app-world-form-tooltip,.app-world-form-tooltip.is-closing{animation:none!important}}
+.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:flex-end;min-height:14px;color:#b5c9c1;font-size:10px;font-weight:650}
+.app-world-form-tooltip-round{display:inline-flex;gap:5px;white-space:nowrap}
+.app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px;min-height:36px}
+.app-world-form-tooltip-team{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .app-world-form-tooltip-team:last-child{text-align:right}
 .app-world-form-tooltip-score{font-size:18px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
-.app-world-form-tooltip-context{display:flex;flex-wrap:wrap;gap:4px 9px;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:1px solid #34524d;color:#b5c9c1;font-size:10px}
+.app-world-form-tooltip-context{display:flex;justify-content:center;margin-top:0;padding-top:8px;border-top:1px solid #34524d;color:#b5c9c1;font-size:10px}
 .app-world-form-tooltip-context [hidden]{display:none}
 /* Shared competition standings: dedicated crest slot for every club. */
 .app-world-standings{width:100%;max-width:100%;min-width:0;margin-top:0;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
