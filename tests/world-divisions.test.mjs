@@ -90,6 +90,10 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
 });
 
 test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",()=>{
+ for(const html of [index,shared]){
+  assert.match(html,/<\/header>\s*<div class="fa-shell-content-scroll">\s*<main class="app-main"/);
+  assert.match(html,/<\/main>\s*<footer class="app-footer">[^]*?<\/footer>\s*<\/div>\s*<\/div>/);
+ }
  assert.ok(shared.includes('<main class="app-main" id="main-content" tabindex="-1">'));
  assert.ok(shared.includes('id="app-nav-divisions"'));
  assert.ok(shared.includes('id="app-search-dialog"'));
