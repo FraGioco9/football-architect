@@ -1,6 +1,7 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
+import {validateDivisionAssets} from "./validate-division-assets.mjs";
 
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8");
 const pages = {
@@ -36,6 +37,7 @@ const pages = {
   }
 };
 
+const finalLogos=validateDivisionAssets().divisions;
 const divisionData = JSON.parse(readFileSync(new URL("../data/divisions.json", import.meta.url), "utf8"));
 const clubData = JSON.parse(readFileSync(new URL("../data/clubs.json", import.meta.url), "utf8"));
 if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new Error("Expected 320 canonical club identities");
@@ -61,10 +63,19 @@ const worldSection = function worldSection(content,active,division=null){
  const h=division ? '' : '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>\n';
  return '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"'+(active?'':' hidden')+'>\n'+h+(content?content+'\n':'')+'        </section>';
 };
+// The documented color variants are explicit; theme.js selects one source pair.
+const logoPicture=(id,root,kind,large)=>{
+ const a=finalLogos.get(id),light=a[kind],dark=a[kind+"-dark"];
+ const path=p=>root+encode(p);
+ return '<span class="app-competition-logo-placeholder app-competition-logo-approved'+(large?' app-competition-logo-placeholder-large':'')+'" aria-hidden="true">'+
+  '<picture data-division-logo data-light-webp="'+path(light.webp)+'" data-dark-webp="'+path(dark.webp)+'" data-light-png="'+path(light.png)+'" data-dark-png="'+path(dark.png)+'">'+
+  '<source type="image/webp" srcset="'+path(dark.webp)+'">'+
+  '<img src="'+path(dark.png)+'" width="'+(large?60:36)+'" height="'+(large?60:36)+'" alt="" decoding="async"></picture></span>';
+};
 const indexContent = function indexContent(root){
  const cards=divisionData.countries.map(c=>{
   const links=divisionData.divisions.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+encode(d.id)+'</span><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/">'+(finalLogos.has(d.id)?logoPicture(d.id,root,'compact',false):'<span class="app-competition-logo-placeholder" aria-hidden="true">'+encode(d.id)+'</span>')+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
@@ -204,6 +215,7 @@ const competitionManifest = {
   const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
+   ...(finalLogos.has(d.id)?{visualAsset:finalLogos.get(d.id)}:{}),
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
    clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c)}))};
  })

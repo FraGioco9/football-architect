@@ -30,6 +30,15 @@
           !/^assets\/flags\/[a-z0-9-]+\.svg$/.test(d.flagAsset) ||
           ![1,2].includes(d.tier) || d.capacity !== 20 ||
           !Array.isArray(d.clubs) || d.clubs.length !== d.capacity) return false;
+      if(d.visualAsset!==undefined){
+        if(!["IT-1","ENG-1","ES-1"].includes(d.id))return false;
+        const dir={"IT-1":"it-1-lega-federale","ENG-1":"eng-1-crown-league","ES-1":"es-1-liga-de-la-union"}[d.id];
+        for(const variant of ["primary","primary-dark","compact","compact-dark"]){
+          const entry=d.visualAsset[variant];
+          for(const ext of ["png","webp"])
+            if(entry?.[ext]!==`assets/divisions/${dir}/${dir}-${variant}.${ext}`)return false;
+        }
+      }else if(["IT-1","ENG-1","ES-1"].includes(d.id))return false;
       ids.add(d.id);
       let previous = 0;
       for (const club of d.clubs) {
@@ -279,9 +288,24 @@
     parsed.querySelectorAll("script").forEach(script => script.remove());
     document.body.innerHTML = parsed.body.innerHTML;
     document.body.className = parsed.body.className;
-    window.faThemeRebind?.(); // Rebind theme controls and branding after shared-shell hydration.
     document.getElementById("division-detail-name").textContent = division.name;
-    document.getElementById("app-competition-badge").textContent = division.id;
+    const badge=document.getElementById("app-competition-badge");
+    badge.textContent=division.id;
+    if(division.visualAsset){
+      const a=division.visualAsset;
+      const picture=document.createElement("picture"),source=document.createElement("source"),img=document.createElement("img");
+      const absolute=path=>"../../../"+path;
+      picture.setAttribute("data-division-logo","");
+      for(const [key,path] of Object.entries({lightWebp:a.primary.webp,darkWebp:a["primary-dark"].webp,lightPng:a.primary.png,darkPng:a["primary-dark"].png}))
+        picture.dataset[key]=absolute(path);
+      source.type="image/webp";source.srcset=picture.dataset.darkWebp;
+      img.alt="";img.decoding="async";img.width=60;img.height=60;img.src=picture.dataset.darkPng;
+      img.onerror=()=>{badge.textContent=division.id;badge.className=badge.className.replace(" app-competition-logo-approved","");};
+      picture.append(source,img);
+      badge.className+=" app-competition-logo-approved";
+      badge.replaceChildren(picture);
+    }
+    window.faThemeRebind?.(); // Rebind branding + approved division logos after hydration.
     document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset;
     const country = document.getElementById("app-competition-country");
     country.dataset.worldCountry = division.countryId;

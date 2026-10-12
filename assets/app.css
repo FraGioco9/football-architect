@@ -188,6 +188,9 @@ html{scroll-padding-top:72px}
 .app-world-grid{display:grid;gap:2px}
 .app-division-card{display:flex;align-items:center;gap:11px;min-width:0;min-height:54px;padding:9px 12px;border-radius:8px}
 .app-competition-logo-placeholder{display:grid;place-items:center;flex:none;width:36px;height:36px;border:1px dashed #567e70;border-radius:9px;background:#1d3532;color:#b6d9c7;font-size:10px;font-weight:750;letter-spacing:-.015em}
+.app-competition-logo-approved{border-color:transparent!important;background:transparent!important;padding:0!important;overflow:hidden;}
+.app-competition-logo-approved picture{display:block;width:100%;height:100%;}
+.app-competition-logo-approved picture img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;}
 .app-division-card:hover{background:#24433d}
 .app-division-card:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-division-card-copy{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;width:100%;min-width:0}

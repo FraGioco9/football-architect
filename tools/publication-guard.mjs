@@ -3,6 +3,7 @@
 import {readdirSync,lstatSync,readFileSync,existsSync,mkdirSync,copyFileSync} from "node:fs";
 import {join,resolve,dirname} from "node:path";
 import {fileURLToPath} from "node:url";
+import {validateDivisionAssets} from "./validate-division-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
 const required=[
@@ -23,6 +24,7 @@ const runtimeAssets=new Set(["landing.js","landing.css","app.js","app.css",
  "app-search.js","competition-page.js","competition-tabs.js","theme.js"]);
 
 export function isAllowlistedPublicPath(path) {
+ if(path.startsWith("assets/divisions/"))return validateDivisionAssets().paths.has(path);
  if(rootFiles.has(path)||divisions.includes(path))return true;
  if(path.startsWith("assets/brand/"))
   return /^assets\/brand\/[a-z0-9-]+\.(?:svg|png)$/.test(path);
@@ -48,6 +50,9 @@ export function planPublicFiles(sourceRoot=repositoryRoot) {
  const files=listFiles(sourceRoot).filter(isAllowlistedPublicPath);
  for(const path of [...required,...divisions])
   if(!files.includes(path))throw Error("Required public asset missing: "+path);
+ const images=validateDivisionAssets(sourceRoot);
+ for(const path of images.paths)
+  if(!files.includes(path))throw Error("Required approved division asset missing: "+path);
  return files;
 }
 export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot}={}) {
