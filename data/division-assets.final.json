@@ -60,6 +60,124 @@
           }
         }
       }
+    },
+    {
+      "id": "NL-1",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "branch": "assets/division-logos-final",
+        "manifestBlob": "81eb4f7e64693453536f1be8eff6a4eab6ac3d66"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
+            "sha256": "8957ffad575cc49c6e28173bedd188a6880d527a8443e3b80262cfd83b69aefb",
+            "bytes": 74061
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp",
+            "sha256": "7aa815801817090b193fc77ee7559f6d359ccb169eab5f4e9031176a3df94935",
+            "bytes": 22916
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
+            "sha256": "ee21ca80f94f74a4614c2aea0d8669577867409f804a81b199f66d8c8ec84067",
+            "bytes": 73723
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp",
+            "sha256": "2a938c9ff545cc3d3727f98fadb2b58695952f4fa0b267cf78513c66b06a35e3",
+            "bytes": 22762
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
+            "sha256": "2c92b540703a45b093738138cca1c04de8f0258e091511a7b049219bda98d45e",
+            "bytes": 46715
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp",
+            "sha256": "425c0ab6170a659df0f412f9cc2da99eeed5801de2434d5df084efeb6c720512",
+            "bytes": 14268
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
+            "sha256": "a7e4d0527f68a421abdf1ca06aa00ac5457389dc6d46bf4828b0d492b758b9f7",
+            "bytes": 46721
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp",
+            "sha256": "e26956a644a9fd7d673410b91ce9273dd61079a09850f63cd6629cb42d8287d0",
+            "bytes": 14252
+          }
+        }
+      }
+    },
+    {
+      "id": "ENG-2",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "branch": "assets/division-logos-final",
+        "manifestBlob": "52115e3de6f1287f9069a1d880f2ca6c7f7683e6"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
+            "sha256": "735c97a20102b115894e8fbce7597b556b63b36fae5782a64fede17a5b4c1db4",
+            "bytes": 97940
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp",
+            "sha256": "5abee7638a781124d39da8a294432ac1984c760f8c7fb18821b2fa618b6c0007",
+            "bytes": 37462
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
+            "sha256": "4e5ead7f4f42b44187711f95c85a5dfb976be73d364b5f45110b71e4b403c4d9",
+            "bytes": 97751
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp",
+            "sha256": "27810fb32eba993564332496b7a051b4cbbbb35774b332bdf1df4df3bffa2066",
+            "bytes": 35068
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
+            "sha256": "83e423dbd3fcf3129521bc8090ef9717675d47dbcb6a59f20150a6f9a7916609",
+            "bytes": 70769
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp",
+            "sha256": "c1df03e9c9c21a98f3e71d4dfe697aa8526ccefa90bc07ac5a85fefbfd93fed2",
+            "bytes": 27508
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
+            "sha256": "f9aeeed0fbbd5c33610a77a1641f66fcb0a2f2b0e13ad63d9a86d98b6a8ebe9c",
+            "bytes": 70775
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp",
+            "sha256": "76188448b855c9b7e87572785cd6b54b69dba4d7e9970a9c2a2f020eb40d54de",
+            "bytes": 25858
+          }
+        }
+      }
     }
   ]
 }
