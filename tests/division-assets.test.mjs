@@ -11,11 +11,11 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const registry=JSON.parse(readFileSync(join(root,'data/division-assets.final.json'),'utf8'));
 const clone=()=>structuredClone(registry);
 
-test('ASSET-01: three explicit FINAL divisions, exactly 24 byte-verified PNG/WebP images',()=>{
+test('ASSET-01: registered division images are byte-verified, up to 16 divisions',()=>{
  const verified=validateDivisionAssets();
- assert.deepEqual([...verified.divisions.keys()],['IT-1','ENG-1','ES-1']);
- assert.equal(verified.paths.size,24);
- for(const id of ['IT-1','ENG-1','ES-1']) {
+ assert.deepEqual([...verified.divisions.keys()],registry.divisions.map(d=>d.id));
+ assert.equal(verified.paths.size,registry.divisions.length*8);
+ for(const id of verified.divisions.keys()) {
   const projection=verified.divisions.get(id);
   assert.deepEqual(Object.keys(projection),['primary','primary-dark','compact','compact-dark']);
   for(const variant of Object.values(projection))for(const path of Object.values(variant))
@@ -37,10 +37,10 @@ test('ASSET-02: changed metadata, missing files, duplicate IDs and changed image
    const dest=join(temp,path);mkdirSync(dirname(dest),{recursive:true});copyFileSync(join(root,path),dest);
   }
   snapshot(clone());
-  assert.equal(validateDivisionAssets(temp).paths.size,24);
+  assert.equal(validateDivisionAssets(temp).paths.size,registry.divisions.length*8);
   const checks=[
    r=>r.schemaVersion=2,
-   r=>r.divisions.pop(),
+   r=>r.divisions.push(structuredClone(r.divisions[0])),
    r=>r.divisions[0].id='IT-2',
    r=>r.divisions[1].id='IT-1',
    r=>r.divisions[0].source.commit='0000000000000000000000000000000000000000',

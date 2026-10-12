@@ -10,6 +10,7 @@ const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
 const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
+const logoIds=new Set(JSON.parse(read("data/division-assets.final.json")).divisions.map(d=>d.id));
 const shared=read("app/competitions/_shared/index.html");
 const index=read("app/competitions/index.html");
 const routes=divisions.map(d=>({division:d,file:"app/competitions/"+d.id.toLowerCase()+"/index.html"}));
@@ -30,7 +31,7 @@ test("COMPETITIONS-06 keeps the index and 16 deep links",()=>{
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-  if(["IT-1","ENG-1","ES-1"].includes(division.id)){
+  if(logoIds.has(division.id)){
    assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder app-competition-logo-approved"'),division.id);
    assert.ok(index.includes('data-division-logo data-light-webp='),division.id);
   }else assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);

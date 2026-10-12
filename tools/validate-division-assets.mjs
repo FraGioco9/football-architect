@@ -4,7 +4,8 @@ import {createHash} from "node:crypto";
 import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 const ROOT=fileURLToPath(new URL("../",import.meta.url));
-const EXPECTED=new Map([["IT-1","it-1-lega-federale"],["ENG-1","eng-1-crown-league"],["ES-1","es-1-liga-de-la-union"]]);
+const CANONICAL=JSON.parse(readFileSync(new URL("../data/divisions.json",import.meta.url),"utf8")).divisions;
+const EXPECTED=new Map(CANONICAL.map(d=>[d.id,d.id.toLowerCase()+"-"+d.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")]));
 const VARIANTS=["primary","primary-dark","compact","compact-dark"];
 const FORMATS=["png","webp"];
 const fail=message=>{throw Error("Division assets invalid: "+message);};
@@ -12,12 +13,13 @@ export function validateDivisionAssets(root=ROOT){
  const registryPath=join(root,"data/division-assets.final.json");
  if(lstatSync(registryPath).isSymbolicLink())fail("registry symlink");
  const registry=JSON.parse(readFileSync(registryPath,"utf8"));
- if(registry.schemaVersion!==1||registry.scope!=="approved-division-logos-only"||!Array.isArray(registry.divisions)||registry.divisions.length!==3)fail("schema or count");
+ if(registry.schemaVersion!==1||registry.scope!=="approved-division-logos-only"||!Array.isArray(registry.divisions)||registry.divisions.length<1||registry.divisions.length>EXPECTED.size)fail("schema or count");
  const results=new Map(),paths=new Set();
- for(let index=0;index<3;index++){
-  const item=registry.divisions[index],pair=[...EXPECTED][index],base=pair[1];
-  if(item.id!==pair[0]||item.enabled!==true||!item.source||Object.keys(item.variants??{}).sort().join("|")!==[...VARIANTS].sort().join("|"))fail("division/variants "+index);
+ for(let index=0;index<registry.divisions.length;index++){
+  const item=registry.divisions[index],base=EXPECTED.get(item.id);
+  if(!base||results.has(item.id)||item.enabled!==true||!item.source||Object.keys(item.variants??{}).sort().join("|")!==[...VARIANTS].sort().join("|"))fail("division/variants "+index);
   if(item.id==="IT-1"&&(item.source.kind!=="git"||item.source.commit!=="855c5b0341b5aa17ea2d35f2601badc68d33163e"))fail("IT-1 source");
+  if(typeof item.source.kind!=="string"||!item.source.kind)fail("source "+item.id);
   const projection={};
   for(const variant of VARIANTS){
    const x=item.variants[variant];

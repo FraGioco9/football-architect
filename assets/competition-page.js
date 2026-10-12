@@ -19,6 +19,7 @@
     main.appendChild(back);
     document.body.appendChild(main);
   }
+  const divisionSlugs = {"IT-1":"it-1-lega-federale","IT-2":"it-2-lega-delle-citta","ENG-1":"eng-1-crown-league","ENG-2":"eng-2-shield-league","ES-1":"es-1-liga-de-la-union","ES-2":"es-2-liga-de-las-regiones","DE-1":"de-1-meisterliga","DE-2":"de-2-vereinsliga","FR-1":"fr-1-ligue-des-societes","FR-2":"fr-2-ligue-des-regions","PT-1":"pt-1-liga-lusitana","PT-2":"pt-2-liga-atlantica","NL-1":"nl-1-oranjeliga","NL-2":"nl-2-bondsklasse","BR-1":"br-1-liga-das-associacoes","BR-2":"br-2-liga-das-regioes"};
   function validManifest(data) {
     if (data?.schemaVersion !== 1 || data.approved !== false ||
         !Array.isArray(data.divisions) || data.divisions.length !== 16) return false;
@@ -31,14 +32,14 @@
           ![1,2].includes(d.tier) || d.capacity !== 20 ||
           !Array.isArray(d.clubs) || d.clubs.length !== d.capacity) return false;
       if(d.visualAsset!==undefined){
-        if(!["IT-1","ENG-1","ES-1"].includes(d.id))return false;
-        const dir={"IT-1":"it-1-lega-federale","ENG-1":"eng-1-crown-league","ES-1":"es-1-liga-de-la-union"}[d.id];
+        const dir=divisionSlugs[d.id];
+        if(!dir)return false;
         for(const variant of ["primary","primary-dark","compact","compact-dark"]){
           const entry=d.visualAsset[variant];
           for(const ext of ["png","webp"])
             if(entry?.[ext]!==`assets/divisions/${dir}/${dir}-${variant}.${ext}`)return false;
         }
-      }else if(["IT-1","ENG-1","ES-1"].includes(d.id))return false;
+      }
       ids.add(d.id);
       let previous = 0;
       for (const club of d.clubs) {
