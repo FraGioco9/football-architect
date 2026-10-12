@@ -7,56 +7,56 @@
       "enabled": true,
       "source": {
         "kind": "git",
-        "commit": "4b4320d3f6ad9c312602c7e539cc0d2e4e17f7aa",
-        "manifestBlob": "971a3217656d0f7e9c63291da65ef9e777e14c75"
+        "commit": "855c5b0341b5aa17ea2d35f2601badc68d33163e",
+        "manifestBlob": "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0"
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
-            "sha256": "c5070d67ce39f20f6d254bffafb2a68475b0e7b6e363010c525c72e790c2c368",
-            "bytes": 90599
+            "sha256": "7e4595a664865f487e7869e5cc7c10df01094461b384dfd3fc92e0a99e302128",
+            "bytes": 92659
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp",
-            "sha256": "8df08182e2885a6dc62ac031bf127549cdd0fea95503f50f2413337210de4378",
-            "bytes": 27312
+            "sha256": "2c0cf7cbde105282e1ccfebd0bf802a2c268d3b1e139083cae6cfaa6a9b030b8",
+            "bytes": 28518
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
-            "sha256": "12af6575b6e3e4939a740df73f0d9fc9fa3f80748dc23f6b106d5cba967f3bc5",
-            "bytes": 66310
+            "sha256": "250da80cfb5f4da02ea7c012edf4824f6e1f7af3a2a2906b82c3682ee352b0d9",
+            "bytes": 92392
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp",
-            "sha256": "634d9738dec6d8fa7ba601d0c5f92c9e650aacffc52fd94f4e72dd2f030248a6",
-            "bytes": 27290
+            "sha256": "220a594457c73a59a2d84c9f87e435c9c346d1dec286812d56a6565c7adf5292",
+            "bytes": 28366
           }
         },
         "compact": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.png",
-            "sha256": "13ded702d64e006f6411ad0dffc258c397dec3a5ee71f301bc02dc45f3e65007",
-            "bytes": 34710
+            "sha256": "b12325b0430ef8ecf9b59bfdf8ca55d692a071a3878aaeaf8c2c3c1141492b80",
+            "bytes": 56509
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.webp",
-            "sha256": "3ff33d80f530618fb2285087fb12331e50010284e4162e089ca53163e59eb9aa",
-            "bytes": 13252
+            "sha256": "c8d203fbf2652c3c47975f96b169e1431615ad357af40a7d21d7ea2094f0a620",
+            "bytes": 15848
           }
         },
         "compact-dark": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.png",
-            "sha256": "12887baecbd25c3900aef0c0dd117bae0aff7c0a70afb167f2eb2a8b3ea935e0",
-            "bytes": 34720
+            "sha256": "23c8bedab9a8150a7c64965b0d3a7868facbee92bb0520e876d9c12070180fe3",
+            "bytes": 56507
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.webp",
-            "sha256": "2c8cef3142bb6c4ca3408e863e6ad43ac9d28469837bc5c49d0302c5ef220602",
-            "bytes": 13222
+            "sha256": "5ef4ba2db782aa08914bda61a78ef9b08bfbea86f039adb367b9b8f5f4862730",
+            "bytes": 15914
           }
         }
       }

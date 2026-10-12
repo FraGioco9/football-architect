@@ -17,7 +17,7 @@ export function validateDivisionAssets(root=ROOT){
  for(let index=0;index<3;index++){
   const item=registry.divisions[index],pair=[...EXPECTED][index],base=pair[1];
   if(item.id!==pair[0]||item.enabled!==true||!item.source||Object.keys(item.variants??{}).sort().join("|")!==[...VARIANTS].sort().join("|"))fail("division/variants "+index);
-  if(item.id==="IT-1"&&(item.source.kind!=="git"||item.source.commit!=="4b4320d3f6ad9c312602c7e539cc0d2e4e17f7aa"))fail("IT-1 source");
+  if(item.id==="IT-1"&&(item.source.kind!=="git"||item.source.commit!=="855c5b0341b5aa17ea2d35f2601badc68d33163e"))fail("IT-1 source");
   const projection={};
   for(const variant of VARIANTS){
    const x=item.variants[variant];
