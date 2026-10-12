@@ -327,24 +327,6 @@
       "name": "Crown League",
       "countryId": "ENG",
       "countryName": "England",
-      "visualAsset": {
-        "primary": {
-          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.png",
-          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.webp"
-        },
-        "primary-dark": {
-          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.png",
-          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.webp"
-        },
-        "compact": {
-          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.png",
-          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.webp"
-        },
-        "compact-dark": {
-          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.png",
-          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.webp"
-        }
-      },
       "flagAsset": "assets/flags/gb-eng.svg",
       "tier": 1,
       "capacity": 20,
@@ -647,24 +629,6 @@
       "name": "Liga de la Unión",
       "countryId": "ES",
       "countryName": "Spain",
-      "visualAsset": {
-        "primary": {
-          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.png",
-          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.webp"
-        },
-        "primary-dark": {
-          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.png",
-          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.webp"
-        },
-        "compact": {
-          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.png",
-          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.webp"
-        },
-        "compact-dark": {
-          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.png",
-          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.webp"
-        }
-      },
       "flagAsset": "assets/flags/es.svg",
       "tier": 1,
       "capacity": 20,
