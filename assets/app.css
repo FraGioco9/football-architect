@@ -346,3 +346,7 @@ html[data-theme="light"] .app-competition-tab.is-active{background:#D9EEE1;color
 .app-theme-choice[aria-pressed="true"]{border-color:var(--border);background:#21483D;color:#F2F7F4}
 html[data-theme="light"] .app-theme-choice[aria-pressed="true"]{border-color:#2E8061;background:#D6EDE0;color:#164A35}
 .app-theme-choice:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* Keep division logos and placeholders identical at each breakpoint. */
+@media(max-width:620px){.app-competition-header{--app-competition-logo-size:64px}}
+@media(max-width:360px){.app-competition-header{--app-competition-logo-size:58px}}
