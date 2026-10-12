@@ -296,7 +296,7 @@
       const picture=document.createElement("picture"),source=document.createElement("source"),img=document.createElement("img");
       const absolute=path=>"../../../"+path;
       picture.setAttribute("data-division-logo","");
-      for(const [key,path] of Object.entries({lightWebp:a.primary.webp,darkWebp:a["primary-dark"].webp,lightPng:a.primary.png,darkPng:a["primary-dark"].png}))
+      for(const [key,path] of Object.entries({lightWebp:a.compact.webp,darkWebp:a["compact-dark"].webp,lightPng:a.compact.png,darkPng:a["compact-dark"].png}))
         picture.dataset[key]=absolute(path);
       source.type="image/webp";source.srcset=picture.dataset.darkWebp;
       img.alt="";img.decoding="async";img.width=60;img.height=60;img.src=picture.dataset.darkPng;
