@@ -21,7 +21,8 @@ const TYPES = {
   ".svg": "image/svg+xml",
   ".json": "application/json; charset=utf-8",
   ".ico": "image/x-icon",
-  ".png": "image/png"
+  ".png": "image/png",
+  ".webp": "image/webp"
 };
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12]\/(?:index\.html)?$/;
 const INJECT = '<script type="module" src="/__fa_dev__/standings-client.mjs"></script>';

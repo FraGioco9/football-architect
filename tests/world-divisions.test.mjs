@@ -10,6 +10,7 @@ const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
 const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
+const logoIds=new Set(JSON.parse(read("data/division-assets.final.json")).divisions.map(d=>d.id));
 const shared=read("app/competitions/_shared/index.html");
 const index=read("app/competitions/index.html");
 const routes=divisions.map(d=>({division:d,file:"app/competitions/"+d.id.toLowerCase()+"/index.html"}));
@@ -18,7 +19,7 @@ const cols=["standingsPosition","standingsClub","standingsPlayed","standingsWon"
  "standingsPoints","standingsForm"];
 const views=["standings","fixtures","stats","history","rules","awards"];
 
-test("COMPETITIONS-06 keeps the index and 16 deep links",()=>{
+test("COMPETITIONS-06 keeps the index and renders logos from the manifest",()=>{
  assert.equal(countries.length,8);
  assert.equal(divisions.length,16);
  assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
@@ -31,6 +32,15 @@ test("COMPETITIONS-06 keeps the index and 16 deep links",()=>{
  for(const {division} of routes){
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);
+ }
+ assert.ok(index.includes('<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>'));
+ assert.ok(!index.includes("assets/divisions/"),"logo asset paths must not be hardcoded in the HTML");
+ const logoRenderer=read("assets/division-logos.js");
+ assert.ok(logoRenderer.includes('fetch(manifestUrl'));
+ assert.ok(logoRenderer.includes('division.visualAsset'));
+ assert.ok(logoRenderer.includes('app-competition-logo-approved'));
+ for(const division of manifest.divisions){
+  if(logoIds.has(division.id))assert.ok(division.visualAsset,division.id);
  }
 });
 

@@ -10,7 +10,7 @@ import {fileURLToPath} from "node:url";
 import {once} from "node:events";
 import {setTimeout as delay} from "node:timers/promises";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
-const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".ico":"image/x-icon"};
+const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"};
 const server=createServer(async(req,res)=>{
   try{
     const route=new URL(req.url,"http://localhost").pathname;

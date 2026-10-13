@@ -7,6 +7,24 @@
       "name": "Lega Federale",
       "countryId": "IT",
       "countryName": "Italy",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/it.svg",
       "tier": 1,
       "capacity": 20,
@@ -158,6 +176,24 @@
       "name": "Lega delle Città",
       "countryId": "IT",
       "countryName": "Italy",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/it.svg",
       "tier": 2,
       "capacity": 20,
@@ -460,6 +496,24 @@
       "name": "Shield League",
       "countryId": "ENG",
       "countryName": "England",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/gb-eng.svg",
       "tier": 2,
       "capacity": 20,
@@ -1819,6 +1873,24 @@
       "name": "Oranjeliga",
       "countryId": "NL",
       "countryName": "Netherlands",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/nl.svg",
       "tier": 1,
       "capacity": 20,

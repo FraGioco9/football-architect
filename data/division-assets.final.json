@@ -1,0 +1,242 @@
+{
+    "schemaVersion":  1,
+    "scope":  "approved-division-logos-only",
+    "divisions":  [
+                      {
+                          "id":  "IT-1",
+                          "enabled":  true,
+                          "source":  {
+                                         "kind":  "git",
+                                         "commit":  "855c5b0341b5aa17ea2d35f2601badc68d33163e",
+                                         "manifestBlob":  "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0"
+                                     },
+                          "variants":  {
+                                           "primary":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
+                                                                       "sha256":  "7e4595a664865f487e7869e5cc7c10df01094461b384dfd3fc92e0a99e302128",
+                                                                       "bytes":  92659
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp",
+                                                                        "sha256":  "2c0cf7cbde105282e1ccfebd0bf802a2c268d3b1e139083cae6cfaa6a9b030b8",
+                                                                        "bytes":  28518
+                                                                    }
+                                                       },
+                                           "primary-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
+                                                                            "sha256":  "250da80cfb5f4da02ea7c012edf4824f6e1f7af3a2a2906b82c3682ee352b0d9",
+                                                                            "bytes":  92392
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp",
+                                                                             "sha256":  "220a594457c73a59a2d84c9f87e435c9c346d1dec286812d56a6565c7adf5292",
+                                                                             "bytes":  28366
+                                                                         }
+                                                            },
+                                           "compact":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.png",
+                                                                       "sha256":  "b12325b0430ef8ecf9b59bfdf8ca55d692a071a3878aaeaf8c2c3c1141492b80",
+                                                                       "bytes":  56509
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.webp",
+                                                                        "sha256":  "c8d203fbf2652c3c47975f96b169e1431615ad357af40a7d21d7ea2094f0a620",
+                                                                        "bytes":  15848
+                                                                    }
+                                                       },
+                                           "compact-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.png",
+                                                                            "sha256":  "23c8bedab9a8150a7c64965b0d3a7868facbee92bb0520e876d9c12070180fe3",
+                                                                            "bytes":  56507
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.webp",
+                                                                             "sha256":  "5ef4ba2db782aa08914bda61a78ef9b08bfbea86f039adb367b9b8f5f4862730",
+                                                                             "bytes":  15914
+                                                                         }
+                                                            }
+                                       }
+                      },
+                      {
+                          "id":  "NL-1",
+                          "enabled":  true,
+                          "source":  {
+                                         "kind":  "git",
+                                         "branch":  "assets/division-logos-final",
+                                         "manifestBlob":  "81eb4f7e64693453536f1be8eff6a4eab6ac3d66"
+                                     },
+                          "variants":  {
+                                           "primary":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
+                                                                       "sha256":  "8957ffad575cc49c6e28173bedd188a6880d527a8443e3b80262cfd83b69aefb",
+                                                                       "bytes":  74061
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp",
+                                                                        "sha256":  "7aa815801817090b193fc77ee7559f6d359ccb169eab5f4e9031176a3df94935",
+                                                                        "bytes":  22916
+                                                                    }
+                                                       },
+                                           "primary-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
+                                                                            "sha256":  "ee21ca80f94f74a4614c2aea0d8669577867409f804a81b199f66d8c8ec84067",
+                                                                            "bytes":  73723
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp",
+                                                                             "sha256":  "2a938c9ff545cc3d3727f98fadb2b58695952f4fa0b267cf78513c66b06a35e3",
+                                                                             "bytes":  22762
+                                                                         }
+                                                            },
+                                           "compact":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
+                                                                       "sha256":  "2c92b540703a45b093738138cca1c04de8f0258e091511a7b049219bda98d45e",
+                                                                       "bytes":  46715
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp",
+                                                                        "sha256":  "425c0ab6170a659df0f412f9cc2da99eeed5801de2434d5df084efeb6c720512",
+                                                                        "bytes":  14268
+                                                                    }
+                                                       },
+                                           "compact-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
+                                                                            "sha256":  "a7e4d0527f68a421abdf1ca06aa00ac5457389dc6d46bf4828b0d492b758b9f7",
+                                                                            "bytes":  46721
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp",
+                                                                             "sha256":  "e26956a644a9fd7d673410b91ce9273dd61079a09850f63cd6629cb42d8287d0",
+                                                                             "bytes":  14252
+                                                                         }
+                                                            }
+                                       }
+                      },
+                      {
+                          "id":  "ENG-2",
+                          "enabled":  true,
+                          "source":  {
+                                         "kind":  "git",
+                                         "branch":  "assets/division-logos-final",
+                                         "manifestBlob":  "26881d14115f148860e4685ec5361bc4f08245bc"
+                                     },
+                          "variants":  {
+                                           "primary":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
+                                                                       "sha256":  "807b87603c86e21faf2fadeffbfc952061df7d111bed65a098e4c62c9c561a38",
+                                                                       "bytes":  72577
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp",
+                                                                        "sha256":  "17c32df8b11bb06a2520f3fa009cdc41b506e74e73184dff2a203c1014d26ad1",
+                                                                        "bytes":  33494
+                                                                    }
+                                                       },
+                                           "primary-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
+                                                                            "sha256":  "c870be897b34cded8f788d9e6f9304ff22e9fccbd9434387f2c31b4e37264906",
+                                                                            "bytes":  72225
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp",
+                                                                             "sha256":  "7bb9e213f06e1b4bc5eeb75d446ad1fcfc73f09f8184649781c4ffd4b8f98242",
+                                                                             "bytes":  33184
+                                                                         }
+                                                            },
+                                           "compact":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
+                                                                       "sha256":  "75c441482db3016a204443ec6a9d80d9e2ae162183d489a70cb088dd9acbf981",
+                                                                       "bytes":  94651
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp",
+                                                                        "sha256":  "42ce08503fd9ae1b1c0ca7f3d60317966fdbd867dd93629bccbd2eb478f7c53e",
+                                                                        "bytes":  41624
+                                                                    }
+                                                       },
+                                           "compact-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
+                                                                            "sha256":  "41bdbfccbef221d2323ba5d922683e30fb2c4e9dfb2fb3ebc9e5e2bf69f1bf4a",
+                                                                            "bytes":  93507
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp",
+                                                                             "sha256":  "1da994ada89c8fddacf570ff2ce8cc4dd03918552607b538e45ae3e5e90d51ae",
+                                                                             "bytes":  40956
+                                                                         }
+                                                            }
+                                       }
+                      },
+                      {
+                          "id":  "IT-2",
+                          "enabled":  true,
+                          "source":  {
+                                         "kind":  "git",
+                                         "commit":  "429f878f13d935a5d7721e9d0835fe1a25de6830",
+                                         "manifestBlob":  "c0abeacc05df922c62e856fc12d567608c070b6b"
+                                     },
+                          "variants":  {
+                                           "primary":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.png",
+                                                                       "sha256":  "75a540df044d5d1f9105977d1bfe3b322f9763b93e8fc1eb82a6cdfa75acef3d",
+                                                                       "bytes":  68772
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.webp",
+                                                                        "sha256":  "d59d0335b8554878371cab19c75bf673e22161b4266db87b5faaa25b4f8a3664",
+                                                                        "bytes":  26950
+                                                                    }
+                                                       },
+                                           "primary-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.png",
+                                                                            "sha256":  "9fba145e92ad3cee6e51614e26ade0bdd1edfc1bc684c1c8716bfb3c9893872f",
+                                                                            "bytes":  68524
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.webp",
+                                                                             "sha256":  "661b23dd9a51daf1400ec0522c4ee1167b6efcd0dcd94f223af0b3a102d4f07a",
+                                                                             "bytes":  27036
+                                                                         }
+                                                            },
+                                           "compact":  {
+                                                           "png":  {
+                                                                       "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.png",
+                                                                       "sha256":  "e4e09cc204e4e3a6b33e58de669a27146efced155b2090bfe4e9434a4ae00898",
+                                                                       "bytes":  44318
+                                                                   },
+                                                           "webp":  {
+                                                                        "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.webp",
+                                                                        "sha256":  "42d1388aac53e49fb579ba3eb0891c5955ff9ec2902a7c8c625063040cc1fff5",
+                                                                        "bytes":  18030
+                                                                    }
+                                                       },
+                                           "compact-dark":  {
+                                                                "png":  {
+                                                                            "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.png",
+                                                                            "sha256":  "cf3d23817b409799ead6c6e9d0afbd5f5c66ee91ff555a56bc36df2437d015d8",
+                                                                            "bytes":  44367
+                                                                        },
+                                                                "webp":  {
+                                                                             "path":  "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.webp",
+                                                                             "sha256":  "6b0b1378b578069d5f2abb689f2b2bc474e9f583ab46825012cb6a8cc44e1fed",
+                                                                             "bytes":  17982
+                                                                         }
+                                                            }
+                                       }
+                      }
+                  ]
+}
