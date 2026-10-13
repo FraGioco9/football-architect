@@ -296,6 +296,65 @@
           }
         }
       }
+    },
+    {
+      "id": "DE-1",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "commit": "ffda6105704a1aa293aaf42055bdc54d15c535b9",
+        "manifestBlob": "75a384d3901eac579e18b66e46ec713784de2998"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.png",
+            "sha256": "f4c4e6fa499623a0472c8a0d63b667d3cbc7fd426d7a6e04da431bc11aebb66c",
+            "bytes": 89944
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.webp",
+            "sha256": "9ddb615ee3045c341ea4ad8b4307bf337209b989bd222423ed261a49b8e54a1e",
+            "bytes": 25914
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.png",
+            "sha256": "54b0503c28e4b8fd3477b0faf9f477558d18c8d336f400744cfcf7b181066f9e",
+            "bytes": 89595
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.webp",
+            "sha256": "d12b0bfa8750634537ed3b70181708e7403f05b1d9bb16a0e56d085e59cdd536",
+            "bytes": 25816
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.png",
+            "sha256": "7fb7ee30bdcc5cc4eb1251ed0c0c280743c25802d0fe049b2c3312db772dfa45",
+            "bytes": 64080
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.webp",
+            "sha256": "dce31ecd310bbdd4b095b1521f9e1da950e8b73f0881c9e1ecd6dd10400d721d",
+            "bytes": 17108
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.png",
+            "sha256": "13e5ec986e6bdd1518b681233b4ae5d3927841567265e3cee257d41c578983d9",
+            "bytes": 64080
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.webp",
+            "sha256": "a7f2f9ceda9ffd7dfbd69cf2f7452ac24827ae5813fa58529f5301fce425c9a4",
+            "bytes": 17114
+          }
+        }
+      }
     }
   ]
 }

@@ -985,6 +985,24 @@
       "name": "Meisterliga",
       "countryId": "DE",
       "countryName": "Germany",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/de.svg",
       "tier": 1,
       "capacity": 20,
