@@ -1190,6 +1190,24 @@
       "name": "Vereinsliga",
       "countryId": "DE",
       "countryName": "Germany",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/de.svg",
       "tier": 2,
       "capacity": 20,
