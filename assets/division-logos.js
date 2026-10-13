@@ -66,6 +66,8 @@
     } catch (error) {
       // Keep the existing division-code placeholders when the manifest is unavailable.
       console.warn("Division logos could not be loaded from the manifest.", error);
+    } finally {
+      document.body.classList.remove("division-logos-pending");
     }
   }
 
