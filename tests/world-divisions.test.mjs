@@ -33,7 +33,7 @@ test("COMPETITIONS-06 keeps the index and renders logos from the manifest",()=>{
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);
  }
- assert.ok(index.includes('<script src="../../assets/division-logos.js" defer></script>'));
+ assert.ok(index.includes('<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>'));
  assert.ok(!index.includes("assets/divisions/"),"logo asset paths must not be hardcoded in the HTML");
  const logoRenderer=read("assets/division-logos.js");
  assert.ok(logoRenderer.includes('fetch(manifestUrl'));
