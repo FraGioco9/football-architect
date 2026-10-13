@@ -2132,6 +2132,24 @@
       "name": "Bondsklasse",
       "countryId": "NL",
       "countryName": "Netherlands",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/nl.svg",
       "tier": 2,
       "capacity": 20,
