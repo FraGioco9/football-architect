@@ -65,57 +65,60 @@
       "id": "NL-1",
       "enabled": true,
       "source": {
-        "kind": "git",
-        "branch": "assets/division-logos-final",
-        "manifestBlob": "81eb4f7e64693453536f1be8eff6a4eab6ac3d66"
+        "kind": "offline-final-archive",
+        "filename": "nl-1-oranjeliga-FINAL.zip",
+        "sha256": "83185d3b80475a11712fb3e06724d1184cfb2e17eca3befffd5083e01296d4cb",
+        "manifestSha256": "847bfd541714e4a676c719d67eb2abfecae3408e5df94dc5745732d50319c026",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved",
+        "revision": "single-vector-stem-and-Playfair-Display-Black-lettering"
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
-            "sha256": "8957ffad575cc49c6e28173bedd188a6880d527a8443e3b80262cfd83b69aefb",
-            "bytes": 74061
+            "sha256": "d9b11e6ad8e25c170dc0d89305fb581f347fbb4c1cd9102231c27d2ca95b48ce",
+            "bytes": 79088
           },
           "webp": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp",
-            "sha256": "7aa815801817090b193fc77ee7559f6d359ccb169eab5f4e9031176a3df94935",
-            "bytes": 22916
+            "sha256": "bafa4dad1af48c13235adde3011b1a82100b9faf9a3c8bd83566ab1c0a11778f",
+            "bytes": 25026
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
-            "sha256": "ee21ca80f94f74a4614c2aea0d8669577867409f804a81b199f66d8c8ec84067",
-            "bytes": 73723
+            "sha256": "47dde89add44ebb1cf8f4c51d5bcad8a8bfa460922fa2479c430531bd165bd33",
+            "bytes": 78556
           },
           "webp": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp",
-            "sha256": "2a938c9ff545cc3d3727f98fadb2b58695952f4fa0b267cf78513c66b06a35e3",
-            "bytes": 22762
+            "sha256": "baacd78a821534f295c227716b53322e1022c76866fac568815ad6da007d52f9",
+            "bytes": 24990
           }
         },
         "compact": {
           "png": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
-            "sha256": "2c92b540703a45b093738138cca1c04de8f0258e091511a7b049219bda98d45e",
-            "bytes": 46715
+            "sha256": "3a038fb8ff6be1b08fe53856fdb99aeda014785a01201409dae0a95964683e48",
+            "bytes": 46174
           },
           "webp": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp",
-            "sha256": "425c0ab6170a659df0f412f9cc2da99eeed5801de2434d5df084efeb6c720512",
-            "bytes": 14268
+            "sha256": "d7a910bdcee44c01e8d0938207ce10d2797d1c092671fcfdbc0eae5c81f79dab",
+            "bytes": 14210
           }
         },
         "compact-dark": {
           "png": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
-            "sha256": "a7e4d0527f68a421abdf1ca06aa00ac5457389dc6d46bf4828b0d492b758b9f7",
-            "bytes": 46721
+            "sha256": "aef711c1c35c171b93477137abd6fc49fdc103f6c9369a8131992a5cd178f5c1",
+            "bytes": 46176
           },
           "webp": {
             "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp",
-            "sha256": "e26956a644a9fd7d673410b91ce9273dd61079a09850f63cd6629cb42d8287d0",
-            "bytes": 14252
+            "sha256": "a55bb0a06f376a7018f0dee21f9a5b70ed115a2a5f282b70750faebb3cd6c74b",
+            "bytes": 14148
           }
         }
       }
