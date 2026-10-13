@@ -242,57 +242,58 @@
       "id": "ENG-1",
       "enabled": true,
       "source": {
-        "kind": "git",
-        "commit": "9d18001ff70857d4b6325217f592eb7b5c2bc3a9",
-        "manifestBlob": "bff0516314cb0606f558848e908e918abc63ea39"
+        "kind": "offline-zip",
+        "archive": "eng-1-crown-league-FINAL.zip",
+        "archiveSha256": "f405ebab7ff6e548ca8f39cfc523d434477f216752dbaec44e95ee5eb47d393a",
+        "manifestSha256": "11abfc143d4b51c9bb9a242b940c8dd4e8802b7a43f769bd814e725ce357a90e"
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.png",
-            "sha256": "7b1e5b49517a2533bca6096cb154fe47ea353be0cac4f4ceb32316403aa557c5",
-            "bytes": 214235
+            "sha256": "82f820bcd3595e99a0e93b4694adcac159be0292951b2153fb6866513a06510b",
+            "bytes": 93663
           },
           "webp": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.webp",
-            "sha256": "c14e1c4552f9d4d0ac3263ffc97616c190c441aebad99896c3e9b2b311a6adcd",
-            "bytes": 96320
+            "sha256": "d801e6428c2fce85cd961477f143874b55e2d49264ed01680cd00639a52e2d20",
+            "bytes": 33236
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.png",
-            "sha256": "54926d3f0a8a4150ac6dbe5421eb71dec128a09cef6839ca368c2ee327552cca",
-            "bytes": 214158
+            "sha256": "e6c741c8c37a2fd15e3a4e525c8073a46155a06542a0eaa78b372314fb04c794",
+            "bytes": 93663
           },
           "webp": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.webp",
-            "sha256": "3b47222415e1104002768e2a92fe7f676b2bde1ffc0ee1ffa3a674ac3c5eda3d",
-            "bytes": 95734
+            "sha256": "b7b3ae231f85b75299b87ec10b8f8ff6a269a4e408bc84a57c6226482273c1f5",
+            "bytes": 33182
           }
         },
         "compact": {
           "png": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.png",
-            "sha256": "04f22668cbe7a5f09854ad732d04c60262b5fe785c1e69b8b6315a4d1838aa61",
-            "bytes": 119764
+            "sha256": "0fcec55d642c9c9b1b550d2b75838dabbf55eebd608ed32dfd2f8231c54f5871",
+            "bytes": 59822
           },
           "webp": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.webp",
-            "sha256": "b994d1e8a2dacd596dedefefb7100437523f779680d59f2b4cc47b1564a70b5c",
-            "bytes": 51298
+            "sha256": "303f76ca0ef116f45d712e4bc641fc69a7e53ab640b49a86315d8860ebd3ea3e",
+            "bytes": 21426
           }
         },
         "compact-dark": {
           "png": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.png",
-            "sha256": "f14a277d14dd4a7da9e5b1e919051cd574df29a341d6bba27cea1150f106982a",
-            "bytes": 120046
+            "sha256": "6c46a90b0e285722f99d93244903c7f46f6759b6bde23f80c3a4479667f516c4",
+            "bytes": 59825
           },
           "webp": {
             "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.webp",
-            "sha256": "64dc00ec54307aad3be907b7aadd410f2df21f44f092105693bec0587a981459",
-            "bytes": 51280
+            "sha256": "5ffd7a6b70b17a05743523c6fe38dce7a65f85d77589f835c94af41eb8f5d87e",
+            "bytes": 20836
           }
         }
       }
