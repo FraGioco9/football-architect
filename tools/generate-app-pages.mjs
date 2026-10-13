@@ -3,7 +3,8 @@ import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
 import {validateDivisionAssets} from "./validate-division-assets.mjs";
 
-const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8");
+// Normalize the source template too: Windows clones may retain CRLF from an earlier checkout.
+const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8").replace(/\r\n/g,"\n");
 const pages = {
   "dashboard": {
     "@@FA_LINE_008@@": "  <title>Dashboard — Football Architect</title>",
