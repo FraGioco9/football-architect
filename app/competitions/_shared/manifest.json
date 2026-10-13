@@ -478,6 +478,24 @@
       "name": "Shield League",
       "countryId": "ENG",
       "countryName": "England",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/gb-eng.svg",
       "tier": 2,
       "capacity": 20,
@@ -622,25 +640,7 @@
           "fullName": "Cliffmere Town Football Club",
           "primaryName": "Cliffmere Town"
         }
-      ],
-      "visualAsset": {
-        "primary": {
-          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
-          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp"
-        },
-        "primary-dark": {
-          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
-          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp"
-        },
-        "compact": {
-          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
-          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp"
-        },
-        "compact-dark": {
-          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
-          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp"
-        }
-      }
+      ]
     },
     {
       "id": "ES-1",
@@ -1855,6 +1855,24 @@
       "name": "Oranjeliga",
       "countryId": "NL",
       "countryName": "Netherlands",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/nl.svg",
       "tier": 1,
       "capacity": 20,
@@ -1999,25 +2017,7 @@
           "fullName": "Leeuwarder Sportclub Westerwier",
           "primaryName": "SC Westerwier"
         }
-      ],
-      "visualAsset": {
-        "primary": {
-          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
-          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp"
-        },
-        "primary-dark": {
-          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
-          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp"
-        },
-        "compact": {
-          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
-          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp"
-        },
-        "compact-dark": {
-          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
-          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp"
-        }
-      }
+      ]
     },
     {
       "id": "NL-2",
