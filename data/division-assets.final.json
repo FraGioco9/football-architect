@@ -476,6 +476,67 @@
           }
         }
       }
+    },
+    {
+      "id": "ES-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "es-2-liga-de-las-regiones-FINAL.zip",
+        "sha256": "4d04a1742497c4d52db5159ceab07ab20188fa3cf18eb61b48ff7051afbc7a88",
+        "manifestSha256": "a9140ab4a2f4d1afe501e630e3eebbd687cc17bbdff28d913a3de23f964b9a7a",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.png",
+            "sha256": "161a21a3d231af825b2066ed96ff92430b27b7283ecfbbac992b869332a218c0",
+            "bytes": 98088
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.webp",
+            "sha256": "db64f01e60875dd8e38fc844755cb2da3dbd7ffef826e45eb2d2378665c06ce9",
+            "bytes": 32382
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.png",
+            "sha256": "e92096fd8669c74b1214ae6fbfb3191c50895e2f6db9a36e2e1ac937960ce934",
+            "bytes": 97569
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.webp",
+            "sha256": "1e0736a3e715eb6a10b54b212b5c448728dcf2437ea4b6b160f1016b589256e2",
+            "bytes": 32962
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.png",
+            "sha256": "2f46027a58d97df8017e8e331cf53b8d393fc1d8c697dcdf05e069bb013c7c3e",
+            "bytes": 59986
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.webp",
+            "sha256": "8987b770972c48595cf66566aed5db8794367fbc1a4a9df6190c6f7f19e643f1",
+            "bytes": 19890
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.png",
+            "sha256": "d00b9e9e2f997526f1f88f64defc1e2f6099d0a2dd0611c90a4dde77dd420842",
+            "bytes": 59989
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.webp",
+            "sha256": "032ee884a7d17c1b97ebd672a10a6afbfadaf62a3fd86ff82c92062b5ea3cc77",
+            "bytes": 19838
+          }
+        }
+      }
     }
   ]
 }

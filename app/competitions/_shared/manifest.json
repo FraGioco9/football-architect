@@ -852,6 +852,24 @@
       "name": "Liga de las Regiones",
       "countryId": "ES",
       "countryName": "Spain",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/es.svg",
       "tier": 2,
       "capacity": 20,
