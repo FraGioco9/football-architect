@@ -415,6 +415,66 @@
           }
         }
       }
+    },
+    {
+      "id": "ES-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "es-1-liga-de-la-union-FINAL.zip",
+        "sha256": "a9d4b429f8b838f4f8b6c96b5275279f54297385307a3b5729d1a9fecbecf433",
+        "photopeaEditability": "owner-confirmed"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.png",
+            "sha256": "39d3825889aa79d8bb0521782d2f1ffa6aa5c5ac16c5dc2a76d8d7e87926806d",
+            "bytes": 103977
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.webp",
+            "sha256": "4ffe814c5f8eace90fa1ef6a3dbe70dae5b050b5f978c923e43de00eee00cd99",
+            "bytes": 35290
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.png",
+            "sha256": "3f2f5862d925aa0741fd26c9c336eedc59ba65253f5f7f7ba133eb9a79d54c3d",
+            "bytes": 103752
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.webp",
+            "sha256": "0f075733f5e2ec1b18a4afd78bb4f609ed52699e8897a0a744ab54f591768403",
+            "bytes": 35164
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.png",
+            "sha256": "972941d55249897e73b446501b8ba0549fd13d4e8cf1e2a0fe79ffede8681f59",
+            "bytes": 75646
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.webp",
+            "sha256": "1bcf48e0f41a34eac751309020f06e48c4e445f8b874b8a264b63cc86b33def4",
+            "bytes": 26546
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.png",
+            "sha256": "fc433eb42a549db6e14f0f79103999779bcfee343440857c8d3b9d89204d1867",
+            "bytes": 75657
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.webp",
+            "sha256": "78fe8bf833a6d3cb1db9d21536ee561c2a578152d42bcb6ec9b0eb2ab741589f",
+            "bytes": 26554
+          }
+        }
+      }
     }
   ]
 }
