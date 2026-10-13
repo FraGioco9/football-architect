@@ -279,7 +279,7 @@ test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
   assert.match(js, /node\.setAttribute\("aria-label", strings\[node\.dataset\.appAria\]\)/);
 });
 
-test("CLEAN-OPT generated app shells stay byte-identical to checked-in HTML", () => {
+test("CLEAN-OPT generated app shells match checked-in HTML across LF/CRLF checkouts", () => {
   const generator = fileURLToPath(new URL("../tools/generate-app-pages.mjs", import.meta.url));
   const output = execFileSync(process.execPath, [generator, "--check"], {encoding:"utf8"});
   assert.match(output, /Static HTML matches checked-in pages: 21\/21/);
