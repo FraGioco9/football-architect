@@ -598,6 +598,67 @@
           }
         }
       }
+    },
+    {
+      "id": "BR-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "br-1-liga-das-associacoes-FINAL.zip",
+        "sha256": "9fbfc35c4ccdd90c1bc13cf54533ed2e27cd86e1e41e709cf2234c5b0f37215c",
+        "manifestSha256": "a4a57ae1ccf616fcaba3cfd3967ce28a5acda77b7fd140073480f87352cedb30",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.png",
+            "sha256": "dc8d89de20f76bc1df20bbacbb2f047fe20934d1cd7d7ba70c273fd09a084f0c",
+            "bytes": 90560
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.webp",
+            "sha256": "e43a13eb866961c8ac5d1b14d2e3284cc8372174f5b60a7cc554b6d5b57a8afe",
+            "bytes": 29410
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.png",
+            "sha256": "aecf4093856d09405762d0c631cb43569931c89dffe50168eac6f9782e3e5a48",
+            "bytes": 90128
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.webp",
+            "sha256": "d57ae26e88773b96eaef86e23b6341a86ed33295d095e79a139884e2755c6416",
+            "bytes": 28716
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.png",
+            "sha256": "5b0e6cda9e8ff63f2525c8dd32c38582740dedb6c3420ba70a238772826b374b",
+            "bytes": 59515
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.webp",
+            "sha256": "240f387e329bf82fd565344331764e721edc1bfa2618b6deaec0c29f740e78e8",
+            "bytes": 18224
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.png",
+            "sha256": "9a93d9dd88d0cab148fb22ace7196dd23a44b4f23cc7fd2e64e297fc324bf087",
+            "bytes": 59514
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.webp",
+            "sha256": "1d9da6f9bd331a81cd332f2bb97b706535da3e9469ae7478842549a71c757261",
+            "bytes": 18166
+          }
+        }
+      }
     }
   ]
 }
