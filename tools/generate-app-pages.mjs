@@ -228,7 +228,8 @@ const outputPages = [
    "@@FA_WORLD_LINK@@":worldNav("../competitions/",false),
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
- {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2)},
+ {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2),
+  transform:html=>html.replace('<body class="app-body">','<body class="app-body division-logos-pending">').replace('<script src="../../assets/division-logos.js" defer></script>','<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>')},
  {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
   replacements:worldPageReplacements(3,divisionData.divisions[0]),transform:sharedTemplate},
  ...divisionData.divisions.map(division=>({
