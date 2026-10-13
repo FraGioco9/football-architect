@@ -31,10 +31,18 @@ test("COMPETITIONS-06 keeps the index and 16 deep links",()=>{
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-  if(logoIds.has(division.id)){
-   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder app-competition-logo-approved"'),division.id);
-   assert.ok(index.includes('data-division-logo data-light-webp='),division.id);
-  }else assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);
+ }
+ assert.ok(index.includes('<script src="../../assets/division-logos.js" defer></script>'));
+ assert.ok(!index.includes('assets/divisions/'));
+ const logoRenderer=read("assets/division-logos.js");
+ assert.ok(logoRenderer.includes('fetch(manifestUrl'));
+ assert.ok(logoRenderer.includes('division.visualAsset'));
+ assert.ok(logoRenderer.includes('app-competition-logo-approved'));
+ for(const division of manifest.divisions){
+  if(logoIds.has(division.id))assert.ok(division.visualAsset,division.id);
+ }
  }
 });
 
