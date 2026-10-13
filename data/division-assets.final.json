@@ -659,6 +659,69 @@
           }
         }
       }
+    },
+    {
+      "id": "FR-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "fr-2-ligue-des-regions-FINAL.zip",
+        "sha256": "25515e41e68c667f9143f20e291fe0c0ea7aa9943bdabbce43a3ab688e1883d3",
+        "manifestSha256": "c699ce4ad89b66ffde6ef58a7517643a0383b745b7de2ca5ca7d4a86825121e4",
+        "offlineCertification": "PENDING_FINAL_CERTIFICATION",
+        "photopeaEditability": "UNKNOWN",
+        "artisticApprovals": "Owner approved latest visual set; four separately SHA-bound approvals not recorded"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary.png",
+            "sha256": "5babc78339d097196db12d20370c6f92ab851261a3da07c0dec2342530e55f54",
+            "bytes": 91030
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary.webp",
+            "sha256": "bcce357c837803e640f6fbb574e57b1ddba460244a7b43928bf659f1a67a4fb6",
+            "bytes": 29080
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary-dark.png",
+            "sha256": "9ae022fb3fefafcc2a6b657603aefac4945f209c0ff84e20f3e8944df95f1b1f",
+            "bytes": 91103
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary-dark.webp",
+            "sha256": "05690a03ce998d8436dab9117e920d8cf7f0f1f76720bf90dc2e9d36467e85db",
+            "bytes": 28862
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact.png",
+            "sha256": "ff9c54fdc89fda1471f32e4ab89ea0adc1b40b851f8f67d839a5cebb60e982e4",
+            "bytes": 51773
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact.webp",
+            "sha256": "4bbe1b989bd782fa1d74b1e04407fbef01e2a8c0e11f00cc6327a859276e62fe",
+            "bytes": 16696
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact-dark.png",
+            "sha256": "0ac6b81b4b97e891767c95d091c2d9f498a406bcd2e958370dc1e87d3d8e46d1",
+            "bytes": 51773
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact-dark.webp",
+            "sha256": "f39095fa476eb5f3aa578059701734834071ba2dbc127af00e2e8a53734af2f9",
+            "bytes": 16628
+          }
+        }
+      }
     }
   ]
 }
