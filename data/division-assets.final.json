@@ -537,6 +537,67 @@
           }
         }
       }
+    },
+    {
+      "id": "NL-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "nl-2-bondsklasse-FINAL.zip",
+        "sha256": "69038ded18e50522f08ef54bf49783641178dc30d84d3662bc41d508b1c7e796",
+        "manifestSha256": "d9ec0a3c2ddb3f579e86788fbd0123b6741fabcb19e3fe762de9a8f144853838",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.png",
+            "sha256": "d0092f3ff0259105b46505d0c8c2c09215b755840c6d68cb3729cef1997ba268",
+            "bytes": 89417
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.webp",
+            "sha256": "0ee1b5bb3f74f39f047f38647859207914b3f3460266b2aed32ac64dbd1e0bad",
+            "bytes": 28968
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.png",
+            "sha256": "23c10a91b54932d8af9df894a5aa615848a19a5cbe3e2b9e2444790d20a0ad36",
+            "bytes": 88983
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.webp",
+            "sha256": "7801986e149fb305f18a23e2aa5b13b5fe3c833bac2f839c634c0daa7b94be20",
+            "bytes": 28764
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.png",
+            "sha256": "c8e278f529da8524f3d1eabb254dbd1f87c8f1b846da648fa2a0bc32659289da",
+            "bytes": 51392
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.webp",
+            "sha256": "728aa7303f3058849b785ebeba359d8d0c4f6fd7259ea9c1113654edde3263c6",
+            "bytes": 16152
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.png",
+            "sha256": "067f67f5d24947c7646c95b9c0385f61efecd342acf18d1119585a22cd6ff609",
+            "bytes": 51389
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.webp",
+            "sha256": "a9df97dd35761e06e8d88f74e0925dbc5883ab2e690c64f2e0b1f6bdfdfce9d3",
+            "bytes": 15954
+          }
+        }
+      }
     }
   ]
 }
