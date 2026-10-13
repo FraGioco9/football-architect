@@ -245,7 +245,9 @@ const writeOutput=(path,content)=>{
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
-  if(Buffer.compare(Buffer.from(content,"utf8"),Buffer.from(current,"utf8"))!==0)
+  // Existing Windows checkouts may still use CRLF from before LF attributes were added.
+  // Compare exact generated content except for CRLF-to-LF conversion.
+  if(content!==current.replace(/\r\n/g,"\n"))
    throw Error("Generated output differs from checked-in file: "+path);
  }else{
   mkdirSync(new URL("./",file),{recursive:true});
