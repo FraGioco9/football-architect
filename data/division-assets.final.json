@@ -784,6 +784,67 @@
           }
         }
       }
+    },
+    {
+      "id": "PT-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "pt-1-liga-lusitana-FINAL.zip",
+        "sha256": "c2e9fb34e6993b044faab2e86a92215d8d965a75867da28da7cb3e1d3c9526c2",
+        "manifestSha256": "9c2f76afabfcc01e59991428b102ead5b98a1dfbc985035b98b6769e8250ff19",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.png",
+            "sha256": "76460a821eba5b3c583dce549e009cb0d2a3d084f0d7db2d34fdb7a1fc185e96",
+            "bytes": 41572
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.webp",
+            "sha256": "59257f6b7ccde0a88ad9383db3e6900bf63b3ee170eddada80e554ca779b916d",
+            "bytes": 16152
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.png",
+            "sha256": "500c5d7c846b1f53437a6691ca89526c95d8e535f1142d16dec5c1cd6375f2d2",
+            "bytes": 40824
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.webp",
+            "sha256": "d7155a08c110dd0eca36b9c97703ffa6963dbe99207507d12b9f546b1f7ba423",
+            "bytes": 16042
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.png",
+            "sha256": "6c6d78b06e7edceb7d174c53c56609ccde059b6f9d708dacff1a32cc77c23073",
+            "bytes": 18533
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.webp",
+            "sha256": "91188c847b9ed031fbafb15e641d5bbc33a442b3dbec95ca43516e8d0b399071",
+            "bytes": 7562
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.png",
+            "sha256": "6c97beec921b9a9247621d8299326116924dc5d685a7da4b52638501aa319d99",
+            "bytes": 18527
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.webp",
+            "sha256": "f348b41c559d6b816ac757b2651d15ce82a81438369da6be1ba8c9acd8ac8187",
+            "bytes": 7346
+          }
+        }
+      }
     }
   ]
 }

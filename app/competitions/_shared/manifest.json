@@ -1697,6 +1697,24 @@
       "name": "Liga Lusitana",
       "countryId": "PT",
       "countryName": "Portugal",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/pt.svg",
       "tier": 1,
       "capacity": 20,
