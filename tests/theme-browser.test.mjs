@@ -22,9 +22,14 @@ const server=createServer(async(req,res)=>{
   }catch{res.writeHead(404);res.end("Not found");}
 });
 const chrome=()=>{
-  for(const binary of [process.env.CHROME_BIN,"google-chrome","google-chrome-stable","chromium","chromium-browser"].filter(Boolean))
+  const windows=process.platform==="win32"?[
+    process.env.ProgramFiles&&join(process.env.ProgramFiles,"Google","Chrome","Application","chrome.exe"),
+    process.env["PROGRAMFILES(X86)"]&&join(process.env["PROGRAMFILES(X86)"],"Google","Chrome","Application","chrome.exe"),
+    process.env.LOCALAPPDATA&&join(process.env.LOCALAPPDATA,"Google","Chrome","Application","chrome.exe")
+  ]:[];
+  for(const binary of [process.env.CHROME_BIN,...windows,"google-chrome","google-chrome-stable","chromium","chromium-browser"].filter(Boolean))
     if(spawnSync(binary,["--version"],{timeout:4000,stdio:"ignore"}).status===0)return binary;
-  throw Error("Chrome is required for visual QA; cannot mark QA as passed");
+  throw Error("Chrome is required for visual QA; set CHROME_BIN to its executable path");
 };
 const ratio=(a,b)=>{
   const parse=x=>{
@@ -38,10 +43,12 @@ const ratio=(a,b)=>{
   const x=light(a),y=light(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);
 };
 test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeout:180000},async()=>{
+  // Detect Chrome before opening the server, so missing Chrome cannot leave Node hanging.
+  const browser=chrome();
   server.listen(0,"127.0.0.1");await once(server,"listening");
   const origin="http://127.0.0.1:"+server.address().port;
   const dir=await mkdtemp(join(tmpdir(),"fa-theme-browser-"));
-  const proc=spawn(chrome(),["--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
+  const proc=spawn(browser,["--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
     "--no-proxy-server","--disable-background-networking","--disable-extensions","--disable-sync",
     "--no-first-run","--no-default-browser-check","--remote-debugging-port=0",
     "--user-data-dir="+dir,"about:blank"],{stdio:["ignore","ignore","pipe"]});

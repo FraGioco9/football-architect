@@ -1,0 +1,4 @@
+# Generated static app pages must retain canonical LF line endings on Windows.
+app/**/index.html text eol=lf
+app/competitions/_shared/manifest.json text eol=lf
+templates/app-page.html text eol=lf
