@@ -661,6 +661,68 @@
       }
     },
     {
+      "id": "DE-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "de-2-vereinsliga-FINAL.zip",
+        "sha256": "858906b6d539fcec68363f8b9341e1d68a05e95d73a81744d1af71e352a1ef2e",
+        "manifestSha256": "08da46afb216db911f7e67690b5eecc515f88705748f39b5648711825784f5d1",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved",
+        "psdReexportWarning": "Original offline PSD may reproduce 208 pre-correction off-palette pixels; approved PNGs are authoritative."
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.png",
+            "sha256": "21654428479f5b39bda0b67abeeacfaa88d6450e04163147e0cccfbfc07a0799",
+            "bytes": 35203
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.webp",
+            "sha256": "1e60de5ce9cdd796efd6fb5348dacfcffe516f096d560a4bcfaafb7375d6f759",
+            "bytes": 12038
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.png",
+            "sha256": "db9becd3e810413e7a4ea10148dd02c68059db65eff1224bf031e747595506b8",
+            "bytes": 34506
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.webp",
+            "sha256": "0bff334ce904741bea9a324811558b6ce8afc768f9d295f5fb93af1307db6a90",
+            "bytes": 12098
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.png",
+            "sha256": "b53ec76a856de37310fbe81097d827396ec92b3da141368f60a6383043e42865",
+            "bytes": 13871
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.webp",
+            "sha256": "c5e51c5c122036d584fc2137026f1ac31a0be0b7d509da66a7e66f5df9687782",
+            "bytes": 3176
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.png",
+            "sha256": "91cbe6bb2f4e70e1dfb2fe0293786f82d711083a17998f0e0f76e79b8839088c",
+            "bytes": 13449
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.webp",
+            "sha256": "b91ece91bc3f7e4e08c7b97ea94dc8c096e8249b665a4c1edf86f27612e57c6b",
+            "bytes": 3182
+          }
+        }
+      }
+    },
+    {
       "id": "FR-2",
       "enabled": true,
       "source": {
