@@ -2301,6 +2301,24 @@
       "name": "Liga das Associações",
       "countryId": "BR",
       "countryName": "Brazil",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/br.svg",
       "tier": 1,
       "capacity": 20,
