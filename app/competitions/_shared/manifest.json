@@ -489,7 +489,25 @@
           "fullName": "Redcliff Town Football Club",
           "primaryName": "Redcliff Town"
         }
-      ]
+      ],
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.webp"
+        }
+      }
     },
     {
       "id": "ENG-2",
