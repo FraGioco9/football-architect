@@ -29,5 +29,6 @@ jobs:
           node --check assets/landing.js
           node --check assets/app.js
           node --check assets/app-search.js
+          node --check assets/division-logos.js
       - name: Site contracts
         run: node --test tests/*.test.mjs
