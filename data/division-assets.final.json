@@ -355,6 +355,66 @@
           }
         }
       }
+    },
+    {
+      "id": "FR-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "fr-1-ligue-des-societes-FINAL.zip",
+        "sha256": "4c823d6f3463c74bb3f881962c7e3e62417549758a3ed1f3503c4d140d12fa81",
+        "photopeaEditability": "owner-confirmed"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary.png",
+            "sha256": "6435c1fa06fd408c5c3621592d249eac4176db3ff132421244e2273332739439",
+            "bytes": 93231
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary.webp",
+            "sha256": "81f98fad90e72c9cdc667d390fc156e079062ab81d4d60cb26e413a50eb8a2be",
+            "bytes": 32108
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary-dark.png",
+            "sha256": "8be10f4ca1901a1a2e35c207fe231821c09697ee7796d00f0c8354be5bff720c",
+            "bytes": 93036
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary-dark.webp",
+            "sha256": "6f4f48f1035291dc5efb5014eac41f236e904e44227be74b4ded5b0d361564ec",
+            "bytes": 32228
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact.png",
+            "sha256": "e7074b1712d135c95defb3776ed583e53ca7a126f78cdaaf0241601a5dc923de",
+            "bytes": 59001
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact.webp",
+            "sha256": "6ce9d92313773143f98a8b73d91d2ed9c77420f1c199bad975a2de23c7de1577",
+            "bytes": 19806
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact-dark.png",
+            "sha256": "24e7b0cabb6ae87446767c6c25995106fff06a578656e14b034286a3f05b4a6e",
+            "bytes": 58908
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact-dark.webp",
+            "sha256": "b3aa3ef11b3993f35ff94dc612a6f90175b1cfa6d8ee0a7d24dd911d6078a33e",
+            "bytes": 19724
+          }
+        }
+      }
     }
   ]
 }
