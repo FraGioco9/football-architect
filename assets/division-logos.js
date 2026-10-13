@@ -58,7 +58,7 @@
       );
 
       for (const card of cards) {
-        const match = card.getAttribute("href")?.match(/^\.\/([a-z]{2,3}-[12])\/$/i);
+        const match = card.getAttribute("href")?.match(/(?:^|\/)([a-z]{2,3}-[12])\/?$/i);
         if (!match) continue;
         const division = divisions.get(match[1].toLowerCase());
         if (division) renderLogo(card, division);
