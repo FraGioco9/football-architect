@@ -130,6 +130,10 @@ async function boot(routeId) {
     if (entries.length !== 100 || fragment.childNodes.length !== 20) {
       throw Error("Incomplete DEV standings rendering");
     }
+    // Prepare mobile from the validated fixture model before changing the table.
+    const mobile = window.faStandingsMobile;
+    if (typeof mobile?.prepare !== "function") throw Error("Mobile standings unavailable");
+    const commitMobile = mobile.prepare(rows);
 
     const caption = document.getElementById("app-standings-caption");
     if (!caption) throw Error("Missing standings caption");
@@ -241,6 +245,7 @@ async function boot(routeId) {
     }
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
+    commitMobile();
     parent.before(toolbar);
     document.head.appendChild(style);
     document.body.appendChild(tooltip);

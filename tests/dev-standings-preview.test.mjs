@@ -236,3 +236,58 @@ test("DEV-L10N + interactions: 5 languages, 100 results, semantic tooltips and e
     assert.ok(client.includes(property),property);
   assert.ok(client.includes("sessionStorage.removeItem(FLAG)"));
 });
+
+test("UX-01A: mobile compact-only and desktop full table share one validated model", () => {
+  const html = read("app/competitions/_shared/index.html").toString();
+  const runtime = read("assets/competition-page.js").toString();
+  const css = read("assets/app.css").toString();
+  const localization = read("assets/app.js").toString();
+  // The shared HTML remains generator-owned and byte-identical.
+  assert.ok(!html.includes('id="app-standings-compact-list"'));
+  for (const id of ["app-standings-compact-list","app-standings-full"])
+    assert.ok(runtime.includes('id="'+id+'"'),id);
+  assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
+  for (const key of ["standingsMobileRecent","standingsMobileDetails"])
+    assert.equal(localization.split(key+":").length,6,"five localizations for "+key);
+  for (const removed of ["app-standings-layout-switch","app-standings-show-compact",
+    "app-standings-show-full"]) assert.ok(!runtime.includes(removed));
+  assert.ok(!css.includes(".app-world-layout-switch"));
+  assert.ok(css.includes("@media(max-width:620px){.app-world-standing-scroll{display:none!important}"));
+  assert.ok(css.includes("@media(min-width:621px){.app-world-compact{display:none!important}}"));
+  assert.ok(runtime.includes("function createMobileStandings()"));
+  assert.ok(runtime.includes('element("dl","app-world-mobile-stats")'));
+  assert.ok(runtime.includes('for (const game of row.recent) {'),"five form indicators preserved");
+  for (const absent of ["app-world-mobile-matches","app-world-mobile-match",
+    "standingsMobileMatches","Recent matches"]) {
+    assert.ok(!runtime.includes(absent),"removed from mobile rendering: "+absent);
+    assert.ok(!css.includes(absent),"removed from CSS: "+absent);
+  }
+  assert.ok(!localization.includes("standingsMobileMatches:"));
+  assert.ok(runtime.includes("window.faStandingsMobile = mobile"));
+  assert.ok(runtime.includes("const commitMobile = mobile.prepare(provisional)"));
+  assert.ok(client.includes("const commitMobile = mobile.prepare(rows)"));
+  assert.ok(client.indexOf("const commitMobile = mobile.prepare(rows)") <
+    client.indexOf("tbody.replaceChildren(fragment)"));
+  assert.ok(client.indexOf("tbody.replaceChildren(fragment)") < client.indexOf("commitMobile();"));
+  assert.ok(css.includes("@media(max-width:360px)"));
+  assert.ok(css.includes(".app-world-standings [hidden]"));
+  assert.ok(!read("app/competitions/_shared/manifest.json").toString().includes("standingsPreview"));
+});
+
+test("UX-01A integration: approved division logos and theme rebind survive mobile hydration", () => {
+  const runtime = read("assets/competition-page.js").toString();
+  const theme = read("assets/theme.js").toString();
+  const css = read("assets/app.css").toString();
+  const manifest = JSON.parse(read("app/competitions/_shared/manifest.json").toString());
+  assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
+  assert.ok(runtime.includes("window.faThemeRebind?.()"));
+  assert.ok(runtime.includes("if(division.visualAsset)"));
+  assert.ok(runtime.includes("badge.replaceChildren(picture)"));
+  assert.ok(runtime.indexOf("badge.replaceChildren(picture)") < runtime.indexOf("window.faThemeRebind?.()"));
+  assert.ok(theme.includes("picture[data-division-logo]"));
+  assert.ok(css.includes('html[data-theme="light"] .app-world-mobile-points'));
+  assert.equal(manifest.divisions.length, 16);
+  assert.equal(manifest.approved, false);
+  for (const division of manifest.divisions)
+    assert.equal(division.clubs.length, 20);
+});

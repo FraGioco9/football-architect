@@ -47,6 +47,8 @@
       standingsPoints:"Pts",
       standingsForm:"Form",
       standingsTable:"Standings statistics",
+      standingsMobileRecent:"Recent form",
+      standingsMobileDetails:"Club statistics",
       fixturesHeading:"Fixtures and results",
       fixturesEmpty:"No scheduled matches or results are available.",
       clubsHeading:"Participating clubs",
@@ -142,6 +144,8 @@
       standingsPoints:"Pkt",
       standingsForm:"Form",
       standingsTable:"Tabellenstatistiken",
+      standingsMobileRecent:"Letzte Ergebnisse",
+      standingsMobileDetails:"Vereinsstatistik",
       fixturesHeading:"Spielplan und Ergebnisse",
       fixturesEmpty:"Es sind keine Spiele oder Ergebnisse verfügbar.",
       clubsHeading:"Teilnehmende Vereine",
@@ -237,6 +241,8 @@
       standingsPoints:"Pts",
       standingsForm:"Forma",
       standingsTable:"Estadísticas de clasificación",
+      standingsMobileRecent:"Forma reciente",
+      standingsMobileDetails:"Estadísticas del club",
       fixturesHeading:"Calendario y resultados",
       fixturesEmpty:"Todavía no hay partidos programados ni resultados.",
       clubsHeading:"Clubes participantes",
@@ -332,6 +338,8 @@
       standingsPoints:"Pts",
       standingsForm:"Forme",
       standingsTable:"Statistiques du classement",
+      standingsMobileRecent:"Forme récente",
+      standingsMobileDetails:"Statistiques du club",
       fixturesHeading:"Calendrier et résultats",
       fixturesEmpty:"Aucun match ni résultat n'est disponible.",
       clubsHeading:"Clubs participants",
@@ -427,6 +435,8 @@
       standingsPoints:"Pt",
       standingsForm:"Forma",
       standingsTable:"Statistiche della classifica",
+      standingsMobileRecent:"Forma recente",
+      standingsMobileDetails:"Statistiche del club",
       fixturesHeading:"Calendario e risultati",
       fixturesEmpty:"Non sono disponibili partite programmate né risultati.",
       clubsHeading:"Club partecipanti",
@@ -479,8 +489,9 @@
     }
   };
   const worldCountryNames = {"en":{"IT":"Italy","ENG":"England","ES":"Spain","DE":"Germany","FR":"France","PT":"Portugal","NL":"Netherlands","BR":"Brazil"},"de":{"IT":"Italien","ENG":"England","ES":"Spanien","DE":"Deutschland","FR":"Frankreich","PT":"Portugal","NL":"Niederlande","BR":"Brasilien"},"es":{"IT":"Italia","ENG":"Inglaterra","ES":"España","DE":"Alemania","FR":"Francia","PT":"Portugal","NL":"Países Bajos","BR":"Brasil"},"fr":{"IT":"Italie","ENG":"Angleterre","ES":"Espagne","DE":"Allemagne","FR":"France","PT":"Portugal","NL":"Pays-Bas","BR":"Brésil"},"it":{"IT":"Italia","ENG":"Inghilterra","ES":"Spagna","DE":"Germania","FR":"Francia","PT":"Portogallo","NL":"Paesi Bassi","BR":"Brasile"}};
-  const words = [...document.querySelectorAll("[data-app-i18n]")];
-  const accessible = [...document.querySelectorAll("[data-app-aria]")];
+  // Mobile nodes are hydrated dynamically after the first language pass.
+  const words = () => document.querySelectorAll("[data-app-i18n]");
+  const accessible = () => document.querySelectorAll("[data-app-aria]");
   const dashboard = document.getElementById("app-dashboard");
   const calendar = document.getElementById("app-calendar");
   const settings = document.getElementById("app-settings");
@@ -552,10 +563,10 @@
   }
   function renderLanguage() {
     const strings = copies[language()];
-    for (const node of words) {
+    for (const node of words()) {
       if (Object.hasOwn(strings, node.dataset.appI18n)) node.textContent = strings[node.dataset.appI18n];
     }
-    for (const node of accessible) {
+    for (const node of accessible()) {
       if (Object.hasOwn(strings, node.dataset.appAria)) node.setAttribute("aria-label", strings[node.dataset.appAria]);
       if (node.dataset.appAria === "crestPlaceholder" && node.textContent?.trim()) node.setAttribute("aria-label", strings.crestPlaceholder + " — " + node.textContent.trim());
     }
@@ -582,6 +593,7 @@
     }
     renderLanguage();
   }
+  window.faAppRenderLanguage = renderLanguage;
   new MutationObserver(renderLanguage).observe(document.documentElement, {
     attributes: true, attributeFilter: ["lang"]
   });

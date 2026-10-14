@@ -268,6 +268,31 @@ html{scroll-padding-top:72px}
 
 @media(max-width:360px){.app-world-standing-table{min-width:686px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}.app-world-club-identity{gap:7px}}
 
+/* UX-01A: mobile projection preserving the canonical 11-column table. */
+.app-world-standings [hidden]{display:none!important}
+.app-world-mobile-list{margin:0;padding:0;list-style:none}
+.app-world-mobile-item{border-bottom:1px solid var(--line)}
+.app-world-mobile-item:last-child{border-bottom:0}
+.app-world-mobile-details{min-width:0}
+.app-world-mobile-summary{display:grid;grid-template-columns:25px minmax(0,1fr) 40px;grid-template-areas:"position name points" ". form points";column-gap:6px;row-gap:5px;align-items:center;min-height:78px;padding:9px 8px;cursor:pointer;list-style:none}
+.app-world-mobile-summary::-webkit-details-marker{display:none}
+.app-world-mobile-summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:8px}
+.app-world-mobile-details[open]>.app-world-mobile-summary,.app-world-mobile-summary:hover{background:rgba(100,203,169,.065)}
+.app-world-mobile-position{grid-area:position;padding-left:4px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.app-world-mobile-name{grid-area:name;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.35;font-weight:700}
+.app-world-mobile-points{grid-area:points;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border-radius:7px;background:#26473e;color:#effff4;font-size:16px;font-weight:850;font-variant-numeric:tabular-nums}
+.app-world-mobile-form{grid-area:form;display:flex;align-items:center;gap:3px;min-width:0}
+.app-world-mobile-form .app-world-form-dot{width:16px;height:16px;cursor:default}
+.app-world-mobile-no-form{font-size:13px;color:var(--muted)}
+.app-world-mobile-panel{padding:6px 9px}
+.app-world-mobile-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0}
+.app-world-mobile-stat{min-width:0;padding:7px 2px;text-align:center;background:rgba(100,203,169,.045);border:1px solid var(--line);border-radius:7px;font-variant-numeric:tabular-nums}
+.app-world-mobile-stat dt{color:var(--muted);font-size:10px;font-weight:700}
+.app-world-mobile-stat dd{margin:4px 0 0;font-size:13px;font-weight:750}
+@media(min-width:621px){.app-world-compact{display:none!important}}
+@media(max-width:620px){.app-world-standing-scroll{display:none!important}.app-world-standings{overflow:hidden}.app-world-mobile-name{font-size:12px}}
+@media(max-width:360px){.app-world-mobile-summary{grid-template-columns:21px minmax(0,1fr) 36px;column-gap:4px;padding:8px 5px}.app-world-mobile-points{font-size:15px}.app-world-mobile-name{font-size:11.5px}}
+
 /* Six competition views share the same page and never fabricate data. */
 .app-competition-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
 .app-competition-tabs::-webkit-scrollbar{height:5px}
@@ -351,3 +376,9 @@ html[data-theme="light"] .app-theme-choice[aria-pressed="true"]{border-color:#2E
 /* Keep division logos and placeholders identical at each breakpoint. */
 @media(max-width:620px){.app-competition-header{--app-competition-logo-size:64px}}
 @media(max-width:360px){.app-competition-header{--app-competition-logo-size:58px}}
+
+/* UX-01A: keep the mobile projection readable in the existing Light theme. */
+html[data-theme="light"] .app-world-mobile-details[open]>.app-world-mobile-summary,
+html[data-theme="light"] .app-world-mobile-summary:hover{background:#E7F4EB}
+html[data-theme="light"] .app-world-mobile-points{background:#D4EBDD;color:#174936}
+html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:var(--line)}

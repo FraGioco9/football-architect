@@ -19,6 +19,7 @@ const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
+ "app-standings-compact","app-standings-compact-list","app-standings-full",
  "app-search-dialog","division-detail-name"];
 
 function node(tag){
@@ -146,6 +147,27 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(r.fields.get("app-competition-level").textContent,String(division.tier));
    const rows=r.fields.get("app-standings-body").children;
    assert.equal(rows.length,20,division.id);
+   const mobileRows=r.fields.get("app-standings-compact-list").children;
+   assert.equal(mobileRows.length,20,"mobile rows match canonical table");
+   assert.deepEqual(mobileRows.map(x=>x.dataset.worldClub),
+     rows.map(x=>x.dataset.worldClub));
+   assert.ok(!r.body.innerHTML.includes('id="app-standings-layout-switch"'));
+   assert.ok(!r.body.innerHTML.includes('id="app-standings-show-full"'));
+   for (const [width,isMobile] of [[320,true],[390,true],[620,true],[621,false],[800,false]]) {
+     r.window.innerWidth=width;
+     r.window.emit("resize");
+     assert.equal(r.fields.get("app-standings-compact").hidden,!isMobile,division.id+" "+width);
+     assert.equal(r.fields.get("app-standings-full").hidden,isMobile,division.id+" "+width);
+   }
+   r.window.innerWidth=390;
+   r.window.emit("resize");
+   assert.equal(mobileRows[0].children[0].tagName,"details");
+   assert.equal(mobileRows[0].children[0].children[0].tagName,"summary");
+   const detailsPanel=mobileRows[0].children[0].children[1];
+   assert.equal(detailsPanel.children.length,1,"mobile expansion includes stats only");
+   assert.equal(detailsPanel.children[0].className,"app-world-mobile-stats");
+   assert.equal(detailsPanel.children[0].children.length,8);
+   assert.equal(mobileRows[0].children[0].children[0].children[2].textContent,"—");
    const preview=false; // ordinary pages never render sample results
    const clubs=preview ? new Map(division.clubs.map(c=>[c.clubId,c])) : null;
    for(let i=0;i<20;i++){
