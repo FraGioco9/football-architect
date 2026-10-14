@@ -11,6 +11,7 @@ import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
+import { validateDebugManifest } from "../tools/dev-debug-settings.mjs";
 import { isAllowlistedPublicPath, planPublicFiles, stagePublicArtifact,
   assertPublicArtifact } from "../tools/publication-guard.mjs";
 
@@ -23,6 +24,8 @@ const client = read("tools/dev-standings-preview-client.mjs").toString();
 const serverSource = read("tools/dev-standings-preview.mjs").toString();
 const clientName = "/__fa_dev__/standings-client.mjs";
 const dataName = "/__fa_dev__/standings-data.mjs";
+const debugName = "/__fa_dev__/debug-settings.mjs";
+const debugSource = read("tools/dev-debug-settings.mjs").toString();
 const allIds = manifest.divisions.map(d => d.id);
 
 test("DEV-LEAGUES: deterministic complete 16x16 standings and 1,920 DEV fixture objects", () => {
@@ -94,9 +97,36 @@ test("DEV-LEAGUES: deterministic complete 16x16 standings and 1,920 DEV fixture 
   assert.equal(snapshots.length, 16);
 });
 
+test("DEV-DEBUG-SETTINGS: local-only five-language controls and strict 16x16 manifest", () => {
+  const options = validateDebugManifest(manifest);
+  assert.equal(options.length,16);
+  assert.equal(new Set(options.map(x => x.id)).size,16);
+  for (const invalid of [
+    null, {}, {...manifest, approved:true},
+    {...manifest, divisions:manifest.divisions.slice(1)},
+    {...manifest, divisions:[...manifest.divisions.slice(0,15),manifest.divisions[0]]},
+    {...manifest, divisions:manifest.divisions.map((x,i) => i===0?{...x, capacity:20}:x)},
+    {...manifest, divisions:manifest.divisions.map((x,i) => i===0?{...x, clubs:[]}:x)}
+  ]) assert.throws(() => validateDebugManifest(invalid),"invalid debug manifest must fail closed");
+  assert.ok(debugSource.includes("sessionStorage.getItem(FLAG)"));
+  assert.ok(debugSource.includes("sessionStorage.setItem(FLAG"));
+  assert.ok(debugSource.includes("sessionStorage.removeItem(FLAG)"));
+  assert.ok(debugSource.includes('location.hostname !== "127.0.0.1"'));
+  assert.ok(debugSource.includes('location.port !== "2000"'));
+  assert.ok(debugSource.includes("aria-pressed"));
+  assert.ok(debugSource.includes("fa-dev-debug-settings"));
+  assert.ok(debugSource.includes("validateDebugManifest"));
+  for (const locale of ["en:","de:","es:","fr:","it:"])
+    assert.ok(debugSource.includes(locale),"missing Debug Settings translation "+locale);
+  assert.ok(!/\blocalStorage\b|\bindexedDB\b/.test(debugSource));
+  assert.equal(isAllowlistedPublicPath("tools/dev-debug-settings.mjs"),false);
+  assert.ok(!planPublicFiles().includes("tools/dev-debug-settings.mjs"));
+});
+
 test("DEV-GATE-01: published artifact excludes all preview sources and private fixtures", () => {
   const preview = ["tools/dev-standings-preview.mjs",
     "tools/dev-standings-preview-client.mjs","tools/dev-standings-preview-data.mjs",
+    "tools/dev-debug-settings.mjs",
     "tests/dev-standings-preview.test.mjs","tests/fixtures/it-1-demo.mjs"];
   for (const path of preview) assert.equal(isAllowlistedPublicPath(path), false, path);
   const publicFiles = planPublicFiles();
@@ -122,7 +152,7 @@ test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchange
   for (const division of manifest.divisions) createPreviewStandings(division);
   assert.deepEqual(files.map(f => hash(read(f))), before);
   assert.equal(manifest.approved, false);
-  const privateClient = client + serverSource;
+  const privateClient = client + serverSource + debugSource;
   assert.ok(privateClient.includes("sessionStorage"));
   assert.ok(!/\blocalStorage\b|\bindexedDB\b/.test(privateClient));
   assert.ok(!/\bwriteFile(?:Sync)?\b|\bappendFile(?:Sync)?\b/.test(privateClient));
@@ -204,6 +234,19 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     const indexPage = await get("/app/competitions/eng-2/index.html");
     assert.equal(indexPage.status,200);
     assert.equal(indexPage.body.split(clientName).length,2);
+    const settings = await get("/app/settings/");
+    assert.equal(settings.status,200);
+    assert.equal(settings.headers["cache-control"],"no-store");
+    assert.equal(settings.body.split(debugName).length,2);
+    assert.ok(!settings.body.includes(clientName));
+    const settingsIndex = await get("/app/settings/index.html");
+    assert.equal(settingsIndex.status,200);
+    assert.equal(settingsIndex.body.split(debugName).length,2);
+    assert.notEqual((await get("/app/settings/",{host:"example.invalid:2000"})).status,200);
+    const dashboard = await get("/app/dashboard/");
+    assert.equal(dashboard.status,200);
+    assert.ok(!dashboard.body.includes(debugName));
+    assert.ok(!read("app/settings/index.html").toString().includes("__fa_dev__"));
     const regular = await get("/");
     assert.equal(regular.status,200);
     assert.ok(!regular.body.includes(clientName));
@@ -215,7 +258,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     assert.ok(theme.body.includes("football-architect:theme"));
     assert.ok(theme.body.includes("data-theme"));
     assert.ok(!theme.body.includes("__fa_dev__"));
-    for (const virtual of [clientName,dataName]) {
+    for (const virtual of [clientName,dataName,debugName]) {
       const result = await get(virtual);
       assert.equal(result.status,200);
       assert.match(result.headers["content-type"],/javascript/);

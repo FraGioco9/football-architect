@@ -11,7 +11,8 @@ const HOST = "127.0.0.1";
 const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
-  "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs"
+  "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs",
+  "/__fa_dev__/debug-settings.mjs": "dev-debug-settings.mjs"
 });
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -25,7 +26,9 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12]\/(?:index\.html)?$/;
+const SETTINGS = /^\/app\/settings\/(?:index\.html)?$/;
 const INJECT = '<script type="module" src="/__fa_dev__/standings-client.mjs"></script>';
+const INJECT_SETTINGS = '<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>';
 
 function reject(res, status = 404) {
   res.writeHead(status, {
@@ -79,10 +82,10 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
-        if (DETAIL.test(raw)) {
+        if (DETAIL.test(raw) || SETTINGS.test(raw)) {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
-          body = Buffer.from(html.replace("</head>", INJECT + "\n</head>"), "utf8");
+          body = Buffer.from(html.replace("</head>", (DETAIL.test(raw) ? INJECT : INJECT_SETTINGS) + "\n</head>"), "utf8");
         }
       }
       res.writeHead(200, {
