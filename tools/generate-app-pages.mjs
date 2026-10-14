@@ -1,8 +1,10 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
+import {validateDivisionAssets} from "./validate-division-assets.mjs";
 
-const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8");
+// Normalize the source template too: Windows clones may retain CRLF from an earlier checkout.
+const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8").replace(/\r\n/g,"\n");
 const pages = {
   "dashboard": {
     "@@FA_LINE_008@@": "  <title>Dashboard — Football Architect</title>",
@@ -36,6 +38,7 @@ const pages = {
   }
 };
 
+const finalLogos=validateDivisionAssets().divisions;
 const divisionData = JSON.parse(readFileSync(new URL("../data/divisions.json", import.meta.url), "utf8"));
 const clubData = JSON.parse(readFileSync(new URL("../data/clubs.json", import.meta.url), "utf8"));
 if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new Error("Expected 320 canonical club identities");
@@ -61,6 +64,15 @@ const worldSection = function worldSection(content,active,division=null){
  const h=division ? '' : '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>\n';
  return '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"'+(active?'':' hidden')+'>\n'+h+(content?content+'\n':'')+'        </section>';
 };
+// The documented color variants are explicit; theme.js selects one source pair.
+const logoPicture=(id,root,kind,large)=>{
+ const a=finalLogos.get(id),light=a[kind],dark=a[kind+"-dark"];
+ const path=p=>root+encode(p);
+ return '<span class="app-competition-logo-placeholder app-competition-logo-approved'+(large?' app-competition-logo-placeholder-large':'')+'" aria-hidden="true">'+
+  '<picture data-division-logo data-light-webp="'+path(light.webp)+'" data-dark-webp="'+path(dark.webp)+'" data-light-png="'+path(light.png)+'" data-dark-png="'+path(dark.png)+'">'+
+  '<source type="image/webp" srcset="'+path(dark.webp)+'">'+
+  '<img src="'+path(dark.png)+'" width="'+(large?60:36)+'" height="'+(large?60:36)+'" alt="" decoding="async"></picture></span>';
+};
 const indexContent = function indexContent(root){
  const cards=divisionData.countries.map(c=>{
   const links=divisionData.divisions.filter(d=>d.countryId===c.id).map(d=>
@@ -70,7 +82,7 @@ const indexContent = function indexContent(root){
  '              <h2 id="world-country-'+c.id.toLowerCase()+'"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
  '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
  }).join("\n");
- return '          <div class="app-world-countries">\n'+cards+'\n          </div>';
+ return '          <div class="app-world-countries">\n'+cards+'\n          </div>\n          <script src="'+root+'assets/division-logos.js" defer></script>';
 };
 const detailAppend = function detailAppend(d){
  const cs=provisionalClubs.get(d.id);
@@ -187,6 +199,7 @@ const competitionRoute = d=>[
  '  <meta name="fa-division" content="'+encode(d.id)+'">',
  '  <title>'+encode(d.name)+' — Football Architect</title>',
  '  <link rel="icon" href="../../../favicon.svg" type="image/svg+xml">',
+ '  <script src="../../../assets/theme.js"></script>',
  '  <link rel="stylesheet" href="../../../assets/landing.css">',
  '  <link rel="stylesheet" href="../../../assets/app.css">',
  '  <script src="../../../assets/competition-page.js" defer></script>',
@@ -203,6 +216,7 @@ const competitionManifest = {
   const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
+   ...(finalLogos.has(d.id)?{visualAsset:finalLogos.get(d.id)}:{}),
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
    clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c)}))};
  })
@@ -215,7 +229,8 @@ const outputPages = [
    "@@FA_WORLD_LINK@@":worldNav("../competitions/",false),
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
- {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2)},
+ {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2),
+  transform:html=>html.replace('<body class="app-body">','<body class="app-body division-logos-pending">').replace('<script src="../../assets/division-logos.js" defer></script>','<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>')},
  {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
   replacements:worldPageReplacements(3,divisionData.divisions[0]),transform:sharedTemplate},
  ...divisionData.divisions.map(division=>({
@@ -231,7 +246,9 @@ const writeOutput=(path,content)=>{
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
-  if(Buffer.compare(Buffer.from(content,"utf8"),Buffer.from(current,"utf8"))!==0)
+  // Existing Windows checkouts may still use CRLF from before LF attributes were added.
+  // Compare exact generated content except for CRLF-to-LF conversion.
+  if(content!==current.replace(/\r\n/g,"\n"))
    throw Error("Generated output differs from checked-in file: "+path);
  }else{
   mkdirSync(new URL("./",file),{recursive:true});

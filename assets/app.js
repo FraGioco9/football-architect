@@ -84,6 +84,10 @@
       settingsIntro:"Manage your interface preferences. Career saves are not available in this preview.",
       languageHeading:"Language",
       languageHelp:"Choose the interface language. This preference is shared with the Landing and Guide on this device.",
+      themeHeading:"Appearance",
+      themeHelp:"Choose the site theme. It applies across the website and app on this device.",
+      themeDark:"Dark",
+      themeLight:"Light",
       careerPanel:"Your career",
       saveStatus:"Saves",
       notAvailable:"Not available yet",
@@ -177,6 +181,10 @@
       settingsIntro:"Verwalte die Sprache der Oberfläche. Karriere-Spielstände sind in dieser Vorschau noch nicht verfügbar.",
       languageHeading:"Sprache",
       languageHelp:"Wähle die Sprache der Oberfläche. Die Einstellung gilt auf diesem Gerät auch für Startseite und Leitfaden.",
+      themeHeading:"Darstellung",
+      themeHelp:"Wähle das Erscheinungsbild. Es gilt für Website und App auf diesem Gerät.",
+      themeDark:"Dunkel",
+      themeLight:"Hell",
       careerPanel:"Deine Karriere",
       saveStatus:"Spielstände",
       notAvailable:"Noch nicht verfügbar",
@@ -270,6 +278,10 @@
       settingsIntro:"Configura el idioma de la interfaz. Las partidas de carrera no están disponibles en esta vista previa.",
       languageHeading:"Idioma",
       languageHelp:"Elige el idioma de la interfaz. La preferencia se comparte con la portada y la guía en este dispositivo.",
+      themeHeading:"Apariencia",
+      themeHelp:"Elige el tema visual. Se aplica al sitio web y a la aplicación en este dispositivo.",
+      themeDark:"Oscuro",
+      themeLight:"Claro",
       careerPanel:"Tu carrera",
       saveStatus:"Partidas guardadas",
       notAvailable:"Aún no disponible",
@@ -363,6 +375,10 @@
       settingsIntro:"Configurez la langue de l’interface. Les sauvegardes de carrière ne sont pas disponibles dans cet aperçu.",
       languageHeading:"Langue",
       languageHelp:"Choisissez la langue de l’interface. Ce réglage est partagé avec l’accueil et le guide sur cet appareil.",
+      themeHeading:"Apparence",
+      themeHelp:"Choisissez le thème visuel. Il s'applique au site et à l'application sur cet appareil.",
+      themeDark:"Sombre",
+      themeLight:"Clair",
       careerPanel:"Votre carrière",
       saveStatus:"Sauvegardes",
       notAvailable:"Pas encore disponible",
@@ -456,6 +472,10 @@
       settingsIntro:"Gestisci le preferenze dell'interfaccia. I salvataggi delle carriere non sono ancora disponibili in questa anteprima.",
       languageHeading:"Lingua",
       languageHelp:"Scegli la lingua dell'interfaccia. La preferenza è condivisa con Landing e Guida su questo dispositivo.",
+      themeHeading:"Aspetto",
+      themeHelp:"Scegli il tema grafico. Vale per il sito e l'app su questo dispositivo.",
+      themeDark:"Scuro",
+      themeLight:"Chiaro",
       careerPanel:"La tua carriera",
       saveStatus:"Salvataggi",
       notAvailable:"Non ancora disponibile",
@@ -469,7 +489,7 @@
     }
   };
   const worldCountryNames = {"en":{"IT":"Italy","ENG":"England","ES":"Spain","DE":"Germany","FR":"France","PT":"Portugal","NL":"Netherlands","BR":"Brazil"},"de":{"IT":"Italien","ENG":"England","ES":"Spanien","DE":"Deutschland","FR":"Frankreich","PT":"Portugal","NL":"Niederlande","BR":"Brasilien"},"es":{"IT":"Italia","ENG":"Inglaterra","ES":"España","DE":"Alemania","FR":"Francia","PT":"Portugal","NL":"Países Bajos","BR":"Brasil"},"fr":{"IT":"Italie","ENG":"Angleterre","ES":"Espagne","DE":"Allemagne","FR":"France","PT":"Portugal","NL":"Pays-Bas","BR":"Brésil"},"it":{"IT":"Italia","ENG":"Inghilterra","ES":"Spagna","DE":"Germania","FR":"Francia","PT":"Portogallo","NL":"Paesi Bassi","BR":"Brasile"}};
-  // Mobile rows can be built after the first translation pass.
+  // Mobile nodes are hydrated dynamically after the first language pass.
   const words = () => document.querySelectorAll("[data-app-i18n]");
   const accessible = () => document.querySelectorAll("[data-app-aria]");
   const dashboard = document.getElementById("app-dashboard");

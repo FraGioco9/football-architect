@@ -1,0 +1,914 @@
+{
+  "schemaVersion": 1,
+  "scope": "approved-division-logos-only",
+  "divisions": [
+    {
+      "id": "IT-1",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "commit": "855c5b0341b5aa17ea2d35f2601badc68d33163e",
+        "manifestBlob": "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
+            "sha256": "7e4595a664865f487e7869e5cc7c10df01094461b384dfd3fc92e0a99e302128",
+            "bytes": 92659
+          },
+          "webp": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp",
+            "sha256": "2c0cf7cbde105282e1ccfebd0bf802a2c268d3b1e139083cae6cfaa6a9b030b8",
+            "bytes": 28518
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
+            "sha256": "250da80cfb5f4da02ea7c012edf4824f6e1f7af3a2a2906b82c3682ee352b0d9",
+            "bytes": 92392
+          },
+          "webp": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp",
+            "sha256": "220a594457c73a59a2d84c9f87e435c9c346d1dec286812d56a6565c7adf5292",
+            "bytes": 28366
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.png",
+            "sha256": "b12325b0430ef8ecf9b59bfdf8ca55d692a071a3878aaeaf8c2c3c1141492b80",
+            "bytes": 56509
+          },
+          "webp": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.webp",
+            "sha256": "c8d203fbf2652c3c47975f96b169e1431615ad357af40a7d21d7ea2094f0a620",
+            "bytes": 15848
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.png",
+            "sha256": "23c8bedab9a8150a7c64965b0d3a7868facbee92bb0520e876d9c12070180fe3",
+            "bytes": 56507
+          },
+          "webp": {
+            "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.webp",
+            "sha256": "5ef4ba2db782aa08914bda61a78ef9b08bfbea86f039adb367b9b8f5f4862730",
+            "bytes": 15914
+          }
+        }
+      }
+    },
+    {
+      "id": "NL-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "nl-1-oranjeliga-FINAL.zip",
+        "sha256": "83185d3b80475a11712fb3e06724d1184cfb2e17eca3befffd5083e01296d4cb",
+        "manifestSha256": "847bfd541714e4a676c719d67eb2abfecae3408e5df94dc5745732d50319c026",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved",
+        "revision": "single-vector-stem-and-Playfair-Display-Black-lettering"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
+            "sha256": "d9b11e6ad8e25c170dc0d89305fb581f347fbb4c1cd9102231c27d2ca95b48ce",
+            "bytes": 79088
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp",
+            "sha256": "bafa4dad1af48c13235adde3011b1a82100b9faf9a3c8bd83566ab1c0a11778f",
+            "bytes": 25026
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
+            "sha256": "47dde89add44ebb1cf8f4c51d5bcad8a8bfa460922fa2479c430531bd165bd33",
+            "bytes": 78556
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp",
+            "sha256": "baacd78a821534f295c227716b53322e1022c76866fac568815ad6da007d52f9",
+            "bytes": 24990
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
+            "sha256": "3a038fb8ff6be1b08fe53856fdb99aeda014785a01201409dae0a95964683e48",
+            "bytes": 46174
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp",
+            "sha256": "d7a910bdcee44c01e8d0938207ce10d2797d1c092671fcfdbc0eae5c81f79dab",
+            "bytes": 14210
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
+            "sha256": "aef711c1c35c171b93477137abd6fc49fdc103f6c9369a8131992a5cd178f5c1",
+            "bytes": 46176
+          },
+          "webp": {
+            "path": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp",
+            "sha256": "a55bb0a06f376a7018f0dee21f9a5b70ed115a2a5f282b70750faebb3cd6c74b",
+            "bytes": 14148
+          }
+        }
+      }
+    },
+    {
+      "id": "ENG-2",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "branch": "assets/division-logos-final",
+        "manifestBlob": "26881d14115f148860e4685ec5361bc4f08245bc"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
+            "sha256": "807b87603c86e21faf2fadeffbfc952061df7d111bed65a098e4c62c9c561a38",
+            "bytes": 72577
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp",
+            "sha256": "17c32df8b11bb06a2520f3fa009cdc41b506e74e73184dff2a203c1014d26ad1",
+            "bytes": 33494
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
+            "sha256": "c870be897b34cded8f788d9e6f9304ff22e9fccbd9434387f2c31b4e37264906",
+            "bytes": 72225
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp",
+            "sha256": "7bb9e213f06e1b4bc5eeb75d446ad1fcfc73f09f8184649781c4ffd4b8f98242",
+            "bytes": 33184
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
+            "sha256": "75c441482db3016a204443ec6a9d80d9e2ae162183d489a70cb088dd9acbf981",
+            "bytes": 94651
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp",
+            "sha256": "42ce08503fd9ae1b1c0ca7f3d60317966fdbd867dd93629bccbd2eb478f7c53e",
+            "bytes": 41624
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
+            "sha256": "41bdbfccbef221d2323ba5d922683e30fb2c4e9dfb2fb3ebc9e5e2bf69f1bf4a",
+            "bytes": 93507
+          },
+          "webp": {
+            "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp",
+            "sha256": "1da994ada89c8fddacf570ff2ce8cc4dd03918552607b538e45ae3e5e90d51ae",
+            "bytes": 40956
+          }
+        }
+      }
+    },
+    {
+      "id": "IT-2",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "commit": "429f878f13d935a5d7721e9d0835fe1a25de6830",
+        "manifestBlob": "c0abeacc05df922c62e856fc12d567608c070b6b"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.png",
+            "sha256": "75a540df044d5d1f9105977d1bfe3b322f9763b93e8fc1eb82a6cdfa75acef3d",
+            "bytes": 68772
+          },
+          "webp": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.webp",
+            "sha256": "d59d0335b8554878371cab19c75bf673e22161b4266db87b5faaa25b4f8a3664",
+            "bytes": 26950
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.png",
+            "sha256": "9fba145e92ad3cee6e51614e26ade0bdd1edfc1bc684c1c8716bfb3c9893872f",
+            "bytes": 68524
+          },
+          "webp": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.webp",
+            "sha256": "661b23dd9a51daf1400ec0522c4ee1167b6efcd0dcd94f223af0b3a102d4f07a",
+            "bytes": 27036
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.png",
+            "sha256": "e4e09cc204e4e3a6b33e58de669a27146efced155b2090bfe4e9434a4ae00898",
+            "bytes": 44318
+          },
+          "webp": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.webp",
+            "sha256": "42d1388aac53e49fb579ba3eb0891c5955ff9ec2902a7c8c625063040cc1fff5",
+            "bytes": 18030
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.png",
+            "sha256": "cf3d23817b409799ead6c6e9d0afbd5f5c66ee91ff555a56bc36df2437d015d8",
+            "bytes": 44367
+          },
+          "webp": {
+            "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.webp",
+            "sha256": "6b0b1378b578069d5f2abb689f2b2bc474e9f583ab46825012cb6a8cc44e1fed",
+            "bytes": 17982
+          }
+        }
+      }
+    },
+    {
+      "id": "ENG-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-zip",
+        "archive": "eng-1-crown-league-FINAL.zip",
+        "archiveSha256": "f405ebab7ff6e548ca8f39cfc523d434477f216752dbaec44e95ee5eb47d393a",
+        "manifestSha256": "11abfc143d4b51c9bb9a242b940c8dd4e8802b7a43f769bd814e725ce357a90e"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.png",
+            "sha256": "82f820bcd3595e99a0e93b4694adcac159be0292951b2153fb6866513a06510b",
+            "bytes": 93663
+          },
+          "webp": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.webp",
+            "sha256": "d801e6428c2fce85cd961477f143874b55e2d49264ed01680cd00639a52e2d20",
+            "bytes": 33236
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.png",
+            "sha256": "e6c741c8c37a2fd15e3a4e525c8073a46155a06542a0eaa78b372314fb04c794",
+            "bytes": 93663
+          },
+          "webp": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.webp",
+            "sha256": "b7b3ae231f85b75299b87ec10b8f8ff6a269a4e408bc84a57c6226482273c1f5",
+            "bytes": 33182
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.png",
+            "sha256": "0fcec55d642c9c9b1b550d2b75838dabbf55eebd608ed32dfd2f8231c54f5871",
+            "bytes": 59822
+          },
+          "webp": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.webp",
+            "sha256": "303f76ca0ef116f45d712e4bc641fc69a7e53ab640b49a86315d8860ebd3ea3e",
+            "bytes": 21426
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.png",
+            "sha256": "6c46a90b0e285722f99d93244903c7f46f6759b6bde23f80c3a4479667f516c4",
+            "bytes": 59825
+          },
+          "webp": {
+            "path": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.webp",
+            "sha256": "5ffd7a6b70b17a05743523c6fe38dce7a65f85d77589f835c94af41eb8f5d87e",
+            "bytes": 20836
+          }
+        }
+      }
+    },
+    {
+      "id": "DE-1",
+      "enabled": true,
+      "source": {
+        "kind": "git",
+        "commit": "ffda6105704a1aa293aaf42055bdc54d15c535b9",
+        "manifestBlob": "75a384d3901eac579e18b66e46ec713784de2998"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.png",
+            "sha256": "f4c4e6fa499623a0472c8a0d63b667d3cbc7fd426d7a6e04da431bc11aebb66c",
+            "bytes": 89944
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.webp",
+            "sha256": "9ddb615ee3045c341ea4ad8b4307bf337209b989bd222423ed261a49b8e54a1e",
+            "bytes": 25914
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.png",
+            "sha256": "54b0503c28e4b8fd3477b0faf9f477558d18c8d336f400744cfcf7b181066f9e",
+            "bytes": 89595
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.webp",
+            "sha256": "d12b0bfa8750634537ed3b70181708e7403f05b1d9bb16a0e56d085e59cdd536",
+            "bytes": 25816
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.png",
+            "sha256": "7fb7ee30bdcc5cc4eb1251ed0c0c280743c25802d0fe049b2c3312db772dfa45",
+            "bytes": 64080
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.webp",
+            "sha256": "dce31ecd310bbdd4b095b1521f9e1da950e8b73f0881c9e1ecd6dd10400d721d",
+            "bytes": 17108
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.png",
+            "sha256": "13e5ec986e6bdd1518b681233b4ae5d3927841567265e3cee257d41c578983d9",
+            "bytes": 64080
+          },
+          "webp": {
+            "path": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.webp",
+            "sha256": "a7f2f9ceda9ffd7dfbd69cf2f7452ac24827ae5813fa58529f5301fce425c9a4",
+            "bytes": 17114
+          }
+        }
+      }
+    },
+    {
+      "id": "FR-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "fr-1-ligue-des-societes-FINAL.zip",
+        "sha256": "4c823d6f3463c74bb3f881962c7e3e62417549758a3ed1f3503c4d140d12fa81",
+        "photopeaEditability": "owner-confirmed"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary.png",
+            "sha256": "6435c1fa06fd408c5c3621592d249eac4176db3ff132421244e2273332739439",
+            "bytes": 93231
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary.webp",
+            "sha256": "81f98fad90e72c9cdc667d390fc156e079062ab81d4d60cb26e413a50eb8a2be",
+            "bytes": 32108
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary-dark.png",
+            "sha256": "8be10f4ca1901a1a2e35c207fe231821c09697ee7796d00f0c8354be5bff720c",
+            "bytes": 93036
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary-dark.webp",
+            "sha256": "6f4f48f1035291dc5efb5014eac41f236e904e44227be74b4ded5b0d361564ec",
+            "bytes": 32228
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact.png",
+            "sha256": "e7074b1712d135c95defb3776ed583e53ca7a126f78cdaaf0241601a5dc923de",
+            "bytes": 59001
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact.webp",
+            "sha256": "6ce9d92313773143f98a8b73d91d2ed9c77420f1c199bad975a2de23c7de1577",
+            "bytes": 19806
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact-dark.png",
+            "sha256": "24e7b0cabb6ae87446767c6c25995106fff06a578656e14b034286a3f05b4a6e",
+            "bytes": 58908
+          },
+          "webp": {
+            "path": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact-dark.webp",
+            "sha256": "b3aa3ef11b3993f35ff94dc612a6f90175b1cfa6d8ee0a7d24dd911d6078a33e",
+            "bytes": 19724
+          }
+        }
+      }
+    },
+    {
+      "id": "ES-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "es-1-liga-de-la-union-FINAL.zip",
+        "sha256": "a9d4b429f8b838f4f8b6c96b5275279f54297385307a3b5729d1a9fecbecf433",
+        "photopeaEditability": "owner-confirmed"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.png",
+            "sha256": "39d3825889aa79d8bb0521782d2f1ffa6aa5c5ac16c5dc2a76d8d7e87926806d",
+            "bytes": 103977
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.webp",
+            "sha256": "4ffe814c5f8eace90fa1ef6a3dbe70dae5b050b5f978c923e43de00eee00cd99",
+            "bytes": 35290
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.png",
+            "sha256": "3f2f5862d925aa0741fd26c9c336eedc59ba65253f5f7f7ba133eb9a79d54c3d",
+            "bytes": 103752
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.webp",
+            "sha256": "0f075733f5e2ec1b18a4afd78bb4f609ed52699e8897a0a744ab54f591768403",
+            "bytes": 35164
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.png",
+            "sha256": "972941d55249897e73b446501b8ba0549fd13d4e8cf1e2a0fe79ffede8681f59",
+            "bytes": 75646
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.webp",
+            "sha256": "1bcf48e0f41a34eac751309020f06e48c4e445f8b874b8a264b63cc86b33def4",
+            "bytes": 26546
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.png",
+            "sha256": "fc433eb42a549db6e14f0f79103999779bcfee343440857c8d3b9d89204d1867",
+            "bytes": 75657
+          },
+          "webp": {
+            "path": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.webp",
+            "sha256": "78fe8bf833a6d3cb1db9d21536ee561c2a578152d42bcb6ec9b0eb2ab741589f",
+            "bytes": 26554
+          }
+        }
+      }
+    },
+    {
+      "id": "ES-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "es-2-liga-de-las-regiones-FINAL.zip",
+        "sha256": "4d04a1742497c4d52db5159ceab07ab20188fa3cf18eb61b48ff7051afbc7a88",
+        "manifestSha256": "a9140ab4a2f4d1afe501e630e3eebbd687cc17bbdff28d913a3de23f964b9a7a",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.png",
+            "sha256": "161a21a3d231af825b2066ed96ff92430b27b7283ecfbbac992b869332a218c0",
+            "bytes": 98088
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.webp",
+            "sha256": "db64f01e60875dd8e38fc844755cb2da3dbd7ffef826e45eb2d2378665c06ce9",
+            "bytes": 32382
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.png",
+            "sha256": "e92096fd8669c74b1214ae6fbfb3191c50895e2f6db9a36e2e1ac937960ce934",
+            "bytes": 97569
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.webp",
+            "sha256": "1e0736a3e715eb6a10b54b212b5c448728dcf2437ea4b6b160f1016b589256e2",
+            "bytes": 32962
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.png",
+            "sha256": "2f46027a58d97df8017e8e331cf53b8d393fc1d8c697dcdf05e069bb013c7c3e",
+            "bytes": 59986
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.webp",
+            "sha256": "8987b770972c48595cf66566aed5db8794367fbc1a4a9df6190c6f7f19e643f1",
+            "bytes": 19890
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.png",
+            "sha256": "d00b9e9e2f997526f1f88f64defc1e2f6099d0a2dd0611c90a4dde77dd420842",
+            "bytes": 59989
+          },
+          "webp": {
+            "path": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.webp",
+            "sha256": "032ee884a7d17c1b97ebd672a10a6afbfadaf62a3fd86ff82c92062b5ea3cc77",
+            "bytes": 19838
+          }
+        }
+      }
+    },
+    {
+      "id": "NL-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "nl-2-bondsklasse-FINAL.zip",
+        "sha256": "69038ded18e50522f08ef54bf49783641178dc30d84d3662bc41d508b1c7e796",
+        "manifestSha256": "d9ec0a3c2ddb3f579e86788fbd0123b6741fabcb19e3fe762de9a8f144853838",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.png",
+            "sha256": "d0092f3ff0259105b46505d0c8c2c09215b755840c6d68cb3729cef1997ba268",
+            "bytes": 89417
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.webp",
+            "sha256": "0ee1b5bb3f74f39f047f38647859207914b3f3460266b2aed32ac64dbd1e0bad",
+            "bytes": 28968
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.png",
+            "sha256": "23c10a91b54932d8af9df894a5aa615848a19a5cbe3e2b9e2444790d20a0ad36",
+            "bytes": 88983
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.webp",
+            "sha256": "7801986e149fb305f18a23e2aa5b13b5fe3c833bac2f839c634c0daa7b94be20",
+            "bytes": 28764
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.png",
+            "sha256": "c8e278f529da8524f3d1eabb254dbd1f87c8f1b846da648fa2a0bc32659289da",
+            "bytes": 51392
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.webp",
+            "sha256": "728aa7303f3058849b785ebeba359d8d0c4f6fd7259ea9c1113654edde3263c6",
+            "bytes": 16152
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.png",
+            "sha256": "067f67f5d24947c7646c95b9c0385f61efecd342acf18d1119585a22cd6ff609",
+            "bytes": 51389
+          },
+          "webp": {
+            "path": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.webp",
+            "sha256": "a9df97dd35761e06e8d88f74e0925dbc5883ab2e690c64f2e0b1f6bdfdfce9d3",
+            "bytes": 15954
+          }
+        }
+      }
+    },
+    {
+      "id": "BR-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "br-1-liga-das-associacoes-FINAL.zip",
+        "sha256": "9fbfc35c4ccdd90c1bc13cf54533ed2e27cd86e1e41e709cf2234c5b0f37215c",
+        "manifestSha256": "a4a57ae1ccf616fcaba3cfd3967ce28a5acda77b7fd140073480f87352cedb30",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.png",
+            "sha256": "dc8d89de20f76bc1df20bbacbb2f047fe20934d1cd7d7ba70c273fd09a084f0c",
+            "bytes": 90560
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.webp",
+            "sha256": "e43a13eb866961c8ac5d1b14d2e3284cc8372174f5b60a7cc554b6d5b57a8afe",
+            "bytes": 29410
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.png",
+            "sha256": "aecf4093856d09405762d0c631cb43569931c89dffe50168eac6f9782e3e5a48",
+            "bytes": 90128
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.webp",
+            "sha256": "d57ae26e88773b96eaef86e23b6341a86ed33295d095e79a139884e2755c6416",
+            "bytes": 28716
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.png",
+            "sha256": "5b0e6cda9e8ff63f2525c8dd32c38582740dedb6c3420ba70a238772826b374b",
+            "bytes": 59515
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.webp",
+            "sha256": "240f387e329bf82fd565344331764e721edc1bfa2618b6deaec0c29f740e78e8",
+            "bytes": 18224
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.png",
+            "sha256": "9a93d9dd88d0cab148fb22ace7196dd23a44b4f23cc7fd2e64e297fc324bf087",
+            "bytes": 59514
+          },
+          "webp": {
+            "path": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.webp",
+            "sha256": "1d9da6f9bd331a81cd332f2bb97b706535da3e9469ae7478842549a71c757261",
+            "bytes": 18166
+          }
+        }
+      }
+    },
+    {
+      "id": "DE-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "de-2-vereinsliga-FINAL.zip",
+        "sha256": "858906b6d539fcec68363f8b9341e1d68a05e95d73a81744d1af71e352a1ef2e",
+        "manifestSha256": "08da46afb216db911f7e67690b5eecc515f88705748f39b5648711825784f5d1",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved",
+        "psdReexportWarning": "Original offline PSD may reproduce 208 pre-correction off-palette pixels; approved PNGs are authoritative."
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.png",
+            "sha256": "21654428479f5b39bda0b67abeeacfaa88d6450e04163147e0cccfbfc07a0799",
+            "bytes": 35203
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.webp",
+            "sha256": "1e60de5ce9cdd796efd6fb5348dacfcffe516f096d560a4bcfaafb7375d6f759",
+            "bytes": 12038
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.png",
+            "sha256": "db9becd3e810413e7a4ea10148dd02c68059db65eff1224bf031e747595506b8",
+            "bytes": 34506
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.webp",
+            "sha256": "0bff334ce904741bea9a324811558b6ce8afc768f9d295f5fb93af1307db6a90",
+            "bytes": 12098
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.png",
+            "sha256": "b53ec76a856de37310fbe81097d827396ec92b3da141368f60a6383043e42865",
+            "bytes": 13871
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.webp",
+            "sha256": "c5e51c5c122036d584fc2137026f1ac31a0be0b7d509da66a7e66f5df9687782",
+            "bytes": 3176
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.png",
+            "sha256": "91cbe6bb2f4e70e1dfb2fe0293786f82d711083a17998f0e0f76e79b8839088c",
+            "bytes": 13449
+          },
+          "webp": {
+            "path": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.webp",
+            "sha256": "b91ece91bc3f7e4e08c7b97ea94dc8c096e8249b665a4c1edf86f27612e57c6b",
+            "bytes": 3182
+          }
+        }
+      }
+    },
+    {
+      "id": "FR-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "fr-2-ligue-des-regions-FINAL.zip",
+        "sha256": "25515e41e68c667f9143f20e291fe0c0ea7aa9943bdabbce43a3ab688e1883d3",
+        "manifestSha256": "c699ce4ad89b66ffde6ef58a7517643a0383b745b7de2ca5ca7d4a86825121e4",
+        "offlineCertification": "PENDING_FINAL_CERTIFICATION",
+        "photopeaEditability": "UNKNOWN",
+        "artisticApprovals": "Owner approved latest visual set; four separately SHA-bound approvals not recorded"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary.png",
+            "sha256": "5babc78339d097196db12d20370c6f92ab851261a3da07c0dec2342530e55f54",
+            "bytes": 91030
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary.webp",
+            "sha256": "bcce357c837803e640f6fbb574e57b1ddba460244a7b43928bf659f1a67a4fb6",
+            "bytes": 29080
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary-dark.png",
+            "sha256": "9ae022fb3fefafcc2a6b657603aefac4945f209c0ff84e20f3e8944df95f1b1f",
+            "bytes": 91103
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary-dark.webp",
+            "sha256": "05690a03ce998d8436dab9117e920d8cf7f0f1f76720bf90dc2e9d36467e85db",
+            "bytes": 28862
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact.png",
+            "sha256": "ff9c54fdc89fda1471f32e4ab89ea0adc1b40b851f8f67d839a5cebb60e982e4",
+            "bytes": 51773
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact.webp",
+            "sha256": "4bbe1b989bd782fa1d74b1e04407fbef01e2a8c0e11f00cc6327a859276e62fe",
+            "bytes": 16696
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact-dark.png",
+            "sha256": "0ac6b81b4b97e891767c95d091c2d9f498a406bcd2e958370dc1e87d3d8e46d1",
+            "bytes": 51773
+          },
+          "webp": {
+            "path": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact-dark.webp",
+            "sha256": "f39095fa476eb5f3aa578059701734834071ba2dbc127af00e2e8a53734af2f9",
+            "bytes": 16628
+          }
+        }
+      }
+    },
+    {
+      "id": "PT-1",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "pt-1-liga-lusitana-FINAL.zip",
+        "sha256": "c2e9fb34e6993b044faab2e86a92215d8d965a75867da28da7cb3e1d3c9526c2",
+        "manifestSha256": "9c2f76afabfcc01e59991428b102ead5b98a1dfbc985035b98b6769e8250ff19",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.png",
+            "sha256": "76460a821eba5b3c583dce549e009cb0d2a3d084f0d7db2d34fdb7a1fc185e96",
+            "bytes": 41572
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.webp",
+            "sha256": "59257f6b7ccde0a88ad9383db3e6900bf63b3ee170eddada80e554ca779b916d",
+            "bytes": 16152
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.png",
+            "sha256": "500c5d7c846b1f53437a6691ca89526c95d8e535f1142d16dec5c1cd6375f2d2",
+            "bytes": 40824
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.webp",
+            "sha256": "d7155a08c110dd0eca36b9c97703ffa6963dbe99207507d12b9f546b1f7ba423",
+            "bytes": 16042
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.png",
+            "sha256": "6c6d78b06e7edceb7d174c53c56609ccde059b6f9d708dacff1a32cc77c23073",
+            "bytes": 18533
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.webp",
+            "sha256": "91188c847b9ed031fbafb15e641d5bbc33a442b3dbec95ca43516e8d0b399071",
+            "bytes": 7562
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.png",
+            "sha256": "6c97beec921b9a9247621d8299326116924dc5d685a7da4b52638501aa319d99",
+            "bytes": 18527
+          },
+          "webp": {
+            "path": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.webp",
+            "sha256": "f348b41c559d6b816ac757b2651d15ce82a81438369da6be1ba8c9acd8ac8187",
+            "bytes": 7346
+          }
+        }
+      }
+    },
+    {
+      "id": "BR-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "br-2-liga-das-regioes-FINAL.zip",
+        "sha256": "f2be19f62a0fbf7b3808e54cca65957b1c42454e8b9ccdaf6c8743d7e6623706",
+        "manifestSha256": "89b2cdbeee47d2f3df2b2e491cc77f11315fcdb55c55ba47dfd47822e60ee37b",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.png",
+            "sha256": "b8a928a7a9969cf848604ca484c62017c697867e175476377f674cbececc784c",
+            "bytes": 71998
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.webp",
+            "sha256": "2c52620d6b28d46871992c1f4bf2db777fca198150616f97999f74c7cdecb2ec",
+            "bytes": 22380
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.png",
+            "sha256": "f331d18239d0fc23b4f2519ef26945be4e36519811e4d8bb0f874070d8dc574d",
+            "bytes": 71513
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.webp",
+            "sha256": "5d8f035304853ea6562390ad7e89f89511938468b5aabc87979b54e7547aa63c",
+            "bytes": 22264
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.png",
+            "sha256": "91b09b8bcf5e1b42dc19b272dd7745a5189a75945d5d3b3150cda157b53fdf60",
+            "bytes": 39787
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.webp",
+            "sha256": "3dde8b9570d8d4eb2b36651a110aa3e84f03cf878a2d35f14771ba0dfdcf786b",
+            "bytes": 11614
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.png",
+            "sha256": "1abef285dda36329a761c33b4527203e5a89688886ad2ed108cd674061dfabe5",
+            "bytes": 39736
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.webp",
+            "sha256": "3558e544e2a8feffc041a8f21fbf8ab82d845c5a9ebb3f4353b78b47c1be56a1",
+            "bytes": 11584
+          }
+        }
+      }
+    }
+  ]
+}

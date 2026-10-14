@@ -7,6 +7,24 @@
       "name": "Lega Federale",
       "countryId": "IT",
       "countryName": "Italy",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.png",
+          "webp": "assets/divisions/it-1-lega-federale/it-1-lega-federale-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/it.svg",
       "tier": 1,
       "capacity": 20,
@@ -158,6 +176,24 @@
       "name": "Lega delle Città",
       "countryId": "IT",
       "countryName": "Italy",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.png",
+          "webp": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/it.svg",
       "tier": 2,
       "capacity": 20,
@@ -309,6 +345,24 @@
       "name": "Crown League",
       "countryId": "ENG",
       "countryName": "England",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.png",
+          "webp": "assets/divisions/eng-1-crown-league/eng-1-crown-league-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/gb-eng.svg",
       "tier": 1,
       "capacity": 20,
@@ -460,6 +514,24 @@
       "name": "Shield League",
       "countryId": "ENG",
       "countryName": "England",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.png",
+          "webp": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/gb-eng.svg",
       "tier": 2,
       "capacity": 20,
@@ -611,6 +683,24 @@
       "name": "Liga de la Unión",
       "countryId": "ES",
       "countryName": "Spain",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.png",
+          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.png",
+          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.png",
+          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.png",
+          "webp": "assets/divisions/es-1-liga-de-la-union/es-1-liga-de-la-union-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/es.svg",
       "tier": 1,
       "capacity": 20,
@@ -762,6 +852,24 @@
       "name": "Liga de las Regiones",
       "countryId": "ES",
       "countryName": "Spain",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.png",
+          "webp": "assets/divisions/es-2-liga-de-las-regiones/es-2-liga-de-las-regiones-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/es.svg",
       "tier": 2,
       "capacity": 20,
@@ -913,6 +1021,24 @@
       "name": "Meisterliga",
       "countryId": "DE",
       "countryName": "Germany",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.png",
+          "webp": "assets/divisions/de-1-meisterliga/de-1-meisterliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/de.svg",
       "tier": 1,
       "capacity": 20,
@@ -1064,6 +1190,24 @@
       "name": "Vereinsliga",
       "countryId": "DE",
       "countryName": "Germany",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.png",
+          "webp": "assets/divisions/de-2-vereinsliga/de-2-vereinsliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/de.svg",
       "tier": 2,
       "capacity": 20,
@@ -1215,6 +1359,24 @@
       "name": "Ligue des Sociétés",
       "countryId": "FR",
       "countryName": "France",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary.png",
+          "webp": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary-dark.png",
+          "webp": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact.png",
+          "webp": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact-dark.png",
+          "webp": "assets/divisions/fr-1-ligue-des-societes/fr-1-ligue-des-societes-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/fr.svg",
       "tier": 1,
       "capacity": 20,
@@ -1366,6 +1528,24 @@
       "name": "Ligue des Régions",
       "countryId": "FR",
       "countryName": "France",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary.png",
+          "webp": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary-dark.png",
+          "webp": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact.png",
+          "webp": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact-dark.png",
+          "webp": "assets/divisions/fr-2-ligue-des-regions/fr-2-ligue-des-regions-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/fr.svg",
       "tier": 2,
       "capacity": 20,
@@ -1517,6 +1697,24 @@
       "name": "Liga Lusitana",
       "countryId": "PT",
       "countryName": "Portugal",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.png",
+          "webp": "assets/divisions/pt-1-liga-lusitana/pt-1-liga-lusitana-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/pt.svg",
       "tier": 1,
       "capacity": 20,
@@ -1819,6 +2017,24 @@
       "name": "Oranjeliga",
       "countryId": "NL",
       "countryName": "Netherlands",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.png",
+          "webp": "assets/divisions/nl-1-oranjeliga/nl-1-oranjeliga-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/nl.svg",
       "tier": 1,
       "capacity": 20,
@@ -1970,6 +2186,24 @@
       "name": "Bondsklasse",
       "countryId": "NL",
       "countryName": "Netherlands",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.png",
+          "webp": "assets/divisions/nl-2-bondsklasse/nl-2-bondsklasse-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/nl.svg",
       "tier": 2,
       "capacity": 20,
@@ -2121,6 +2355,24 @@
       "name": "Liga das Associações",
       "countryId": "BR",
       "countryName": "Brazil",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.png",
+          "webp": "assets/divisions/br-1-liga-das-associacoes/br-1-liga-das-associacoes-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/br.svg",
       "tier": 1,
       "capacity": 20,
@@ -2272,6 +2524,24 @@
       "name": "Liga das Regiões",
       "countryId": "BR",
       "countryName": "Brazil",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/br.svg",
       "tier": 2,
       "capacity": 20,

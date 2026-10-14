@@ -100,10 +100,12 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
   const publicFiles = planPublicFiles();
   for (const path of preview) assert.ok(!publicFiles.includes(path));
   assert.ok(publicFiles.includes("app/competitions/it-1/index.html"));
+  assert.ok(publicFiles.includes("assets/theme.js"),"theme bootstrap must be published");
   const folder = mkdtempSync(join(tmpdir(), "fa-standings-dev-"));
   try {
     const artifact = join(folder, "public");
     stagePublicArtifact(ROOT_PATH, artifact);
+    assert.ok(readFileSync(join(artifact,"assets/theme.js"),"utf8").includes("football-architect:theme"));
     assert.deepEqual(assertPublicArtifact(artifact, {
       sourceRoot: ROOT_PATH
     }), publicFiles);
@@ -111,7 +113,7 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
 });
 
 test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchanged", async () => {
-  const files = ["assets/competition-page.js", "assets/app.css",
+  const files = ["assets/competition-page.js", "assets/app.css", "assets/theme.js",
     "app/competitions/it-1/index.html","app/competitions/_shared/manifest.json",
     "data/divisions.json","data/clubs.json","data/division-allocations.provisional.json"];
   const before = files.map(f => hash(read(f)));
@@ -201,6 +203,14 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     const regular = await get("/");
     assert.equal(regular.status,200);
     assert.ok(!regular.body.includes(clientName));
+    assert.ok(regular.body.includes("assets/theme.js"),"landing bootstraps theme");
+    const theme=await get("/assets/theme.js");
+    assert.equal(theme.status,200,"DEV loopback must serve required public runtime");
+    assert.match(theme.headers["content-type"],/javascript/);
+    assert.equal(theme.headers["cache-control"],"no-store");
+    assert.ok(theme.body.includes("football-architect:theme"));
+    assert.ok(theme.body.includes("data-theme"));
+    assert.ok(!theme.body.includes("__fa_dev__"));
     for (const virtual of [clientName,dataName]) {
       const result = await get(virtual);
       assert.equal(result.status,200);
@@ -262,4 +272,22 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   assert.ok(css.includes("@media(max-width:360px)"));
   assert.ok(css.includes(".app-world-standings [hidden]"));
   assert.ok(!read("app/competitions/_shared/manifest.json").toString().includes("standingsPreview"));
+});
+
+test("UX-01A integration: approved division logos and theme rebind survive mobile hydration", () => {
+  const runtime = read("assets/competition-page.js").toString();
+  const theme = read("assets/theme.js").toString();
+  const css = read("assets/app.css").toString();
+  const manifest = JSON.parse(read("app/competitions/_shared/manifest.json").toString());
+  assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
+  assert.ok(runtime.includes("window.faThemeRebind?.()"));
+  assert.ok(runtime.includes("if(division.visualAsset)"));
+  assert.ok(runtime.includes("badge.replaceChildren(picture)"));
+  assert.ok(runtime.indexOf("badge.replaceChildren(picture)") < runtime.indexOf("window.faThemeRebind?.()"));
+  assert.ok(theme.includes("picture[data-division-logo]"));
+  assert.ok(css.includes('html[data-theme="light"] .app-world-mobile-points'));
+  assert.equal(manifest.divisions.length, 16);
+  assert.equal(manifest.approved, false);
+  for (const division of manifest.divisions)
+    assert.equal(division.clubs.length, 20);
 });
