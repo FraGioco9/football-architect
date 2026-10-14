@@ -2524,6 +2524,24 @@
       "name": "Liga das Regiões",
       "countryId": "BR",
       "countryName": "Brazil",
+      "visualAsset": {
+        "primary": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.webp"
+        },
+        "primary-dark": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.webp"
+        },
+        "compact": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.webp"
+        },
+        "compact-dark": {
+          "png": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.png",
+          "webp": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.webp"
+        }
+      },
       "flagAsset": "assets/flags/br.svg",
       "tier": 2,
       "capacity": 20,
