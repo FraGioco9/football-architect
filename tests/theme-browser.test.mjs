@@ -203,6 +203,23 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(tooltip.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)");
         await delay(240); // Wait for the documented 170ms entrance animation before capturing.
         await snap(name+" "+theme+" tooltip fixture",w,h);
+        // SCROLLBAR-GUTTER-01: stable reservation on the actual vertical scroll container.
+        const standardRoutes=["/","/guide/","/app/dashboard/","/app/calendar/",
+          "/app/settings/","/app/competitions/","/app/competitions/it-1/"];
+        const allDivisionRoutes=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8"))
+          .divisions.map(d=>"/app/competitions/"+d.id.toLowerCase()+"/");
+        const gutterRoutes=name==="desktop"&&theme==="dark"
+          ? [...standardRoutes,...allDivisionRoutes.filter(route=>!standardRoutes.includes(route))]
+          : standardRoutes;
+        for(const route of gutterRoutes){
+          const detail=route.startsWith("/app/competitions/")&&route!=="/app/competitions/";
+          await visit(route,detail?"document.querySelectorAll('#app-standings-body tr').length===16":"true");
+          const gutter=await run("(()=>{const scroll=document.querySelector('.fa-shell-content-scroll'),root=scroll||document.documentElement,measure=()=>scroll?scroll.clientWidth:document.body.getBoundingClientRect().width,oldWidth=measure(),probe=document.createElement('div');probe.style.cssText='height:2400px;flex:0 0 2400px;visibility:hidden';(scroll||document.body).appendChild(probe);const width=measure(),overflow=root.scrollHeight>root.clientHeight,mode=getComputedStyle(root).scrollbarGutter;probe.remove();return {mode,oldWidth,width,overflow,pageWidth:document.documentElement.scrollWidth,viewport:innerWidth}})()");
+          assert.equal(gutter.mode,"stable","SCROLLBAR-GUTTER-01 "+route+" "+name+"/"+theme);
+          assert.equal(gutter.width,gutter.oldWidth,"no horizontal shift "+route+" "+name+"/"+theme);
+          assert.ok(gutter.overflow,"vertical probe scrolls "+route+" "+name+"/"+theme);
+          assert.ok(gutter.pageWidth<=gutter.viewport+1,"no horizontal overflow "+route+" "+name+"/"+theme);
+        }
         checks.push(name+"/"+theme);
       }
     }
