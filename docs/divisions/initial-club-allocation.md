@@ -1,41 +1,33 @@
-# Initial division allocations — provisional review
+# Initial club allocation — approved ID policy, provisional UI
 
-**Status: PROVISIONAL / NOT APPROVED.** This register supports the static `UI-WORLD` preview in [PR #92](https://github.com/FraGioco9/football-architect/pull/92). It must not be used as an approved season membership file, authoritative league standings, historical sporting results or save-game initialization.
+**Owner-approved prospective allocation** (2026-10-14): [GAME-VISION #95](https://github.com/FraGioco9/football-architect/issues/95). This policy governs the **future initial** club grouping. The UI remains a static preview with **no active season**, sports ranking, fixture scheduling or game simulation. The original `football-architect-provisional-division-allocation-v1` schema is retained; `status: "provisional"` and `approved: false` remain unchanged.
 
-## Source of truth and evidence
+## Source contracts
 
-- Club identities and `(countryId, clubId)` keys: [`data/clubs.json`](../../data/clubs.json) — 320 documented identities; no divisionId field.
-- Division IDs, tiers and capacities: [`data/divisions.json`](../../data/divisions.json) — eight countries, 16 divisions, 20 planned places each.
-- Explicit proposed mappings: [`data/division-allocations.provisional.json`](../../data/division-allocations.provisional.json) — **320 unique club placements**, with per-division lists and provenance.
-- **160 first-tier placements (50%)** are *historically informed*: the 20 clubs with IDs 1–20 in each country have a `firstDivisionReference` containing legacy name/city/stadium information. **This is not a current membership approval**.
-- **160 second-tier placements (50%)** are *derived*: the remaining IDs 21–40 in each country have no first-tier reference, so they fill the other tier as a working hypothesis. This does not constitute formal approval.
-- **0/320 memberships approved canonically (0%)**. No user-approved exceptions to the proposed rule are documented.
+- [Club identities](../../data/clubs.json): all **320** permanent `(countryId, clubId)` identities (40 per country), with existing abbreviations, approved primary names and historical references preserved.
+- [Divisions](../../data/divisions.json): the same eight countries, 16 competition IDs, original-language names, flags and logos; **16 places per division**.
+- [Initial UI allocation](../../data/division-allocations.provisional.json): **256** participants in 16 provisional club lists, each protected by [the allocation validator](../../tools/validate-provisional-allocations.mjs).
+- [CLUB-ASSET #61](https://github.com/FraGioco9/football-architect/issues/61): continue the **640 planned PNGs** for all 320 clubs, including 128 images for the 64 excluded clubs.
 
-## Review proposal (not a decision)
+## Initial allocation, identical in all eight countries
 
-| Country | Tier 1 | Tier 2 | Provisional slots |
-|---|---|---|---:|
-| Italy | IT-1 — Lega Federale (IDs 1–20) | IT-2 — Lega delle Città (IDs 21–40) | 40 |
-| England | ENG-1 — Crown League (IDs 1–20) | ENG-2 — Shield League (IDs 21–40) | 40 |
-| Spain | ES-1 — Liga de la Unión (IDs 1–20) | ES-2 — Liga de las Regiones (IDs 21–40) | 40 |
-| Germany | DE-1 — Meisterliga (IDs 1–20) | DE-2 — Vereinsliga (IDs 21–40) | 40 |
-| France | FR-1 — Ligue des Sociétés (IDs 1–20) | FR-2 — Ligue des Régions (IDs 21–40) | 40 |
-| Portugal | PT-1 — Liga Lusitana (IDs 1–20) | PT-2 — Liga Atlântica (IDs 21–40) | 40 |
-| Netherlands | NL-1 — Oranjeliga (IDs 1–20) | NL-2 — Bondsklasse (IDs 21–40) | 40 |
-| Brazil | BR-1 — Liga das Associações (IDs 1–20) | BR-2 — Liga das Regiões (IDs 21–40) | 40 |
+| Country | First division: IDs 1–16 | Second division: IDs 17–32 | Outside gameplay: IDs 33–40 |
+|---|---|---|---|
+| Italy | IT-1 | IT-2 | 8 asset-only clubs |
+| England | ENG-1 | ENG-2 | 8 asset-only clubs |
+| Spain | ES-1 | ES-2 | 8 asset-only clubs |
+| Germany | DE-1 | DE-2 | 8 asset-only clubs |
+| France | FR-1 | FR-2 | 8 asset-only clubs |
+| Portugal | PT-1 | PT-2 | 8 asset-only clubs |
+| Netherlands | NL-1 | NL-2 | 8 asset-only clubs |
+| Brazil | BR-1 | BR-2 | 8 asset-only clubs |
 
-Club ID ordering is **registry ordering, never position in a league table**. Until actual career, match and standings data exist, standings numbers, rankings, scores, matches and results remain unavailable. The table renders the provisional club list without inventing performance.
+**Totals:** first division **128** + second division **128** = **256** provisional participants; **64** excluded from gameplay; all **320** identities remain in the catalogue. Club ID order is not a league ranking. The 160 historical first-tier references on IDs 1–20 document archival club details, **not** the current placement of IDs 17–20.
 
-## Fail-closed contract
+## Integrity and scope
 
-`tools/validate-provisional-allocations.mjs` and its tests reject missing/duplicate/foreign club IDs, unsorted or repeated IDs, wrong evidence type, source drift, invalid country/tier/capacity, deviations from the working 1–20/21–40 rule, and any attempt to mark the provisional manifest `approved: true` or `status: canonical`. The shared static page generator reads this manifest and validates it before rendering; `--check` must remain byte-identical.
+The existing v1 validator fails closed on missing, duplicate, foreign, wrongly ordered, out-of-range or excluded IDs. The public competition manifest contains only IDs 1–32 (split by tier), while the source club catalogue retains all IDs 1–40. The shared standings shell and 16 competition URLs remain stable.
 
-### Gates before a future canonical decision
+Ordinary public standings show no invented match statistics. Deterministic fictional results are permitted only in the separately guarded, loopback-only DEV Preview and are never allowed in published artifacts. This allocation does **not** activate careers, cups, promotion/relegation, matches or an official calendar. Those rules remain separate under [WORLD-TIME #94](https://github.com/FraGioco9/football-architect/issues/94).
 
-- [ ] Review all eight country pairs and their 20+20 rosters, including possible exceptions.
-- [ ] Resolve whether historical references sufficiently justify first-tier membership or require explicit club-by-club confirmation.
-- [ ] Approve or revise the derived second-tier allocations, separately from historical hints.
-- [ ] Obtain explicit owner approval of the final assignment policy and entire 320-club mapping.
-- [ ] After approval, use a separate authorized change to publish a canonical version and adopt it in the game runtime (when a runtime exists).
-
-**Excluded:** changes to canonical club/division catalogues, crests, game saves, engine/simulation, deployment configuration, production and `main`. Approval is not inferred from tests or review of this document.
+Division logo source history, hashes, archives and 320 club artistic concepts are preserved. The former provisional 20+20 distribution is retained in Git history rather than a parallel schema, duplicated asset registry or compatibility layer.
