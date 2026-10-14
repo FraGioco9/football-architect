@@ -8,31 +8,38 @@
       "source": {
         "kind": "git",
         "commit": "855c5b0341b5aa17ea2d35f2601badc68d33163e",
-        "manifestBlob": "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0"
+        "manifestBlob": "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0",
+        "approvedRevision": {
+          "kind": "owner-approved-lettering-refinement",
+          "archive": "it-1-lega-federale-FINAL.zip",
+          "archiveSha256": "c0917055da2d0b12d530a343933ac5198eb876c63f70e93f8b612d0e0ce0b819",
+          "sourcePsdSha256": "66aa440d70ec8aab776aa51af06546960ecf6d3ea43354a6361c1a2dfc4b9be6",
+          "scope": "primary-and-primary-dark"
+        }
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
-            "sha256": "7e4595a664865f487e7869e5cc7c10df01094461b384dfd3fc92e0a99e302128",
-            "bytes": 92659
+            "sha256": "7e777873d6677cdd2bc330c6127b321b2258975160eac0ff6b17034f34aeaa03",
+            "bytes": 97642
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp",
-            "sha256": "2c0cf7cbde105282e1ccfebd0bf802a2c268d3b1e139083cae6cfaa6a9b030b8",
-            "bytes": 28518
+            "sha256": "70181d17af459f4142e9b1714c05624807bd6d00e9473e7643d6a32824550c37",
+            "bytes": 30844
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
-            "sha256": "250da80cfb5f4da02ea7c012edf4824f6e1f7af3a2a2906b82c3682ee352b0d9",
-            "bytes": 92392
+            "sha256": "946632a313277a17a443a33c71cfa44cb3ead48b4800a0eed6cebc021ae54a35",
+            "bytes": 96626
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp",
-            "sha256": "220a594457c73a59a2d84c9f87e435c9c346d1dec286812d56a6565c7adf5292",
-            "bytes": 28366
+            "sha256": "e3ca0538001ec40889f8e00b713b138f9bb0b388af0117fbfa89deb2d168f6a6",
+            "bytes": 30830
           }
         },
         "compact": {
