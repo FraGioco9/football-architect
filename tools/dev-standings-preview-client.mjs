@@ -50,7 +50,7 @@ function waitForRows() {
     let done = false;
     const table = () => {
       const tbody = document.getElementById("app-standings-body");
-      if (tbody?.rows.length === 20 && document.querySelector(".app-world-standing-table")) {
+      if (tbody?.rows.length === 16 && document.querySelector(".app-world-standing-table")) {
         finish(null, tbody);
       }
     };
@@ -77,7 +77,7 @@ async function boot(routeId) {
     const manifest = await response.json();
     if (manifest.schemaVersion !== 1 || manifest.approved !== false ||
         !Array.isArray(manifest.divisions) || manifest.divisions.length !== 16 ||
-        manifest.divisions.reduce((n, d) => n + d.clubs?.length, 0) !== 320) {
+        manifest.divisions.reduce((n, d) => n + d.clubs?.length, 0) !== 256) {
       throw Error("Invalid DEV manifest");
     }
     const division = manifest.divisions.find(d => d.id === routeId);
@@ -85,7 +85,7 @@ async function boot(routeId) {
     const { rows, clubs } = createPreviewStandings(division);
     const tbody = await waitForRows();
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
-    if (originalIds.size !== 20 || rows.some(r =>
+    if (originalIds.size !== 16 || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
       throw Error("DEV standings identities mismatch");
     }
@@ -127,7 +127,7 @@ async function boot(routeId) {
       tr.append(formCell);
       fragment.append(tr);
     });
-    if (entries.length !== 100 || fragment.childNodes.length !== 20) {
+    if (entries.length !== 80 || fragment.childNodes.length !== 16) {
       throw Error("Incomplete DEV standings rendering");
     }
     // Prepare mobile from the validated fixture model before changing the table.

@@ -8,11 +8,11 @@
     "divisions": "data/divisions.json"
   },
   "evidenceNote": "firstDivisionReference is a historical city/stadium/name reference, not a user-approved current league assignment.",
-  "decisionRule": "For each country: IDs 1-20 provisionally placed in tier 1 because each has firstDivisionReference; IDs 21-40 provisionally placed in tier 2 as the remaining clubs. Listing order is club ID, never table rank.",
+  "decisionRule": "Owner-approved future initial placement by national club ID: 1–16 tier 1, 17–32 tier 2, and 33–40 outside gameplay (identities and artwork preserved). UI allocation remains provisional, with no active season; ID order is not league rank.",
   "allocations": [
     {
       "divisionId": "IT-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -29,17 +29,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "IT-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -51,20 +51,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "ENG-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -81,17 +73,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "ENG-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -103,20 +95,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "ES-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -133,17 +117,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "ES-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -155,20 +139,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "DE-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -185,17 +161,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "DE-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -207,20 +183,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "FR-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -237,17 +205,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "FR-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -259,20 +227,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "PT-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -289,17 +249,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "PT-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -311,20 +271,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "NL-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -341,17 +293,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "NL-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -363,20 +315,12 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     },
     {
       "divisionId": "BR-1",
-      "evidenceType": "historical-first-division-reference",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
         1,
         2,
@@ -393,17 +337,17 @@
         13,
         14,
         15,
-        16,
-        17,
-        18,
-        19,
-        20
+        16
       ]
     },
     {
       "divisionId": "BR-2",
-      "evidenceType": "derived-complement",
+      "evidenceType": "owner-approved-initial-id-rule",
       "clubIds": [
+        17,
+        18,
+        19,
+        20,
         21,
         22,
         23,
@@ -415,15 +359,7 @@
         29,
         30,
         31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40
+        32
       ]
     }
   ]

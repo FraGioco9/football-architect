@@ -14,7 +14,7 @@ test("PUBLIC-01: only explicit public assets are eligible; demo fixture is exclu
   assert.ok(!files.includes(path),"not public: "+path);
  assert.ok(existsSync(join(repositoryRoot,"tests/fixtures/it-1-demo.mjs")));
  const fixture=readFileSync(join(repositoryRoot,"tests/fixtures/it-1-demo.mjs"),"utf8");
- assert.equal((fixture.match(/^\s*\[\d+,\d+,\d+,\d+,\d+,\d+,"[WDL]{5}"\],?$/gm)||[]).length,20);
+ assert.equal((fixture.match(/^\s*\[\d+,\d+,\d+,\d+,\d+,\d+,"[WDL]{5}"\],?$/gm)||[]).length,16);
  for(const path of files.filter(x=>/\.(?:js|css|html|json)$/.test(x)))
   assert.doesNotMatch(readFileSync(join(repositoryRoot,path),"utf8"),
    /\bit1Demo\b|__faFixtureHooks|tests\/fixtures\/it-1-demo/,path);

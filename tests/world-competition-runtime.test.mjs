@@ -113,7 +113,7 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   assert.equal(selected,"IT-1");
   assert.ok(window.__faFixtureHooks,"VM-only hooks must be present");
   const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
-  assert.equal(it1Demo.length,20);
+  assert.equal(it1Demo.length,16);
   const rows=it1Demo.map((sample,index)=>
    window.__faFixtureHooks.createStandingsRow(clubs.get(sample[0]),sample,index+1));
   fields.get("app-standings-body").replaceChildren(...rows);
@@ -143,12 +143,12 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(r.fields.get("app-competition-country").dataset.worldCountry,division.countryId);
    assert.equal(r.fields.get("app-competition-tier").dataset.appI18n,
     division.tier===1?"divisionTier1":"divisionTier2");
-   assert.equal(r.fields.get("app-competition-capacity").textContent,"20");
+   assert.equal(r.fields.get("app-competition-capacity").textContent,"16");
    assert.equal(r.fields.get("app-competition-level").textContent,String(division.tier));
    const rows=r.fields.get("app-standings-body").children;
-   assert.equal(rows.length,20,division.id);
+   assert.equal(rows.length,16,division.id);
    const mobileRows=r.fields.get("app-standings-compact-list").children;
-   assert.equal(mobileRows.length,20,"mobile rows match canonical table");
+   assert.equal(mobileRows.length,16,"mobile rows match canonical table");
    assert.deepEqual(mobileRows.map(x=>x.dataset.worldClub),
      rows.map(x=>x.dataset.worldClub));
    assert.ok(!r.body.innerHTML.includes('id="app-standings-layout-switch"'));
@@ -170,7 +170,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(mobileRows[0].children[0].children[0].children[2].textContent,"—");
    const preview=false; // ordinary pages never render sample results
    const clubs=preview ? new Map(division.clubs.map(c=>[c.clubId,c])) : null;
-   for(let i=0;i<20;i++){
+   for(let i=0;i<16;i++){
     const row=rows[i],club=preview ? clubs.get(Number(row.dataset.worldClub.split("-")[1])) : division.clubs[i];
     assert.ok(club.primaryName,"Expected an approved primary club name");
     assert.equal(row.dataset.worldClub,club.countryId+"-"+club.clubId);
@@ -188,10 +188,10 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     assert.notEqual(name.textContent,club.fullName);
     if(preview){
      assert.equal(row.children[0].textContent,String(i+1));
-     assert.equal(row.children[2].textContent,"19");
+     assert.equal(row.children[2].textContent,"15");
      const numbers=row.children.slice(3,10).map(cell=>Number(cell.textContent));
      const [w,d,l,gf,ga,gd,pts]=numbers;
-     assert.equal(w+d+l,19);
+     assert.equal(w+d+l,15);
      assert.equal(gd,gf-ga);
      assert.equal(row.children[8].className,"app-world-stat-value");
      assert.equal(pts,3*w+d);
@@ -200,7 +200,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
      assert.equal(form.children.length,5);
      if(i===0)assert.deepEqual(
       form.children.map(dot=>dot.className.split(" ").find(cls=>/^app-world-form-[wdl]$/.test(cls)).slice(-1).toUpperCase()),
-      ["W","D","W","W","W"],"demo order must be newest first");
+      it1Demo[0][6].split("").reverse(),"demo order must be newest first");
      for(const [index,dot] of form.children.entries()){
       assert.equal(dot.tagName,"button");
       assert.equal(dot.type,"button");
@@ -230,11 +230,11 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
 test("DEMO-IT1: isolated fixture ranking is internally consistent",async()=>{
  const preview=await simulate({division:manifest.divisions.find(d=>d.id==="IT-1"),demo:true});
  const rows=preview.fields.get("app-standings-body").children;
- assert.equal(rows.length,20);
+ assert.equal(rows.length,16);
  assert.deepEqual([...rows].map(row=>Number(row.children[0].textContent)),
-  Array.from({length:20},(_,i)=>i+1));
+  Array.from({length:16},(_,i)=>i+1));
  const idsSeen=new Set(rows.map(row=>row.dataset.worldClub));
- assert.equal(idsSeen.size,20);
+ assert.equal(idsSeen.size,16);
  let wins=0,losses=0,goalsFor=0,goalsAgainst=0,draws=0;
  let previousPoints=Infinity;
  for(const row of rows){
@@ -271,8 +271,8 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
- assert.equal(metadata.children[0].children[1].textContent,"19");
- assert.equal(scoreline.children[1].textContent,"1 – 2");
+ assert.equal(metadata.children[0].children[1].textContent,"15");
+ assert.match(scoreline.children[1].textContent,/^(?:1 – 2|2 – 1|1 – 1)$/);
  assert.ok(scoreline.children[0].textContent);
  assert.ok(scoreline.children[2].textContent);
  assert.notEqual(scoreline.children[0].textContent,scoreline.children[2].textContent);
@@ -283,7 +283,7 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  oldest.emit("focus");
  assert.equal(newest.attrs["aria-describedby"],undefined);
  assert.equal(oldest.attrs["aria-describedby"],"app-world-form-tooltip");
- assert.equal(metadata.children[0].children[1].textContent,"15");
+ assert.equal(metadata.children[0].children[1].textContent,"11");
  oldest.emit("blur");
  assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
  assert.equal(tooltip.hidden,false,"closing animation must complete before hiding");

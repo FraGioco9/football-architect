@@ -29,7 +29,7 @@
           !d.id.startsWith(d.countryId + "-") || typeof d.name !== "string" || !d.name ||
           typeof d.countryName !== "string" || !d.countryName ||
           !/^assets\/flags\/[a-z0-9-]+\.svg$/.test(d.flagAsset) ||
-          ![1,2].includes(d.tier) || d.capacity !== 20 ||
+          ![1,2].includes(d.tier) || d.capacity !== 16 ||
           !Array.isArray(d.clubs) || d.clubs.length !== d.capacity) return false;
       if(d.visualAsset!==undefined){
         const dir=divisionSlugs[d.id];
@@ -41,11 +41,11 @@
         }
       }
       ids.add(d.id);
-      let previous = 0;
+      let previous = d.tier === 1 ? 0 : 16;
       for (const club of d.clubs) {
         const key = club.countryId + ":" + club.clubId;
         if (club.countryId !== d.countryId || !Number.isInteger(club.clubId) ||
-            club.clubId <= previous || clubs.has(key) ||
+            club.clubId !== previous + 1 || clubs.has(key) ||
             typeof club.fullName !== "string" || !club.fullName ||
             typeof club.abbr !== "string" || !club.abbr ||
             !(club.primaryName === null || (typeof club.primaryName === "string" && !!club.primaryName.trim()))) return false;
@@ -53,7 +53,7 @@
         previous = club.clubId;
       }
     }
-    return ids.size === 16 && clubs.size === 320;
+    return ids.size === 16 && clubs.size === 256;
   }
   const formLabels = {
     W:["standingsDemoFormWin","Win","standingsDemoWinLetter"],
@@ -112,7 +112,7 @@
     if (breakpoint?.addEventListener) breakpoint.addEventListener("change", updateVisibility);
     window.addEventListener("resize", updateVisibility);
     function prepare(rows) {
-      if (!Array.isArray(rows) || rows.length !== 20)
+      if (!Array.isArray(rows) || rows.length !== 16)
         throw Error("Incomplete mobile standings model");
       const identities = new Set();
       const clubs = new Map(rows.map(row => [row.club?.clubId,row.club]));
@@ -173,7 +173,7 @@
         li.appendChild(details);
         return li;
       });
-      if (identities.size !== 20) throw Error("Invalid mobile standings size");
+      if (identities.size !== 16) throw Error("Invalid mobile standings size");
       return () => {
         list.replaceChildren(...items);
         updateVisibility();
@@ -218,7 +218,7 @@
     if (sample) {
       const [id,w,d,l,gf,ga,form] = sample;
       const diff = gf - ga;
-      const values = [19,w,d,l,gf,ga,diff > 0 ? "+" + diff : diff,3*w+d];
+      const values = [15,w,d,l,gf,ga,diff > 0 ? "+" + diff : diff,3*w+d];
       values.forEach(value => tr.appendChild(stat(value)));
       const formCell = document.createElement("td");
       const strip = document.createElement("span");
@@ -236,7 +236,7 @@
         dot.dataset.appI18n = letterKey;
         dot.setAttribute("aria-label",isLatest ? english + " — latest match" : english);
         dot.textContent = result;
-        demoFormTriggers.push({button:dot,club,result,round:15+i});
+        demoFormTriggers.push({button:dot,club,result,round:11+i});
         strip.appendChild(dot);
       }
       formCell.appendChild(strip);

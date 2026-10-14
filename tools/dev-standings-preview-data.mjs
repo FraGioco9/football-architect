@@ -5,12 +5,14 @@ const DIVISION_ID = /^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/;
 
 function assertDivision(division) {
   if (!division || !DIVISION_ID.test(division.id) ||
-      !Array.isArray(division.clubs) || division.clubs.length !== 20) {
+      !Array.isArray(division.clubs) || division.clubs.length !== 16 || division.capacity !== 16 ||
+      ![1,2].includes(division.tier) || division.id !== division.countryId + "-" + division.tier) {
     throw Error("Invalid DEV division");
   }
   const ids = new Set();
+  const start = division.tier === 1 ? 1 : 17;
   for (const club of division.clubs) {
-    if (!Number.isInteger(club.clubId) || club.clubId <= 0 ||
+    if (!Number.isInteger(club.clubId) || club.clubId !== start + ids.size ||
         club.countryId !== division.countryId ||
         typeof club.primaryName !== "string" || !club.primaryName.trim() ||
         ids.has(club.clubId)) throw Error("Invalid or repeated DEV club identity");
@@ -46,9 +48,9 @@ export function createPreviewStandings(division) {
   }]));
   const pairings = new Set();
 
-  for (let round = 1; round <= 19; round++) {
-    for (let index = 0; index < 10; index++) {
-      const a = rotation[index], b = rotation[19 - index];
+  for (let round = 1; round <= 15; round++) {
+    for (let index = 0; index < 8; index++) {
+      const a = rotation[index], b = rotation[15 - index];
       const homeId = (round + index) % 2 === 0 ? a : b;
       const awayId = homeId === a ? b : a;
       const pair = [a, b].sort((x, y) => x - y).join(":");
@@ -78,12 +80,12 @@ export function createPreviewStandings(division) {
     row.gd = row.gf - row.ga;
     row.pts = 3 * row.won + row.drawn;
     row.recent = row.recent.slice(-5).reverse();
-    if (row.played !== 19 || row.won + row.drawn + row.lost !== 19 ||
+    if (row.played !== 15 || row.won + row.drawn + row.lost !== 15 ||
         row.recent.length !== 5) throw Error("Incomplete DEV club results");
     return row;
   }).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf ||
     a.club.clubId - b.club.clubId);
-  if (fixtures.length !== 190 || pairings.size !== 190 || rows.length !== 20 ||
+  if (fixtures.length !== 120 || pairings.size !== 120 || rows.length !== 16 ||
       rows.reduce((n, x) => n + x.gf, 0) !== rows.reduce((n, x) => n + x.ga, 0) ||
       rows.reduce((n, x) => n + x.won, 0) !== rows.reduce((n, x) => n + x.lost, 0)) {
     throw Error("Unbalanced DEV fixture model");

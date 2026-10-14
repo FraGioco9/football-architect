@@ -25,7 +25,7 @@ const clientName = "/__fa_dev__/standings-client.mjs";
 const dataName = "/__fa_dev__/standings-data.mjs";
 const allIds = manifest.divisions.map(d => d.id);
 
-test("DEV-LEAGUES: deterministic complete 16x20 standings and 3,040 real fixture objects", () => {
+test("DEV-LEAGUES: deterministic complete 16x16 standings and 1,920 DEV fixture objects", () => {
   assert.equal(manifest.approved, false);
   assert.equal(allIds.length, 16);
   const snapshots = [];
@@ -35,15 +35,15 @@ test("DEV-LEAGUES: deterministic complete 16x20 standings and 3,040 real fixture
     const model = createPreviewStandings(division);
     const second = createPreviewStandings(division);
     assert.deepEqual(second, model, division.id + " must be deterministic");
-    assert.equal(model.rows.length, 20);
-    assert.equal(model.fixtures.length, 190);
-    assert.deepEqual(new Set(model.fixtures.map(f => f.round)).size, 19);
+    assert.equal(model.rows.length, 16);
+    assert.equal(model.fixtures.length, 120);
+    assert.deepEqual(new Set(model.fixtures.map(f => f.round)).size, 15);
     const pairs = new Set();
-    for (let day = 1; day <= 19; day++) {
+    for (let day = 1; day <= 15; day++) {
       const matches = model.fixtures.filter(f => f.round === day);
-      assert.equal(matches.length, 10);
+      assert.equal(matches.length, 8);
       const dayClubs = matches.flatMap(m => [m.homeId, m.awayId]);
-      assert.equal(new Set(dayClubs).size, 20);
+      assert.equal(new Set(dayClubs).size, 16);
     }
     for (const match of model.fixtures) {
       assert.ok(match.homeGoals >= 0 && match.awayGoals >= 0);
@@ -56,15 +56,17 @@ test("DEV-LEAGUES: deterministic complete 16x20 standings and 3,040 real fixture
     assert.deepEqual(previous, [...previous].sort((a, b) =>
       b[0]-a[0] || b[1]-a[1] || b[2]-a[2] || a[3]-b[3]));
     for (const row of model.rows) {
-      const id = division.id + ":" + row.club.clubId;
+      const id = row.club.countryId + ":" + row.club.clubId;
+      assert.ok(row.club.clubId >= (division.tier===1?1:17) &&
+        row.club.clubId <= (division.tier===1?16:32), "wrong tier or excluded club");
       assert.ok(!clubIdentities.has(id));
       clubIdentities.add(id);
-      assert.equal(row.played, 19);
-      assert.equal(row.won + row.drawn + row.lost, 19);
+      assert.equal(row.played, 15);
+      assert.equal(row.won + row.drawn + row.lost, 15);
       assert.equal(row.pts, 3 * row.won + row.drawn);
       assert.equal(row.gd, row.gf - row.ga);
       assert.equal(row.recent.length, 5);
-      assert.deepEqual(row.recent.map(x=>x.round), [19,18,17,16,15]);
+      assert.deepEqual(row.recent.map(x=>x.round), [15,14,13,12,11]);
       wins += row.won;
       losses += row.lost;
       draws += row.drawn;
@@ -87,8 +89,8 @@ test("DEV-LEAGUES: deterministic complete 16x20 standings and 3,040 real fixture
     totalGames += model.fixtures.length;
     snapshots.push(model);
   }
-  assert.equal(totalGames, 3040);
-  assert.equal(clubIdentities.size, 320);
+  assert.equal(totalGames, 1920);
+  assert.equal(clubIdentities.size, 256);
   assert.equal(snapshots.length, 16);
 });
 
@@ -144,11 +146,13 @@ test("DEV-GATE-06: malformed and incomplete models are rejected without partial 
   const division = manifest.divisions[0];
   for (const bad of [null, {}, {...division, clubs:[]},
     {...division, id:"FAKE-1"},
-    {...division, clubs:[...division.clubs.slice(0,19),division.clubs[0]]},
+    {...division, clubs:[...division.clubs.slice(0,15),division.clubs[0]]},
+    {...division, clubs:[...division.clubs.slice(0,15),{...division.clubs[15],clubId:33}]},
+    {...division, tier:division.tier===1?2:1},
     {...division, clubs:division.clubs.map(x=>({...x, primaryName:""}))}]) {
     assert.throws(()=>createPreviewStandings(bad));
   }
-  assert.ok(client.includes("fragment.childNodes.length !== 20"));
+  assert.ok(client.includes("fragment.childNodes.length !== 16"));
   assert.ok(client.includes("tbody.replaceChildren(fragment)"));
   assert.ok(client.includes('manifest.approved !== false'));
 });
@@ -224,10 +228,10 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
   });
 });
 
-test("DEV-L10N + interactions: 5 languages, 100 results, semantic tooltips and exit", () => {
+test("DEV-L10N + interactions: 5 languages, 80 results, semantic tooltips and exit", () => {
   for(const lang of ["en","de","es","fr","it"])
     assert.match(client, new RegExp("\\b"+lang+": \\{ badge:"));
-  assert.ok(client.includes("entries.length !== 100"));
+  assert.ok(client.includes("entries.length !== 80"));
   assert.ok(client.includes('new MutationObserver(translate)'));
   for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
     assert.ok(client.includes('"'+event+'"'),event);
@@ -289,5 +293,5 @@ test("UX-01A integration: approved division logos and theme rebind survive mobil
   assert.equal(manifest.divisions.length, 16);
   assert.equal(manifest.approved, false);
   for (const division of manifest.divisions)
-    assert.equal(division.clubs.length, 20);
+    assert.equal(division.clubs.length, 16);
 });
