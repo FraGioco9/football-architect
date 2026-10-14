@@ -23,7 +23,7 @@ html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
 .fa-shell-link.is-active{color:#ddfff0!important;background:linear-gradient(90deg,#22483e,#1a3934);border-color:#537369;box-shadow:inset 0 0 0 1px #57d9af22}
 .fa-shell-link:focus-visible,.app-brand:focus-visible,.app-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .fa-shell-workspace{grid-column:2;grid-row:1;display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;overflow:hidden}
-.fa-shell-content-scroll{display:flex;flex:1 1 auto;flex-direction:column;min-width:0;min-height:0;overflow-y:auto;scroll-padding-top:12px;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.fa-shell-content-scroll{display:flex;flex:1 1 auto;flex-direction:column;min-width:0;min-height:0;overflow-y:auto;scrollbar-gutter:stable;scroll-padding-top:12px;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 .fa-shell-content-scroll::-webkit-scrollbar{width:9px}
 .fa-shell-content-scroll::-webkit-scrollbar-track{background:transparent}
 .fa-shell-content-scroll::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border:2px solid transparent;background-clip:padding-box;border-radius:10px}
