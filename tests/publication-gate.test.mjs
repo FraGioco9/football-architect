@@ -51,7 +51,24 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
  const dir=join(repositoryRoot,".github","workflows");
  for(const file of readdirSync(dir).filter(f=>/\.ya?ml$/.test(f))){
   const source=readFileSync(join(dir,file),"utf8");
-  assert.doesNotMatch(source,/\b(deploy|publish|upload-pages-artifact|actions\/deploy-pages)\b/i,
-   "Workflow must use audited public artifact: "+file);
+  if(file==="manual-vercel-preview.yml"){
+   // An explicit, owner-triggered Preview is the only audited publication exception.
+   assert.match(source,/^  workflow_dispatch:$/m);
+   assert.doesNotMatch(source,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
+   for(const gate of [
+    /GITHUB_ACTOR/,/inputs\.expected_sha/,/\.head\.sha == \$sha/,
+    /landing-checks\.yml\/runs\?head_sha=/,/node --test tests\/\*\.test\.mjs/,
+    /stagePublicArtifact/,/assertPublicArtifact/,/actions\/upload-artifact@v4/,
+    /needs: stage-public/,/actions\/download-artifact@v4/,
+    /secrets\.VERCEL_TOKEN/,/--target=preview/,/VERCEL_PROJECT_ID/,
+    /readyState == "READY"/,/vercel alias set/,
+    /STABLE_PREVIEW_ALIAS/
+   ])assert.match(source,gate,"Manual preview gate missing: "+gate);
+   assert.doesNotMatch(source,/--prod\b|--target=production|vercel\s+promote|vercel\s+rollback/i);
+   assert.doesNotMatch(source,/deploy-pages|upload-pages-artifact|actions\/deploy-pages/i);
+  }else{
+   assert.doesNotMatch(source,/\b(deploy|publish|upload-pages-artifact|actions\/deploy-pages)\b/i,
+    "Workflow must use audited public artifact: "+file);
+  }
  }
 });

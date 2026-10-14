@@ -1,0 +1,155 @@
+name: Manual Vercel Preview
+
+# This workflow must never have an automatic event trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Existing same-repository PR number
+        required: true
+        default: "100"
+        type: string
+      expected_sha:
+        description: Exact 40-character PR HEAD approved for Preview
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: football-architect-manual-preview
+  cancel-in-progress: false
+
+jobs:
+  stage-public:
+    name: Exact-head CI and public artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Verify owner, PR HEAD and prior exact-head Site checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'Dispatch only from main'; exit 1; }
+          [[ "${GITHUB_ACTOR,,}" == fragioco9 ]] || { echo 'Owner-only dispatch'; exit 1; }
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || exit 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+          jq -e --arg sha "$EXPECTED_SHA" --arg repo "$GITHUB_REPOSITORY" '
+            .state == "open" and .merged_at == null and .base.ref == "main"
+            and .head.repo.full_name == $repo and .head.sha == $sha
+          ' <<< "$pr_json" >/dev/null || exit 1
+          runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/landing-checks.yml/runs?head_sha=$EXPECTED_SHA&event=pull_request&status=success&per_page=100")"
+          jq -e --arg sha "$EXPECTED_SHA" '
+            [.workflow_runs[] | select(.head_sha == $sha and .event == "pull_request"
+              and .status == "completed" and .conclusion == "success")] | length > 0
+          ' <<< "$runs" >/dev/null || { echo 'No successful exact-head PR CI'; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Recheck SHA and run site contracts
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          node --test tests/*.test.mjs
+      - name: Stage and verify exact public allowlist
+        run: |
+          set -euo pipefail
+          node --input-type=module -e '
+            import {stagePublicArtifact,assertPublicArtifact} from "./tools/publication-guard.mjs";
+            const files=stagePublicArtifact(process.cwd(),"preview-public");
+            assertPublicArtifact("preview-public");
+            console.log("Verified public asset count:",files.length);
+          '
+          for path in .github .git tools tests vercel.json package.json; do
+            test ! -e "preview-public/$path"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: approved-preview-public
+          path: preview-public/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-preview:
+    name: Preview-only Vercel CLI deployment
+    needs: stage-public
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The job bearing VERCEL_TOKEN never checks out or executes PR code.
+    env:
+      VERCEL_ORG_ID: team_XH0dWBAN59sFjuvrAXuDev4o
+      VERCEL_PROJECT_ID: prj_qyveVyWJlBQ0y7MQGu9cELxPlKf9
+      STABLE_PREVIEW_ALIAS: football-architect-git-ux-01a-mobile-responsi-4c0ec6-fra-gioco9.vercel.app
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: approved-preview-public
+          path: preview-public
+      - name: Confirm PR HEAD and allowed artifact (no Vercel credentials)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+          jq -e --arg sha "$EXPECTED_SHA" --arg repo "$GITHUB_REPOSITORY" '
+            .state == "open" and .merged_at == null and .base.ref == "main"
+            and .head.repo.full_name == $repo and .head.sha == $sha
+          ' <<< "$pr_json" >/dev/null
+          test -f preview-public/index.html
+          test -f preview-public/assets/competition-page.js
+          for path in .github .git tools tests vercel.json package.json; do
+            test ! -e "preview-public/$path"
+          done
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Deploy to Preview, verify provider target, then update stable alias
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN" || { echo 'Missing VERCEL_TOKEN Actions secret'; exit 1; }
+          mkdir -p preview-public/.vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > preview-public/.vercel/project.json
+          # Production is forbidden: never add production flags or promotion.
+          deployment_url="$(vercel deploy ./preview-public --yes --target=preview --archive=tgz --scope fra-gioco9 --token "$VERCEL_TOKEN" --meta "pr=$PR_NUMBER" --meta "source_sha=$EXPECTED_SHA")"
+          [[ "$deployment_url" =~ ^https://[a-z0-9-]+\.vercel\.app/?$ ]] || { echo 'Unrecognized Vercel URL'; exit 1; }
+          host="${deployment_url#https://}"
+          host="${host%/}"
+          info="$(curl --fail --silent --show-error --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$host?teamId=$VERCEL_ORG_ID")"
+          jq -e --arg id "$VERCEL_PROJECT_ID" '
+            (.projectId == $id or .project.id == $id)
+            and (.target == null or .target == "preview")
+            and (.readyState == "READY" or .state == "READY")
+          ' <<< "$info" >/dev/null || { echo 'Not a READY Preview on the exact project'; exit 1; }
+          pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+          jq -e --arg sha "$EXPECTED_SHA" '.state == "open" and .head.sha == $sha' <<< "$pr_json" >/dev/null || { echo 'PR moved; alias unchanged'; exit 1; }
+          alias_info="$(curl --fail --silent --show-error --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$STABLE_PREVIEW_ALIAS?teamId=$VERCEL_ORG_ID")"
+          jq -e --arg id "$VERCEL_PROJECT_ID" --arg alias "$STABLE_PREVIEW_ALIAS" \
+            '.projectId == $id and .alias == $alias' <<< "$alias_info" >/dev/null || { echo 'Non-production alias ownership not verified'; exit 1; }
+          vercel alias set "$deployment_url" "$STABLE_PREVIEW_ALIAS" --scope fra-gioco9 --token "$VERCEL_TOKEN"
+          {
+            echo "### Manual Football Architect Preview"
+            echo "- PR #$PR_NUMBER exact HEAD: $EXPECTED_SHA"
+            echo "- Target: Preview (verified by Vercel API)"
+            echo "- Stable protected URL: https://$STABLE_PREVIEW_ALIAS"
+            echo "- Immutable deployment URL: $deployment_url"
+            echo "- Access: Vercel SSO or a separately generated temporary share link"
+          } >> "$GITHUB_STEP_SUMMARY"
