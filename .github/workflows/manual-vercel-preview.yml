@@ -92,7 +92,7 @@ jobs:
     env:
       VERCEL_ORG_ID: team_XH0dWBAN59sFjuvrAXuDev4o
       VERCEL_PROJECT_ID: prj_qyveVyWJlBQ0y7MQGu9cELxPlKf9
-      STABLE_PREVIEW_ALIAS: football-architect-git-ux-01a-mobile-responsi-4c0ec6-fra-gioco9.vercel.app
+      STABLE_PREVIEW_ALIAS: football-architect-preview.vercel.app
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -141,10 +141,30 @@ jobs:
           ' <<< "$info" >/dev/null || { echo 'Not a READY Preview on the exact project'; exit 1; }
           pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
           jq -e --arg sha "$EXPECTED_SHA" '.state == "open" and .head.sha == $sha' <<< "$pr_json" >/dev/null || { echo 'PR moved; alias unchanged'; exit 1; }
-          alias_info="$(curl --fail --silent --show-error --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$STABLE_PREVIEW_ALIAS?teamId=$VERCEL_ORG_ID")"
-          jq -e --arg id "$VERCEL_PROJECT_ID" --arg alias "$STABLE_PREVIEW_ALIAS" \
-            '.projectId == $id and .alias == $alias' <<< "$alias_info" >/dev/null || { echo 'Non-production alias ownership not verified'; exit 1; }
+          # A new .vercel.app name can only be claimed by assigning it to a READY Preview.
+          # Never reassign an existing alias from another project or unknown provider response.
+          alias_response="$(mktemp)"
+          alias_status="$(curl --silent --show-error --output "$alias_response" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v4/aliases/$STABLE_PREVIEW_ALIAS?teamId=$VERCEL_ORG_ID")"
+          case "$alias_status" in
+            200)
+              jq -e --arg id "$VERCEL_PROJECT_ID" --arg alias "$STABLE_PREVIEW_ALIAS" \
+                '.projectId == $id and .alias == $alias' "$alias_response" >/dev/null || { echo 'Alias belongs to another project'; exit 1; }
+              ;;
+            404)
+              echo 'Alias not yet assigned; Vercel must confirm name availability'
+              ;;
+            *)
+              echo "Alias availability could not be verified (HTTP $alias_status)"
+              exit 1
+              ;;
+          esac
           vercel alias set "$deployment_url" "$STABLE_PREVIEW_ALIAS" --scope fra-gioco9 --token "$VERCEL_TOKEN"
+          alias_info="$(curl --fail --silent --show-error --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$STABLE_PREVIEW_ALIAS?teamId=$VERCEL_ORG_ID")"
+          deployment_id="$(jq -r '.id' <<< "$info")"
+          jq -e --arg id "$VERCEL_PROJECT_ID" --arg alias "$STABLE_PREVIEW_ALIAS" --arg deployment "$deployment_id" \
+            '.projectId == $id and .alias == $alias and .deploymentId == $deployment' <<< "$alias_info" >/dev/null || { echo 'Preview alias verification failed'; exit 1; }
           {
             echo "### Manual Football Architect Preview"
             echo "- PR #$PR_NUMBER exact HEAD: $EXPECTED_SHA"
