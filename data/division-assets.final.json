@@ -195,55 +195,64 @@
       "source": {
         "kind": "git",
         "commit": "429f878f13d935a5d7721e9d0835fe1a25de6830",
-        "manifestBlob": "c0abeacc05df922c62e856fc12d567608c070b6b"
+        "manifestBlob": "c0abeacc05df922c62e856fc12d567608c070b6b",
+        "approvedRevision": {
+          "kind": "owner-approved-exact-symbol-parity",
+          "archive": "it-2-lega-delle-citta-FINAL.zip",
+          "archiveSha256": "1da9868f053ce6d64078d831f30b38be935b01bff36d0c6f84356e7eec4bef78",
+          "sourcePsdSha256": "887d4c0d64f8b2a428ee8247e25a4d238c0b855efd66955fd495dc805012b405",
+          "scope": "all-four-variants",
+          "primaryCompactPixelDifference": 0,
+          "documentedWaivers": []
+        }
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.png",
-            "sha256": "75a540df044d5d1f9105977d1bfe3b322f9763b93e8fc1eb82a6cdfa75acef3d",
-            "bytes": 68772
+            "sha256": "497879e7173a23d410bbe6c9649a34e70ba1cd3045a6a6ad626bfbb7adb18da2",
+            "bytes": 88376
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.webp",
-            "sha256": "d59d0335b8554878371cab19c75bf673e22161b4266db87b5faaa25b4f8a3664",
-            "bytes": 26950
+            "sha256": "82f7fb5c351c36325beb63a4230146a22009397048f10820735a1efa5b17cc64",
+            "bytes": 28640
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.png",
-            "sha256": "9fba145e92ad3cee6e51614e26ade0bdd1edfc1bc684c1c8716bfb3c9893872f",
-            "bytes": 68524
+            "sha256": "029eaa4d6995df950c3a037af6f24a5e45948d161e237036288d5b0edbfd4405",
+            "bytes": 87605
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.webp",
-            "sha256": "661b23dd9a51daf1400ec0522c4ee1167b6efcd0dcd94f223af0b3a102d4f07a",
-            "bytes": 27036
+            "sha256": "d6ee1f065f7b80cb2bb2ac9332b8563b42a3a54ef8a714df8e462b44fee477f3",
+            "bytes": 28566
           }
         },
         "compact": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.png",
-            "sha256": "e4e09cc204e4e3a6b33e58de669a27146efced155b2090bfe4e9434a4ae00898",
-            "bytes": 44318
+            "sha256": "24da8336eb12cb998ba41feda0ce5e0d209c7c5b0786fc361bca0aeebe6fff7f",
+            "bytes": 55248
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.webp",
-            "sha256": "42d1388aac53e49fb579ba3eb0891c5955ff9ec2902a7c8c625063040cc1fff5",
-            "bytes": 18030
+            "sha256": "908bc8ca33c059d530a2da95d2c0f0c7f8c6590fc7653f8e5019f5ec8125b025",
+            "bytes": 18026
           }
         },
         "compact-dark": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.png",
-            "sha256": "cf3d23817b409799ead6c6e9d0afbd5f5c66ee91ff555a56bc36df2437d015d8",
-            "bytes": 44367
+            "sha256": "fdce772c44e16dfa85425bb65b6f77bb9b1fcb7aed562ff372e81fdf16fdc6b9",
+            "bytes": 55245
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.webp",
-            "sha256": "6b0b1378b578069d5f2abb689f2b2bc474e9f583ab46825012cb6a8cc44e1fed",
-            "bytes": 17982
+            "sha256": "d3dc6cf7b2b03ce6d1685d0a98742881524514174e9b0b5c52916745c4d56bfe",
+            "bytes": 17980
           }
         }
       }
