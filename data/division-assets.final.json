@@ -848,6 +848,67 @@
           }
         }
       }
+    },
+    {
+      "id": "BR-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "br-2-liga-das-regioes-FINAL.zip",
+        "sha256": "f2be19f62a0fbf7b3808e54cca65957b1c42454e8b9ccdaf6c8743d7e6623706",
+        "manifestSha256": "89b2cdbeee47d2f3df2b2e491cc77f11315fcdb55c55ba47dfd47822e60ee37b",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.png",
+            "sha256": "b8a928a7a9969cf848604ca484c62017c697867e175476377f674cbececc784c",
+            "bytes": 71998
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary.webp",
+            "sha256": "2c52620d6b28d46871992c1f4bf2db777fca198150616f97999f74c7cdecb2ec",
+            "bytes": 22380
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.png",
+            "sha256": "f331d18239d0fc23b4f2519ef26945be4e36519811e4d8bb0f874070d8dc574d",
+            "bytes": 71513
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-primary-dark.webp",
+            "sha256": "5d8f035304853ea6562390ad7e89f89511938468b5aabc87979b54e7547aa63c",
+            "bytes": 22264
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.png",
+            "sha256": "91b09b8bcf5e1b42dc19b272dd7745a5189a75945d5d3b3150cda157b53fdf60",
+            "bytes": 39787
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact.webp",
+            "sha256": "3dde8b9570d8d4eb2b36651a110aa3e84f03cf878a2d35f14771ba0dfdcf786b",
+            "bytes": 11614
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.png",
+            "sha256": "1abef285dda36329a761c33b4527203e5a89688886ad2ed108cd674061dfabe5",
+            "bytes": 39736
+          },
+          "webp": {
+            "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.webp",
+            "sha256": "3558e544e2a8feffc041a8f21fbf8ab82d845c5a9ebb3f4353b78b47c1be56a1",
+            "bytes": 11584
+          }
+        }
+      }
     }
   ]
 }
