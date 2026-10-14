@@ -101,7 +101,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
-          "mobile dark search","mobile light tooltip fixture"].includes(label)){
+          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
         chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
@@ -140,6 +140,63 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
         assert.ok(table.logo?.endsWith("-"+theme+".svg"),name+" async logo");
         await snap(name+" "+theme+" standings",w,h);
+        // UX-01A focused real-Chrome responsive acceptance (theme + native disclosure).
+        // Do not confuse the public unknown-statistics state with DEV-only fictional results.
+        const qaWidths = name==="iPhone" ? [320,360,390,620,621] : [w];
+        for(const width of qaWidths){
+          if(width!==w)await cmd("Emulation.setDeviceMetricsOverride",
+            {width,height:h,deviceScaleFactor:1,mobile,screenWidth:width,screenHeight:h});
+          const compactExpected=width<=620;
+          await wait("(()=>{const c=document.getElementById('app-standings-compact'),f=document.getElementById('app-standings-full');return !!c&&!!f&&c.hidden==="+(!compactExpected)+"&&f.hidden==="+compactExpected+"})()");
+          const state=await run("(()=>{const full=document.getElementById('app-standings-full'),compact=document.getElementById('app-standings-compact'),items=[...document.querySelectorAll('#app-standings-compact-list > li')],table=document.querySelector('.app-world-standing-table'),first=items[0]?.querySelector('details'),summary=first?.querySelector('summary'),points=summary?.querySelector('.app-world-mobile-points'),fg=points?getComputedStyle(points):null;return {inner:innerWidth,scroll:document.documentElement.scrollWidth,compact:compact.hidden,full:full.hidden,compactDisplay:getComputedStyle(compact).display,fullDisplay:getComputedStyle(full).display,rows:document.querySelectorAll('#app-standings-body tr').length,clubs:items.length,idsMatch:items.every((li,i)=>li.dataset.worldClub===document.querySelectorAll('#app-standings-body tr')[i]?.dataset.worldClub),cells:table.querySelector('tbody tr').children.length,stats:first?.querySelectorAll('.app-world-mobile-stat').length,form:summary?.querySelectorAll('.app-world-form-dot').length,points:points?.firstChild?.textContent,color:fg?.color,background:fg?.backgroundColor,summaryTag:summary?.tagName,logo:!!document.querySelector('#app-competition-badge picture[data-division-logo]')}})()");
+          assert.equal(state.inner,width,"responsive viewport "+width);
+          assert.ok(state.scroll<=width+1,"no page-wide overflow at "+width+"px "+theme);
+          assert.equal(state.rows,20,"canonical public rows "+width);
+          assert.equal(state.clubs,20,"compact public rows "+width);
+          assert.ok(state.idsMatch,"canonical identity equality "+width);
+          assert.equal(state.cells,11,"full table keeps all 11 columns");
+          assert.equal(state.stats,8,"eight statistics retained under disclosure");
+          assert.equal(state.form,0,"ordinary public standings have no invented recent form");
+          assert.equal(state.points,"—","public points remain unknown");
+          assert.equal(state.logo,true,"approved IT-1 badge survives shared hydration");
+          assert.equal(state.summaryTag,"SUMMARY","native keyboard/touch disclosure");
+          assert.equal(state.compact,!compactExpected,"compact visibility at "+width);
+          assert.equal(state.full,compactExpected,"full visibility at "+width);
+          assert.equal(state.compactDisplay==="none",!compactExpected,"compact computed CSS at "+width);
+          assert.equal(state.fullDisplay==="none",compactExpected,"full computed CSS at "+width);
+          assert.ok(ratio(state.color,state.background)>=4.5,theme+" compact points contrast "+width);
+          if(compactExpected){
+            const disclosure=await run("(()=>{const d=document.querySelector('#app-standings-compact-list details'),s=d.querySelector('summary');s.click();const expanded=d.open,shown=getComputedStyle(d.querySelector('.app-world-mobile-panel')).display,stats=d.querySelectorAll('dt, dd').length;s.focus();const focused=document.activeElement===s;s.click();return {expanded,shown,stats,focused,closed:!d.open}})()");
+            assert.equal(disclosure.expanded,true,"summary opens at "+width);
+            assert.notEqual(disclosure.shown,"none","stats shown at "+width);
+            assert.equal(disclosure.stats,16,"eight definition terms and descriptions");
+            assert.ok(disclosure.focused,"native summary focus at "+width);
+            assert.equal(disclosure.closed,true,"summary closes at "+width);
+          }
+          if(name==="iPhone"){
+            await snap("UX-01A "+theme+" "+width+" standings",width,h);
+            console.log("UX01A_BROWSER_QA|"+JSON.stringify({width,theme,rows:state.rows,clubs:state.clubs,cells:state.cells,stats:state.stats,compact:compactExpected,contrast:ratio(state.color,state.background).toFixed(2)}));
+          }
+        }
+        if(name==="iPhone"){
+          await cmd("Emulation.setDeviceMetricsOverride",
+            {width:w,height:h,deviceScaleFactor:1,mobile,screenWidth:w,screenHeight:h});
+          if(w===390){
+            for(const [lang,recent,details] of [
+              ["en","Recent form","Club statistics"],
+              ["de","Letzte Ergebnisse","Vereinsstatistik"],
+              ["es","Forma reciente","Estadísticas del club"],
+              ["fr","Forme récente","Statistiques du club"],
+              ["it","Forma recente","Statistiche del club"]]){
+              await run("document.documentElement.lang="+JSON.stringify(lang));
+              const selector="'#app-standings-compact-list [data-app-i18n=\"standingsMobileDetails\"]'";
+              await wait("document.querySelector("+selector+")?.textContent==="+JSON.stringify(details));
+              const local=await run("(()=>{const q=key=>document.querySelector('#app-standings-compact-list [data-app-i18n=\"'+key+'\"]')?.textContent;return {recent:q('standingsMobileRecent'),details:q('standingsMobileDetails')}})()");
+              assert.deepEqual(local,{recent,details},"dynamic compact localization "+lang+" "+theme);
+            }
+            await run("document.documentElement.lang='en'");
+          }
+        }
         // Normal public standings contain no actual match form: CSS-only diagnostic tooltip fixture.
         const tooltip=await run("(()=>{const t=document.createElement('div');t.className='app-world-form-tooltip';t.style.left=Math.max(12,Math.round((innerWidth-Math.min(350,innerWidth*.8))/2))+'px';t.style.top=Math.round(innerHeight*.38)+'px';t.innerHTML='<div class=\"app-world-form-tooltip-meta\">Matchday 19</div><div class=\"app-world-form-tooltip-scoreline\"><span class=\"app-world-form-tooltip-team\">Sample FC</span><strong class=\"app-world-form-tooltip-score\">2–1</strong><span class=\"app-world-form-tooltip-team\">Example FC</span></div><div class=\"app-world-form-tooltip-context\">Diagnostic match result</div>';document.body.appendChild(t);const s=getComputedStyle(t);return {fg:s.color,bg:s.backgroundColor,width:t.getBoundingClientRect().width}})()");
         assert.ok(tooltip.width>0);assert.ok(ratio(tooltip.fg,tooltip.bg)>=4.5);
