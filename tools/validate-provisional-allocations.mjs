@@ -1,50 +1,55 @@
-// Validates provisional UI-only allocations before any generated page uses them.
+// Validates approved initial ID ranges for provisional UI only, never game results.
 export function validateProvisionalAllocations(manifest,divisionData,clubData){
-  const fail = message => { throw new Error("Provisional division allocations: "+message); };
-  const check = (condition,message) => { if(!condition)fail(message); };
+  const fail=message=>{throw Error("Provisional division allocations: "+message);};
+  const check=(condition,message)=>{if(!condition)fail(message);};
   check(manifest?.schema==="football-architect-provisional-division-allocation-v1","unexpected schema");
-  check(manifest.status==="provisional" && manifest.approved===false,"approval gate must remain provisional and unapproved");
-  check(manifest.sources?.clubs==="data/clubs.json" && manifest.sources?.divisions==="data/divisions.json","source catalogue mismatch");
-  const divisions=divisionData?.divisions,clubs=clubData?.clubs;
-  check(Array.isArray(divisions) && divisions.length===16,"expected 16 division definitions");
-  check(Array.isArray(clubs) && clubs.length===320,"expected 320 club identities");
-  check(Array.isArray(manifest.allocations) && manifest.allocations.length===divisions.length,"expected one allocation for each division");
-  const byClub=new Map(),byDivision=new Map(),seen=new Set();
+  check(manifest.status==="provisional"&&manifest.approved===false,"allocation must remain provisional");
+  check(manifest.sources?.clubs==="data/clubs.json"&&manifest.sources?.divisions==="data/divisions.json","source catalogues changed");
+  check(divisionData?.implementedGame===false,"gameplay must not be enabled");
+  const countries=divisionData?.countries,divisions=divisionData?.divisions,clubs=clubData?.clubs;
+  const expectedCountries=["IT","ENG","ES","DE","FR","PT","NL","BR"];
+  check(Array.isArray(countries)&&countries.length===8&&new Set(countries.map(c=>c.id)).size===8&&expectedCountries.every(id=>countries.some(c=>c.id===id)),"unexpected countries");
+  check(Array.isArray(divisions)&&divisions.length===16,"expected 16 divisions");
+  check(Array.isArray(clubs)&&clubs.length===320,"expected 320 identities");
+  check(Array.isArray(manifest.allocations)&&manifest.allocations.length===16,"expected 16 allocations");
+  const byClub=new Map(),byDivision=new Map(),seen=new Set(),excluded=new Set();
   for(const club of clubs){
     const key=club.countryId+":"+club.clubId;
+    check(expectedCountries.includes(club.countryId)&&Number.isInteger(club.clubId)&&club.clubId>=1&&club.clubId<=40,"invalid club key "+key);
     check(!byClub.has(key),"duplicate club identity "+key);
-    check(typeof club.fullName==="string" && club.fullName.length>0 && typeof club.abbr==="string","missing club identity "+key);
+    check(typeof club.fullName==="string"&&club.fullName.length>0&&typeof club.abbr==="string"&&club.abbr.length>0,"incomplete club identity "+key);
     byClub.set(key,club);
   }
-  const historic=new Set(clubs.filter(club=>club.firstDivisionReference).map(club=>club.countryId+":"+club.clubId));
-  check(historic.size===160,"expected 160 historic first-division references");
-  let historicalCount=0,derivedCount=0;
-  for(let index=0;index<divisions.length;index++){
-    const division=divisions[index],entry=manifest.allocations[index];
-    check(entry?.divisionId===division.id,"division identifier/order mismatch at index "+index);
+  for(const countryId of expectedCountries)for(let id=1;id<=40;id++){
+    const key=countryId+":"+id;
+    check(byClub.has(key),"missing club "+key);
+    if(id>=33)excluded.add(key);
+  }
+  const historical=new Set(clubs.filter(c=>c.firstDivisionReference).map(c=>c.countryId+":"+c.clubId));
+  check(historical.size===160,"historical reference count changed");
+  for(const countryId of expectedCountries)for(let id=1;id<=20;id++)
+    check(historical.has(countryId+":"+id),"historical reference changed "+countryId+":"+id);
+  let tier1=0,tier2=0;
+  for(let i=0;i<divisions.length;i++){
+    const division=divisions[i],entry=manifest.allocations[i];
+    check(expectedCountries.includes(division.countryId)&&[1,2].includes(division.tier)&&division.id===division.countryId+"-"+division.tier,"invalid division identity");
     check(!byDivision.has(division.id),"duplicate division "+division.id);
-    check(division.tier===1 || division.tier===2,"unsupported tier "+division.id);
-    check(division.capacity===20,"unexpected division capacity "+division.id);
-    const evidenceType=division.tier===1?"historical-first-division-reference":"derived-complement";
-    check(entry.evidenceType===evidenceType,"wrong provenance for "+division.id);
-    check(Array.isArray(entry.clubIds) && entry.clubIds.length===division.capacity,"club count mismatch for "+division.id);
-    const allocated=[];
-    let last=0;
-    for(const id of entry.clubIds){
-      check(Number.isInteger(id) && id>last,"duplicate or unordered club ID in "+division.id);
-      check(division.tier===1 ? id<=20 : id>=21 && id<=40,"unexpected tier assignment "+division.id+" club "+id);
-      const key=division.countryId+":"+id,club=byClub.get(key);
-      check(club!==undefined,"unknown or foreign club "+key);
-      check(!seen.has(key),"club allocated more than once "+key);
-      check(division.tier===1 ? historic.has(key) : !historic.has(key),"historical source mismatch "+key);
+    check(entry?.divisionId===division.id,"division ordering changed at "+i);
+    check(division.capacity===16,"wrong capacity "+division.id);
+    check(entry.evidenceType==="owner-approved-initial-id-rule","wrong allocation evidence "+division.id);
+    check(Array.isArray(entry.clubIds)&&entry.clubIds.length===16,"wrong club count "+division.id);
+    const start=division.tier===1?1:17,allocated=[];
+    for(let j=0;j<16;j++){
+      const id=entry.clubIds[j],key=division.countryId+":"+id;
+      check(id===start+j,"wrong club ID/order "+division.id+" at "+j);
+      check(byClub.has(key)&&!excluded.has(key)&&!seen.has(key),"duplicate, excluded or missing club "+key);
       seen.add(key);
-      allocated.push(club);
-      last=id;
-      if(division.tier===1)historicalCount++;else derivedCount++;
+      allocated.push(byClub.get(key));
     }
     byDivision.set(division.id,allocated);
+    if(division.tier===1)tier1+=16;else tier2+=16;
   }
-  check(seen.size===320,"incomplete allocation");
-  check(historicalCount===160 && derivedCount===160,"provenance totals must be 160+160");
-  return {byDivision,counts:{total:seen.size,historical:historicalCount,derived:derivedCount},approved:false};
+  check(byDivision.size===16&&tier1===128&&tier2===128&&seen.size===256&&excluded.size===64,"invalid active/excluded totals");
+  check([...byClub.keys()].every(key=>seen.has(key)!==excluded.has(key)),"invalid 320-club partition");
+  return {byDivision,counts:{total:256,tier1,tier2,excluded:64,catalog:320},approved:false};
 }

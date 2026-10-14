@@ -14,7 +14,7 @@
       guideDivisionsHeading:"Divisions",
       guideClubsHeading:"Clubs",
       guideDivisionsText1:"Divisions are the competitions in which clubs are organized within each country. Every country has two levels: a first division and a second division.",
-      guideDivisionsText2:"Each division is designed for 20 clubs. A division describes the level of competition; it does not define a club's identity.",
+      guideDivisionsText2:"Each division is designed for 16 clubs. A division describes the level of competition; it does not define a club's identity.",
       guideClubsText1:"Clubs are the football teams in Football Architect. Each club has its own name, country and unique three-letter abbreviation.",
       guideClubsText2:"Clubs are the teams that take part in divisions. Their identity remains separate from the division in which they compete."
     },
@@ -28,7 +28,7 @@
       guideDivisionsHeading:"Ligen",
       guideClubsHeading:"Vereine",
       guideDivisionsText1:"Ligen sind die Wettbewerbe, in denen Vereine innerhalb eines Landes organisiert werden. Jedes Land hat zwei Ebenen: eine erste und eine zweite Liga.",
-      guideDivisionsText2:"Jede Liga ist für 20 Vereine vorgesehen. Die Liga beschreibt die Wettbewerbsebene, nicht die Identität eines Vereins.",
+      guideDivisionsText2:"Jede Liga ist für 16 Vereine vorgesehen. Die Liga beschreibt die Wettbewerbsebene, nicht die Identität eines Vereins.",
       guideClubsText1:"Vereine sind die Fußballmannschaften in Football Architect. Jeder Verein hat einen eigenen Namen, ein Land und ein eindeutiges Kürzel aus drei Buchstaben.",
       guideClubsText2:"Vereine nehmen an Ligawettbewerben teil. Ihre Identität bleibt unabhängig von der Liga, in der sie spielen."
     },
@@ -42,7 +42,7 @@
       guideDivisionsHeading:"Divisiones",
       guideClubsHeading:"Clubes",
       guideDivisionsText1:"Las divisiones son las competiciones que organizan a los clubes de cada país. Cada país tiene dos niveles: primera y segunda división.",
-      guideDivisionsText2:"Cada división está pensada para 20 clubes. La división indica el nivel de competición, no la identidad del club.",
+      guideDivisionsText2:"Cada división está pensada para 16 clubes. La división indica el nivel de competición, no la identidad del club.",
       guideClubsText1:"Los clubes son los equipos de fútbol de Football Architect. Cada club tiene su propio nombre, país y una sigla única de tres letras.",
       guideClubsText2:"Los clubes participan en las divisiones, pero su identidad es independiente de la división en la que compiten."
     },
@@ -56,7 +56,7 @@
       guideDivisionsHeading:"Divisions",
       guideClubsHeading:"Clubs",
       guideDivisionsText1:"Les divisions sont les compétitions qui regroupent les clubs dans chaque pays. Chaque pays comprend deux niveaux : une première et une deuxième division.",
-      guideDivisionsText2:"Chaque division est prévue pour 20 clubs. Elle indique le niveau de compétition, pas l’identité d’un club.",
+      guideDivisionsText2:"Chaque division est prévue pour 16 clubs. Elle indique le niveau de compétition, pas l’identité d’un club.",
       guideClubsText1:"Les clubs sont les équipes de football de Football Architect. Chaque club possède un nom, un pays et un sigle unique de trois lettres.",
       guideClubsText2:"Les clubs participent aux divisions, mais leur identité reste indépendante de la division dans laquelle ils évoluent."
     },
@@ -70,7 +70,7 @@
       guideDivisionsHeading:"Divisioni",
       guideClubsHeading:"Club",
       guideDivisionsText1:"Le divisioni sono le competizioni che organizzano i club all’interno di ciascun Paese. Ogni Paese ha due livelli: una prima e una seconda divisione.",
-      guideDivisionsText2:"Ogni divisione è progettata per 20 club. La divisione indica il livello della competizione, non l’identità del club.",
+      guideDivisionsText2:"Ogni divisione è progettata per 16 club. La divisione indica il livello della competizione, non l’identità del club.",
       guideClubsText1:"I club sono le squadre di calcio di Football Architect. Ogni club ha un proprio nome, un Paese e una sigla univoca di tre lettere.",
       guideClubsText2:"I club partecipano alle divisioni, ma la loro identità resta indipendente dalla divisione in cui competono."
     }

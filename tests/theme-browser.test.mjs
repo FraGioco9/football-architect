@@ -134,9 +134,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(search.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)",name+" search colors");
         assert.ok(search.rect[0]>=-1&&search.rect[1]<=w+1,name+" search fits");
         await snap(name+" "+theme+" search",w,h);
-        await visit("/app/competitions/it-1/","document.querySelectorAll('#app-standings-body tr').length===20");
+        await visit("/app/competitions/it-1/","document.querySelectorAll('#app-standings-body tr').length===16");
         const table=await run("(()=>{const t=document.querySelector('.app-world-standing-table');return {rows:document.querySelectorAll('#app-standings-body tr').length,sticky:getComputedStyle(t.querySelector('tbody tr>*:first-child')).position,head:getComputedStyle(t.querySelector('thead th')).backgroundColor,logo:document.querySelector('.app-brand-symbol')?.getAttribute('src')}})()");
-        assert.equal(table.rows,20);assert.equal(table.sticky,"sticky");
+        assert.equal(table.rows,16);assert.equal(table.sticky,"sticky");
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
         assert.ok(table.logo?.endsWith("-"+theme+".svg"),name+" async logo");
         await snap(name+" "+theme+" standings",w,h);
@@ -151,8 +151,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           const state=await run("(()=>{const full=document.getElementById('app-standings-full'),compact=document.getElementById('app-standings-compact'),items=[...document.querySelectorAll('#app-standings-compact-list > li')],table=document.querySelector('.app-world-standing-table'),first=items[0]?.querySelector('details'),summary=first?.querySelector('summary'),points=summary?.querySelector('.app-world-mobile-points'),fg=points?getComputedStyle(points):null;return {inner:innerWidth,scroll:document.documentElement.scrollWidth,compact:compact.hidden,full:full.hidden,compactDisplay:getComputedStyle(compact).display,fullDisplay:getComputedStyle(full).display,rows:document.querySelectorAll('#app-standings-body tr').length,clubs:items.length,idsMatch:items.every((li,i)=>li.dataset.worldClub===document.querySelectorAll('#app-standings-body tr')[i]?.dataset.worldClub),cells:table.querySelector('tbody tr').children.length,stats:first?.querySelectorAll('.app-world-mobile-stat').length,form:summary?.querySelectorAll('.app-world-form-dot').length,points:points?.firstChild?.textContent,color:fg?.color,background:fg?.backgroundColor,summaryTag:summary?.tagName,logo:!!document.querySelector('#app-competition-badge picture[data-division-logo]')}})()");
           assert.equal(state.inner,width,"responsive viewport "+width);
           assert.ok(state.scroll<=width+1,"no page-wide overflow at "+width+"px "+theme);
-          assert.equal(state.rows,20,"canonical public rows "+width);
-          assert.equal(state.clubs,20,"compact public rows "+width);
+          assert.equal(state.rows,16,"canonical public rows "+width);
+          assert.equal(state.clubs,16,"compact public rows "+width);
           assert.ok(state.idsMatch,"canonical identity equality "+width);
           assert.equal(state.cells,11,"full table keeps all 11 columns");
           assert.equal(state.stats,8,"eight statistics retained under disclosure");
