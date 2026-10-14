@@ -62,9 +62,9 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
     /needs: stage-public/,/actions\/download-artifact@v4/,
     /secrets\.VERCEL_TOKEN/,/--target=preview/,/VERCEL_PROJECT_ID/,
     /readyState == "READY"/,/vercel alias set/,
-    /STABLE_PREVIEW_ALIAS: football-architect-preview\\.vercel\\.app/,
+    /STABLE_PREVIEW_ALIAS: football-architect-preview\.vercel\.app/,
     /alias_status/,/Alias belongs to another project/,
-    /\\.deploymentId == \\$deployment/
+    /\.deploymentId == \$deployment/
    ])assert.match(source,gate,"Manual preview gate missing: "+gate);
    assert.doesNotMatch(source,/--prod\b|--target=production|vercel\s+promote|vercel\s+rollback/i);
    assert.doesNotMatch(source,/deploy-pages|upload-pages-artifact|actions\/deploy-pages/i);
