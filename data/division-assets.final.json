@@ -171,8 +171,8 @@
           },
           "webp": {
             "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp",
-            "sha256": "42ce08503fd9ae1b1c0ca7f3d60317966fdbd867dd93629bccbd2eb478f7c53e",
-            "bytes": 41624
+            "sha256": "b59a521187be4011d9a554760d4141e7c3ad9cdd543f3626179cbfb2e457b09b",
+            "bytes": 44314
           }
         },
         "compact-dark": {
@@ -183,8 +183,8 @@
           },
           "webp": {
             "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp",
-            "sha256": "1da994ada89c8fddacf570ff2ce8cc4dd03918552607b538e45ae3e5e90d51ae",
-            "bytes": 40956
+            "sha256": "a790ff8d98bcb79f76abd79fc57543527e6c927b320836fe7f36880a76cf23d7",
+            "bytes": 44352
           }
         }
       }
