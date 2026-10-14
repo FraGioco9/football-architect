@@ -98,7 +98,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
  }
  assert.equal(seen.size,256);
   for(const club of clubs)
-    assert.equal(seen.has(club.countryId+":"+club.clubId),club.clubId<=32,"asset-only club must not appear in standings");
+    assert.equal(seen.has(club.countryId+"-"+club.clubId),club.clubId<=32,"asset-only club must not appear in standings");
 });
 
 test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",()=>{

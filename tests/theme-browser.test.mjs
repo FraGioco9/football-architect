@@ -151,8 +151,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           const state=await run("(()=>{const full=document.getElementById('app-standings-full'),compact=document.getElementById('app-standings-compact'),items=[...document.querySelectorAll('#app-standings-compact-list > li')],table=document.querySelector('.app-world-standing-table'),first=items[0]?.querySelector('details'),summary=first?.querySelector('summary'),points=summary?.querySelector('.app-world-mobile-points'),fg=points?getComputedStyle(points):null;return {inner:innerWidth,scroll:document.documentElement.scrollWidth,compact:compact.hidden,full:full.hidden,compactDisplay:getComputedStyle(compact).display,fullDisplay:getComputedStyle(full).display,rows:document.querySelectorAll('#app-standings-body tr').length,clubs:items.length,idsMatch:items.every((li,i)=>li.dataset.worldClub===document.querySelectorAll('#app-standings-body tr')[i]?.dataset.worldClub),cells:table.querySelector('tbody tr').children.length,stats:first?.querySelectorAll('.app-world-mobile-stat').length,form:summary?.querySelectorAll('.app-world-form-dot').length,points:points?.firstChild?.textContent,color:fg?.color,background:fg?.backgroundColor,summaryTag:summary?.tagName,logo:!!document.querySelector('#app-competition-badge picture[data-division-logo]')}})()");
           assert.equal(state.inner,width,"responsive viewport "+width);
           assert.ok(state.scroll<=width+1,"no page-wide overflow at "+width+"px "+theme);
-          assert.equal(state.rows,16,"canonical public rows +width);
-          assert.equal(state.clubs,16,"compact public rows +width);
+          assert.equal(state.rows,16,"canonical public rows "+width);
+          assert.equal(state.clubs,16,"compact public rows "+width);
           assert.ok(state.idsMatch,"canonical identity equality "+width);
           assert.equal(state.cells,11,"full table keeps all 11 columns");
           assert.equal(state.stats,8,"eight statistics retained under disclosure");
