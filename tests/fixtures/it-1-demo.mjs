@@ -1,24 +1,21 @@
-// Fictional IT-1 records for isolated Node tests; not a public asset.
-// [clubId, won, drawn, lost, goalsFor, goalsAgainst, recentForm]
+// Fictional IT-1 results for isolated Node tests only; never publish.
+// [clubId, wins, draws, losses, goalsFor, goalsAgainst, recentForm oldest-to-newest]
+// Derived from deterministic 16-club, 15-round DEV circle schedule.
 export const it1Demo = Object.freeze([
-    [4,14,2,3,33,13,"WWWDW"],
-    [7,12,2,5,40,16,"LWWLW"],
-    [2,10,6,3,32,18,"WLDDL"],
-    [13,9,7,3,31,19,"WDWWD"],
-    [5,10,2,7,30,23,"WWWWW"],
-    [11,8,7,4,24,14,"DLWLW"],
-    [15,8,6,5,28,20,"WWWLD"],
-    [1,9,2,8,26,24,"WLLDW"],
-    [9,8,4,7,28,28,"LLDWL"],
-    [14,8,4,7,24,27,"LLLWW"],
-    [17,8,3,8,35,32,"WDLWW"],
-    [8,7,6,6,21,21,"LWWLD"],
-    [6,7,5,7,26,22,"LLDWL"],
-    [20,6,7,6,30,26,"DWLLD"],
-    [3,6,4,9,24,31,"WLLDD"],
-    [10,5,2,12,21,39,"LWWWD"],
-    [16,4,5,10,19,40,"LDLLL"],
-    [18,4,4,11,13,21,"LWDWL"],
-    [12,2,5,12,17,38,"DDLLL"],
-    [19,2,3,14,16,46,"DLLLL"]
-  ]);
+  [12,10,3,2,39,19,"WWWWD"],
+  [6,9,3,3,34,26,"WWWWL"],
+  [4,9,1,5,34,30,"WLWWW"],
+  [8,7,3,5,31,24,"LLLWL"],
+  [7,6,5,4,41,38,"LWWWD"],
+  [16,7,2,6,28,26,"LDLWW"],
+  [1,6,5,4,30,31,"LWLDD"],
+  [11,6,4,5,32,30,"WLLWW"],
+  [5,6,4,5,23,22,"WLDLW"],
+  [15,6,2,7,31,27,"LLWLL"],
+  [14,5,4,6,32,34,"WWWLL"],
+  [13,6,0,9,33,40,"LLWLW"],
+  [2,5,2,8,27,33,"WWLLD"],
+  [9,3,5,7,31,39,"DDLLD"],
+  [3,2,5,8,26,37,"DLDDL"],
+  [10,1,4,10,26,42,"LWLLD"]
+]);
