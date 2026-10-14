@@ -925,6 +925,68 @@
           }
         }
       }
+    },
+    {
+      "id": "PT-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "pt-2-liga-atlantica-FINAL.zip",
+        "sha256": "b2d5a06cffc9837958e428df2cd8369f1dc9bf3a313a9334ee282d64f06d5079",
+        "manifestSha256": "00d0f55def76ecc933b618f3e649408f4939190f6040f1eb5af424a57bb9330d",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved",
+        "rasterMirrorDiagnostic": "5192 rgba / 288 silhouette differences per compact; diagnostic only (not a mandatory roadmap #104 gate)"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary.png",
+            "sha256": "1b2731417ed19282ea130d59fb8ed96eb9f8a45ead027a5dcc5038a9fbdd5bdb",
+            "bytes": 83555
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary.webp",
+            "sha256": "a21073f09f46c6e9cabcb5dabc96f3a96aa54512d14b0739402ab7efe64852dd",
+            "bytes": 26304
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary-dark.png",
+            "sha256": "0c0fe99410a1a33c13e3af3ffc0eeca507741c211ca4b00a156b503fd7c2798c",
+            "bytes": 83025
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary-dark.webp",
+            "sha256": "ce5ffc4f8af41b8cfca2b78b3c6202cfc955b9de949feb1e06da211e4140c14c",
+            "bytes": 26260
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact.png",
+            "sha256": "08c1022aa1fcb37cfd8326be9f07f911c52b372d503e18c90731f998d4e234e6",
+            "bytes": 57752
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact.webp",
+            "sha256": "3c4cd02cf53ebd231cae6b764d164da9e810f131a39de73010341fb6291c55f0",
+            "bytes": 17966
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact-dark.png",
+            "sha256": "1ad8b55bdfe90cad974f97d069f9b9c7866f7b67fcb08be8c8a367f75e91cd6f",
+            "bytes": 57750
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact-dark.webp",
+            "sha256": "fb5a18d9be88586c7b0db2ac5b0b85fb064652754b6a7a58e1bcf18c9c1629ef",
+            "bytes": 18016
+          }
+        }
+      }
     }
   ]
 }
