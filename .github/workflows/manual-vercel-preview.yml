@@ -128,7 +128,7 @@ jobs:
           test -n "$VERCEL_TOKEN" || { echo 'Missing VERCEL_TOKEN Actions secret'; exit 1; }
           mkdir -p preview-public/.vercel
           printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > preview-public/.vercel/project.json
-          # Production is forbidden: NEVER pass --prod, --target=production or promote.
+          # Production is forbidden: never add production flags or promotion.
           deployment_url="$(vercel deploy ./preview-public --yes --target=preview --archive=tgz --scope fra-gioco9 --token "$VERCEL_TOKEN" --meta "pr=$PR_NUMBER" --meta "source_sha=$EXPECTED_SHA")"
           [[ "$deployment_url" =~ ^https://[a-z0-9-]+\.vercel\.app/?$ ]] || { echo 'Unrecognized Vercel URL'; exit 1; }
           host="${deployment_url#https://}"
