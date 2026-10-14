@@ -8,31 +8,38 @@
       "source": {
         "kind": "git",
         "commit": "855c5b0341b5aa17ea2d35f2601badc68d33163e",
-        "manifestBlob": "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0"
+        "manifestBlob": "fc9cc01a0fee7d3bd7e209a24f13575fadf50fc0",
+        "approvedRevision": {
+          "kind": "owner-approved-lettering-refinement",
+          "archive": "it-1-lega-federale-FINAL.zip",
+          "archiveSha256": "c0917055da2d0b12d530a343933ac5198eb876c63f70e93f8b612d0e0ce0b819",
+          "sourcePsdSha256": "66aa440d70ec8aab776aa51af06546960ecf6d3ea43354a6361c1a2dfc4b9be6",
+          "scope": "primary-and-primary-dark"
+        }
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.png",
-            "sha256": "7e4595a664865f487e7869e5cc7c10df01094461b384dfd3fc92e0a99e302128",
-            "bytes": 92659
+            "sha256": "7e777873d6677cdd2bc330c6127b321b2258975160eac0ff6b17034f34aeaa03",
+            "bytes": 97642
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary.webp",
-            "sha256": "2c0cf7cbde105282e1ccfebd0bf802a2c268d3b1e139083cae6cfaa6a9b030b8",
-            "bytes": 28518
+            "sha256": "70181d17af459f4142e9b1714c05624807bd6d00e9473e7643d6a32824550c37",
+            "bytes": 30844
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.png",
-            "sha256": "250da80cfb5f4da02ea7c012edf4824f6e1f7af3a2a2906b82c3682ee352b0d9",
-            "bytes": 92392
+            "sha256": "946632a313277a17a443a33c71cfa44cb3ead48b4800a0eed6cebc021ae54a35",
+            "bytes": 96626
           },
           "webp": {
             "path": "assets/divisions/it-1-lega-federale/it-1-lega-federale-primary-dark.webp",
-            "sha256": "220a594457c73a59a2d84c9f87e435c9c346d1dec286812d56a6565c7adf5292",
-            "bytes": 28366
+            "sha256": "e3ca0538001ec40889f8e00b713b138f9bb0b388af0117fbfa89deb2d168f6a6",
+            "bytes": 30830
           }
         },
         "compact": {
@@ -164,8 +171,8 @@
           },
           "webp": {
             "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact.webp",
-            "sha256": "42ce08503fd9ae1b1c0ca7f3d60317966fdbd867dd93629bccbd2eb478f7c53e",
-            "bytes": 41624
+            "sha256": "b59a521187be4011d9a554760d4141e7c3ad9cdd543f3626179cbfb2e457b09b",
+            "bytes": 44314
           }
         },
         "compact-dark": {
@@ -176,8 +183,8 @@
           },
           "webp": {
             "path": "assets/divisions/eng-2-shield-league/eng-2-shield-league-compact-dark.webp",
-            "sha256": "1da994ada89c8fddacf570ff2ce8cc4dd03918552607b538e45ae3e5e90d51ae",
-            "bytes": 40956
+            "sha256": "a790ff8d98bcb79f76abd79fc57543527e6c927b320836fe7f36880a76cf23d7",
+            "bytes": 44352
           }
         }
       }
@@ -188,55 +195,64 @@
       "source": {
         "kind": "git",
         "commit": "429f878f13d935a5d7721e9d0835fe1a25de6830",
-        "manifestBlob": "c0abeacc05df922c62e856fc12d567608c070b6b"
+        "manifestBlob": "c0abeacc05df922c62e856fc12d567608c070b6b",
+        "approvedRevision": {
+          "kind": "owner-approved-exact-symbol-parity",
+          "archive": "it-2-lega-delle-citta-FINAL.zip",
+          "archiveSha256": "1da9868f053ce6d64078d831f30b38be935b01bff36d0c6f84356e7eec4bef78",
+          "sourcePsdSha256": "887d4c0d64f8b2a428ee8247e25a4d238c0b855efd66955fd495dc805012b405",
+          "scope": "all-four-variants",
+          "primaryCompactPixelDifference": 0,
+          "documentedWaivers": []
+        }
       },
       "variants": {
         "primary": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.png",
-            "sha256": "75a540df044d5d1f9105977d1bfe3b322f9763b93e8fc1eb82a6cdfa75acef3d",
-            "bytes": 68772
+            "sha256": "497879e7173a23d410bbe6c9649a34e70ba1cd3045a6a6ad626bfbb7adb18da2",
+            "bytes": 88376
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary.webp",
-            "sha256": "d59d0335b8554878371cab19c75bf673e22161b4266db87b5faaa25b4f8a3664",
-            "bytes": 26950
+            "sha256": "82f7fb5c351c36325beb63a4230146a22009397048f10820735a1efa5b17cc64",
+            "bytes": 28640
           }
         },
         "primary-dark": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.png",
-            "sha256": "9fba145e92ad3cee6e51614e26ade0bdd1edfc1bc684c1c8716bfb3c9893872f",
-            "bytes": 68524
+            "sha256": "029eaa4d6995df950c3a037af6f24a5e45948d161e237036288d5b0edbfd4405",
+            "bytes": 87605
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-primary-dark.webp",
-            "sha256": "661b23dd9a51daf1400ec0522c4ee1167b6efcd0dcd94f223af0b3a102d4f07a",
-            "bytes": 27036
+            "sha256": "d6ee1f065f7b80cb2bb2ac9332b8563b42a3a54ef8a714df8e462b44fee477f3",
+            "bytes": 28566
           }
         },
         "compact": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.png",
-            "sha256": "e4e09cc204e4e3a6b33e58de669a27146efced155b2090bfe4e9434a4ae00898",
-            "bytes": 44318
+            "sha256": "24da8336eb12cb998ba41feda0ce5e0d209c7c5b0786fc361bca0aeebe6fff7f",
+            "bytes": 55248
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact.webp",
-            "sha256": "42d1388aac53e49fb579ba3eb0891c5955ff9ec2902a7c8c625063040cc1fff5",
-            "bytes": 18030
+            "sha256": "908bc8ca33c059d530a2da95d2c0f0c7f8c6590fc7653f8e5019f5ec8125b025",
+            "bytes": 18026
           }
         },
         "compact-dark": {
           "png": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.png",
-            "sha256": "cf3d23817b409799ead6c6e9d0afbd5f5c66ee91ff555a56bc36df2437d015d8",
-            "bytes": 44367
+            "sha256": "fdce772c44e16dfa85425bb65b6f77bb9b1fcb7aed562ff372e81fdf16fdc6b9",
+            "bytes": 55245
           },
           "webp": {
             "path": "assets/divisions/it-2-lega-delle-citta/it-2-lega-delle-citta-compact-dark.webp",
-            "sha256": "6b0b1378b578069d5f2abb689f2b2bc474e9f583ab46825012cb6a8cc44e1fed",
-            "bytes": 17982
+            "sha256": "d3dc6cf7b2b03ce6d1685d0a98742881524514174e9b0b5c52916745c4d56bfe",
+            "bytes": 17980
           }
         }
       }
@@ -906,6 +922,68 @@
             "path": "assets/divisions/br-2-liga-das-regioes/br-2-liga-das-regioes-compact-dark.webp",
             "sha256": "3558e544e2a8feffc041a8f21fbf8ab82d845c5a9ebb3f4353b78b47c1be56a1",
             "bytes": 11584
+          }
+        }
+      }
+    },
+    {
+      "id": "PT-2",
+      "enabled": true,
+      "source": {
+        "kind": "offline-final-archive",
+        "filename": "pt-2-liga-atlantica-FINAL.zip",
+        "sha256": "b2d5a06cffc9837958e428df2cd8369f1dc9bf3a313a9334ee282d64f06d5079",
+        "manifestSha256": "00d0f55def76ecc933b618f3e649408f4939190f6040f1eb5af424a57bb9330d",
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved",
+        "rasterMirrorDiagnostic": "5192 rgba / 288 silhouette differences per compact; diagnostic only (not a mandatory roadmap #104 gate)"
+      },
+      "variants": {
+        "primary": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary.png",
+            "sha256": "1b2731417ed19282ea130d59fb8ed96eb9f8a45ead027a5dcc5038a9fbdd5bdb",
+            "bytes": 83555
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary.webp",
+            "sha256": "a21073f09f46c6e9cabcb5dabc96f3a96aa54512d14b0739402ab7efe64852dd",
+            "bytes": 26304
+          }
+        },
+        "primary-dark": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary-dark.png",
+            "sha256": "0c0fe99410a1a33c13e3af3ffc0eeca507741c211ca4b00a156b503fd7c2798c",
+            "bytes": 83025
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-primary-dark.webp",
+            "sha256": "ce5ffc4f8af41b8cfca2b78b3c6202cfc955b9de949feb1e06da211e4140c14c",
+            "bytes": 26260
+          }
+        },
+        "compact": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact.png",
+            "sha256": "08c1022aa1fcb37cfd8326be9f07f911c52b372d503e18c90731f998d4e234e6",
+            "bytes": 57752
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact.webp",
+            "sha256": "3c4cd02cf53ebd231cae6b764d164da9e810f131a39de73010341fb6291c55f0",
+            "bytes": 17966
+          }
+        },
+        "compact-dark": {
+          "png": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact-dark.png",
+            "sha256": "1ad8b55bdfe90cad974f97d069f9b9c7866f7b67fcb08be8c8a367f75e91cd6f",
+            "bytes": 57750
+          },
+          "webp": {
+            "path": "assets/divisions/pt-2-liga-atlantica/pt-2-liga-atlantica-compact-dark.webp",
+            "sha256": "fb5a18d9be88586c7b0db2ac5b0b85fb064652754b6a7a58e1bcf18c9c1629ef",
+            "bytes": 18016
           }
         }
       }
