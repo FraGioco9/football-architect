@@ -85,7 +85,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
   assert.equal(m.capacity,d.capacity);assert.equal(m.countryId,d.countryId);
   assert.equal(m.countryName,country.name.en);assert.equal(m.flagAsset,country.flagAsset);
   assert.equal(source.divisionId,d.id);
-  assert.equal(m.clubs.length,20);
+  assert.equal(m.clubs.length,16);
   assert.deepEqual(m.clubs.map(c=>c.clubId),source.clubIds);
   for(const record of m.clubs){
    const club=clubs.find(c=>c.countryId===record.countryId&&c.clubId===record.clubId);
@@ -96,7 +96,9 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
    seen.add(key);
   }
  }
- assert.equal(seen.size,320);
+ assert.equal(seen.size,256);
+  for(const club of clubs)
+    assert.equal(seen.has(club.countryId+":"+club.clubId),club.clubId<=32,"asset-only club must not appear in standings");
 });
 
 test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",()=>{
@@ -191,7 +193,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("for (let i = form.length - 1; i >= 0; i--)"));
  assert.ok(renderer.includes("data.approved !== false"));
- assert.ok(renderer.includes("clubs.size === 320"));
+ assert.ok(renderer.includes("clubs.size === 256"));
  assert.ok(renderer.includes('document.createElement("tr")'));
  assert.ok(renderer.includes("name.textContent = club.primaryName"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
@@ -251,7 +253,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  assert.doesNotThrow(()=>new Script(runtime,{filename:"competition-page.js"}));
  assert.ok(runtime.includes('routeId.toLowerCase()'));
  assert.ok(runtime.includes("data.approved !== false"));
- assert.ok(runtime.includes("clubs.size === 320"));
+ assert.ok(runtime.includes("clubs.size === 256"));
  assert.ok(runtime.includes("start().catch(fail)"));
 });
 
@@ -327,7 +329,7 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
  assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
- assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,320);
+ assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 
 test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{
@@ -346,7 +348,7 @@ test("COMPETITIONS-08 uses only documented primary names, never inferred shorten
    if(c.primaryName)named++;else abbreviationOnly++;
   }
  }
- assert.equal(named,320);
+ assert.equal(named,256);
  assert.equal(abbreviationOnly,0);
  for(const [key,name] of Object.entries(primaryNames)){
   assert.ok(byId.has(key),key);
