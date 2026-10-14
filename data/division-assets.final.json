@@ -749,9 +749,8 @@
         "filename": "fr-2-ligue-des-regions-FINAL.zip",
         "sha256": "25515e41e68c667f9143f20e291fe0c0ea7aa9943bdabbce43a3ab688e1883d3",
         "manifestSha256": "c699ce4ad89b66ffde6ef58a7517643a0383b745b7de2ca5ca7d4a86825121e4",
-        "offlineCertification": "PENDING_FINAL_CERTIFICATION",
         "photopeaEditability": "UNKNOWN",
-        "artisticApprovals": "Owner approved latest visual set; four separately SHA-bound approvals not recorded"
+        "artisticApprovals": "4/4 exact PNG SHA-256 owner approved"
       },
       "variants": {
         "primary": {
