@@ -45,7 +45,7 @@ if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new E
 const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division-allocations.provisional.json", import.meta.url), "utf8"));
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-const countryById = Object.fromEntries(divisionData.countries.map(country => [country.id,country]));
+const countryById = Object.fromEntries(new Map(divisionData.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:d.flagAsset}])));
 const primaryReference = JSON.parse(readFileSync(new URL("../data/club-primary-names.documented.json",import.meta.url),"utf8"));
 if(primaryReference.schemaVersion!==1 || Object.keys(primaryReference.names??{}).length!==315)throw Error("Primary-name reference mismatch");
 const namesById=new Map(clubData.clubs.map(club=>[club.countryId+":"+club.clubId,club]));
@@ -74,8 +74,8 @@ const logoPicture=(id,root,kind,large)=>{
   '<img src="'+path(dark.png)+'" width="'+(large?60:36)+'" height="'+(large?60:36)+'" alt="" decoding="async"></picture></span>';
 };
 const indexContent = function indexContent(root){
- const cards=divisionData.countries.map(c=>{
-  const links=divisionData.divisions.filter(d=>d.countryId===c.id).map(d=>
+ const cards=Object.values(countryById).map(c=>{
+  const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
  '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+encode(d.id)+'</span><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
@@ -171,7 +171,7 @@ const worldPageReplacements = (depth, division = null) => {
 // Shared competition shell: one markup source and one validated data manifest.
 // Small route files preserve deep links on local/static hosting.
 const sharedTemplate = function sharedTemplate(html) {
- const first=divisionData.divisions[0],country=countryById[first.countryId];
+ const first=divisionData[0],country=countryById[first.countryId];
  const replaceOne=(before,after,label)=>{
   if(html.split(before).length!==2)throw Error("Shared template contract changed: "+label);
   html=html.replace(before,after);
@@ -212,7 +212,7 @@ const competitionRoute = d=>[
 ].join("\n");
 const competitionManifest = {
  schemaVersion:1,approved:provisionalAssignments.approved,
- divisions:divisionData.divisions.map(d=>{
+ divisions:divisionData.map(d=>{
   const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
@@ -232,13 +232,13 @@ const outputPages = [
  {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2),
   transform:html=>html.replace('<body class="app-body">','<body class="app-body division-logos-pending">').replace('<script src="../../assets/division-logos.js" defer></script>','<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>')},
  {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
-  replacements:worldPageReplacements(3,divisionData.divisions[0]),transform:sharedTemplate},
- ...divisionData.divisions.map(division=>({
+  replacements:worldPageReplacements(3,divisionData[0]),transform:sharedTemplate},
+ ...divisionData.map(division=>({
   name:division.id,path:"app/competitions/"+division.id.toLowerCase()+"/index.html",
   directContent:competitionRoute(division)
  }))
 ];
-if(divisionData.countries.length!==8||divisionData.divisions.length!==16||outputPages.length!==21)
+if(Object.keys(countryById).length!==8||divisionData.length!==16||outputPages.length!==21)
  throw Error("Division catalogue cardinality changed; review the source data");
 const check = process.argv.length === 3 && process.argv[2] === "--check";
 if(process.argv.length > (check ? 3 : 2))throw Error("Usage: node tools/generate-app-pages.mjs [--check]");
