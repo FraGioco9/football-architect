@@ -35,7 +35,7 @@ function ipv4(value) {
   if (typeof value !== "string") return null;
   const normalized = value.startsWith("::ffff:") ? value.slice(7) : value;
   const parts = normalized.split(".");
-  if (parts.length !== 4 || parts.some(part => part.length > 3 || !Number.isInteger(Number(part)) || Number(part) < 0 || Number(part) > 255)) return null;
+  if (parts.length !== 4 || parts.some(part => part.length === 0 || part.length > 3 || ![...part].every(char => char >= "0" && char <= "9") || Number(part) > 255)) return null;
   return parts.map(Number).join(".");
 }
 function isPrivateIPv4(value) {
