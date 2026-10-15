@@ -389,7 +389,7 @@ test("DEV modular registry and adaptive panel contracts",()=>{
 
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays (slider)",min:0,max:30,step:1'));
  assert.ok(client.includes('visible:()=>previewState==="ON"'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
