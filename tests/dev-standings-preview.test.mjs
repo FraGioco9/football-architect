@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
+import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -317,4 +318,33 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
  assert.ok(widget.includes('role","switch"'));
  assert.ok(!isAllowlistedPublicPath("tools/dev-debug-widget.mjs"));
  assert.ok(!planPublicFiles().includes("tools/dev-debug-widget.mjs"));
+});
+test("DEV-M01: mount the Debug widget only after competition hydration", async () => {
+  const runtime = read("assets/competition-page.js").toString();
+  assert.ok(runtime.includes("document.body.innerHTML = withMobileShell(parsed.body.innerHTML)"));
+  const start = client.indexOf("if(validPath){");
+  const end = client.indexOf("\nfunction strings()", start);
+  assert.ok(start >= 0 && end > start, "DEV initialization block missing");
+  const initializer = client.slice(start, end);
+  assert.ok(initializer.includes("waitForRows().then("));
+  assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
+    initializer.indexOf("waitForRows().then(") < initializer.indexOf("createDebugWidget({controls:[{"));
+  for (const enabled of [false, true]) {
+    let hydrate;
+    const hydration = new Promise(resolve => { hydrate = resolve; });
+    const operations = [];
+    runInNewContext(initializer, {
+      validPath: ["/app/competitions/it-1/", "it-1"],
+      waitForRows: () => hydration,
+      createDebugWidget: () => operations.push("widget"),
+      isPreviewEnabled: () => enabled,
+      boot: division => operations.push("boot:" + division),
+      console: { error: error => { throw error; } }
+    });
+    assert.deepEqual(operations, [], "widget must not mount before hydration");
+    hydrate();
+    await hydration;
+    await Promise.resolve();
+    assert.deepEqual(operations, enabled ? ["widget", "boot:IT-1"] : ["widget"]);
+  }
 });

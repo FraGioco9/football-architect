@@ -35,11 +35,15 @@ function setPreviewEnabled(enabled) {
  return true;
 }
 if(validPath){
- createDebugWidget({controls:[{
-  type:"switch",id:"fictional-standings",label:"Fictional standings",
-  checked:isPreviewEnabled,onChange:setPreviewEnabled
- }]});
- if(isPreviewEnabled())boot(validPath[1].toUpperCase());
+ waitForRows().then(() => {
+  createDebugWidget({controls:[{
+   type:"switch",id:"fictional-standings",label:"Fictional standings",
+   checked:isPreviewEnabled,onChange:setPreviewEnabled
+  }]});
+  if(isPreviewEnabled())boot(validPath[1].toUpperCase());
+ }).catch(error => {
+  console.error("DEV Debug unavailable:", error);
+ });
 }
 
 function strings() { return LANG[document.documentElement.lang] || LANG.en; }
