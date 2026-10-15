@@ -92,6 +92,7 @@
       ["gd","standingsDifference","GD"],["pts","standingsPoints","Pts"]
     ];
     const formKeys = {W:"standingsDemoFormWin",D:"standingsDemoFormDraw",L:"standingsDemoFormLoss"};
+    const formLetterKeys = {W:"standingsDemoWinLetter",D:"standingsDemoDrawLetter",L:"standingsDemoLossLetter"};
     const element = (tag, cls = "", value = "") => {
       const el = document.createElement(tag);
       el.className = cls;
@@ -144,7 +145,8 @@
                 !Number.isInteger(game.round) || !clubs.has(game.homeId) ||
                 !clubs.has(game.awayId)) throw Error("Invalid mobile fixture metadata");
             const mark = element("span","app-world-form-dot app-world-form-" +
-              game.result.toLowerCase(),game.result);
+              game.result.toLowerCase() + (row.recent.indexOf(game) === 0 ? " app-world-form-last" : ""),game.result);
+            mark.dataset.appI18n = formLetterKeys[game.result];
             mark.setAttribute("aria-hidden","true");
             form.append(mark,translation(formKeys[game.result],
               game.result === "W" ? "Win" : game.result === "D" ? "Draw" : "Loss"));

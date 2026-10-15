@@ -224,6 +224,18 @@ html{scroll-padding-top:72px}
 .app-world-form-l{background:#98504d}
 .app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}
 .app-world-form-dot:focus-visible{outline:2px solid #effff4;outline-offset:2px}
+.app-world-form-control{box-sizing:border-box;width:32px;height:32px;border-radius:8px;background:transparent;position:relative;touch-action:manipulation;transition:background-color 130ms ease,outline-color 130ms ease}
+.app-world-form-strip .app-world-form-control{width:18px;height:18px;border-radius:5px}
+.app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:-4px}
+.app-world-form-control:hover{background:var(--surface-raised)}
+.app-world-form-control .app-world-form-glyph{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:9px;font-weight:850;line-height:1;color:#f7fbf8}
+.app-world-form-control.app-world-form-w .app-world-form-glyph{background:#237c59}
+.app-world-form-control.app-world-form-d .app-world-form-glyph{background:#667b82}
+.app-world-form-control.app-world-form-l .app-world-form-glyph{background:#98504d}
+.app-world-form-control.app-world-form-last{outline:0}
+.app-world-form-control.app-world-form-last .app-world-form-glyph{box-shadow:0 0 0 2px var(--focus)}
+.app-world-form-control:focus-visible{outline:2px solid var(--focus);outline-offset:1px;background:var(--surface-raised)}
+.app-world-form-control:focus-visible .app-world-form-glyph{box-shadow:none}
 /* Viewport-scaled, content-independent 155:64 border-box proportions. */
 .app-world-form-tooltip{--app-form-tooltip-width:clamp(240px,80vw,350px);position:fixed;z-index:80;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;gap:clamp(5px,1.8vw,8px);width:var(--app-form-tooltip-width);height:calc(var(--app-form-tooltip-width) * 0.4129032258064516);aspect-ratio:155/64;overflow:hidden;pointer-events:none;padding:clamp(9px,3vw,13.5px) clamp(10px,3.4vw,15.8px);border:1px solid #537369;border-radius:clamp(9px,3.1vw,13px);background:#142b2e;color:#f2f7f4;box-shadow:0 16px 40px rgba(0,0,0,.38);font-size:clamp(10px,2.8vw,12.5px);line-height:1.4;animation:app-world-tooltip-in 170ms ease-out both}
 .app-world-form-tooltip[hidden]{display:none}
@@ -283,6 +295,7 @@ html{scroll-padding-top:72px}
 .app-world-mobile-points{grid-area:points;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border-radius:7px;background:#26473e;color:#effff4;font-size:16px;font-weight:850;font-variant-numeric:tabular-nums}
 .app-world-mobile-form{grid-area:form;display:flex;align-items:center;gap:3px;min-width:0}
 .app-world-mobile-form .app-world-form-dot{width:16px;height:16px;cursor:default}
+.app-world-mobile-form .app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}
 .app-world-mobile-no-form{font-size:13px;color:var(--muted)}
 .app-world-mobile-panel{padding:6px 9px}
 .app-world-mobile-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0}
