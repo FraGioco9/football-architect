@@ -43,9 +43,9 @@ test("simple concept guide has only Divisions and Clubs",()=>{
   assert.doesNotMatch(js,/fetch\(|querySelectorAll\("\.club/);
 });
 test("division and club definitions follow documented design scope",()=>{
-  assert.equal(source.countries.length,8);
-  assert.equal(source.divisions.length,16);
-  assert.ok(source.divisions.every(d=>d.capacity===16&&[1,2].includes(d.tier)));
+  assert.equal(new Set(source.map(d=>d.countryId)).size,8);
+  assert.equal(source.length,16);
+  assert.ok(source.every(d=>d.capacity===16&&[1,2].includes(d.tier)));
   assert.equal(clubs.length,320);
   assert.ok(clubs.every(c=>/^[A-Z]{3}$/.test(c.abbr)));
 });

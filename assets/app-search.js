@@ -63,7 +63,7 @@
       return {kind,label,detail,href,score};
     }), ...divisionEntries.map(item => {
       const label = item.name;
-      const detail = [item.id,item.countryId,item.country.en,item.country.it].join(" ");
+      const detail = [item.id,item.countryId,item.countryName].join(" ");
       const name = fold(label);
       const searchable = fold(label + " " + detail);
       const score = !query ? 0 : name === query || fold(item.id) === query ? 4
@@ -213,17 +213,20 @@
         return response.json();
       })
       .then(catalogue => {
-        if (!catalogue || catalogue.countries?.length !== 8 || catalogue.divisions?.length !== 16) return;
-        const countries = new Map(catalogue.countries.map(country => [country.id,country]));
-        const ids = new Set();
-        const valid = catalogue.divisions.every(item => {
+        if (!Array.isArray(catalogue) || catalogue.length !== 16) return;
+        const ids = new Set(), countries = new Set();
+        const valid = catalogue.every(item => {
           if (!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(item.id) ||
-              ids.has(item.id) || !countries.has(item.countryId) || typeof item.name !== "string") return false;
+              item.id !== item.countryId + "-" + item.tier ||
+              ![1,2].includes(item.tier) || item.capacity !== 16 ||
+              ids.has(item.id) || typeof item.countryName !== "string" || !item.countryName ||
+              typeof item.flagAsset !== "string" || !item.flagAsset || !Array.isArray(item.clubIds)) return false;
           ids.add(item.id);
+          countries.add(item.countryId);
           return true;
         });
-        if (!valid || ids.size !== 16) return;
-        divisionEntries.push(...catalogue.divisions.map(item => ({...item,country:countries.get(item.countryId).name})));
+        if (!valid || ids.size !== 16 || countries.size !== 8) return;
+        divisionEntries.push(...catalogue);
         if (dialog.open) render();
       })
       .catch(() => { /* Preserve normal page search when the catalogue cannot load. */ });

@@ -4,7 +4,7 @@ import {createHash} from "node:crypto";
 import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 const ROOT=fileURLToPath(new URL("../",import.meta.url));
-const CANONICAL=JSON.parse(readFileSync(new URL("../data/divisions.json",import.meta.url),"utf8")).divisions;
+const CANONICAL=JSON.parse(readFileSync(new URL("../data/divisions.json",import.meta.url),"utf8"));
 const EXPECTED=new Map(CANONICAL.map(d=>[d.id,d.id.toLowerCase()+"-"+d.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")]));
 const VARIANTS=["primary","primary-dark","compact","compact-dark"];
 const FORMATS=["png","webp"];

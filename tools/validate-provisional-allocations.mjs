@@ -5,11 +5,16 @@ export function validateProvisionalAllocations(manifest,divisionData,clubData){
   check(manifest?.schema==="football-architect-provisional-division-allocation-v1","unexpected schema");
   check(manifest.status==="provisional"&&manifest.approved===false,"allocation must remain provisional");
   check(manifest.sources?.clubs==="data/clubs.json"&&manifest.sources?.divisions==="data/divisions.json","source catalogues changed");
-  check(divisionData?.implementedGame===false,"gameplay must not be enabled");
-  const countries=divisionData?.countries,divisions=divisionData?.divisions,clubs=clubData?.clubs;
+  const divisions=divisionData,clubs=clubData?.clubs;
   const expectedCountries=["IT","ENG","ES","DE","FR","PT","NL","BR"];
-  check(Array.isArray(countries)&&countries.length===8&&new Set(countries.map(c=>c.id)).size===8&&expectedCountries.every(id=>countries.some(c=>c.id===id)),"unexpected countries");
-  check(Array.isArray(divisions)&&divisions.length===16,"expected 16 divisions");
+  check(Array.isArray(divisions)&&divisions.length===16,"expected flat 16-division registry");
+  const countries=[...new Set(divisions.map(d=>d.countryId))];
+  check(countries.length===8&&new Set(countries).size===8&&expectedCountries.every(id=>countries.includes(id)),"unexpected countries");
+  check(divisions.every(d=>Array.isArray(d.clubIds)&&d.clubIds.length===0),"canonical participants must remain unset");
+  for(const countryId of expectedCountries){
+    const national=divisions.filter(d=>d.countryId===countryId);
+    check(national.length===2&&new Set(national.map(d=>d.countryName)).size===1&&new Set(national.map(d=>d.flagAsset)).size===1,"inconsistent country metadata "+countryId);
+  }
   check(Array.isArray(clubs)&&clubs.length===320,"expected 320 identities");
   check(Array.isArray(manifest.allocations)&&manifest.allocations.length===16,"expected 16 allocations");
   const byClub=new Map(),byDivision=new Map(),seen=new Set(),excluded=new Set();
