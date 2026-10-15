@@ -26,21 +26,40 @@ const validPath = location.pathname.match(DETAIL);
 function isPreviewEnabled() {
  try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}
 }
+let activePreview=null;
+let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
- try {
-  if(enabled)sessionStorage.setItem(FLAG,"on");
-  else sessionStorage.removeItem(FLAG);
- }catch{return false}
- location.reload();
- return true;
+ transition=transition.catch(()=>false).then(async()=>{
+  if(enabled===!!activePreview)return true;
+  if(enabled){
+   const cleanup=await boot(validPath[1].toUpperCase());
+   if(typeof cleanup!=="function")return false;
+   try{sessionStorage.setItem(FLAG,"on")}
+   catch(error){cleanup();console.error("DEV preview storage unavailable:",error);return false}
+   activePreview=cleanup;
+   return true;
+  }
+  try{sessionStorage.removeItem(FLAG)}
+  catch(error){console.error("DEV preview storage unavailable:",error);return false}
+  activePreview();
+  activePreview=null;
+  return true;
+ });
+ return transition;
 }
+
 if(validPath){
  waitForRows().then(() => {
   createDebugWidget({controls:[{
    type:"switch",id:"fictional-standings",label:"Fictional standings",
    checked:isPreviewEnabled,onChange:setPreviewEnabled
   }]});
-  if(isPreviewEnabled())boot(validPath[1].toUpperCase());
+  if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
+   if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
+    const input=document.querySelector('[data-dev-control="fictional-standings"]');
+    if(input)input.checked=false;
+   }
+  });
  }).catch(error => {
   console.error("DEV Debug unavailable:", error);
  });
@@ -145,6 +164,13 @@ async function boot(routeId) {
 
     const caption = document.getElementById("app-standings-caption");
     if(!caption)throw Error("Missing standings caption");
+    const canonicalRows=[...tbody.childNodes];
+    const mobileList=document.getElementById("app-standings-compact-list");
+    if(!mobileList)throw Error("Mobile standings list unavailable");
+    const canonicalMobile=[...mobileList.childNodes];
+    const captionI18n=caption.getAttribute("data-app-i18n");
+    const captionText=caption.textContent;
+    const listeners=new AbortController();
     const tooltip = node("div", "app-world-form-tooltip");
     tooltip.setAttribute("role", "tooltip");
     tooltip.id = "fa-dev-form-tooltip";
@@ -180,7 +206,9 @@ async function boot(routeId) {
         tooltip.className = "app-world-form-tooltip is-closing";
       }
     }
-    tooltip.addEventListener("animationend", e => {
+    const listen=(target,type,handler,options={})=>
+      target?.addEventListener(type,handler,{...options,signal:listeners.signal});
+    listen(tooltip,"animationend", e => {
       if (e.target === tooltip && e.animationName === "app-world-tooltip-out" && !active) {
         tooltip.hidden = true;
         tooltip.className = "app-world-form-tooltip";
@@ -230,6 +258,20 @@ async function boot(routeId) {
       translate();
       place();
     }
+    const languageObserver=new MutationObserver(translate);
+    let committed=false;
+    function restore(){
+      listeners.abort();languageObserver.disconnect();tooltip.remove();
+      if(!committed)return;
+      tbody.replaceChildren(...canonicalRows);
+      mobileList.replaceChildren(...canonicalMobile);
+      if(captionI18n===null)caption.removeAttribute("data-app-i18n");
+      else caption.setAttribute("data-app-i18n",captionI18n);
+      caption.textContent=captionText;
+      window.faAppRenderLanguage?.();
+    }
+    try {
+    committed=true;
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
     commitMobile();
@@ -237,42 +279,42 @@ async function boot(routeId) {
     window.faAppRenderLanguage?.();
     document.body.appendChild(tooltip);
     translate();
-    new MutationObserver(translate).observe(document.documentElement, {
+    languageObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
     for (const entry of entries) {
       const btn = entry.button;
-      btn.addEventListener("pointerenter", e => {
+      listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
       });
-      btn.addEventListener("pointerleave", e => {
+      listen(btn,"pointerleave", e => {
         if ((e.pointerType === "mouse" || e.pointerType === "pen") &&
             active === entry && document.activeElement !== btn) close();
       });
-      btn.addEventListener("focus", () => open(entry));
-      btn.addEventListener("blur", () => { if (active === entry) close(); });
-      btn.addEventListener("pointerdown", e => {
+      listen(btn,"focus", () => open(entry));
+      listen(btn,"blur", () => { if (active === entry) close(); });
+      listen(btn,"pointerdown", e => {
         pressedWhenOpen = (e.pointerType === "touch" || e.pointerType === "pen") &&
           active === entry;
       });
-      btn.addEventListener("click", () => {
+      listen(btn,"click", () => {
         if (pressedWhenOpen && active === entry) close();
         else open(entry);
         pressedWhenOpen = false;
       });
     }
-    document.addEventListener("pointerdown", e => {
+    listen(document,"pointerdown", e => {
       if (active && !tooltip.contains(e.target) && e.target !== active.button) close();
     });
-    document.addEventListener("keydown", e => {
+    listen(document,"keydown", e => {
       if (e.key === "Escape" && active) { close(); e.stopPropagation(); }
     });
-    window.addEventListener("resize", place);
-    window.addEventListener("scroll", place, { passive: true });
-    document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll", place,
-      { passive: true });
-    document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll", place,
-      { passive: true });
+    listen(window,"resize", place);
+    listen(window,"scroll", place, { passive: true });
+    listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
+    listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
+    return restore;
+    } catch(error){restore();throw error}
   } catch (error) {
     // Fail closed: do not disclose partial standings or mutate canonical sources.
     console.error("Standings DEV Preview unavailable:", error);

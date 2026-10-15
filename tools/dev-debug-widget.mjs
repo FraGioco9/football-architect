@@ -17,6 +17,10 @@ export function createDebugWidget({controls=[]}={}) {
   ".fa-dev-widget-button{width:48px;height:48px;border:1px solid #498a7c;border-radius:50%;",
   "background:#184d46;color:#fff;font-size:23px;cursor:grab;touch-action:none;user-select:none;",
   "box-shadow:0 5px 20px #0005}",
+  ".fa-dev-widget-button:hover{background:#21665b;border-color:#8ee5c5}",
+  'html[data-theme="light"] .fa-dev-widget-button{background:#e5f4ee;color:#174a40;border-color:#398674}',
+  'html[data-theme="light"] .fa-dev-widget-button:hover{background:#cce9de;border-color:#256d5b}',
+  'html[data-theme="light"] .fa-dev-widget-panel{background:#fff;color:#18332d;border-color:#9cbdb3}',
   ".fa-dev-widget-button:active{cursor:grabbing}",
   ".fa-dev-widget-button:focus-visible,.fa-dev-widget-panel input:focus-visible{outline:2px solid #8ee5c5;outline-offset:3px}",
   ".fa-dev-widget-panel{position:absolute;width:240px;padding:13px;border:1px solid #568378;",
@@ -27,7 +31,8 @@ export function createDebugWidget({controls=[]}={}) {
   ".fa-dev-widget-option input{accent-color:#47b58d;width:20px;height:20px;flex-shrink:0}"
  ].join("");
  const root=element("div","fa-dev-widget");
- const button=element("button","fa-dev-widget-button","⚙");
+ const button=element("button","fa-dev-widget-button");
+ button.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h4m4 0h8M4 17h10m4 0h2"/><circle cx="10" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></svg>';
  button.type="button";
  button.setAttribute("aria-label","Debug Settings");
  button.setAttribute("aria-expanded","false");
@@ -48,8 +53,12 @@ export function createDebugWidget({controls=[]}={}) {
   input.dataset.devControl=control.id;
   input.checked=typeof control.checked==="function"?
    !!control.checked():!!control.checked;
-  input.addEventListener("change",()=>{
-   if(control.onChange(input.checked)===false)input.checked=!input.checked;
+  input.addEventListener("change",async()=>{
+   const desired=input.checked;
+   input.disabled=true;
+   try { if(await control.onChange(desired)===false)input.checked=!desired; }
+   catch(error){input.checked=!desired;console.error("DEV Debug transition failed:",error)}
+   finally {input.disabled=false}
   });
   row.append(input);
   panel.append(row);

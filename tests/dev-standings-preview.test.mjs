@@ -339,13 +339,31 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       waitForRows: () => hydration,
       createDebugWidget: () => { operations.push("widget"); signalMounted(); },
       isPreviewEnabled: () => enabled,
-      setPreviewEnabled: () => true,
+      setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
       boot: division => operations.push("boot:" + division),
       console: { error: error => { throw error; } }
     });
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
     await widgetMounted;
-    assert.deepEqual(operations, enabled ? ["widget", "boot:IT-1"] : ["widget"]);
+    assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
   }
+});
+
+test("UX-02..08: DEV switch lifecycle and rollback contracts",()=>{
+ assert.ok(!client.includes("location.reload()"));
+ assert.ok(client.includes("transition=transition.catch(()=>false).then(async()=>"));
+ assert.ok(client.includes("activePreview=cleanup"));
+ assert.ok(client.includes("return restore"));
+ assert.ok(client.includes("tbody.replaceChildren(...canonicalRows)"));
+ assert.ok(client.includes("mobileList.replaceChildren(...canonicalMobile)"));
+ assert.ok(client.includes("languageObserver.disconnect()"));
+ assert.ok(client.includes("listeners.abort()"));
+ assert.ok(client.includes("signal:listeners.signal"));
+ assert.ok(client.includes("sessionStorage.setItem(FLAG"));
+ assert.ok(client.includes("sessionStorage.removeItem(FLAG"));
+ assert.ok(widget.includes("input.disabled=true"));
+ assert.ok(widget.includes("await control.onChange(desired)"));
+ assert.ok(widget.includes('html[data-theme="light"]'));
+ assert.ok(widget.includes("<svg"));
 });
