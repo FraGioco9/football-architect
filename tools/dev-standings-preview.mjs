@@ -126,7 +126,12 @@ export function createPreviewServer({ root = ROOT } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.length !== 2) throw Error("DEV preview server accepts no CLI flags");
   createPreviewServer().listen(PORT, HOST, () => {
-    process.stdout.write("Standings DEV preview: http://" + HOST + ":" + PORT +
-      "/app/competitions/it-1/\n");
+    const addresses = LAN_ENABLED
+      ? Object.values(networkInterfaces()).flatMap(items => items || [])
+        .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
+        .map(item => "http://" + item.address + ":" + PORT + "/app/competitions/it-1/")
+      : ["http://" + LOOPBACK + ":" + PORT + "/app/competitions/it-1/"];
+    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):\\n" +
+      addresses.join("\\n") + "\\n");
   });
 }
