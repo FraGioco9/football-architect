@@ -339,6 +339,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       waitForRows: () => hydration,
       createDebugWidget: () => { operations.push("widget"); signalMounted(); },
       isPreviewEnabled: () => enabled,
+      setPreviewEnabled: () => true,
       boot: division => operations.push("boot:" + division),
       console: { error: error => { throw error; } }
     });
