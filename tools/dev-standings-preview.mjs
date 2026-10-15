@@ -35,7 +35,7 @@ function ipv4(value) {
   if (typeof value !== "string") return null;
   const normalized = value.startsWith("::ffff:") ? value.slice(7) : value;
   const parts = normalized.split(".");
-  if (parts.length !== 4 || parts.some(part => !/^\\d{1,3}$/.test(part) || Number(part) > 255)) return null;
+  if (parts.length !== 4 || parts.some(part => part.length > 3 || !Number.isInteger(Number(part)) || Number(part) < 0 || Number(part) > 255)) return null;
   return parts.map(Number).join(".");
 }
 function isPrivateIPv4(value) {
@@ -131,7 +131,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
         .map(item => "http://" + item.address + ":" + PORT + "/app/competitions/it-1/")
       : ["http://" + LOOPBACK + ":" + PORT + "/app/competitions/it-1/"];
-    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):\\n" +
-      addresses.join("\\n") + "\\n");
+    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):" + String.fromCharCode(10) +
+      addresses.join(String.fromCharCode(10)) + String.fromCharCode(10));
   });
 }
