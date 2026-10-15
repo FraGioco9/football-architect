@@ -436,7 +436,9 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
 });
 
 test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output position",()=>{
- assert.ok(widget.includes('row.append(input,number)'));
+ assert.ok(widget.includes('row.append(input,numberWrap)'));
+ assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
+ assert.ok(widget.includes('class","fa-dev-number-arrow")'));
  assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
  assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
