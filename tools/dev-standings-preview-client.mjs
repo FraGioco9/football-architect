@@ -1,42 +1,143 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
 import { createPreviewStandings } from "./standings-data.mjs";
+import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
+const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
+function readMatchdays(){
+ try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 15;
+  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=30?value:15;
+ }catch{return 15}
+}
+let matchdays=readMatchdays();
+async function setMatchdays(value){
+ if(!Number.isInteger(value)||value<0||value>30)return false;
+ const old=matchdays;if(value===old)return true;
+ if(previewState==="ERROR")return false;
+ try{sessionStorage.setItem(ROUNDS_KEY,String(value))}catch{return false}
+ matchdays=value;
+ if(previewState==="ON"){
+  const previous=activePreview;
+  const replacement=await boot(validPath[1].toUpperCase());
+  if(typeof replacement!=="function"){
+   matchdays=old;try{sessionStorage.setItem(ROUNDS_KEY,String(old))}catch{}
+   return false;
+  }
+  activePreview=()=>{try{replacement()}finally{previous()}};
+ }
+ const slider=document.querySelector('[data-dev-control="matchdays"]');
+ if(slider){slider.value=String(matchdays);slider.dataset.previous=String(matchdays);const output=slider.parentElement?.querySelector("output");if(output)output.textContent=String(matchdays)}
+ return true;
+}
+async function resetPreview(){
+ if(previewState!=="OFF" && !await setPreviewEnabled(false))return false;
+ try{sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
+ matchdays=15;
+ const input=document.querySelector('[data-dev-control="fictional-standings"]');
+ const select=document.querySelector('[data-dev-control="matchdays"]');
+ if(input)input.checked=false;
+ if(select){select.value="15";select.dataset.previous="15";const output=select.parentElement?.querySelector("output");if(output)output.textContent="15";if(select.parentElement)select.parentElement.hidden=true}
+ return true;
+}
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
 const LANG = {
-  en: { badge: "DEV PREVIEW — fictional results", exit: "Exit preview", round: "Matchday",
+  en: { round: "Matchday",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
-    recent: "latest match", caption: "Fictional local development standings and recent form." },
-  de: { badge: "DEV-VORSCHAU — fiktive Ergebnisse", exit: "Vorschau beenden", round: "Spieltag",
+    recent: "latest match" },
+  de: { round: "Spieltag",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
-    recent: "letztes Spiel", caption: "Fiktive lokale Entwicklungstabelle und Form." },
-  es: { badge: "VISTA DEV — resultados ficticios", exit: "Cerrar vista previa", round: "Jornada",
+    recent: "letztes Spiel" },
+  es: { round: "Jornada",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
-    recent: "último partido", caption: "Clasificación local ficticia de desarrollo y forma reciente." },
-  fr: { badge: "APERÇU DEV — résultats fictifs", exit: "Quitter l'aperçu", round: "Journée",
+    recent: "último partido" },
+  fr: { round: "Journée",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
-    recent: "dernier match", caption: "Classement fictif de développement local et forme récente." },
-  it: { badge: "ANTEPRIMA DEV — risultati fittizi", exit: "Esci dall'anteprima", round: "Giornata",
+    recent: "dernier match" },
+  it: { round: "Giornata",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
-    recent: "ultima partita", caption: "Classifica fittizia locale di sviluppo e forma recente." }
+    recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
-const params = new URLSearchParams(location.search);
-const toggle = params.get("standingsPreview");
-if (validPath && (toggle === "on" || toggle === "off")) {
-  try {
-    if (toggle === "on") sessionStorage.setItem(FLAG, "on");
-    else sessionStorage.removeItem(FLAG);
-  } catch { /* Unavailable storage is fail-closed. */ }
-  params.delete("standingsPreview");
-  const query = params.toString();
-  history.replaceState(history.state, "", location.pathname +
-    (query ? "?" + query : "") + location.hash);
+function isPreviewEnabled() {
+ try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}
 }
-let enabled = false;
-try { enabled = sessionStorage.getItem(FLAG) === "on"; } catch { /* fail closed */ }
-if (validPath && enabled) boot(validPath[1].toUpperCase());
+let activePreview=null;
+let previewState="OFF";
+let transition=Promise.resolve();
+function setPreviewEnabled(enabled) {
+ transition=transition.catch(()=>false).then(async()=>{
+  if(previewState==="ERROR"){
+   try{activePreview()}
+   catch(error){console.error("DEV preview retry restore failed:",error);return false}
+   try{sessionStorage.removeItem(FLAG)}
+   catch(error){console.error("DEV preview retry storage failed:",error);return false}
+   activePreview=null;
+   previewState="OFF";
+   if(!enabled)return true;
+  }
+  if(enabled===(previewState==="ON"))return true;
+  if(enabled){
+   const cleanup=await boot(validPath[1].toUpperCase());
+   if(typeof cleanup!=="function")return false;
+   try{sessionStorage.setItem(FLAG,"on")}
+   catch(error){
+    try{cleanup()}
+    catch(restoreError){
+     activePreview=cleanup;
+     previewState="ERROR";
+     console.error("DEV preview rollback failed:",restoreError);
+    }
+    console.error("DEV preview storage unavailable:",error);
+    return false;
+   }
+   activePreview=cleanup;
+   previewState="ON";
+   return true;
+  }
+  // Reject OFF without changing the DOM if persistence is unavailable.
+  try{sessionStorage.removeItem(FLAG)}
+  catch(error){console.error("DEV preview storage unavailable:",error);return false}
+  try{activePreview()}
+  catch(error){
+   previewState="ERROR";
+   console.error("DEV preview restore failed:",error);
+   try{sessionStorage.setItem(FLAG,"on")}
+   catch(storageError){console.error("DEV preview rollback storage failed:",storageError)}
+   return false;
+  }
+  activePreview=null;
+  previewState="OFF";
+  return true;
+ });
+ return transition;
+}
+
+if(validPath){
+ waitForRows().then(() => {
+  registerDebugControls("standings",[{
+   type:"switch",id:"fictional-standings",label:"Fictional standings",
+   checked:isPreviewEnabled,onChange:setPreviewEnabled
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
+    value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
+    {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
+  let widgetRoot;
+  registerDebugControls("general",[{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
+   if(!await resetPreview())return false;
+   return widgetRoot?.resetWidgetState()===true;
+  }}]);
+  widgetRoot=createDebugWidget({page:"standings"});
+  if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
+   widgetRoot?.syncVisibility();
+  if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
+    const input=document.querySelector('[data-dev-control="fictional-standings"]');
+    if(input)input.checked=false;
+   }
+  });
+ }).catch(error => {
+  console.error("DEV Debug unavailable:", error);
+ });
+}
 
 function strings() { return LANG[document.documentElement.lang] || LANG.en; }
 function node(tag, className = "", value = "") {
@@ -82,7 +183,7 @@ async function boot(routeId) {
     }
     const division = manifest.divisions.find(d => d.id === routeId);
     if (!division) throw Error("Unknown DEV division");
-    const { rows, clubs } = createPreviewStandings(division);
+    const { rows, clubs } = createPreviewStandings(division,matchdays);
     const tbody = await waitForRows();
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
@@ -127,7 +228,7 @@ async function boot(routeId) {
       tr.append(formCell);
       fragment.append(tr);
     });
-    if (entries.length !== 80 || fragment.childNodes.length !== 16) {
+    if (entries.length !== 16*Math.min(5,matchdays) || fragment.childNodes.length !== 16) {
       throw Error("Incomplete DEV standings rendering");
     }
     // Prepare mobile from the validated fixture model before changing the table.
@@ -136,25 +237,14 @@ async function boot(routeId) {
     const commitMobile = mobile.prepare(rows);
 
     const caption = document.getElementById("app-standings-caption");
-    if (!caption) throw Error("Missing standings caption");
-    const toolbar = node("div", "fa-dev-preview-toolbar");
-    const badge = node("strong", "fa-dev-preview-label");
-    const exit = node("button", "fa-dev-preview-exit");
-    exit.type = "button";
-    toolbar.append(badge, exit);
-    const style = node("style");
-    style.textContent = `
-      .fa-dev-preview-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;
-        margin:0 0 12px;padding:9px 12px;border:1px solid #537369;border-radius:10px;
-        background:#193438;color:#f2f7f4;font-size:12px}
-      .fa-dev-preview-label{letter-spacing:.03em}
-      .fa-dev-preview-exit{border:1px solid #759a8c;border-radius:6px;background:transparent;
-        color:inherit;padding:5px 9px;font:inherit;cursor:pointer}
-      .fa-dev-preview-exit:focus-visible{outline:2px solid #b9e6d5;outline-offset:2px}
-    `;
-    const parent = document.querySelector(".app-world-standings");
-    if (!parent) throw Error("Missing standings layout");
-
+    if(!caption)throw Error("Missing standings caption");
+    const canonicalRows=[...tbody.childNodes];
+    const mobileList=document.getElementById("app-standings-compact-list");
+    if(!mobileList)throw Error("Mobile standings list unavailable");
+    const canonicalMobile=[...mobileList.childNodes];
+    const captionI18n=caption.getAttribute("data-app-i18n");
+    const captionText=caption.textContent;
+    const listeners=new AbortController();
     const tooltip = node("div", "app-world-form-tooltip");
     tooltip.setAttribute("role", "tooltip");
     tooltip.id = "fa-dev-form-tooltip";
@@ -190,7 +280,9 @@ async function boot(routeId) {
         tooltip.className = "app-world-form-tooltip is-closing";
       }
     }
-    tooltip.addEventListener("animationend", e => {
+    const listen=(target,type,handler,options={})=>
+      target?.addEventListener(type,handler,{...options,signal:listeners.signal});
+    listen(tooltip,"animationend", e => {
       if (e.target === tooltip && e.animationName === "app-world-tooltip-out" && !active) {
         tooltip.hidden = true;
         tooltip.className = "app-world-form-tooltip";
@@ -215,9 +307,6 @@ async function boot(routeId) {
     }
     function translate() {
       const t = strings();
-      badge.textContent = t.badge;
-      exit.textContent = t.exit;
-      caption.textContent = t.caption;
       for (const entry of entries) {
         entry.button.setAttribute("aria-label", t[entry.game.result] +
           (entry.latest ? " — " + t.recent : ""));
@@ -243,53 +332,74 @@ async function boot(routeId) {
       translate();
       place();
     }
+    const languageObserver=new MutationObserver(translate);
+    let committed=false;
+    let restored=false;
+    function restore(){
+      if(restored)return;
+      const failures=[];
+      const attempt=fn=>{try{fn()}catch(error){failures.push(error)}};
+      attempt(()=>listeners.abort());
+      attempt(()=>languageObserver.disconnect());
+      attempt(()=>tooltip.remove());
+      if(committed){
+       attempt(()=>tbody.replaceChildren(...canonicalRows));
+       attempt(()=>mobileList.replaceChildren(...canonicalMobile));
+       attempt(()=>{
+        if(captionI18n===null)caption.removeAttribute("data-app-i18n");
+        else caption.setAttribute("data-app-i18n",captionI18n);
+        caption.textContent=captionText;
+       });
+       attempt(()=>window.faAppRenderLanguage?.());
+      }
+      if(failures.length)throw new AggregateError(failures,"DEV standings restore incomplete");
+      restored=true;
+    }
+    try {
+    committed=true;
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
     commitMobile();
-    parent.before(toolbar);
-    document.head.appendChild(style);
+    caption.dataset.appI18n="standingsFilledCaption";
+    window.faAppRenderLanguage?.();
     document.body.appendChild(tooltip);
     translate();
-    exit.addEventListener("click", () => {
-      try { sessionStorage.removeItem(FLAG); } catch { /* local only */ }
-      location.reload();
-    });
-    new MutationObserver(translate).observe(document.documentElement, {
+    languageObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
     for (const entry of entries) {
       const btn = entry.button;
-      btn.addEventListener("pointerenter", e => {
+      listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
       });
-      btn.addEventListener("pointerleave", e => {
+      listen(btn,"pointerleave", e => {
         if ((e.pointerType === "mouse" || e.pointerType === "pen") &&
             active === entry && document.activeElement !== btn) close();
       });
-      btn.addEventListener("focus", () => open(entry));
-      btn.addEventListener("blur", () => { if (active === entry) close(); });
-      btn.addEventListener("pointerdown", e => {
+      listen(btn,"focus", () => open(entry));
+      listen(btn,"blur", () => { if (active === entry) close(); });
+      listen(btn,"pointerdown", e => {
         pressedWhenOpen = (e.pointerType === "touch" || e.pointerType === "pen") &&
           active === entry;
       });
-      btn.addEventListener("click", () => {
+      listen(btn,"click", () => {
         if (pressedWhenOpen && active === entry) close();
         else open(entry);
         pressedWhenOpen = false;
       });
     }
-    document.addEventListener("pointerdown", e => {
+    listen(document,"pointerdown", e => {
       if (active && !tooltip.contains(e.target) && e.target !== active.button) close();
     });
-    document.addEventListener("keydown", e => {
+    listen(document,"keydown", e => {
       if (e.key === "Escape" && active) { close(); e.stopPropagation(); }
     });
-    window.addEventListener("resize", place);
-    window.addEventListener("scroll", place, { passive: true });
-    document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll", place,
-      { passive: true });
-    document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll", place,
-      { passive: true });
+    listen(window,"resize", place);
+    listen(window,"scroll", place, { passive: true });
+    listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
+    listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
+    return restore;
+    } catch(error){restore();throw error}
   } catch (error) {
     // Fail closed: do not disclose partial standings or mutate canonical sources.
     console.error("Standings DEV Preview unavailable:", error);

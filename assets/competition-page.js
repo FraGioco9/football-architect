@@ -121,7 +121,7 @@
         const id = club?.countryId + "-" + club?.clubId;
         if (!club || !(club.primaryName || club.abbr) || !Number.isInteger(club.clubId) ||
             identities.has(id) || !club.countryId || !Array.isArray(row.recent) ||
-            (row.recent.length !== 0 && row.recent.length !== 5))
+            row.recent.length !== Math.min(5,row.played))
           throw Error("Invalid mobile standings identity or form");
         identities.add(id);
         const li = element("li","app-world-mobile-item");

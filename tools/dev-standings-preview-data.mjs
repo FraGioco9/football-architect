@@ -35,8 +35,9 @@ function randomSource(key) {
   };
 }
 
-export function createPreviewStandings(division) {
+export function createPreviewStandings(division, matchdays = 15) {
   assertDivision(division);
+  if (!Number.isInteger(matchdays) || matchdays < 0 || matchdays > 30) throw Error("Invalid DEV matchday count");
   const clubs = [...division.clubs].sort((a, b) => a.clubId - b.clubId);
   const random = randomSource("FA-STANDINGS-DEV-v" + PREVIEW_SCHEMA_VERSION + ":" +
     division.id + ":" + clubs.map(c => c.clubId).join(","));
@@ -60,7 +61,13 @@ export function createPreviewStandings(division) {
       const awayGoals = Math.floor(random() * 5);
       const fixture = { round, homeId, awayId, homeGoals, awayGoals };
       fixtures.push(fixture);
-
+      fixtures.push({round:round+15,homeId:awayId,awayId:homeId,
+        homeGoals:Math.floor(random()*5),awayGoals:Math.floor(random()*5)});
+    }
+    rotation.splice(1, 0, rotation.pop());
+  }
+  for (const fixture of fixtures.filter(game=>game.round<=matchdays)) {
+      const {homeId,awayId,homeGoals,awayGoals}=fixture;
       const h = byId.get(homeId), v = byId.get(awayId);
       h.played++; v.played++;
       h.gf += homeGoals; h.ga += awayGoals;
@@ -72,23 +79,20 @@ export function createPreviewStandings(division) {
       else { h.drawn++; v.drawn++; }
       h.recent.push({ ...fixture, result: homeForm, isHome: true });
       v.recent.push({ ...fixture, result: awayForm, isHome: false });
-    }
-    // Circle scheduling with one fixed participant: every unordered pair once.
-    rotation.splice(1, 0, rotation.pop());
   }
   const rows = [...byId.values()].map(row => {
     row.gd = row.gf - row.ga;
     row.pts = 3 * row.won + row.drawn;
     row.recent = row.recent.slice(-5).reverse();
-    if (row.played !== 15 || row.won + row.drawn + row.lost !== 15 ||
-        row.recent.length !== 5) throw Error("Incomplete DEV club results");
+    if (row.played !== matchdays || row.won + row.drawn + row.lost !== matchdays ||
+        row.recent.length !== Math.min(5,matchdays)) throw Error("Incomplete DEV club results");
     return row;
   }).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf ||
     a.club.clubId - b.club.clubId);
-  if (fixtures.length !== 120 || pairings.size !== 120 || rows.length !== 16 ||
+  if (fixtures.length !== 240 || pairings.size !== 120 || rows.length !== 16 ||
       rows.reduce((n, x) => n + x.gf, 0) !== rows.reduce((n, x) => n + x.ga, 0) ||
       rows.reduce((n, x) => n + x.won, 0) !== rows.reduce((n, x) => n + x.lost, 0)) {
     throw Error("Unbalanced DEV fixture model");
   }
-  return { divisionId: division.id, rows, fixtures, clubs };
+  return { divisionId: division.id, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs };
 }

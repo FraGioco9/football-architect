@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
+import { runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -20,8 +21,10 @@ const read = path => readFileSync(new URL(path, ROOT));
 const manifest = JSON.parse(read("app/competitions/_shared/manifest.json"));
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const client = read("tools/dev-standings-preview-client.mjs").toString();
+const widget = read("tools/dev-debug-widget.mjs").toString();
 const serverSource = read("tools/dev-standings-preview.mjs").toString();
 const clientName = "/__fa_dev__/standings-client.mjs";
+const widgetName = "/__fa_dev__/debug-widget.mjs";
 const dataName = "/__fa_dev__/standings-data.mjs";
 const allIds = manifest.divisions.map(d => d.id);
 
@@ -95,7 +98,7 @@ test("DEV-LEAGUES: deterministic complete 16x16 standings and 1,920 DEV fixture 
 });
 
 test("DEV-GATE-01: published artifact excludes all preview sources and private fixtures", () => {
-  const preview = ["tools/dev-standings-preview.mjs",
+  const preview = ["tools/dev-debug-widget.mjs","tools/dev-standings-preview.mjs",
     "tools/dev-standings-preview-client.mjs","tools/dev-standings-preview-data.mjs",
     "tests/dev-standings-preview.test.mjs","tests/fixtures/it-1-demo.mjs"];
   for (const path of preview) assert.equal(isAllowlistedPublicPath(path), false, path);
@@ -122,7 +125,7 @@ test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchange
   for (const division of manifest.divisions) createPreviewStandings(division);
   assert.deepEqual(files.map(f => hash(read(f))), before);
   assert.equal(manifest.approved, false);
-  const privateClient = client + serverSource;
+  const privateClient = client + serverSource + widget;
   assert.ok(privateClient.includes("sessionStorage"));
   assert.ok(!/\blocalStorage\b|\bindexedDB\b/.test(privateClient));
   assert.ok(!/\bwriteFile(?:Sync)?\b|\bappendFile(?:Sync)?\b/.test(privateClient));
@@ -196,7 +199,7 @@ test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal
 
 test("DEV-GATE-01/03: only DEV responses inject private scripts; static source stays clean", async () => {
   await withServer(async get => {
-    const page = await get("/app/competitions/it-1/?standingsPreview=on");
+    const page = await get("/app/competitions/it-1/");
     assert.equal(page.status,200);
     assert.equal(page.headers["cache-control"],"no-store");
     assert.equal(page.body.split(clientName).length,2);
@@ -215,7 +218,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     assert.ok(theme.body.includes("football-architect:theme"));
     assert.ok(theme.body.includes("data-theme"));
     assert.ok(!theme.body.includes("__fa_dev__"));
-    for (const virtual of [clientName,dataName]) {
+    for (const virtual of [clientName,dataName,widgetName]) {
       const result = await get(virtual);
       assert.equal(result.status,200);
       assert.match(result.headers["content-type"],/javascript/);
@@ -228,10 +231,10 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
   });
 });
 
-test("DEV-L10N + interactions: 5 languages, 80 results, semantic tooltips and exit", () => {
+test("DEV-L10N + interactions: 5 languages, 80 results and widget", () => {
   for(const lang of ["en","de","es","fr","it"])
-    assert.match(client, new RegExp("\\b"+lang+": \\{ badge:"));
-  assert.ok(client.includes("entries.length !== 80"));
+    assert.match(client, new RegExp("\\b"+lang+": \\{ round:"));
+  assert.ok(client.includes("entries.length !== 16*Math.min(5,matchdays)"));
   assert.ok(client.includes('new MutationObserver(translate)'));
   for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
     assert.ok(client.includes('"'+event+'"'),event);
@@ -294,4 +297,117 @@ test("UX-01A integration: approved division logos and theme rebind survive mobil
   assert.equal(manifest.approved, false);
   for (const division of manifest.divisions)
     assert.equal(division.clubs.length, 16);
+});
+
+test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
+ assert.ok(widget.includes("export function createDebugWidget("));
+ assert.ok(client.includes('import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";'));
+ assert.ok(client.includes('id:"fictional-standings",label:"Fictional standings"'));
+ assert.ok(client.includes('caption.dataset.appI18n="standingsFilledCaption"'));
+ assert.ok(client.includes("window.faAppRenderLanguage?.()"));
+ assert.ok(!client.includes("standingsPreview"));
+ assert.ok(!client.includes("fa-dev-preview-toolbar"));
+ assert.ok(!client.includes("fa-dev-preview-label"));
+ assert.ok(!client.includes("fa-dev-preview-exit"));
+ for(const event of ["pointerdown","pointermove","pointerup","pointercancel",
+   "click","keydown","resize","change"]){
+  assert.ok(widget.includes('"'+event+'"'),event);
+ }
+ assert.ok(widget.includes("setPointerCapture"));
+ assert.ok(widget.includes("suppressClick"));
+ assert.ok(widget.includes('role","switch"'));
+ assert.ok(!isAllowlistedPublicPath("tools/dev-debug-widget.mjs"));
+ assert.ok(!planPublicFiles().includes("tools/dev-debug-widget.mjs"));
+});
+test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
+  const runtime = read("assets/competition-page.js").toString();
+  assert.ok(runtime.includes("document.body.innerHTML = withMobileShell(parsed.body.innerHTML)"));
+  const start = client.indexOf("if(validPath){");
+  const end = client.indexOf("\nfunction strings()", start);
+  assert.ok(start >= 0 && end > start, "DEV initialization block missing");
+  const initializer = client.slice(start, end);
+  assert.ok(initializer.includes("waitForRows().then("));
+  assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
+    initializer.indexOf("waitForRows().then(") < initializer.indexOf("createDebugWidget({controls:[{"));
+  for (const enabled of [false, true]) {
+    let hydrate, signalMounted;
+    const hydration = new Promise(resolve => { hydrate = resolve; });
+    const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
+    const operations = [];
+    runInNewContext(initializer, {
+      validPath: ["/app/competitions/it-1/", "it-1"],
+      waitForRows: () => hydration,
+      createDebugWidget: () => { operations.push("widget"); signalMounted(); },
+      registerDebugControls: () => {},
+      isPreviewEnabled: () => enabled,
+      setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
+      matchdays: 15,
+      setMatchdays: () => Promise.resolve(true),
+      resetPreview: () => Promise.resolve(true),
+      Array,
+      boot: division => operations.push("boot:" + division),
+      console: { error: error => { throw error; } }
+    });
+    assert.deepEqual(operations, [], "widget must not mount before hydration");
+    hydrate();
+    await widgetMounted;
+    assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
+  }
+});
+
+test("UX-02..08: DEV switch lifecycle and rollback contracts",()=>{
+ assert.ok(!client.includes("location.reload()"));
+ assert.ok(client.includes("transition=transition.catch(()=>false).then(async()=>"));
+ assert.ok(client.includes("activePreview=cleanup"));
+ assert.ok(client.includes("return restore"));
+ assert.ok(client.includes("tbody.replaceChildren(...canonicalRows)"));
+ assert.ok(client.includes("mobileList.replaceChildren(...canonicalMobile)"));
+ assert.ok(client.includes("languageObserver.disconnect()"));
+ assert.ok(client.includes("listeners.abort()"));
+ assert.ok(client.includes("signal:listeners.signal"));
+ assert.ok(client.includes("sessionStorage.setItem(FLAG"));
+ assert.ok(client.includes("sessionStorage.removeItem(FLAG"));
+ assert.ok(widget.includes("input.disabled=true"));
+ assert.ok(widget.includes("await control.onChange(desired)"));
+ assert.ok(widget.includes('html[data-theme="light"]'));
+ assert.ok(widget.includes("<svg"));
+});
+
+
+test("DEV modular registry and adaptive panel contracts",()=>{
+ assert.ok(widget.includes("export function registerDebugControls("));
+ assert.ok(widget.includes("export function getDebugControls("));
+ assert.ok(widget.includes("fa-dev-widget-section"));
+ assert.ok(widget.includes("fa-dev-widget-backdrop"));
+ assert.ok(widget.includes("safe-area-inset-bottom"));
+ assert.ok(widget.includes("touchend"));
+ assert.ok(widget.includes("SECTIONS_KEY"));
+ assert.ok(client.includes('id:"reset-page"'));
+ assert.ok(client.includes('id:"reset-global"'));
+ assert.ok(client.includes('registerDebugControls("standings"'));
+});
+
+
+test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
+ assert.ok(client.includes('visible:()=>previewState==="ON"'));
+ assert.ok(widget.includes('input.type="range"'));
+ for(const days of [0,1,2,3,4,30]){
+  const model=createPreviewStandings(manifest.divisions[0],days);
+  assert.equal(model.fixtures.length,days*8,"fixture count for "+days);
+  for(const row of model.rows){assert.equal(row.played,days);assert.equal(row.won+row.drawn+row.lost,days);assert.equal(row.recent.length,Math.min(5,days))}
+ }
+ assert.ok(client.includes('value:()=>matchdays,visible:()=>previewState==="ON"'));
+ assert.ok(client.includes("widgetRoot?.syncVisibility()"));
+ assert.ok(client.includes("if(select.parentElement)select.parentElement.hidden=true"));
+ assert.ok(widget.includes("root.syncVisibility=()=>"));
+ assert.ok(client.includes('activePreview=()=>{try{replacement()}finally{previous()}}'));
+ const mobileRuntime=read("assets/competition-page.js").toString();
+ assert.ok(mobileRuntime.includes("row.recent.length !== Math.min(5,row.played)"),
+  "mobile standings must accept exactly the available recent results for 1–4 matchdays");
+ for(const days of [1,2,3,4]){
+  const model=createPreviewStandings(manifest.divisions[0],days);
+  assert.ok(model.rows.every(row=>row.recent.length===days),
+   "recent form should contain "+days+" results");
+ }
 });

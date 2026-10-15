@@ -10,6 +10,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const HOST = "127.0.0.1";
 const PORT = 2000;
 const VIRTUAL = Object.freeze({
+  "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
   "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs"
 });
@@ -102,6 +103,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (process.argv.length !== 2) throw Error("DEV preview server accepts no CLI flags");
   createPreviewServer().listen(PORT, HOST, () => {
     process.stdout.write("Standings DEV preview: http://" + HOST + ":" + PORT +
-      "/app/competitions/it-1/?standingsPreview=on\n");
+      "/app/competitions/it-1/\n");
   });
 }
