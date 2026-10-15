@@ -371,3 +371,17 @@ test("UX-02..08: DEV switch lifecycle and rollback contracts",()=>{
  assert.ok(widget.includes('html[data-theme="light"]'));
  assert.ok(widget.includes("<svg"));
 });
+
+
+test("DEV modular registry and adaptive panel contracts",()=>{
+ assert.ok(widget.includes("export function registerDebugControls("));
+ assert.ok(widget.includes("export function getDebugControls("));
+ assert.ok(widget.includes("fa-dev-widget-section"));
+ assert.ok(widget.includes("fa-dev-widget-backdrop"));
+ assert.ok(widget.includes("safe-area-inset-bottom"));
+ assert.ok(widget.includes("touchend"));
+ assert.ok(widget.includes("SECTIONS_KEY"));
+ assert.ok(client.includes('id:"reset-page"'));
+ assert.ok(client.includes('id:"reset-global"'));
+ assert.ok(client.includes('registerDebugControls("standings"'));
+});

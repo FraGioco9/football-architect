@@ -1,7 +1,7 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
 import { createPreviewStandings } from "./standings-data.mjs";
-import { createDebugWidget } from "./debug-widget.mjs";
+import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
@@ -114,12 +114,18 @@ function setPreviewEnabled(enabled) {
 
 if(validPath){
  waitForRows().then(() => {
-  createDebugWidget({controls:[{
+  registerDebugControls("standings",[{
    type:"switch",id:"fictional-standings",label:"Fictional standings",
    checked:isPreviewEnabled,onChange:setPreviewEnabled
   },{type:"select",id:"matchdays",label:"Matchdays",options:Array.from({length:31},(_,i)=>i),
     value:()=>matchdays,onChange:setMatchdays},
-    {type:"button",id:"reset",label:"Reset",onChange:resetPreview}]});
+    {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
+  registerDebugControls("general",[{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
+   if(!await resetPreview())return false;
+   try{sessionStorage.removeItem("football-architect:dev-debug-widget-position");sessionStorage.removeItem("football-architect:dev-debug-sections")}catch{return false}
+   return true;
+  }}]);
+  createDebugWidget({page:"standings"});
   if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
    if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
     const input=document.querySelector('[data-dev-control="fictional-standings"]');

@@ -1,5 +1,14 @@
 // Reusable local-only Debug Settings. Loaded only by the loopback DEV server.
 const POSITION_KEY = "football-architect:dev-debug-widget-position";
+const SECTIONS_KEY = "football-architect:dev-debug-sections";
+const REGISTRY = new Map();
+export function registerDebugControls(namespace, controls) {
+ if(typeof namespace!=="string"||!namespace||!Array.isArray(controls))throw Error("Invalid DEV registry");
+ if(controls.some(c=>!c?.id||!c?.type||typeof c.onChange!=="function"))throw Error("Invalid DEV controls");
+ REGISTRY.set(namespace, controls);
+ return () => REGISTRY.delete(namespace);
+}
+export function getDebugControls(namespace) { return [...(REGISTRY.get(namespace)||[])]; }
 const EDGE = 8, SIZE = 48;
 const clamp = (value,min,max) => Math.max(min,Math.min(value,max));
 function element(tag,className,text) {
@@ -8,7 +17,8 @@ function element(tag,className,text) {
  if(text)node.textContent = text;
  return node;
 }
-export function createDebugWidget({controls=[]}={}) {
+export function createDebugWidget({controls=[],page="standings"}={}) {
+ controls=[...getDebugControls("general"),...getDebugControls(page),...controls];
  if(!Array.isArray(controls)||!controls.length)return null;
  const style=element("style");
  style.textContent=[
@@ -32,7 +42,13 @@ export function createDebugWidget({controls=[]}={}) {
   ".fa-dev-widget-option{cursor:pointer}",
   ".fa-dev-widget-option select,.fa-dev-widget-reset{cursor:pointer;background:#244c45;color:inherit;border:1px solid #568378;border-radius:6px;padding:5px}",
   "html[data-theme=\"light\"] .fa-dev-widget-option select,html[data-theme=\"light\"] .fa-dev-widget-reset{background:#e5f4ee;color:#174a40}",
-  ".fa-dev-widget-reset{width:100%;margin-top:12px}"
+  ".fa-dev-widget-reset{width:100%;margin-top:12px}",
+  ".fa-dev-widget-section{margin:8px 0;border-top:1px solid #568378;padding-top:8px}",
+  ".fa-dev-widget-section summary{cursor:pointer;font-weight:600;padding:5px 0}",
+  ".fa-dev-widget-close{display:none;cursor:pointer}",
+  ".fa-dev-widget-backdrop{display:none}",
+  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:-1}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}"
+
  ].join("");
  const root=element("div","fa-dev-widget");
  const button=element("button","fa-dev-widget-button");
@@ -46,7 +62,17 @@ export function createDebugWidget({controls=[]}={}) {
  panel.hidden=true;
  button.setAttribute("aria-controls",panel.id);
  panel.append(element("h2","fa-dev-widget-title","Debug Settings"));
+ const closeButton=element("button","fa-dev-widget-close","×");closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
+ const sections=new Map();
+ for(const [id,label] of [["general","General"],["page","Current page"]]){
+  const details=element("details","fa-dev-widget-section");details.dataset.section=id;
+  details.append(element("summary","",label));details.open=true;
+  try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");if(typeof saved[id]==="boolean")details.open=saved[id]}catch{}
+  details.addEventListener("toggle",()=>{try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");saved[id]=details.open;sessionStorage.setItem(SECTIONS_KEY,JSON.stringify(saved))}catch{}});
+  sections.set(id,details);
+ }
  for(const control of controls){
+  const target=sections.get(control.scope==="general"?"general":"page");
   if(!["switch","select","button"].includes(control.type)||!control.id||!control.label||
      typeof control.onChange!=="function")throw Error("Invalid DEV control");
   if(control.type==="button"){
@@ -57,7 +83,7 @@ export function createDebugWidget({controls=[]}={}) {
     try{await control.onChange();}catch(error){console.error("DEV Debug reset failed:",error)}
     finally{action.disabled=false}
    });
-   panel.append(action);continue;
+   target.append(action);continue;
   }
   if(control.type==="select"){
    const row=element("label","fa-dev-widget-option");
@@ -76,7 +102,7 @@ export function createDebugWidget({controls=[]}={}) {
     catch(error){select.value=previous;console.error("DEV Debug matchday change failed:",error)}
     finally{select.disabled=false}
    });
-   row.append(select);panel.append(row);continue;
+   row.append(select);target.append(row);continue;
   }
   const row=element("label","fa-dev-widget-option");
   row.append(element("span","",control.label));
@@ -94,9 +120,11 @@ export function createDebugWidget({controls=[]}={}) {
    finally {input.disabled=false}
   });
   row.append(input);
-  panel.append(row);
+  target.append(row);
  }
- root.append(button,panel);
+ for(const details of sections.values())if(details.children.length>1)panel.append(details);
+ const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
+ root.append(backdrop,button,panel);
  document.head.append(style);
  document.body.append(root);
  let x=innerWidth-SIZE-16,y=innerHeight-SIZE-16;
@@ -108,6 +136,7 @@ export function createDebugWidget({controls=[]}={}) {
  }catch{ /* Session storage can be unavailable. */ }
  function placePanel(){
   if(panel.hidden)return;
+  if(matchMedia("(max-width:600px)").matches){panel.style.left="0";panel.style.top="auto";return}
   const rect=root.getBoundingClientRect();
   panel.style.left=(clamp(rect.left,EDGE,Math.max(EDGE,innerWidth-240-EDGE))-rect.left)+"px";
   const above=rect.top-panel.offsetHeight-10;
@@ -142,16 +171,20 @@ export function createDebugWidget({controls=[]}={}) {
   if(button.hasPointerCapture(event.pointerId))button.releasePointerCapture(event.pointerId);
  });
  button.addEventListener("pointercancel",()=>{press=null});
+ function setOpen(open){panel.hidden=!open;backdrop.hidden=!open;button.setAttribute("aria-expanded",String(open));if(open)placePanel()}
+ closeButton.addEventListener("click",()=>setOpen(false));
+ backdrop.addEventListener("click",()=>setOpen(false));
+ let touchStart=null;
+ panel.addEventListener("touchstart",e=>{touchStart=e.touches[0]?.clientY??null},{passive:true});
+ panel.addEventListener("touchend",e=>{if(touchStart===null)return;const delta=(e.changedTouches[0]?.clientY??touchStart)-touchStart;if(delta>90&&panel.scrollTop===0)setOpen(false);touchStart=null},{passive:true});
  button.addEventListener("click",event=>{
   if(event.detail!==0&&suppressClick){suppressClick=false;return}
   suppressClick=false;
-  panel.hidden=!panel.hidden;
-  button.setAttribute("aria-expanded",String(!panel.hidden));
-  placePanel();
+  setOpen(panel.hidden);
  });
  document.addEventListener("keydown",event=>{
   if(event.key==="Escape"&&!panel.hidden){
-   panel.hidden=true;button.setAttribute("aria-expanded","false");button.focus();
+   setOpen(false);button.focus();
   }
  });
  window.addEventListener("resize",()=>move(x,y));
