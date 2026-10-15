@@ -225,8 +225,10 @@ html{scroll-padding-top:72px}
 .app-world-form-last{outline:2px solid var(--focus);outline-offset:1px}
 .app-world-form-dot:focus-visible{outline:2px solid #effff4;outline-offset:2px}
 .app-world-form-control{box-sizing:border-box;width:32px;height:32px;border-radius:8px;background:transparent;position:relative;touch-action:manipulation;transition:background-color 130ms ease,outline-color 130ms ease}
+.app-world-form-strip .app-world-form-control{width:18px;height:18px;border-radius:5px}
+.app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:-4px}
 .app-world-form-control:hover{background:var(--surface-raised)}
-.app-world-form-control .app-world-form-glyph{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:4px;font-size:9px;font-weight:850;line-height:1;color:#f7fbf8}
+.app-world-form-control .app-world-form-glyph{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:9px;font-weight:850;line-height:1;color:#f7fbf8}
 .app-world-form-control.app-world-form-w .app-world-form-glyph{background:#237c59}
 .app-world-form-control.app-world-form-d .app-world-form-glyph{background:#667b82}
 .app-world-form-control.app-world-form-l .app-world-form-glyph{background:#98504d}
