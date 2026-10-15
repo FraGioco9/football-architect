@@ -71,7 +71,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-option input:disabled,.fa-dev-widget-reset:disabled{opacity:.6;cursor:wait}",
   ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{opacity:1;cursor:pointer}",
   "html[data-theme=\"light\"] .fa-dev-widget-option input[type=number]{background:var(--surface,#fff);color:var(--text,#18332d)}",
-  ".fa-dev-widget-panel{box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:calc(100vw - 24px);overflow-x:hidden}",
+  ".fa-dev-widget-panel{box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 32px);overflow-x:hidden;overflow-y:auto}",
   ".fa-dev-widget-option{box-sizing:border-box;min-width:0;gap:8px}",
   ".fa-dev-widget-option>span{flex:0 1 42%;min-width:0;overflow-wrap:anywhere}",
   ".fa-dev-widget-option input[type=range]{box-sizing:border-box;flex:1 1 72px;width:72px;min-width:54px;max-width:none}",
@@ -223,12 +223,21 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }catch{ /* Session storage can be unavailable. */ }
  function placePanel(){
   if(panel.hidden)return;
-  if(matchMedia("(max-width:600px)").matches){panel.style.left="0";panel.style.top="auto";return}
+  if(matchMedia("(max-width:600px)").matches){panel.style.left="0";panel.style.right="0";panel.style.top="auto";panel.style.bottom="0";return}
+  panel.style.right="auto";panel.style.bottom="auto";
+  panel.style.maxHeight=Math.max(160,innerHeight-EDGE*2)+"px";
   const rect=root.getBoundingClientRect();
-  panel.style.left=(clamp(rect.left,EDGE,Math.max(EDGE,innerWidth-240-EDGE))-rect.left)+"px";
-  const above=rect.top-panel.offsetHeight-10;
-  const top=above>=EDGE?above:Math.min(rect.bottom+10,innerHeight-panel.offsetHeight-EDGE);
-  panel.style.top=(top-rect.top)+"px";
+  const panelRect=panel.getBoundingClientRect();
+  const panelWidth=panelRect.width||320,panelHeight=panelRect.height;
+  const left=clamp(rect.left,EDGE,Math.max(EDGE,innerWidth-panelWidth-EDGE));
+  const spaceAbove=rect.top-EDGE-10,spaceBelow=innerHeight-EDGE-rect.bottom-10;
+  let top;
+  if(spaceAbove>=panelHeight)top=rect.top-panelHeight-10;
+  else if(spaceBelow>=panelHeight)top=rect.bottom+10;
+  else if(spaceBelow>=spaceAbove)top=rect.bottom+10;
+  else top=EDGE;
+  panel.style.left=(left-rect.left)+"px";
+  panel.style.top=(clamp(top,EDGE,Math.max(EDGE,innerHeight-panelHeight-EDGE))-rect.top)+"px";
  }
  function move(left,top){
   x=clamp(left,EDGE,Math.max(EDGE,innerWidth-SIZE-EDGE));
