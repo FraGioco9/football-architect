@@ -45,7 +45,8 @@ if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new E
 const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division-allocations.provisional.json", import.meta.url), "utf8"));
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-const countryById = Object.fromEntries(new Map(divisionData.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:d.flagAsset}])));
+const flagForCountry = id => "assets/flags/" + (id === "ENG" ? "gb-eng" : id.toLowerCase()) + ".svg";
+const countryById = Object.fromEntries(new Map(divisionData.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:flagForCountry(d.countryId)}])));
 const primaryReference = JSON.parse(readFileSync(new URL("../data/club-primary-names.documented.json",import.meta.url),"utf8"));
 if(primaryReference.schemaVersion!==1 || Object.keys(primaryReference.names??{}).length!==315)throw Error("Primary-name reference mismatch");
 const namesById=new Map(clubData.clubs.map(club=>[club.countryId+":"+club.clubId,club]));
@@ -74,7 +75,8 @@ const logoPicture=(id,root,kind,large)=>{
   '<img src="'+path(dark.png)+'" width="'+(large?60:36)+'" height="'+(large?60:36)+'" alt="" decoding="async"></picture></span>';
 };
 const indexContent = function indexContent(root){
- const cards=Object.values(countryById).map(c=>{
+ const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
+ const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
  '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+encode(d.id)+'</span><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
@@ -171,7 +173,7 @@ const worldPageReplacements = (depth, division = null) => {
 // Shared competition shell: one markup source and one validated data manifest.
 // Small route files preserve deep links on local/static hosting.
 const sharedTemplate = function sharedTemplate(html) {
- const first=divisionData[0],country=countryById[first.countryId];
+ const first=divisionData.find(d=>d.id==="IT-1"),country=countryById[first.countryId];
  const replaceOne=(before,after,label)=>{
   if(html.split(before).length!==2)throw Error("Shared template contract changed: "+label);
   html=html.replace(before,after);
@@ -212,7 +214,7 @@ const competitionRoute = d=>[
 ].join("\n");
 const competitionManifest = {
  schemaVersion:1,approved:provisionalAssignments.approved,
- divisions:divisionData.map(d=>{
+ divisions:[...divisionData].sort((a,b)=>["IT","ENG","ES","DE","FR","PT","NL","BR"].indexOf(a.countryId)-["IT","ENG","ES","DE","FR","PT","NL","BR"].indexOf(b.countryId)||a.tier-b.tier).map(d=>{
   const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
@@ -232,7 +234,7 @@ const outputPages = [
  {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2),
   transform:html=>html.replace('<body class="app-body">','<body class="app-body division-logos-pending">').replace('<script src="../../assets/division-logos.js" defer></script>','<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>')},
  {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
-  replacements:worldPageReplacements(3,divisionData[0]),transform:sharedTemplate},
+  replacements:worldPageReplacements(3,divisionData.find(d=>d.id==="IT-1")),transform:sharedTemplate},
  ...divisionData.map(division=>({
   name:division.id,path:"app/competitions/"+division.id.toLowerCase()+"/index.html",
   directContent:competitionRoute(division)

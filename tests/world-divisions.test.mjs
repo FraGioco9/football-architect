@@ -5,7 +5,7 @@ import {fileURLToPath} from "node:url";
 
 const read=file=>readFileSync(new URL("../"+file,import.meta.url),"utf8");
 const divisions=JSON.parse(read("data/divisions.json"));
-const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:d.flagAsset}])).values()];
+const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:"assets/flags/"+(d.countryId==="ENG"?"gb-eng":d.countryId.toLowerCase())+".svg"}])).values()];
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
 const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
@@ -77,8 +77,12 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
  assert.equal(allocation.approved,false);
  assert.equal(manifest.divisions.length,16);
  const seen=new Set();
+ const manifestById=new Map(manifest.divisions.map(d=>[d.id,d]));
+ const allocationById=new Map(allocation.allocations.map(d=>[d.divisionId,d]));
+ assert.equal(manifestById.size,16);
+ assert.equal(allocationById.size,16);
  for(let i=0;i<divisions.length;i++){
-  const d=divisions[i],m=manifest.divisions[i],source=allocation.allocations[i];
+  const d=divisions[i],m=manifestById.get(d.id),source=allocationById.get(d.id);
   const country=countries.find(c=>c.id===d.countryId);
   assert.ok(country);assert.equal(m.id,d.id);
   assert.equal(m.name,d.name);assert.equal(m.tier,d.tier);
