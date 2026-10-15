@@ -120,12 +120,12 @@ if(validPath){
   },{type:"select",id:"matchdays",label:"Matchdays",options:Array.from({length:31},(_,i)=>i),
     value:()=>matchdays,onChange:setMatchdays},
     {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
+  let widgetRoot;
   registerDebugControls("general",[{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
-   try{sessionStorage.removeItem("football-architect:dev-debug-widget-position");sessionStorage.removeItem("football-architect:dev-debug-sections")}catch{return false}
-   return true;
+   return widgetRoot?.resetWidgetState()===true;
   }}]);
-  createDebugWidget({page:"standings"});
+  widgetRoot=createDebugWidget({page:"standings"});
   if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
    if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
     const input=document.querySelector('[data-dev-control="fictional-standings"]');

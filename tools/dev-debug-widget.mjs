@@ -47,7 +47,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-section summary{cursor:pointer;font-weight:600;padding:5px 0}",
   ".fa-dev-widget-close{display:none;cursor:pointer}",
   ".fa-dev-widget-backdrop{display:none}",
-  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:-1}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}"
+  ".fa-dev-widget-panel[hidden]{display:none!important}",
+  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}"
 
  ].join("");
  const root=element("div","fa-dev-widget");
@@ -172,6 +173,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  });
  button.addEventListener("pointercancel",()=>{press=null});
  function setOpen(open){panel.hidden=!open;backdrop.hidden=!open;button.setAttribute("aria-expanded",String(open));if(open)placePanel()}
+ root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}move(innerWidth-SIZE-16,innerHeight-SIZE-16);for(const section of sections.values())section.open=true;return true};
  closeButton.addEventListener("click",()=>setOpen(false));
  backdrop.addEventListener("click",()=>setOpen(false));
  let touchStart=null;
