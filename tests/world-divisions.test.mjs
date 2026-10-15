@@ -4,8 +4,8 @@ import {existsSync,readFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 
 const read=file=>readFileSync(new URL("../"+file,import.meta.url),"utf8");
-const divisions=JSON.parse(read("data/divisions.json")).divisions;
-const countries=JSON.parse(read("data/divisions.json")).countries;
+const divisions=JSON.parse(read("data/divisions.json"));
+const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:d.flagAsset}])).values()];
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
 const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
