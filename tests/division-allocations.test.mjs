@@ -10,7 +10,7 @@ const clubs=read("data/clubs.json");
 const clone=value=>JSON.parse(JSON.stringify(value));
 
 test("REGISTRY-01: CSV and JSON use the same flat division fields and records",()=>{
-  const lines=read("data/divisions-registry.csv").trimEnd().split(/\r?\n/);
+  const lines=readFileSync(new URL("../data/divisions-registry.csv",import.meta.url),"utf8").trimEnd().split(/\r?\n/);
   const headers=lines[0].split(",");
   assert.equal(divisions.length,16);
   assert.equal(lines.length,17);
