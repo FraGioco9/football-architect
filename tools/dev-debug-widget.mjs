@@ -76,9 +76,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-option>span{flex:0 1 42%;min-width:0;overflow-wrap:anywhere}",
   ".fa-dev-widget-option input[type=range]{box-sizing:border-box;flex:1 1 72px;width:72px;min-width:54px;max-width:none}",
   ".fa-dev-widget-option input[type=number]{box-sizing:border-box;flex:0 0 68px;width:68px;min-width:68px;max-width:68px;padding:6px 4px;color-scheme:dark}",
-  "html[data-theme=\\"light\\"] .fa-dev-widget-option input[type=number]{color-scheme:light}",
+  'html[data-theme="light"] .fa-dev-widget-option input[type=number]{color-scheme:light}',
   ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{opacity:1;filter:contrast(1.1);cursor:pointer}",
-  "@media(max-width:600px){.fa-dev-widget-panel{width:100%;max-width:100%;padding-inline:16px}.fa-dev-widget-option>span{flex-basis:40%}.fa-dev-widget-option input[type=range]{min-width:48px}.fa-dev-widget-option input[type=number]{flex-basis:64px;width:64px;min-width:64px;max-width:64px}}",
+  "@media(max-width:600px){.fa-dev-widget-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding-inline:16px}.fa-dev-widget-option>span{flex-basis:40%}.fa-dev-widget-option input[type=range]{min-width:48px}.fa-dev-widget-option input[type=number]{flex-basis:64px;width:64px;min-width:64px;max-width:64px}}",
   "@media(prefers-reduced-motion:reduce){.fa-dev-widget-panel{animation:none!important;transition:none!important}}"
  ].join("");
  const root=element("div","fa-dev-widget");
