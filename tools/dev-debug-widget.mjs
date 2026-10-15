@@ -77,7 +77,20 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-option input[type=range]{box-sizing:border-box;flex:1 1 72px;width:72px;min-width:54px;max-width:none}",
   ".fa-dev-widget-option input[type=number]{box-sizing:border-box;flex:0 0 68px;width:68px;min-width:68px;max-width:68px;padding:6px 4px;color-scheme:dark}",
   'html[data-theme="light"] .fa-dev-widget-option input[type=number]{color-scheme:light}',
-  ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{opacity:1;filter:contrast(1.1);cursor:pointer}",
+  ".fa-dev-widget-option input[type=number]{appearance:textfield;-moz-appearance:textfield;padding-right:4px}",
+  ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}",
+  ".fa-dev-number-wrap{position:relative;display:flex;flex:0 0 72px;width:72px;height:34px;min-width:72px;align-items:stretch}",
+  ".fa-dev-number-wrap input[type=number]{width:100%;min-width:0;max-width:none;height:34px;padding:4px 21px 4px 4px;text-align:center}",
+  ".fa-dev-number-spin{position:absolute;right:3px;top:3px;bottom:3px;width:16px;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:1px;border-left:1px solid var(--border,#568378);padding-left:2px}",
+  ".fa-dev-number-arrow{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;width:13px;padding:0;border:0;border-radius:3px;background:transparent;color:var(--text,#f3f8f5);cursor:pointer;touch-action:manipulation;outline:none;user-select:none}",
+  ".fa-dev-number-arrow svg{display:block;width:9px;height:6px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}",
+  ".fa-dev-number-arrow:hover{background:var(--surface-hover,#315d53);color:var(--primary,#47b58d)}",
+  ".fa-dev-number-arrow:active{background:var(--surface-raised,#244c45)}",
+  ".fa-dev-number-arrow:focus-visible{outline:1px solid var(--focus,#8ee5c5);outline-offset:-1px}",
+  ".fa-dev-widget-option,.fa-dev-widget-option>span{user-select:none;-webkit-user-select:none}",
+  ".fa-dev-widget-button.dismiss-focus:focus{outline:none}",
+  ".fa-dev-widget-panel{z-index:2147482998}",
+  ".fa-dev-widget{z-index:2147482998}",
   "@media(max-width:600px){.fa-dev-widget-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding-inline:16px}.fa-dev-widget-option>span{flex-basis:40%}.fa-dev-widget-option input[type=range]{min-width:48px}.fa-dev-widget-option input[type=number]{flex-basis:64px;width:64px;min-width:64px;max-width:64px}}",
   "@media(prefers-reduced-motion:reduce){.fa-dev-widget-panel{animation:none!important;transition:none!important}}"
  ].join("");
@@ -123,9 +136,25 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    row.append(element("span","",control.label));
    const input=element("input");input.type="range";input.min=String(control.min??0);input.max=String(control.max??100);input.step=String(control.step??1);
    input.value=String(typeof control.value==="function"?control.value():control.value??input.min);input.dataset.devControl=control.id;input.dataset.previous=input.value;
+   const numberWrap=element("div","fa-dev-number-wrap");
    const number=element("input");number.type="number";number.min=input.min;number.max=input.max;number.step=input.step;
    number.inputMode="numeric";number.value=input.value;number.dataset.devControl="matchdays-number";number.dataset.previous=number.value;
-   number.setAttribute("aria-label",control.label+" value");
+   number.id="fa-dev-matchdays-number";number.setAttribute("aria-label",control.label+" value");
+   numberWrap.append(number);
+   const spin=element("span","fa-dev-number-spin");
+   for(const [direction,label] of [[1,"Increase matchdays"],[-1,"Decrease matchdays"]]){
+    const arrow=element("button","fa-dev-number-arrow");arrow.type="button";arrow.dataset.step=String(direction);arrow.setAttribute("aria-label",label);
+    arrow.innerHTML=direction===1?'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 6 4-4 4 4"/></svg>':'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 2 4 4 4-4"/></svg>';
+    arrow.addEventListener("pointerdown",event=>{event.preventDefault();event.stopPropagation()});
+    arrow.addEventListener("click",event=>{
+     event.preventDefault();event.stopPropagation();
+     const next=Math.max(Number(number.min),Math.min(Number(number.max),Number(number.value||0)+direction*Number(number.step||1)));
+     number.value=String(next);number.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    spin.append(arrow);
+   }
+   numberWrap.append(spin);
+   number.addEventListener("pointerdown",event=>event.stopPropagation());
    input.addEventListener("input",()=>{number.value=input.value});
    input.addEventListener("change",async()=>{
     const previous=input.dataset.previous;input.disabled=true;number.disabled=true;
@@ -141,7 +170,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     catch(error){number.value=previous;console.error("DEV Debug number change failed:",error)}
     finally{input.value=number.value;input.dataset.previous=number.value;number.disabled=false;input.disabled=false}
    });
-   row.append(input,number);target.append(row);continue;
+   row.append(input,numberWrap);target.append(row);continue;
   }
   if(control.type==="number"){
    const row=element("label","fa-dev-widget-option");
@@ -228,8 +257,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   panel.style.maxHeight=Math.max(160,innerHeight-EDGE*2)+"px";
   const rect=root.getBoundingClientRect();
   const panelRect=panel.getBoundingClientRect();
+  const viewportRight=document.documentElement.clientWidth||innerWidth;
   const panelWidth=panelRect.width||320,panelHeight=panelRect.height;
-  const left=clamp(rect.left,EDGE,Math.max(EDGE,innerWidth-panelWidth-EDGE));
+  const left=clamp(rect.left,EDGE,Math.max(EDGE,viewportRight-panelWidth-EDGE));
   const spaceAbove=rect.top-EDGE-10,spaceBelow=innerHeight-EDGE-rect.bottom-10;
   let top;
   if(spaceAbove>=panelHeight)top=rect.top-panelHeight-10;
@@ -246,7 +276,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }
  move(x,y);
  let press=null,suppressClick=false;
- button.addEventListener("pointerdown",event=>{
+ button.addEventListener("pointerdown",event=>{button.classList.remove("dismiss-focus");
   if(event.pointerType==="mouse"&&event.button!==0)return;
   press={id:event.pointerId,px:event.clientX,py:event.clientY,x,y,moved:false};
   button.setPointerCapture(event.pointerId);
@@ -288,7 +318,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  });
  document.addEventListener("keydown",event=>{
   if(event.key==="Escape"&&!panel.hidden){
-   setOpen(false);button.focus();
+   event.preventDefault();event.stopPropagation();
+   setOpen(false);button.classList.add("dismiss-focus");button.focus({preventScroll:true});
   }
  });
  window.addEventListener("resize",()=>move(x,y));
