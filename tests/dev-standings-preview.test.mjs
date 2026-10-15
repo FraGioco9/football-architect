@@ -234,7 +234,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
 test("DEV-L10N + interactions: 5 languages, 80 results and widget", () => {
   for(const lang of ["en","de","es","fr","it"])
     assert.match(client, new RegExp("\\b"+lang+": \\{ round:"));
-  assert.ok(client.includes("entries.length !== 80"));
+  assert.ok(client.includes("entries.length !== 16*Math.min(5,matchdays)"));
   assert.ok(client.includes('new MutationObserver(translate)'));
   for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
     assert.ok(client.includes('"'+event+'"'),event);
@@ -340,6 +340,10 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       createDebugWidget: () => { operations.push("widget"); signalMounted(); },
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
+      matchdays: 15,
+      setMatchdays: () => Promise.resolve(true),
+      resetPreview: () => Promise.resolve(true),
+      Array,
       boot: division => operations.push("boot:" + division),
       console: { error: error => { throw error; } }
     });
