@@ -33,9 +33,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   'html[data-theme="light"] .fa-dev-widget-panel{background:#fff;color:#18332d;border-color:#9cbdb3}',
   ".fa-dev-widget-button:active{cursor:grabbing}",
   ".fa-dev-widget-button:focus-visible,.fa-dev-widget-panel input:focus-visible{outline:2px solid #8ee5c5;outline-offset:3px}",
-  ".fa-dev-widget-panel{position:absolute;width:240px;padding:13px;border:1px solid #568378;",
+  ".fa-dev-widget-panel{position:fixed;z-index:2147483001;box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:min(320px,calc(100vw - 24px));padding:13px;border:1px solid #568378;",
   "border-radius:12px;background:#17302f;color:#f3f8f5;box-shadow:0 8px 32px #0008;",
-  "font:14px/1.4 system-ui,sans-serif;max-height:65vh;overflow:auto}",
+  "font:14px/1.4 system-ui,sans-serif;max-height:calc(100dvh - 32px);overflow-x:hidden;overflow-y:auto}",
   ".fa-dev-widget-title{font-weight:700;margin:0 0 12px}",
   ".fa-dev-widget-option{display:flex;align-items:center;justify-content:space-between;gap:12px}",
   " .fa-dev-widget-option input{accent-color:#47b58d;width:20px;height:20px;flex-shrink:0;cursor:pointer}",
@@ -48,9 +48,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-section{margin:8px 0;border-top:1px solid #568378;padding-top:8px}",
   ".fa-dev-widget-section summary{cursor:pointer;font-weight:600;padding:5px 0}",
   ".fa-dev-widget-close{display:none;cursor:pointer}",
-  ".fa-dev-widget-backdrop{display:none}",
+  ".fa-dev-widget-backdrop{display:none;position:fixed;inset:0;z-index:2147483000}",
   ".fa-dev-widget-panel[hidden]{display:none!important}",
-  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}"
+  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}",
 
   ".fa-dev-widget-panel{width:260px;padding:14px;border-color:var(--border,#568378);border-radius:14px;background:var(--surface,#17302f);color:var(--text,#f3f8f5);box-shadow:0 12px 36px #0005;font:inherit;font-size:13px;line-height:1.45;max-height:65vh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb,#63877c) transparent;transition:opacity .18s ease,transform .18s ease}",
   ".fa-dev-widget-panel:not([hidden]){animation:fa-dev-panel-in .18s ease both}",
@@ -71,6 +71,33 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-option input:disabled,.fa-dev-widget-reset:disabled{opacity:.6;cursor:wait}",
   ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{opacity:1;cursor:pointer}",
   "html[data-theme=\"light\"] .fa-dev-widget-option input[type=number]{background:var(--surface,#fff);color:var(--text,#18332d)}",
+  ".fa-dev-widget-panel{box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 32px);overflow-x:hidden;overflow-y:auto}",
+  ".fa-dev-widget-option{box-sizing:border-box;min-width:0;gap:8px}",
+  ".fa-dev-widget-option>span{flex:0 1 42%;min-width:0;overflow-wrap:anywhere}",
+  ".fa-dev-widget-option input[type=range]{box-sizing:border-box;flex:1 1 72px;width:72px;min-width:54px;max-width:none}",
+  ".fa-dev-widget-option input[type=number]{box-sizing:border-box;flex:0 0 68px;width:68px;min-width:68px;max-width:68px;padding:6px 4px;color-scheme:dark}",
+  'html[data-theme="light"] .fa-dev-widget-option input[type=number]{color-scheme:light}',
+  ".fa-dev-widget-option input[type=number]{appearance:textfield;-moz-appearance:textfield;padding-right:4px}",
+  ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}",
+  ".fa-dev-number-wrap{position:relative;display:flex;flex:0 0 76px;width:76px;height:36px;min-width:76px;align-items:stretch;border:1px solid var(--border,#568378);border-radius:9px;background:var(--surface-raised,#244c45);overflow:hidden;box-shadow:inset 0 1px 2px #0001;transition:border-color .16s ease,box-shadow .16s ease}",
+  ".fa-dev-number-wrap:focus-within{border-color:var(--primary,#47b58d);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary,#47b58d) 20%,transparent)}",
+  ".fa-dev-number-wrap input[type=number]{box-sizing:border-box;flex:1 1 auto;width:0;min-width:0;max-width:none;height:100%;padding:4px 2px 4px 6px;border:0;border-radius:0;background:transparent;color:var(--text,#f3f8f5);font:inherit;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;outline:none;box-shadow:none}",
+  ".fa-dev-number-wrap input[type=number]:focus{outline:none;box-shadow:none}",
+  ".fa-dev-number-spin{position:relative;flex:0 0 21px;width:21px;min-width:21px;height:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;border-left:1px solid var(--border,#568378);padding:2px;gap:1px;background:var(--surface,#17302f)}",
+  ".fa-dev-number-arrow{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:1 1 50%;min-height:0;width:100%;margin:0;padding:0;border:0;border-radius:4px;background:transparent;color:var(--text,#f3f8f5);cursor:pointer;touch-action:manipulation;outline:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .12s ease,color .12s ease}",
+  ".fa-dev-number-arrow svg{display:block;flex:none;width:10px;height:7px;overflow:visible;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}",
+  ".fa-dev-number-arrow:hover{background:var(--surface-hover,#315d53);color:var(--primary,#47b58d)}",
+  ".fa-dev-number-arrow:active{background:var(--surface-raised,#244c45);color:var(--primary,#47b58d)}",
+  ".fa-dev-number-arrow:focus{outline:none}",
+  ".fa-dev-number-arrow:focus-visible{outline:1px solid var(--focus,#8ee5c5);outline-offset:-1px}",
+  'html[data-theme="light"] .fa-dev-number-wrap{background:var(--surface,#fff)}',
+  'html[data-theme="light"] .fa-dev-number-spin{background:var(--surface-raised,#e5f4ee)}',
+  'html[data-theme="light"] .fa-dev-number-arrow{color:var(--text,#18332d)}',
+  ".fa-dev-widget-option,.fa-dev-widget-option>span{user-select:none;-webkit-user-select:none}",
+  ".fa-dev-widget-button.dismiss-focus:focus{outline:none}",
+  ".fa-dev-widget-panel{z-index:2147482998}",
+  ".fa-dev-widget{z-index:2147482998}",
+  "@media(max-width:600px){.fa-dev-widget-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding-inline:16px}.fa-dev-widget-option>span{flex-basis:40%}.fa-dev-widget-option input[type=range]{min-width:48px}.fa-dev-number-wrap{flex-basis:72px;width:72px;min-width:72px}}",
   "@media(prefers-reduced-motion:reduce){.fa-dev-widget-panel{animation:none!important;transition:none!important}}"
  ].join("");
  const root=element("div","fa-dev-widget");
@@ -109,15 +136,31 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    target.append(action);continue;
   }
   if(control.type==="range"){
-   const row=element("label","fa-dev-widget-option");
+   const row=element("div","fa-dev-widget-option");
    row.dataset.devControlRow=control.id;
    row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;
    row.append(element("span","",control.label));
    const input=element("input");input.type="range";input.min=String(control.min??0);input.max=String(control.max??100);input.step=String(control.step??1);
    input.value=String(typeof control.value==="function"?control.value():control.value??input.min);input.dataset.devControl=control.id;input.dataset.previous=input.value;
+   const numberWrap=element("div","fa-dev-number-wrap");
    const number=element("input");number.type="number";number.min=input.min;number.max=input.max;number.step=input.step;
    number.inputMode="numeric";number.value=input.value;number.dataset.devControl="matchdays-number";number.dataset.previous=number.value;
-   number.setAttribute("aria-label",control.label+" value");
+   number.id="fa-dev-matchdays-number";number.setAttribute("aria-label",control.label+" value");
+   numberWrap.append(number);
+   const spin=element("span","fa-dev-number-spin");
+   for(const [direction,label] of [[1,"Increase matchdays"],[-1,"Decrease matchdays"]]){
+    const arrow=element("button","fa-dev-number-arrow");arrow.type="button";arrow.dataset.step=String(direction);arrow.setAttribute("aria-label",label);
+    arrow.innerHTML=direction===1?'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 6 4-4 4 4"/></svg>':'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 2 4 4 4-4"/></svg>';
+    arrow.addEventListener("pointerdown",event=>{event.preventDefault();event.stopPropagation()});
+    arrow.addEventListener("click",event=>{
+     event.preventDefault();event.stopPropagation();
+     const next=Math.max(Number(number.min),Math.min(Number(number.max),Number(number.value||0)+direction*Number(number.step||1)));
+     number.value=String(next);number.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    spin.append(arrow);
+   }
+   numberWrap.append(spin);
+   number.addEventListener("pointerdown",event=>event.stopPropagation());
    input.addEventListener("input",()=>{number.value=input.value});
    input.addEventListener("change",async()=>{
     const previous=input.dataset.previous;input.disabled=true;number.disabled=true;
@@ -133,7 +176,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     catch(error){number.value=previous;console.error("DEV Debug number change failed:",error)}
     finally{input.value=number.value;input.dataset.previous=number.value;number.disabled=false;input.disabled=false}
    });
-   row.append(input,number);target.append(row);continue;
+   row.append(input,numberWrap);target.append(row);continue;
   }
   if(control.type==="number"){
    const row=element("label","fa-dev-widget-option");
@@ -203,9 +246,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  function syncVisibility(){root.syncVisibility()}
  for(const details of sections.values())if(details.children.length>1)panel.append(details);
  const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
- root.append(backdrop,button,panel);
+ root.append(button);
  document.head.append(style);
- document.body.append(root);
+ document.body.append(root,backdrop,panel);
  let x=innerWidth-SIZE-16,y=innerHeight-SIZE-16;
  try{
   const saved=JSON.parse(sessionStorage.getItem(POSITION_KEY));
@@ -215,21 +258,56 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }catch{ /* Session storage can be unavailable. */ }
  function placePanel(){
   if(panel.hidden)return;
-  if(matchMedia("(max-width:600px)").matches){panel.style.left="0";panel.style.top="auto";return}
+  const doc=document.documentElement;
+  // clientWidth excludes the classic vertical scrollbar; visualViewport additionally
+  // protects against mobile browser chrome and pinch-zoom viewport changes.
+  const vv=window.visualViewport;
+  const viewportLeft=Math.max(0,vv?vv.offsetLeft:0);
+  const viewportRight=Math.min(doc.clientWidth||innerWidth,vv?vv.offsetLeft+vv.width:innerWidth);
+  const viewportTop=Math.max(0,vv?vv.offsetTop:0);
+  const viewportHeight=Math.min(doc.clientHeight||innerHeight,vv?vv.offsetTop+vv.height:innerHeight);
+  panel.style.position="fixed";
+  panel.style.margin="0";
+  panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
+  if(matchMedia("(max-width:600px)").matches){
+   panel.style.left="0";panel.style.right="0";panel.style.top="auto";panel.style.bottom="0";
+   panel.style.width="100%";panel.style.maxWidth="100%";
+   return;
+  }
+  panel.style.right="auto";panel.style.bottom="auto";
+  panel.style.width="min(320px, calc(100vw - 24px))";
+  panel.style.maxWidth="min(320px, calc(100vw - 24px))";
   const rect=root.getBoundingClientRect();
-  panel.style.left=(clamp(rect.left,EDGE,Math.max(EDGE,innerWidth-240-EDGE))-rect.left)+"px";
-  const above=rect.top-panel.offsetHeight-10;
-  const top=above>=EDGE?above:Math.min(rect.bottom+10,innerHeight-panel.offsetHeight-EDGE);
-  panel.style.top=(top-rect.top)+"px";
+  const panelRect=panel.getBoundingClientRect();
+  const panelWidth=panelRect.width||Math.min(320,viewportRight-EDGE*2);
+  const panelHeight=panelRect.height;
+  const minLeft=viewportLeft+EDGE;
+  const maxLeft=Math.max(minLeft,viewportRight-panelWidth-EDGE);
+  // If the button is too close to the right edge, align the popup's right edge
+  // to the button instead of letting it occupy the scrollbar gutter.
+  const preferredLeft=rect.right+panelWidth>viewportRight-EDGE?rect.right-panelWidth:rect.left;
+  const left=clamp(preferredLeft,minLeft,maxLeft);
+  const spaceAbove=Math.max(0,rect.top-EDGE-10);
+  const spaceBelow=Math.max(0,viewportHeight-EDGE-rect.bottom-10);
+  let top;
+  if(spaceAbove>=panelHeight)top=rect.top-panelHeight-10;
+  else if(spaceBelow>=panelHeight)top=rect.bottom+10;
+  else if(spaceBelow>=spaceAbove)top=rect.bottom+10;
+  else top=EDGE;
+  panel.style.left=clamp(left,minLeft,maxLeft)+"px";
+  panel.style.top=clamp(top,viewportTop+EDGE,Math.max(viewportTop+EDGE,viewportHeight-panelHeight-EDGE))+"px";
  }
- function move(left,top){
-  x=clamp(left,EDGE,Math.max(EDGE,innerWidth-SIZE-EDGE));
-  y=clamp(top,EDGE,Math.max(EDGE,innerHeight-SIZE-EDGE));
+  function move(left,top){
+  const doc=document.documentElement;
+  const visibleWidth=Math.max(0,doc.clientWidth||innerWidth);
+  const visibleHeight=Math.max(0,doc.clientHeight||innerHeight);
+  x=clamp(left,EDGE,Math.max(EDGE,visibleWidth-SIZE-EDGE));
+  y=clamp(top,EDGE,Math.max(EDGE,visibleHeight-SIZE-EDGE));
   root.style.left=x+"px";root.style.top=y+"px";placePanel();
  }
  move(x,y);
  let press=null,suppressClick=false;
- button.addEventListener("pointerdown",event=>{
+ button.addEventListener("pointerdown",event=>{button.classList.remove("dismiss-focus");
   if(event.pointerType==="mouse"&&event.button!==0)return;
   press={id:event.pointerId,px:event.clientX,py:event.clientY,x,y,moved:false};
   button.setPointerCapture(event.pointerId);
@@ -271,7 +349,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  });
  document.addEventListener("keydown",event=>{
   if(event.key==="Escape"&&!panel.hidden){
-   setOpen(false);button.focus();
+   event.preventDefault();event.stopPropagation();
+   setOpen(false);button.classList.add("dismiss-focus");button.focus({preventScroll:true});
   }
  });
  window.addEventListener("resize",()=>move(x,y));
