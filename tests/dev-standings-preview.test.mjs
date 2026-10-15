@@ -449,3 +449,30 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes("input[type=number]::-webkit-inner-spin-button"));
  assert.ok(widget.includes("var(--surface-raised"));
 });
+
+
+test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV-only",()=>{
+ const client=read("tools/dev-standings-preview-client.mjs").toString();
+ const mobile=read("assets/competition-page.js").toString();
+ const css=read("assets/app.css").toString();
+ for(const [locale,letters] of Object.entries({
+  en:'letters: {W:"W",D:"D",L:"L"}',
+  de:'letters: {W:"S",D:"U",L:"N"}',
+  es:'letters: {W:"V",D:"E",L:"D"}',
+  fr:'letters: {W:"V",D:"N",L:"D"}',
+  it:'letters: {W:"V",D:"N",L:"P"}'
+ }))assert.ok(client.includes(letters),"localized result letters: "+locale);
+ assert.ok(client.includes('button.setAttribute("aria-haspopup","true")'));
+ assert.ok(client.includes('entry.glyph.textContent = t.letters[entry.game.result]'));
+ assert.ok(client.includes('entry.button.setAttribute("aria-label", t[entry.game.result]'));
+ assert.ok(client.includes('index === 0 ? " app-world-form-last"'));
+ assert.ok(mobile.includes('mark.dataset.appI18n = formLetterKeys[game.result]'));
+ assert.ok(mobile.includes('"standingsDemoWinLetter"'));
+ assert.ok(css.includes(".app-world-form-control{box-sizing:border-box;width:32px;height:32px"));
+ assert.ok(css.includes(".app-world-form-control:focus-visible"));
+ assert.ok(css.includes(".app-world-form-control.app-world-form-last .app-world-form-glyph"));
+ assert.ok(css.includes("@media(prefers-reduced-motion:reduce)"));
+ assert.ok(client.includes('const FLAG = "football-architect:standings-dev-preview"'));
+ assert.ok(client.includes("function isPreviewEnabled()"));
+ assert.ok(read(".github/workflows/landing-checks.yml").toString().includes("node --test tests/*.test.mjs"));
+});

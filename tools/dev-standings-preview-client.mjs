@@ -46,18 +46,23 @@ const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
 const LANG = {
   en: { round: "Matchday",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
+    letters: {W:"W",D:"D",L:"L"},
     recent: "latest match" },
   de: { round: "Spieltag",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
+    letters: {W:"S",D:"U",L:"N"},
     recent: "letztes Spiel" },
   es: { round: "Jornada",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
+    letters: {W:"V",D:"E",L:"D"},
     recent: "último partido" },
   fr: { round: "Journée",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
+    letters: {W:"V",D:"N",L:"D"},
     recent: "dernier match" },
   it: { round: "Giornata",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
+    letters: {W:"V",D:"N",L:"P"},
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
@@ -219,11 +224,13 @@ async function boot(routeId) {
       const formCell = node("td");
       const strip = node("span", "app-world-form-strip");
       for (const [index, game] of r.recent.entries()) {
-        const button = node("button", "app-world-form-dot app-world-form-" +
-          game.result.toLowerCase() + (index === 0 ? " app-world-form-last" : ""),
-          game.result);
+        const button = node("button", "app-world-form-dot app-world-form-control app-world-form-" +
+          game.result.toLowerCase() + (index === 0 ? " app-world-form-last" : ""));
         button.type = "button";
-        entries.push({ button, game, ownId: r.club.clubId, latest: index === 0 });
+        button.setAttribute("aria-haspopup","true");
+        const glyph = node("span","app-world-form-glyph",game.result);
+        button.append(glyph);
+        entries.push({ button, glyph, game, ownId: r.club.clubId, latest: index === 0 });
         strip.append(button);
       }
       formCell.append(strip);
@@ -310,9 +317,10 @@ async function boot(routeId) {
     function translate() {
       const t = strings();
       for (const entry of entries) {
-        entry.button.setAttribute("aria-label", t[entry.game.result] +
-          (entry.latest ? " — " + t.recent : ""));
-      }
+         entry.glyph.textContent = t.letters[entry.game.result];
+         entry.button.setAttribute("aria-label", t[entry.game.result] +
+           (entry.latest ? " — " + t.recent : ""));
+       }
       if (selected) {
         roundLabel.textContent = t.round + " ";
         perspective.textContent = selected.game.isHome ? t.home : t.away;
