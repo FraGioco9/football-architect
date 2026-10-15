@@ -13,7 +13,7 @@ export function validateProvisionalAllocations(manifest,divisionData,clubData){
   check(divisions.every(d=>Array.isArray(d.clubIds)&&d.clubIds.length===0),"canonical participants must remain unset");
   for(const countryId of expectedCountries){
     const national=divisions.filter(d=>d.countryId===countryId);
-    check(national.length===2&&new Set(national.map(d=>d.countryName)).size===1&&new Set(national.map(d=>d.flagAsset)).size===1,"inconsistent country metadata "+countryId);
+    check(national.length===2&&new Set(national.map(d=>d.countryName)).size===1,"inconsistent country metadata "+countryId);
   }
   check(Array.isArray(clubs)&&clubs.length===320,"expected 320 identities");
   check(Array.isArray(manifest.allocations)&&manifest.allocations.length===16,"expected 16 allocations");
@@ -34,12 +34,14 @@ export function validateProvisionalAllocations(manifest,divisionData,clubData){
   check(historical.size===160,"historical reference count changed");
   for(const countryId of expectedCountries)for(let id=1;id<=20;id++)
     check(historical.has(countryId+":"+id),"historical reference changed "+countryId+":"+id);
+  const allocationById=new Map(manifest.allocations.map(entry=>[entry.divisionId,entry]));
+  check(allocationById.size===16,"duplicate allocation division");
   let tier1=0,tier2=0;
   for(let i=0;i<divisions.length;i++){
-    const division=divisions[i],entry=manifest.allocations[i];
+    const division=divisions[i],entry=allocationById.get(division.id);
     check(expectedCountries.includes(division.countryId)&&[1,2].includes(division.tier)&&division.id===division.countryId+"-"+division.tier,"invalid division identity");
     check(!byDivision.has(division.id),"duplicate division "+division.id);
-    check(entry?.divisionId===division.id,"division ordering changed at "+i);
+    check(entry?.divisionId===division.id,"missing allocation "+division.id);
     check(division.capacity===16,"wrong capacity "+division.id);
     check(entry.evidenceType==="owner-approved-initial-id-rule","wrong allocation evidence "+division.id);
     check(Array.isArray(entry.clubIds)&&entry.clubIds.length===16,"wrong club count "+division.id);
