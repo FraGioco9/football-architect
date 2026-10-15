@@ -39,9 +39,11 @@ function setPreviewEnabled(enabled) {
    activePreview=cleanup;
    return true;
   }
+  // Keep the cleanup handle until the DOM and storage are both reset.
+  try{activePreview()}
+  catch(error){console.error("DEV preview restore failed:",error);return false}
   try{sessionStorage.removeItem(FLAG)}
   catch(error){console.error("DEV preview storage unavailable:",error);return false}
-  activePreview();
   activePreview=null;
   return true;
  });
@@ -260,15 +262,26 @@ async function boot(routeId) {
     }
     const languageObserver=new MutationObserver(translate);
     let committed=false;
+    let restored=false;
     function restore(){
-      listeners.abort();languageObserver.disconnect();tooltip.remove();
-      if(!committed)return;
-      tbody.replaceChildren(...canonicalRows);
-      mobileList.replaceChildren(...canonicalMobile);
-      if(captionI18n===null)caption.removeAttribute("data-app-i18n");
-      else caption.setAttribute("data-app-i18n",captionI18n);
-      caption.textContent=captionText;
-      window.faAppRenderLanguage?.();
+      if(restored)return;
+      const failures=[];
+      const attempt=fn=>{try{fn()}catch(error){failures.push(error)}};
+      attempt(()=>listeners.abort());
+      attempt(()=>languageObserver.disconnect());
+      attempt(()=>tooltip.remove());
+      if(committed){
+       attempt(()=>tbody.replaceChildren(...canonicalRows));
+       attempt(()=>mobileList.replaceChildren(...canonicalMobile));
+       attempt(()=>{
+        if(captionI18n===null)caption.removeAttribute("data-app-i18n");
+        else caption.setAttribute("data-app-i18n",captionI18n);
+        caption.textContent=captionText;
+       });
+       attempt(()=>window.faAppRenderLanguage?.());
+      }
+      if(failures.length)throw new AggregateError(failures,"DEV standings restore incomplete");
+      restored=true;
     }
     try {
     committed=true;
