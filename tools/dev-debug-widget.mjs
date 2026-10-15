@@ -33,7 +33,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   'html[data-theme="light"] .fa-dev-widget-panel{background:#fff;color:#18332d;border-color:#9cbdb3}',
   ".fa-dev-widget-button:active{cursor:grabbing}",
   ".fa-dev-widget-button:focus-visible,.fa-dev-widget-panel input:focus-visible{outline:2px solid #8ee5c5;outline-offset:3px}",
-  ".fa-dev-widget-panel{position:fixed;box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:min(320px,calc(100vw - 24px));padding:13px;border:1px solid #568378;",
+  ".fa-dev-widget-panel{position:fixed;z-index:2147483001;box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:min(320px,calc(100vw - 24px));padding:13px;border:1px solid #568378;",
   "border-radius:12px;background:#17302f;color:#f3f8f5;box-shadow:0 8px 32px #0008;",
   "font:14px/1.4 system-ui,sans-serif;max-height:calc(100dvh - 32px);overflow-x:hidden;overflow-y:auto}",
   ".fa-dev-widget-title{font-weight:700;margin:0 0 12px}",
@@ -48,7 +48,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-section{margin:8px 0;border-top:1px solid #568378;padding-top:8px}",
   ".fa-dev-widget-section summary{cursor:pointer;font-weight:600;padding:5px 0}",
   ".fa-dev-widget-close{display:none;cursor:pointer}",
-  ".fa-dev-widget-backdrop{display:none}",
+  ".fa-dev-widget-backdrop{display:none;position:fixed;inset:0;z-index:2147483000}",
   ".fa-dev-widget-panel[hidden]{display:none!important}",
   "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}",
 
@@ -246,9 +246,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  function syncVisibility(){root.syncVisibility()}
  for(const details of sections.values())if(details.children.length>1)panel.append(details);
  const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
- root.append(backdrop,button,panel);
+ root.append(button);
  document.head.append(style);
- document.body.append(root);
+ document.body.append(root,backdrop,panel);
  let x=innerWidth-SIZE-16,y=innerHeight-SIZE-16;
  try{
   const saved=JSON.parse(sessionStorage.getItem(POSITION_KEY));
