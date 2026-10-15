@@ -33,9 +33,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   'html[data-theme="light"] .fa-dev-widget-panel{background:#fff;color:#18332d;border-color:#9cbdb3}',
   ".fa-dev-widget-button:active{cursor:grabbing}",
   ".fa-dev-widget-button:focus-visible,.fa-dev-widget-panel input:focus-visible{outline:2px solid #8ee5c5;outline-offset:3px}",
-  ".fa-dev-widget-panel{position:absolute;width:240px;padding:13px;border:1px solid #568378;",
+  ".fa-dev-widget-panel{position:fixed;box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:min(320px,calc(100vw - 24px));padding:13px;border:1px solid #568378;",
   "border-radius:12px;background:#17302f;color:#f3f8f5;box-shadow:0 8px 32px #0008;",
-  "font:14px/1.4 system-ui,sans-serif;max-height:65vh;overflow:auto}",
+  "font:14px/1.4 system-ui,sans-serif;max-height:calc(100dvh - 32px);overflow-x:hidden;overflow-y:auto}",
   ".fa-dev-widget-title{font-weight:700;margin:0 0 12px}",
   ".fa-dev-widget-option{display:flex;align-items:center;justify-content:space-between;gap:12px}",
   " .fa-dev-widget-option input{accent-color:#47b58d;width:20px;height:20px;flex-shrink:0;cursor:pointer}",
@@ -289,8 +289,11 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   panel.style.top=clamp(top,EDGE,Math.max(EDGE,viewportHeight-panelHeight-EDGE))+"px";
  }
   function move(left,top){
-  x=clamp(left,EDGE,Math.max(EDGE,innerWidth-SIZE-EDGE));
-  y=clamp(top,EDGE,Math.max(EDGE,innerHeight-SIZE-EDGE));
+  const doc=document.documentElement;
+  const visibleWidth=Math.max(0,doc.clientWidth||innerWidth);
+  const visibleHeight=Math.max(0,doc.clientHeight||innerHeight);
+  x=clamp(left,EDGE,Math.max(EDGE,visibleWidth-SIZE-EDGE));
+  y=clamp(top,EDGE,Math.max(EDGE,visibleHeight-SIZE-EDGE));
   root.style.left=x+"px";root.style.top=y+"px";placePanel();
  }
  move(x,y);
