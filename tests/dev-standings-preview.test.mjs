@@ -429,7 +429,7 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
  assert.ok(widget.includes('!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)'));
  assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
  assert.ok(client.includes("for(const input of [slider,number].filter(Boolean))"));
- assert.ok(client.includes('for(const control of matchdayControls)'));
+ assert.ok(client.includes("const matchdayRow=document.querySelector"));
  assert.ok(client.includes('visible:()=>previewState==="ON",onChange:setMatchdays'));
  assert.ok(client.includes('sessionStorage.setItem(ROUNDS_KEY,String(value))'));
  for(const invalid of [-1,31,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=30,false);
