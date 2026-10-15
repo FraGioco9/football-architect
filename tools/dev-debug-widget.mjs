@@ -52,6 +52,26 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-panel[hidden]{display:none!important}",
   "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}"
 
+  ".fa-dev-widget-panel{width:260px;padding:14px;border-color:var(--border,#568378);border-radius:14px;background:var(--surface,#17302f);color:var(--text,#f3f8f5);box-shadow:0 12px 36px #0005;font:inherit;font-size:13px;line-height:1.45;max-height:65vh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb,#63877c) transparent;transition:opacity .18s ease,transform .18s ease}",
+  ".fa-dev-widget-panel:not([hidden]){animation:fa-dev-panel-in .18s ease both}",
+  "@keyframes fa-dev-panel-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}",
+  "@keyframes fa-dev-panel-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(6px) scale(.99)}}",
+  ".fa-dev-widget-panel.is-closing{animation:fa-dev-panel-out .14s ease both}",
+  ".fa-dev-widget-backdrop{opacity:0;transition:opacity .18s ease}",
+  ".fa-dev-widget-backdrop:not([hidden]){opacity:1}",
+  ".fa-dev-widget-panel::-webkit-scrollbar{width:8px}.fa-dev-widget-panel::-webkit-scrollbar-track{background:transparent}.fa-dev-widget-panel::-webkit-scrollbar-thumb{background:var(--scroll-thumb,#63877c);border:2px solid transparent;background-clip:padding-box;border-radius:10px}",
+  ".fa-dev-widget-option input{accent-color:var(--primary,#47b58d);flex-shrink:0;cursor:pointer}",
+  ".fa-dev-widget-option input[type=checkbox]{width:20px;height:20px}",
+  ".fa-dev-widget-option input[type=range]{width:100%;min-width:70px;max-width:130px;height:24px;accent-color:var(--primary,#47b58d);cursor:pointer}",
+  ".fa-dev-widget-option input[type=number]{width:66px;min-width:58px;max-width:30%;padding:7px 5px;border:1px solid var(--border,#568378);border-radius:8px;background:var(--surface-raised,#244c45);color:var(--text,#f3f8f5);font:inherit;font-variant-numeric:tabular-nums;text-align:center}",
+  ".fa-dev-widget-option select,.fa-dev-widget-reset{cursor:pointer;background:var(--surface-raised,#244c45);color:inherit;border:1px solid var(--border,#568378);border-radius:8px;padding:8px 10px;font:inherit;transition:background .16s ease,border-color .16s ease,transform .16s ease}",
+  ".fa-dev-widget-option select{max-width:55%;min-width:0}",
+  ".fa-dev-widget-option select:focus-visible,.fa-dev-widget-option input:focus-visible,.fa-dev-widget-reset:focus-visible{outline:2px solid var(--focus,#8ee5c5);outline-offset:2px}",
+  ".fa-dev-widget-option select:hover,.fa-dev-widget-reset:hover{border-color:var(--primary,#47b58d)}",
+  ".fa-dev-widget-option input:disabled,.fa-dev-widget-reset:disabled{opacity:.6;cursor:wait}",
+  ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{opacity:1;cursor:pointer}",
+  "html[data-theme=\"light\"] .fa-dev-widget-option input[type=number]{background:var(--surface,#fff);color:var(--text,#18332d)}",
+  "@media(prefers-reduced-motion:reduce){.fa-dev-widget-panel{animation:none!important;transition:none!important}}"
  ].join("");
  const root=element("div","fa-dev-widget");
  const button=element("button","fa-dev-widget-button");
@@ -95,15 +115,25 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    row.append(element("span","",control.label));
    const input=element("input");input.type="range";input.min=String(control.min??0);input.max=String(control.max??100);input.step=String(control.step??1);
    input.value=String(typeof control.value==="function"?control.value():control.value??input.min);input.dataset.devControl=control.id;input.dataset.previous=input.value;
-   const output=element("output","",input.value);
-   input.addEventListener("input",()=>{output.textContent=input.value});
+   const number=element("input");number.type="number";number.min=input.min;number.max=input.max;number.step=input.step;
+   number.inputMode="numeric";number.value=input.value;number.dataset.devControl="matchdays-number";number.dataset.previous=number.value;
+   number.setAttribute("aria-label",control.label+" value");
+   input.addEventListener("input",()=>{number.value=input.value});
    input.addEventListener("change",async()=>{
-    const previous=input.dataset.previous;input.disabled=true;
+    const previous=input.dataset.previous;input.disabled=true;number.disabled=true;
     try{if(await control.onChange(Number(input.value))===false)input.value=previous;else input.dataset.previous=input.value}
     catch(error){input.value=previous;console.error("DEV Debug range change failed:",error)}
-    finally{output.textContent=input.value;input.disabled=false}
+    finally{number.value=input.value;number.dataset.previous=input.value;number.disabled=false;input.disabled=false}
    });
-   row.append(input,output);target.append(row);continue;
+   number.addEventListener("change",async()=>{
+    const previous=number.dataset.previous,value=number.valueAsNumber;
+    if(!Number.isInteger(value)||value<Number(number.min)||value>Number(number.max)){number.value=previous;return}
+    input.disabled=true;number.disabled=true;
+    try{if(await control.onChange(value)===false)number.value=previous;else number.dataset.previous=number.value}
+    catch(error){number.value=previous;console.error("DEV Debug number change failed:",error)}
+    finally{input.value=number.value;input.dataset.previous=number.value;number.disabled=false;input.disabled=false}
+   });
+   row.append(input,number);target.append(row);continue;
   }
   if(control.type==="number"){
    const row=element("label","fa-dev-widget-option");
@@ -220,7 +250,14 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   if(button.hasPointerCapture(event.pointerId))button.releasePointerCapture(event.pointerId);
  });
  button.addEventListener("pointercancel",()=>{press=null});
- function setOpen(open){panel.hidden=!open;backdrop.hidden=!open;button.setAttribute("aria-expanded",String(open));if(open)placePanel()}
+ function setOpen(open){
+  button.setAttribute("aria-expanded",String(open));
+  if(open){panel.classList.remove("is-closing");panel.hidden=false;backdrop.hidden=false;placePanel();return}
+  panel.classList.add("is-closing");backdrop.hidden=true;
+  const finish=()=>{panel.hidden=true;panel.classList.remove("is-closing")};
+  panel.addEventListener("animationend",finish,{once:true});
+  setTimeout(finish,180);
+ }
  root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}move(innerWidth-SIZE-16,innerHeight-SIZE-16);for(const section of sections.values())section.open=true;return true};
  closeButton.addEventListener("click",()=>setOpen(false));
  backdrop.addEventListener("click",()=>setOpen(false));
