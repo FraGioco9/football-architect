@@ -55,6 +55,10 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-panel{width:260px;padding:14px;border-color:var(--border,#568378);border-radius:14px;background:var(--surface,#17302f);color:var(--text,#f3f8f5);box-shadow:0 12px 36px #0005;font:inherit;font-size:13px;line-height:1.45;max-height:65vh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb,#63877c) transparent;transition:opacity .18s ease,transform .18s ease}",
   ".fa-dev-widget-panel:not([hidden]){animation:fa-dev-panel-in .18s ease both}",
   "@keyframes fa-dev-panel-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}",
+  "@keyframes fa-dev-panel-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(6px) scale(.99)}}",
+  ".fa-dev-widget-panel.is-closing{animation:fa-dev-panel-out .14s ease both}",
+  ".fa-dev-widget-backdrop{opacity:0;transition:opacity .18s ease}",
+  ".fa-dev-widget-backdrop:not([hidden]){opacity:1}",
   ".fa-dev-widget-panel::-webkit-scrollbar{width:8px}.fa-dev-widget-panel::-webkit-scrollbar-track{background:transparent}.fa-dev-widget-panel::-webkit-scrollbar-thumb{background:var(--scroll-thumb,#63877c);border:2px solid transparent;background-clip:padding-box;border-radius:10px}",
   ".fa-dev-widget-option input{accent-color:var(--primary,#47b58d);flex-shrink:0;cursor:pointer}",
   ".fa-dev-widget-option input[type=checkbox]{width:20px;height:20px}",
@@ -246,7 +250,14 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   if(button.hasPointerCapture(event.pointerId))button.releasePointerCapture(event.pointerId);
  });
  button.addEventListener("pointercancel",()=>{press=null});
- function setOpen(open){panel.hidden=!open;backdrop.hidden=!open;button.setAttribute("aria-expanded",String(open));if(open)placePanel()}
+ function setOpen(open){
+  button.setAttribute("aria-expanded",String(open));
+  if(open){panel.classList.remove("is-closing");panel.hidden=false;backdrop.hidden=false;placePanel();return}
+  panel.classList.add("is-closing");backdrop.hidden=true;
+  const finish=()=>{panel.hidden=true;panel.classList.remove("is-closing")};
+  panel.addEventListener("animationend",finish,{once:true});
+  setTimeout(finish,180);
+ }
  root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}move(innerWidth-SIZE-16,innerHeight-SIZE-16);for(const section of sections.values())section.open=true;return true};
  closeButton.addEventListener("click",()=>setOpen(false));
  backdrop.addEventListener("click",()=>setOpen(false));
