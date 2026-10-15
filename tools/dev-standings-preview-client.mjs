@@ -1,42 +1,46 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
 import { createPreviewStandings } from "./standings-data.mjs";
+import { createDebugWidget } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
 const LANG = {
-  en: { badge: "DEV PREVIEW — fictional results", exit: "Exit preview", round: "Matchday",
+  en: { round: "Matchday",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
-    recent: "latest match", caption: "Fictional local development standings and recent form." },
-  de: { badge: "DEV-VORSCHAU — fiktive Ergebnisse", exit: "Vorschau beenden", round: "Spieltag",
+    recent: "latest match" },
+  de: { round: "Spieltag",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
-    recent: "letztes Spiel", caption: "Fiktive lokale Entwicklungstabelle und Form." },
-  es: { badge: "VISTA DEV — resultados ficticios", exit: "Cerrar vista previa", round: "Jornada",
+    recent: "letztes Spiel" },
+  es: { round: "Jornada",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
-    recent: "último partido", caption: "Clasificación local ficticia de desarrollo y forma reciente." },
-  fr: { badge: "APERÇU DEV — résultats fictifs", exit: "Quitter l'aperçu", round: "Journée",
+    recent: "último partido" },
+  fr: { round: "Journée",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
-    recent: "dernier match", caption: "Classement fictif de développement local et forme récente." },
-  it: { badge: "ANTEPRIMA DEV — risultati fittizi", exit: "Esci dall'anteprima", round: "Giornata",
+    recent: "dernier match" },
+  it: { round: "Giornata",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
-    recent: "ultima partita", caption: "Classifica fittizia locale di sviluppo e forma recente." }
+    recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
-const params = new URLSearchParams(location.search);
-const toggle = params.get("standingsPreview");
-if (validPath && (toggle === "on" || toggle === "off")) {
-  try {
-    if (toggle === "on") sessionStorage.setItem(FLAG, "on");
-    else sessionStorage.removeItem(FLAG);
-  } catch { /* Unavailable storage is fail-closed. */ }
-  params.delete("standingsPreview");
-  const query = params.toString();
-  history.replaceState(history.state, "", location.pathname +
-    (query ? "?" + query : "") + location.hash);
+function isPreviewEnabled() {
+ try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}
 }
-let enabled = false;
-try { enabled = sessionStorage.getItem(FLAG) === "on"; } catch { /* fail closed */ }
-if (validPath && enabled) boot(validPath[1].toUpperCase());
+function setPreviewEnabled(enabled) {
+ try {
+  if(enabled)sessionStorage.setItem(FLAG,"on");
+  else sessionStorage.removeItem(FLAG);
+ }catch{return false}
+ location.reload();
+ return true;
+}
+if(validPath){
+ createDebugWidget({controls:[{
+  type:"switch",id:"fictional-standings",label:"Fictional standings",
+  checked:isPreviewEnabled,onChange:setPreviewEnabled
+ }]});
+ if(isPreviewEnabled())boot(validPath[1].toUpperCase());
+}
 
 function strings() { return LANG[document.documentElement.lang] || LANG.en; }
 function node(tag, className = "", value = "") {
@@ -136,25 +140,7 @@ async function boot(routeId) {
     const commitMobile = mobile.prepare(rows);
 
     const caption = document.getElementById("app-standings-caption");
-    if (!caption) throw Error("Missing standings caption");
-    const toolbar = node("div", "fa-dev-preview-toolbar");
-    const badge = node("strong", "fa-dev-preview-label");
-    const exit = node("button", "fa-dev-preview-exit");
-    exit.type = "button";
-    toolbar.append(badge, exit);
-    const style = node("style");
-    style.textContent = `
-      .fa-dev-preview-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;
-        margin:0 0 12px;padding:9px 12px;border:1px solid #537369;border-radius:10px;
-        background:#193438;color:#f2f7f4;font-size:12px}
-      .fa-dev-preview-label{letter-spacing:.03em}
-      .fa-dev-preview-exit{border:1px solid #759a8c;border-radius:6px;background:transparent;
-        color:inherit;padding:5px 9px;font:inherit;cursor:pointer}
-      .fa-dev-preview-exit:focus-visible{outline:2px solid #b9e6d5;outline-offset:2px}
-    `;
-    const parent = document.querySelector(".app-world-standings");
-    if (!parent) throw Error("Missing standings layout");
-
+    if(!caption)throw Error("Missing standings caption");
     const tooltip = node("div", "app-world-form-tooltip");
     tooltip.setAttribute("role", "tooltip");
     tooltip.id = "fa-dev-form-tooltip";
@@ -215,9 +201,6 @@ async function boot(routeId) {
     }
     function translate() {
       const t = strings();
-      badge.textContent = t.badge;
-      exit.textContent = t.exit;
-      caption.textContent = t.caption;
       for (const entry of entries) {
         entry.button.setAttribute("aria-label", t[entry.game.result] +
           (entry.latest ? " — " + t.recent : ""));
@@ -246,14 +229,10 @@ async function boot(routeId) {
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
     commitMobile();
-    parent.before(toolbar);
-    document.head.appendChild(style);
+    caption.dataset.appI18n="standingsFilledCaption";
+    window.faAppRenderLanguage?.();
     document.body.appendChild(tooltip);
     translate();
-    exit.addEventListener("click", () => {
-      try { sessionStorage.removeItem(FLAG); } catch { /* local only */ }
-      location.reload();
-    });
     new MutationObserver(translate).observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
