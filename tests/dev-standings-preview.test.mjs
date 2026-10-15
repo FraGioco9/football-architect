@@ -319,7 +319,7 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
  assert.ok(!isAllowlistedPublicPath("tools/dev-debug-widget.mjs"));
  assert.ok(!planPublicFiles().includes("tools/dev-debug-widget.mjs"));
 });
-test("DEV-M01: mount the Debug widget only after competition hydration", async () => {
+test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("document.body.innerHTML = withMobileShell(parsed.body.innerHTML)"));
   const start = client.indexOf("if(validPath){");
@@ -330,21 +330,21 @@ test("DEV-M01: mount the Debug widget only after competition hydration", async (
   assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
     initializer.indexOf("waitForRows().then(") < initializer.indexOf("createDebugWidget({controls:[{"));
   for (const enabled of [false, true]) {
-    let hydrate;
+    let hydrate, signalMounted;
     const hydration = new Promise(resolve => { hydrate = resolve; });
+    const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
       waitForRows: () => hydration,
-      createDebugWidget: () => operations.push("widget"),
+      createDebugWidget: () => { operations.push("widget"); signalMounted(); },
       isPreviewEnabled: () => enabled,
       boot: division => operations.push("boot:" + division),
       console: { error: error => { throw error; } }
     });
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
-    await hydration;
-    await Promise.resolve();
+    await widgetMounted;
     assert.deepEqual(operations, enabled ? ["widget", "boot:IT-1"] : ["widget"]);
   }
 });
