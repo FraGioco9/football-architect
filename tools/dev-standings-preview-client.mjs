@@ -37,7 +37,7 @@ async function resetPreview(){
  const input=document.querySelector('[data-dev-control="fictional-standings"]');
  const select=document.querySelector('[data-dev-control="matchdays"]');
  if(input)input.checked=false;
- if(select){select.value="15";select.dataset.previous="15";const output=select.parentElement?.querySelector("output");if(output)output.textContent="15"}
+ if(select){select.value="15";select.dataset.previous="15";const output=select.parentElement?.querySelector("output");if(output)output.textContent="15";if(select.parentElement)select.parentElement.hidden=true}
  return true;
 }
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
