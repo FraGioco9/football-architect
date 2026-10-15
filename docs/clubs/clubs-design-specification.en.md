@@ -15,6 +15,8 @@
 - **CLUB-ESSENTIAL-05 — Approved A (2026-10-15):** Each club has one permanent official nickname, recorded in the club’s original language and displayed unchanged in every interface language.
 - Each club has exactly two permanent official social colors: one **primary** and one **secondary** (**CLUB-ESSENTIAL-03 — Approved A, 2026-10-15**).
 
+- **CLUB-ESSENTIAL-08 — Approved (2026-10-15):** Each club has one permanent official description, originally written in the club's own language. The original-language description is canonical and is translated for display in the other supported interface languages. The description conveys the club's identity, traditions, connection to its city, and football culture, without relying on changeable simulation state (such as its current division, results, staff, or players).
+
 ## Permanent visual identity
 
 - Each club has one permanent official crest.
