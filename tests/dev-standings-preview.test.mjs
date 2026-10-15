@@ -301,7 +301,7 @@ test("UX-01A integration: approved division logos and theme rebind survive mobil
 
 test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
  assert.ok(widget.includes("export function createDebugWidget("));
- assert.ok(client.includes('import { createDebugWidget } from "./debug-widget.mjs";'));
+ assert.ok(client.includes('import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";'));
  assert.ok(client.includes('id:"fictional-standings",label:"Fictional standings"'));
  assert.ok(client.includes('caption.dataset.appI18n="standingsFilledCaption"'));
  assert.ok(client.includes("window.faAppRenderLanguage?.()"));
@@ -338,6 +338,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       validPath: ["/app/competitions/it-1/", "it-1"],
       waitForRows: () => hydration,
       createDebugWidget: () => { operations.push("widget"); signalMounted(); },
+      registerDebugControls: () => {},
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
       matchdays: 15,
