@@ -140,6 +140,34 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
         assert.ok(table.logo?.endsWith("-"+theme+".svg"),name+" async logo");
         await snap(name+" "+theme+" standings",w,h);
+        // UX-01B: desktop-only styling, sticky geometry and both themes.
+        if(name==="desktop"){
+          for(const width of [621,1024,1159,1160,1440]){
+            await cmd("Emulation.setDeviceMetricsOverride",
+              {width,height:h,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:h});
+            await wait("innerWidth==="+width);
+            const desktop=await run("(()=>{const t=document.querySelector('.app-world-standing-table'),r=t.tBodies[0].rows[0],c=r.cells,style=e=>getComputedStyle(e),head=style(t.tHead.rows[0].cells[0]),club=style(r.querySelector('.app-world-club-name')),crest=style(r.querySelector('.app-world-club-crest-placeholder')),pts=style(c[9]);const input=document.createElement('button');input.type='button';input.textContent='Focus QA';input.setAttribute('aria-label','Focus QA');c[10].append(input);const before=style(c[0]).backgroundColor,ptsBefore=pts.backgroundColor;input.focus();const focus=style(c[0]).backgroundColor,ptsAfter=style(c[9]).backgroundColor;const focused=document.activeElement===input;input.remove();return {rows:t.tBodies[0].rows.length,cells:c.length,minWidth:style(t).minWidth,headHeight:head.height,cellHeight:style(c[0]).height,pos:style(c[0]).width,clubLeft:style(c[1]).left,sticky:style(c[1]).position,clubMin:style(c[1]).minWidth,clubFont:club.fontSize,clubWeight:club.fontWeight,crestWidth:crest.width,crestHeight:crest.height,numeric:style(c[2]).textAlign,pointsAlign:pts.textAlign,pointsSize:pts.fontSize,pointsWeight:pts.fontWeight,pointsText:c[9].textContent,pointsBg:pts.backgroundColor,formAlign:style(c[10]).textAlign,focusChanged:before!==focus,focusColor:focus,pointsStable:ptsBefore===ptsAfter,focused}})()");
+            const wide=width>=1160;
+            assert.equal(desktop.rows,16,"UX-01B rows "+width);
+            assert.equal(desktop.cells,11,"UX-01B canonical columns "+width);
+            assert.equal(desktop.minWidth,wide?"852px":"766px","UX-01B minimum width "+width);
+            assert.ok(parseFloat(desktop.headHeight)>=40,"UX-01B heading height "+width);
+            assert.ok(parseFloat(desktop.cellHeight)>= (wide?46:44),"UX-01B row height "+width);
+            assert.equal(desktop.pos,wide?"44px":"38px","UX-01B position width "+width);
+            assert.equal(desktop.clubLeft,wide?"44px":"38px","UX-01B sticky offset "+width);
+            assert.equal(desktop.sticky,"sticky","UX-01B club sticky "+width);
+            if(wide)assert.equal(desktop.clubMin,"210px","UX-01B club minimum "+width);
+            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"700");
+            assert.equal(desktop.crestWidth,"28px");assert.equal(desktop.crestHeight,"30px");
+            assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
+            assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");
+            assert.equal(desktop.formAlign,"center");assert.equal(desktop.pointsText,"—");
+            assert.equal(desktop.pointsBg,theme==="light"?"rgb(212, 235, 221)":"rgb(38, 71, 62)");
+            assert.ok(desktop.focused&&desktop.focusChanged&&desktop.pointsStable,"UX-01B focus "+width);
+          }
+          await cmd("Emulation.setDeviceMetricsOverride",
+            {width:w,height:h,deviceScaleFactor:1,mobile:false,screenWidth:w,screenHeight:h});
+        }
         // UX-01A focused real-Chrome responsive acceptance (theme + native disclosure).
         // Do not confuse the public unknown-statistics state with DEV-only fictional results.
         const qaWidths = name==="iPhone" ? [320,360,390,620,621] : [w];
