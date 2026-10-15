@@ -259,8 +259,13 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  function placePanel(){
   if(panel.hidden)return;
   const doc=document.documentElement;
-  const viewportRight=Math.max(0,doc.clientWidth||innerWidth);
-  const viewportHeight=Math.max(0,doc.clientHeight||innerHeight);
+  // clientWidth excludes the classic vertical scrollbar; visualViewport additionally
+  // protects against mobile browser chrome and pinch-zoom viewport changes.
+  const vv=window.visualViewport;
+  const viewportLeft=Math.max(0,vv?vv.offsetLeft:0);
+  const viewportRight=Math.min(doc.clientWidth||innerWidth,vv?vv.offsetLeft+vv.width:innerWidth);
+  const viewportTop=Math.max(0,vv?vv.offsetTop:0);
+  const viewportHeight=Math.min(doc.clientHeight||innerHeight,vv?vv.offsetTop+vv.height:innerHeight);
   panel.style.position="fixed";
   panel.style.margin="0";
   panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
@@ -276,8 +281,12 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   const panelRect=panel.getBoundingClientRect();
   const panelWidth=panelRect.width||Math.min(320,viewportRight-EDGE*2);
   const panelHeight=panelRect.height;
-  const maxLeft=Math.max(EDGE,viewportRight-panelWidth-EDGE);
-  const left=clamp(rect.left,maxLeft===EDGE?EDGE:EDGE,maxLeft);
+  const minLeft=viewportLeft+EDGE;
+  const maxLeft=Math.max(minLeft,viewportRight-panelWidth-EDGE);
+  // If the button is too close to the right edge, align the popup's right edge
+  // to the button instead of letting it occupy the scrollbar gutter.
+  const preferredLeft=rect.right+panelWidth>viewportRight-EDGE?rect.right-panelWidth:rect.left;
+  const left=clamp(preferredLeft,minLeft,maxLeft);
   const spaceAbove=Math.max(0,rect.top-EDGE-10);
   const spaceBelow=Math.max(0,viewportHeight-EDGE-rect.bottom-10);
   let top;
@@ -285,8 +294,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   else if(spaceBelow>=panelHeight)top=rect.bottom+10;
   else if(spaceBelow>=spaceAbove)top=rect.bottom+10;
   else top=EDGE;
-  panel.style.left=clamp(left,EDGE,maxLeft)+"px";
-  panel.style.top=clamp(top,EDGE,Math.max(EDGE,viewportHeight-panelHeight-EDGE))+"px";
+  panel.style.left=clamp(left,minLeft,maxLeft)+"px";
+  panel.style.top=clamp(top,viewportTop+EDGE,Math.max(viewportTop+EDGE,viewportHeight-panelHeight-EDGE))+"px";
  }
   function move(left,top){
   const doc=document.documentElement;
