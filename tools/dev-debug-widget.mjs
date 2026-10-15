@@ -130,7 +130,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    target.append(action);continue;
   }
   if(control.type==="range"){
-   const row=element("label","fa-dev-widget-option");
+   const row=element("div","fa-dev-widget-option");
    row.dataset.devControlRow=control.id;
    row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;
    row.append(element("span","",control.label));
