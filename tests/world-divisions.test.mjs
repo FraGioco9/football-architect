@@ -170,18 +170,18 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-form-tooltip{--app-form-tooltip-width:clamp(240px,80vw,350px);position:fixed;z-index:80;box-sizing:border-box;display:flex;flex-direction:column;"));
  assert.ok(css.includes("--app-form-tooltip-width:clamp(240px,80vw,350px);"));
  assert.ok(css.includes("box-sizing:border-box;display:flex;flex-direction:column;"));
- assert.ok(css.includes("width:var(--app-form-tooltip-width);height:calc(var(--app-form-tooltip-width) * 0.4129032258064516);aspect-ratio:155/64;overflow:hidden;"));
+ assert.ok(css.includes("min-height:clamp(100px,29vw,114px);height:auto;max-height:min(60vh,260px);aspect-ratio:auto"));
+ assert.ok(css.includes("overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain"));
  assert.ok(css.includes("pointer-events:none;padding:clamp(9px,3vw,13.5px) clamp(10px,3.4vw,15.8px);border:1px solid #537369"));
  assert.ok(css.includes("font-size:clamp(10px,2.8vw,12.5px);"));
  assert.ok(css.includes(".app-world-form-tooltip-score{font-size:clamp(15px,4.5vw,20.3px);"));
- // Aspect ratio must be determined by viewport width alone, never the names.
+ // Width follows the viewport while height adapts to content and remains bounded.
  const responsiveTooltipWidth=viewport=>Math.max(240,Math.min(0.8*viewport,350));
  for(const [viewport,expectedWidth] of [[1280,350],[390,312],[320,256]]){
   const width=responsiveTooltipWidth(viewport);
-  const height=width*64/155;
   assert.equal(width,expectedWidth);
-  assert.ok(Math.abs(width/height-155/64)<1e-10);
   assert.ok(width<=viewport-16);
+  assert.ok(width>=240);
  }
  assert.ok(css.includes(".app-world-form-tooltip[hidden]{display:none}"));
  assert.ok(css.includes(".app-world-form-tooltip.is-closing{animation:app-world-tooltip-out 130ms ease-in both}"));
