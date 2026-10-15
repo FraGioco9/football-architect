@@ -14,19 +14,20 @@ let matchdays=readMatchdays();
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
  const old=matchdays;if(value===old)return true;
- const enabled=previewState==="ON";
- if(previewState!=="OFF" && !await setPreviewEnabled(false))return false;
- try{sessionStorage.setItem(ROUNDS_KEY,String(value))}catch{
-  if(enabled)await setPreviewEnabled(true);
-  return false;
- }
+ if(previewState==="ERROR")return false;
+ try{sessionStorage.setItem(ROUNDS_KEY,String(value))}catch{return false}
  matchdays=value;
- if(enabled && !await setPreviewEnabled(true)){
-  matchdays=old;
-  try{sessionStorage.setItem(ROUNDS_KEY,String(old))}catch{}
-  await setPreviewEnabled(true);
-  return false;
+ if(previewState==="ON"){
+  const previous=activePreview;
+  const replacement=await boot(validPath[1].toUpperCase());
+  if(typeof replacement!=="function"){
+   matchdays=old;try{sessionStorage.setItem(ROUNDS_KEY,String(old))}catch{}
+   return false;
+  }
+  activePreview=()=>{replacement();previous()};
  }
+ const slider=document.querySelector('[data-dev-control="matchdays"]');
+ if(slider){slider.value=String(matchdays);slider.dataset.previous=String(matchdays);const output=slider.parentElement?.querySelector("output");if(output)output.textContent=String(matchdays)}
  return true;
 }
 async function resetPreview(){
@@ -36,7 +37,7 @@ async function resetPreview(){
  const input=document.querySelector('[data-dev-control="fictional-standings"]');
  const select=document.querySelector('[data-dev-control="matchdays"]');
  if(input)input.checked=false;
- if(select){select.value="15";select.dataset.previous="15"}
+ if(select){select.value="15";select.dataset.previous="15";const output=select.parentElement?.querySelector("output");if(output)output.textContent="15"}
  return true;
 }
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
@@ -117,8 +118,8 @@ if(validPath){
   registerDebugControls("standings",[{
    type:"switch",id:"fictional-standings",label:"Fictional standings",
    checked:isPreviewEnabled,onChange:setPreviewEnabled
-  },{type:"select",id:"matchdays",label:"Matchdays",options:Array.from({length:31},(_,i)=>i),
-    value:()=>matchdays,onChange:setMatchdays},
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
+    value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
     {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
   let widgetRoot;
   registerDebugControls("general",[{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{

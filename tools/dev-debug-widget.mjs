@@ -39,6 +39,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-title{font-weight:700;margin:0 0 12px}",
   ".fa-dev-widget-option{display:flex;align-items:center;justify-content:space-between;gap:12px}",
   " .fa-dev-widget-option input{accent-color:#47b58d;width:20px;height:20px;flex-shrink:0;cursor:pointer}",
+  " .fa-dev-widget-option input[type=range]{width:112px;height:20px}",
+  " .fa-dev-widget-option output{min-width:2ch;text-align:right;font-variant-numeric:tabular-nums}",
   ".fa-dev-widget-option{cursor:pointer}",
   ".fa-dev-widget-option select,.fa-dev-widget-reset{cursor:pointer;background:#244c45;color:inherit;border:1px solid #568378;border-radius:6px;padding:5px}",
   "html[data-theme=\"light\"] .fa-dev-widget-option select,html[data-theme=\"light\"] .fa-dev-widget-reset{background:#e5f4ee;color:#174a40}",
@@ -74,7 +76,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }
  for(const control of controls){
   const target=sections.get(control.scope==="general"?"general":"page");
-  if(!["switch","select","button"].includes(control.type)||!control.id||!control.label||
+  if(!["switch","select","range","button"].includes(control.type)||!control.id||!control.label||
      typeof control.onChange!=="function")throw Error("Invalid DEV control");
   if(control.type==="button"){
    const action=element("button","fa-dev-widget-reset",control.label);
@@ -85,6 +87,23 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     finally{action.disabled=false}
    });
    target.append(action);continue;
+  }
+  if(control.type==="range"){
+   const row=element("label","fa-dev-widget-option");
+   row.dataset.devControlRow=control.id;
+   row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;
+   row.append(element("span","",control.label));
+   const input=element("input");input.type="range";input.min=String(control.min??0);input.max=String(control.max??100);input.step=String(control.step??1);
+   input.value=String(typeof control.value==="function"?control.value():control.value??input.min);input.dataset.devControl=control.id;input.dataset.previous=input.value;
+   const output=element("output","",input.value);
+   input.addEventListener("input",()=>{output.textContent=input.value});
+   input.addEventListener("change",async()=>{
+    const previous=input.dataset.previous;input.disabled=true;
+    try{if(await control.onChange(Number(input.value))===false)input.value=previous;else input.dataset.previous=input.value}
+    catch(error){input.value=previous;console.error("DEV Debug range change failed:",error)}
+    finally{output.textContent=input.value;input.disabled=false}
+   });
+   row.append(input,output);target.append(row);continue;
   }
   if(control.type==="select"){
    const row=element("label","fa-dev-widget-option");
@@ -106,6 +125,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    row.append(select);target.append(row);continue;
   }
   const row=element("label","fa-dev-widget-option");
+  row.dataset.devControlRow=control.id;
+  row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;
   row.append(element("span","",control.label));
   const input=element("input");
   input.type="checkbox";
@@ -118,11 +139,12 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    input.disabled=true;
    try { if(await control.onChange(desired)===false)input.checked=!desired; }
    catch(error){input.checked=!desired;console.error("DEV Debug transition failed:",error)}
-   finally {input.disabled=false}
+   finally {input.disabled=false;syncVisibility()}
   });
   row.append(input);
   target.append(row);
  }
+ function syncVisibility(){for(const control of controls){const row=panel.querySelector(`[data-dev-control-row="${control.id}"]`);if(row)row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false}}
  for(const details of sections.values())if(details.children.length>1)panel.append(details);
  const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
  root.append(backdrop,button,panel);
