@@ -76,7 +76,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }
  for(const control of controls){
   const target=sections.get(control.scope==="general"?"general":"page");
-  if(!["switch","select","range","button"].includes(control.type)||!control.id||!control.label||
+  if(!["switch","select","range","number","button"].includes(control.type)||!control.id||!control.label||
      typeof control.onChange!=="function")throw Error("Invalid DEV control");
   if(control.type==="button"){
    const action=element("button","fa-dev-widget-reset",control.label);
@@ -104,6 +104,31 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     finally{output.textContent=input.value;input.disabled=false}
    });
    row.append(input,output);target.append(row);continue;
+  }
+  if(control.type==="number"){
+   const row=element("label","fa-dev-widget-option");
+   row.dataset.devControlRow=control.id;
+   row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;
+   row.append(element("span","",control.label));
+   const input=element("input");input.type="number";input.min=String(control.min??0);input.max=String(control.max??100);input.step=String(control.step??1);
+   input.inputMode="numeric";
+   input.value=String(typeof control.value==="function"?control.value():control.value??input.min);
+   input.dataset.devControl=control.id;input.dataset.previous=input.value;
+   input.style.width="76px";input.style.maxWidth="40%";
+   input.addEventListener("change",async()=>{
+    const previous=input.dataset.previous;
+    const value=input.valueAsNumber;
+    if(!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)){
+     input.value=previous;return;
+    }
+    input.disabled=true;
+    try{
+     if(await control.onChange(value)===false)input.value=previous;
+     else input.dataset.previous=input.value;
+    }catch(error){input.value=previous;console.error("DEV Debug number change failed:",error)}
+    finally{input.disabled=false}
+   });
+   row.append(input);target.append(row);continue;
   }
   if(control.type==="select"){
    const row=element("label","fa-dev-widget-option");

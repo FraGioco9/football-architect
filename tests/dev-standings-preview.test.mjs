@@ -421,3 +421,16 @@ test("DEV-LAN: LAN access is opt-in and limited to private IPv4 clients and host
  assert.ok(serverSource.includes("if (!allowedHost(req.headers.host))"));
  assert.ok(serverSource.includes('"LAN opt-in"'));
 });
+
+test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and persistence with slider",()=>{
+ assert.ok(widget.includes('"number"'));
+ assert.ok(widget.includes('input.type="number"'));
+ assert.ok(widget.includes('input.inputMode="numeric"'));
+ assert.ok(widget.includes('!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)'));
+ assert.ok(client.includes('id:"matchdays-number",label:"Matchdays (number)",min:0,max:30,step:1'));
+ assert.ok(client.includes('for(const input of document.querySelectorAll(\'[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]\'))'));
+ assert.ok(client.includes('for(const control of matchdayControls)'));
+ assert.ok(client.includes('visible:()=>previewState==="ON",onChange:setMatchdays'));
+ assert.ok(client.includes('sessionStorage.setItem(ROUNDS_KEY,String(value))'));
+ for(const invalid of [-1,31,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=30,false);
+});
