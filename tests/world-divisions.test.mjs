@@ -188,7 +188,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes("@keyframes app-world-tooltip-in{from{opacity:0;transform:translateY(6px) scale(.97)}"));
  assert.ok(css.includes("@keyframes app-world-tooltip-out{from{opacity:1;transform:translateY(0) scale(1)}"));
  assert.ok(css.includes("@media(prefers-reduced-motion:reduce){.app-world-form-tooltip,.app-world-form-tooltip.is-closing{animation:none!important}"));
- assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"));
+ assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;"));
  assert.ok(renderer.includes('tooltip.setAttribute("role","tooltip")'));
  assert.ok(renderer.includes('document.body.appendChild(tooltip)'));
  assert.ok(renderer.includes('active.setAttribute("aria-describedby",tooltip.id)'));
