@@ -478,3 +478,20 @@ test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV
  assert.ok(client.includes("function isPreviewEnabled()"));
  assert.ok(read(".github/workflows/landing-checks.yml").toString().includes("node --test tests/*.test.mjs"));
 });
+
+
+test("STANDINGS-UX-01D: result tooltips adapt to long names and constrained viewports",()=>{
+ const css=read("assets/app.css").toString();
+ const client=read("tools/dev-standings-preview-client.mjs").toString();
+ const publicRuntime=read("assets/competition-page.js").toString();
+ assert.ok(css.includes("min-height:clamp(100px,29vw,114px);height:auto;max-height:min(60vh,260px);aspect-ratio:auto"));
+ assert.ok(css.includes("overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain"));
+ assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:700}"));
+ for(const field of ["game.homeGoals","game.awayGoals","game.homeId","game.awayId","game.round","game.isHome"])
+  assert.ok(client.includes(field),"tooltip retains real DEV match metadata: "+field);
+ assert.ok(client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124") ||
+  client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124;"),
+  "positioning measures the adaptive tooltip dimensions");
+ assert.ok(publicRuntime.includes("if (!demoFormTriggers.length) return"));
+ assert.ok(!publicRuntime.includes("data-dev-control"),"DEV controls remain isolated from public rendering");
+});
