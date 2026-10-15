@@ -259,29 +259,34 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  function placePanel(){
   if(panel.hidden)return;
   const doc=document.documentElement;
-  const scrollbarWidth=Math.max(0,innerWidth-doc.clientWidth);
-  const viewportRight=Math.min(doc.clientWidth,innerWidth-scrollbarWidth);
-  const viewportHeight=doc.clientHeight||innerHeight;
+  const viewportRight=Math.max(0,doc.clientWidth||innerWidth);
+  const viewportHeight=Math.max(0,doc.clientHeight||innerHeight);
+  panel.style.position="fixed";
+  panel.style.margin="0";
+  panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
   if(matchMedia("(max-width:600px)").matches){
    panel.style.left="0";panel.style.right="0";panel.style.top="auto";panel.style.bottom="0";
-   panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
+   panel.style.width="100%";panel.style.maxWidth="100%";
    return;
   }
   panel.style.right="auto";panel.style.bottom="auto";
-  panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
+  panel.style.width="min(320px, calc(100vw - 24px))";
+  panel.style.maxWidth="min(320px, calc(100vw - 24px))";
   const rect=root.getBoundingClientRect();
   const panelRect=panel.getBoundingClientRect();
-  const panelWidth=panelRect.width||320,panelHeight=panelRect.height;
-  const left=clamp(rect.left,EDGE,Math.max(EDGE,viewportRight-panelWidth-EDGE));
-  const spaceAbove=rect.top-EDGE-10;
-  const spaceBelow=viewportHeight-EDGE-rect.bottom-10;
+  const panelWidth=panelRect.width||Math.min(320,viewportRight-EDGE*2);
+  const panelHeight=panelRect.height;
+  const maxLeft=Math.max(EDGE,viewportRight-panelWidth-EDGE);
+  const left=clamp(rect.left,maxLeft===EDGE?EDGE:EDGE,maxLeft);
+  const spaceAbove=Math.max(0,rect.top-EDGE-10);
+  const spaceBelow=Math.max(0,viewportHeight-EDGE-rect.bottom-10);
   let top;
   if(spaceAbove>=panelHeight)top=rect.top-panelHeight-10;
   else if(spaceBelow>=panelHeight)top=rect.bottom+10;
   else if(spaceBelow>=spaceAbove)top=rect.bottom+10;
   else top=EDGE;
-  panel.style.left=(left-rect.left)+"px";
-  panel.style.top=(clamp(top,EDGE,Math.max(EDGE,viewportHeight-panelHeight-EDGE))-rect.top)+"px";
+  panel.style.left=clamp(left,EDGE,maxLeft)+"px";
+  panel.style.top=clamp(top,EDGE,Math.max(EDGE,viewportHeight-panelHeight-EDGE))+"px";
  }
   function move(left,top){
   x=clamp(left,EDGE,Math.max(EDGE,innerWidth-SIZE-EDGE));
