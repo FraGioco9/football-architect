@@ -79,19 +79,25 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   'html[data-theme="light"] .fa-dev-widget-option input[type=number]{color-scheme:light}',
   ".fa-dev-widget-option input[type=number]{appearance:textfield;-moz-appearance:textfield;padding-right:4px}",
   ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}",
-  ".fa-dev-number-wrap{position:relative;display:flex;flex:0 0 72px;width:72px;height:34px;min-width:72px;align-items:stretch}",
-  ".fa-dev-number-wrap input[type=number]{width:100%;min-width:0;max-width:none;height:34px;padding:4px 21px 4px 4px;text-align:center}",
-  ".fa-dev-number-spin{position:absolute;right:3px;top:3px;bottom:3px;width:16px;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:1px;border-left:1px solid var(--border,#568378);padding-left:2px}",
-  ".fa-dev-number-arrow{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;width:13px;padding:0;border:0;border-radius:3px;background:transparent;color:var(--text,#f3f8f5);cursor:pointer;touch-action:manipulation;outline:none;user-select:none}",
-  ".fa-dev-number-arrow svg{display:block;width:9px;height:6px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}",
+  ".fa-dev-number-wrap{position:relative;display:flex;flex:0 0 76px;width:76px;height:36px;min-width:76px;align-items:stretch;border:1px solid var(--border,#568378);border-radius:9px;background:var(--surface-raised,#244c45);overflow:hidden;box-shadow:inset 0 1px 2px #0001;transition:border-color .16s ease,box-shadow .16s ease}",
+  ".fa-dev-number-wrap:focus-within{border-color:var(--primary,#47b58d);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary,#47b58d) 20%,transparent)}",
+  ".fa-dev-number-wrap input[type=number]{box-sizing:border-box;flex:1 1 auto;width:0;min-width:0;max-width:none;height:100%;padding:4px 2px 4px 6px;border:0;border-radius:0;background:transparent;color:var(--text,#f3f8f5);font:inherit;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;outline:none;box-shadow:none}",
+  ".fa-dev-number-wrap input[type=number]:focus{outline:none;box-shadow:none}",
+  ".fa-dev-number-spin{position:relative;flex:0 0 21px;width:21px;min-width:21px;height:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;border-left:1px solid var(--border,#568378);padding:2px;gap:1px;background:var(--surface,#17302f)}",
+  ".fa-dev-number-arrow{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:1 1 50%;min-height:0;width:100%;margin:0;padding:0;border:0;border-radius:4px;background:transparent;color:var(--text,#f3f8f5);cursor:pointer;touch-action:manipulation;outline:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .12s ease,color .12s ease}",
+  ".fa-dev-number-arrow svg{display:block;flex:none;width:10px;height:7px;overflow:visible;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}",
   ".fa-dev-number-arrow:hover{background:var(--surface-hover,#315d53);color:var(--primary,#47b58d)}",
-  ".fa-dev-number-arrow:active{background:var(--surface-raised,#244c45)}",
+  ".fa-dev-number-arrow:active{background:var(--surface-raised,#244c45);color:var(--primary,#47b58d)}",
+  ".fa-dev-number-arrow:focus{outline:none}",
   ".fa-dev-number-arrow:focus-visible{outline:1px solid var(--focus,#8ee5c5);outline-offset:-1px}",
+  "html[data-theme=\\"light\\"] .fa-dev-number-wrap{background:var(--surface,#fff)}",
+  "html[data-theme=\\"light\\"] .fa-dev-number-spin{background:var(--surface-raised,#e5f4ee)}",
+  "html[data-theme=\\"light\\"] .fa-dev-number-arrow{color:var(--text,#18332d)}",
   ".fa-dev-widget-option,.fa-dev-widget-option>span{user-select:none;-webkit-user-select:none}",
   ".fa-dev-widget-button.dismiss-focus:focus{outline:none}",
   ".fa-dev-widget-panel{z-index:2147482998}",
   ".fa-dev-widget{z-index:2147482998}",
-  "@media(max-width:600px){.fa-dev-widget-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding-inline:16px}.fa-dev-widget-option>span{flex-basis:40%}.fa-dev-widget-option input[type=range]{min-width:48px}.fa-dev-widget-option input[type=number]{flex-basis:64px;width:64px;min-width:64px;max-width:64px}}",
+  "@media(max-width:600px){.fa-dev-widget-panel{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding-inline:16px}.fa-dev-widget-option>span{flex-basis:40%}.fa-dev-widget-option input[type=range]{min-width:48px}.fa-dev-number-wrap{flex-basis:72px;width:72px;min-width:72px}}",
   "@media(prefers-reduced-motion:reduce){.fa-dev-widget-panel{animation:none!important;transition:none!important}}"
  ].join("");
  const root=element("div","fa-dev-widget");
@@ -252,24 +258,32 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }catch{ /* Session storage can be unavailable. */ }
  function placePanel(){
   if(panel.hidden)return;
-  if(matchMedia("(max-width:600px)").matches){panel.style.left="0";panel.style.right="0";panel.style.top="auto";panel.style.bottom="0";return}
+  const doc=document.documentElement;
+  const scrollbarWidth=Math.max(0,innerWidth-doc.clientWidth);
+  const viewportRight=Math.min(doc.clientWidth,innerWidth-scrollbarWidth);
+  const viewportHeight=doc.clientHeight||innerHeight;
+  if(matchMedia("(max-width:600px)").matches){
+   panel.style.left="0";panel.style.right="0";panel.style.top="auto";panel.style.bottom="0";
+   panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
+   return;
+  }
   panel.style.right="auto";panel.style.bottom="auto";
-  panel.style.maxHeight=Math.max(160,innerHeight-EDGE*2)+"px";
+  panel.style.maxHeight=Math.max(160,viewportHeight-EDGE*2)+"px";
   const rect=root.getBoundingClientRect();
   const panelRect=panel.getBoundingClientRect();
-  const viewportRight=document.documentElement.clientWidth||innerWidth;
   const panelWidth=panelRect.width||320,panelHeight=panelRect.height;
   const left=clamp(rect.left,EDGE,Math.max(EDGE,viewportRight-panelWidth-EDGE));
-  const spaceAbove=rect.top-EDGE-10,spaceBelow=innerHeight-EDGE-rect.bottom-10;
+  const spaceAbove=rect.top-EDGE-10;
+  const spaceBelow=viewportHeight-EDGE-rect.bottom-10;
   let top;
   if(spaceAbove>=panelHeight)top=rect.top-panelHeight-10;
   else if(spaceBelow>=panelHeight)top=rect.bottom+10;
   else if(spaceBelow>=spaceAbove)top=rect.bottom+10;
   else top=EDGE;
   panel.style.left=(left-rect.left)+"px";
-  panel.style.top=(clamp(top,EDGE,Math.max(EDGE,innerHeight-panelHeight-EDGE))-rect.top)+"px";
+  panel.style.top=(clamp(top,EDGE,Math.max(EDGE,viewportHeight-panelHeight-EDGE))-rect.top)+"px";
  }
- function move(left,top){
+  function move(left,top){
   x=clamp(left,EDGE,Math.max(EDGE,innerWidth-SIZE-EDGE));
   y=clamp(top,EDGE,Math.max(EDGE,innerHeight-SIZE-EDGE));
   root.style.left=x+"px";root.style.top=y+"px";placePanel();
