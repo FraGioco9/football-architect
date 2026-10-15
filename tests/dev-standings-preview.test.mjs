@@ -411,3 +411,13 @@ test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4
    "recent form should contain "+days+" results");
  }
 });
+
+test("DEV-LAN: LAN access is opt-in and limited to private IPv4 clients and hosts",()=>{
+ const serverSource = read("tools/dev-standings-preview.mjs").toString();
+ assert.ok(serverSource.includes('process.env.FA_DEV_LAN === "1"'));
+ assert.ok(serverSource.includes('const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK'));
+ assert.ok(serverSource.includes("function isPrivateIPv4(value)"));
+ assert.ok(serverSource.includes("if (!isLoopback(remote) && !(LAN_ENABLED && isPrivateIPv4(remote)))"));
+ assert.ok(serverSource.includes("if (!allowedHost(req.headers.host))"));
+ assert.ok(serverSource.includes('"LAN opt-in"'));
+});

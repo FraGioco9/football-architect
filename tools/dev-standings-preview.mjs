@@ -3,11 +3,14 @@ import { createServer } from "node:http";
 import { readFile, realpath, lstat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath } from "./publication-guard.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
-const HOST = "127.0.0.1";
+const LOOPBACK = "127.0.0.1";
+const LAN_ENABLED = process.env.FA_DEV_LAN === "1";
+const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK;
 const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
@@ -28,6 +31,27 @@ const TYPES = {
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12]\/(?:index\.html)?$/;
 const INJECT = '<script type="module" src="/__fa_dev__/standings-client.mjs"></script>';
 
+function ipv4(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.startsWith("::ffff:") ? value.slice(7) : value;
+  const parts = normalized.split(".");
+  if (parts.length !== 4 || parts.some(part => part.length === 0 || part.length > 3 || ![...part].every(char => char >= "0" && char <= "9") || Number(part) > 255)) return null;
+  return parts.map(Number).join(".");
+}
+function isPrivateIPv4(value) {
+  const address = ipv4(value);
+  if (!address) return false;
+  const [a,b] = address.split(".").map(Number);
+  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+}
+function isLoopback(value) {
+  return ipv4(value) === LOOPBACK || value === "::1";
+}
+function allowedHost(value) {
+  if (typeof value !== "string" || !value.endsWith(":" + PORT)) return false;
+  const address = value.slice(0, -(String(PORT).length + 1));
+  return isLoopback(address) || (LAN_ENABLED && isPrivateIPv4(address));
+}
 function reject(res, status = 404) {
   res.writeHead(status, {
     "Content-Type": "text/plain; charset=utf-8",
@@ -60,9 +84,9 @@ async function safeFile(root, relativePath) {
 export function createPreviewServer({ root = ROOT } = {}) {
   return createServer(async (req, res) => {
     try {
-      if (req.socket.remoteAddress !== HOST &&
-          req.socket.remoteAddress !== "::ffff:" + HOST) return reject(res, 403);
-      if (req.headers.host !== HOST + ":" + PORT) return reject(res, 403);
+      const remote = req.socket.remoteAddress;
+      if (!isLoopback(remote) && !(LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
+      if (!allowedHost(req.headers.host)) return reject(res, 403);
       if (req.method !== "GET" && req.method !== "HEAD") return reject(res, 405);
       const raw = req.url?.split("?")[0] ?? "";
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||
@@ -102,7 +126,12 @@ export function createPreviewServer({ root = ROOT } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.length !== 2) throw Error("DEV preview server accepts no CLI flags");
   createPreviewServer().listen(PORT, HOST, () => {
-    process.stdout.write("Standings DEV preview: http://" + HOST + ":" + PORT +
-      "/app/competitions/it-1/\n");
+    const addresses = LAN_ENABLED
+      ? Object.values(networkInterfaces()).flatMap(items => items || [])
+        .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
+        .map(item => "http://" + item.address + ":" + PORT + "/app/competitions/it-1/")
+      : ["http://" + LOOPBACK + ":" + PORT + "/app/competitions/it-1/"];
+    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):" + String.fromCharCode(10) +
+      addresses.join(String.fromCharCode(10)) + String.fromCharCode(10));
   });
 }
