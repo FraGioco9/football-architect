@@ -217,7 +217,7 @@ html{scroll-padding-top:72px}
 .app-competition-return:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 /* IT-1 demonstration: temporary numbers only, not official match or league data. */
 .app-world-stat-value{font-weight:650}
-.app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:1px;white-space:nowrap}
+.app-world-form-strip{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .app-world-form-dot{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;padding:0;border:0;border-radius:3px;font:inherit;font-size:9px;font-weight:800;line-height:1;color:#f7fbf8;cursor:pointer}
 .app-world-form-w{background:#237c59}
 .app-world-form-d{background:#667b82}
