@@ -434,3 +434,16 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
  assert.ok(client.includes('sessionStorage.setItem(ROUNDS_KEY,String(value))'));
  for(const invalid of [-1,31,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=30,false);
 });
+
+test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output position",()=>{
+ assert.ok(widget.includes('row.append(input,number)'));
+ assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
+ assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
+ assert.ok(client.includes('const number=document.querySelector(\'[data-dev-control="matchdays-number"]\')'));
+ assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));
+ assert.ok(widget.includes("@keyframes fa-dev-panel-in"));
+ assert.ok(widget.includes("prefers-reduced-motion:reduce"));
+ assert.ok(widget.includes("input[type=number]::-webkit-inner-spin-button"));
+ assert.ok(widget.includes("var(--surface-raised"));
+});

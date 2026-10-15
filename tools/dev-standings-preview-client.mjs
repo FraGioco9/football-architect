@@ -26,10 +26,9 @@ async function setMatchdays(value){
   }
   activePreview=()=>{try{replacement()}finally{previous()}};
  }
- for(const input of document.querySelectorAll('[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]')){
-  input.value=String(matchdays);input.dataset.previous=String(matchdays);
-  const output=input.parentElement?.querySelector("output");if(output)output.textContent=String(matchdays);
- }
+ const slider=document.querySelector('[data-dev-control="matchdays"]');
+ const number=document.querySelector('[data-dev-control="matchdays-number"]');
+ for(const input of [slider,number].filter(Boolean)){input.value=String(matchdays);input.dataset.previous=String(matchdays)}
  return true;
 }
 async function resetPreview(){
@@ -37,9 +36,10 @@ async function resetPreview(){
  try{sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
  matchdays=15;
  const input=document.querySelector('[data-dev-control="fictional-standings"]');
- const matchdayControls=document.querySelectorAll('[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]');
+ const matchdayRow=document.querySelector('[data-dev-control-row="matchdays"]');
  if(input)input.checked=false;
- for(const control of matchdayControls){control.value="15";control.dataset.previous="15";const output=control.parentElement?.querySelector("output");if(output)output.textContent="15";if(control.parentElement)control.parentElement.hidden=true}
+ for(const control of document.querySelectorAll('[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]')){control.value="15";control.dataset.previous="15"}
+ if(matchdayRow)matchdayRow.hidden=true
  return true;
 }
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
@@ -120,9 +120,7 @@ if(validPath){
   registerDebugControls("standings",[{
    type:"switch",id:"fictional-standings",label:"Fictional standings",
    checked:isPreviewEnabled,onChange:setPreviewEnabled
-  },{type:"range",id:"matchdays",label:"Matchdays (slider)",min:0,max:30,step:1,
-    value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
-    {type:"number",id:"matchdays-number",label:"Matchdays (number)",min:0,max:30,step:1,
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
     value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
     {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
   let widgetRoot;
