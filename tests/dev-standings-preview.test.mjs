@@ -468,7 +468,9 @@ test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV
  assert.ok(client.includes('index === 0 ? " app-world-form-last"'));
  assert.ok(mobile.includes('mark.dataset.appI18n = formLetterKeys[game.result]'));
  assert.ok(mobile.includes('"standingsDemoWinLetter"'));
- assert.ok(css.includes(".app-world-form-control{box-sizing:border-box;width:32px;height:32px"));
+ assert.ok(css.includes(".app-world-form-strip .app-world-form-control{width:18px;height:18px;border-radius:5px}"));
+ assert.ok(css.includes(".app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:-4px}"));
+ assert.ok(css.includes("width:15px;height:15px;border-radius:4px;font-size:9px"));
  assert.ok(css.includes(".app-world-form-control:focus-visible"));
  assert.ok(css.includes(".app-world-form-control.app-world-form-last .app-world-form-glyph"));
  assert.ok(css.includes("@media(prefers-reduced-motion:reduce)"));
