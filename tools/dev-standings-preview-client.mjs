@@ -4,6 +4,41 @@ import { createPreviewStandings } from "./standings-data.mjs";
 import { createDebugWidget } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
+const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
+function readMatchdays(){
+ try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 15;
+  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=30?value:15;
+ }catch{return 15}
+}
+let matchdays=readMatchdays();
+async function setMatchdays(value){
+ if(!Number.isInteger(value)||value<0||value>30)return false;
+ const old=matchdays;if(value===old)return true;
+ const enabled=previewState==="ON";
+ if(previewState!=="OFF" && !await setPreviewEnabled(false))return false;
+ try{sessionStorage.setItem(ROUNDS_KEY,String(value))}catch{
+  if(enabled)await setPreviewEnabled(true);
+  return false;
+ }
+ matchdays=value;
+ if(enabled && !await setPreviewEnabled(true)){
+  matchdays=old;
+  try{sessionStorage.setItem(ROUNDS_KEY,String(old))}catch{}
+  await setPreviewEnabled(true);
+  return false;
+ }
+ return true;
+}
+async function resetPreview(){
+ if(previewState!=="OFF" && !await setPreviewEnabled(false))return false;
+ try{sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
+ matchdays=15;
+ const input=document.querySelector('[data-dev-control="fictional-standings"]');
+ const select=document.querySelector('[data-dev-control="matchdays"]');
+ if(input)input.checked=false;
+ if(select){select.value="15";select.dataset.previous="15"}
+ return true;
+}
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
 const LANG = {
   en: { round: "Matchday",
@@ -82,7 +117,9 @@ if(validPath){
   createDebugWidget({controls:[{
    type:"switch",id:"fictional-standings",label:"Fictional standings",
    checked:isPreviewEnabled,onChange:setPreviewEnabled
-  }]});
+  },{type:"select",id:"matchdays",label:"Matchdays",options:Array.from({length:31},(_,i)=>i),
+    value:()=>matchdays,onChange:setMatchdays},
+    {type:"button",id:"reset",label:"Reset",onChange:resetPreview}]});
   if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
    if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
     const input=document.querySelector('[data-dev-control="fictional-standings"]');
@@ -138,7 +175,7 @@ async function boot(routeId) {
     }
     const division = manifest.divisions.find(d => d.id === routeId);
     if (!division) throw Error("Unknown DEV division");
-    const { rows, clubs } = createPreviewStandings(division);
+    const { rows, clubs } = createPreviewStandings(division,matchdays);
     const tbody = await waitForRows();
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
@@ -183,7 +220,7 @@ async function boot(routeId) {
       tr.append(formCell);
       fragment.append(tr);
     });
-    if (entries.length !== 80 || fragment.childNodes.length !== 16) {
+    if (entries.length !== 16*Math.min(5,matchdays) || fragment.childNodes.length !== 16) {
       throw Error("Incomplete DEV standings rendering");
     }
     // Prepare mobile from the validated fixture model before changing the table.

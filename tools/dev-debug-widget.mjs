@@ -14,8 +14,8 @@ export function createDebugWidget({controls=[]}={}) {
  style.textContent=[
   ".fa-dev-widget{position:fixed;width:48px;height:48px;z-index:2147483000}",
   ".fa-dev-widget *{box-sizing:border-box}",
-  ".fa-dev-widget-button{width:48px;height:48px;border:1px solid #498a7c;border-radius:50%;",
-  "background:#184d46;color:#fff;font-size:23px;cursor:grab;touch-action:none;user-select:none;",
+  ".fa-dev-widget-button{width:48px;height:48px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid #498a7c;border-radius:50%;",
+  "background:#184d46;color:#fff;font-size:23px;cursor:pointer;touch-action:none;user-select:none;",
   "box-shadow:0 5px 20px #0005}",
   ".fa-dev-widget-button:hover{background:#21665b;border-color:#8ee5c5}",
   'html[data-theme="light"] .fa-dev-widget-button{background:#e5f4ee;color:#174a40;border-color:#398674}',
@@ -28,11 +28,15 @@ export function createDebugWidget({controls=[]}={}) {
   "font:14px/1.4 system-ui,sans-serif;max-height:65vh;overflow:auto}",
   ".fa-dev-widget-title{font-weight:700;margin:0 0 12px}",
   ".fa-dev-widget-option{display:flex;align-items:center;justify-content:space-between;gap:12px}",
-  ".fa-dev-widget-option input{accent-color:#47b58d;width:20px;height:20px;flex-shrink:0}"
+  " .fa-dev-widget-option input{accent-color:#47b58d;width:20px;height:20px;flex-shrink:0;cursor:pointer}",
+  ".fa-dev-widget-option{cursor:pointer}",
+  ".fa-dev-widget-option select,.fa-dev-widget-reset{cursor:pointer;background:#244c45;color:inherit;border:1px solid #568378;border-radius:6px;padding:5px}",
+  "html[data-theme=\"light\"] .fa-dev-widget-option select,html[data-theme=\"light\"] .fa-dev-widget-reset{background:#e5f4ee;color:#174a40}",
+  ".fa-dev-widget-reset{width:100%;margin-top:12px}"
  ].join("");
  const root=element("div","fa-dev-widget");
  const button=element("button","fa-dev-widget-button");
- button.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h4m4 0h8M4 17h10m4 0h2"/><circle cx="10" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></svg>';
+ button.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="19" r="2" fill="currentColor" stroke="none"/></svg>';
  button.type="button";
  button.setAttribute("aria-label","Debug Settings");
  button.setAttribute("aria-expanded","false");
@@ -43,8 +47,37 @@ export function createDebugWidget({controls=[]}={}) {
  button.setAttribute("aria-controls",panel.id);
  panel.append(element("h2","fa-dev-widget-title","Debug Settings"));
  for(const control of controls){
-  if(control.type!=="switch"||!control.id||!control.label||
+  if(!["switch","select","button"].includes(control.type)||!control.id||!control.label||
      typeof control.onChange!=="function")throw Error("Invalid DEV control");
+  if(control.type==="button"){
+   const action=element("button","fa-dev-widget-reset",control.label);
+   action.type="button";action.dataset.devControl=control.id;
+   action.addEventListener("click",async()=>{
+    action.disabled=true;
+    try{await control.onChange();}catch(error){console.error("DEV Debug reset failed:",error)}
+    finally{action.disabled=false}
+   });
+   panel.append(action);continue;
+  }
+  if(control.type==="select"){
+   const row=element("label","fa-dev-widget-option");
+   row.append(element("span","",control.label));
+   const select=element("select");select.dataset.devControl=control.id;
+   for(const option of control.options||[]){
+    const item=element("option","",String(option));item.value=String(option);select.append(item);
+   }
+   select.value=String(typeof control.value==="function"?control.value():control.value);
+   select.dataset.previous=select.value;
+   select.addEventListener("change",async()=>{
+    const previous=select.dataset.previous;
+    select.disabled=true;
+    try{if(await control.onChange(Number(select.value))===false)select.value=previous;
+     else select.dataset.previous=select.value;}
+    catch(error){select.value=previous;console.error("DEV Debug matchday change failed:",error)}
+    finally{select.disabled=false}
+   });
+   row.append(select);panel.append(row);continue;
+  }
   const row=element("label","fa-dev-widget-option");
   row.append(element("span","",control.label));
   const input=element("input");
