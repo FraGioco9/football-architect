@@ -27,24 +27,51 @@ function isPreviewEnabled() {
  try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}
 }
 let activePreview=null;
+let previewState="OFF";
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
  transition=transition.catch(()=>false).then(async()=>{
-  if(enabled===!!activePreview)return true;
+  if(previewState==="ERROR"){
+   try{activePreview()}
+   catch(error){console.error("DEV preview retry restore failed:",error);return false}
+   try{sessionStorage.removeItem(FLAG)}
+   catch(error){console.error("DEV preview retry storage failed:",error);return false}
+   activePreview=null;
+   previewState="OFF";
+   if(!enabled)return true;
+  }
+  if(enabled===(previewState==="ON"))return true;
   if(enabled){
    const cleanup=await boot(validPath[1].toUpperCase());
    if(typeof cleanup!=="function")return false;
    try{sessionStorage.setItem(FLAG,"on")}
-   catch(error){cleanup();console.error("DEV preview storage unavailable:",error);return false}
+   catch(error){
+    try{cleanup()}
+    catch(restoreError){
+     activePreview=cleanup;
+     previewState="ERROR";
+     console.error("DEV preview rollback failed:",restoreError);
+    }
+    console.error("DEV preview storage unavailable:",error);
+    return false;
+   }
    activePreview=cleanup;
+   previewState="ON";
    return true;
   }
-  // Keep the cleanup handle until the DOM and storage are both reset.
-  try{activePreview()}
-  catch(error){console.error("DEV preview restore failed:",error);return false}
+  // Reject OFF without changing the DOM if persistence is unavailable.
   try{sessionStorage.removeItem(FLAG)}
   catch(error){console.error("DEV preview storage unavailable:",error);return false}
+  try{activePreview()}
+  catch(error){
+   previewState="ERROR";
+   console.error("DEV preview restore failed:",error);
+   try{sessionStorage.setItem(FLAG,"on")}
+   catch(storageError){console.error("DEV preview rollback storage failed:",storageError)}
+   return false;
+  }
   activePreview=null;
+  previewState="OFF";
   return true;
  });
  return transition;
