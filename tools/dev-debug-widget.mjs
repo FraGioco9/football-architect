@@ -144,7 +144,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   row.append(input);
   target.append(row);
  }
- function syncVisibility(){for(const control of controls){const row=panel.querySelector(`[data-dev-control-row="${control.id}"]`);if(row)row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false}}
+ root.syncVisibility=()=>{for(const control of controls){const row=panel.querySelector(`[data-dev-control-row="${control.id}"]`);if(row)row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false}};
+ function syncVisibility(){root.syncVisibility()}
  for(const details of sections.values())if(details.children.length>1)panel.append(details);
  const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
  root.append(backdrop,button,panel);

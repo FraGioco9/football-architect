@@ -24,7 +24,7 @@ async function setMatchdays(value){
    matchdays=old;try{sessionStorage.setItem(ROUNDS_KEY,String(old))}catch{}
    return false;
   }
-  activePreview=()=>{replacement();previous()};
+  activePreview=()=>{try{replacement()}finally{previous()}};
  }
  const slider=document.querySelector('[data-dev-control="matchdays"]');
  if(slider){slider.value=String(matchdays);slider.dataset.previous=String(matchdays);const output=slider.parentElement?.querySelector("output");if(output)output.textContent=String(matchdays)}
@@ -128,7 +128,8 @@ if(validPath){
   }}]);
   widgetRoot=createDebugWidget({page:"standings"});
   if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
-   if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
+   widgetRoot?.syncVisibility();
+  if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
     const input=document.querySelector('[data-dev-control="fictional-standings"]');
     if(input)input.checked=false;
    }

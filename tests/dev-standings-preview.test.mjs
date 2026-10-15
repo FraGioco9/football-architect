@@ -398,5 +398,7 @@ test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4
   for(const row of model.rows){assert.equal(row.played,days);assert.equal(row.won+row.drawn+row.lost,days);assert.equal(row.recent.length,Math.min(5,days))}
  }
  assert.ok(client.includes('value:()=>matchdays,visible:()=>previewState==="ON"'));
+ assert.ok(client.includes("widgetRoot?.syncVisibility()"));
+ assert.ok(widget.includes("root.syncVisibility=()=>"));
  assert.ok(client.includes('activePreview=()=>{replacement();previous()}'));
 });
