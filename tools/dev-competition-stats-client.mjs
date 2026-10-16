@@ -259,7 +259,10 @@ if (panel && divisionId) {
       manifest=data;render();
     })
     .catch(error=>{console.error(error);root.replaceChildren(create("p","DEV statistics unavailable"));});
-  window.addEventListener("fa:competition-route-change",render);
+  window.addEventListener("fa:competition-route-change",()=>{
+    document.querySelector("dialog.fa-dev-stats-dialog[open]")?.close();
+    render();
+  });
   window.addEventListener("popstate",render);
   window.addEventListener("fa:fictional-standings-change",render);
   const standings = document.getElementById("app-standings-body");
