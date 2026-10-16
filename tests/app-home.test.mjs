@@ -127,7 +127,7 @@ test("HOME-01 retains bottom Settings sidebar, a clean top bar, and old shell wi
     assert.match(css,new RegExp("grid-template-columns:"+width+"px minmax"));
   }
   assert.match(css,/\.app-panels,\.app-settings-grid\{grid-template-columns:1fr\}/);
-  assert.doesNotMatch(css,/overflow-x:\s*hidden/);
+  assert.doesNotMatch(css.replace(/\.app-world-form-tooltip\{[^}]*\}/g,""),/overflow-x:\s*hidden/);
   assert.match(css,/prefers-reduced-motion:reduce/);
 });
 

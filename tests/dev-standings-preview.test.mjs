@@ -478,3 +478,31 @@ test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV
  assert.ok(client.includes("function isPreviewEnabled()"));
  assert.ok(read(".github/workflows/landing-checks.yml").toString().includes("node --test tests/*.test.mjs"));
 });
+
+
+test("STANDINGS-UX-01D: result tooltips adapt to long names and constrained viewports",()=>{
+ const css=read("assets/app.css").toString();
+ const client=read("tools/dev-standings-preview-client.mjs").toString();
+ const publicRuntime=read("assets/competition-page.js").toString();
+ assert.ok(css.includes("min-height:clamp(100px,29vw,114px);height:auto;max-height:min(60vh,260px);aspect-ratio:auto"));
+ assert.ok(css.includes("overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain"));
+ assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:700}"));
+ for(const field of ["game.homeGoals","game.awayGoals","game.homeId","game.awayId","game.round","game.isHome"])
+  assert.ok(client.includes(field),"tooltip retains real DEV match metadata: "+field);
+ assert.ok(client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124") ||
+  client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124;"),
+  "positioning measures the adaptive tooltip dimensions");
+ assert.ok(publicRuntime.includes("if (!demoFormTriggers.length) return"));
+ assert.ok(!publicRuntime.includes("data-dev-control"),"DEV controls remain isolated from public rendering");
+});
+
+
+test("STANDINGS-UX-01D: mobile compact form keeps its appearance and opens tooltips on tap",()=>{
+ const client=read("tools/dev-standings-preview-client.mjs").toString();
+ const canonical=read("assets/competition-page.js").toString();
+ assert.ok(client.includes('item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")'));
+ assert.ok(client.includes('if(entry.mobile){e.preventDefault();e.stopPropagation();}'));
+ assert.ok(client.includes('[...entries,...mobileEntries]'));
+ assert.ok(canonical.includes('element("span","app-world-form-dot app-world-form-"'));
+ assert.ok(!client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
+});

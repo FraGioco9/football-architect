@@ -251,6 +251,7 @@ async function boot(routeId) {
     const mobileList=document.getElementById("app-standings-compact-list");
     if(!mobileList)throw Error("Mobile standings list unavailable");
     const canonicalMobile=[...mobileList.childNodes];
+    const mobileEntries=[];
     const captionI18n=caption.getAttribute("data-app-i18n");
     const captionText=caption.textContent;
     const listeners=new AbortController();
@@ -370,6 +371,19 @@ async function boot(routeId) {
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
     commitMobile();
+    // Preserve the canonical compact-form marks exactly as rendered. Bind taps
+    // directly to those marks and cancel the enclosing <summary> activation.
+    const mobileItems=[...mobileList.querySelectorAll(".app-world-mobile-item")];
+    if(mobileItems.length!==rows.length)throw Error("Mobile standings row/model mismatch");
+    mobileItems.forEach((item,rowIndex)=>{
+      const row=rows[rowIndex];
+      const marks=[...item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")];
+      if(marks.length!==row.recent.length)throw Error("Mobile recent-form count mismatch");
+      marks.forEach((mark,index)=>{
+        const game=row.recent[index];
+        mobileEntries.push({button:mark,glyph:mark,game,ownId:row.club.clubId,latest:index===0,mobile:true});
+      });
+    });
     caption.dataset.appI18n="standingsFilledCaption";
     window.faAppRenderLanguage?.();
     document.body.appendChild(tooltip);
@@ -377,7 +391,7 @@ async function boot(routeId) {
     languageObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
-    for (const entry of entries) {
+    for (const entry of [...entries,...mobileEntries]) {
       const btn = entry.button;
       listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
@@ -392,7 +406,8 @@ async function boot(routeId) {
         pressedWhenOpen = (e.pointerType === "touch" || e.pointerType === "pen") &&
           active === entry;
       });
-      listen(btn,"click", () => {
+      listen(btn,"click", e => {
+        if(entry.mobile){e.preventDefault();e.stopPropagation();}
         if (pressedWhenOpen && active === entry) close();
         else open(entry);
         pressedWhenOpen = false;
