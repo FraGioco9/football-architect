@@ -51,7 +51,7 @@
   const views=["standings","fixtures","stats","history","rules","awards"];
   const tabs=[...tablist.querySelectorAll('[role="tab"]')];
   // Safari may briefly restore touch focus to the active tab when a modal closes.
-  for(const tab of tabs)tab.style.webkitTapHighlightColor="transparent";
+  for(const tab of tabs)if(tab.style)tab.style.webkitTapHighlightColor="transparent";
   const panels=tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
   const season=document.getElementById("app-competition-season");
   const seasonMenu=document.getElementById("app-competition-season-menu");
