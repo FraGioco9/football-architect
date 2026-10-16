@@ -187,7 +187,7 @@ if (panel && divisionId) {
         crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
         crest.setAttribute("aria-hidden","true");
         identity.append(crest,create("span",team.clubName));
-        li.append(position,identity,create("strong",number(team[key])));
+        li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         top.append(li);
       });
       card.append(top);leaderGrid.append(card);
