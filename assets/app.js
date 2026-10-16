@@ -593,8 +593,8 @@
       link.setAttribute("href",appHref(routes.dashboard));
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
-      const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?$/i);
-      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()));
+      const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?(?:\?.*)?$/i);
+      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"?season=1&view=standings"));
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
       link.setAttribute("href",appHref(routes.divisions));

@@ -244,7 +244,8 @@
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <div class="app-fixtures-toolbar">
               <div class="app-fixtures-navigation">
-                <button type="button" class="app-link app-link-secondary" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled>‹</button>
+                <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+                <div class="language-control app-fixtures-select">
                 <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
                   <div class="language-option" role="option" id="app-fixtures-round-option-1" data-menu-value="1" data-fixture-round-choice="1" aria-selected="true"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;1</div>
@@ -278,7 +279,8 @@
                   <div class="language-option" role="option" id="app-fixtures-round-option-29" data-menu-value="29" data-fixture-round-choice="29" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;29</div>
                   <div class="language-option" role="option" id="app-fixtures-round-option-30" data-menu-value="30" data-fixture-round-choice="30" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;30</div>
                 </div>
-                <button type="button" class="app-link app-link-secondary" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled>›</button>
+                </div>
+                <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
               </div>
               <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             </div>

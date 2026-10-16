@@ -141,7 +141,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(search.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)",name+" search colors");
         assert.ok(search.rect[0]>=-1&&search.rect[1]<=w+1,name+" search fits");
         await snap(name+" "+theme+" search",w,h);
-        await visit("/app/competitions/it-1/","document.querySelectorAll('#app-standings-body tr').length===16");
+        await visit("/app/competitions/","document.querySelectorAll('a.app-division-card').length===16");
+        assert.equal(await run("[...document.querySelectorAll('a.app-division-card')].every(a=>new URL(a.href).search==='?season=1&view=standings')"),true);
+        await run("document.querySelector('a.app-division-card').click()");
+        await wait("document.readyState==='complete'&&window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1'&&document.querySelectorAll('#app-standings-body tr').length===16");
+        assert.equal(await run("location.search"),"?season=1&view=standings");
         const table=await run("(()=>{const t=document.querySelector('.app-world-standing-table');return {rows:document.querySelectorAll('#app-standings-body tr').length,sticky:getComputedStyle(t.querySelector('tbody tr>*:first-child')).position,head:getComputedStyle(t.querySelector('thead th')).backgroundColor,logo:document.querySelector('.app-brand-symbol')?.getAttribute('src')}})()");
         assert.equal(table.rows,16);assert.equal(table.sticky,"sticky");
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
@@ -162,6 +166,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.deepEqual(picker,{open:true,expanded:"true",focused:"app-fixtures-round",active:"app-fixtures-round-option-1",fit:true});
         const sameMenuStyle=await run("(()=>{const keys=['backgroundColor','borderColor','borderRadius','boxShadow','padding'],reference=getComputedStyle(document.getElementById('language-options'));return ['app-fixtures-picker','app-competition-season-menu'].every(id=>{const style=getComputedStyle(document.getElementById(id));return keys.every(key=>style[key]===reference[key])})})()");
         assert.equal(sameMenuStyle,true,"competition dropdowns share Settings menu styles");
+        const dropdownWidths=await run("(()=>{const width=id=>document.getElementById(id).getBoundingClientRect().width;return {round:width('app-fixtures-round'),menu:width('app-fixtures-picker'),season:width('app-competition-season')}})()");
+        assert.equal(dropdownWidths.round,dropdownWidths.menu);assert.equal(dropdownWidths.season,88);
+        const disabledStyle=await run("(()=>{const s=getComputedStyle(document.getElementById('app-fixtures-previous'));return {background:s.backgroundColor,border:s.borderColor,transition:s.transitionDuration,transform:s.transform}})()");
+        const disabledPoint=await run("(()=>{const r=document.getElementById('app-fixtures-previous').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
+        await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',...disabledPoint});
+        assert.deepEqual(await run("(()=>{const s=getComputedStyle(document.getElementById('app-fixtures-previous'));return {background:s.backgroundColor,border:s.borderColor,transition:s.transitionDuration,transform:s.transform}})()"),disabledStyle);
+        assert.equal(disabledStyle.transition,'0s');assert.equal(disabledStyle.transform,'none');
         await snap(name+" "+theme+" round picker",w,h);
         await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
         assert.equal(await run("window.faCompetitionRoute.get().matchday"),2);

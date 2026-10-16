@@ -16,6 +16,8 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 - Eight matches per round; home club, score when played, away club, timing and
   scheduled/full-time state. On narrow screens home/away clubs stack beside the
   score, preserving readable space for long names without truncation.
+- Dropdown menus match their trigger width. Season uses a compact 88px control;
+  previous/next use site-style SVG chevrons and have no disabled hover effect.
 - A shared season selector applies to all six competition views. No match-detail
   action is included.
 - Dates and times remain unknown unless supplied. Supplied ISO timestamps must
@@ -26,7 +28,8 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 
 ## URL and season context
 
-Canonical detail URLs have no trailing slash:
+Competition catalogue links explicitly open Standings in the current provisional
+season (1). Canonical detail URLs have no trailing slash:
 `/app/competitions/it-1?season=1&view=fixtures&matchday=12`.
 The six supported views are `standings`, `fixtures`, `stats`, `history`, `rules`
 and `awards`. Only Fixtures carries `matchday` (1–30). Switching tabs preserves

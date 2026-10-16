@@ -29,8 +29,8 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
  assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'"'),division.id);
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'">'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'?season=1&amp;view=standings"'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'?season=1&amp;view=standings">'),division.id);
  }
  assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
