@@ -393,9 +393,6 @@ async function boot(routeId) {
     });
     for (const entry of [...entries,...mobileEntries]) {
       const btn = entry.button;
-      if(entry.mobile){
-        listen(btn,"click",e=>{e.preventDefault();e.stopPropagation();},{capture:true});
-      }
       listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
       });
@@ -409,7 +406,8 @@ async function boot(routeId) {
         pressedWhenOpen = (e.pointerType === "touch" || e.pointerType === "pen") &&
           active === entry;
       });
-      listen(btn,"click", () => {
+      listen(btn,"click", e => {
+        if(entry.mobile){e.preventDefault();e.stopPropagation();}
         if (pressedWhenOpen && active === entry) close();
         else open(entry);
         pressedWhenOpen = false;
