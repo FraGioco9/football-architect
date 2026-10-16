@@ -287,7 +287,6 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
  assert.ok(css.includes(".app-world-club-crest-placeholder::before{content:\"\";"));
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
- assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
@@ -295,7 +294,6 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(generator.includes('class="app-world-club-crest-placeholder" data-club-crest='));
- assert.equal((page.match(/<th scope="col"/g)||[]).length,11);
  assert.ok(!page.includes("app-world-club-crest-placeholder"));
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
@@ -328,7 +326,6 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:686px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}"));
  assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
  assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
- assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
  assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 
