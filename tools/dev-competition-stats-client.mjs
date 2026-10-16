@@ -172,6 +172,7 @@ if (panel && divisionId) {
           let closing=false;
           let pointerDismiss=false;
           let fallbackClose;
+          let neutralFocus=null;
           close.addEventListener("pointerdown",()=>{pointerDismiss=true});
           const finishClose=()=>{
             if(!dialog.open)return;
@@ -179,13 +180,12 @@ if (panel && divisionId) {
             // Safari restores focus to the modal opener when close() runs.
             // Redirect touch dismissal focus to a neutral, non-visible target.
             if(pointerDismiss){
-              const neutral=document.createElement("span");
-              neutral.tabIndex=-1;
-              neutral.style.cssText="position:fixed;width:0;height:0;overflow:hidden";
-              document.body.append(neutral);
-              neutral.focus({preventScroll:true});
+              neutralFocus=document.createElement("span");
+              neutralFocus.tabIndex=-1;
+              neutralFocus.style.cssText="position:fixed;width:0;height:0;overflow:hidden";
+              document.body.append(neutralFocus);
+              neutralFocus.focus({preventScroll:true});
               dialog.close();
-              requestAnimationFrame(()=>neutral.remove());
             }else dialog.close();
           };
           const dismiss=()=>{
@@ -233,7 +233,10 @@ if (panel && divisionId) {
           dialog.addEventListener("close",()=>{
             clearTimeout(fallbackClose);
             dialog.remove();
-            if(pointerDismiss)requestAnimationFrame(()=>expand.blur());
+            if(pointerDismiss)requestAnimationFrame(()=>{
+              if(document.activeElement===expand)expand.blur();
+              neutralFocus?.remove();
+            });
           });
           window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
