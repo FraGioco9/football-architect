@@ -30,7 +30,7 @@ const devServer=createServer((req,res)=>{
  if(devLegacyGuard){
   const end=res.end.bind(res);
   res.end=(body,...args)=>{
-   if(body&&String(res.getHeader('Content-Type')).includes('text/html'))body=Buffer.from(body.toString().replace(/<style>html\[data-fa-(?:dev-standings|debug)-pending[\s\S]*?<\/style>/g,''));
+   if(body&&body.toString().slice(0,200).toLowerCase().includes('<!doctype html'))body=Buffer.from(body.toString().replace(/<style>html\[data-fa-(?:dev-standings|debug)-pending[\s\S]*?<\/style>/g,''));
    return end(body,...args);
   };
  }
