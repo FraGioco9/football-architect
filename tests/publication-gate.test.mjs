@@ -7,13 +7,15 @@ import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact}
 
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
+  const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));
+  assert.equal(divisionAssets.length,32);
+  assert.ok(divisionAssets.every(p=>p.endsWith("/primary.svg")||p.endsWith("/compact.svg")));
+  assert.ok(!files.includes("assets/division-logos.js"));
  assert.ok(files.includes("assets/theme.js"),"runtime theme bootstrap must be public");
- const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));
- assert.equal(divisionAssets.length,32);
- assert.ok(divisionAssets.every(p=>/\/(?:primary|compact)\.svg$/.test(p)));
- assert.ok(!files.includes("assets/division-logos.js"));
  assert.equal(files.filter(p=>/^app\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(p)).length,16);
- for(const path of ["tests/fixtures/it-1-demo.mjs","tests/world-competition-runtime.test.mjs",
+ for(const path of ["__fa_dev__/debug-settings.mjs","__fa_dev__/artifact-manifest.json",
+                    "tools/dev-debug-settings.mjs","tools/dev-preview-artifact.mjs",
+                    "tests/fixtures/it-1-demo.mjs","tests/world-competition-runtime.test.mjs",
                     "tools/publication-guard.mjs","data/division-allocations.provisional.json"])
   assert.ok(!files.includes(path),"not public: "+path);
  assert.ok(existsSync(join(repositoryRoot,"tests/fixtures/it-1-demo.mjs")));
@@ -62,7 +64,9 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
    for(const gate of [
     /GITHUB_ACTOR/,/inputs\.expected_sha/,/\.head\.sha == \$sha/,
     /landing-checks\.yml\/runs\?head_sha=/,/node --test tests\/\*\.test\.mjs/,
-    /stagePublicArtifact/,/assertPublicArtifact/,/actions\/upload-artifact@v4/,
+    /stagePublicArtifact/,/assertPublicArtifact/,/artifact_contract:/,
+     /stage-protected-debug:/,/Protected Debug publication remains disabled/,
+     /actions\/upload-artifact@v4/,
     /needs: stage-public/,/actions\/download-artifact@v4/,
     /secrets\.VERCEL_TOKEN/,/--target=preview/,/VERCEL_PROJECT_ID/,
     /readyState == "READY"/,/vercel alias set/,
