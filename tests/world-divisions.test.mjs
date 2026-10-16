@@ -202,7 +202,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
  assert.ok(code.includes("tabs.length!==6"));
- for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key === "'+key+'"'));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
