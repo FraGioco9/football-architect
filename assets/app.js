@@ -511,8 +511,9 @@
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
       host.endsWith(".localhost") || host.endsWith(".local") ||
       host.endsWith(".vercel.app") || host.endsWith(".github.io");
-    if (local) return route;
-    const clean = route.slice(4) || "/";
+    if (local) return route === "/" ? route : route.replace(/\/+$/, "") + "/";
+    const raw = route.slice(4) || "/";
+    const clean = raw === "/" ? raw : raw.replace(/\/+$/, "") + "/";
     if (host.startsWith("app.")) return clean;
     const mainHost = host.startsWith("www.") ? host.slice(4) : host;
     return (window.location.protocol || "https:") + "//app." + mainHost + clean;
@@ -521,12 +522,12 @@
     const host = (window.location.hostname || "").toLowerCase();
     if (!host.startsWith("app.")) return path;
     const origin = (window.location.protocol || "https:") + "//" + host.slice(4);
-    return path === "/" ? origin : origin + path.replace(/\/+$/, "");
+    return path === "/" ? origin : origin + path.replace(/\/+$/, "") + "/";
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
-    const routes = {dashboard:"/app/dashboard",calendar:"/app/calendar",
-      settings:"/app/settings",divisions:"/app/competitions"};
+    const routes = {dashboard:"/app/dashboard/",calendar:"/app/calendar/",
+      settings:"/app/settings/",divisions:"/app/competitions/"};
     for (const [view,link] of Object.entries(links)) {
       if (link) link.setAttribute("href",appHref(routes[view]));
     }
@@ -535,7 +536,7 @@
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
       const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?$/i);
-      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()));
+      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"/"));
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
       link.setAttribute("href",appHref(routes.divisions));
