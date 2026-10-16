@@ -14,7 +14,8 @@ function sandbox() {
  for(const [name,content] of [
   ["dev-debug-settings.mjs","export const enabled = false;\n"],
   ["dev-standings-preview-client.mjs","export const client = true;\n"],
-  ["dev-standings-preview-data.mjs","export const data = [];\n"]
+  ["dev-standings-preview-data.mjs","export const data = [];\n"],
+  ["dev-debug-widget.mjs","export const widget = true;\n"]
  ])writeFileSync(join(debugRoot,"tools",name),content);
  return {root,debugRoot,protectedPath:join(root,"protected"),publicPath:join(root,"public")};
 }
@@ -26,7 +27,7 @@ test("DEBUG-INFRA-01: contracts are explicit; protected files are never public",
  assert.equal(assertArtifactContract("public"),"public");
  assert.equal(assertArtifactContract("protected_debug"),"protected_debug");
  for(const path of ["__fa_dev__/debug-settings.mjs","__fa_dev__/standings-client.mjs",
-  "__fa_dev__/standings-data.mjs","__fa_dev__/artifact-manifest.json"])
+  "__fa_dev__/standings-data.mjs","__fa_dev__/debug-widget.mjs","__fa_dev__/artifact-manifest.json"])
   assert.equal(isAllowlistedPublicPath(path),false);
 });
 
@@ -107,4 +108,20 @@ test("DEBUG-INFRA-05: GitHub can stage Public, but protected publishing stays di
  assert.match(workflow,/approved-preview-public/);
  assert.match(workflow,/--target=preview/);
  assert.doesNotMatch(workflow,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
+});
+
+
+test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
+ const {root,debugRoot,protectedPath}=sandbox();
+ try{
+  for(const name of ["dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs","dev-debug-widget.mjs"])
+   writeFileSync(join(debugRoot,"tools",name),readFileSync(join(repositoryRoot,"tools",name)));
+  stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
+  const directory=join(protectedPath,"__fa_dev__");
+  for(const name of ["debug-settings.mjs","standings-client.mjs","standings-data.mjs","debug-widget.mjs"]){
+   const source=readFileSync(join(directory,name),"utf8");
+   for(const match of source.matchAll(/(?:import|export)\\s+(?:[^"'\\n]*?\\s+from\\s+)?["'](\\.[^"']+)["']/g))
+    assert.equal(existsSync(join(directory,match[1])),true,name+" imports missing "+match[1]);
+  }
+ }finally{rmSync(root,{recursive:true,force:true})}
 });
