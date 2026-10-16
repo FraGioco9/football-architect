@@ -351,6 +351,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
     await widgetMounted;
+    if (enabled) await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
   }
 });
