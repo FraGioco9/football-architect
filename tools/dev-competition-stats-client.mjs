@@ -173,7 +173,6 @@ if (panel && divisionId) {
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
-    leaders.append(create("h3","Team leaders","fa-dev-stats-heading"));
     const leaderGrid=create("div",undefined,"fa-dev-stats-leader-grid");
     const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false]];
     for(const [key,label,ascending] of categories){
@@ -194,44 +193,7 @@ if (panel && divisionId) {
       card.append(top);leaderGrid.append(card);
     }
     leaders.append(leaderGrid);root.append(leaders);
-    const subnav=create("div",undefined,"fa-dev-stats-subnav");
-    for(const [id,label] of [["performance","Performance"],["additional","Additional"]]){
-      const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamMode===id));
-      button.addEventListener("click",()=>{teamMode=id;sortKey=id==="performance"?"points":"cs";descending=true;render();});subnav.append(button);
-    }
-    root.append(subnav);
-    const visibleColumns=teamMode==="performance"?["clubName","mp","w","d","l","gf","ga","gd","ppg"]:["clubName","cs","fts","homeWinPct","awayWinPct"];
-    const table = create("table",undefined,"fa-dev-stats-table");
-    const thead = create("thead"), header = create("tr");
-    visibleColumns.forEach(key=>{
-      const th = create("th"), button = create("button",labels[columns.indexOf(key)]);
-      th.scope = "col";
-      button.type = "button";
-      button.addEventListener("click",()=>{
-        if (sortKey === key) descending = !descending;
-        else { sortKey = key; descending = key !== "clubName"; }
-        render();
-      });
-      th.append(button);header.append(th);
-    });
-    thead.append(header);table.append(thead);
-    const tbody = create("tbody");
-    const teams = [...stats.teams].sort((a,b)=>{
-      const x = a[sortKey], y = b[sortKey];
-      const difference = typeof x === "string" ? x.localeCompare(y) : x-y;
-      return (descending ? -difference : difference) || a.clubId-b.clubId;
-    });
-    for (const team of teams) {
-      const row = create("tr");
-      for (const key of visibleColumns) {
-        const value = key.endsWith("Pct") ? pct(team[key]) : key === "ppg" ? number(team[key]) : team[key];
-        row.append(create("td",value));
-      }
-      tbody.append(row);
-    }
-    table.append(tbody);
-    const wrap = create("div",undefined,"fa-dev-stats-table-wrap");
-    wrap.append(table);root.append(wrap);
+
   }
   fetch("/competitions/_shared/manifest.json",{cache:"no-store"})
     .then(response=>{if(!response.ok)throw Error("Manifest unavailable");return response.json();})
