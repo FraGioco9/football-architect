@@ -11,9 +11,11 @@ function readMatchdays(){
  }catch{return 15}
 }
 let matchdays=readMatchdays();
+let routeSeasonOverride=null;
 function selectedSeason(){
  const available=(document.documentElement.dataset.faDevSeasons||"1,2").split(",").map(Number).filter(Number.isSafeInteger);
- // The URL carries the requested deep-link season during first paint, before the router hydrates.
+ // Initial deep links are canonical until the app router emits an explicit route change.
+ if([1,2].includes(routeSeasonOverride))return routeSeasonOverride;
  const requested=Number(new URL(window.location.href).searchParams.get("season"));
  if([1,2].includes(requested))return requested;
  const routed=Number(window.faCompetitionRoute?.get?.().season);
@@ -149,6 +151,8 @@ if(validPath){
   let seasonRefresh=Promise.resolve();
   let seasonRequest=0;
   function syncSeason(){
+   const routed=Number(window.faCompetitionRoute?.get?.().season);
+   if([1,2].includes(routed))routeSeasonOverride=routed;
    const next=selectedSeason();
    if(next===renderedSeason)return;
    // Route changes can arrive while initial DEV hydration is still pending.
