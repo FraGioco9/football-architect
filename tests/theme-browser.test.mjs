@@ -113,7 +113,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
-          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")){
+          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
         chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
@@ -356,6 +356,62 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=fixtures&matchday=1"});
     await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
     assert.equal(await run("(()=>{const e=document.getElementById('app-fixtures-empty');return !e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()"),true,"DEV OFF reveals the legitimate empty state");
+    // Mobile Fixtures QA uses CDP touch input rather than programmatic .click().
+    const tap=async selector=>{
+      const point=await run("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");if(!e)throw Error('Missing touch target');e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
+      assert.ok(point.x>=0&&point.x<await run("innerWidth")&&point.y>=0&&point.y<await run("innerHeight"),selector+" touch target fits viewport");
+      await cmd("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[{x:point.x,y:point.y,radiusX:1,radiusY:1,force:1}]});
+      await cmd("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
+    };
+    const menuFits=async id=>{
+      const box=await run("(()=>{const e=document.getElementById("+JSON.stringify(id)+"),r=e.getBoundingClientRect();return {open:!e.hidden,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight}})()");
+      assert.equal(box.open,true,id+" opened by touch");
+      assert.ok(box.left>=0&&box.right<=box.width&&box.top>=0&&box.bottom<=box.height,id+" remains inside mobile viewport");
+    };
+    for(const [width,height] of [[390,844],[320,700]])for(const theme of ["dark","light"]){
+      await cmd("Emulation.setDeviceMetricsOverride",{width,height,deviceScaleFactor:1,mobile:true,screenWidth:width,screenHeight:height});
+      await cmd("Emulation.setTouchEmulationEnabled",{enabled:true,maxTouchPoints:1});
+      await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+");sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
+      await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=standings"});
+      await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
+      assert.equal(await run("document.documentElement.dataset.theme"),theme);
+      await tap('#competition-tab-fixtures');await expectSeason(1,8);
+      await tap('#app-fixtures-round');await wait("!document.getElementById('app-fixtures-picker').hidden");await menuFits('app-fixtures-picker');
+      await tap('#app-fixtures-round-option-1');await expectSeason(1,1);
+      assert.equal(await run("document.getElementById('app-fixtures-picker').hidden"),true);
+      await tap('#app-fixtures-round');await tap('#app-fixtures-previous');
+      await wait("document.getElementById('app-fixtures-picker').hidden");await expectSeason(1,1);
+      await tap('#app-fixtures-next');await expectSeason(1,2);
+      await tap('#app-fixtures-previous');await expectSeason(1,1);
+      for(const season of [2,1]){
+        await tap('#app-competition-season');await wait("!document.getElementById('app-competition-season-menu').hidden");await menuFits('app-competition-season-menu');
+        await tap('#app-competition-season-option-'+season);await expectSeason(season,1);
+      }
+      for(const lang of ['en','it','de','es','fr']){
+        await run("document.documentElement.lang="+JSON.stringify(lang)+";window.faAppRenderLanguage?.()");
+        const layout=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')],r=e=>e.getBoundingClientRect(),n=r(document.querySelector('.app-fixtures-navigation')),c=r(document.getElementById('app-fixtures-current'));return {rows:rows.length,scroll:document.documentElement.scrollWidth,width:innerWidth,fit:rows.every(e=>r(e).left>=0&&r(e).right<=innerWidth),names:rows.every(e=>[...e.querySelectorAll('.app-fixture-name')].every(n=>n.scrollWidth<=n.clientWidth+1)),controls:n.right<=c.left+1&&c.right<=innerWidth}})()");
+        assert.equal(layout.rows,8);assert.ok(layout.scroll<=layout.width,width+" "+theme+" "+lang+" no horizontal page overflow");assert.equal(layout.fit,true);assert.equal(layout.names,true,"club names wrap without clipping");assert.equal(layout.controls,true,"round controls and current shortcut do not overlap");
+      }
+      await run("document.documentElement.lang='en';window.faAppRenderLanguage?.();document.getElementById('competition-panel-fixtures').scrollIntoView({block:'start'})");
+      await snap("FIXTURES-MOBILE "+width+" "+theme,width,height);
+      const frameObserver=await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faEmptyFrames=[];window.__faObserveEmpty=true;const sample=()=>{const e=document.getElementById('app-fixtures-empty');if(e&&!e.hidden&&e.getClientRects().length&&getComputedStyle(e).visibility==='visible')window.__faEmptyFrames.push(1);if(window.__faObserveEmpty)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
+      await cmd("Page.reload",{ignoreCache:true});await expectSeason(1,1);
+      await run("window.__faObserveEmpty=false");assert.deepEqual(await run("window.__faEmptyFrames"),[],"mobile refresh has no empty frame");
+      await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:frameObserver.identifier});
+      await tap('#app-fixtures-current');await expectSeason(1,8);
+      await tap('#app-fixtures-round');await tap('#app-fixtures-round-option-30');await expectSeason(1,30);
+      assert.equal(await run("document.getElementById('app-fixtures-next').disabled"),true);
+      await tap('#app-fixtures-next');await expectSeason(1,30);
+      await run("sessionStorage.setItem('football-architect:standings-dev-matchdays','0')");
+      await cmd("Page.reload",{ignoreCache:true});
+      await wait(signature+"==="+JSON.stringify(expected(1,30,0)));
+      assert.equal(await run("!document.getElementById('app-fixtures-toolbar').hidden"),true,"zero completed games still has a schedule");
+      await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
+      await cmd("Page.reload",{ignoreCache:true});
+      await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
+      assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"DEV OFF hides all navigation and shows the empty state");
+      console.log("FIXTURES_MOBILE_PASS|"+width+"|"+theme+"|touch menus, arrows, season changes, current round, refresh, empty state, zero completed games, five-language layout");
+    }
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}
