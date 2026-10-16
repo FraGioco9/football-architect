@@ -29,8 +29,8 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
  assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/">'),division.id);
+  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'"'),division.id);
+  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'"'),division.id);
  }
  assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
@@ -47,7 +47,7 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
    if(href.startsWith("#")||href.startsWith("data:"))continue;
    assert.doesNotMatch(href,/^https?:/);
-   const path=new URL(href,base);
+   const path=href.startsWith("/") ? new URL(".."+href,base) : new URL(href,base);
    const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
    assert.ok(existsSync(fileURLToPath(filePath)),file+" -> "+href);
   }
@@ -116,7 +116,7 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",
  assert.ok(shared.includes('data-app-i18n="navCompetitions">Competitions'));
  assert.ok(shared.includes('class="app-competition-header"'));
  assert.ok(shared.includes('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"'));
- assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions"'));
+ assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/app/competitions" data-app-i18n="allDivisions"'));
  assert.equal((shared.match(/<th scope="col"/g)||[]).length,11);
  for(const key of cols)assert.ok(shared.includes('data-app-i18n="'+key+'"'),key);
  assert.equal((shared.match(/<tr data-world-club="/g)||[]).length,0);
