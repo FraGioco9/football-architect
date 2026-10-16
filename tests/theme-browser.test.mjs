@@ -99,6 +99,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error("CDP timeout "+method));},15000);
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
     });
+    await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -106,7 +107,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     };
     const wait=async expr=>{
       for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}
-      throw Error("Timed out: "+expr);
+      let diagnostic="unavailable";
+      try{diagnostic=JSON.stringify(await run(`(()=>({url:location.href,readyState:document.readyState,route:window.faCompetitionRoute?.get?.()||null,preview:sessionStorage.getItem('football-architect:standings-dev-preview'),pending:document.documentElement.dataset.faDevStandingsPending||null,fixturesApi:typeof window.faFixtures,prepare:typeof window.faFixtures?.prepare,fixtureRows:[...document.querySelectorAll('[data-fixture-match]')].map(n=>({id:n.dataset.fixtureMatch,score:n.querySelector('.app-fixture-score')?.textContent||null})),empty:(()=>{const e=document.getElementById('app-fixtures-empty');return e?{hidden:e.hidden,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility,text:e.textContent}:null})(),errors:window.__faRuntimeErrors||[]}))()`));}catch(error){diagnostic=String(error)}
+      throw Error("Timed out: "+expr+"; browser state: "+diagnostic);
     };
     const visit=async(route,condition="true")=>{
       const url=origin+route;await cmd("Page.navigate",{url});
