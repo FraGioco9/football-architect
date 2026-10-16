@@ -214,7 +214,9 @@ async function boot(routeId) {
     // Future rounds have no result; standings and fixtures share completed scores.
     const complete=createPreviewStandings(division,30,season);
     const fixtureData=complete.fixtures.map(game=>({
-      ...game,
+      round:game.round,
+      homeId:game.homeId,
+      awayId:game.awayId,
       homeGoals:game.round<=matchdays?game.homeGoals:null,
       awayGoals:game.round<=matchdays?game.awayGoals:null,
       kickoff:null
