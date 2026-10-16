@@ -54,7 +54,7 @@ test("SEARCH-01 search destinations are limited to real internal routes and head
   for(const [,kind,id,description,url] of destinations){
     assert.match(url,/^\/app\/(?:dashboard|calendar|settings|competitions)(?:\/[a-z0-9-]+)?(?:#[a-z-]+)?$/);
     const [pathname,fragment] = url.slice(1).split("#");
-    const file=pathname+"index.html";
+    const file=pathname+"/index.html";
     assert.ok(known.has(file),url);
     const target=html[file] ?? read(file);
     assert.ok(target.includes('id="'+id+'"'),id);
