@@ -108,7 +108,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
         // server, point those links to the latest preview season instead.
         if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
           body = Buffer.from(body.toString("utf8").replace(
-            /(\/app\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\?season=)1(?=&amp;|&|["'])/g,
+            /(href=["']\.\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\?season=)1(?=&amp;|&|["'])/g,
             (_, prefix) => prefix + "2"
           ), "utf8");
         }
