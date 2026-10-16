@@ -599,7 +599,10 @@
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
       const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?(?:\?.*)?$/i);
-      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"?season=1&view=standings"));
+      if (slug) {
+        const season = link.hasAttribute("data-dev-latest-season") ? "2" : "1";
+        link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"?season="+season+"&view=standings"));
+      }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
       link.setAttribute("href",appHref(routes.divisions));
