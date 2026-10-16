@@ -97,7 +97,7 @@ test('FIXTURES-05: return to supplied current round is conditional, transactiona
  const restore=view.snapshot();view.prepare(null)();assert.equal(button.hidden,true);
  restore();button.emit('click');assert.equal(route.get().matchday,16);
  for(const invalid of [0,31,NaN,'16'])assert.throws(()=>view.prepare(schedule(divisions[0]),{currentMatchday:invalid}));
- route.set({season:'3'});assert.equal(button.hidden,true);
+ route.set({season:'5'});assert.equal(button.hidden,true,'unavailable season hides return-to-current-round control');
  route.set({season:'1'});view.prepare(schedule(divisions[0]))();assert.equal(button.hidden,true,'unknown current round is never inferred');
  for(const currentMatchday of [1,30]){
   view.prepare(schedule(divisions[0],currentMatchday===1?0:30),{currentMatchday})();
