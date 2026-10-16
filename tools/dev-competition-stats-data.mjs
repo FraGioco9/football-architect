@@ -1,6 +1,6 @@
 // DEV-only statistics derived from the same fictional match results as standings.
 // Not publication-allowlisted. Never substitute for canonical match/player events.
-import {createPreviewStandings} from "./dev-standings-preview-data.mjs";
+import {createPreviewStandings} from "./standings-data.mjs";
 
 export function aggregatePreviewStats(division, matchdays=15, season=1) {
   const preview=createPreviewStandings(division,matchdays,season);
