@@ -99,7 +99,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
-        const file = (raw.endsWith("/") ? raw + "index.html" : DETAIL.test(raw) ? raw + "/index.html" : raw).slice(1);
+        const file = (raw.endsWith("/") ? raw + "index.html" : DETAIL.test(raw) && !raw.endsWith("/index.html") ? raw + "/index.html" : raw).slice(1);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
