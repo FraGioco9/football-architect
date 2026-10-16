@@ -90,6 +90,8 @@
     }
     if(focus){tabs[index].focus();tabs[index].scrollIntoView?.({block:"nearest",inline:"nearest"})}
     for(const listener of listeners)listener({...state});
+    // Notify DEV enhancements even when they initialize before this router.
+    window.dispatchEvent(new CustomEvent("fa:competition-route-change",{detail:{...state}}));
   }
   function set(patch,options){
     if(Object.hasOwn(patch,"matchday"))pendingDefaultMatchday=false;
