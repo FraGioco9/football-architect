@@ -95,8 +95,8 @@ if (panel && divisionId) {
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
 .fa-dev-stats-dialog .fa-dev-stats-top{max-width:none;list-style:none;padding:0;margin:0}
 .fa-dev-stats-dialog .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px}
-.fa-dev-stats-expand:hover,.fa-dev-stats-expand:focus-visible{opacity:1;background:transparent;text-decoration:underline}
-.fa-dev-stats-expand:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.fa-dev-stats-expand:hover{opacity:1;background:transparent;text-decoration:underline}
+.fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
 .fa-dev-stats-leader-card .app-world-club-identity{min-width:0}
 .fa-dev-stats-leader-card .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -261,7 +261,7 @@ if (panel && divisionId) {
           const all=create("ol",undefined,"fa-dev-stats-top");
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
           dialog.append(header,all);
-          dialog.addEventListener("close",()=>{dialog.remove();expand.blur();});
+          dialog.addEventListener("close",()=>{expand.blur();dialog.remove();});
           document.body.append(dialog);
           dialog.showModal();
           close.focus();
