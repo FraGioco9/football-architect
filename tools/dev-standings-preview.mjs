@@ -171,13 +171,13 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.length !== 2) throw Error("DEV preview server accepts no CLI flags");
-  createPreviewServer().listen(PORT, HOST, () => {
+  createPreviewServer({ subdomains: !LAN_ENABLED }).listen(PORT, HOST, () => {
     const addresses = LAN_ENABLED
       ? Object.values(networkInterfaces()).flatMap(items => items || [])
         .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
         .map(item => "http://" + item.address + ":" + PORT + "/competitions/it-1")
-      : ["http://" + LOOPBACK + ":" + PORT + "/competitions/it-1"];
-    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):" + String.fromCharCode(10) +
+      : ["http://app.localhost:" + PORT + "/competitions/it-1"];
+    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "local subdomains") + "):" + String.fromCharCode(10) +
       addresses.join(String.fromCharCode(10)) + String.fromCharCode(10));
   });
 }
