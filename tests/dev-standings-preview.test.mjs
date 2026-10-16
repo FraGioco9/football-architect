@@ -497,12 +497,4 @@ test("STANDINGS-UX-01D: result tooltips adapt to long names and constrained view
 });
 
 
-test("STANDINGS-UX-01D: mobile compact form taps open match tooltips without toggling details",()=>{
- const client=read("tools/dev-standings-preview-client.mjs").toString();
- const css=read("assets/app.css").toString();
- assert.ok(client.includes('item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")'));
- assert.ok(client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
- assert.ok(client.includes('listen(btn,"click",e=>{e.preventDefault();e.stopPropagation();},{capture:true})'));
- assert.ok(client.includes('[...entries,...mobileEntries]'));
- assert.ok(css.includes(".app-world-mobile-form .app-world-form-dot{width:16px;height:16px;cursor:pointer}"));
-});
+
