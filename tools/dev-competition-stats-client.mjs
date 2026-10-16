@@ -167,6 +167,7 @@ if (panel && divisionId) {
           const dialog=create("dialog",undefined,"fa-dev-stats-dialog");
           const header=create("div",undefined,"fa-dev-stats-dialog-header");
           const title=create("h3",label);
+          dialog.setAttribute("aria-label",label+" leaderboard");
           const close=create("button","×","fa-dev-stats-dialog-close");
           close.type="button";close.setAttribute("aria-label","Close");
           let closing=false;
