@@ -233,6 +233,16 @@ if(Object.keys(countryById).length!==8||divisionData.length!==16||outputPages.le
  throw Error("Division catalogue cardinality changed; review the source data");
 const check = process.argv.length === 3 && process.argv[2] === "--check";
 if(process.argv.length > (check ? 3 : 2))throw Error("Usage: node tools/generate-app-pages.mjs [--check]");
+const normalizeRouteLinks=(html,path)=>{
+ const directory=path==="index.html"?"/":"/"+path.slice(0,-"index.html".length);
+ const base="https://fa.invalid"+directory;
+ return html.replace(/\\bhref=(["'])([^"']+)\\1/g,(all,q,href)=>{
+  if(!href.endsWith("/")||href.startsWith("//")||/^[a-z][a-z0-9+.-]*:/i.test(href)||href.startsWith("#"))return all;
+  const url=new URL(href,base);let pathname=url.pathname;
+  if(pathname.length>1)pathname=pathname.replace(/\\/+$/,"");
+  return "href="+q+pathname+url.search+url.hash+q;
+ });
+};
 const writeOutput=(path,content)=>{
  const file=new URL("../"+path,import.meta.url);
  if(check){
