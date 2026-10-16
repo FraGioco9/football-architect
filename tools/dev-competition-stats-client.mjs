@@ -196,6 +196,8 @@ if (panel && divisionId) {
           const close=create("button","×","fa-dev-stats-dialog-close");
           close.type="button";close.setAttribute("aria-label","Close");
           let closing=false;
+          let pointerDismiss=false;
+          close.addEventListener("pointerdown",()=>{pointerDismiss=true});
           const dismiss=()=>{
             if(closing||!dialog.open)return;
             closing=true;
@@ -224,7 +226,7 @@ if (panel && divisionId) {
           dialog.addEventListener("pointercancel",()=>{pressedOutside=false;});
           dialog.addEventListener("click",event=>{
             if(event.detail===0||event.button!==0){pressedOutside=false;return;}
-            if(pressedOutside&&outside(event))dismiss();
+            if(pressedOutside&&outside(event)){pointerDismiss=true;dismiss();}
             pressedOutside=false;
           });
           dialog.addEventListener("keydown",event=>{
@@ -241,7 +243,13 @@ if (panel && divisionId) {
           const all=create("ol",undefined,"fa-dev-stats-top");
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
           dialog.append(header,all);
-          dialog.addEventListener("close",()=>{expand.blur();dialog.remove();requestAnimationFrame(()=>{expand.blur();root.querySelector(".fa-dev-stats-nav button:focus")?.blur();});});
+          dialog.addEventListener("close",()=>{
+            dialog.remove();
+            requestAnimationFrame(()=>{
+              if(pointerDismiss&&document.activeElement instanceof HTMLElement)document.activeElement.blur();
+              expand.blur();
+            });
+          });
           window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
           dialog.showModal();
