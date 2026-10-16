@@ -100,8 +100,9 @@ function setPreviewEnabled(enabled) {
    if(typeof cleanup!=="function")return false;
    activePreview=cleanup;
    previewState="ON";
-   // Reconcile route changes that arrived while the initial manifest/Fixtures load was pending.
-   window.dispatchEvent(new Event("fa:competition-route-change"));
+   // Do not synthesize a route-change event here: the router may still expose
+   // its pre-hydration default season, which would override a valid deep-link URL.
+   // Real router events are handled by syncSeason after initialization.
    widgetRoot?.syncVisibility();
    try{sessionStorage.setItem(FLAG,"on")}catch{}
    window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:true}}));
