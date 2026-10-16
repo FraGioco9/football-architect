@@ -73,6 +73,7 @@ const LANG = {
 const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
 let previewState="OFF";
+let widgetRoot;
 function savedPreviewEnabled(){try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}}
 function isPreviewEnabled(){return previewState==="ON";}
 let transition=Promise.resolve();
@@ -93,6 +94,7 @@ function setPreviewEnabled(enabled) {
    if(typeof cleanup!=="function")return false;
    activePreview=cleanup;
    previewState="ON";
+   widgetRoot?.syncVisibility();
    try{sessionStorage.setItem(FLAG,"on")}catch{}
    return true;
   }
@@ -106,6 +108,7 @@ function setPreviewEnabled(enabled) {
   }
   activePreview=null;
   previewState="OFF";
+  widgetRoot?.syncVisibility();
   try{sessionStorage.removeItem(FLAG)}catch{}
   return true;
  });
@@ -120,7 +123,6 @@ if(validPath){
   },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
     value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
     {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
-  let widgetRoot;
   registerDebugControls("general",[{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    return widgetRoot?.resetWidgetState()===true;
