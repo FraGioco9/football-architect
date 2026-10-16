@@ -336,8 +336,10 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
+      window: {faCompetitionRoute:{subscribe(){}}},
+      selectedSeason: () => 1,
       waitForRows: () => hydration,
-      createDebugWidget: () => { operations.push("widget"); signalMounted(); },
+      createDebugWidget: () => { operations.push("widget"); signalMounted(); return {syncVisibility(){}}; },
       registerDebugControls: () => {},
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
