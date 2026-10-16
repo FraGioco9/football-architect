@@ -127,7 +127,10 @@ if(validPath){
    renderedSeason=next;
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
-    if(previewState!=="ON")return;
+    if(previewState!=="ON"){
+     if(next===2)await setPreviewEnabled(true);
+     return;
+    }
     const previous=activePreview;
     const replacement=await boot(validPath[1].toUpperCase());
     if(typeof replacement!=="function")return;
