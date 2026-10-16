@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-gb-eng" viewBox="0 0 640 480">
-  <path fill="#fff" d="M0 0h640v480H0z"/>
-  <path fill="#ce1124" d="M281.6 0h76.8v480h-76.8z"/>
-  <path fill="#ce1124" d="M0 201.6h640v76.8H0z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 15">
+<defs><mask id="fa-flag-rounded-gb-eng" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="25.0" height="15.0"><rect x="0.0" y="0.0" width="25.0" height="15.0" rx="2.8125" ry="2.8125" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-gb-eng)"><rect width="25" height="15" fill="#FFF" />
+<g fill="#CE1124">
+<rect width="3" height="15" x="11" />
+<rect width="25" height="3" y="6" />
+</g>
+</g></svg>

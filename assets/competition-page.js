@@ -401,7 +401,11 @@
     standings.outerHTML=withMobileShell(standings.outerHTML);
     document.getElementById("division-detail-name").textContent=division.name;
     window.faThemeRebind?.(); // Rebind unrelated branding/theme controls.
-    document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset;
+    const flag = document.getElementById("app-competition-flag");
+    // The server-generated inline SVG is already correct at first paint.
+    // Validate the route identity instead of replacing the flag DOM.
+    if (flag.tagName.toLowerCase() !== "svg" ||
+        !flag.closest(".app-world-flag-frame")) throw Error("Invalid inline competition flag");
     const country = document.getElementById("app-competition-country");
     country.dataset.worldCountry = division.countryId;
     country.textContent = division.countryName;

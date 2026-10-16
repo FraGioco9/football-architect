@@ -27,7 +27,7 @@ function node(tag='div'){
  return n;
 }
 function setup(d=divisions[0]){
- const fields=new Map(['current','round','previous','next','list','empty','summary','picker','round-number'].map(id=>['app-fixtures-'+id,node()]));
+ const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number'].map(id=>['app-fixtures-'+id,node()]));
  const choices=Array.from({length:30},(_,i)=>({...node('button'),id:"app-fixtures-round-option-"+(i+1),dataset:{fixtureRoundChoice:String(i+1),menuValue:String(i+1)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
@@ -103,4 +103,17 @@ test('FIXTURES-05: return to supplied current round is conditional, transactiona
   view.prepare(schedule(divisions[0],currentMatchday===1?0:30),{currentMatchday})();
   button.emit('click');assert.equal(route.get().matchday,currentMatchday);assert.equal(button.hidden,true);
  }
+});
+
+
+test('FIXTURES-06: matchday controls stay hidden without a schedule and recover with available rounds',()=>{
+ const {view,fields,route}=setup(),toolbar=fields.get('app-fixtures-toolbar');
+ assert.equal(toolbar.hidden,true,'initial public empty state');
+ view.prepare(schedule(divisions[0],0))();
+ assert.equal(toolbar.hidden,false,'unplayed scheduled rounds still provide navigation');
+ route.set({season:'2'});assert.equal(toolbar.hidden,true,'unavailable season');
+ route.set({season:'1'});assert.equal(toolbar.hidden,false,'available season restored');
+ const restore=view.snapshot();view.prepare(null)();
+ assert.equal(toolbar.hidden,true,'removing schedule hides controls');
+ restore();assert.equal(toolbar.hidden,false,'rollback restores navigation');
 });

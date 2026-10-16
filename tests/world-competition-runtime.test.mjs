@@ -54,7 +54,8 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   get(){return bodyMarkup},
   set(value){
    bodyMarkup=value;
-   for(const id of ids)fields.set(id,node("div"));
+   for(const id of ids)fields.set(id,node(id==="app-competition-flag"?"svg":"div"));
+   fields.get("app-competition-flag").closest=selector=>selector===".app-world-flag-frame"?node("span"):null;
 
   }
  });
@@ -132,7 +133,9 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
    assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");
-   assert.equal(r.fields.get("app-competition-flag").src,"../../../"+division.flagAsset);
+   assert.equal(r.fields.get("app-competition-flag").tagName,"svg");
+   assert.ok(r.fields.get("app-competition-flag").closest(".app-world-flag-frame"));
+   assert.ok(r.body.innerHTML.includes('id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
    assert.equal(r.fields.get("app-competition-country").dataset.worldCountry,division.countryId);
    assert.equal(r.fields.get("app-competition-tier").dataset.appI18n,
     division.tier===1?"divisionTier1":"divisionTier2");

@@ -274,7 +274,9 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    panel.style.width="100%";panel.style.maxWidth="100%";
    return;
   }
-  panel.style.right="auto";panel.style.bottom="auto";
+  panel.style.right="auto";
+  panel.style.top="auto";
+  panel.style.bottom="auto";
   panel.style.width="min(320px, calc(100vw - 24px))";
   panel.style.maxWidth="min(320px, calc(100vw - 24px))";
   const rect=root.getBoundingClientRect();
@@ -287,15 +289,23 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   // to the button instead of letting it occupy the scrollbar gutter.
   const preferredLeft=rect.right+panelWidth>viewportRight-EDGE?rect.right-panelWidth:rect.left;
   const left=clamp(preferredLeft,minLeft,maxLeft);
-  const spaceAbove=Math.max(0,rect.top-EDGE-10);
-  const spaceBelow=Math.max(0,viewportHeight-EDGE-rect.bottom-10);
-  let top;
-  if(spaceAbove>=panelHeight)top=rect.top-panelHeight-10;
-  else if(spaceBelow>=panelHeight)top=rect.bottom+10;
-  else if(spaceBelow>=spaceAbove)top=rect.bottom+10;
-  else top=EDGE;
-  panel.style.left=clamp(left,minLeft,maxLeft)+"px";
-  panel.style.top=clamp(top,viewportTop+EDGE,Math.max(viewportTop+EDGE,viewportHeight-panelHeight-EDGE))+"px";
+  const gap=10;
+  const spaceAbove=Math.max(0,rect.top-viewportTop-EDGE-gap);
+  const spaceBelow=Math.max(0,viewportHeight-EDGE-rect.bottom-gap);
+  // Choose the side based on available space, not the current section height.
+  // Keeping top (below) or bottom (above) fixed anchors the panel during
+  // native <details> expansion and collapse without repositioning on toggle.
+  const openAbove=spaceAbove>=spaceBelow;
+  const availableHeight=Math.max(0,openAbove?spaceAbove:spaceBelow);
+  panel.style.maxHeight=availableHeight+"px";
+  panel.style.left=left+"px";
+  if(openAbove){
+   panel.style.top="auto";
+   panel.style.bottom=Math.max(0,innerHeight-rect.top+gap)+"px";
+  }else{
+   panel.style.bottom="auto";
+   panel.style.top=rect.bottom+gap+"px";
+  }
  }
   function move(left,top){
   const doc=document.documentElement;

@@ -2,7 +2,7 @@
 (() => {
   "use strict";
   const division=window.faCompetitionDivision;
-  const fields=Object.fromEntries(["current","round","previous","next","list","empty","summary"]
+  const fields=Object.fromEntries(["toolbar","current","round","previous","next","list","empty","summary"]
     .map(key=>[key,document.getElementById("app-fixtures-"+key)]));
   if(!division||Object.values(fields).some(field=>!field))return;
   const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
@@ -86,6 +86,7 @@
   }
   function render(){
     const available=rounds!==null&&navigation.get().season==="1";
+    fields.toolbar.hidden=!available;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
     fields.round.value=String(selected);fields.round.disabled=!available;
     number.textContent=String(selected);

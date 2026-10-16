@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-mg" viewBox="0 0 640 480">
-  <g fill-rule="evenodd" stroke-width="1pt">
-    <path fill="#fc3d32" d="M213.3 0H640v240H213.3z"/>
-    <path fill="#007e3a" d="M213.3 240H640v240H213.3z"/>
-    <path fill="#fff" d="M0 0h213.3v480H0z"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2"><defs><mask id="fa-flag-rounded-mg" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="3.0" height="2.0"><rect x="0.0" y="0.0" width="3.0" height="2.0" rx="0.375" ry="0.375" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-mg)"><path fill="#007E3A" d="M0 0h3v2H0z" /><path fill="#FC3D32" d="M0 0h3v1H0z" /><path fill="#FFF" d="M0 0h1v2H0z" /></g></svg>

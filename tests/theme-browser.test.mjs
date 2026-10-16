@@ -165,11 +165,12 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const emptyFixtures=await run("({count:document.querySelectorAll('[data-fixture-match]').length,empty:!document.getElementById('app-fixtures-empty').hidden,disabled:document.getElementById('app-fixtures-round').disabled})");
         assert.deepEqual(emptyFixtures,{count:0,empty:true,disabled:true});
         assert.equal(await run("document.getElementById('app-fixtures-current').getClientRects().length"),0);
-        const fixtureControls=await run("(()=>{const panel=document.getElementById('competition-panel-fixtures'),select=document.getElementById('app-fixtures-round'),p=panel.getBoundingClientRect(),s=select.getBoundingClientRect();return {centered:Math.abs((s.left+s.right)-(p.left+p.right))<2,title:!!panel.querySelector('h2'),notice:!!document.getElementById('app-fixtures-preview'),siteStyle:select.classList.contains('language-trigger'),height:s.height}})()");
-        assert.deepEqual(fixtureControls,{centered:true,title:false,notice:false,siteStyle:true,height:44});
+        assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length===0)"),true,"empty schedule hides picker and both arrows");
         const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
         await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+",{currentMatchday:16})()");
+        const fixtureControls=await run("(()=>{const panel=document.getElementById('competition-panel-fixtures'),select=document.getElementById('app-fixtures-round'),p=panel.getBoundingClientRect(),s=select.getBoundingClientRect();return {centered:Math.abs((s.left+s.right)-(p.left+p.right))<2,title:!!panel.querySelector('h2'),notice:!!document.getElementById('app-fixtures-preview'),siteStyle:select.classList.contains('language-trigger'),height:s.height}})()");
+        assert.deepEqual(fixtureControls,{centered:true,title:false,notice:false,siteStyle:true,height:44});
         // Explicitly select round 1 before checking the disabled previous arrow.
         await run("window.faCompetitionRoute.set({matchday:1})");
         await run("document.getElementById('app-fixtures-round').click()");
