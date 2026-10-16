@@ -71,6 +71,18 @@ if (panel && divisionId) {
 @media(max-width:700px){.fa-dev-stats-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.fa-dev-stats-record-grid{grid-template-columns:1fr}}
 `;
+  style.textContent += `
+.fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.22);border-radius:12px;padding:16px}
+.fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
+.fa-dev-stats-leader-card .fa-dev-stats-top{max-width:none;list-style:none}
+.fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
+.fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
+.fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
+.fa-dev-stats-leader-card .app-world-club-identity{min-width:0}
+.fa-dev-stats-leader-card .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:760px){.fa-dev-stats-leader-grid{grid-template-columns:1fr}}
+`;
   document.head.append(style);
   const root = create("div");
   root.id = "fa-dev-stats";
@@ -78,7 +90,6 @@ if (panel && divisionId) {
   let manifest = null;
   let view = "overview";
   let teamMode = "performance";
-  let teamCategory = "gf";
   let sortKey = "points";
   let descending = true;
   const columns = ["clubName","mp","w","d","l","gf","ga","gd","points","ppg","cs","fts","homeWinPct","awayWinPct"];
@@ -162,14 +173,27 @@ if (panel && divisionId) {
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
-    leaders.append(create("h3","Top 5 teams","fa-dev-stats-heading"));
-    const categoryNav=create("div",undefined,"fa-dev-stats-categories");
-    const categories=[["gf","Goals scored"],["ga","Fewest conceded"],["w","Wins"],["cs","Clean sheets"],["ppg","Points per match"]];
-    for(const [key,label] of categories){const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamCategory===key));button.addEventListener("click",()=>{teamCategory=key;render();});categoryNav.append(button);}
-    leaders.append(categoryNav);
-    const top=create("ol",undefined,"fa-dev-stats-top");
-    ranked(teamCategory,teamCategory==="ga").slice(0,5).forEach(t=>{const li=create("li");const identity=create("span",undefined,"app-world-club-identity");const crest=create("span",undefined,"app-world-club-crest-placeholder");crest.dataset.clubCrest=division.countryId+"-"+t.clubId;crest.setAttribute("aria-hidden","true");identity.append(crest,create("span",t.clubName));li.append(identity,create("strong",number(t[teamCategory])));top.append(li);});
-    leaders.append(top);root.append(leaders);
+    leaders.append(create("h3","Team leaders","fa-dev-stats-heading"));
+    const leaderGrid=create("div",undefined,"fa-dev-stats-leader-grid");
+    const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false]];
+    for(const [key,label,ascending] of categories){
+      const card=create("section",undefined,"fa-dev-stats-leader-card");
+      card.append(create("h4",label,"fa-dev-stats-leader-title"));
+      const top=create("ol",undefined,"fa-dev-stats-top");
+      ranked(key,ascending).slice(0,5).forEach((team,index)=>{
+        const li=create("li");
+        const position=create("span",String(index+1),"fa-dev-stats-rank");
+        const identity=create("span",undefined,"app-world-club-identity");
+        const crest=create("span",undefined,"app-world-club-crest-placeholder");
+        crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
+        crest.setAttribute("aria-hidden","true");
+        identity.append(crest,create("span",team.clubName));
+        li.append(position,identity,create("strong",number(team[key])));
+        top.append(li);
+      });
+      card.append(top);leaderGrid.append(card);
+    }
+    leaders.append(leaderGrid);root.append(leaders);
     const subnav=create("div",undefined,"fa-dev-stats-subnav");
     for(const [id,label] of [["performance","Performance"],["additional","Additional"]]){
       const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamMode===id));
