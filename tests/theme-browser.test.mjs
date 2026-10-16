@@ -373,7 +373,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         if(window.__faObserveEmpty)requestAnimationFrame(sample);
       };requestAnimationFrame(sample);
     `});
-    await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
+    // Keep DEV enabled across the navigation so this specifically tests restoration
+    // during delayed manifest/Fixtures hydration, rather than expecting a removed
+    // session flag to enable fictional standings by itself.
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on')");
     devManifestDelay=250;devFixturesDelay=500;devLegacyGuard=true;
     await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=2&view=fixtures&matchday=1"});
     await expectSeason(2,1);
