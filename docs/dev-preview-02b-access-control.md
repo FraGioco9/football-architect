@@ -86,3 +86,11 @@ The owner selected **Cloudflare Access** instead of Vercel Enterprise Access Gro
 **Pre-implementation checks:** confirm the available Cloudflare Zero Trust plan limits and identity policy features; verify DNS/hostname ownership, Vercel project deployment-protection behavior, exact origin routing, and whether a server-side Access JWT validation gateway is needed. Never put a Cloudflare service token in a public static artifact.
 
 No Cloudflare application, DNS change, identity policy, deployment, or Vercel setting is authorized by this design decision alone. Existing G10 rejection remains active.
+
+## Supabase consolidation decision (2026-10-17)
+
+The owner subsequently selected **Supabase for authentication, authorization, and application data**, replacing the earlier Cloudflare Access proposal. Public visitors can browse the landing, guides, and competition pages anonymously; entering the game requires an account authenticated with **email and password**. Include email verification, password reset, and session handling in the public-auth design.
+
+The protected Debug runtime uses the same Supabase identity system but requires a **separate, explicit, per-user server-side authorization check**. A valid player account must not grant Debug access. Public game authorization and protected artifact authorization remain distinct security boundaries. Every protected asset request must be enforced server-side, including direct Vercel origin URLs; RLS alone does not protect static HTML/JS files.
+
+**Supersession:** Cloudflare Access and Vercel Access Groups are no longer the selected approach. Previous sections document historical evaluation only. Do not configure Cloudflare or deploy Debug. A dedicated Supabase project for Football Architect is required; no existing unrelated project should be reused. The G10 block remains in force.
