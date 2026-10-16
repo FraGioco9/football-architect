@@ -23,6 +23,15 @@ for (const tier of [1,2]) {
       assert.equal(stats.players.length,0);
       assert.equal(stats.playerStatsAvailable,false);
       assert.deepEqual(stats,aggregatePreviewStats(division,matchdays,season));
+      const streaks=new Map(clubs.map(club=>[club.clubId,0]));
+      for(const game of fixtures){
+        streaks.set(game.homeId,game.homeGoals>=game.awayGoals?streaks.get(game.homeId)+1:0);
+        streaks.set(game.awayId,game.awayGoals>=game.homeGoals?streaks.get(game.awayId)+1:0);
+      }
+      for(const team of stats.teams){
+        assert.equal(team.unbeatenStreak,streaks.get(team.clubId));
+        assert.ok(team.unbeatenStreak>=0&&team.unbeatenStreak<=team.mp);
+      }
       for(const team of stats.teams) {
         assert.equal(team.mp,team.w+team.d+team.l);
         assert.equal(team.gd,team.gf-team.ga);
