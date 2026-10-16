@@ -13,9 +13,10 @@ function readMatchdays(){
 let matchdays=readMatchdays();
 function selectedSeason(){
  const available=(document.documentElement.dataset.faDevSeasons||"1,2").split(",").map(Number).filter(Number.isSafeInteger);
- const requested=Number(new URLSearchParams(location.search).get("season"));
- // The DEV client can start before the preview server's season marker is hydrated.
- // Preserve an explicit supported deep-link season instead of silently falling back to season 1.
+ // Prefer the canonical router state once it exists; it is updated before route-change events.
+ const routed=Number(window.faCompetitionRoute?.get?.().season);
+ if([1,2].includes(routed))return routed;
+ const requested=Number(new URLSearchParams(window.location.href).searchParams.get("season"));
  if([1,2].includes(requested))return requested;
  return available.includes(1)||available.includes(2)?Math.max(...available.filter(season=>[1,2].includes(season))):1;
 }
@@ -144,21 +145,25 @@ if(validPath){
   }else reveal();
   let renderedSeason=selectedSeason();
   let seasonRefresh=Promise.resolve();
+  let seasonRequest=0;
   function syncSeason(){
    const next=selectedSeason();
    if(next===renderedSeason)return;
    renderedSeason=next;
+   const request=++seasonRequest;
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
-    if(previewState!=="ON"){
-     return;
-    }
-    // Prepare the next season while keeping the current one visible.
-    // Restore and replace synchronously after the asynchronous work finishes.
+    if(previewState!=="ON"||request!==seasonRequest)return;
     const previous=activePreview;
     const replacement=await boot(validPath[1].toUpperCase(),previous);
     if(typeof replacement!=="function"){
-     previewState="OFF";
+     if(request===seasonRequest)previewState="OFF";
+     return;
+    }
+    // A newer route may have been selected while this season was hydrating.
+    // Discard stale work and let the newest queued request render instead.
+    if(request!==seasonRequest||selectedSeason()!==next){
+     try{replacement()}catch(error){console.error("Stale DEV season cleanup failed:",error)}
      return;
     }
     activePreview=replacement;
