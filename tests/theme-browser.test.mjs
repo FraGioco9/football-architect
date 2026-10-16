@@ -168,6 +168,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(sameMenuStyle,true,"competition dropdowns share Settings menu styles");
         const dropdownWidths=await run("(()=>{const width=id=>document.getElementById(id).getBoundingClientRect().width;return {round:width('app-fixtures-round'),menu:width('app-fixtures-picker'),season:width('app-competition-season')}})()");
         assert.equal(dropdownWidths.round,dropdownWidths.menu);assert.equal(dropdownWidths.season,88);
+        if(w>620)assert.equal(await run("document.getElementById('app-competition-season').getBoundingClientRect().height===document.querySelector('.app-competition-return').getBoundingClientRect().height"),true,"Season and All competitions have the same height");
         const disabledStyle=await run("(()=>{const s=getComputedStyle(document.getElementById('app-fixtures-previous'));return {background:s.backgroundColor,border:s.borderColor,transition:s.transitionDuration,transform:s.transform}})()");
         const disabledPoint=await run("(()=>{const r=document.getElementById('app-fixtures-previous').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
         await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',...disabledPoint});
@@ -180,6 +181,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.getElementById('app-fixtures-round').click();document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
         assert.equal(await run("document.getElementById('app-fixtures-picker').hidden"),true);
         await run("window.faCompetitionRoute.set({matchday:1})");
+        await run("document.getElementById('app-fixtures-round').click()");
+        const disabledClick=await run("(()=>{const b=document.getElementById('app-fixtures-previous').getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2}})()");
+        for(const type of ['mousePressed','mouseReleased'])await cmd('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,...disabledClick});
+        assert.equal(await run("document.getElementById('app-fixtures-picker').hidden&&document.activeElement!==document.getElementById('app-fixtures-round')&&window.faCompetitionRoute.get().matchday===1"),true,"disabled arrow dismisses menu and focus without navigating");
+        await run("document.getElementById('app-fixtures-round').focus()");
+        for(const type of ['mousePressed','mouseReleased'])await cmd('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,...disabledClick});
+        assert.equal(await run("document.activeElement!==document.getElementById('app-fixtures-round')"),true,"disabled arrow also removes focus from a closed menu");
         for(const lang of ["en","it","de","es","fr"]){
           await run("document.documentElement.lang='"+lang+"'");
           const fixtures=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')];return {count:rows.length,options:document.querySelectorAll('[data-fixture-round-choice]').length,previous:document.getElementById('app-fixtures-previous').disabled,fit:rows.every(row=>{const b=row.getBoundingClientRect(),score=row.querySelector('.app-fixture-score').getBoundingClientRect(),home=row.querySelector('.app-fixture-home').getBoundingClientRect(),away=row.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&home.right<=score.left&&(innerWidth<=620?(away.right<=score.left&&home.width>=120&&away.width>=120):away.left>=score.right)}),statuses:rows.map(r=>r.querySelector('.app-fixture-status').textContent),text:getComputedStyle(rows[0]).color,background:getComputedStyle(rows[0]).backgroundColor}})()");

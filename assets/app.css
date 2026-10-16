@@ -210,7 +210,7 @@ html{scroll-padding-top:72px}
 .app-competition-identity{flex:1 1 260px;min-width:0;align-self:center}
 .app-competition-identity .app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-competition-heading-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;overflow-wrap:anywhere}
 .app-world-detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0 0;color:var(--muted);font-size:12px}
-.app-competition-return{display:inline-flex;align-items:center;justify-content:center;flex:none;min-height:38px;padding:8px 13px;margin-left:auto;white-space:nowrap;border-radius:9px;text-decoration:none}
+.app-competition-return{display:inline-flex;align-items:center;justify-content:center;flex:none;min-height:44px;height:44px;padding:8px 13px;margin-left:auto;white-space:nowrap;border-radius:9px;text-decoration:none}
 .app-competition-return:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 /* IT-1 demonstration: temporary numbers only, not official match or league data. */
 .app-world-stat-value{font-weight:650}
@@ -424,6 +424,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-fixtures-select{width:132px}
 .app-fixtures-trigger{width:100%;min-width:0!important;gap:7px}
 .app-fixtures-navigation :disabled{opacity:.45;cursor:default}
+.app-fixtures-arrow:disabled{pointer-events:none}
 .app-fixtures-navigation button:disabled,.app-fixtures-navigation button:disabled:hover{background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
 .app-fixtures-navigation button:focus-visible,.app-competition-season .language-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-fixtures-picker{width:100%;min-width:0;inset-inline-end:0}
@@ -432,7 +433,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-competition-season>span{font-weight:700}
 .app-competition-season .language-control{width:88px}
 #app-competition-season-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.app-competition-season .language-trigger{width:100%;min-width:0}
+.app-competition-season .language-trigger{width:100%;min-width:0;height:44px}
 .app-competition-season .language-menu{width:100%;min-width:0}
 #app-competition-season-unavailable[hidden]{display:none}
 @media(max-width:620px){.app-competition-season{margin-inline-start:0}}

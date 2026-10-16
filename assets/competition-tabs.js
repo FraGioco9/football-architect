@@ -38,7 +38,11 @@
       option.addEventListener("click",()=>{active=index;select()});
       option.addEventListener("pointermove",()=>{if(!menu.hidden){active=index;highlight()}});
     });
-    document.addEventListener("pointerdown",event=>{if(!menu.hidden&&!control.contains(event.target))close()});
+    document.addEventListener("pointerdown",event=>{
+      if(control.contains(event.target))return;
+      if(!menu.hidden)close();
+      if(document.activeElement===trigger)trigger.blur();
+    },true);
     document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!menu.hidden)close(true)});
     return {close,sync(value){trigger.value=value;options.forEach(option=>option.setAttribute("aria-selected",String(option.dataset.menuValue===value)))}};
   };

@@ -15,7 +15,7 @@
   if(choices.length!==30)return;
   let rounds=null,selected=navigation.get().matchday;
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
-    document.querySelector(".app-fixtures-navigation"));
+    document.querySelector(".app-fixtures-select"));
   const element=(tag,cls="",text="")=>{
     const item=document.createElement(tag);item.className=cls;item.textContent=text;return item;
   };
