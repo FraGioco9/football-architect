@@ -30,7 +30,13 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
-const INJECT = '<script type="module" src="/__fa_dev__/standings-client.mjs"></script>';
+const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data supports more.
+const latestDevSeason = String(Math.max(...DEV_SEASONS));
+const INJECT = [
+  `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
+  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list{visibility:hidden}</style>',
+  '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
+].join("\n");
 
 function ipv4(value) {
   if (typeof value !== "string") return null;
@@ -100,15 +106,36 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
-        const file = (DETAIL.test(raw) ? raw.replace(/\/(?:index\.html)?$/,"")+"/index.html" : raw.endsWith("/") ? raw + "index.html" : raw).slice(1);
+        const file = (raw.endsWith("/") ? raw + "index.html" : DETAIL.test(raw) && !raw.endsWith("/index.html") ? raw + "/index.html" : raw).slice(1);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
+        // The public competition index links to season 1. In the isolated DEV
+        // server, point those links to the latest preview season instead.
+        if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
+          // Every season=1 occurrence on this index is a generated division link.
+          // Rewrite the HTML directly rather than depending on href formatting.
+          body = Buffer.from(body.toString("utf8").replace(
+            /(<a class="app-division-card")/g, `$1 data-dev-latest-season="${latestDevSeason}"`
+          ).replaceAll(
+            "?season=1&amp;view=standings", `?season=${latestDevSeason}&amp;view=standings`
+          ), "utf8");
+        }
         if (DETAIL.test(raw)) {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
-          body = Buffer.from(html.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
+          // Resolve the requested DEV season before the browser paints the selector.
+          const params = new URL(req.url, "http://localhost").searchParams;
+          const requested = params.get("season");
+          const season = requested && DEV_SEASONS.includes(Number(requested)) ? requested : latestDevSeason;
+          const seasonHtml = season !== "1"
+            ? html.replace('id="app-competition-season-value">1</span>',
+                `id="app-competition-season-value">${season}</span>`)
+              .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
+                'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
+            : html;
+          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
         }
       }
       res.writeHead(200, {

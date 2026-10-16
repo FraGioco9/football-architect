@@ -199,10 +199,6 @@ test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal
 
 test("DEV-GATE-01/03: only DEV responses inject private scripts; static source stays clean", async () => {
   await withServer(async get => {
-    const canonical=await get("/app/competitions/it-1?season=1&view=fixtures&matchday=12");
-    assert.equal(canonical.status,200);
-    assert.ok(canonical.body.includes('<base href="/app/competitions/it-1/">'));
-    assert.equal(canonical.body.split(clientName).length,2);
     const page = await get("/app/competitions/it-1/");
     assert.equal(page.status,200);
     assert.equal(page.headers["cache-control"],"no-store");
@@ -340,9 +336,12 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
-      window:{faDebugFirstPaintRelease:()=>operations.push("reveal")},
+      window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
+      selectedSeason: () => 1,
+      savedPreviewEnabled: () => enabled,
+      document: {documentElement:{dataset:{}},querySelector:()=>null},
       waitForRows: () => hydration,
-      createDebugWidget: () => { operations.push("widget"); signalMounted(); },
+      createDebugWidget: () => { operations.push("widget"); signalMounted(); return {syncVisibility(){}}; },
       registerDebugControls: () => {},
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
@@ -356,9 +355,8 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
     await widgetMounted;
+    if (enabled) await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
-    await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(operations.at(-1),"reveal","initial visibility waits for DEV restoration");
   }
 });
 

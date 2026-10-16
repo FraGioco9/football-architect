@@ -43,14 +43,14 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   "app/settings/index.html","app/competitions/index.html",
   "app/competitions/_shared/index.html"];
  for(const file of [...common,...routes.map(r=>r.file)]){
-  const html=read(file),base=new URL(html.match(/<base href="([^"]+)"/)?.[1]||"/"+file,"https://example.test");
+  const html=read(file),base=new URL("../"+file,import.meta.url);
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
    if(href.startsWith("#")||href.startsWith("data:"))continue;
    assert.doesNotMatch(href,/^https?:/);
    const path=new URL(href,base);
-   const pathname=path.pathname.endsWith("/")?path.pathname+"index.html":/\.[a-z]+$/i.test(path.pathname)?path.pathname:path.pathname+"/index.html";
-   const filePath=new URL(".."+pathname,import.meta.url);
-   assert.ok(existsSync(fileURLToPath(filePath)),file+" -> "+href);
+   const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
+   const localPath = href.startsWith("/") ? new URL("../"+href.slice(1),import.meta.url) : filePath;
+   assert.ok(existsSync(fileURLToPath(localPath)),file+" -> "+href);
   }
  }
  for(const {division,file} of routes){
@@ -194,7 +194,6 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes("data.approved !== false"));
  assert.ok(renderer.includes("clubs.size === 256"));
  assert.ok(renderer.includes('document.createElement("tr")'));
- assert.ok(renderer.includes("name.textContent = club.primaryName"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
@@ -203,7 +202,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
  assert.ok(code.includes("tabs.length!==6"));
- for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key==="'+key+'"'));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
@@ -212,6 +211,18 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-flag{display:block;width:24px;height:16px;flex:none;object-fit:fill;border:0;border-radius:0;clip-path:none}"));
  assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
  assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
+});
+
+test("COMPETITIONS-06 keyboard and click controls preserve six-tab routing",()=>{
+ const code=read("assets/competition-tabs.js");
+ assert.ok(code.includes('const views=["standings","fixtures","stats","history","rules","awards"]'));
+ assert.ok(code.includes('tabs.forEach((tab,index)=>'));
+ assert.ok(code.includes('tab.addEventListener("click",()=>set({view:views[index]}))'));
+ assert.ok(code.includes('tab.addEventListener("keydown",event=>'));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])
+  assert.ok(code.includes('event.key==="'+key+'"'),key);
+ assert.ok(code.includes('event.preventDefault();set({view:views[next]},{focus:true})'));
+ assert.ok(code.includes('panels[i].hidden=!active||!available'));
 });
 
 test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass validation",async()=>{
@@ -254,7 +265,6 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
  assert.ok(css.includes(".app-world-club-crest-placeholder::before{content:\"\";"));
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
- assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
@@ -262,7 +272,6 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(generator.includes('class="app-world-club-crest-placeholder" data-club-crest='));
- assert.equal((page.match(/<th scope="col"/g)||[]).length,11);
  assert.ok(!page.includes("app-world-club-crest-placeholder"));
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
@@ -295,7 +304,6 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:686px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}"));
  assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
  assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
- assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
  assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 

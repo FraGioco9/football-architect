@@ -11,15 +11,15 @@ function setup(path='/app/competitions/it-1/'){
  const tabs=views.map(view=>{const tab=item();tab.id='competition-tab-'+view;tab.getAttribute=()=> 'competition-panel-'+view;fields.set('competition-panel-'+view,item());return tab});
  fields.set('app-competition-season',item());fields.set('app-competition-season-unavailable',item());
  const option=item();option.id='app-competition-season-option-1';option.dataset.menuValue='1';
- const menu=item();menu.querySelectorAll=()=>[option];fields.set('app-competition-season-menu',menu);
+ const menu=item();menu.querySelector=()=>option;menu.append=()=>{};menu.querySelectorAll=()=>[option];fields.set('app-competition-season-menu',menu);
  fields.set('app-competition-season-value',item());fields.set('app-competition-season-control',{contains:()=>false});
  fields.set('app-competition-season-option-1',option);
  const document={addEventListener(){},documentElement:{dataset:{}},getElementById:id=>fields.get(id),querySelector:()=>({querySelectorAll:()=>tabs})};
  const window={get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
-  addEventListener(k,fn){events[k]=fn}};
- runInNewContext(source,{document,window,URL});
+  dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
+ runInNewContext(source,{document,window,URL,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{

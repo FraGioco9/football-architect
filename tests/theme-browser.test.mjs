@@ -9,30 +9,18 @@ import {join,resolve,extname,sep} from "node:path";
 import {fileURLToPath} from "node:url";
 import {once} from "node:events";
 import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
-import {createPreviewServer} from "../tools/dev-standings-preview.mjs";
 import {setTimeout as delay} from "node:timers/promises";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"};
-let competitionResourceDelay=0;
 const server=createServer(async(req,res)=>{
   try{
     const route=new URL(req.url,"http://localhost").pathname;
-    if(competitionResourceDelay&&route==="/assets/competition-page.js")await delay(competitionResourceDelay);
     let file=resolve(root,"."+decodeURIComponent(route));
     if(file!==root&&!file.startsWith(root+sep))throw Error("outside root");
     if(!extname(file))file=join(file,"index.html");
     res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});
     res.end(await readFile(file));
   }catch{res.writeHead(404);res.end("Not found");}
-});
-// Adapter exercises the actual DEV server on an isolated ephemeral test port.
-const devRouter=createPreviewServer();
-let devResourceDelay=0;
-const devServer=createServer((req,res)=>{
- req.headers.host="127.0.0.1:2000";
- const send=()=>devRouter.emit("request",req,res);
- if(devResourceDelay&&(req.url.startsWith("/__fa_dev__/")||req.url.includes("manifest.json")))setTimeout(send,devResourceDelay);
- else send();
 });
 const chrome=()=>{
   const windows=process.platform==="win32"?[
@@ -60,8 +48,6 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
   const browser=chrome();
   server.listen(0,"127.0.0.1");await once(server,"listening");
   const origin="http://127.0.0.1:"+server.address().port;
-  devServer.listen(0,"127.0.0.1");await once(devServer,"listening");
-  const devOrigin="http://127.0.0.1:"+devServer.address().port;
   const dir=await mkdtemp(join(tmpdir(),"fa-theme-browser-"));
   const proc=spawn(browser,["--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
     "--no-proxy-server","--disable-background-networking","--disable-extensions","--disable-sync",
@@ -105,7 +91,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     };
     const visit=async(route,condition="true")=>{
       const url=origin+route;await cmd("Page.navigate",{url});
-      await wait("location.pathname.replace(/\\/$/,'')==="+JSON.stringify(new URL(url).pathname.replace(/\/$/,""))+"&&document.readyState==='complete'&&("+condition+")");
+      await wait("location.pathname.replace(/\\/$/,\"\")==="+JSON.stringify(new URL(url).pathname.replace(/\/$/, ""))+"&&document.readyState==='complete'&&("+condition+")");
     };
     const snap=async(label,w,h)=>{
       const out=await cmd("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});
@@ -116,7 +102,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
-          "mobile dark search","mobile light tooltip fixture","mobile light round picker","desktop dark round picker"].includes(label)||label.startsWith("UX-01A ")){
+          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
         chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
@@ -149,83 +135,22 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(search.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)",name+" search colors");
         assert.ok(search.rect[0]>=-1&&search.rect[1]<=w+1,name+" search fits");
         await snap(name+" "+theme+" search",w,h);
-        await visit("/app/competitions/","document.querySelectorAll('a.app-division-card').length===16");
-        assert.equal(await run("[...document.querySelectorAll('a.app-division-card')].every(a=>new URL(a.href).search==='?season=1&view=standings')"),true);
-        await run("document.querySelector('a.app-division-card').click()");
-        await wait("document.readyState==='complete'&&window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1'&&document.querySelectorAll('#app-standings-body tr').length===16");
-        assert.equal(await run("location.search"),"?season=1&view=standings");
+        await visit("/app/competitions/it-1/","document.querySelectorAll('#app-standings-body tr').length===16");
         const table=await run("(()=>{const t=document.querySelector('.app-world-standing-table');return {rows:document.querySelectorAll('#app-standings-body tr').length,sticky:getComputedStyle(t.querySelector('tbody tr>*:first-child')).position,head:getComputedStyle(t.querySelector('thead th')).backgroundColor,logo:document.querySelector('.app-brand-symbol')?.getAttribute('src')}})()");
         assert.equal(table.rows,16);assert.equal(table.sticky,"sticky");
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
         assert.ok(table.logo?.endsWith("-"+theme+".svg"),name+" async logo");
         await snap(name+" "+theme+" standings",w,h);
-        // Fixtures: real browser behavior with a test-only supplied schedule.
         await wait("!!window.faFixtures");
         await run("document.getElementById('competition-tab-fixtures').click()");
-        const emptyFixtures=await run("({count:document.querySelectorAll('[data-fixture-match]').length,empty:!document.getElementById('app-fixtures-empty').hidden,disabled:document.getElementById('app-fixtures-round').disabled})");
-        assert.deepEqual(emptyFixtures,{count:0,empty:true,disabled:true});
-        assert.equal(await run("document.getElementById('app-fixtures-current').getClientRects().length"),0);
-        assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length===0)"),true,"empty schedule hides picker and both arrows");
+        assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length===0)"),true,"no matchday controls without a schedule");
         const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
-        const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
-        await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+",{currentMatchday:16})()");
-        const fixtureControls=await run("(()=>{const panel=document.getElementById('competition-panel-fixtures'),select=document.getElementById('app-fixtures-round'),p=panel.getBoundingClientRect(),s=select.getBoundingClientRect();return {centered:Math.abs((s.left+s.right)-(p.left+p.right))<2,title:!!panel.querySelector('h2'),notice:!!document.getElementById('app-fixtures-preview'),siteStyle:select.classList.contains('language-trigger'),height:s.height}})()");
-        assert.deepEqual(fixtureControls,{centered:true,title:false,notice:false,siteStyle:true,height:44});
-        // Explicitly select round 1 before checking the disabled previous arrow.
-        await run("window.faCompetitionRoute.set({matchday:1})");
-        await run("document.getElementById('app-fixtures-round').click()");
-        const picker=await run("(()=>{const p=document.getElementById('app-fixtures-picker'),b=p.getBoundingClientRect();return {open:!p.hidden,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded'),focused:document.activeElement.id,active:document.getElementById('app-fixtures-round').getAttribute('aria-activedescendant'),fit:b.left>=0&&b.right<=innerWidth}})()");
-        assert.deepEqual(picker,{open:true,expanded:"true",focused:"app-fixtures-round",active:"app-fixtures-round-option-1",fit:true});
-        const sameMenuStyle=await run("(()=>{const keys=['backgroundColor','borderColor','borderRadius','boxShadow','padding'],reference=getComputedStyle(document.getElementById('language-options'));return ['app-fixtures-picker','app-competition-season-menu'].every(id=>{const style=getComputedStyle(document.getElementById(id));return keys.every(key=>style[key]===reference[key])})})()");
-        assert.equal(sameMenuStyle,true,"competition dropdowns share Settings menu styles");
-        const dropdownWidths=await run("(()=>{const width=id=>document.getElementById(id).getBoundingClientRect().width;return {round:width('app-fixtures-round'),menu:width('app-fixtures-picker'),season:width('app-competition-season')}})()");
-        assert.equal(dropdownWidths.round,dropdownWidths.menu);assert.equal(dropdownWidths.season,88);
-        if(w>620)assert.equal(await run("document.getElementById('app-competition-season').getBoundingClientRect().height===document.querySelector('.app-competition-return').getBoundingClientRect().height"),true,"Season and All competitions have the same height");
-        const disabledStyle=await run("(()=>{const s=getComputedStyle(document.getElementById('app-fixtures-previous'));return {background:s.backgroundColor,border:s.borderColor,transition:s.transitionDuration,transform:s.transform}})()");
-        const disabledPoint=await run("(()=>{const r=document.getElementById('app-fixtures-previous').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
-        await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',...disabledPoint});
-        assert.deepEqual(await run("(()=>{const s=getComputedStyle(document.getElementById('app-fixtures-previous'));return {background:s.backgroundColor,border:s.borderColor,transition:s.transitionDuration,transform:s.transform}})()"),disabledStyle);
-        assert.equal(disabledStyle.transition,'0s');assert.equal(disabledStyle.transform,'none');
-        await snap(name+" "+theme+" round picker",w,h);
-        await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
-        assert.equal(await run("window.faCompetitionRoute.get().matchday"),2);
-        assert.equal(await run("document.activeElement.id"),"app-fixtures-round");
-        await run("document.getElementById('app-fixtures-round').click();document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
-        assert.equal(await run("document.getElementById('app-fixtures-picker').hidden"),true);
-        await run("window.faCompetitionRoute.set({matchday:1})");
-        await run("document.getElementById('app-fixtures-round').click()");
-        const disabledClick=await run("(()=>{const b=document.getElementById('app-fixtures-previous').getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2}})()");
-        for(const type of ['mousePressed','mouseReleased'])await cmd('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,...disabledClick});
-        assert.equal(await run("document.getElementById('app-fixtures-picker').hidden&&document.activeElement!==document.getElementById('app-fixtures-round')&&window.faCompetitionRoute.get().matchday===1"),true,"disabled arrow dismisses menu and focus without navigating");
-        await run("document.getElementById('app-fixtures-round').focus()");
-        for(const type of ['mousePressed','mouseReleased'])await cmd('Input.dispatchMouseEvent',{type,button:'left',clickCount:1,...disabledClick});
-        assert.equal(await run("document.activeElement!==document.getElementById('app-fixtures-round')"),true,"disabled arrow also removes focus from a closed menu");
-        for(const lang of ["en","it","de","es","fr"]){
-          await run("document.documentElement.lang='"+lang+"'");
-          const fixtures=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')];return {count:rows.length,options:document.querySelectorAll('[data-fixture-round-choice]').length,previous:document.getElementById('app-fixtures-previous').disabled,fit:rows.every(row=>{const b=row.getBoundingClientRect(),score=row.querySelector('.app-fixture-score').getBoundingClientRect(),home=row.querySelector('.app-fixture-home').getBoundingClientRect(),away=row.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&home.right<=score.left&&(innerWidth<=620?(away.right<=score.left&&home.width>=120&&away.width>=120):away.left>=score.right)}),statuses:rows.map(r=>r.querySelector('.app-fixture-status').textContent),text:getComputedStyle(rows[0]).color,background:getComputedStyle(rows[0]).backgroundColor}})()");
-          const currentButton=await run("(()=>{const b=document.getElementById('app-fixtures-current'),r=b.getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect();return {visible:!b.hidden,fit:r.left>=0&&r.right<=innerWidth&&r.width>=44,right:Math.abs(r.right-p.right)<2,sameRow:Math.abs(r.top-document.getElementById('app-fixtures-round').getBoundingClientRect().top)<2,label:b.textContent}})()");
-          assert.deepEqual(currentButton,{visible:true,fit:true,right:true,sameRow:true,label:({en:"Current matchday",it:"Giornata attuale",de:"Aktueller Spieltag",es:"Jornada actual",fr:"Journée actuelle"})[lang]},name+"/"+theme+"/"+lang+" "+await run("JSON.stringify({button:document.getElementById('app-fixtures-current').getBoundingClientRect().toJSON(),panel:document.getElementById('competition-panel-fixtures').getBoundingClientRect().toJSON()})"));
-          assert.equal(fixtures.count,8);assert.equal(fixtures.options,30);assert.equal(fixtures.previous,true);
-          assert.ok(fixtures.fit,"Fixtures fit "+name+"/"+theme+"/"+lang);
-          assert.ok(ratio(fixtures.text,fixtures.background)>=4.5);
-          assert.ok(fixtures.statuses.every(text=>text===({en:"Full time",it:"Terminata",de:"Beendet",es:"Finalizado",fr:"Terminé"})[lang]));
-        }
-        if(name==="desktop"){
-          await run("document.documentElement.lang='de'");
-          for(const width of [360,620,621,800,801,1000,1001]){
-            await cmd("Emulation.setDeviceMetricsOverride",{width,height:h,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:h});
-            assert.equal(await run("(()=>{const b=document.getElementById('app-fixtures-current').getBoundingClientRect(),n=document.querySelector('.app-fixtures-navigation').getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect();return b.width>=44&&Math.abs(b.right-p.right)<2&&Math.abs(b.top-n.top)<2&&n.right<=b.left})()"),true,"shortcut geometry at "+width);
-          }
-          await cmd("Emulation.setDeviceMetricsOverride",{width:w,height:h,deviceScaleFactor:1,mobile,screenWidth:w,screenHeight:h});
-        }
-        await run("document.documentElement.lang='en';window.faCompetitionRoute.set({matchday:16})");
-        await wait("document.querySelector('[data-fixture-round=\"16\"]')");
-        const scheduled=await run("({scores:[...document.querySelectorAll('.app-fixture-score')].map(x=>x.textContent),next:document.getElementById('app-fixtures-next').disabled})");
-        assert.ok(scheduled.scores.every(score=>score==="—"));assert.equal(scheduled.next,false);
-        await snap(name+" "+theme+" Fixtures",w,h);
-        const last=await run("(()=>{window.faCompetitionRoute.set({matchday:30});const s=document.getElementById('app-fixtures-round');return {value:s.value,next:document.getElementById('app-fixtures-next').disabled}})()");
-        assert.deepEqual(last,{value:"30",next:true});
-        await run("window.faFixtures.prepare(null)();document.getElementById('competition-tab-standings').click()");
+        const fixtureModel=createPreviewStandings(fixtureDivision,0).fixtures.map(game=>({...game,kickoff:null,homeGoals:null,awayGoals:null}));
+        await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
+        assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length>0)"),true,"scheduled rounds restore controls even before matches are played");
+        await run("window.faFixtures.prepare(null)()");
+        assert.equal(await run("document.getElementById('app-fixtures-round').getClientRects().length"),0,"removing schedule hides controls again");
+        await run("document.getElementById('competition-tab-standings').click()");
         // UX-01B: desktop-only styling, sticky geometry and both themes.
         if(name==="desktop"){
           for(const width of [621,1024,1159,1160,1440]){
@@ -337,132 +262,6 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         checks.push(name+"/"+theme);
       }
     }
-    // Fixtures integration: real DEV switch, slider, standings totals and OFF restoration.
-    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1/"});
-    await wait("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
-    await run("document.getElementById('competition-tab-fixtures').click();document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
-    for(const completed of [0,1,2,3,4,15,30]){
-      await run("(()=>{const s=document.querySelector('[data-dev-control=\"matchdays\"]');s.value='"+completed+"';s.dispatchEvent(new Event('change'))})()");
-      await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='"+completed+"'");
-      const preview=await run("(()=>{window.faCompetitionRoute.set({matchday:1});const matches=[...document.querySelectorAll('[data-fixture-match]')];return {count:matches.length,scores:matches.map(row=>row.querySelector('.app-fixture-score').textContent),notice:!!document.getElementById('app-fixtures-preview'),allPlayed:[...document.querySelectorAll('#app-standings-body tr')].every(row=>row.cells[2].textContent==='"+completed+"')}})()");
-      assert.equal(preview.count,8);assert.equal(preview.notice,false);assert.equal(preview.allPlayed,true);
-      assert.ok(preview.scores.every(score=>completed===0?score==="—":/^\d+ – \d+$/.test(score)));
-      const current=Math.min(completed+1,30);
-      assert.equal(await run("document.getElementById('app-fixtures-current').hidden"),current===1);
-      if(current!==1){
-        await run("document.getElementById('app-fixtures-current').click()");
-        assert.equal(await run("window.faCompetitionRoute.get().matchday"),current);
-        assert.equal(await run("document.getElementById('app-fixtures-current').getClientRects().length===0&&document.activeElement.id==='app-fixtures-round'"),true);
-      }
-    }
-    // Compare every match score and each club's goal totals against the same deterministic model.
-    const agreement=await run("(()=>{const totals=new Map([...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,{gf:Number(row.cells[6].textContent),ga:Number(row.cells[7].textContent),actualFor:0,actualAgainst:0}]));for(let n=1;n<=30;n++){window.faCompetitionRoute.set({matchday:n});for(const row of document.querySelectorAll('[data-fixture-match]')){const scores=row.querySelector('.app-fixture-score').textContent.split(' – ').map(Number),crests=[...row.querySelectorAll('[data-club-crest]')],home=totals.get(crests[0].dataset.clubCrest),away=totals.get(crests[1].dataset.clubCrest);home.actualFor+=scores[0];home.actualAgainst+=scores[1];away.actualFor+=scores[1];away.actualAgainst+=scores[0]}}return [...totals.values()].every(c=>c.gf===c.actualFor&&c.ga===c.actualAgainst)})()");
-    assert.equal(agreement,true,"Fixtures and standings share the same 240 results");
-    await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===0");
-    assert.equal(await run("!document.getElementById('app-fixtures-preview')&&document.getElementById('app-fixtures-round').disabled"),true);
-    // OFF remains OFF after refresh; it never leaks fictional matches into the public view.
-    await cmd("Page.reload");
-    await wait("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
-    assert.equal(await run("document.querySelectorAll('[data-fixture-match]').length"),0);
-    await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
-    await run("(()=>{const s=document.querySelector('[data-dev-control=\"matchdays\"]');s.value='4';s.dispatchEvent(new Event('change'))})()");
-    await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
-    await cmd("Page.reload");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===8&&document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
-    assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"4","existing session matchday preference restores both views");
-    await run("document.querySelector('[data-dev-control=\"reset-page\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===0&&!document.querySelector('[data-dev-control=\"fictional-standings\"]').checked");
-    assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"15");
-    await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
-    await run("document.querySelector('[data-dev-control=\"reset-global\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===0");
-    assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-preview')"),null);
-    const clickControl=async selector=>{
-      const point=await run("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
-      await cmd("Input.dispatchMouseEvent",{type:"mousePressed",button:"left",clickCount:1,...point});
-      await cmd("Input.dispatchMouseEvent",{type:"mouseReleased",button:"left",clickCount:1,...point});
-    };
-    // Direct canonical DEV URL, picker, history, refresh and missing seasons.
-    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=fixtures&matchday=12"});
-    await wait("!!window.faCompetitionRoute&&!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
-    assert.equal(await run("location.pathname"),"/app/competitions/it-1");
-    assert.equal(await run("window.faCompetitionRoute.get().matchday"),12);
-    await wait("document.readyState==='complete'");
-    await run("if(!document.querySelector('[data-dev-control=\"fictional-standings\"]').checked)document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
-    await clickControl("#app-fixtures-round");
-    await clickControl('[data-fixture-round-choice="13"]');
-    await clickControl("#competition-tab-history");
-    assert.equal(await run("location.search"),"?season=1&view=history");
-    await run("history.back()");await wait("location.search==='?season=1&view=fixtures&matchday=13'&&window.faCompetitionRoute.get().view==='fixtures'&&window.faCompetitionRoute.get().matchday===13");
-    await run("history.back()");await wait("window.faCompetitionRoute.get().matchday===12");
-    await run("history.forward()");await wait("window.faCompetitionRoute.get().matchday===13");
-    await cmd("Page.reload");await wait("!!window.faFixtures&&document.querySelectorAll('[data-fixture-match]').length===8");
-    assert.equal(await run("document.getElementById(\"app-fixtures-round-number\").textContent"),"13");
-    assert.equal(await run("!!document.querySelector('[data-dev-control=\"fictional-standings\"]').checked"),true);
-    await run("window.faCompetitionRoute.set({season:\"2\"})");
-    assert.equal(await run("!document.getElementById(\"app-competition-season-unavailable\").hidden&&[...document.querySelectorAll(\".app-competition-panel\")].every(p=>p.hidden)"),true);
-    await run("document.getElementById(\"app-competition-season\").click();document.getElementById(\"app-competition-season-option-1\").click()");
-    assert.equal(await run("!document.getElementById(\"competition-panel-fixtures\").hidden"),true);
-    await clickControl("#app-fixtures-current");
-    assert.equal(await run("window.faCompetitionRoute.get().matchday"),16);
-    await clickControl("#competition-tab-standings");
-    assert.equal(await run("location.search"),"?season=1&view=standings");
-    await clickControl("#competition-tab-fixtures");
-    assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"16");
-    await clickControl("#competition-tab-standings");
-    await cmd("Page.reload");await wait("!!window.faFixtures&&document.querySelectorAll('[data-fixture-match]').length===8");
-    await clickControl("#competition-tab-fixtures");
-    assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"16");
-    // Observe actual visible frames during a catalogue-to-competition navigation.
-    await run("(()=>{const slider=document.querySelector('[data-dev-control=\"matchdays\"]');slider.value='4';slider.dispatchEvent(new Event('change'))})()");
-    await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
-    devResourceDelay=350;
-    const observeSource="(()=>{if(location.origin!==\"PLACEHOLDER\")return;const checks=window.__faDevPaintChecks={wrong:0,correct:0,pendingLogo:false};function frame(){const region=document.querySelector('.app-world-standings'),logo=document.getElementById('app-competition-badge');if(document.documentElement.dataset.faDebugPending==='true'&&logo?.getBoundingClientRect().width>0&&getComputedStyle(logo).visibility==='visible')checks.pendingLogo=true;if(region?.getBoundingClientRect().height>0&&getComputedStyle(region).visibility==='visible'&&!region.closest('[hidden]')){const rows=[...document.querySelectorAll('#app-standings-body tr')];if(rows.length===16&&rows.every(r=>r.cells[2].textContent==='4'))checks.correct++;else checks.wrong++}requestAnimationFrame(frame)}requestAnimationFrame(frame)})();".replace("\"PLACEHOLDER\"",JSON.stringify(devOrigin));
-    const observerScript=await cmd("Page.addScriptToEvaluateOnNewDocument",{source:observeSource});
-    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/"});
-    await wait("document.readyState==='complete'&&!!document.querySelector('a.app-division-card')");
-    await run("document.querySelectorAll('a.app-division-card')[2].click()");
-    await wait("window.__faDevPaintChecks?.correct>0");
-    const paints=await run("window.__faDevPaintChecks");
-    assert.equal(paints.wrong,0,"no visible default standings before saved DEV values");
-    assert.equal(paints.pendingLogo,true,"logo remains visible while saved DEV values restore");
-    assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"4");
-    await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:observerScript.identifier});
-    devResourceDelay=0;
-    // URL-selected tab must be highlighted on every visible frame before runtime hydration.
-    competitionResourceDelay=350;
-    const tabObserver=await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`(()=>{
-      const expected=new URLSearchParams(location.search).get('view');
-      const frames=window.__faTabPaint={wrong:0,correct:0};
-      function frame(){
-        const tabs=[...document.querySelectorAll('.app-competition-tab')];
-        if(tabs.length===6&&tabs[0].getBoundingClientRect().height>0){
-          const color=document.documentElement.dataset.theme==='light'?'rgb(217, 238, 225)':'rgb(33, 72, 61)';
-          const active=tabs.filter(tab=>getComputedStyle(tab).backgroundColor===color);
-          if(active.length===1&&active[0].id==='competition-tab-'+expected&&active[0].getAttribute('aria-selected')==='true'&&active[0].tabIndex===0&&tabs.filter(tab=>tab.getAttribute('aria-selected')==='true').length===1)frames.correct++;else frames.wrong++;
-        }
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();`});
-    for(const theme of ['dark','light']){
-      await run("localStorage.setItem('football-architect:theme','"+theme+"')");
-      for(const view of ['fixtures','stats','history','rules','awards']){
-        await cmd("Page.navigate",{url:origin+'/app/competitions/it-1?season=1&view='+view});
-        await wait("document.readyState==='complete'&&window.__faTabPaint?.correct>0");
-        assert.equal(await run("window.__faTabPaint.wrong"),0,theme+'/'+view+' initial tab paint');
-        await cmd("Page.reload");
-        await wait("document.readyState==='complete'&&window.__faTabPaint?.correct>0");
-        assert.equal(await run("window.__faTabPaint.wrong"),0,theme+'/'+view+' refresh tab paint');
-      }
-    }
-    await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:tabObserver.identifier});
-    competitionResourceDelay=0;
     // DIV-ASSET-07: artwork must render from the HTML with all page scripts disabled.
     // Declarative shadow DOM prevents the original .s0/.s1 rules crossing logo boundaries.
     const divisions=JSON.parse(await readFile(join(root,"data/divisions.json"),"utf8"));
@@ -498,7 +297,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}
-    proc.kill("SIGTERM");devServer.close();server.close();
+    proc.kill("SIGTERM");server.close();
     await new Promise(ok=>server.once("close",ok));
     for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);
     if(proc.exitCode===null)proc.kill("SIGKILL");

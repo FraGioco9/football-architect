@@ -85,7 +85,7 @@
     return item;
   }
   function render(){
-    const available=rounds!==null&&navigation.get().season==="1";
+    const available=rounds!==null&&["1","2"].includes(navigation.get().season);
     fields.toolbar.hidden=!available;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
     fields.round.value=String(selected);fields.round.disabled=!available;
