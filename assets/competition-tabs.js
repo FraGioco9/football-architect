@@ -58,6 +58,8 @@
   if(tabs.length!==6||panels.some(panel=>!panel)||!season||!unavailable||!seasonMenu||!seasonValue)return;
   const listeners=new Set();let state;
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
+  // Season 2 is an isolated DEV preview, never a public competition season.
+  const devSeasonTwo=!!document.querySelector('script[src="/__fa_dev__/standings-client.mjs"]');
   // Season 1 is a provisional display context, not an official calendar/history.
   function read(){
     const params=new URL(window.location.href).searchParams;
@@ -74,7 +76,7 @@
     url.searchParams.set("season",state.season);url.searchParams.set("view",state.view);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
-    const index=views.indexOf(state.view),available=state.season==="1"||state.season==="2";
+    const index=views.indexOf(state.view),available=state.season==="1"||(devSeasonTwo&&state.season==="2");
     document.documentElement.dataset.competitionView=state.view;
     document.documentElement.dataset.competitionSeasonUnavailable=String(!available);
     seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available;
@@ -98,7 +100,7 @@
   }
   window.faCompetitionRoute={get:()=>({...state}),set,
     defaultMatchday(round){
-      if(!pendingDefaultMatchday||state.view!=="fixtures"||!["1","2"].includes(state.season))return;
+      if(!pendingDefaultMatchday||state.view!=="fixtures"||!(state.season==="1"||(devSeasonTwo&&state.season==="2")))return;
       pendingDefaultMatchday=false;
       if(Number.isInteger(round)&&round>=1&&round<=30)apply({...state,matchday:round},{replace:true});
     },
@@ -117,7 +119,7 @@
   });
   // The checked-in competition markup has the season 1 option only.
   // Add season 2 without duplicating the menu in all generated pages.
-  if(!seasonMenu.querySelector('[data-menu-value="2"]')){
+  if(devSeasonTwo&&!seasonMenu.querySelector('[data-menu-value="2"]')){
     const option=document.createElement("div");
     option.id="app-competition-season-option-2";
     option.className="language-option";
