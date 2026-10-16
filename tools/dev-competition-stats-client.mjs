@@ -80,6 +80,7 @@ if (panel && divisionId) {
 .fa-dev-stats-leader-card .fa-dev-stats-top{max-width:none;list-style:none}
 .fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
 .fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
+.fa-dev-stats-empty{font-size:.85rem;opacity:.65}
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 .fa-dev-stats-top li[hidden]{display:none}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
@@ -154,8 +155,7 @@ if (panel && divisionId) {
     root.append(nav);
     let fictionalEnabled = false;
     try { fictionalEnabled = sessionStorage.getItem("football-architect:standings-dev-preview") === "on"; } catch {}
-    if (!fictionalEnabled) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
-    if (stats.overview.matchesPlayed === 0) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
+    const hasMatches=fictionalEnabled&&stats.overview.matchesPlayed>0;
     if (view === "players") {
       const section=create("section",undefined,"fa-dev-stats-section");
       const grid=create("div",undefined,"fa-dev-stats-leader-grid");
@@ -184,7 +184,7 @@ if (panel && divisionId) {
         const grid=create("div",undefined,"fa-dev-stats-grid");
         for(const [label,value] of cards){
           const card=create("div",undefined,"fa-dev-stats-card");
-          card.append(create("span",label),create("strong",value));grid.append(card);
+          card.append(create("span",label),hasMatches?create("strong",value):create("span","No statistics available yet.","fa-dev-stats-empty"));grid.append(card);
         }
         section.append(grid);root.append(section);
       }
@@ -209,9 +209,10 @@ if (panel && divisionId) {
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         return li;
       };
-      teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
+      if(hasMatches)teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
+      else top.append(create("li","No statistics available yet.","fa-dev-stats-player-empty"));
       card.append(top);
-      if(teams.length>5){
+      if(hasMatches&&teams.length>5){
         const expand=create("button","Show all","fa-dev-stats-expand");
         expand.type="button";
         expand.addEventListener("click",()=>{
