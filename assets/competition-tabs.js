@@ -69,7 +69,8 @@
     else if(rect.right>bounds.right-16)tablist.scrollLeft+=rect.right-bounds.right+16;
     syncTabOverflow();
   }
-  tablist.addEventListener("scroll",syncTabOverflow,{passive:true});
+  const tabScrollKey="football-architect:competition-tabs-scroll:"+location.pathname;
+  tablist.addEventListener("scroll",()=>{syncTabOverflow();try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}},{passive:true});
   window.addEventListener("resize",revealSelectedTab);
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
@@ -161,4 +162,8 @@
     apply(read(),{replace:true});
   });
   apply(read(),{replace:true});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    try{const saved=Number(sessionStorage.getItem(tabScrollKey));if(Number.isFinite(saved)&&saved>=0)tablist.scrollLeft=saved}catch{}
+    syncTabOverflow();
+  }));
 })();
