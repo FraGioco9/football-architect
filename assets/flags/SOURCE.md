@@ -1,5 +1,7 @@
-# Country flag sources
+# Country flag assets
 
-The eight country flag SVGs in this directory are sourced from [Hampus Borgos country-flags](https://github.com/hampusborgos/country-flags), which describes its flag imagery as public domain. The flags are kept as source SVGs and embedded inline on the competitions overview for first paint.
+All 255 flags are from [Hampus Borgos country-flags](https://github.com/hampusborgos/country-flags). The upstream project describes the flag imagery as public domain.
 
-Country codes: `it`, `gb-eng`, `es`, `de`, `fr`, `pt`, `nl`, `br`.
+All flags have a native SVG rounded-corner mask corresponding to a 3 px radius when displayed at 24 x 16 px. Country flag assets are not constrained to a 1:1 replacement of previous assets.
+
+The England flag uses `gb-eng.svg`.
