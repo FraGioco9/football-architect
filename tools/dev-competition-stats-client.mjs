@@ -166,7 +166,6 @@ if (panel && divisionId) {
       const groups = [
         ["General",[["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]]
       ];
-      const recordItems=[["Best attack","gf",false],["Worst attack","gf",true],["Best defence","ga",true],["Worst defence","ga",false],["Most wins","w",false],["Most clean sheets","cs",false]];
       for(const [heading,cards] of groups){
         const section=create("section",undefined,"fa-dev-stats-section");
         section.append(create("h3",heading,"fa-dev-stats-heading"));
@@ -177,29 +176,11 @@ if (panel && divisionId) {
         }
         section.append(grid);root.append(section);
       }
-      const section=create("section",undefined,"fa-dev-stats-section");
-      section.append(create("h3","Team records","fa-dev-stats-heading"));
-      const grid=create("div",undefined,"fa-dev-stats-record-grid");
-      for(const [label,key,ascending] of recordItems){
-        const team=ranked(key,ascending)[0];
-        const card=create("div",undefined,"fa-dev-stats-record");
-        card.append(create("span",label,"fa-dev-stats-record-label"));
-        if(team){
-          const identity=create("div",undefined,"app-world-club-identity");
-          const crest=create("span",undefined,"app-world-club-crest-placeholder");
-          crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
-          crest.setAttribute("aria-hidden","true");
-          identity.append(crest,create("span",team.clubName,"app-world-club-name"));
-          card.append(identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
-        }
-        grid.append(card);
-      }
-      section.append(grid);root.append(section);
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
     const leaderGrid=create("div",undefined,"fa-dev-stats-leader-grid");
-    const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false]];
+    const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false],["gd","Goal difference",false],["unbeatenStreak","Unbeaten streak",false]];
     for(const [key,label,ascending] of categories){
       const card=create("section",undefined,"fa-dev-stats-leader-card");
       card.append(create("h4",label,"fa-dev-stats-leader-title"));
