@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-ua" viewBox="0 0 640 480">
-  <g fill-rule="evenodd" stroke-width="1pt">
-    <path fill="#0057b8" d="M0 0h640v240H0z"/>
-    <path fill="gold" d="M0 240h640v240H0z"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2"><defs><mask id="fa-flag-rounded-ua" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="3.0" height="2.0"><rect x="0.0" y="0.0" width="3.0" height="2.0" rx="0.375" ry="0.375" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-ua)"><path fill="#0057B7" d="M0 0h3v2H0z" /><path fill="gold" d="M0 1h3v1H0z" /></g></svg>

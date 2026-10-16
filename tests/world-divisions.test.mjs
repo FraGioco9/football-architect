@@ -207,8 +207,10 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
- assert.ok(css.includes(".app-world-flag{width:28px;height:20px;object-fit:contain;flex:none;border-radius:6px}"));
- assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
+ assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;width:24px;height:16px;flex:none}"));
+ assert.ok(css.includes(".app-world-flag{display:block;width:24px;height:16px;flex:none;object-fit:fill;border:0;border-radius:0;clip-path:none}"));
+ assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
+ assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
 });
 
 test("COMPETITIONS-06 keyboard and click controls still isolate one of six tabs",async()=>{
@@ -397,7 +399,8 @@ test("COMPETITIONS-ROUTE-02 resolves flags from the three-level competition path
  const generator=read("tools/generate-app-pages.mjs");
  assert.ok(shared.includes('id="app-competition-flag" alt="" src="../../../assets/flags/it.svg"'));
  assert.ok(!shared.includes('id="app-competition-flag" alt="" src="../../../../'));
- assert.ok(loader.includes('document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset'));
+ assert.ok(loader.includes('new URL("../../../" + division.flagAsset, window.location.href)'));
+ assert.ok(loader.includes('if (flag.src !== expectedFlag.href) flag.src = expectedFlag.href'));
  assert.ok(generator.includes('id="app-competition-flag" alt="" src="../../../'));
 });
 

@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-gp" viewBox="0 0 640 480">
-  <path fill="#fff" d="M0 0h640v480H0z"/>
-  <path fill="#000091" d="M0 0h213.3v480H0z"/>
-  <path fill="#e1000f" d="M426.7 0H640v480H426.7z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2"><defs><mask id="fa-flag-rounded-gp" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="3.0" height="2.0"><rect x="0.0" y="0.0" width="3.0" height="2.0" rx="0.375" ry="0.375" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-gp)"><path fill="#EC1920" d="M0 0h3v2H0z" /><path fill="#fff" d="M0 0h2v2H0z" /><path fill="#051440" d="M0 0h1v2H0z" /></g></svg>
