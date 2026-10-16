@@ -47,7 +47,7 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
    if(href.startsWith("#")||href.startsWith("data:"))continue;
    assert.doesNotMatch(href,/^https?:/);
-   const path=href.startsWith("/app/") ? new URL("../"+href.slice(1)+"/index.html",import.meta.url) : new URL(href,base);
+   const path=href.startsWith("/") ? new URL(href === "/" ? "../index.html" : "../"+href.slice(1)+( /\.[a-z0-9]+$/i.test(href) ? "" : "/index.html"),import.meta.url) : new URL(href,base);
    const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
    assert.ok(existsSync(fileURLToPath(filePath)),file+" -> "+href);
   }
