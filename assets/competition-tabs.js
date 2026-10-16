@@ -178,8 +178,7 @@
     restoreTabScroll();
     requestAnimationFrame(()=>{
       restoreTabScroll();restoringTabScroll=false;
-      document.documentElement.dataset.faDevStandingsPending &&
-        document.documentElement.style.setProperty("--fa-tabs-restored","1");
+      if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
     });
   });
 })();
