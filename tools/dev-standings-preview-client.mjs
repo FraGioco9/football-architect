@@ -150,8 +150,13 @@ if(validPath){
     activePreview=()=>{try{replacement()}finally{previous()}};
    }).catch(error=>console.error("DEV season preview refresh failed:",error));
   }
-  window.addEventListener("popstate",syncSeason);
-  document.addEventListener("click",()=>setTimeout(syncSeason,0),true);
+  // The competition router notifies subscribers after updating its URL state.
+  // Avoid delayed document click polling (which can briefly display stale scores).
+  if(typeof window.faCompetitionRoute?.subscribe==="function"){
+   window.faCompetitionRoute.subscribe(syncSeason);
+  }else{
+   window.addEventListener("popstate",syncSeason);
+  }
   if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
    widgetRoot?.syncVisibility();
   if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
