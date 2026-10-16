@@ -71,7 +71,7 @@
     else if(rect.right>bounds.right-16)tablist.scrollLeft+=rect.right-bounds.right+16;
     syncTabOverflow();
   }
-  const tabScrollKey="football-architect:competition-tabs-scroll:"+location.pathname;
+  const tabScrollKey="football-architect:competition-tabs-scroll:"+new URL(window.location.href).pathname;
   let restoringTabScroll=true;
   let savedTabScroll=null;
   try{const raw=sessionStorage.getItem(tabScrollKey);if(raw!==null&&Number.isFinite(Number(raw)))savedTabScroll=Math.max(0,Number(raw))}catch{}
