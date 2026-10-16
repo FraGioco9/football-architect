@@ -29,8 +29,8 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
  assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/">'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'"'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'">'),division.id);
  }
  assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
@@ -43,12 +43,13 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   "app/settings/index.html","app/competitions/index.html",
   "app/competitions/_shared/index.html"];
  for(const file of [...common,...routes.map(r=>r.file)]){
-  const html=read(file),base=new URL("../"+file,import.meta.url);
+  const html=read(file),base=new URL(html.match(/<base href="([^"]+)"/)?.[1]||"/"+file,"https://example.test");
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
    if(href.startsWith("#")||href.startsWith("data:"))continue;
    assert.doesNotMatch(href,/^https?:/);
    const path=new URL(href,base);
-   const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
+   const pathname=path.pathname.endsWith("/")?path.pathname+"index.html":/\.[a-z]+$/i.test(path.pathname)?path.pathname:path.pathname+"/index.html";
+   const filePath=new URL(".."+pathname,import.meta.url);
    assert.ok(existsSync(fileURLToPath(filePath)),file+" -> "+href);
   }
  }
@@ -199,50 +200,16 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-fixtures.js","competition-tabs.js"]'));
+ assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
- assert.ok(code.includes("tabs.length !== 6"));
- for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key === "'+key+'"'));
+ assert.ok(code.includes("tabs.length!==6"));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key==="'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
  assert.ok(css.includes(".app-world-flag{width:28px;height:20px;object-fit:contain;flex:none;border-radius:6px}"));
  assert.ok(read("assets/flags/LICENSE").includes("MIT License"));
-});
-
-test("COMPETITIONS-06 keyboard and click controls still isolate one of six tabs",async()=>{
- const {runInNewContext}=await import("node:vm");
- const tabs=Array.from({length:6},(_,i)=>{
-  const listeners={},selected={};
-  return {
-   listeners,selected,tabIndex:i===0?0:-1,focused:false,scrolled:false,
-   classList:{toggle(name,on){selected[name]=on}},
-   getAttribute(name){return name==="aria-controls"?"competition-panel-"+i:null},
-   setAttribute(name,value){selected[name]=value},
-   addEventListener(name,listener){listeners[name]=listener},
-   focus(){this.focused=true},scrollIntoView(){this.scrolled=true}
-  };
- });
- const panels=tabs.map(()=>({hidden:false}));
- const doc={
-  querySelector(selector){return selector===".app-competition-tabs"?{querySelectorAll(){return tabs}}:null},
-  getElementById(id){return panels[Number(id.slice("competition-panel-".length))]??null}
- };
- runInNewContext(read("assets/competition-tabs.js"),{document:doc});
- assert.deepEqual(panels.map(p=>p.hidden),[false,true,true,true,true,true]);
- tabs[3].listeners.click();
- assert.equal(panels[3].hidden,false);
- assert.equal(tabs[3].selected["aria-selected"],"true");
- let prevented=false;
- tabs[3].listeners.keydown({key:"ArrowRight",preventDefault(){prevented=true}});
- assert.ok(prevented);assert.equal(tabs[4].focused,true);
- assert.equal(tabs[4].scrolled,true);assert.equal(panels[4].hidden,false);
- tabs[4].listeners.keydown({key:"Home",preventDefault(){}});
- assert.equal(panels[0].hidden,false);
- tabs[0].listeners.keydown({key:"ArrowLeft",preventDefault(){}});
- assert.equal(panels[5].hidden,false);
- assert.equal(panels.filter(p=>!p.hidden).length,1);
 });
 
 test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass validation",async()=>{

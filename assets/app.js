@@ -60,6 +60,8 @@
       competitionTabHistory:"History",
       competitionTabRules:"Rules",
       competitionTabAwards:"Awards",
+      competitionSeason:"Season",
+      competitionSeasonUnavailable:"Season unavailable",
       fixturesMatchday:"Matchday",
       fixturesPrevious:"Previous matchday",
       fixturesNext:"Next matchday",
@@ -167,6 +169,8 @@
       competitionTabHistory:"Historie",
       competitionTabRules:"Regeln",
       competitionTabAwards:"Auszeichnungen",
+      competitionSeason:"Saison",
+      competitionSeasonUnavailable:"Saison nicht verfügbar",
       fixturesMatchday:"Spieltag",
       fixturesPrevious:"Vorheriger Spieltag",
       fixturesNext:"Nächster Spieltag",
@@ -274,6 +278,8 @@
       competitionTabHistory:"Historia",
       competitionTabRules:"Reglas",
       competitionTabAwards:"Premios",
+      competitionSeason:"Temporada",
+      competitionSeasonUnavailable:"Temporada no disponible",
       fixturesMatchday:"Jornada",
       fixturesPrevious:"Jornada anterior",
       fixturesNext:"Jornada siguiente",
@@ -381,6 +387,8 @@
       competitionTabHistory:"Historique",
       competitionTabRules:"Règlement",
       competitionTabAwards:"Récompenses",
+      competitionSeason:"Saison",
+      competitionSeasonUnavailable:"Saison indisponible",
       fixturesMatchday:"Journée",
       fixturesPrevious:"Journée précédente",
       fixturesNext:"Journée suivante",
@@ -488,6 +496,8 @@
       competitionTabHistory:"Albo d'oro",
       competitionTabRules:"Regolamento",
       competitionTabAwards:"Premi",
+      competitionSeason:"Stagione",
+      competitionSeasonUnavailable:"Stagione non disponibile",
       fixturesMatchday:"Giornata",
       fixturesPrevious:"Giornata precedente",
       fixturesNext:"Giornata successiva",
@@ -584,7 +594,7 @@
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
       const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?$/i);
-      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"/"));
+      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()));
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
       link.setAttribute("href",appHref(routes.divisions));

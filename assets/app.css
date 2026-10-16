@@ -419,13 +419,20 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 
 /* Competition Fixtures: one eight-match round, shared desktop/mobile markup. */
 .app-fixtures-toolbar{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 16px}
-.app-fixtures-toolbar label{font-size:13px;font-weight:700}
-.app-fixtures-navigation{display:flex;gap:6px;align-items:center}
-.app-fixtures-navigation button.app-link{width:44px;min-width:44px;height:44px;padding:0;font-size:24px;cursor:pointer}
-.app-fixtures-navigation select{width:84px;min-width:84px;height:44px;padding:9px 12px;font:inherit;font-size:13px;font-weight:700;color-scheme:dark}
-html[data-theme="light"] .app-fixtures-navigation select{color-scheme:light}
+.app-fixtures-navigation{position:relative;display:flex;gap:6px;align-items:center}
+.app-fixtures-navigation>button.app-link{width:44px;min-width:44px;height:44px;padding:0;font-size:24px;cursor:pointer}
+.app-fixtures-trigger{width:132px;min-width:132px!important;height:44px;font:inherit;font-size:13px;font-weight:700;gap:7px}
 .app-fixtures-navigation :disabled{opacity:.45;cursor:default}
-.app-fixtures-navigation select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-fixtures-navigation button:focus-visible,.app-competition-season select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-fixtures-picker{position:absolute;z-index:30;top:calc(100% + 8px);left:50%;transform:translateX(-50%);width:260px;max-width:calc(100vw - 64px);padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 10px 24px rgba(0,0,0,.22)}
+.app-fixtures-picker[hidden]{display:none}
+.app-fixtures-round-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.app-fixtures-round-grid .app-theme-choice{width:100%;min-width:0;min-height:36px;padding:7px 0;font-size:12px}
+.app-competition-season{display:flex;align-items:center;gap:8px;margin-inline-start:auto;font-size:13px;font-weight:700}
+.app-competition-season select{width:76px;min-width:76px;font:inherit;color-scheme:dark}
+html[data-theme="light"] .app-competition-season select{color-scheme:light}
+#app-competition-season-unavailable[hidden]{display:none}
+@media(max-width:620px){.app-competition-season{margin-inline-start:0}}
 .app-fixtures-list{list-style:none;display:grid;gap:8px;padding:0;margin:0}
 .app-fixture-match{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;gap:8px 14px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
 .app-fixture-club{display:flex;align-items:center;gap:8px;min-width:0;font-size:14px;font-weight:700}
@@ -443,3 +450,12 @@ html[data-theme="light"] .app-fixtures-navigation select{color-scheme:light}
  .app-fixture-score{grid-column:2;grid-row:1/3;align-self:center}
  .app-fixture-meta{grid-column:1/-1;grid-row:3;justify-content:flex-start;gap:6px 12px}
 }
+
+/* Prevent a different view/season flashing before URL state is bound. */
+html[data-competition-view="standings"] .app-competition-panel:not(#competition-panel-standings){display:none}
+html[data-competition-view="fixtures"] .app-competition-panel:not(#competition-panel-fixtures){display:none}
+html[data-competition-view="stats"] .app-competition-panel:not(#competition-panel-stats){display:none}
+html[data-competition-view="history"] .app-competition-panel:not(#competition-panel-history){display:none}
+html[data-competition-view="rules"] .app-competition-panel:not(#competition-panel-rules){display:none}
+html[data-competition-view="awards"] .app-competition-panel:not(#competition-panel-awards){display:none}
+html[data-competition-season-unavailable="true"] .app-competition-panel{display:none}

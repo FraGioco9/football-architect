@@ -42,7 +42,7 @@ async function resetPreview(){
  if(matchdayRow)matchdayRow.hidden=true
  return true;
 }
-const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])\/(?:index\.html)?$/;
+const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
 const LANG = {
   en: { round: "Matchday",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",

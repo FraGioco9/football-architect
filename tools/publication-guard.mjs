@@ -1,5 +1,6 @@
 // Fail-closed allowlist for future static publication artifacts.
 // Do not use the repository root as a public document root.
+import {isDeepStrictEqual} from "node:util";
 import {readdirSync,lstatSync,readFileSync,existsSync,mkdirSync,copyFileSync} from "node:fs";
 import {join,resolve,dirname} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -7,7 +8,7 @@ import {validateDivisionAssets} from "./validate-division-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
 const required=[
- "index.html","guide/index.html","app/index.html","app/dashboard/index.html",
+ "vercel.json","index.html","guide/index.html","app/index.html","app/dashboard/index.html",
  "app/calendar/index.html","app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
@@ -15,13 +16,16 @@ const required=[
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"app/competitions/"+country+"-"+tier+"/index.html"));
-const rootFiles=new Set(["index.html","favicon.ico","favicon.svg","guide/index.html",
+const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
  "app/index.html","app/dashboard/index.html","app/calendar/index.html",
  "app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","app.js","app.css",
  "app-search.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js"]);
+
+// Only competition URL routing is allowed; no hosting, auth or build overrides.
+const competitionRouting={"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]};
 
 export function isAllowlistedPublicPath(path) {
  if(path.startsWith("assets/divisions/"))return validateDivisionAssets().paths.has(path);
@@ -47,6 +51,8 @@ export function listFiles(root,relative="") {
  return files.sort();
 }
 export function planPublicFiles(sourceRoot=repositoryRoot) {
+ const routing=JSON.parse(readFileSync(join(sourceRoot,"vercel.json"),"utf8"));
+ if(!isDeepStrictEqual(routing,competitionRouting))throw Error("Unexpected competition routing configuration");
  const files=listFiles(sourceRoot).filter(isAllowlistedPublicPath);
  for(const path of [...required,...divisions])
   if(!files.includes(path))throw Error("Required public asset missing: "+path);

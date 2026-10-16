@@ -121,14 +121,14 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
 
 test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async()=>{
  for(const division of manifest.divisions){
-  for(const ending of ["/","/index.html"]){
+  for(const ending of ["","/","/index.html"]){
    const r=await simulate({division,ending});
    assert.deepEqual(r.requested,[
     "/app/competitions/_shared/manifest.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/landing.js","/assets/app.js",
-    "/assets/app-search.js","/assets/competition-fixtures.js","/assets/competition-tabs.js"
+    "/assets/app-search.js","/assets/competition-tabs.js","/assets/competition-fixtures.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
    assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");

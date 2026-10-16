@@ -414,10 +414,10 @@ test("UI-WORLD resolves all canonical divisions by name and identifier",async()=
   assert.deepEqual(app.requestedUrls,["http://127.0.0.1:2000/data/divisions.json"]);
   app.trigger.emit("click");
   for(const [query,path] of [
-    ["pt-1","/app/competitions/pt-1/"],
-    ["atlantica","/app/competitions/pt-2/"],
-    ["liga lusitana","/app/competitions/pt-1/"],
-    ["bondsklasse","/app/competitions/nl-2/"]
+    ["pt-1","/app/competitions/pt-1"],
+    ["atlantica","/app/competitions/pt-2"],
+    ["liga lusitana","/app/competitions/pt-1"],
+    ["bondsklasse","/app/competitions/nl-2"]
   ]){
     app.input.value=query;
     app.input.emit("input");

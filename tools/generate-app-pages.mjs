@@ -69,7 +69,7 @@ const indexContent = function indexContent(root){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
  const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
@@ -106,12 +106,15 @@ ${rows}
 };
 const fixturesContent = ()=>`
             <div class="app-fixtures-toolbar">
-              <label for="app-fixtures-round" data-app-i18n="fixturesMatchday">Matchday</label>
               <div class="app-fixtures-navigation">
                 <button type="button" class="app-link app-link-secondary" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled>‹</button>
-                <select id="app-fixtures-round" class="language-trigger" disabled>
-${Array.from({length:30},(_,i)=>'                  <option value="'+(i+1)+'">'+(i+1)+'</option>').join("\n")}
-                </select>
+                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" aria-haspopup="dialog" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span data-app-i18n="fixturesMatchday">Matchday</span> <strong id="app-fixtures-round-number">1</strong><span class="language-chevron" aria-hidden="true">⌄</span></button>
+                <div id="app-fixtures-picker" class="app-fixtures-picker" role="dialog" aria-labelledby="app-fixtures-picker-label" hidden>
+                  <span id="app-fixtures-picker-label" class="sr-only" data-app-i18n="fixturesMatchday">Matchday</span>
+                  <div class="app-fixtures-round-grid">
+${Array.from({length:30},(_,i)=>'                    <button type="button" class="app-theme-choice" data-fixture-round-choice="'+(i+1)+'" aria-pressed="'+(i===0)+'"><span class="sr-only" data-app-i18n="fixturesMatchday">Matchday</span> '+(i+1)+'</button>').join("\n")}
+                  </div>
+                </div>
                 <button type="button" class="app-link app-link-secondary" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled>›</button>
               </div>
               <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
@@ -156,8 +159,10 @@ const detailContent = function detailContent(d,root){
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(d.name)+'</span></h1>\n'+
  '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
  '            </div>\n'+
+ '            <div class="app-competition-season"><label for="app-competition-season" data-app-i18n="competitionSeason">Season</label><select id="app-competition-season" class="language-trigger"><option value="" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</option><option value="1" selected>1</option></select></div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>\n'+
- '          </header>\n'+competitionTabs(d,detailAppend(d));
+ '          </header>\n'+
+ '          <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>\n'+competitionTabs(d,detailAppend(d));
 };
 const worldPageReplacements = (depth, division = null) => {
   const upToApp = "../".repeat(depth - 1);
@@ -206,9 +211,10 @@ const competitionRoute = d=>{
  let html=template.replaceAll("../../","../../../");
  for(const [token,value] of Object.entries(worldPageReplacements(3,d)))html=html.replace(token,value);
  html=sharedTemplate(html,d,false);
- html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
+ html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/app/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
  html=html.replace(/\s*<script src="\.\.\/\.\.\/\.\.\/assets\/(?:landing|app|app-search|competition-tabs)\.js" defer><\/script>/g,"");
- return html.replace('</head>','  <script src="../../../assets/competition-page.js" defer></script>\n</head>');
+ const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=p.get(\"view\"),s=p.get(\"season\");document.documentElement.dataset.competitionView=[\"standings\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"].includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\\d{0,8}$/.test(s||\"\")&&s!==\"1\")})();";
+ return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="../../../assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
  schemaVersion:1,approved:provisionalAssignments.approved,

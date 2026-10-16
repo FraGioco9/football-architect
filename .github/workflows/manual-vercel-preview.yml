@@ -73,7 +73,7 @@ jobs:
             assertPublicArtifact("preview-public");
             console.log("Verified public asset count:",files.length);
           '
-          for path in .github .git tools tests vercel.json package.json; do
+          for path in .github .git tools tests package.json; do
             test ! -e "preview-public/$path"
           done
       - uses: actions/upload-artifact@v4
@@ -112,7 +112,9 @@ jobs:
           ' <<< "$pr_json" >/dev/null
           test -f preview-public/index.html
           test -f preview-public/assets/competition-page.js
-          for path in .github .git tools tests vercel.json package.json; do
+          # Verify the only permitted Vercel config before any credentials are available.
+          jq -e '. == {"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]}' preview-public/vercel.json >/dev/null
+          for path in .github .git tools tests package.json; do
             test ! -e "preview-public/$path"
           done
       - name: Install Vercel CLI

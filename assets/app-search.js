@@ -69,7 +69,7 @@
       const score = !query ? 0 : name === query || fold(item.id) === query ? 4
         : name.startsWith(query) ? 3
         : name.includes(query) ? 2 : searchable.includes(query) ? 1 : 0;
-      return {kind:"division",label,detail,href:"/app/competitions/" + item.id.toLowerCase() + "/",score};
+      return {kind:"division",label,detail,href:"/app/competitions/" + item.id.toLowerCase(),score};
     })].filter(item => item.label && item.score > 0)
       .sort((a,b) => b.score - a.score).slice(0,8);
     const nodes = matches.map(item => {

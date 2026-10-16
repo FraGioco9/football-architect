@@ -4,19 +4,49 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 
 ## Display decisions for review
 
-- One round at a time, with a top-centered, labeled 1–30 selector styled with
-  the shared site control and previous/next buttons. No repeated Fixtures heading.
+- One round at a time, with a top-centered Matchday button and previous/next
+  buttons. The Matchday button opens a 30-button picker in the shared site style.
+  Arrow keys move within the picker; Home/End jump to its ends, Escape closes
+  it and returns focus, and choosing a round closes it. No repeated Fixtures heading.
   The round/match-count announcement is available only to assistive technology.
-  Round 1 is the initial selection. Changing data preserves the selected round.
+  Round 1 is the default when the URL has no valid matchday. Changing data or
+  resetting DEV results preserves the URL-selected round.
 - Eight matches per round; home club, score when played, away club, timing and
   scheduled/full-time state. On narrow screens home/away clubs stack beside the
   score, preserving readable space for long names without truncation.
-- No separate season selector or match-detail action in this first version.
+- A shared season selector applies to all six competition views. No match-detail
+  action is included.
 - Dates and times remain unknown unless supplied. Supplied ISO timestamps must
   carry a time-zone offset; they are displayed in the browser's local time.
   This does not choose world-clock, kickoff or seasonal scheduling rules.
 - Public pages contain an empty state with disabled navigation until a complete
   schedule is supplied. There are no fabricated official matches or results.
+
+## URL and season context
+
+Canonical detail URLs have no trailing slash:
+`/app/competitions/it-1?season=1&view=fixtures&matchday=12`.
+The six supported views are `standings`, `fixtures`, `stats`, `history`, `rules`
+and `awards`. Only Fixtures carries `matchday` (1–30). Switching tabs preserves
+that selection in the current document. Direct links, refresh, Back and Forward
+restore the selected view/round. Default or malformed values normalize with
+`replaceState`; user navigation adds a history entry only when the URL changes.
+
+Season `1` is a provisional display context for the existing data, not a newly
+approved sporting season, calendar year or historical dataset. Other valid numeric
+season IDs retain their URL but show "Season unavailable" and hide every data
+panel. Selecting season 1 restores the requested view. No unavailable season
+silently falls back to season 1 results. Real season metadata and history remain
+unconnected.
+
+The generated detail pages have a fixed same-origin base URL so assets/links work
+with or without the directory slash. A small head bootstrap hides another
+view/season before the shared runtime binds URL state. The DEV server accepts
+canonical URLs without broadening its host, network or file allowlists.
+`vercel.json` contains only competition-specific redirects and rewrites. The
+publication guard validates its exact structure; the manual Preview workflow
+checks that same structure before credentials are available. No workflow is run
+and no deployment is performed by this implementation.
 
 ## Data and existing debug settings
 

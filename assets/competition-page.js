@@ -3,7 +3,7 @@
   "use strict";
   const sourceUrl = document.currentScript?.src;
   const routeId = document.querySelector('meta[name="fa-division"]')?.content;
-  const root = new URL("../_shared/", window.location.href);
+  const root = new URL("../app/competitions/_shared/", sourceUrl);
   const status = document.getElementById("main-content");
 
   function fail() {
@@ -422,7 +422,7 @@
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
-    for (const script of ["landing.js","app.js","app-search.js","competition-fixtures.js","competition-tabs.js"])
+    for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"])
       await loadScript(script);
   }
   start().catch(fail);
