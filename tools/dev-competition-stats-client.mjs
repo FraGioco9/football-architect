@@ -129,6 +129,9 @@ if (panel && divisionId) {
       nav.append(button);
     }
     root.append(nav);
+    let fictionalEnabled = false;
+    try { fictionalEnabled = sessionStorage.getItem("football-architect:standings-dev-preview") === "on"; } catch {}
+    if (!fictionalEnabled) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
     if (stats.overview.matchesPlayed === 0) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
     if (view === "players") {
       root.append(create("h3","Top 5 players","fa-dev-stats-heading"));
@@ -205,6 +208,7 @@ if (panel && divisionId) {
     .catch(error=>{console.error(error);root.replaceChildren(create("p","DEV statistics unavailable"));});
   window.addEventListener("fa:competition-route-change",render);
   window.addEventListener("popstate",render);
+  window.addEventListener("fa:fictional-standings-change",render);
   const standings = document.getElementById("app-standings-body");
   if (standings) new MutationObserver(()=>{if(manifest)render();}).observe(standings,{childList:true});
 }
