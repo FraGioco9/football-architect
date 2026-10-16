@@ -336,8 +336,12 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
+      window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
+      selectedSeason: () => 1,
+      savedPreviewEnabled: () => enabled,
+      document: {documentElement:{dataset:{}},querySelector:()=>null},
       waitForRows: () => hydration,
-      createDebugWidget: () => { operations.push("widget"); signalMounted(); },
+      createDebugWidget: () => { operations.push("widget"); signalMounted(); return {syncVisibility(){}}; },
       registerDebugControls: () => {},
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
@@ -351,6 +355,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
     await widgetMounted;
+    if (enabled) await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
   }
 });
