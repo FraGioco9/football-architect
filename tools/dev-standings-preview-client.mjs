@@ -69,6 +69,7 @@ const LANG = {
 const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
 let previewState="OFF";
+function isPreviewEnabled(){return previewState==="ON";}
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
  transition=transition.catch(()=>false).then(async()=>{
