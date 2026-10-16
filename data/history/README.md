@@ -5,6 +5,8 @@ This directory is the planned canonical source for approved historical competiti
 ## Layout
 - `index.json` lists all 16 competitions and their data-availability status.
 - `competitions/<competition-id>.json` holds all seasons for one competition.
+- `coverage-matrix.csv` tracks the audit status of each candidate competition/season pair.
+- `SOURCE-AUDIT.md` documents inspected sources and unresolved prerequisites.
 - Use stable competition and club IDs. Resolve display names and crests from canonical catalogues instead of copying them into historical rows.
 
 ## Season contract
