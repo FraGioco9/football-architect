@@ -42,3 +42,17 @@ This document does **not** approve implementation, publishing, deployment, DNS/a
 - **02C:** independently verify deterministic manifests, byte-level isolation and fail-closed source handling.
 - **02D:** run exact-head automated tests including protected access negative cases once an enforcement implementation exists.
 - **02E:** independent G10 review and explicit deployment authorization remain outstanding.
+
+## Read-only Vercel configuration audit (2026-10-16)
+
+The existing `football-architect` Vercel project reports `ssoProtection.enabled=true` with `deploymentType=all_except_custom_domains`. Password protection and trusted-IP protection are disabled. This is evidence of Vercel Authentication being configured for covered deployment URLs, **not** proof that custom domains, every protected asset, or the proposed identity allowlist are secured.
+
+**Preferred candidate:** Vercel Authentication on an independently verified protected deployment URL, subject to the following conditions:
+
+- Use a hostname that falls within the enforced deployment-protection scope; never assume a custom alias is covered by `all_except_custom_domains`.
+- Confirm actual membership/access rules for the chosen project and environment; do not assume that every authenticated Vercel user is an approved Debug user.
+- Test anonymous, unauthorized, and authorized requests against direct HTML routes, refresh, `/__fa_dev__/*`, JSON, CSS and JS, including unknown paths and redirects.
+- Keep the existing workflow-level G10 denial active throughout evaluation. Do not create or expose a protected artifact merely to test protection.
+- If the intended hostname or identity scope is not enforceable with the current project settings, revise the design before implementation; do not silently disable or broaden protection.
+
+**Decision still pending:** owner approval of the exact identity scope, protected hostname class, and session/revocation policy, followed by independent security acceptance.
