@@ -69,7 +69,7 @@ if (panel && divisionId) {
       root.replaceChildren(create("p","DEV statistics unavailable"));
       return;
     }
-    root.replaceChildren(create("p", "DEV ONLY — Season " + stats.season + " — " + stats.matchdays + " matchdays"));
+    root.replaceChildren();
     const nav = create("div", undefined, "fa-dev-stats-nav");
     for (const [id,label] of [["overview","Overview"],["teams","Teams"],["players","Players"]]) {
       const button = create("button",label,"language-trigger");
@@ -79,8 +79,9 @@ if (panel && divisionId) {
       nav.append(button);
     }
     root.append(nav);
+    if (stats.overview.matchesPlayed === 0) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
     if (view === "players") {
-      root.append(create("p","Individual player statistics are unavailable because DEV matches do not contain player events.","app-competition-status"));
+      root.append(create("p","No player statistics available yet.","app-competition-status"));
       return;
     }
     if (view === "overview") {
@@ -136,7 +137,7 @@ if (panel && divisionId) {
     const wrap = create("div",undefined,"fa-dev-stats-table-wrap");
     wrap.append(table);root.append(wrap);
   }
-  fetch("/app/competitions/_shared/manifest.json",{cache:"no-store"})
+  fetch("/competitions/_shared/manifest.json",{cache:"no-store"})
     .then(response=>{if(!response.ok)throw Error("Manifest unavailable");return response.json();})
     .then(data=>{
       if(data?.schemaVersion!==1||data.approved!==false||!Array.isArray(data.divisions)||data.divisions.length!==16)
