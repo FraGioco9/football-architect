@@ -1,4 +1,4 @@
-import {aggregatePreviewStats} from "./dev-competition-stats-data.mjs";
+import {aggregatePreviewStats} from "./stats-data.mjs";
 
 // The shared competition shell is hydrated asynchronously by competition-page.js.
 const panel = await new Promise(resolve => {
