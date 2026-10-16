@@ -16,112 +16,128 @@
           "clubId": 1,
           "abbr": "MEN",
           "fullName": "Associazione Calcio Meneghina",
-          "primaryName": "AC Meneghina"
+          "primaryName": "AC Meneghina",
+          "stadiumName": "Stadio dei Navigli"
         },
         {
           "countryId": "IT",
           "clubId": 2,
           "abbr": "CAP",
           "fullName": "Unione Sportiva Capitolina",
-          "primaryName": "US Capitolina"
+          "primaryName": "US Capitolina",
+          "stadiumName": "Stadio del Colle Capitolino"
         },
         {
           "countryId": "IT",
           "clubId": 3,
           "abbr": "SUB",
           "fullName": "Football Club Subalpina",
-          "primaryName": "FC Subalpina"
+          "primaryName": "FC Subalpina",
+          "stadiumName": "Stadio delle Colline Subalpine"
         },
         {
           "countryId": "IT",
           "clubId": 4,
           "abbr": "PAR",
           "fullName": "Società Sportiva Partenopea",
-          "primaryName": "SS Partenopea"
+          "primaryName": "SS Partenopea",
+          "stadiumName": "Stadio del Golfo Partenopeo"
         },
         {
           "countryId": "IT",
           "clubId": 5,
           "abbr": "AMB",
           "fullName": "Unione Sportiva Ambrosiana",
-          "primaryName": "US Ambrosiana"
+          "primaryName": "US Ambrosiana",
+          "stadiumName": "Stadio della Cerchia Ambrosiana"
         },
         {
           "countryId": "IT",
           "clubId": 6,
           "abbr": "AVT",
           "fullName": "Associazione Calcio Aventina",
-          "primaryName": "AC Aventina"
+          "primaryName": "AC Aventina",
+          "stadiumName": "Stadio dell’Aventino"
         },
         {
           "countryId": "IT",
           "clubId": 7,
           "abbr": "VES",
           "fullName": "Associazione Calcio Vesuviana",
-          "primaryName": "AC Vesuviana"
+          "primaryName": "AC Vesuviana",
+          "stadiumName": "Stadio delle Pendici Vesuviane"
         },
         {
           "countryId": "IT",
           "clubId": 8,
           "abbr": "SBA",
           "fullName": "Associazione Calcio Sabauda",
-          "primaryName": "AC Sabauda"
+          "primaryName": "AC Sabauda",
+          "stadiumName": "Stadio dei Portici Sabaudi"
         },
         {
           "countryId": "IT",
           "clubId": 9,
           "abbr": "ORB",
           "fullName": "Unione Sportiva Orobica",
-          "primaryName": "US Orobica"
+          "primaryName": "US Orobica",
+          "stadiumName": "Stadio delle Valli Orobiche"
         },
         {
           "countryId": "IT",
           "clubId": 10,
           "abbr": "FEL",
           "fullName": "Associazione Calcio Felsina",
-          "primaryName": "AC Felsina"
+          "primaryName": "AC Felsina",
+          "stadiumName": "Stadio delle Due Torri"
         },
         {
           "countryId": "IT",
           "clubId": 11,
           "abbr": "MDC",
           "fullName": "Associazione Sportiva Medicea",
-          "primaryName": "AS Medicea"
+          "primaryName": "AS Medicea",
+          "stadiumName": "Stadio delle Colline Medicee"
         },
         {
           "countryId": "IT",
           "clubId": 12,
           "abbr": "LNT",
           "fullName": "Unione Sportiva Lanterna",
-          "primaryName": "US Lanterna"
+          "primaryName": "US Lanterna",
+          "stadiumName": "Stadio del Porto Antico"
         },
         {
           "countryId": "IT",
           "clubId": 13,
           "abbr": "COM",
           "fullName": "Associazione Sportiva Comasca",
-          "primaryName": "AS Comasca"
+          "primaryName": "AS Comasca",
+          "stadiumName": "Stadio del Lario"
         },
         {
           "countryId": "IT",
           "clubId": 14,
           "abbr": "CRC",
           "fullName": "Unione Sportiva Crociata",
-          "primaryName": "US Crociata"
+          "primaryName": "US Crociata",
+          "stadiumName": "Stadio della Via Emilia"
         },
         {
           "countryId": "IT",
           "clubId": 15,
           "abbr": "PET",
           "fullName": "Unione Sportiva Petroniana",
-          "primaryName": "US Petroniana"
+          "primaryName": "US Petroniana",
+          "stadiumName": "Stadio delle Mura Petroniane"
         },
         {
           "countryId": "IT",
           "clubId": 16,
           "abbr": "CVC",
           "fullName": "Unione Sportiva Coverciano",
-          "primaryName": "US Coverciano"
+          "primaryName": "US Coverciano",
+          "stadiumName": "Stadio dei Campi di Coverciano"
         }
       ]
     },
@@ -139,112 +155,128 @@
           "clubId": 17,
           "abbr": "MAR",
           "fullName": "Associazione Calcio Marassi",
-          "primaryName": "AC Marassi"
+          "primaryName": "AC Marassi",
+          "stadiumName": "Stadio della Val Bisagno"
         },
         {
           "countryId": "IT",
           "clubId": 18,
           "abbr": "SCL",
           "fullName": "Unione Sportiva Scaligera",
-          "primaryName": "US Scaligera"
+          "primaryName": "US Scaligera",
+          "stadiumName": "Stadio delle Mura Scaligere"
         },
         {
           "countryId": "IT",
           "clubId": 19,
           "abbr": "SSL",
           "fullName": "Associazione Calcio Sassolese",
-          "primaryName": "AC Sassolese"
+          "primaryName": "AC Sassolese",
+          "stadiumName": "Stadio delle Ceramiche"
         },
         {
           "countryId": "IT",
           "clubId": 20,
           "abbr": "BAR",
           "fullName": "Football Club Barcola",
-          "primaryName": "FC Barcola"
+          "primaryName": "FC Barcola",
+          "stadiumName": "Stadio della Riviera di Barcola"
         },
         {
           "countryId": "IT",
           "clubId": 21,
           "abbr": "FRI",
           "fullName": "Unione Sportiva Friulana",
-          "primaryName": "US Friulana"
+          "primaryName": "US Friulana",
+          "stadiumName": "Stadio delle Rogge Friulane"
         },
         {
           "countryId": "IT",
           "clubId": 22,
           "abbr": "CAS",
           "fullName": "Unione Sportiva Casteddu",
-          "primaryName": "US Casteddu"
+          "primaryName": "US Casteddu",
+          "stadiumName": "Stadio del Colle Casteddu"
         },
         {
           "countryId": "IT",
           "clubId": 23,
           "abbr": "LAG",
           "fullName": "Unione Sportiva Lagunare",
-          "primaryName": "US Lagunare"
+          "primaryName": "US Lagunare",
+          "stadiumName": "Stadio delle Fondamenta"
         },
         {
           "countryId": "IT",
           "clubId": 24,
           "abbr": "ARN",
           "fullName": "Associazione Sportiva Arenella",
-          "primaryName": "AS Arenella"
+          "primaryName": "AS Arenella",
+          "stadiumName": "Stadio della Cala"
         },
         {
           "countryId": "IT",
           "clubId": 25,
           "abbr": "SAL",
           "fullName": "Associazione Calcio Salento",
-          "primaryName": "AC Salento"
+          "primaryName": "AC Salento",
+          "stadiumName": "Stadio delle Terre Salentine"
         },
         {
           "countryId": "IT",
           "clubId": 26,
           "abbr": "BRT",
           "fullName": "Associazione Calcio Briantea",
-          "primaryName": "AC Briantea"
+          "primaryName": "AC Briantea",
+          "stadiumName": "Stadio dei Giardini Briantei"
         },
         {
           "countryId": "IT",
           "clubId": 27,
           "abbr": "TRM",
           "fullName": "Football Club Tramontana",
-          "primaryName": "FC Tramontana"
+          "primaryName": "FC Tramontana",
+          "stadiumName": "Stadio del Vento di Tramontana"
         },
         {
           "countryId": "IT",
           "clubId": 28,
           "abbr": "CRE",
           "fullName": "Football Club Cremonella",
-          "primaryName": "FC Cremonella"
+          "primaryName": "FC Cremonella",
+          "stadiumName": "Stadio delle Torri Cremonesi"
         },
         {
           "countryId": "IT",
           "clubId": 29,
           "abbr": "FRU",
           "fullName": "Unione Sportiva Frusinate",
-          "primaryName": "US Frusinate"
+          "primaryName": "US Frusinate",
+          "stadiumName": "Stadio della Valle del Sacco"
         },
         {
           "countryId": "IT",
           "clubId": 30,
           "abbr": "LEO",
           "fullName": "Unione Sportiva Leonessa",
-          "primaryName": "US Leonessa"
+          "primaryName": "US Leonessa",
+          "stadiumName": "Stadio delle Colline Leonessane"
         },
         {
           "countryId": "IT",
           "clubId": 31,
           "abbr": "PEU",
           "fullName": "Unione Sportiva Peuceta",
-          "primaryName": "US Peuceta"
+          "primaryName": "US Peuceta",
+          "stadiumName": "Stadio delle Murge"
         },
         {
           "countryId": "IT",
           "clubId": 32,
           "abbr": "MON",
           "fullName": "Unione Sportiva Mongibello",
-          "primaryName": "US Mongibello"
+          "primaryName": "US Mongibello",
+          "stadiumName": "Stadio delle Lave"
         }
       ]
     },
@@ -262,112 +294,128 @@
           "clubId": 1,
           "abbr": "THA",
           "fullName": "Thames Athletic Football Club",
-          "primaryName": "Thames Athletic"
+          "primaryName": "Thames Athletic",
+          "stadiumName": "Thamesgate Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 2,
           "abbr": "MED",
           "fullName": "Medlock United Football Club",
-          "primaryName": "Medlock United"
+          "primaryName": "Medlock United",
+          "stadiumName": "Medlock Park"
         },
         {
           "countryId": "ENG",
           "clubId": 3,
           "abbr": "MRA",
           "fullName": "Mersey Albion Football Club",
-          "primaryName": "Mersey Albion"
+          "primaryName": "Mersey Albion",
+          "stadiumName": "Merseybank Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 4,
           "abbr": "BNB",
           "fullName": "Bournbrook United Football Club",
-          "primaryName": "Bournbrook United"
+          "primaryName": "Bournbrook United",
+          "stadiumName": "Bournbrook Fields"
         },
         {
           "countryId": "ENG",
           "clubId": 5,
           "abbr": "SWA",
           "fullName": "Southwark Athletic Football Club",
-          "primaryName": "Southwark Athletic"
+          "primaryName": "Southwark Athletic",
+          "stadiumName": "Southwark Common Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 6,
           "abbr": "HUA",
           "fullName": "Hulme Athletic Football Club",
-          "primaryName": "Hulme Athletic"
+          "primaryName": "Hulme Athletic",
+          "stadiumName": "Hulme Park Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 7,
           "abbr": "WLR",
           "fullName": "Walton Rovers Football Club",
-          "primaryName": "Walton Rovers"
+          "primaryName": "Walton Rovers",
+          "stadiumName": "Walton Vale Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 8,
           "abbr": "AVF",
           "fullName": "Aire Valley Football Club",
-          "primaryName": "Aire Valley FC"
+          "primaryName": "Aire Valley FC",
+          "stadiumName": "Airebank Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 9,
           "abbr": "TYA",
           "fullName": "Tyne Athletic Football Club",
-          "primaryName": "Tyne Athletic"
+          "primaryName": "Tyne Athletic",
+          "stadiumName": "Tyne Quays Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 10,
           "abbr": "RVA",
           "fullName": "Rivelin Athletic Football Club",
-          "primaryName": "Rivelin Athletic"
+          "primaryName": "Rivelin Athletic",
+          "stadiumName": "Rivelin Park"
         },
         {
           "countryId": "ENG",
           "clubId": 11,
           "abbr": "SHA",
           "fullName": "Sherwood Athletic Football Club",
-          "primaryName": "Sherwood Athletic"
+          "primaryName": "Sherwood Athletic",
+          "stadiumName": "Sherwood Grove Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 12,
           "abbr": "HOV",
           "fullName": "Hove Athletic Football Club",
-          "primaryName": "Hove Athletic"
+          "primaryName": "Hove Athletic",
+          "stadiumName": "Hove Coast Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 13,
           "abbr": "BNA",
           "fullName": "Bournville Athletic Football Club",
-          "primaryName": "Bournville Athletic"
+          "primaryName": "Bournville Athletic",
+          "stadiumName": "Bournville Green"
         },
         {
           "countryId": "ENG",
           "clubId": 14,
           "abbr": "CLA",
           "fullName": "Clifton Athletic Football Club",
-          "primaryName": "Clifton Athletic"
+          "primaryName": "Clifton Athletic",
+          "stadiumName": "Clifton Ridge Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 15,
           "abbr": "LAB",
           "fullName": "Clarendon Rovers Football Club",
-          "primaryName": "Clarendon Rovers"
+          "primaryName": "Clarendon Rovers",
+          "stadiumName": "Clarendon Park Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 16,
           "abbr": "WEA",
           "fullName": "Wearside Athletic Football Club",
-          "primaryName": "Wearside Athletic"
+          "primaryName": "Wearside Athletic",
+          "stadiumName": "Wearmouth Stadium"
         }
       ]
     },
@@ -385,112 +433,128 @@
           "clubId": 17,
           "abbr": "KHU",
           "fullName": "Kelham United Football Club",
-          "primaryName": "Kelham United"
+          "primaryName": "Kelham United",
+          "stadiumName": "Kelham Riverside Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 18,
           "abbr": "MDA",
           "fullName": "Meadows Athletic Football Club",
-          "primaryName": "Meadows Athletic"
+          "primaryName": "Meadows Athletic",
+          "stadiumName": "Meadows Lane Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 19,
           "abbr": "FSH",
           "fullName": "Foleshill Athletic Football Club",
-          "primaryName": "Foleshill Athletic"
+          "primaryName": "Foleshill Athletic",
+          "stadiumName": "Foleshill Fields"
         },
         {
           "countryId": "ENG",
           "clubId": 20,
           "abbr": "ITR",
           "fullName": "Itchen Rovers Football Club",
-          "primaryName": "Itchen Rovers"
+          "primaryName": "Itchen Rovers",
+          "stadiumName": "Itchenbank Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 21,
           "abbr": "PNR",
           "fullName": "Penn Rovers Football Club",
-          "primaryName": "Penn Rovers"
+          "primaryName": "Penn Rovers",
+          "stadiumName": "Penn Ridge Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 22,
           "abbr": "MRK",
           "fullName": "Markeaton Football Club",
-          "primaryName": "FC Markeaton"
+          "primaryName": "FC Markeaton",
+          "stadiumName": "Markeaton Park Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 23,
           "abbr": "SBR",
           "fullName": "Southbourne Rovers Football Club",
-          "primaryName": "Southbourne Rovers"
+          "primaryName": "Southbourne Rovers",
+          "stadiumName": "Southbourne Coast Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 24,
           "abbr": "PTU",
           "fullName": "Potteries United Football Club",
-          "primaryName": "Potteries United"
+          "primaryName": "Potteries United",
+          "stadiumName": "Kilnfield Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 25,
           "abbr": "CLR",
           "fullName": "Acklam Rovers Football Club",
-          "primaryName": "Acklam Rovers"
+          "primaryName": "Acklam Rovers",
+          "stadiumName": "Acklam Moor Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 26,
           "abbr": "WEN",
           "fullName": "Wensum Athletic Football Club",
-          "primaryName": "Wensum Athletic"
+          "primaryName": "Wensum Athletic",
+          "stadiumName": "Wensum Riverside Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 27,
           "abbr": "ORW",
           "fullName": "Orwell Football Club",
-          "primaryName": "FC Orwell"
+          "primaryName": "FC Orwell",
+          "stadiumName": "Orwell Quay Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 28,
           "abbr": "EWA",
           "fullName": "Ewood Athletic Football Club",
-          "primaryName": "Ewood Athletic"
+          "primaryName": "Ewood Athletic",
+          "stadiumName": "Ewood Vale Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 29,
           "abbr": "DPD",
           "fullName": "Deepdale Rovers Football Club",
-          "primaryName": "Deepdale Rovers"
+          "primaryName": "Deepdale Rovers",
+          "stadiumName": "Deepdale Heights Stadium"
         },
         {
           "countryId": "ENG",
           "clubId": 30,
           "abbr": "FNT",
           "fullName": "Farnworth United Football Club",
-          "primaryName": "Farnworth United"
+          "primaryName": "Farnworth United",
+          "stadiumName": "Farnworth Park"
         },
         {
           "countryId": "ENG",
           "clubId": 31,
           "abbr": "MAN",
           "fullName": "Manningham Football Club",
-          "primaryName": "FC Manningham"
+          "primaryName": "FC Manningham",
+          "stadiumName": "Manningham Moor Ground"
         },
         {
           "countryId": "ENG",
           "clubId": 32,
           "abbr": "HDF",
           "fullName": "Humber Dock Football Club",
-          "primaryName": "Humber Dock FC"
+          "primaryName": "Humber Dock FC",
+          "stadiumName": "Humber Dock Ground"
         }
       ]
     },
@@ -508,112 +572,128 @@
           "clubId": 1,
           "abbr": "IMP",
           "fullName": "Club Deportivo Imperial Madrid",
-          "primaryName": "CD Imperial Madrid"
+          "primaryName": "CD Imperial Madrid",
+          "stadiumName": "Estadio del Paseo Imperial"
         },
         {
           "countryId": "ES",
           "clubId": 2,
           "abbr": "DRA",
           "fullName": "Club Esportiu Drassanes",
-          "primaryName": "CE Drassanes"
+          "primaryName": "CE Drassanes",
+          "stadiumName": "Estadi de les Drassanes"
         },
         {
           "countryId": "ES",
           "clubId": 3,
           "abbr": "CAE",
           "fullName": "Sociedad Deportiva Castellana",
-          "primaryName": "SD Castellana"
+          "primaryName": "SD Castellana",
+          "stadiumName": "Estadio de la Castellana Alta"
         },
         {
           "countryId": "ES",
           "clubId": 4,
           "abbr": "AZA",
           "fullName": "Unión Deportiva Azahar",
-          "primaryName": "UD Azahar"
+          "primaryName": "UD Azahar",
+          "stadiumName": "Estadio del Azahar"
         },
         {
           "countryId": "ES",
           "clubId": 5,
           "abbr": "HIS",
           "fullName": "Club Deportivo Hispalense",
-          "primaryName": "CD Hispalense"
+          "primaryName": "CD Hispalense",
+          "stadiumName": "Estadio del Arenal Hispalense"
         },
         {
           "countryId": "ES",
           "clubId": 6,
           "abbr": "MOT",
           "fullName": "Unió Esportiva Montjuïc",
-          "primaryName": "UE Montjuïc"
+          "primaryName": "UE Montjuïc",
+          "stadiumName": "Estadi de la Muntanya Nova"
         },
         {
           "countryId": "ES",
           "clubId": 7,
           "abbr": "BEG",
           "fullName": "Sociedad Deportiva Begoña",
-          "primaryName": "SD Begoña"
+          "primaryName": "SD Begoña",
+          "stadiumName": "Estadio de las Laderas de Begoña"
         },
         {
           "countryId": "ES",
           "clubId": 8,
           "abbr": "CER",
           "fullName": "Club Deportivo Cerámico",
-          "primaryName": "CD Cerámico"
+          "primaryName": "CD Cerámico",
+          "stadiumName": "Estadio de la Arcilla"
         },
         {
           "countryId": "ES",
           "clubId": 9,
           "abbr": "PIL",
           "fullName": "Sociedad Deportiva Pilarica",
-          "primaryName": "SD Pilarica"
+          "primaryName": "SD Pilarica",
+          "stadiumName": "Estadio de la Ribera del Ebro"
         },
         {
           "countryId": "ES",
           "clubId": 10,
           "abbr": "MAL",
           "fullName": "Unión Deportiva Malagueta",
-          "primaryName": "UD Malagueta"
+          "primaryName": "UD Malagueta",
+          "stadiumName": "Estadio de la Brisa Marina"
         },
         {
           "countryId": "ES",
           "clubId": 11,
           "abbr": "DON",
           "fullName": "Sociedad Deportiva Donostiarra",
-          "primaryName": "SD Donostiarra"
+          "primaryName": "SD Donostiarra",
+          "stadiumName": "Estadio de la Bahía de la Concha"
         },
         {
           "countryId": "ES",
           "clubId": 12,
           "abbr": "OLI",
           "fullName": "Club Deportivo Olívico",
-          "primaryName": "CD Olívico"
+          "primaryName": "CD Olívico",
+          "stadiumName": "Estadio de los Olivos"
         },
         {
           "countryId": "ES",
           "clubId": 13,
           "abbr": "HER",
           "fullName": "Sociedad Deportiva Herculina",
-          "primaryName": "SD Herculina"
+          "primaryName": "SD Herculina",
+          "stadiumName": "Estadio de la Torre Atlántica"
         },
         {
           "countryId": "ES",
           "clubId": 14,
           "abbr": "GAV",
           "fullName": "Futbol Club Gavarres",
-          "primaryName": "FC Gavarres"
+          "primaryName": "FC Gavarres",
+          "stadiumName": "Estadi de les Gavarres"
         },
         {
           "countryId": "ES",
           "clubId": 15,
           "abbr": "LEV",
           "fullName": "Sociedad Deportiva Levantina",
-          "primaryName": "SD Levantina"
+          "primaryName": "SD Levantina",
+          "stadiumName": "Estadio de la Huerta Levantina"
         },
         {
           "countryId": "ES",
           "clubId": 16,
           "abbr": "GIR",
           "fullName": "Sociedad Deportiva Giralda",
-          "primaryName": "SD Giralda"
+          "primaryName": "SD Giralda",
+          "stadiumName": "Estadio de los Jardines de la Giralda"
         }
       ]
     },
@@ -631,112 +711,128 @@
           "clubId": 17,
           "abbr": "IND",
           "fullName": "Club de Fútbol Indautxu",
-          "primaryName": "CF Indautxu"
+          "primaryName": "CF Indautxu",
+          "stadiumName": "Estadio de Indautxu Norte"
         },
         {
           "countryId": "ES",
           "clubId": 18,
           "abbr": "GUI",
           "fullName": "Agrupación Deportiva Guiniguada",
-          "primaryName": "AD Guiniguada"
+          "primaryName": "AD Guiniguada",
+          "stadiumName": "Estadio del Barranco Guiniguada"
         },
         {
           "countryId": "ES",
           "clubId": 19,
           "abbr": "GIB",
           "fullName": "Club Deportivo Gibralfaro",
-          "primaryName": "CD Gibralfaro"
+          "primaryName": "CD Gibralfaro",
+          "stadiumName": "Estadio del Mirador de Gibralfaro"
         },
         {
           "countryId": "ES",
           "clubId": 20,
           "abbr": "PON",
           "fullName": "Unión Deportiva Ponent",
-          "primaryName": "UD Ponent"
+          "primaryName": "UD Ponent",
+          "stadiumName": "Estadi del Vent de Ponent"
         },
         {
           "countryId": "ES",
           "clubId": 21,
           "abbr": "NAV",
           "fullName": "Club de Fútbol Navarrería",
-          "primaryName": "CF Navarrería"
+          "primaryName": "CF Navarrería",
+          "stadiumName": "Estadio de las Murallas de Navarrería"
         },
         {
           "countryId": "ES",
           "clubId": 22,
           "abbr": "GET",
           "fullName": "Unión Deportiva Getafense",
-          "primaryName": "UD Getafense"
+          "primaryName": "UD Getafense",
+          "stadiumName": "Estadio del Cerro Getafense"
         },
         {
           "countryId": "ES",
           "clubId": 23,
           "abbr": "PAL",
           "fullName": "Unión Deportiva Palmeral",
-          "primaryName": "UD Palmeral"
+          "primaryName": "UD Palmeral",
+          "stadiumName": "Estadio de las Palmeras"
         },
         {
           "countryId": "ES",
           "clubId": 24,
           "abbr": "ZAB",
           "fullName": "Club Deportivo Zabalgana",
-          "primaryName": "CD Zabalgana"
+          "primaryName": "CD Zabalgana",
+          "stadiumName": "Estadio de Zabalgana"
         },
         {
           "countryId": "ES",
           "clubId": 25,
           "abbr": "PIS",
           "fullName": "Club Deportivo Pisuerga",
-          "primaryName": "CD Pisuerga"
+          "primaryName": "CD Pisuerga",
+          "stadiumName": "Estadio de la Ribera del Pisuerga"
         },
         {
           "countryId": "ES",
           "clubId": 26,
           "abbr": "ALB",
           "fullName": "Unión Deportiva Albaicín",
-          "primaryName": "UD Albaicín"
+          "primaryName": "UD Albaicín",
+          "stadiumName": "Estadio del Mirador del Albaicín"
         },
         {
           "countryId": "ES",
           "clubId": 27,
           "abbr": "HUE",
           "fullName": "Club Deportivo Huertano",
-          "primaryName": "CD Huertano"
+          "primaryName": "CD Huertano",
+          "stadiumName": "Estadio de la Vega Murciana"
         },
         {
           "countryId": "ES",
           "clubId": 28,
           "abbr": "CIM",
           "fullName": "Sociedad Deportiva Cimavilla",
-          "primaryName": "SD Cimavilla"
+          "primaryName": "SD Cimavilla",
+          "stadiumName": "Estadio de la Atalaya de Cimavilla"
         },
         {
           "countryId": "ES",
           "clubId": 29,
           "abbr": "NAR",
           "fullName": "Club Deportivo Naranco",
-          "primaryName": "CD Naranco"
+          "primaryName": "CD Naranco",
+          "stadiumName": "Estadio del Naranco"
         },
         {
           "countryId": "ES",
           "clubId": 30,
           "abbr": "ALA",
           "fullName": "Sociedad Deportiva Alacantina",
-          "primaryName": "SD Alacantina"
+          "primaryName": "SD Alacantina",
+          "stadiumName": "Estadio del Cabo de la Huerta"
         },
         {
           "countryId": "ES",
           "clubId": 31,
           "abbr": "CAL",
           "fullName": "Club Deportivo Califal",
-          "primaryName": "CD Califal"
+          "primaryName": "CD Califal",
+          "stadiumName": "Estadio de los Patios Califales"
         },
         {
           "countryId": "ES",
           "clubId": 32,
           "abbr": "SAR",
           "fullName": "Sociedad Deportiva Sardinero",
-          "primaryName": "SD Sardinero"
+          "primaryName": "SD Sardinero",
+          "stadiumName": "Estadio de las Dunas del Sardinero"
         }
       ]
     },
@@ -754,112 +850,128 @@
           "clubId": 1,
           "abbr": "FCM",
           "fullName": "Fußballclub Münchner Freiheit",
-          "primaryName": "FC Münchner Freiheit"
+          "primaryName": "FC Münchner Freiheit",
+          "stadiumName": "Stadion an der Freiheit"
         },
         {
           "countryId": "DE",
           "clubId": 2,
           "abbr": "REI",
           "fullName": "Sportverein Reinickendorf",
-          "primaryName": "SV Reinickendorf"
+          "primaryName": "SV Reinickendorf",
+          "stadiumName": "Reinickendorfer Parkstadion"
         },
         {
           "countryId": "DE",
           "clubId": 3,
           "abbr": "EVG",
           "fullName": "Fußballclub Eving",
-          "primaryName": "FC Eving"
+          "primaryName": "FC Eving",
+          "stadiumName": "Evinger Höhenstadion"
         },
         {
           "countryId": "DE",
           "clubId": 4,
           "abbr": "ALV",
           "fullName": "Alster Sportverein",
-          "primaryName": "Alster SV"
+          "primaryName": "Alster SV",
+          "stadiumName": "Alsterufer-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 5,
           "abbr": "SPA",
           "fullName": "Sportclub Spandau",
-          "primaryName": "SC Spandau"
+          "primaryName": "SC Spandau",
+          "stadiumName": "Spandauer Torstadion"
         },
         {
           "countryId": "DE",
           "clubId": 6,
           "abbr": "FCT",
           "fullName": "Fußballclub Pleißestadt",
-          "primaryName": "FC Pleißestadt"
+          "primaryName": "FC Pleißestadt",
+          "stadiumName": "Pleißepark-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 7,
           "abbr": "VFT",
           "fullName": "Verein für Bewegungsspiele Frankfurt-West",
-          "primaryName": "VfB Frankfurt-West"
+          "primaryName": "VfB Frankfurt-West",
+          "stadiumName": "Westend-Stadion am Main"
         },
         {
           "countryId": "DE",
           "clubId": 8,
           "abbr": "EHF",
           "fullName": "Sportclub Ehrenfeld Köln",
-          "primaryName": "SC Ehrenfeld"
+          "primaryName": "SC Ehrenfeld",
+          "stadiumName": "Ehrenfelder Stadtparkstadion"
         },
         {
           "countryId": "DE",
           "clubId": 9,
           "abbr": "HEN",
           "fullName": "Turn- und Sportverein Isar München",
-          "primaryName": "TSV Isar München"
+          "primaryName": "TSV Isar München",
+          "stadiumName": "Isarauen-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 10,
           "abbr": "CAN",
           "fullName": "Fußballclub Cannstatt",
-          "primaryName": "FC Cannstatt"
+          "primaryName": "FC Cannstatt",
+          "stadiumName": "Cannstatter Höhenstadion"
         },
         {
           "countryId": "DE",
           "clubId": 11,
           "abbr": "OPL",
           "fullName": "Turn- und Sportverein Opladen",
-          "primaryName": "TSV Opladen"
+          "primaryName": "TSV Opladen",
+          "stadiumName": "Opladener Waldstadion"
         },
         {
           "countryId": "DE",
           "clubId": 12,
           "abbr": "SVW",
           "fullName": "Sportverein Weser Bremen",
-          "primaryName": "SV Weser Bremen"
+          "primaryName": "SV Weser Bremen",
+          "stadiumName": "Weserbogen-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 13,
           "abbr": "ALT",
           "fullName": "Sportclub Altona",
-          "primaryName": "SC Altona"
+          "primaryName": "SC Altona",
+          "stadiumName": "Altonaer Hafenstadion"
         },
         {
           "countryId": "DE",
           "clubId": 14,
           "abbr": "TRE",
           "fullName": "Turn- und Sportverein Tremonia",
-          "primaryName": "TSV Tremonia"
+          "primaryName": "TSV Tremonia",
+          "stadiumName": "Tremonia-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 15,
           "abbr": "URT",
           "fullName": "Verein für Leibesübungen Main Frankfurt",
-          "primaryName": "VfL Main Frankfurt"
+          "primaryName": "VfL Main Frankfurt",
+          "stadiumName": "Mainufer-Arena"
         },
         {
           "countryId": "DE",
           "clubId": 16,
           "abbr": "LIN",
           "fullName": "Fußballclub Lindenau",
-          "primaryName": "FC Lindenau"
+          "primaryName": "FC Lindenau",
+          "stadiumName": "Lindenauer Parkstadion"
         }
       ]
     },
@@ -877,112 +989,128 @@
           "clubId": 17,
           "abbr": "MUE",
           "fullName": "Fußballclub Mülheim",
-          "primaryName": "FC Mülheim"
+          "primaryName": "FC Mülheim",
+          "stadiumName": "Mülheimer Rheinstadion"
         },
         {
           "countryId": "DE",
           "clubId": 18,
           "abbr": "VER",
           "fullName": "Verein für Leibesübungen Leine Hannover",
-          "primaryName": "VfL Leine Hannover"
+          "primaryName": "VfL Leine Hannover",
+          "stadiumName": "Leinebogen-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 19,
           "abbr": "GOS",
           "fullName": "Fußballclub Gostenhof",
-          "primaryName": "FC Gostenhof"
+          "primaryName": "FC Gostenhof",
+          "stadiumName": "Gostenhofer Torstadion"
         },
         {
           "countryId": "DE",
           "clubId": 20,
           "abbr": "OBK",
           "fullName": "Fußballclub Oberkassel Düsseldorf",
-          "primaryName": "FC Oberkassel"
+          "primaryName": "FC Oberkassel",
+          "stadiumName": "Oberkasseler Rheinuferstadion"
         },
         {
           "countryId": "DE",
           "clubId": 21,
           "abbr": "FAL",
           "fullName": "Verein für Leibesübungen Fallersleben",
-          "primaryName": "VfL Fallersleben"
+          "primaryName": "VfL Fallersleben",
+          "stadiumName": "Fallerslebener Waldstadion"
         },
         {
           "countryId": "DE",
           "clubId": 22,
           "abbr": "DRI",
           "fullName": "Fußballclub Dreisam",
-          "primaryName": "FC Dreisam"
+          "primaryName": "FC Dreisam",
+          "stadiumName": "Dreisamwiesen-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 23,
           "abbr": "BRM",
           "fullName": "Bremer Neustadt Sportverein",
-          "primaryName": "Bremer Neustadt SV"
+          "primaryName": "Bremer Neustadt SV",
+          "stadiumName": "Neustädter Weserstadion"
         },
         {
           "countryId": "DE",
           "clubId": 24,
           "abbr": "BUE",
           "fullName": "Sportverein Buer",
-          "primaryName": "SV Buer"
+          "primaryName": "SV Buer",
+          "stadiumName": "Buerer Heidepark"
         },
         {
           "countryId": "DE",
           "clubId": 25,
           "abbr": "BOE",
           "fullName": "Verein für Bewegungsspiele Bökelberg",
-          "primaryName": "VfB Bökelberg"
+          "primaryName": "VfB Bökelberg",
+          "stadiumName": "Bökelberger Höhenstadion"
         },
         {
           "countryId": "DE",
           "clubId": 26,
           "abbr": "GON",
           "fullName": "Turn- und Sportverein Gonsenheim",
-          "primaryName": "TSV Gonsenheim"
+          "primaryName": "TSV Gonsenheim",
+          "stadiumName": "Gonsenheimer Feldstadion"
         },
         {
           "countryId": "DE",
           "clubId": 27,
           "abbr": "KRA",
           "fullName": "Sportverein Kraichgau",
-          "primaryName": "SV Kraichgau"
+          "primaryName": "SV Kraichgau",
+          "stadiumName": "Kraichgaupark-Stadion"
         },
         {
           "countryId": "DE",
           "clubId": 28,
           "abbr": "FUV",
           "fullName": "Fuggerstadt Sportverein",
-          "primaryName": "Fuggerstadt SV"
+          "primaryName": "Fuggerstadt SV",
+          "stadiumName": "Fuggerstadt-Arena"
         },
         {
           "countryId": "DE",
           "clubId": 29,
           "abbr": "WEI",
           "fullName": "Verein für Leibesübungen Weitmar",
-          "primaryName": "VfL Weitmar"
+          "primaryName": "VfL Weitmar",
+          "stadiumName": "Weitmarer Waldstadion"
         },
         {
           "countryId": "DE",
           "clubId": 30,
           "abbr": "HLS",
           "fullName": "Holstein Kieler Fußballclub",
-          "primaryName": "Holstein Kieler FC"
+          "primaryName": "Holstein Kieler FC",
+          "stadiumName": "Kieler Fördepark"
         },
         {
           "countryId": "DE",
           "clubId": 31,
           "abbr": "UHE",
           "fullName": "Verein für Bewegungsspiele Karlsruhe",
-          "primaryName": "VfB Karlsruhe"
+          "primaryName": "VfB Karlsruhe",
+          "stadiumName": "Karlsruher Schlossparkstadion"
         },
         {
           "countryId": "DE",
           "clubId": 32,
           "abbr": "VFM",
           "fullName": "Verein für Bewegungsspiele Heidenheim",
-          "primaryName": "VfB Heidenheim"
+          "primaryName": "VfB Heidenheim",
+          "stadiumName": "Brenztal-Stadion"
         }
       ]
     },
@@ -1000,112 +1128,128 @@
           "clubId": 1,
           "abbr": "FCP",
           "fullName": "Football Club Parisien",
-          "primaryName": "FC Parisien"
+          "primaryName": "FC Parisien",
+          "stadiumName": "Stade des Grands Boulevards"
         },
         {
           "countryId": "FR",
           "clubId": 2,
           "abbr": "LIA",
           "fullName": "Football Club Massalia",
-          "primaryName": "FC Massalia"
+          "primaryName": "FC Massalia",
+          "stadiumName": "Stade du Vieux-Port"
         },
         {
           "countryId": "FR",
           "clubId": 3,
           "abbr": "ERE",
           "fullName": "Racing Club de Fourvière",
-          "primaryName": "RC Fourvière"
+          "primaryName": "RC Fourvière",
+          "stadiumName": "Stade des Hauteurs de Fourvière"
         },
         {
           "countryId": "FR",
           "clubId": 4,
           "abbr": "ETO",
           "fullName": "Étoile Sportive de Paris",
-          "primaryName": "ES Paris"
+          "primaryName": "ES Paris",
+          "stadiumName": "Stade de la Porte Dorée"
         },
         {
           "countryId": "FR",
           "clubId": 5,
           "abbr": "DLE",
           "fullName": "Sporting Club de la Deûle",
-          "primaryName": "SC Deûle"
+          "primaryName": "SC Deûle",
+          "stadiumName": "Stade des Rives"
         },
         {
           "countryId": "FR",
           "clubId": 6,
           "abbr": "FCR",
           "fullName": "Football Club du Rocher",
-          "primaryName": "FC Rocher"
+          "primaryName": "FC Rocher",
+          "stadiumName": "Stade du Rocher"
         },
         {
           "countryId": "FR",
           "clubId": 7,
           "abbr": "RAC",
           "fullName": "Racing Club Azur",
-          "primaryName": "RC Azur"
+          "primaryName": "RC Azur",
+          "stadiumName": "Stade des Collines d’Azur"
         },
         {
           "countryId": "FR",
           "clubId": 8,
           "abbr": "LLE",
           "fullName": "Football Club Maritime Marseille",
-          "primaryName": "FC Maritime Marseille"
+          "primaryName": "FC Maritime Marseille",
+          "stadiumName": "Stade des Docks du Midi"
         },
         {
           "countryId": "FR",
           "clubId": 9,
           "abbr": "ISE",
           "fullName": "Étoile Sportive Lyonnaise",
-          "primaryName": "ES Lyonnaise"
+          "primaryName": "ES Lyonnaise",
+          "stadiumName": "Stade des Rives de Saône"
         },
         {
           "countryId": "FR",
           "clubId": 10,
           "abbr": "NNE",
           "fullName": "Football Club Garonne",
-          "primaryName": "FC Garonne"
+          "primaryName": "FC Garonne",
+          "stadiumName": "Stade des Berges de Garonne"
         },
         {
           "countryId": "FR",
           "clubId": 11,
           "abbr": "NDE",
           "fullName": "Racing Club de Gironde",
-          "primaryName": "RC de Gironde"
+          "primaryName": "RC de Gironde",
+          "stadiumName": "Stade des Vignes de Gironde"
         },
         {
           "countryId": "FR",
           "clubId": 12,
           "abbr": "UNE",
           "fullName": "Union Sportive Lensienne",
-          "primaryName": "US Lensienne"
+          "primaryName": "US Lensienne",
+          "stadiumName": "Stade des Corons"
         },
         {
           "countryId": "FR",
           "clubId": 13,
           "abbr": "UCN",
           "fullName": "Union Sportive des Chantiers Nantais",
-          "primaryName": "US Chantiers Nantais"
+          "primaryName": "US Chantiers Nantais",
+          "stadiumName": "Stade des Ateliers"
         },
         {
           "countryId": "FR",
           "clubId": 14,
           "abbr": "ETE",
           "fullName": "Étoile Sportive Alsacienne",
-          "primaryName": "ES Alsacienne"
+          "primaryName": "ES Alsacienne",
+          "stadiumName": "Stade des Remparts d’Alsace"
         },
         {
           "countryId": "FR",
           "clubId": 15,
           "abbr": "ASR",
           "fullName": "Association Sportive Rennaise",
-          "primaryName": "AS Rennaise"
+          "primaryName": "AS Rennaise",
+          "stadiumName": "Stade des Landes de Vilaine"
         },
         {
           "countryId": "FR",
           "clubId": 16,
           "abbr": "FUR",
           "fullName": "Football Club du Furan",
-          "primaryName": "FC Furan"
+          "primaryName": "FC Furan",
+          "stadiumName": "Stade du Furan"
         }
       ]
     },
@@ -1123,112 +1267,128 @@
           "clubId": 17,
           "abbr": "STE",
           "fullName": "Stade Vauban Lille",
-          "primaryName": "Stade Vauban Lille"
+          "primaryName": "Stade Vauban Lille",
+          "stadiumName": "Stade des Jardins Vauban"
         },
         {
           "countryId": "FR",
           "clubId": 18,
           "abbr": "ASE",
           "fullName": "Association Sportive Riviera Niçoise",
-          "primaryName": "AS Riviera Niçoise"
+          "primaryName": "AS Riviera Niçoise",
+          "stadiumName": "Stade des Balcons de la Riviera"
         },
         {
           "countryId": "FR",
           "clubId": 19,
           "abbr": "AIS",
           "fullName": "Sporting Club Lauragais",
-          "primaryName": "SC Lauragais"
+          "primaryName": "SC Lauragais",
+          "stadiumName": "Stade des Coteaux du Lauragais"
         },
         {
           "countryId": "FR",
           "clubId": 20,
           "abbr": "ASB",
           "fullName": "Association Sportive Bordelaise",
-          "primaryName": "AS Bordelaise"
+          "primaryName": "AS Bordelaise",
+          "stadiumName": "Stade des Quais de la Lune"
         },
         {
           "countryId": "FR",
           "clubId": 21,
           "abbr": "CHY",
           "fullName": "Football Club de Chantenay",
-          "primaryName": "FC Chantenay"
+          "primaryName": "FC Chantenay",
+          "stadiumName": "Stade des Forges"
         },
         {
           "countryId": "FR",
           "clubId": 22,
           "abbr": "PNF",
           "fullName": "Football Club de la Penfeld",
-          "primaryName": "FC Penfeld"
+          "primaryName": "FC Penfeld",
+          "stadiumName": "Stade de la Penfeld"
         },
         {
           "countryId": "FR",
           "clubId": 23,
           "abbr": "ASO",
           "fullName": "Association Sportive Montpelliéraine",
-          "primaryName": "AS Montpelliéraine"
+          "primaryName": "AS Montpelliéraine",
+          "stadiumName": "Stade des Garrigues"
         },
         {
           "countryId": "FR",
           "clubId": 24,
           "abbr": "ASI",
           "fullName": "Association Sportive Rémoise",
-          "primaryName": "AS Rémoise"
+          "primaryName": "AS Rémoise",
+          "stadiumName": "Stade des Coteaux de Champagne"
         },
         {
           "countryId": "FR",
           "clubId": 25,
           "abbr": "ASH",
           "fullName": "Association Sportive Havraise",
-          "primaryName": "AS Havraise"
+          "primaryName": "AS Havraise",
+          "stadiumName": "Stade de l’Estuaire"
         },
         {
           "countryId": "FR",
           "clubId": 26,
           "abbr": "INE",
           "fullName": "Étoile Sportive Angevine",
-          "primaryName": "ES Angevine"
+          "primaryName": "ES Angevine",
+          "stadiumName": "Stade des Rives de Maine"
         },
         {
           "countryId": "FR",
           "clubId": 27,
           "abbr": "AUX",
           "fullName": "Racing Club Auxerrois",
-          "primaryName": "Racing Auxerrois"
+          "primaryName": "Racing Auxerrois",
+          "stadiumName": "Stade des Vignes d’Yonne"
         },
         {
           "countryId": "FR",
           "clubId": 28,
           "abbr": "LAN",
           "fullName": "Football Club Mosellan",
-          "primaryName": "FC Mosellan"
+          "primaryName": "FC Mosellan",
+          "stadiumName": "Stade des Portes de Moselle"
         },
         {
           "countryId": "FR",
           "clubId": 29,
           "abbr": "AND",
           "fullName": "Stade Normand",
-          "primaryName": "Stade Normand"
+          "primaryName": "Stade Normand",
+          "stadiumName": "Stade des Plaines Normandes"
         },
         {
           "countryId": "FR",
           "clubId": 30,
           "abbr": "ASC",
           "fullName": "Association Sportive Champenoise",
-          "primaryName": "AS Champenoise"
+          "primaryName": "AS Champenoise",
+          "stadiumName": "Stade des Halles de Champagne"
         },
         {
           "countryId": "FR",
           "clubId": 31,
           "abbr": "RSB",
           "fullName": "Union Sportive du Risban",
-          "primaryName": "US Risban"
+          "primaryName": "US Risban",
+          "stadiumName": "Stade du Risban"
         },
         {
           "countryId": "FR",
           "clubId": 32,
           "abbr": "SCO",
           "fullName": "Football Club du Scorff",
-          "primaryName": "FC Scorff"
+          "primaryName": "FC Scorff",
+          "stadiumName": "Stade des Rives du Scorff"
         }
       ]
     },
@@ -1246,112 +1406,128 @@
           "clubId": 1,
           "abbr": "BEM",
           "fullName": "Futebol Clube de Belém",
-          "primaryName": "FC Belém"
+          "primaryName": "FC Belém",
+          "stadiumName": "Estádio da Ribeira de Belém"
         },
         {
           "countryId": "PT",
           "clubId": 2,
           "abbr": "ATP",
           "fullName": "Atlético Clube Portuense",
-          "primaryName": "Atlético Portuense"
+          "primaryName": "Atlético Portuense",
+          "stadiumName": "Estádio das Fontainhas"
         },
         {
           "countryId": "PT",
           "clubId": 3,
           "abbr": "ALC",
           "fullName": "Clube de Futebol de Alcântara",
-          "primaryName": "CF Alcântara"
+          "primaryName": "CF Alcântara",
+          "stadiumName": "Estádio da Ponte de Alcântara"
         },
         {
           "countryId": "PT",
           "clubId": 4,
           "abbr": "NOG",
           "fullName": "Futebol Clube de Nogueiró",
-          "primaryName": "FC Nogueiró"
+          "primaryName": "FC Nogueiró",
+          "stadiumName": "Estádio dos Campos de Nogueiró"
         },
         {
           "countryId": "PT",
           "clubId": 5,
           "abbr": "CMP",
           "fullName": "Clube de Futebol de Campanhã",
-          "primaryName": "CF Campanhã"
+          "primaryName": "CF Campanhã",
+          "stadiumName": "Estádio da Várzea de Campanhã"
         },
         {
           "countryId": "PT",
           "clubId": 6,
           "abbr": "OLV",
           "fullName": "Sporting Clube de Oliveira",
-          "primaryName": "SC Oliveira"
+          "primaryName": "SC Oliveira",
+          "stadiumName": "Estádio das Oliveiras"
         },
         {
           "countryId": "PT",
           "clubId": 7,
           "abbr": "ARZ",
           "fullName": "Futebol Clube de Arzila",
-          "primaryName": "FC Arzila"
+          "primaryName": "FC Arzila",
+          "stadiumName": "Estádio das Margens de Arzila"
         },
         {
           "countryId": "PT",
           "clubId": 8,
           "abbr": "AZO",
           "fullName": "Futebol Clube de Azeitão",
-          "primaryName": "FC Azeitão"
+          "primaryName": "FC Azeitão",
+          "stadiumName": "Estádio das Vinhas de Azeitão"
         },
         {
           "countryId": "PT",
           "clubId": 9,
           "abbr": "AFR",
           "fullName": "Futebol Clube de Alfragide",
-          "primaryName": "FC Alfragide"
+          "primaryName": "FC Alfragide",
+          "stadiumName": "Estádio do Alto de Alfragide"
         },
         {
           "countryId": "PT",
           "clubId": 10,
           "abbr": "GDB",
           "fullName": "Grupo Desportivo Bracarense",
-          "primaryName": "GD Bracarense"
+          "primaryName": "GD Bracarense",
+          "stadiumName": "Campo do Minho"
         },
         {
           "countryId": "PT",
           "clubId": 11,
           "abbr": "SMT",
           "fullName": "Futebol Clube de São Martinho",
-          "primaryName": "FC São Martinho"
+          "primaryName": "FC São Martinho",
+          "stadiumName": "Estádio das Encostas"
         },
         {
           "countryId": "PT",
           "clubId": 12,
           "abbr": "ESG",
           "fullName": "Sporting Clube de Esgueira",
-          "primaryName": "SC Esgueira"
+          "primaryName": "SC Esgueira",
+          "stadiumName": "Estádio dos Moinhos de Esgueira"
         },
         {
           "countryId": "PT",
           "clubId": 13,
           "abbr": "MNG",
           "fullName": "Sporting Clube de Montenegro",
-          "primaryName": "SC Montenegro"
+          "primaryName": "SC Montenegro",
+          "stadiumName": "Estádio das Salinas de Montenegro"
         },
         {
           "countryId": "PT",
           "clubId": 14,
           "abbr": "AVE",
           "fullName": "Grupo Desportivo do Ave",
-          "primaryName": "GD do Ave"
+          "primaryName": "GD do Ave",
+          "stadiumName": "Campo do Vale do Ave"
         },
         {
           "countryId": "PT",
           "clubId": 15,
           "abbr": "AZR",
           "fullName": "Sporting Clube de Azurém",
-          "primaryName": "SC Azurém"
+          "primaryName": "SC Azurém",
+          "stadiumName": "Estádio da Colina de Azurém"
         },
         {
           "countryId": "PT",
           "clubId": 16,
           "abbr": "MDG",
           "fullName": "Futebol Clube do Mondego",
-          "primaryName": "FC Mondego"
+          "primaryName": "FC Mondego",
+          "stadiumName": "Estádio das Águas do Mondego"
         }
       ]
     },
@@ -1369,112 +1545,128 @@
           "clubId": 17,
           "abbr": "SAD",
           "fullName": "Sporting Clube do Sado",
-          "primaryName": "SC Sado"
+          "primaryName": "SC Sado",
+          "stadiumName": "Campo do Estuário do Sado"
         },
         {
           "countryId": "PT",
           "clubId": 18,
           "abbr": "ATM",
           "fullName": "Atlético Clube Matosinhense",
-          "primaryName": "Atlético Matosinhense"
+          "primaryName": "Atlético Matosinhense",
+          "stadiumName": "Estádio da Costa Atlântica"
         },
         {
           "countryId": "PT",
           "clubId": 19,
           "abbr": "ATV",
           "fullName": "Atlético Clube Vilacondense",
-          "primaryName": "Atlético Vilacondense"
+          "primaryName": "Atlético Vilacondense",
+          "stadiumName": "Campo da Foz do Ave"
         },
         {
           "countryId": "PT",
           "clubId": 20,
           "abbr": "MTE",
           "fullName": "Sporting Clube do Monte Estoril",
-          "primaryName": "SC Monte Estoril"
+          "primaryName": "SC Monte Estoril",
+          "stadiumName": "Estádio dos Jardins do Monte"
         },
         {
           "countryId": "PT",
           "clubId": 21,
           "abbr": "TML",
           "fullName": "Sporting Clube de Tamel",
-          "primaryName": "SC Tamel"
+          "primaryName": "SC Tamel",
+          "stadiumName": "Estádio do Prado de Tamel"
         },
         {
           "countryId": "PT",
           "clubId": 22,
           "abbr": "SNT",
           "fullName": "Grupo Desportivo de São Neutel",
-          "primaryName": "GD São Neutel"
+          "primaryName": "GD São Neutel",
+          "stadiumName": "Campo de São Neutel"
         },
         {
           "countryId": "PT",
           "clubId": 23,
           "abbr": "PFL",
           "fullName": "União Desportiva Penafidelis",
-          "primaryName": "UD Penafidelis"
+          "primaryName": "UD Penafidelis",
+          "stadiumName": "Estádio das Portas de Penafiel"
         },
         {
           "countryId": "PT",
           "clubId": 24,
           "abbr": "PRC",
           "fullName": "Futebol Clube de Parceiros",
-          "primaryName": "FC Parceiros"
+          "primaryName": "FC Parceiros",
+          "stadiumName": "Estádio da Mata dos Parceiros"
         },
         {
           "countryId": "PT",
           "clubId": 25,
           "abbr": "ACP",
           "fullName": "Atlético Clube Poveiro",
-          "primaryName": "Atlético Poveiro"
+          "primaryName": "Atlético Poveiro",
+          "stadiumName": "Estádio da Praia Norte"
         },
         {
           "countryId": "PT",
           "clubId": 26,
           "abbr": "MXG",
           "fullName": "União Desportiva da Mexilhoeira Grande",
-          "primaryName": "UD Mexilhoeira"
+          "primaryName": "UD Mexilhoeira",
+          "stadiumName": "Estádio da Lagoa de Mexilhoeira"
         },
         {
           "countryId": "PT",
           "clubId": 27,
           "abbr": "XIR",
           "fullName": "União Desportiva de Alhandra",
-          "primaryName": "UD Alhandra"
+          "primaryName": "UD Alhandra",
+          "stadiumName": "Estádio da Ribeira de Alhandra"
         },
         {
           "countryId": "PT",
           "clubId": 28,
           "abbr": "FTL",
           "fullName": "Grupo Desportivo do Fontelo",
-          "primaryName": "GD Fontelo"
+          "primaryName": "GD Fontelo",
+          "stadiumName": "Campo da Mata do Fontelo"
         },
         {
           "countryId": "PT",
           "clubId": 29,
           "abbr": "TAG",
           "fullName": "União Desportiva de Tagilde",
-          "primaryName": "UD Tagilde"
+          "primaryName": "UD Tagilde",
+          "stadiumName": "Estádio da Ponte de Tagilde"
         },
         {
           "countryId": "PT",
           "clubId": 30,
           "abbr": "BOU",
           "fullName": "União Desportiva de Bougado",
-          "primaryName": "UD Bougado"
+          "primaryName": "UD Bougado",
+          "stadiumName": "Estádio dos Campos de Bougado"
         },
         {
           "countryId": "PT",
           "clubId": 31,
           "abbr": "ESP",
           "fullName": "Clube Desportivo de Espargo",
-          "primaryName": "CD Espargo"
+          "primaryName": "CD Espargo",
+          "stadiumName": "Estádio do Pinhal de Espargo"
         },
         {
           "countryId": "PT",
           "clubId": 32,
           "abbr": "MRM",
           "fullName": "Futebol Clube da Marmeleira",
-          "primaryName": "FC Marmeleira"
+          "primaryName": "FC Marmeleira",
+          "stadiumName": "Estádio dos Olivais de Marmeleira"
         }
       ]
     },
@@ -1492,112 +1684,128 @@
           "clubId": 1,
           "abbr": "IJD",
           "fullName": "Football Club IJdok",
-          "primaryName": "FC IJdok"
+          "primaryName": "FC IJdok",
+          "stadiumName": "IJdok Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 2,
           "abbr": "RIJ",
           "fullName": "Football Club Rijnmond",
-          "primaryName": "FC Rijnmond"
+          "primaryName": "FC Rijnmond",
+          "stadiumName": "Rijnmondhaven Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 3,
           "abbr": "KEM",
           "fullName": "Sportvereniging Kempenland",
-          "primaryName": "SV Kempenland"
+          "primaryName": "SV Kempenland",
+          "stadiumName": "Kempenveld Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 4,
           "abbr": "WES",
           "fullName": "Amsterdamse Sportvereniging Westerpark",
-          "primaryName": "ASV Westerpark"
+          "primaryName": "ASV Westerpark",
+          "stadiumName": "Westerparkstadion"
         },
         {
           "countryId": "NL",
           "clubId": 5,
           "abbr": "SCH",
           "fullName": "Voetbalvereniging Schiehaven",
-          "primaryName": "VV Schiehaven"
+          "primaryName": "VV Schiehaven",
+          "stadiumName": "Schiehaven Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 6,
           "abbr": "ZUI",
           "fullName": "Sportvereniging Zuilen",
-          "primaryName": "SV Zuilen"
+          "primaryName": "SV Zuilen",
+          "stadiumName": "Zuilense Poort Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 7,
           "abbr": "GEN",
           "fullName": "Eindhovense Voetbalvereniging Genneper",
-          "primaryName": "EVV Genneper"
+          "primaryName": "EVV Genneper",
+          "stadiumName": "Gennepervelden Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 8,
           "abbr": "BIN",
           "fullName": "Sportclub Binnenhof",
-          "primaryName": "SC Binnenhof"
+          "primaryName": "SC Binnenhof",
+          "stadiumName": "Binnenhofpark Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 9,
           "abbr": "OMM",
           "fullName": "Football Club Ommeland",
-          "primaryName": "FC Ommeland"
+          "primaryName": "FC Ommeland",
+          "stadiumName": "Ommelander Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 10,
           "abbr": "TIL",
           "fullName": "Rooms-Katholieke Voetbalvereniging Tilburgia",
-          "primaryName": "RKVV Tilburgia"
+          "primaryName": "RKVV Tilburgia",
+          "stadiumName": "Tilburgse Heide Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 11,
           "abbr": "GMR",
           "fullName": "Football Club Gooimeer",
-          "primaryName": "FC Gooimeer"
+          "primaryName": "FC Gooimeer",
+          "stadiumName": "Gooimeer Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 12,
           "abbr": "MKD",
           "fullName": "Football Club Markdal",
-          "primaryName": "FC Markdal"
+          "primaryName": "FC Markdal",
+          "stadiumName": "Markdal Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 13,
           "abbr": "DUK",
           "fullName": "Sportvereniging Dukenburg",
-          "primaryName": "SV Dukenburg"
+          "primaryName": "SV Dukenburg",
+          "stadiumName": "Stadion Dukenburgse Velden"
         },
         {
           "countryId": "NL",
           "clubId": 14,
           "abbr": "RMB",
           "fullName": "Enschedese Voetbalvereniging Roombeek",
-          "primaryName": "EVV Roombeek"
+          "primaryName": "EVV Roombeek",
+          "stadiumName": "Roombeek Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 15,
           "abbr": "SON",
           "fullName": "Sportvereniging Sonsbeek",
-          "primaryName": "SV Sonsbeek"
+          "primaryName": "SV Sonsbeek",
+          "stadiumName": "Sonsbeekpark Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 16,
           "abbr": "SPR",
           "fullName": "Christelijke Sportvereniging Sprengen",
-          "primaryName": "CSV Sprengen"
+          "primaryName": "CSV Sprengen",
+          "stadiumName": "Sprengenbos Stadion"
         }
       ]
     },
@@ -1615,112 +1823,128 @@
           "clubId": 17,
           "abbr": "HHT",
           "fullName": "Football Club Haarlemmerhout",
-          "primaryName": "FC Haarlemmerhout"
+          "primaryName": "FC Haarlemmerhout",
+          "stadiumName": "Haarlemmerhout Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 18,
           "abbr": "RAP",
           "fullName": "Voetbalvereniging Rapenburg",
-          "primaryName": "VV Rapenburg"
+          "primaryName": "VV Rapenburg",
+          "stadiumName": "Rapenburg Sportpark"
         },
         {
           "countryId": "NL",
           "clubId": 19,
           "abbr": "HEU",
           "fullName": "Voetbalvereniging Heuvelland",
-          "primaryName": "VV Heuvelland"
+          "primaryName": "VV Heuvelland",
+          "stadiumName": "Heuvelland Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 20,
           "abbr": "DES",
           "fullName": "Voetbalvereniging De Staart",
-          "primaryName": "VV De Staart"
+          "primaryName": "VV De Staart",
+          "stadiumName": "Staartse Kade Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 21,
           "abbr": "SEH",
           "fullName": "Sportvereniging Seghwaert",
-          "primaryName": "SV Seghwaert"
+          "primaryName": "SV Seghwaert",
+          "stadiumName": "Seghwaertpark Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 22,
           "abbr": "DIE",
           "fullName": "Voetbalvereniging Diezerpoort",
-          "primaryName": "VV Diezerpoort"
+          "primaryName": "VV Diezerpoort",
+          "stadiumName": "Diezerpoort Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 23,
           "abbr": "BRI",
           "fullName": "Football Club Brinkgreven",
-          "primaryName": "FC Brinkgreven"
+          "primaryName": "FC Brinkgreven",
+          "stadiumName": "Brinkgreven Sportpark"
         },
         {
           "countryId": "NL",
           "clubId": 24,
           "abbr": "BIL",
           "fullName": "Leeuwarder Voetbalvereniging Bilgaard",
-          "primaryName": "LVV Bilgaard"
+          "primaryName": "LVV Bilgaard",
+          "stadiumName": "Bilgaard Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 25,
           "abbr": "EEM",
           "fullName": "Amersfoortse Voetbalvereniging Eemland",
-          "primaryName": "AVV Eemland"
+          "primaryName": "AVV Eemland",
+          "stadiumName": "Eemlandpark Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 26,
           "abbr": "UGC",
           "fullName": "Voetbalvereniging Ugchelen",
-          "primaryName": "VV Ugchelen"
+          "primaryName": "VV Ugchelen",
+          "stadiumName": "Ugchelse Bos Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 27,
           "abbr": "KRL",
           "fullName": "Sportvereniging Kerkelanden",
-          "primaryName": "SV Kerkelanden"
+          "primaryName": "SV Kerkelanden",
+          "stadiumName": "Kerkelanden Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 28,
           "abbr": "POE",
           "fullName": "Amstelveense Voetbalvereniging Poelmeer",
-          "primaryName": "AVV Poelmeer"
+          "primaryName": "AVV Poelmeer",
+          "stadiumName": "Poelmeer Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 29,
           "abbr": "WDV",
           "fullName": "Football Club Weidevenne",
-          "primaryName": "FC Weidevenne"
+          "primaryName": "FC Weidevenne",
+          "stadiumName": "Weidevenne Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 30,
           "abbr": "AMT",
           "fullName": "Sportclub Ambacht",
-          "primaryName": "SC Ambacht"
+          "primaryName": "SC Ambacht",
+          "stadiumName": "Ambachtshaven Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 31,
           "abbr": "NIE",
           "fullName": "Sportclub Nieuwland",
-          "primaryName": "SC Nieuwland"
+          "primaryName": "SC Nieuwland",
+          "stadiumName": "Nieuwlandpark Stadion"
         },
         {
           "countryId": "NL",
           "clubId": 32,
           "abbr": "HOU",
           "fullName": "Voetbalvereniging Houttil",
-          "primaryName": "VV Houttil"
+          "primaryName": "VV Houttil",
+          "stadiumName": "Houttil Stadion"
         }
       ]
     },
@@ -1738,112 +1962,128 @@
           "clubId": 1,
           "abbr": "BIX",
           "fullName": "Esporte Clube Bixiga",
-          "primaryName": "EC Bixiga"
+          "primaryName": "EC Bixiga",
+          "stadiumName": "Estádio da Bela Vista"
         },
         {
           "countryId": "BR",
           "clubId": 2,
           "abbr": "EST",
           "fullName": "Estrela Carioca Futebol Clube",
-          "primaryName": "Estrela Carioca"
+          "primaryName": "Estrela Carioca",
+          "stadiumName": "Estádio da Estrela do Mar"
         },
         {
           "countryId": "BR",
           "clubId": 3,
           "abbr": "MOO",
           "fullName": "Esporte Clube Mooca",
-          "primaryName": "EC Mooca"
+          "primaryName": "EC Mooca",
+          "stadiumName": "Estádio da Mooca"
         },
         {
           "countryId": "BR",
           "clubId": 4,
           "abbr": "LAR",
           "fullName": "Futebol Clube Laranjeiras",
-          "primaryName": "FC Laranjeiras"
+          "primaryName": "FC Laranjeiras",
+          "stadiumName": "Estádio das Laranjeiras Altas"
         },
         {
           "countryId": "BR",
           "clubId": 5,
           "abbr": "PAM",
           "fullName": "Atlético Clube Pampulha",
-          "primaryName": "Atlético Pampulha"
+          "primaryName": "Atlético Pampulha",
+          "stadiumName": "Estádio da Lagoa Clara"
         },
         {
           "countryId": "BR",
           "clubId": 6,
           "abbr": "UFA",
           "fullName": "União Farroupilha Futebol Clube",
-          "primaryName": "União Farroupilha"
+          "primaryName": "União Farroupilha",
+          "stadiumName": "Estádio Farroupilha"
         },
         {
           "countryId": "BR",
           "clubId": 7,
           "abbr": "ABA",
           "fullName": "Atlético da Bahia Futebol Clube",
-          "primaryName": "Atlético da Bahia"
+          "primaryName": "Atlético da Bahia",
+          "stadiumName": "Estádio da Baía Dourada"
         },
         {
           "countryId": "BR",
           "clubId": 8,
           "abbr": "PLN",
           "fullName": "Esporte Clube Pilarzinho",
-          "primaryName": "EC Pilarzinho"
+          "primaryName": "EC Pilarzinho",
+          "stadiumName": "Estádio do Pilar"
         },
         {
           "countryId": "BR",
           "clubId": 9,
           "abbr": "ABE",
           "fullName": "Atlético Belorizontino Futebol Clube",
-          "primaryName": "Atlético Belorizontino"
+          "primaryName": "Atlético Belorizontino",
+          "stadiumName": "Estádio das Montanhas"
         },
         {
           "countryId": "BR",
           "clubId": 10,
           "abbr": "GCE",
           "fullName": "Gaúcho Central Futebol Clube",
-          "primaryName": "Gaúcho Central"
+          "primaryName": "Gaúcho Central",
+          "stadiumName": "Estádio dos Pampas"
         },
         {
           "countryId": "BR",
           "clubId": 11,
           "abbr": "MUC",
           "fullName": "União Mucuripe Futebol Clube",
-          "primaryName": "União Mucuripe"
+          "primaryName": "União Mucuripe",
+          "stadiumName": "Estádio da Enseada"
         },
         {
           "countryId": "BR",
           "clubId": 12,
           "abbr": "AFG",
           "fullName": "Esporte Clube Afogados",
-          "primaryName": "EC Afogados"
+          "primaryName": "EC Afogados",
+          "stadiumName": "Estádio da Várzea Nova"
         },
         {
           "countryId": "BR",
           "clubId": 13,
           "abbr": "ASA",
           "fullName": "Atlético Santista Futebol Clube",
-          "primaryName": "Atlético Santista"
+          "primaryName": "Atlético Santista",
+          "stadiumName": "Estádio da Costa Azul"
         },
         {
           "countryId": "BR",
           "clubId": 14,
           "abbr": "PNA",
           "fullName": "Esporte Clube Paranoá",
-          "primaryName": "EC Paranoá"
+          "primaryName": "EC Paranoá",
+          "stadiumName": "Estádio do Lago Paranoá"
         },
         {
           "countryId": "BR",
           "clubId": 15,
           "abbr": "ACA",
           "fullName": "Atlético Campineiro Futebol Clube",
-          "primaryName": "Atlético Campineiro"
+          "primaryName": "Atlético Campineiro",
+          "stadiumName": "Estádio dos Ipês"
         },
         {
           "countryId": "BR",
           "clubId": 16,
           "abbr": "APA",
           "fullName": "Atlético Paraense Futebol Clube",
-          "primaryName": "Atlético Paraense"
+          "primaryName": "Atlético Paraense",
+          "stadiumName": "Estádio da Guajará"
         }
       ]
     },
@@ -1861,112 +2101,128 @@
           "clubId": 17,
           "abbr": "GOA",
           "fullName": "Esporte Clube Goiabeiras",
-          "primaryName": "EC Goiabeiras"
+          "primaryName": "EC Goiabeiras",
+          "stadiumName": "Estádio das Goiabeiras"
         },
         {
           "countryId": "BR",
           "clubId": 18,
           "abbr": "ECI",
           "fullName": "Esporte Clube Itapuã",
-          "primaryName": "EC Itapuã"
+          "primaryName": "EC Itapuã",
+          "stadiumName": "Estádio das Dunas de Itapuã"
         },
         {
           "countryId": "BR",
           "clubId": 19,
           "abbr": "AGV",
           "fullName": "Esporte Clube Água Verde",
-          "primaryName": "EC Água Verde"
+          "primaryName": "EC Água Verde",
+          "stadiumName": "Estádio das Águas Verdes"
         },
         {
           "countryId": "BR",
           "clubId": 20,
           "abbr": "MEI",
           "fullName": "Atlético Clube Meireles",
-          "primaryName": "Atlético Meireles"
+          "primaryName": "Atlético Meireles",
+          "stadiumName": "Estádio do Farol"
         },
         {
           "countryId": "BR",
           "clubId": 21,
           "abbr": "UDV",
           "fullName": "União da Várzea Futebol Clube",
-          "primaryName": "União da Várzea"
+          "primaryName": "União da Várzea",
+          "stadiumName": "Estádio do Capibaribe"
         },
         {
           "countryId": "BR",
           "clubId": 22,
           "abbr": "RIB",
           "fullName": "Futebol Clube Ribeirão",
-          "primaryName": "FC Ribeirão"
+          "primaryName": "FC Ribeirão",
+          "stadiumName": "Estádio das Palmeiras Altas"
         },
         {
           "countryId": "BR",
           "clubId": 23,
           "abbr": "UJO",
           "fullName": "União Joseense Futebol Clube",
-          "primaryName": "União Joseense"
+          "primaryName": "União Joseense",
+          "stadiumName": "Estádio do Vale Joseense"
         },
         {
           "countryId": "BR",
           "clubId": 24,
           "abbr": "DRC",
           "fullName": "Dourado Cuiabano Futebol Clube",
-          "primaryName": "Dourado Cuiabano"
+          "primaryName": "Dourado Cuiabano",
+          "stadiumName": "Estádio do Dourado"
         },
         {
           "countryId": "BR",
           "clubId": 25,
           "abbr": "UCX",
           "fullName": "União Caxiense Futebol Clube",
-          "primaryName": "União Caxiense"
+          "primaryName": "União Caxiense",
+          "stadiumName": "Estádio das Colinas"
         },
         {
           "countryId": "BR",
           "clubId": 26,
           "abbr": "APO",
           "fullName": "Atlético Potiguar Futebol Clube",
-          "primaryName": "Atlético Potiguar"
+          "primaryName": "Atlético Potiguar",
+          "stadiumName": "Estádio do Seridó"
         },
         {
           "countryId": "BR",
           "clubId": 27,
           "abbr": "UTA",
           "fullName": "União Tabajara Futebol Clube",
-          "primaryName": "União Tabajara"
+          "primaryName": "União Tabajara",
+          "stadiumName": "Estádio da Mata Atlântica"
         },
         {
           "countryId": "BR",
           "clubId": 28,
           "abbr": "AMA",
           "fullName": "Atlético Maceioense Futebol Clube",
-          "primaryName": "Atlético Maceioense"
+          "primaryName": "Atlético Maceioense",
+          "stadiumName": "Estádio das Marés"
         },
         {
           "countryId": "BR",
           "clubId": 29,
           "abbr": "USE",
           "fullName": "União Sergipana Futebol Clube",
-          "primaryName": "União Sergipana"
+          "primaryName": "União Sergipana",
+          "stadiumName": "Estádio do Rio Sergipe"
         },
         {
           "countryId": "BR",
           "clubId": 30,
           "abbr": "API",
           "fullName": "Atlético Piauiense Futebol Clube",
-          "primaryName": "Atlético Piauiense"
+          "primaryName": "Atlético Piauiense",
+          "stadiumName": "Estádio das Carnaúbas"
         },
         {
           "countryId": "BR",
           "clubId": 31,
           "abbr": "EMA",
           "fullName": "Estrela Maranhense Futebol Clube",
-          "primaryName": "Estrela Maranhense"
+          "primaryName": "Estrela Maranhense",
+          "stadiumName": "Estádio da Estrela do Norte"
         },
         {
           "countryId": "BR",
           "clubId": 32,
           "abbr": "ELO",
           "fullName": "Estrela Londrinense Futebol Clube",
-          "primaryName": "Estrela Londrinense"
+          "primaryName": "Estrela Londrinense",
+          "stadiumName": "Estádio dos Cafezais"
         }
       ]
     }

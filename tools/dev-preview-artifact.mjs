@@ -6,6 +6,8 @@ import {repositoryRoot,planPublicFiles,listFiles} from "./publication-guard.mjs"
 
 export const ARTIFACT_CONTRACTS=Object.freeze(["public","protected_debug"]);
 const MANIFEST="__fa_dev__/artifact-manifest.json";
+// Injected only into DEV responses/artifacts, before the body can paint.
+export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings,html[data-fa-debug-pending=\"true\"] #competition-panel-fixtures{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/(?:app\\/)?competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)&&sessionStorage.getItem(\"football-architect:standings-dev-preview\")===\"on\"){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
 const INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>';
 const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],
@@ -41,7 +43,7 @@ function debugHtml(bytes,path) {
  const html=bytes.toString("utf8");
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);
- return Buffer.from(html.replace("</head>",INJECTION+"\n</head>"),"utf8");
+ return Buffer.from(html.replace("</head>",DEBUG_FIRST_PAINT+INJECTION+"\n</head>"),"utf8");
 }
 
 function expectedBytes(sourceRoot,debugRoot) {

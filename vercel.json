@@ -1,0 +1,52 @@
+{
+  "redirects": [
+    {
+      "source": "/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/",
+      "destination": "/app/competitions/:division",
+      "permanent": true
+    },
+    {
+      "source": "/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html",
+      "destination": "/app/competitions/:division",
+      "permanent": true
+    },
+    {
+      "source": "/:page(dashboard|calendar|settings|competitions)/",
+      "destination": "/:page",
+      "permanent": true
+    },
+    {
+      "source": "/:page(dashboard|calendar|settings|competitions)/index.html",
+      "destination": "/:page",
+      "permanent": true
+    },
+    {
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/",
+      "destination": "/competitions/:division",
+      "permanent": true
+    },
+    {
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html",
+      "destination": "/competitions/:division",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])",
+      "destination": "/app/competitions/:division/index.html"
+    },
+    {
+      "source": "/:page(dashboard|calendar|settings|competitions)",
+      "destination": "/app/:page/index.html"
+    },
+    {
+      "source": "/competitions/_shared/:file(index.html|manifest.json)",
+      "destination": "/app/competitions/_shared/:file"
+    },
+    {
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])",
+      "destination": "/app/competitions/:division/index.html"
+    }
+  ]
+}

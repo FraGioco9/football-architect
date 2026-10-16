@@ -57,6 +57,21 @@
   const unavailable=document.getElementById("app-competition-season-unavailable");
   if(tabs.length!==6||panels.some(panel=>!panel)||!season||!unavailable||!seasonMenu||!seasonValue)return;
   const listeners=new Set();let state;
+  function syncTabOverflow(){
+    const maximum=Math.max(0,tablist.scrollWidth-tablist.clientWidth);
+    tablist.dataset.canScrollLeft=String(maximum>1&&tablist.scrollLeft>1);
+    tablist.dataset.canScrollRight=String(maximum>1&&tablist.scrollLeft<maximum-1);
+  }
+  function revealSelectedTab(){
+    const tab=tabs[views.indexOf(state?.view||"standings")];
+    const bounds=tablist.getBoundingClientRect(),rect=tab.getBoundingClientRect();
+    if(rect.left<bounds.left+16)tablist.scrollLeft+=rect.left-bounds.left-16;
+    else if(rect.right>bounds.right-16)tablist.scrollLeft+=rect.right-bounds.right+16;
+    syncTabOverflow();
+  }
+  tablist.addEventListener("scroll",syncTabOverflow,{passive:true});
+  window.addEventListener("resize",revealSelectedTab);
+  if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Season 2 is an isolated DEV preview, never a public competition season.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
@@ -90,7 +105,8 @@
       tabs[i].setAttribute("aria-selected",String(active));tabs[i].tabIndex=active?0:-1;
       tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active||!available;
     }
-    if(focus){tabs[index].focus();tabs[index].scrollIntoView?.({block:"nearest",inline:"nearest"})}
+    if(focus)tabs[index].focus({preventScroll:true});
+    revealSelectedTab();
     for(const listener of listeners)listener({...state});
     // Notify DEV enhancements even when they initialize before this router.
     window.dispatchEvent(new CustomEvent("fa:competition-route-change",{detail:{...state}}));

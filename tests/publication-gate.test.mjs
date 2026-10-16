@@ -32,6 +32,11 @@ test("PUBLIC-02: reject repository-root hosting and injected test files",()=>{
   const destination=join(root,"public");
   const files=stagePublicArtifact(repositoryRoot,destination);
   assert.deepEqual(assertPublicArtifact(destination),files);
+  const routingPath=join(destination,"vercel.json"),routing=readFileSync(routingPath,"utf8");
+  writeFileSync(routingPath,JSON.stringify({...JSON.parse(routing),public:true}));
+  assert.throws(()=>planPublicFiles(destination),/Unexpected competition routing/);
+  writeFileSync(routingPath,routing);
+
   const themePath=join(destination,"assets","theme.js");
   assert.ok(existsSync(themePath),"staged artifact contains theme bootstrap");
   unlinkSync(themePath);
@@ -50,7 +55,7 @@ test("PUBLIC-02: reject repository-root hosting and injected test files",()=>{
 });
 test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate",()=>{
  // External provider settings cannot be verified from repository contents.
- const configs=["vercel.json","netlify.toml","railway.json","railway.toml",
+ const configs=["netlify.toml","railway.json","railway.toml",
   "wrangler.toml","wrangler.json","Dockerfile","firebase.json"];
  for(const file of configs)
   assert.ok(!existsSync(join(repositoryRoot,file)),"inspect new deployment config: "+file);

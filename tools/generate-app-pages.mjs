@@ -103,7 +103,7 @@ ${rows}
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const fixturesContent = ()=>`
-            <div class="app-fixtures-toolbar">
+            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
               <div class="app-fixtures-navigation">
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
                 <div class="language-control app-fixtures-select">
@@ -223,7 +223,7 @@ const competitionManifest = {
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
-   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c)}))};
+   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c),stadiumName:c.stadiumName}))};
  })
 };
 if(competitionManifest.approved!==false)throw Error("Do not publish an approved competition allocation");

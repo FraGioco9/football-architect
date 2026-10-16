@@ -122,7 +122,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
 
 test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async()=>{
  for(const division of manifest.divisions){
-  for(const ending of ["/","/index.html"]){
+  for(const ending of ["","/","/index.html"]){
    const r=await simulate({division,ending});
    assert.deepEqual(r.requested,[
     "/competitions/_shared/manifest.json"

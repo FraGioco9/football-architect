@@ -541,3 +541,32 @@ test("STANDINGS-UX-01D: mobile compact form keeps its appearance and opens toolt
  assert.ok(canonical.includes('element("span","app-world-form-dot app-world-form-"'));
  assert.ok(!client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
 });
+
+test("DEV-FIXTURES-READY: restored preview waits for Fixtures runtime as well as standings rows",async()=>{
+ const start=client.indexOf('function waitForRows() {'),end=client.indexOf('\nasync function boot(',start);
+ const body={rows:Array.from({length:16},()=>({}))};
+ let notify,settled=false;
+ const window={};
+ const context={window,document:{documentElement:{},getElementById:()=>body,querySelector:()=>({})},
+  MutationObserver:class{constructor(fn){notify=fn}observe(){}disconnect(){}},setTimeout,clearTimeout};
+ const wait=runInNewContext(client.slice(start,end)+'\nwaitForRows',context);
+ const pending=wait().then(value=>{settled=true;return value});
+ await new Promise(resolve=>setImmediate(resolve));
+ const early=settled;
+ window.faCompetitionRoute={get(){}};window.faFixtures={prepare(){},snapshot(){}};
+ notify();
+ assert.equal(await pending,body);
+ assert.equal(early,false,'standings rows alone must not release initial DEV hydration');
+});
+
+
+test('STANDINGS-TOOLTIP-DATE: supplied kickoff is localized and missing dates stay unknown',()=>{
+ const start=client.indexOf('function formatMatchDate('),end=client.indexOf('\nfunction node(',start);
+ assert.ok(start>=0&&end>start,'tooltip date formatter exists');
+ const format=runInNewContext(client.slice(start,end)+';formatMatchDate');
+ assert.equal(format({},'en'),null);
+ assert.equal(format({kickoff:null},'it'),null);
+ assert.equal(format({kickoff:'invalid'},'en'),null);
+ const kickoff='2026-10-20T12:30:00Z';
+ for(const lang of ['en','it','de','es','fr'])assert.equal(format({kickoff},lang),new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(kickoff)));
+});

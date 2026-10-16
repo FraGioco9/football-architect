@@ -26,3 +26,23 @@ test('canonical navigation has no /app prefix and all app routes load with asset
     assert.ok(read('app/index.html').includes('location.replace("/dashboard" +'));
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+test('publication aliases map canonical app URLs to the same allowlisted DEV files', async()=>{
+  const {publicRequestFile,isAllowlistedPublicPath}=await import('../tools/publication-guard.mjs');
+  const config=JSON.parse(read('vercel.json'));
+  const tokens=[[':page(dashboard|calendar|settings|competitions)','(?<page>dashboard|calendar|settings|competitions)'],
+    [':division((?:it|eng|es|de|fr|pt|nl|br)-[12])','(?<division>(?:it|eng|es|de|fr|pt|nl|br)-[12])'],
+    [':file(index.html|manifest.json)','(?<file>index.html|manifest.json)']];
+  const paths=['/dashboard','/calendar','/settings','/competitions','/competitions/_shared/manifest.json',
+    ...['it','eng','es','de','fr','pt','nl','br'].flatMap(country=>[1,2].map(tier=>'/competitions/'+country+'-'+tier))];
+  for(const path of paths){
+    let target;
+    for(const rule of config.rewrites){
+      let pattern=rule.source;for(const [token,replacement] of tokens)pattern=pattern.replace(token,replacement);
+      const match=path.match(new RegExp('^'+pattern+'$'));
+      if(match){target=rule.destination.replace(/:(page|division|file)/g,(_,name)=>match.groups[name]);break;}
+    }
+    assert.equal(target?.slice(1),publicRequestFile(path),path);
+    assert.ok(isAllowlistedPublicPath(target.slice(1)),path);
+  }
+});

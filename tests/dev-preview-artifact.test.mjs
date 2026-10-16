@@ -45,7 +45,8 @@ test("DEBUG-INFRA-02: protected contract is a separately verified, nonpublic art
   for(const file of manifest.files)assert.match(file.sha256,/^[0-9a-f]{64}$/);
   const protectedHtml=readFileSync(join(protectedPath,"app","index.html"),"utf8");
   const originalHtml=readFileSync(join(repositoryRoot,"app","index.html"),"utf8");
-  assert.doesNotMatch(originalHtml,/__fa_dev__\/debug-settings/);
+  assert.doesNotMatch(originalHtml,/__fa_dev__\/debug-settings|faDebugPending/);
+  assert.match(protectedHtml,/faDebugPending/);
   assert.equal(protectedHtml.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
   assert.match(protectedHtml,/__fa_dev__\/debug-settings\.mjs/);
   const landing=readFileSync(join(protectedPath,"index.html"));
@@ -124,4 +125,20 @@ test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
     assert.equal(existsSync(join(directory,match[1])),true,name+" imports missing "+match[1]);
   }
  }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('DEBUG-FIRST-PAINT: stored DEV state is gated synchronously and failure cannot leave data hidden',async()=>{
+ const {DEBUG_FIRST_PAINT}=await import('../tools/dev-preview-artifact.mjs');
+ assert.equal(typeof DEBUG_FIRST_PAINT,'string');
+ const {runInNewContext}=await import('node:vm');
+ const script=DEBUG_FIRST_PAINT.match(/<script>([\s\S]+)<\/script>/)[1];
+ for(const value of ['on',null]){
+  const document={documentElement:{dataset:{}}};const window={};let timeout;
+  runInNewContext(script,{document,window,location:{pathname:'/competitions/eng-1'},sessionStorage:{getItem:()=>value},setTimeout:fn=>{timeout=fn;return 1},clearTimeout(){}});
+  assert.equal(document.documentElement.dataset.faDebugPending,value==='on'?'true':undefined);
+  if(value==='on'){timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)}
+ }
+ const document={documentElement:{dataset:{}}};
+ runInNewContext(script,{document,window:{},location:{pathname:'/app/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(){throw Error('must not wait')}});
+ assert.equal(document.documentElement.dataset.faDebugPending,undefined);
 });

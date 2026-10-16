@@ -38,6 +38,7 @@
             club.clubId !== previous + 1 || clubs.has(key) ||
             typeof club.fullName !== "string" || !club.fullName ||
             typeof club.abbr !== "string" || !club.abbr ||
+            typeof club.stadiumName !== "string" || !club.stadiumName.trim() ||
             !(club.primaryName === null || (typeof club.primaryName === "string" && !!club.primaryName.trim()))) return false;
         clubs.add(key);
         previous = club.clubId;

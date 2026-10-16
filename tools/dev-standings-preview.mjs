@@ -5,6 +5,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
+import { DEBUG_FIRST_PAINT } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,7 +34,7 @@ const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data sup
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
   `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
-  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list{visibility:hidden}</style>',
+  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
 ].join("\n");
 
@@ -134,7 +135,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
-          body = Buffer.from(seasonHtml.replace("</head>", INJECT + "\n</head>"), "utf8");
+          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
         }
       }
       res.writeHead(200, {
