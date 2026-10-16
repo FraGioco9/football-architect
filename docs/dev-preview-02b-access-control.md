@@ -55,4 +55,6 @@ The existing `football-architect` Vercel project reports `ssoProtection.enabled=
 - Keep the existing workflow-level G10 denial active throughout evaluation. Do not create or expose a protected artifact merely to test protection.
 - If the intended hostname or identity scope is not enforceable with the current project settings, revise the design before implementation; do not silently disable or broaden protection.
 
-**Decision still pending:** owner approval of the exact identity scope, protected hostname class, and session/revocation policy, followed by independent security acceptance.
+**Identity-scope decision (owner, 2026-10-16):** permit the owner **and explicitly approved collaborators**, rather than owner-only access. Grant access individually under least privilege; require authenticated membership in an approved access group or equivalent server-enforced allowlist. Team membership alone is not sufficient unless the owner explicitly designates that membership as the authorization boundary. Remove access promptly when a collaborator is revoked. Do not create accounts, invite collaborators, or change Vercel permissions as part of this documentation update.
+
+**Decisions still pending:** the specific approved collaborators/group, protected hostname class, session/revocation policy, and independent security acceptance.
