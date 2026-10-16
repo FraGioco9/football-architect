@@ -106,7 +106,14 @@
       navigation.set({matchday:round});
     }
   }
-  navigation.subscribe(route=>{selected=route.matchday;roundMenu.close();render()});
+  navigation.subscribe(route=>{
+    selected=route.matchday;
+    if(route.view==="fixtures"&&rounds!==null){
+      navigation.defaultMatchday(currentMatchday??1);
+      selected=navigation.get().matchday;
+    }
+    roundMenu.close();render();
+  });
   fields.current.addEventListener("click",()=>{if(!fields.current.hidden){select(currentMatchday);fields.round.focus()}});
   fields.previous.addEventListener("click",()=>select(selected-1));
   fields.next.addEventListener("click",()=>select(selected+1));
