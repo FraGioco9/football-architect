@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18">
-<defs><mask id="fa-flag-rounded-tt" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="30.0" height="18.0"><rect x="0.0" y="0.0" width="30.0" height="18.0" rx="3.75" ry="3.375" fill="#fff"/></mask></defs><g mask="url(#fa-flag-rounded-tt)"><rect fill="#CE1126" width="30" height="18"/>
-<polygon fill="#FFF" points="0,0 20.824734,18 30,18 9.175266,0"/>
-<polygon points="1.52921,0 22.353945,18 28.470789,18 7.646055,0"/>
+<defs><mask id="fa-flag-rounded-tt" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="30.0" height="18.0"><rect x="0.0" y="0.0" width="30.0" height="18.0" rx="3.375" ry="3.375" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-tt)"><rect fill="#CE1126" width="30" height="18" />
+<polygon fill="#FFF" points="0,0 20.824734,18 30,18 9.175266,0" />
+<polygon points="1.52921,0 22.353945,18 28.470789,18 7.646055,0" />
 </g></svg>

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 4">
-<defs><mask id="fa-flag-rounded-co" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="6.0" height="4.0"><rect x="0.0" y="0.0" width="6.0" height="4.0" rx="0.75" ry="0.75" fill="#fff"/></mask></defs><g mask="url(#fa-flag-rounded-co)"><rect fill="#CE1126" width="6" height="4"/>
-<rect fill="#003893" width="6" height="3"/>
-<rect fill="#FCD116" width="6" height="2"/>
+<defs><mask id="fa-flag-rounded-co" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="6.0" height="4.0"><rect x="0.0" y="0.0" width="6.0" height="4.0" rx="0.75" ry="0.75" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-co)"><rect fill="#CE1126" width="6" height="4" />
+<rect fill="#003893" width="6" height="3" />
+<rect fill="#FCD116" width="6" height="2" />
 </g></svg>

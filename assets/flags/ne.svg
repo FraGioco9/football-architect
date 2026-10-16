@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 600">
-<defs><mask id="fa-flag-rounded-ne" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="700.0" height="600.0"><rect x="0.0" y="0.0" width="700.0" height="600.0" rx="87.5" ry="112.5" fill="#fff"/></mask></defs><g mask="url(#fa-flag-rounded-ne)"><rect width="700" height="600" fill="#0DB02B"/>
-<rect width="700" height="400" fill="#FFF"/>
-<rect width="700" height="200" fill="#e05206"/>
-<circle cx="350" cy="300" r="85" fill="#e05206"/>
+<defs><mask id="fa-flag-rounded-ne" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="700.0" height="600.0"><rect x="0.0" y="0.0" width="700.0" height="600.0" rx="112.5" ry="112.5" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-ne)"><rect width="700" height="600" fill="#0DB02B" />
+<rect width="700" height="400" fill="#FFF" />
+<rect width="700" height="200" fill="#e05206" />
+<circle cx="350" cy="300" r="85" fill="#e05206" />
 </g></svg>

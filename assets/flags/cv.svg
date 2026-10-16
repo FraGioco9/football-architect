@@ -1,24 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 510 300">
-<defs><mask id="fa-flag-rounded-cv" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="510.0" height="300.0"><rect x="0.0" y="0.0" width="510.0" height="300.0" rx="63.75" ry="56.25" fill="#fff"/></mask></defs><g mask="url(#fa-flag-rounded-cv)"><rect width="510" height="300" fill="#003893"/>
-<rect width="510" height="75" y="150" fill="#fff"/>
-<rect width="510" height="25" y="175" fill="#cf2027"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ns1="http://www.w3.org/1999/xlink" viewBox="0 0 510 300">
+<defs><mask id="fa-flag-rounded-cv" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="510.0" height="300.0"><rect x="0.0" y="0.0" width="510.0" height="300.0" rx="56.25" ry="56.25" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-cv)"><rect width="510" height="300" fill="#003893" />
+<rect width="510" height="75" y="150" fill="#fff" />
+<rect width="510" height="25" y="175" fill="#cf2027" />
 <g fill="#f7d116" transform="translate(191.25,187.5)">
 <g id="s2">
 <g id="s" transform="translate(0,-75)">
 <g id="c">
-<path id="t" d="M0,-15V0H7.5" transform="rotate(18,0,-15)"/>
-<use xlink:href="#t" transform="scale(-1,1)"/>
+<path id="t" d="M0,-15V0H7.5" transform="rotate(18,0,-15)" />
+<use ns1:href="#t" transform="scale(-1,1)" />
 </g>
-<use xlink:href="#c" transform="rotate(72)"/>
-<use xlink:href="#c" transform="rotate(144)"/>
-<use xlink:href="#c" transform="rotate(216)"/>
-<use xlink:href="#c" transform="rotate(288)"/>
+<use ns1:href="#c" transform="rotate(72)" />
+<use ns1:href="#c" transform="rotate(144)" />
+<use ns1:href="#c" transform="rotate(216)" />
+<use ns1:href="#c" transform="rotate(288)" />
 </g>
-<use xlink:href="#s" y="150"/>
+<use ns1:href="#s" y="150" />
 </g>
-<use xlink:href="#s2" transform="rotate(72)"/>
-<use xlink:href="#s2" transform="rotate(144)"/>
-<use xlink:href="#s2" transform="rotate(216)"/>
-<use xlink:href="#s2" transform="rotate(288)"/>
+<use ns1:href="#s2" transform="rotate(72)" />
+<use ns1:href="#s2" transform="rotate(144)" />
+<use ns1:href="#s2" transform="rotate(216)" />
+<use ns1:href="#s2" transform="rotate(288)" />
 </g>
 </g></svg>

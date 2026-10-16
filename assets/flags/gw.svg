@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-2 -3 12 6">
-<defs><mask id="fa-flag-rounded-gw" maskUnits="userSpaceOnUse" x="-2.0" y="-3.0" width="12.0" height="6.0"><rect x="-2.0" y="-3.0" width="12.0" height="6.0" rx="1.5" ry="1.125" fill="#fff"/></mask></defs><g mask="url(#fa-flag-rounded-gw)"><rect x="-2" y="-3" width="4" height="6" fill="#ce1126"/>
-<rect x="2" y="-3" width="8" height="3" fill="#fcd116"/>
-<rect x="2" width="8" height="3" fill="#009e49"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ns1="http://www.w3.org/1999/xlink" viewBox="-2 -3 12 6">
+<defs><mask id="fa-flag-rounded-gw" maskUnits="userSpaceOnUse" x="-2.0" y="-3.0" width="12.0" height="6.0"><rect x="-2.0" y="-3.0" width="12.0" height="6.0" rx="1.125" ry="1.125" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-gw)"><rect x="-2" y="-3" width="4" height="6" fill="#ce1126" />
+<rect x="2" y="-3" width="8" height="3" fill="#fcd116" />
+<rect x="2" width="8" height="3" fill="#009e49" />
 <g id="c">
-<path id="t" d="M 0,-1 v 1 h .5" transform="rotate(18 0,-1)" fill="#000"/>
-<use xlink:href="#t" transform="scale(-1,1)"/>
+<path id="t" d="M 0,-1 v 1 h .5" transform="rotate(18 0,-1)" fill="#000" />
+<use ns1:href="#t" transform="scale(-1,1)" />
 </g>
-<use xlink:href="#c" transform="rotate(72)"/>
-<use xlink:href="#c" transform="rotate(144)"/>
-<use xlink:href="#c" transform="rotate(216)"/>
-<use xlink:href="#c" transform="rotate(288)"/>
+<use ns1:href="#c" transform="rotate(72)" />
+<use ns1:href="#c" transform="rotate(144)" />
+<use ns1:href="#c" transform="rotate(216)" />
+<use ns1:href="#c" transform="rotate(288)" />
 </g></svg>

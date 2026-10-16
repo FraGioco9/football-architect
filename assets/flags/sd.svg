@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6">
-<defs><mask id="fa-flag-rounded-sd" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="12.0" height="6.0"><rect x="0.0" y="0.0" width="12.0" height="6.0" rx="1.5" ry="1.125" fill="#fff"/></mask></defs><g mask="url(#fa-flag-rounded-sd)"><rect width="12" height="6"/>
-<rect fill="#FFF" width="12" height="4"/>
-<rect fill="#D21034" width="12" height="2"/>
-<polygon fill="#007229" points="0,0 4,3 0,6"/>
+<defs><mask id="fa-flag-rounded-sd" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="12.0" height="6.0"><rect x="0.0" y="0.0" width="12.0" height="6.0" rx="1.125" ry="1.125" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-sd)"><rect width="12" height="6" />
+<rect fill="#FFF" width="12" height="4" />
+<rect fill="#D21034" width="12" height="2" />
+<polygon fill="#007229" points="0,0 4,3 0,6" />
 </g></svg>
