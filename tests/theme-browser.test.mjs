@@ -145,7 +145,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.getElementById('competition-tab-fixtures').click()");
         assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length===0)"),true,"no matchday controls without a schedule");
         const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
-        const fixtureModel=createPreviewStandings(fixtureDivision,0).fixtures.map(game=>({...game,kickoff:null,homeGoals:null,awayGoals:null}));
+        const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(game=>({...game,kickoff:null,homeGoals:null,awayGoals:null}));
         await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
         assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length>0)"),true,"scheduled rounds restore controls even before matches are played");
         await run("window.faFixtures.prepare(null)()");
