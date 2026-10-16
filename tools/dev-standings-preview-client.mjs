@@ -279,16 +279,10 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
-    const routeState=window.faCompetitionRoute?.get?.();
-    const routeUrl=new URL(window.location.href);
-    const requestedRound=Number(routeUrl.searchParams.get("matchday"));
-    // Preserve a round only for a direct Fixtures deep link. When the URL
-    // opens another view and the user later switches to Fixtures, its stale
-    // matchday query must not override the simulated current matchday.
-    const explicitFixturesRound=routeUrl.searchParams.get("view")==="fixtures"&&
-      Number.isInteger(requestedRound)&&requestedRound>=1;
-    const defaultRound=explicitFixturesRound
-      ?requestedRound:Math.min(30,matchdays+1);
+    // This value powers the "current matchday" shortcut, not the selected
+    // round. The router already owns the selected round from the URL/state;
+    // reusing ?matchday=1 here incorrectly turns the shortcut into round 1.
+    const defaultRound=Math.min(30,matchdays+1);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:defaultRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
