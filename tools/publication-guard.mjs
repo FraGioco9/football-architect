@@ -21,7 +21,8 @@ const rootFiles=new Set(["index.html","favicon.ico","favicon.svg","guide/index.h
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","app.js","app.css",
- "app-search.js","competition-page.js","competition-tabs.js","theme.js"]);
+ "app-search.js","competition-page.js","competition-tabs.js","theme.js",
+]);
 
 export function isAllowlistedPublicPath(path) {
  if(path.startsWith("assets/divisions/"))return validateDivisionAssets().paths.has(path);
@@ -70,7 +71,7 @@ export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot}={}) 
   if(!bytes.equals(readFileSync(join(sourceRoot,path))))
    throw Error("Public artifact source mismatch: "+path);
   if(/\.(?:js|html|css|json)$/.test(path)&&
-     /\bit1Demo\b|__faFixtureHooks|tests\/fixtures\/it-1-demo/.test(bytes.toString("utf8")))
+     /\bit1Demo\b|__faFixtureHooks|tests\/fixtures\/it-1-demo|__fa_dev__\/|dev-debug-settings/.test(bytes.toString("utf8")))
    throw Error("Private development fixture referenced by public asset: "+path);
  }
  return actual;
