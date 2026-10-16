@@ -191,7 +191,7 @@
   // The preview is a native link; only the Guide button needs scripted navigation.
   for (const button of actions) {
     if (button.dataset.destination !== "guide") continue;
-    button.addEventListener("click", () => window.location.assign("/guide"););
+    button.addEventListener("click", () => window.location.assign("/guide"));
   }
   // Highlight the Guide section selected by click or URL hash.
   const guideLinks = [...document.querySelectorAll("[data-guide-section]")];
