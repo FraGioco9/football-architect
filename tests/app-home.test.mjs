@@ -51,7 +51,7 @@ test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destina
     const base = new URL("../"+path,import.meta.url);
     for (const [,target] of markup.matchAll(/(?:href|src)="([^"]+)"/g)) {
       if (target.startsWith("#")) continue;
-      const loc = target.startsWith("/") ? new URL(".."+target,base) : new URL(target,base);
+      const loc = target.startsWith("/app/") ? new URL("../"+target.slice(1)+"/index.html",import.meta.url) : new URL(target,base);
       // Directory URLs are served as index.html by a normal static HTTP server.
       const file = loc.pathname.endsWith("/") ? new URL("index.html",loc) : loc;
       assert.ok(existsSync(fileURLToPath(file)),page+": missing "+target);
