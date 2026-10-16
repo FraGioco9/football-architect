@@ -52,23 +52,23 @@ const LANG = {
   en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
     letters: {W:"W",D:"D",L:"L"},
-    recent: "latest match" },
+    recent: "latest match", season:"Season", finalStandings:"Final standings", historySelectSeason:"View final standings" },
   de: { round: "Spieltag", dateUnknown: "Datum offen",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
     letters: {W:"S",D:"U",L:"N"},
-    recent: "letztes Spiel" },
+    recent: "letztes Spiel", season:"Saison", finalStandings:"Abschlusstabelle", historySelectSeason:"Abschlusstabelle ansehen" },
   es: { round: "Jornada", dateUnknown: "Fecha pendiente",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
     letters: {W:"V",D:"E",L:"D"},
-    recent: "último partido" },
+    recent: "último partido", season:"Temporada", finalStandings:"Clasificación final", historySelectSeason:"Ver clasificación final" },
   fr: { round: "Journée", dateUnknown: "Date à définir",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
     letters: {W:"V",D:"N",L:"D"},
-    recent: "dernier match" },
+    recent: "dernier match", season:"Saison", finalStandings:"Classement final", historySelectSeason:"Voir le classement final" },
   it: { round: "Giornata", dateUnknown: "Data da definire",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
     letters: {W:"V",D:"N",L:"P"},
-    recent: "ultima partita" }
+    recent: "ultima partita", season:"Stagione", finalStandings:"Classifica finale", historySelectSeason:"Vedi classifica finale" }
 };
 const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
@@ -98,9 +98,9 @@ async function renderHistoryPreview(){
  const hall=section("historyHallOfChampions"),championRows=table(hall,[["historySeasonLabel",false],["historyChampionLabel",false],["historyPodiumLabel",false]]);
  for(const item of [...seasons].reverse()){const row=historyNode("tr");historyCell(row,"td",item.season);historyCell(row,"td",item.rows[0].club.primaryName);historyCell(row,"td",item.rows.slice(0,3).map(r=>r.club.primaryName).join(" · "));championRows.appendChild(row);}
  const archive=section("historySeasonArchive"),buttons=historyNode("div","app-history-dev-archive");archive.appendChild(buttons);
- for(const item of [...seasons].reverse()){const button=historyNode("button","app-history-dev-season-button");button.type="button";button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen.season));button.setAttribute("aria-label",`${strings().historySelectSeason||"View final standings"} — ${item.season}`);button.textContent=(strings().competitionSeason||"Season")+" "+item.season;button.addEventListener("click",()=>window.faCompetitionRoute?.set?.({season:String(item.season),view:"history"}));buttons.appendChild(button);}
+ for(const item of [...seasons].reverse()){const button=historyNode("button","app-history-dev-season-button");button.type="button";button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen.season));button.setAttribute("aria-label",`${strings().historySelectSeason||"View final standings"} — ${item.season}`);button.textContent=(strings().season||"Season")+" "+item.season;button.addEventListener("click",()=>window.faCompetitionRoute?.set?.({season:String(item.season),view:"history"}));buttons.appendChild(button);}
  const finalSection=section("historyFinalStandings"),finalRows=table(finalSection,[["standingsPosition",true],["standingsClub",false],["standingsPlayed",true],["standingsWon",true],["standingsDrawn",true],["standingsLost",true],["standingsFor",true],["standingsAgainst",true],["standingsDifference",true],["standingsPoints",true]]);
- finalSection.querySelector("h3").textContent=(strings().historyFinalStandings||"Final standings")+": "+(strings().competitionSeason||"Season")+" "+chosen.season;
+ finalSection.querySelector("h3").textContent=(strings().finalStandings||"Final standings")+": "+(strings().season||"Season")+" "+chosen.season;
  chosen.rows.forEach((item,index)=>{const row=historyNode("tr",index===0?"is-champion":"");[index+1,item.club.primaryName,item.played,item.won,item.drawn,item.lost,item.gf,item.ga,item.gd>0?"+"+item.gd:item.gd,item.pts].forEach((value,column)=>historyCell(row,"td",value,column===1?"":"numeric"));finalRows.appendChild(row);});
  const records=section("historyHistoricalRecords"),grid=historyNode("div","app-history-dev-records");records.appendChild(grid);
  const titleMap=new Map(),podiumMap=new Map();
@@ -110,8 +110,8 @@ async function renderHistoryPreview(){
  const names=new Map([...titleMap.values()].map(item=>[item.clubId,item.name])),cards=[["historyMostTitles",titleRecord.maximum,titleRecord.clubs.join(", ")],["historyMostPodiums",podiumRecord.maximum,podiumRecord.clubs.join(", ")],["historyLongestTitleStreak",bestStreak,[...streakIds].map(id=>names.get(id)).join(", ")]];
  for(const [key,value,clubNames] of cards){const card=historyNode("article","app-history-dev-record"),h=historyNode("h4");h.dataset.appI18n=key;card.appendChild(h);card.appendChild(historyNode("p","",clubNames));card.appendChild(historyNode("p","app-history-dev-subtle",String(value)));grid.appendChild(card);}
  panel.querySelector('[data-app-i18n="competitionHistoryEmpty"]')?.setAttribute("hidden","");panel.querySelector(".app-history-dev")?.remove();panel.appendChild(root);window.faAppRenderLanguage?.();
- finalSection.querySelector("h3").textContent=(strings().historyFinalStandings||"Final standings")+": "+(strings().competitionSeason||"Season")+" "+chosen.season;
- for(const button of buttons.querySelectorAll("button"))button.textContent=(strings().competitionSeason||"Season")+" "+button.dataset.historySeason;
+ finalSection.querySelector("h3").textContent=(strings().finalStandings||"Final standings")+": "+(strings().season||"Season")+" "+chosen.season;
+ for(const button of buttons.querySelectorAll("button"))button.textContent=(strings().season||"Season")+" "+button.dataset.historySeason;
 }
 function syncHistoryPreview(){const route=window.faCompetitionRoute?.get?.();if(!isPreviewEnabled()){clearHistoryPreview();return;}if(route?.view==="history")renderHistoryPreview().catch(error=>{console.error("DEV History preview unavailable:",error);clearHistoryPreview();});}
 
