@@ -13,11 +13,11 @@ function readMatchdays(){
 let matchdays=readMatchdays();
 function selectedSeason(){
  const available=(document.documentElement.dataset.faDevSeasons||"1,2").split(",").map(Number).filter(Number.isSafeInteger);
- // Prefer the canonical router state once it exists; it is updated before route-change events.
- const routed=Number(window.faCompetitionRoute?.get?.().season);
- if([1,2].includes(routed))return routed;
+ // The URL carries the requested deep-link season during first paint, before the router hydrates.
  const requested=Number(new URL(window.location.href).searchParams.get("season"));
  if([1,2].includes(requested))return requested;
+ const routed=Number(window.faCompetitionRoute?.get?.().season);
+ if([1,2].includes(routed))return routed;
  return available.includes(1)||available.includes(2)?Math.max(...available.filter(season=>[1,2].includes(season))):1;
 }
 async function setMatchdays(value){
