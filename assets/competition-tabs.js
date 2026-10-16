@@ -177,7 +177,10 @@
   requestAnimationFrame(()=>{
     restoreTabScroll();
     requestAnimationFrame(()=>{
-      restoreTabScroll();restoringTabScroll=false;
+      restoreTabScroll();
+      restoringTabScroll=false;
+      // Keep the route-selected tab visible after restoring the previous strip offset.
+      revealSelectedTab();
       if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
     });
   });
