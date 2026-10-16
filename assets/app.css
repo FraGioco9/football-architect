@@ -205,7 +205,7 @@ html{scroll-padding-top:72px}
 .app-division-card-copy{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;width:100%;min-width:0}
 .app-division-card-copy strong{font-size:14px;font-weight:700;color:var(--text);overflow-wrap:anywhere}
 .app-division-card-copy small{font-size:11px;color:var(--muted)}
-.app-competition-header{position:relative;z-index:1;--app-competition-heading-size:var(--app-page-title-size);--app-competition-logo-size:82px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin:0}
+.app-competition-header{position:relative;z-index:2;--app-competition-heading-size:var(--app-page-title-size);--app-competition-logo-size:82px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin:0}
 .app-competition-logo-placeholder-large{width:var(--app-competition-logo-size);height:var(--app-competition-logo-size);border-radius:13px;font-size:15px}
 .app-competition-identity{flex:1 1 260px;min-width:0;align-self:center}
 .app-competition-identity .app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-competition-heading-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;overflow-wrap:anywhere}
@@ -430,21 +430,21 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 }
 
 /* Competition Fixtures: one eight-match round, shared desktop/mobile markup. */
-.app-fixtures-toolbar{position:relative;z-index:0;display:flex;justify-content:center;align-items:center;min-height:32px;margin:0 0 16px}
+.app-fixtures-toolbar{position:relative;z-index:1;display:flex;justify-content:center;align-items:center;min-height:32px;margin:0 0 16px}
 .app-fixtures-toolbar[hidden],.app-fixtures-current[hidden]{display:none}
 .app-fixtures-current{position:absolute;inset-inline-end:0;top:0;width:auto;min-width:0;min-height:32px;height:32px;padding:5px 8px;justify-content:center;gap:6px;white-space:nowrap}
 .app-fixtures-navigation{position:relative;display:flex;gap:4px;align-items:center}
 .app-fixtures-arrow{width:32px;min-width:32px!important;min-height:32px;height:32px;padding:0;justify-content:center}
-.app-fixtures-select{width:120px}
-.app-fixtures-trigger{width:100%;min-width:0!important;min-height:32px;height:32px;padding:5px 8px;gap:4px;font-size:13px}
+.app-fixtures-select{width:120px;font-size:13px}
+.app-fixtures-trigger{width:100%;min-width:0!important;min-height:32px;height:32px;padding:5px 8px;gap:4px;font-size:inherit}
 .app-fixtures-navigation :disabled{opacity:.45;cursor:default}
 .app-fixtures-arrow:disabled{pointer-events:none}
 .app-fixtures-navigation button:disabled,.app-fixtures-navigation button:disabled:hover{background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
 .app-fixtures-navigation button:focus-visible,.app-competition-season .language-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(max-width:1000px){.app-fixtures-current{width:32px;min-width:32px;height:32px;padding:0}.app-fixtures-current span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
-@media(max-width:360px){.app-fixtures-select{width:100px}.app-fixtures-trigger{font-size:12px;padding-inline:6px;gap:3px}.app-fixtures-arrow{width:28px;min-width:28px!important}}
-.app-fixtures-picker{width:100%;min-width:0;inset-inline-end:0}
-.app-fixtures-picker .language-option{gap:3px}
+@media(max-width:360px){.app-fixtures-select{width:100px;font-size:12px}.app-fixtures-trigger{font-size:12px;padding-inline:6px;gap:3px}.app-fixtures-arrow{width:28px;min-width:28px!important}}
+.app-fixtures-picker{width:100%;min-width:0;inset-inline-end:0;padding:3px;font-size:inherit}
+.app-fixtures-picker .language-option{min-height:32px;padding:5px 6px;gap:3px;font-size:inherit}
 .app-competition-season{display:flex;align-items:center;gap:8px;margin-inline-start:auto;font-size:13px}
 .app-competition-season>span{font-weight:700}
 .app-competition-season .language-control{width:88px}
@@ -479,3 +479,7 @@ html[data-competition-view="history"] .app-competition-panel:not(#competition-pa
 html[data-competition-view="rules"] .app-competition-panel:not(#competition-panel-rules){display:none}
 html[data-competition-view="awards"] .app-competition-panel:not(#competition-panel-awards){display:none}
 html[data-competition-season-unavailable="true"] .app-competition-panel{display:none}
+
+/* Keep DEV restoration guards effective when a running server has an older injected style. */
+html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures,
+html[data-fa-debug-pending="true"] #competition-panel-fixtures{visibility:hidden}
