@@ -1,6 +1,6 @@
 # Competition History data
 
-This directory is the planned canonical source for approved historical competition results. It is a **data scaffold only**: it currently contains no historical results.
+This directory is a **data-availability and provenance scaffold only**. Do not populate it with synthetic results. The initial History implementation should reuse the existing deterministic DEV preview generator only while local DEV/debug settings are active; outside that gate, History must use approved canonical results or show the honest empty state.
 
 ## Layout
 - `index.json` lists all 16 competitions and their data-availability status.
@@ -34,7 +34,8 @@ The example values are illustrative only, not Football Architect results.
 - `dataStatus: "unavailable"` means no approved source data is currently present.
 - Public History may consume only completed, approved seasons that pass validation.
 - Missing seasons are not represented as empty or zero-valued standings.
-- Fictional local DEV results from `tools/dev-standings-preview-data.mjs` must never be imported as canonical history.
+- Fictional local DEV results from `tools/dev-standings-preview-data.mjs` must never be imported as canonical history or copied into this directory.
+- When local DEV/debug settings are active, the History preview may derive a temporary view from the existing generator. Label all such output clearly as fictional DEV preview data and keep it behind the existing loopback-only gate.
 - Validate competition and club IDs against approved canonical sources; historical membership may differ from current membership.
 - Season IDs must be unique per competition. Final tables must not duplicate clubs or positions and must use non-negative integer statistics.
 - Enforce `played = won + drawn + lost`; derive goal difference from goals for/against.
@@ -44,6 +45,6 @@ The example values are illustrative only, not Football Architect results.
 - If coverage is incomplete, do not label all-time records definitive without disclosing the coverage limitation.
 
 ## Current limitations
-The repository audit found no authoritative final standings or match-result datasets for Seasons 1–4. The current competition manifest is marked `approved: false`. This scaffold does not approve the manifest or any historical data and does not alter runtime behavior.
+The repository audit found no authoritative final standings or match-result datasets for Seasons 1–4. The current competition manifest is marked `approved: false`. Owner decision: do not create new historical results; reuse existing DEV preview data only when local debug settings are active. This scaffold does not approve the manifest or any historical data and does not alter runtime behavior.
 
 Before adding season rows, establish approved competition/club identity sources and traceable historical results.

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "status": "scaffold",
-  "sourceOfTruth": "data/history/competitions/*.json",
+  "status": "availability-scaffold",
+  "sourceOfTruth": null,
   "generatedAt": "2026-10-17",
-  "note": "Scaffold only. No authoritative historical final standings for Seasons 1–4 were found in the repository audit. Empty seasons arrays mean unavailable, not zero seasons played.",
+  "note": "Availability/provenance metadata only; no historical results are seeded. Do not copy fictional DEV output here. The existing DEV preview generator may power a clearly labelled History preview only while local debug settings are active. Without debug mode, use approved canonical results or show unavailable.",
   "competitionManifest": {
     "path": "app/competitions/_shared/manifest.json",
     "approved": false
