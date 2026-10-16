@@ -64,7 +64,7 @@
   function read(){
     const params=new URL(window.location.href).searchParams;
     const id=params.get("season"),round=params.get("matchday");
-    return {season:/^[1-9]\d{0,8}$/.test(id||"")?id:"1",
+    return {season:/^[1-9]\d{0,8}$/.test(id||"")?id:(devSeasonTwo?"2":"1"),
       view:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:/^(?:[1-9]|[12]\d|30)$/.test(round||"")?Number(round):1};
   }
