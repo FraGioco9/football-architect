@@ -11,7 +11,11 @@ function readMatchdays(){
  }catch{return 15}
 }
 let matchdays=readMatchdays();
-function selectedSeason(){return new URLSearchParams(location.search).get("season")==="1"?1:2;}
+function selectedSeason(){
+ const available=(document.documentElement.dataset.faDevSeasons||"1").split(",").map(Number).filter(Number.isSafeInteger);
+ const requested=Number(new URLSearchParams(location.search).get("season"));
+ return available.includes(requested)?requested:Math.max(...available);
+}
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
  const old=matchdays;if(value===old)return true;
@@ -125,7 +129,7 @@ if(validPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending};
-  if(savedPreviewEnabled()||selectedSeason()===2){
+  if(savedPreviewEnabled()||selectedSeason()>1){
    setPreviewEnabled(true).then(ok=>{
     const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
     if(toggle)toggle.checked=ok;
@@ -140,7 +144,7 @@ if(validPath){
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"){
-     if(next===2)await setPreviewEnabled(true);
+     if(next>1)await setPreviewEnabled(true);
      return;
     }
     // Prepare the next season while keeping the current one visible.
