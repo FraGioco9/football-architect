@@ -241,14 +241,23 @@ if (panel && divisionId) {
               dialog.close();
             };
             dialog.addEventListener("animationend",finish);
+            dialog.addEventListener("animationcancel",()=>{if(dialog.open)dialog.close();},{once:true});
           };
           close.addEventListener("click",dismiss);
           dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
-          dialog.addEventListener("click",event=>{
-            if(event.target!==dialog)return;
+          const outside=(event)=>{
+            if(event.target!==dialog)return false;
             const bounds=dialog.getBoundingClientRect();
-            if(event.clientX<bounds.left||event.clientX>bounds.right||
-               event.clientY<bounds.top||event.clientY>bounds.bottom)dismiss();
+            return event.clientX<bounds.left||event.clientX>bounds.right||
+                   event.clientY<bounds.top||event.clientY>bounds.bottom;
+          };
+          let pressedOutside=false;
+          dialog.addEventListener("pointerdown",event=>{pressedOutside=outside(event);});
+          dialog.addEventListener("pointercancel",()=>{pressedOutside=false;});
+          dialog.addEventListener("click",event=>{
+            if(event.detail===0||event.button!==0){pressedOutside=false;return;}
+            if(pressedOutside&&outside(event))dismiss();
+            pressedOutside=false;
           });
           dialog.addEventListener("keydown",event=>{
             if(event.altKey||event.ctrlKey||event.metaKey)return;
