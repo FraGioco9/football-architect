@@ -198,12 +198,20 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         for(const lang of ["en","it","de","es","fr"]){
           await run("document.documentElement.lang='"+lang+"'");
           const fixtures=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')];return {count:rows.length,options:document.querySelectorAll('[data-fixture-round-choice]').length,previous:document.getElementById('app-fixtures-previous').disabled,fit:rows.every(row=>{const b=row.getBoundingClientRect(),score=row.querySelector('.app-fixture-score').getBoundingClientRect(),home=row.querySelector('.app-fixture-home').getBoundingClientRect(),away=row.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&home.right<=score.left&&(innerWidth<=620?(away.right<=score.left&&home.width>=120&&away.width>=120):away.left>=score.right)}),statuses:rows.map(r=>r.querySelector('.app-fixture-status').textContent),text:getComputedStyle(rows[0]).color,background:getComputedStyle(rows[0]).backgroundColor}})()");
-          const currentButton=await run("(()=>{const b=document.getElementById('app-fixtures-current'),r=b.getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect();return {visible:!b.hidden,fit:r.left>=0&&r.right<=innerWidth,centered:Math.abs((r.left+r.right)-(p.left+p.right))<2,label:b.textContent}})()");
-          assert.deepEqual(currentButton,{visible:true,fit:true,centered:true,label:({en:"Current matchday",it:"Giornata attuale",de:"Aktueller Spieltag",es:"Jornada actual",fr:"Journée actuelle"})[lang]});
+          const currentButton=await run("(()=>{const b=document.getElementById('app-fixtures-current'),r=b.getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect();return {visible:!b.hidden,fit:r.left>=0&&r.right<=innerWidth&&r.width>=44,right:Math.abs(r.right-p.right)<2,sameRow:Math.abs(r.top-document.getElementById('app-fixtures-round').getBoundingClientRect().top)<2,label:b.textContent}})()");
+          assert.deepEqual(currentButton,{visible:true,fit:true,right:true,sameRow:true,label:({en:"Current matchday",it:"Giornata attuale",de:"Aktueller Spieltag",es:"Jornada actual",fr:"Journée actuelle"})[lang]},name+"/"+theme+"/"+lang+" "+await run("JSON.stringify({button:document.getElementById('app-fixtures-current').getBoundingClientRect().toJSON(),panel:document.getElementById('competition-panel-fixtures').getBoundingClientRect().toJSON()})"));
           assert.equal(fixtures.count,8);assert.equal(fixtures.options,30);assert.equal(fixtures.previous,true);
           assert.ok(fixtures.fit,"Fixtures fit "+name+"/"+theme+"/"+lang);
           assert.ok(ratio(fixtures.text,fixtures.background)>=4.5);
           assert.ok(fixtures.statuses.every(text=>text===({en:"Full time",it:"Terminata",de:"Beendet",es:"Finalizado",fr:"Terminé"})[lang]));
+        }
+        if(name==="desktop"){
+          await run("document.documentElement.lang='de'");
+          for(const width of [360,620,621,800,801,1000,1001]){
+            await cmd("Emulation.setDeviceMetricsOverride",{width,height:h,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:h});
+            assert.equal(await run("(()=>{const b=document.getElementById('app-fixtures-current').getBoundingClientRect(),n=document.querySelector('.app-fixtures-navigation').getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect();return b.width>=44&&Math.abs(b.right-p.right)<2&&Math.abs(b.top-n.top)<2&&n.right<=b.left})()"),true,"shortcut geometry at "+width);
+          }
+          await cmd("Emulation.setDeviceMetricsOverride",{width:w,height:h,deviceScaleFactor:1,mobile,screenWidth:w,screenHeight:h});
         }
         await run("document.documentElement.lang='en';window.faCompetitionRoute.set({matchday:16})");
         await wait("document.querySelector('[data-fixture-round=\"16\"]')");
@@ -384,7 +392,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await clickControl("#app-fixtures-round");
     await clickControl('[data-fixture-round-choice="13"]');
     await clickControl("#competition-tab-history");
-    assert.equal(await run("location.search"),"?season=1&view=history&matchday=13");
+    assert.equal(await run("location.search"),"?season=1&view=history");
     await run("history.back()");await wait("location.search==='?season=1&view=fixtures&matchday=13'&&window.faCompetitionRoute.get().view==='fixtures'&&window.faCompetitionRoute.get().matchday===13");
     await run("history.back()");await wait("window.faCompetitionRoute.get().matchday===12");
     await run("history.forward()");await wait("window.faCompetitionRoute.get().matchday===13");
@@ -398,11 +406,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await clickControl("#app-fixtures-current");
     assert.equal(await run("window.faCompetitionRoute.get().matchday"),16);
     await clickControl("#competition-tab-standings");
-    assert.equal(await run("location.search"),"?season=1&view=standings&matchday=16");
-    await cmd("Page.reload");await wait("!!window.faFixtures&&document.querySelectorAll('[data-fixture-match]').length===8");
+    assert.equal(await run("location.search"),"?season=1&view=standings");
     await clickControl("#competition-tab-fixtures");
     assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"16");
-    assert.equal(await run("document.getElementById('app-fixtures-current').hidden"),true);
+    await clickControl("#competition-tab-standings");
+    await cmd("Page.reload");await wait("!!window.faFixtures&&document.querySelectorAll('[data-fixture-match]').length===8");
+    await clickControl("#competition-tab-fixtures");
+    assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"1");
     // Observe actual visible frames during a catalogue-to-competition navigation.
     await run("(()=>{const slider=document.querySelector('[data-dev-control=\"matchdays\"]');slider.value='4';slider.dispatchEvent(new Event('change'))})()");
     await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");

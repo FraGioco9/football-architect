@@ -90,15 +90,15 @@ No deploy, database change or manual workflow is part of this implementation.
 
 ## Returning to the current matchday
 
-The centered **Current matchday** button appears below the round picker only when
+The **Current matchday** button appears at the right of the round picker on the same row only when
 a current round is explicitly supplied and differs from the selected round. It
-updates the URL and returns keyboard focus to the picker. Unknown public current
+updates the URL and returns keyboard focus to the picker. Desktop keeps the picker centered; narrow screens use an accessible icon shortcut and fit both controls on one row. Unknown public current
 rounds do not produce a button. DEV supplies the next unplayed round (completed
 matchdays + 1), capped at round 30 when the preview season is complete. Changing
 the DEV slider updates this target without moving the round being consulted;
 OFF/reset removes the target, and rollback restores it with the schedule.
 
-A selected round above 1 remains in the URL across all competition tabs, so
-switching to Standings, refreshing and returning to Fixtures preserves it.
-Default round 1 is omitted outside Fixtures. Back/Forward uses the URL state;
-no additional persistence key is introduced.
+The `matchday` parameter appears only in Fixtures URLs. Switching tabs within the
+loaded page retains the selected round in memory. Refreshing another tab starts
+from round 1 when returning to Fixtures; direct Fixtures links and Back/Forward
+restore their URL round. No additional persistence key is introduced.
