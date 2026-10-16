@@ -280,8 +280,11 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
     const routeState=window.faCompetitionRoute?.get?.();
-    const defaultRound=routeState?.view==="fixtures"&&Number.isInteger(routeState.matchday)
-      ?routeState.matchday:Math.min(30,matchdays+1);
+    const requestedRound=Number(new URL(window.location.href).searchParams.get("matchday"));
+    // Preserve an explicit deep-link round, but do not mistake the router's
+    // temporary default (usually round 1) for a user-selected round.
+    const defaultRound=routeState?.view==="fixtures"&&Number.isInteger(requestedRound)&&requestedRound>=1
+      ?requestedRound:Math.min(30,matchdays+1);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:defaultRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
