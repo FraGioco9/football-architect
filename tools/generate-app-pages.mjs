@@ -104,6 +104,21 @@ ${rows}
             </div>
           </div>`;
 };
+const fixturesContent = ()=>`
+            <div class="app-fixtures-toolbar">
+              <label for="app-fixtures-round" data-app-i18n="fixturesMatchday">Matchday</label>
+              <div class="app-fixtures-navigation">
+                <button type="button" class="app-link app-link-secondary" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled>‹</button>
+                <select id="app-fixtures-round" disabled>
+${Array.from({length:30},(_,i)=>'                  <option value="'+(i+1)+'">'+(i+1)+'</option>').join("\n")}
+                </select>
+                <button type="button" class="app-link app-link-secondary" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled>›</button>
+              </div>
+              <p id="app-fixtures-summary" class="app-fixtures-summary" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+            </div>
+            <p id="app-fixtures-preview" class="app-fixtures-preview" data-app-i18n="fixturesPreview" hidden>Fictional preview — not official results.</p>
+            <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>`;
 const competitionTabs = function competitionTabs(d,standings) {
  const views=[
   ["standings","competitionTabStandings","Standings"],
@@ -126,6 +141,7 @@ const competitionTabs = function competitionTabs(d,standings) {
  const panels=views.map(([id,key,label],i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
+  if(id==="fixtures")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>${fixturesContent()}\n          </section>`;
   if(id==="rules")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>\n            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>${d.capacity}</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>${d.tier}</dd></div></dl>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");

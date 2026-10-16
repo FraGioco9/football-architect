@@ -1,0 +1,82 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const divisions=JSON.parse(read('app/competitions/_shared/manifest.json')).divisions;
+
+test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an honest empty state',()=>{
+ for(const d of divisions){
+  const html=read('app/competitions/'+d.id.toLowerCase()+'/index.html');
+  assert.ok(html.includes('id="app-fixtures-round"'),d.id);
+  assert.ok(html.includes('for="app-fixtures-round"'),d.id);
+  assert.equal((html.match(/<option value="\d+">/g)||[]).length,30,d.id);
+  assert.ok(html.includes('id="app-fixtures-list"'),d.id);
+  assert.ok(html.includes('id="app-fixtures-empty"'),d.id);
+  assert.ok(html.includes('aria-live="polite"'),d.id);
+  assert.ok(!html.includes('data-fixture-match='),d.id+' has no fabricated public matches');
+ }
+});
+
+function node(tag='div'){
+ const n={tagName:tag,children:[],dataset:{},attrs:{},events:{},textContent:'',value:'1',disabled:true,hidden:false,
+  append(...items){this.children.push(...items)},appendChild(item){this.children.push(item);return item},
+  replaceChildren(...items){this.children=[...items]},setAttribute(k,v){this.attrs[k]=String(v)},
+  addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
+ return n;
+}
+function setup(d=divisions[0]){
+ const fields=new Map(['round','previous','next','list','empty','summary'].map(id=>['app-fixtures-'+id,node()]));
+ const window={faCompetitionDivision:d,faAppRenderLanguage(){}};
+ const document={documentElement:{lang:'en'},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
+ runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
+ return {view:window.faFixtures,fields};
+}
+const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...f,kickoff:null,
+ homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
+const contents=n=>n.textContent+n.children.map(contents).join(' ');
+
+test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
+ for(const d of divisions){
+  const {view,fields}=setup(d),round=fields.get('app-fixtures-round'),list=fields.get('app-fixtures-list');
+  assert.equal(fields.get('app-fixtures-empty').hidden,false);
+  const fixtures=schedule(d);fixtures.find(f=>f.round===1).homeGoals=0;fixtures.find(f=>f.round===1).awayGoals=0;
+  const commit=view.prepare(fixtures);assert.equal(list.children.length,0,'preparation is detached');commit();
+  assert.equal(list.children.length,8);assert.equal(round.disabled,false);
+  assert.equal(fields.get('app-fixtures-previous').disabled,true);
+  assert.ok(contents(list).includes('0 – 0'),'zero is a played score');
+  round.value='16';round.emit('change');
+  assert.equal(list.children.length,8);assert.ok(list.children.every(x=>x.dataset.fixtureRound==='16'));
+  assert.ok(!contents(list).includes(' – '),'future fixtures do not reveal generated future scores');
+  fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'17');
+  round.value='30';round.emit('change');assert.equal(fields.get('app-fixtures-next').disabled,true);
+  fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'30');
+  const restore=view.snapshot();view.prepare(null)();assert.equal(list.children.length,0);restore();
+  assert.equal(list.children.length,8);assert.equal(round.value,'30');
+ }
+});
+
+test('FIXTURES-03: invalid and incomplete schedules never replace valid rendered matches',()=>{
+ const d=divisions[0],{view,fields}=setup(d),fixtures=schedule(d);
+ view.prepare(fixtures)();const previous=fields.get('app-fixtures-list').children;
+ const bad=[fixtures.slice(1),[...fixtures,fixtures[0]],fixtures.map((f,i)=>i?f:{...f,homeId:40}),
+  fixtures.map((f,i)=>i?f:{...f,round:31}),fixtures.map((f,i)=>i?f:{...f,awayGoals:null}),
+  fixtures.map((f,i)=>i?f:{...f,homeGoals:-1}),fixtures.map((f,i)=>i?f:{...f,kickoff:'2026-10-20T12:00:00'}),
+  fixtures.map((f,i)=>i?f:{...f,kickoff:'2026-99-99T12:00:00Z'}),
+  fixtures.map((f,i)=>i?f:{...f,kickoff:'2026-02-30T12:00:00Z'}),
+  fixtures.map((f,i)=>i?f:{...f,kickoff:'2026-10-20T24:00:00Z'}),fixtures.map((f,i)=>i?f:{...f,awayId:f.homeId})];
+ for(const data of bad){assert.throws(()=>view.prepare(data));assert.equal(fields.get('app-fixtures-list').children,previous);}
+});
+
+test('FIXTURES-04: names are plain text, timing stays unknown unless supplied and selected rounds survive updates',()=>{
+ const d=structuredClone(divisions[0]);d.clubs[0].primaryName='<img src=x onerror=alert(1)>';
+ const {view,fields}=setup(d),fixtures=schedule(d),round=fields.get('app-fixtures-round');
+ fixtures.find(f=>f.round===1).kickoff='2026-10-20T12:30:00Z';
+ view.prepare(fixtures)();assert.ok(contents(fields.get('app-fixtures-list')).includes('<img src=x onerror=alert(1)>'));
+ const walk=n=>[n,...n.children.flatMap(walk)];
+ assert.equal(walk(fields.get('app-fixtures-list')).filter(n=>n.tagName==='img').length,0);
+ assert.equal(walk(fields.get('app-fixtures-list')).filter(n=>n.tagName==='time').length,1);
+ round.value='23';round.emit('change');view.prepare(schedule(d,30))();assert.equal(round.value,'23');
+ round.value='invalid';round.emit('change');assert.equal(round.value,'23');
+});

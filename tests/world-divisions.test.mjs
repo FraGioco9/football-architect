@@ -199,7 +199,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js"]'));
+ assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-fixtures.js","competition-tabs.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
  assert.ok(code.includes("tabs.length !== 6"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key === "'+key+'"'));

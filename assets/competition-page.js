@@ -421,7 +421,8 @@
     tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
     commitMobile();
     window.faStandingsMobile = mobile;
-    for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js"])
+    window.faCompetitionDivision=division;
+    for (const script of ["landing.js","app.js","app-search.js","competition-fixtures.js","competition-tabs.js"])
       await loadScript(script);
   }
   start().catch(fail);

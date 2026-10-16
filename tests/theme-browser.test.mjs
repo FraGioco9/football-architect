@@ -8,6 +8,8 @@ import {tmpdir} from "node:os";
 import {join,resolve,extname,sep} from "node:path";
 import {fileURLToPath} from "node:url";
 import {once} from "node:events";
+import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
+import {createPreviewServer} from "../tools/dev-standings-preview.mjs";
 import {setTimeout as delay} from "node:timers/promises";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"};
@@ -21,6 +23,9 @@ const server=createServer(async(req,res)=>{
     res.end(await readFile(file));
   }catch{res.writeHead(404);res.end("Not found");}
 });
+// Adapter exercises the actual DEV server on an isolated ephemeral test port.
+const devRouter=createPreviewServer();
+const devServer=createServer((req,res)=>{req.headers.host="127.0.0.1:2000";devRouter.emit("request",req,res)});
 const chrome=()=>{
   const windows=process.platform==="win32"?[
     process.env.ProgramFiles&&join(process.env.ProgramFiles,"Google","Chrome","Application","chrome.exe"),
@@ -47,6 +52,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
   const browser=chrome();
   server.listen(0,"127.0.0.1");await once(server,"listening");
   const origin="http://127.0.0.1:"+server.address().port;
+  devServer.listen(0,"127.0.0.1");await once(devServer,"listening");
+  const devOrigin="http://127.0.0.1:"+devServer.address().port;
   const dir=await mkdtemp(join(tmpdir(),"fa-theme-browser-"));
   const proc=spawn(browser,["--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
     "--no-proxy-server","--disable-background-networking","--disable-extensions","--disable-sync",
@@ -140,6 +147,30 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
         assert.ok(table.logo?.endsWith("-"+theme+".svg"),name+" async logo");
         await snap(name+" "+theme+" standings",w,h);
+        // Fixtures: real browser behavior with a test-only supplied schedule.
+        await wait("!!window.faFixtures");
+        await run("document.getElementById('competition-tab-fixtures').click()");
+        const emptyFixtures=await run("({count:document.querySelectorAll('[data-fixture-match]').length,empty:!document.getElementById('app-fixtures-empty').hidden,disabled:document.getElementById('app-fixtures-round').disabled})");
+        assert.deepEqual(emptyFixtures,{count:0,empty:true,disabled:true});
+        const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
+        const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
+        await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
+        for(const lang of ["en","it","de","es","fr"]){
+          await run("document.documentElement.lang='"+lang+"'");
+          const fixtures=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')];return {count:rows.length,options:document.getElementById('app-fixtures-round').options.length,previous:document.getElementById('app-fixtures-previous').disabled,fit:rows.every(row=>{const b=row.getBoundingClientRect(),score=row.querySelector('.app-fixture-score').getBoundingClientRect(),home=row.querySelector('.app-fixture-home').getBoundingClientRect(),away=row.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&home.right<=score.left&&(innerWidth<=620?(away.right<=score.left&&home.width>=120&&away.width>=120):away.left>=score.right)}),statuses:rows.map(r=>r.querySelector('.app-fixture-status').textContent),text:getComputedStyle(rows[0]).color,background:getComputedStyle(rows[0]).backgroundColor}})()");
+          assert.equal(fixtures.count,8);assert.equal(fixtures.options,30);assert.equal(fixtures.previous,true);
+          assert.ok(fixtures.fit,"Fixtures fit "+name+"/"+theme+"/"+lang);
+          assert.ok(ratio(fixtures.text,fixtures.background)>=4.5);
+          assert.ok(fixtures.statuses.every(text=>text===({en:"Full time",it:"Terminata",de:"Beendet",es:"Finalizado",fr:"Terminé"})[lang]));
+        }
+        await run("document.documentElement.lang='en';const select=document.getElementById('app-fixtures-round');select.value='16';select.dispatchEvent(new Event('change'))");
+        await wait("document.querySelector('[data-fixture-round=\"16\"]')");
+        const scheduled=await run("({scores:[...document.querySelectorAll('.app-fixture-score')].map(x=>x.textContent),next:document.getElementById('app-fixtures-next').disabled})");
+        assert.ok(scheduled.scores.every(score=>score==="—"));assert.equal(scheduled.next,false);
+        await snap(name+" "+theme+" Fixtures",w,h);
+        const last=await run("(()=>{const s=document.getElementById('app-fixtures-round');s.value='30';s.dispatchEvent(new Event('change'));return {value:s.value,next:document.getElementById('app-fixtures-next').disabled}})()");
+        assert.deepEqual(last,{value:"30",next:true});
+        await run("window.faFixtures.prepare(null)();document.getElementById('competition-tab-standings').click()");
         // UX-01B: desktop-only styling, sticky geometry and both themes.
         if(name==="desktop"){
           for(const width of [621,1024,1159,1160,1440]){
@@ -251,6 +282,43 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         checks.push(name+"/"+theme);
       }
     }
+    // Fixtures integration: real DEV switch, slider, standings totals and OFF restoration.
+    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1/"});
+    await wait("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
+    await run("document.getElementById('competition-tab-fixtures').click();document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
+    for(const completed of [0,1,2,3,4,15,30]){
+      await run("(()=>{const s=document.querySelector('[data-dev-control=\"matchdays\"]');s.value='"+completed+"';s.dispatchEvent(new Event('change'))})()");
+      await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='"+completed+"'");
+      const preview=await run("(()=>{const round=document.getElementById('app-fixtures-round');round.value='1';round.dispatchEvent(new Event('change'));const matches=[...document.querySelectorAll('[data-fixture-match]')];return {count:matches.length,scores:matches.map(row=>row.querySelector('.app-fixture-score').textContent),notice:!document.getElementById('app-fixtures-preview').hidden,allPlayed:[...document.querySelectorAll('#app-standings-body tr')].every(row=>row.cells[2].textContent==='"+completed+"')}})()");
+      assert.equal(preview.count,8);assert.equal(preview.notice,true);assert.equal(preview.allPlayed,true);
+      assert.ok(preview.scores.every(score=>completed===0?score==="—":/^\d+ – \d+$/.test(score)));
+    }
+    // Compare every match score and each club's goal totals against the same deterministic model.
+    const agreement=await run("(()=>{const totals=new Map([...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,{gf:Number(row.cells[6].textContent),ga:Number(row.cells[7].textContent),actualFor:0,actualAgainst:0}]));for(let n=1;n<=30;n++){const select=document.getElementById('app-fixtures-round');select.value=String(n);select.dispatchEvent(new Event('change'));for(const row of document.querySelectorAll('[data-fixture-match]')){const scores=row.querySelector('.app-fixture-score').textContent.split(' – ').map(Number),crests=[...row.querySelectorAll('[data-club-crest]')],home=totals.get(crests[0].dataset.clubCrest),away=totals.get(crests[1].dataset.clubCrest);home.actualFor+=scores[0];home.actualAgainst+=scores[1];away.actualFor+=scores[1];away.actualAgainst+=scores[0]}}return [...totals.values()].every(c=>c.gf===c.actualFor&&c.ga===c.actualAgainst)})()");
+    assert.equal(agreement,true,"Fixtures and standings share the same 240 results");
+    await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===0");
+    assert.equal(await run("document.getElementById('app-fixtures-preview').hidden&&document.getElementById('app-fixtures-round').disabled"),true);
+    // OFF remains OFF after refresh; it never leaks fictional matches into the public view.
+    await cmd("Page.reload");
+    await wait("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
+    assert.equal(await run("document.querySelectorAll('[data-fixture-match]').length"),0);
+    await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
+    await run("(()=>{const s=document.querySelector('[data-dev-control=\"matchdays\"]');s.value='4';s.dispatchEvent(new Event('change'))})()");
+    await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
+    await cmd("Page.reload");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===8&&document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
+    assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"4","existing session matchday preference restores both views");
+    await run("document.querySelector('[data-dev-control=\"reset-page\"]').click()");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===0&&!document.querySelector('[data-dev-control=\"fictional-standings\"]').checked");
+    assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"15");
+    await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===8");
+    await run("document.querySelector('[data-dev-control=\"reset-global\"]').click()");
+    await wait("document.querySelectorAll('[data-fixture-match]').length===0");
+    assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-preview')"),null);
     // DIV-ASSET-07: artwork must render from the HTML with all page scripts disabled.
     // Declarative shadow DOM prevents the original .s0/.s1 rules crossing logo boundaries.
     const divisions=JSON.parse(await readFile(join(root,"data/divisions.json"),"utf8"));
@@ -286,7 +354,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}
-    proc.kill("SIGTERM");server.close();
+    proc.kill("SIGTERM");devServer.close();server.close();
     await new Promise(ok=>server.once("close",ok));
     for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);
     if(proc.exitCode===null)proc.kill("SIGKILL");

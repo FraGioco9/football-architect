@@ -158,7 +158,8 @@ function waitForRows() {
     let done = false;
     const table = () => {
       const tbody = document.getElementById("app-standings-body");
-      if (tbody?.rows.length === 16 && document.querySelector(".app-world-standing-table")) {
+      if (tbody?.rows.length === 16 && document.querySelector(".app-world-standing-table") &&
+          typeof window.faFixtures?.prepare === "function") {
         finish(null, tbody);
       }
     };
@@ -244,6 +245,16 @@ async function boot(routeId) {
     const mobile = window.faStandingsMobile;
     if (typeof mobile?.prepare !== "function") throw Error("Mobile standings unavailable");
     const commitMobile = mobile.prepare(rows);
+    const fixtures=window.faFixtures;
+    if(typeof fixtures?.prepare!=="function")throw Error("Fixtures view unavailable");
+    const schedule=createPreviewStandings(division,30).fixtures.map(game=>({...game,kickoff:null,
+      homeGoals:game.round<=matchdays?game.homeGoals:null,
+      awayGoals:game.round<=matchdays?game.awayGoals:null}));
+    const commitFixtures=fixtures.prepare(schedule);
+    const restoreFixtures=fixtures.snapshot();
+    const fixturePreview=document.getElementById("app-fixtures-preview");
+    if(!fixturePreview)throw Error("Fixtures preview notice unavailable");
+    const previewWasHidden=fixturePreview.hidden;
 
     const caption = document.getElementById("app-standings-caption");
     if(!caption)throw Error("Missing standings caption");
@@ -356,6 +367,8 @@ async function boot(routeId) {
       if(committed){
        attempt(()=>tbody.replaceChildren(...canonicalRows));
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
+       attempt(()=>restoreFixtures());
+       attempt(()=>{fixturePreview.hidden=previewWasHidden});
        attempt(()=>{
         if(captionI18n===null)caption.removeAttribute("data-app-i18n");
         else caption.setAttribute("data-app-i18n",captionI18n);
@@ -371,6 +384,8 @@ async function boot(routeId) {
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
     commitMobile();
+    commitFixtures();
+    fixturePreview.hidden=false;
     // Preserve the canonical compact-form marks exactly as rendered. Bind taps
     // directly to those marks and cancel the enclosing <summary> activation.
     const mobileItems=[...mobileList.querySelectorAll(".app-world-mobile-item")];

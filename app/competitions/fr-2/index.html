@@ -239,7 +239,49 @@
           </div>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
-            <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <div class="app-fixtures-toolbar">
+              <label for="app-fixtures-round" data-app-i18n="fixturesMatchday">Matchday</label>
+              <div class="app-fixtures-navigation">
+                <button type="button" class="app-link app-link-secondary" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled>‹</button>
+                <select id="app-fixtures-round" disabled>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+                  <option value="16">16</option>
+                  <option value="17">17</option>
+                  <option value="18">18</option>
+                  <option value="19">19</option>
+                  <option value="20">20</option>
+                  <option value="21">21</option>
+                  <option value="22">22</option>
+                  <option value="23">23</option>
+                  <option value="24">24</option>
+                  <option value="25">25</option>
+                  <option value="26">26</option>
+                  <option value="27">27</option>
+                  <option value="28">28</option>
+                  <option value="29">29</option>
+                  <option value="30">30</option>
+                </select>
+                <button type="button" class="app-link app-link-secondary" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled>›</button>
+              </div>
+              <p id="app-fixtures-summary" class="app-fixtures-summary" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+            </div>
+            <p id="app-fixtures-preview" class="app-fixtures-preview" data-app-i18n="fixturesPreview" hidden>Fictional preview — not official results.</p>
+            <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>
           </section>
           <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabStats">Stats</h2>
