@@ -59,6 +59,18 @@ if (panel && divisionId) {
 .fa-dev-stats-top strong{font-variant-numeric:tabular-nums}
 @media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
 `;
+  style.textContent += `
+.fa-dev-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fa-dev-stats-card{border-color:rgba(128,145,145,.18);padding:14px}
+.fa-dev-stats-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fa-dev-stats-record{border:1px solid rgba(128,145,145,.18);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
+.fa-dev-stats-record-label{font-size:.82rem;opacity:.7}
+.fa-dev-stats-record strong{font-variant-numeric:tabular-nums;font-size:1.1rem}
+.fa-dev-stats-record .app-world-club-identity,.fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;gap:9px;min-width:0}
+.fa-dev-stats-record .app-world-club-crest-placeholder,.fa-dev-stats-top .app-world-club-crest-placeholder{flex:none}
+@media(max-width:700px){.fa-dev-stats-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.fa-dev-stats-record-grid{grid-template-columns:1fr}}
+`;
   document.head.append(style);
   const root = create("div");
   root.id = "fa-dev-stats";
@@ -115,13 +127,10 @@ if (panel && divisionId) {
     const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
     if (view === "overview") {
       const o = stats.overview;
-      const best = (key,ascending=false) => {const t=ranked(key,ascending)[0];return t?t.clubName+" · "+number(t[key]):"—";};
       const groups = [
-        ["General",[["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]],
-        ["Results",[["Home wins",o.homeWins+" ("+pct(o.homeWinPct)+")"],["Draws",o.draws+" ("+pct(o.drawPct)+")"],["Away wins",o.awayWins+" ("+pct(o.awayWinPct)+")"]]],
-        ["Team records",[["Best attack",best("gf")],["Worst attack",best("gf",true)],["Best defence",best("ga",true)],["Worst defence",best("ga")],["Most wins",best("w")],["Most clean sheets",best("cs")]]],
-        ["Records",[["Clean sheets",o.cleanSheets],["Most frequent score",o.mostFrequentScoreline?o.mostFrequentScoreline.score+" ("+o.mostFrequentScoreline.count+")":"—"],["Highest-scoring matches",o.highestScoringMatches.length?o.highestScoringMatches.map(g=>g.homeGoals+"–"+g.awayGoals+" (MD "+g.round+")").join(", "):"—"]]]
+        ["General",[["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]]
       ];
+      const recordItems=[["Best attack","gf",false],["Worst attack","gf",true],["Best defence","ga",true],["Worst defence","ga",false],["Most wins","w",false],["Most clean sheets","cs",false]];
       for(const [heading,cards] of groups){
         const section=create("section",undefined,"fa-dev-stats-section");
         section.append(create("h3",heading,"fa-dev-stats-heading"));
@@ -132,6 +141,24 @@ if (panel && divisionId) {
         }
         section.append(grid);root.append(section);
       }
+      const section=create("section",undefined,"fa-dev-stats-section");
+      section.append(create("h3","Team records","fa-dev-stats-heading"));
+      const grid=create("div",undefined,"fa-dev-stats-record-grid");
+      for(const [label,key,ascending] of recordItems){
+        const team=ranked(key,ascending)[0];
+        const card=create("div",undefined,"fa-dev-stats-record");
+        card.append(create("span",label,"fa-dev-stats-record-label"));
+        if(team){
+          const identity=create("div",undefined,"app-world-club-identity");
+          const crest=create("span",undefined,"app-world-club-crest-placeholder");
+          crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
+          crest.setAttribute("aria-hidden","true");
+          identity.append(crest,create("span",team.clubName,"app-world-club-name"));
+          card.append(identity,create("strong",number(team[key])));
+        }
+        grid.append(card);
+      }
+      section.append(grid);root.append(section);
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
@@ -141,7 +168,7 @@ if (panel && divisionId) {
     for(const [key,label] of categories){const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamCategory===key));button.addEventListener("click",()=>{teamCategory=key;render();});categoryNav.append(button);}
     leaders.append(categoryNav);
     const top=create("ol",undefined,"fa-dev-stats-top");
-    ranked(teamCategory,teamCategory==="ga").slice(0,5).forEach(t=>{const li=create("li");li.append(create("span",t.clubName),create("strong",number(t[teamCategory])));top.append(li);});
+    ranked(teamCategory,teamCategory==="ga").slice(0,5).forEach(t=>{const li=create("li");const identity=create("span",undefined,"app-world-club-identity");const crest=create("span",undefined,"app-world-club-crest-placeholder");crest.dataset.clubCrest=division.countryId+"-"+t.clubId;crest.setAttribute("aria-hidden","true");identity.append(crest,create("span",t.clubName));li.append(identity,create("strong",number(t[teamCategory])));top.append(li);});
     leaders.append(top);root.append(leaders);
     const subnav=create("div",undefined,"fa-dev-stats-subnav");
     for(const [id,label] of [["performance","Performance"],["additional","Additional"]]){
