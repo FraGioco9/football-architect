@@ -93,6 +93,7 @@ if (panel && divisionId) {
 .fa-dev-stats-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
 .fa-dev-stats-dialog-header h3{margin:0;font-size:1rem}
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
+.fa-dev-stats-dialog-close:focus,.fa-dev-stats-dialog-close:focus-visible{outline:none;box-shadow:none;background:transparent}
 .fa-dev-stats-dialog .fa-dev-stats-top{max-width:none;list-style:none;padding:0;margin:0}
 .fa-dev-stats-dialog .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px}
 .fa-dev-stats-expand:hover{opacity:1;background:transparent;text-decoration:underline}
