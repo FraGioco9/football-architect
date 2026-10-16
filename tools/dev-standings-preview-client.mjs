@@ -12,9 +12,12 @@ function readMatchdays(){
 }
 let matchdays=readMatchdays();
 function selectedSeason(){
- const available=(document.documentElement.dataset.faDevSeasons||"1").split(",").map(Number).filter(Number.isSafeInteger);
+ const available=(document.documentElement.dataset.faDevSeasons||"1,2").split(",").map(Number).filter(Number.isSafeInteger);
  const requested=Number(new URLSearchParams(location.search).get("season"));
- return available.includes(requested)?requested:Math.max(...available);
+ // The DEV client can start before the preview server's season marker is hydrated.
+ // Preserve an explicit supported deep-link season instead of silently falling back to season 1.
+ if([1,2].includes(requested))return requested;
+ return available.includes(1)||available.includes(2)?Math.max(...available.filter(season=>[1,2].includes(season))):1;
 }
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
