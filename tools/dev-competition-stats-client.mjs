@@ -149,19 +149,13 @@ if (panel && divisionId) {
     const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
     if (view === "overview") {
       const o = stats.overview;
-      const groups = [
-        ["General",[["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]]
-      ];
-      for(const [heading,cards] of groups){
-        const section=create("section",undefined,"fa-dev-stats-section");
-        section.append(create("h3",heading,"fa-dev-stats-heading"));
-        const grid=create("div",undefined,"fa-dev-stats-grid");
-        for(const [label,value] of cards){
-          const card=create("div",undefined,"fa-dev-stats-card");
-          card.append(create("span",label),hasMatches?create("strong",value):create("span","No statistics available yet.","fa-dev-stats-empty"));grid.append(card);
-        }
-        section.append(grid);root.append(section);
+      const grid=create("div",undefined,"fa-dev-stats-grid");
+      for(const [label,value] of [["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]){
+        const card=create("div",undefined,"fa-dev-stats-card");
+        card.append(create("span",label),hasMatches?create("strong",value):create("span","No statistics available yet.","fa-dev-stats-empty"));
+        grid.append(card);
       }
+      root.append(grid);
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
