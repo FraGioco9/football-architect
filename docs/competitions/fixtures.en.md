@@ -6,6 +6,7 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 
 - One round at a time, with a top-centered, labeled 1–30 selector styled with
   the shared site control and previous/next buttons. No repeated Fixtures heading.
+  The round/match-count announcement is available only to assistive technology.
   Round 1 is the initial selection. Changing data preserves the selected round.
 - Eight matches per round; home club, score when played, away club, timing and
   scheduled/full-time state. On narrow screens home/away clubs stack beside the

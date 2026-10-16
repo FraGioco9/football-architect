@@ -426,7 +426,6 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 html[data-theme="light"] .app-fixtures-navigation select{color-scheme:light}
 .app-fixtures-navigation :disabled{opacity:.45;cursor:default}
 .app-fixtures-navigation select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-fixtures-summary{display:flex;align-items:center;gap:7px;margin:0;color:var(--muted);font-size:12px}
 .app-fixtures-list{list-style:none;display:grid;gap:8px;padding:0;margin:0}
 .app-fixture-match{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;gap:8px 14px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
 .app-fixture-club{display:flex;align-items:center;gap:8px;min-width:0;font-size:14px;font-weight:700}
@@ -435,7 +434,7 @@ html[data-theme="light"] .app-fixtures-navigation select{color-scheme:light}
 .app-fixture-score{text-align:center;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .app-fixture-meta{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:8px 16px;flex-wrap:wrap;color:var(--muted);font-size:11px}
 .app-fixture-status{font-weight:650}
-.app-fixtures-list[hidden],.app-fixtures-summary[hidden]{display:none}
+.app-fixtures-list[hidden]{display:none}
 @media(max-width:620px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 50px minmax(0,1fr);gap:8px;padding:12px 10px}.app-fixture-club{font-size:12px;gap:5px}.app-fixture-club .app-world-club-crest-placeholder{flex-basis:22px;width:22px;height:24px}.app-fixture-score{font-size:14px}}
 @media(max-width:620px){
  .app-fixture-match{grid-template-columns:minmax(0,1fr) 50px}
