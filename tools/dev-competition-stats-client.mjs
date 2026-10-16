@@ -61,9 +61,9 @@ if (panel && divisionId) {
 `;
   style.textContent += `
 .fa-dev-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.fa-dev-stats-card{border-color:rgba(128,145,145,.18);padding:14px}
+.fa-dev-stats-card{border-color:rgba(128,145,145,.12);padding:14px}
 .fa-dev-stats-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.fa-dev-stats-record{border:1px solid rgba(128,145,145,.18);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
+.fa-dev-stats-record{border:1px solid rgba(128,145,145,.12);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
 .fa-dev-stats-record-label{font-size:.82rem;opacity:.7}
 .fa-dev-stats-record strong{font-variant-numeric:tabular-nums;font-size:1.1rem}
 .fa-dev-stats-record .app-world-club-identity,.fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;gap:9px;min-width:0}
@@ -73,7 +73,7 @@ if (panel && divisionId) {
 `;
   style.textContent += `
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.22);border-radius:12px;padding:16px}
+.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
 .fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
 .fa-dev-stats-leader-card .fa-dev-stats-top{max-width:none;list-style:none}
 .fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
@@ -95,7 +95,7 @@ if (panel && divisionId) {
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
 .fa-dev-stats-dialog .fa-dev-stats-top{max-width:none;list-style:none;padding:0;margin:0}
 .fa-dev-stats-dialog .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px}
-.fa-dev-stats-expand:hover,.fa-dev-stats-expand:focus-visible{opacity:1;background:rgba(128,145,145,.1)}
+.fa-dev-stats-expand:hover,.fa-dev-stats-expand:focus-visible{opacity:1;background:transparent;text-decoration:underline}
 .fa-dev-stats-expand:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
 .fa-dev-stats-leader-card .app-world-club-identity{min-width:0}
