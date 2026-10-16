@@ -120,7 +120,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
-          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")){
+          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")||label.startsWith("STANDINGS-MOBILE ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
         chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
@@ -391,6 +391,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=standings"});
       await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
       assert.equal(await run("document.documentElement.dataset.theme"),theme);
+      const expectedStadiums=createPreviewStandings(division,7,1).rows.map(row=>({homeId:row.recent[0].homeId,stadium:division.clubs.find(c=>c.clubId===row.recent[0].homeId).stadiumName}));
+      for(const index of [0,1]){
+        await tap('#app-standings-compact-list > li:nth-child('+(index+1)+') .app-world-form-dot');
+        await wait("!document.getElementById('fa-dev-form-tooltip').hidden");
+        const details=await run("(()=>{const t=document.getElementById('fa-dev-form-tooltip'),r=t.getBoundingClientRect();return {date:t.querySelector('.app-world-form-tooltip-date')?.textContent,stadium:t.querySelector('.app-world-form-tooltip-stadium')?.textContent,fit:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,overflow:t.scrollWidth>t.clientWidth}})()");
+        assert.equal(details.date,'Date TBD');assert.equal(details.stadium,expectedStadiums[index].stadium,'tooltip always names the home stadium');assert.equal(details.fit,true);assert.equal(details.overflow,false);
+        if(index===0)await snap("STANDINGS-MOBILE "+width+" "+theme+" date and stadium",width,height);
+      }
       await tap('#competition-tab-fixtures');await expectSeason(1,8);
       const centeredControls=await run("(()=>{const n=document.querySelector('.app-fixtures-navigation').getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect(),b=document.getElementById('app-fixtures-round').getBoundingClientRect();return {center:(n.left+n.right)/2,panel:(p.left+p.right)/2,width:n.width,height:b.height,arrow:document.getElementById('app-fixtures-next').getBoundingClientRect().width}})()");
       assert.ok(centeredControls.height<=32&&centeredControls.arrow<=32,'compact mobile matchday controls');

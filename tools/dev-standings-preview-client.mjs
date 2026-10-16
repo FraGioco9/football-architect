@@ -49,23 +49,23 @@ async function resetPreview(){
 }
 const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
 const LANG = {
-  en: { round: "Matchday",
+  en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
     letters: {W:"W",D:"D",L:"L"},
     recent: "latest match" },
-  de: { round: "Spieltag",
+  de: { round: "Spieltag", dateUnknown: "Datum offen",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
     letters: {W:"S",D:"U",L:"N"},
     recent: "letztes Spiel" },
-  es: { round: "Jornada",
+  es: { round: "Jornada", dateUnknown: "Fecha pendiente",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
     letters: {W:"V",D:"E",L:"D"},
     recent: "último partido" },
-  fr: { round: "Journée",
+  fr: { round: "Journée", dateUnknown: "Date à définir",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
     letters: {W:"V",D:"N",L:"D"},
     recent: "dernier match" },
-  it: { round: "Giornata",
+  it: { round: "Giornata", dateUnknown: "Data da definire",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
     letters: {W:"V",D:"N",L:"P"},
     recent: "ultima partita" }
@@ -175,6 +175,11 @@ if(validPath){
 }
 
 function strings() { return LANG[document.documentElement.lang] || LANG.en; }
+function formatMatchDate(game,language) {
+  if(typeof game.kickoff!=="string"||!Number.isFinite(Date.parse(game.kickoff)))return null;
+  return new Intl.DateTimeFormat(language,{dateStyle:"medium",timeStyle:"short"})
+    .format(new Date(game.kickoff));
+}
 function node(tag, className = "", value = "") {
   const el = document.createElement(tag);
   el.className = className;
@@ -313,7 +318,8 @@ async function boot(routeId,restorePrevious=null) {
     const roundLabel = node("span");
     const roundNumber = node("strong");
     round.append(roundLabel, roundNumber);
-    meta.append(round);
+    const date = node("time", "app-world-form-tooltip-date");
+    meta.append(round,date);
     const scoreline = node("div", "app-world-form-tooltip-scoreline");
     const homeName = node("span", "app-world-form-tooltip-team");
     const score = node("strong", "app-world-form-tooltip-score");
@@ -321,7 +327,8 @@ async function boot(routeId,restorePrevious=null) {
     scoreline.append(homeName, score, awayName);
     const context = node("div", "app-world-form-tooltip-context");
     const perspective = node("span");
-    context.append(perspective);
+    const stadium = node("span", "app-world-form-tooltip-stadium");
+    context.append(perspective,stadium);
     tooltip.append(meta, scoreline, context);
     const lookup = new Map(clubs.map(c => [c.clubId, c]));
     let active = null;
@@ -372,6 +379,10 @@ async function boot(routeId,restorePrevious=null) {
            (entry.latest ? " — " + t.recent : ""));
        }
       if (selected) {
+        const formattedDate=formatMatchDate(selected.game,document.documentElement.lang||"en");
+        date.textContent=formattedDate||t.dateUnknown;
+        if(formattedDate)date.setAttribute("datetime",selected.game.kickoff);
+        else date.removeAttribute("datetime");
         roundLabel.textContent = t.round + " ";
         perspective.textContent = selected.game.isHome ? t.home : t.away;
       }
@@ -385,6 +396,7 @@ async function boot(routeId,restorePrevious=null) {
       awayName.textContent = lookup.get(game.awayId).primaryName;
       score.textContent = game.homeGoals + " – " + game.awayGoals;
       roundNumber.textContent = String(game.round);
+      stadium.textContent = lookup.get(game.homeId).stadiumName;
       tooltip.hidden = false;
       tooltip.className = "app-world-form-tooltip";
       tooltip.removeAttribute("aria-hidden");

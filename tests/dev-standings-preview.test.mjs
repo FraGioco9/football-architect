@@ -528,3 +528,15 @@ test("DEV-FIXTURES-READY: restored preview waits for Fixtures runtime as well as
  assert.equal(await pending,body);
  assert.equal(early,false,'standings rows alone must not release initial DEV hydration');
 });
+
+
+test('STANDINGS-TOOLTIP-DATE: supplied kickoff is localized and missing dates stay unknown',()=>{
+ const start=client.indexOf('function formatMatchDate('),end=client.indexOf('\nfunction node(',start);
+ assert.ok(start>=0&&end>start,'tooltip date formatter exists');
+ const format=runInNewContext(client.slice(start,end)+';formatMatchDate');
+ assert.equal(format({},'en'),null);
+ assert.equal(format({kickoff:null},'it'),null);
+ assert.equal(format({kickoff:'invalid'},'en'),null);
+ const kickoff='2026-10-20T12:30:00Z';
+ for(const lang of ['en','it','de','es','fr'])assert.equal(format({kickoff},lang),new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(kickoff)));
+});
