@@ -173,8 +173,13 @@
     if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
     syncTabOverflow();
   };
-  requestAnimationFrame(()=>requestAnimationFrame(restoreTabScroll));
-  window.addEventListener("load",()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    restoreTabScroll();restoringTabScroll=false;
-  })),{once:true});
+  restoreTabScroll();
+  requestAnimationFrame(()=>{
+    restoreTabScroll();
+    requestAnimationFrame(()=>{
+      restoreTabScroll();restoringTabScroll=false;
+      document.documentElement.dataset.faDevStandingsPending &&
+        document.documentElement.style.setProperty("--fa-tabs-restored","1");
+    });
+  });
 })();
