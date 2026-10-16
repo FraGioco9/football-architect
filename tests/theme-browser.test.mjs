@@ -394,7 +394,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const expectedStadiums=createPreviewStandings(division,7,1).rows.map(row=>({homeId:row.recent[0].homeId,stadium:division.clubs.find(c=>c.clubId===row.recent[0].homeId).stadiumName}));
       for(const index of [0,1]){
         await tap('#app-standings-compact-list > li:nth-child('+(index+1)+') .app-world-form-dot');
-        await wait("!document.getElementById('fa-dev-form-tooltip').hidden");
+        await wait("(()=>{const t=document.getElementById('fa-dev-form-tooltip');return !t.hidden&&getComputedStyle(t).opacity==='1'})()");
         const details=await run("(()=>{const t=document.getElementById('fa-dev-form-tooltip'),r=t.getBoundingClientRect();return {date:t.querySelector('.app-world-form-tooltip-date')?.textContent,stadium:t.querySelector('.app-world-form-tooltip-stadium')?.textContent,fit:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,overflow:t.scrollWidth>t.clientWidth}})()");
         assert.equal(details.date,'Date TBD');assert.equal(details.stadium,expectedStadiums[index].stadium,'tooltip always names the home stadium');assert.equal(details.fit,true);assert.equal(details.overflow,false);
         if(index===0)await snap("STANDINGS-MOBILE "+width+" "+theme+" date and stadium",width,height);
