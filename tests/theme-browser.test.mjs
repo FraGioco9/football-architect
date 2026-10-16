@@ -170,9 +170,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
         await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+",{currentMatchday:16})()");
+        // Explicitly select round 1 before checking the disabled previous arrow.
+        await run("window.faCompetitionRoute.set({matchday:1})");
         await run("document.getElementById('app-fixtures-round').click()");
         const picker=await run("(()=>{const p=document.getElementById('app-fixtures-picker'),b=p.getBoundingClientRect();return {open:!p.hidden,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded'),focused:document.activeElement.id,active:document.getElementById('app-fixtures-round').getAttribute('aria-activedescendant'),fit:b.left>=0&&b.right<=innerWidth}})()");
-        assert.deepEqual(picker,{open:true,expanded:"true",focused:"app-fixtures-round",active:"app-fixtures-round-option-16",fit:true});
+        assert.deepEqual(picker,{open:true,expanded:"true",focused:"app-fixtures-round",active:"app-fixtures-round-option-1",fit:true});
         const sameMenuStyle=await run("(()=>{const keys=['backgroundColor','borderColor','borderRadius','boxShadow','padding'],reference=getComputedStyle(document.getElementById('language-options'));return ['app-fixtures-picker','app-competition-season-menu'].every(id=>{const style=getComputedStyle(document.getElementById(id));return keys.every(key=>style[key]===reference[key])})})()");
         assert.equal(sameMenuStyle,true,"competition dropdowns share Settings menu styles");
         const dropdownWidths=await run("(()=>{const width=id=>document.getElementById(id).getBoundingClientRect().width;return {round:width('app-fixtures-round'),menu:width('app-fixtures-picker'),season:width('app-competition-season')}})()");
