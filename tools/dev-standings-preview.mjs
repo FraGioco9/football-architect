@@ -54,10 +54,11 @@ function isPrivateIPv4(value) {
 function isLoopback(value) {
   return ipv4(value) === LOOPBACK || value === "::1";
 }
-function allowedHost(value) {
+function allowedHost(value, subdomains) {
+  if (subdomains && (value === "localhost:2000" || value === "app.localhost:2000")) return true;
   if (typeof value !== "string" || !value.endsWith(":" + PORT)) return false;
   const address = value.slice(0, -(String(PORT).length + 1));
-  return isLoopback(address) || (LAN_ENABLED && isPrivateIPv4(address));
+  return isLoopback(address) || (!subdomains && LAN_ENABLED && isPrivateIPv4(address));
 }
 function reject(res, status = 404) {
   res.writeHead(status, {
@@ -88,12 +89,12 @@ async function safeFile(root, relativePath) {
 }
 
 // Exported solely to test the server without opening a production or LAN socket.
-export function createPreviewServer({ root = ROOT } = {}) {
+export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
   return createServer(async (req, res) => {
     try {
       const remote = req.socket.remoteAddress;
-      if (!isLoopback(remote) && !(LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
-      if (!allowedHost(req.headers.host)) return reject(res, 403);
+      if (!isLoopback(remote) && !(!subdomains && LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
+      if (!allowedHost(req.headers.host, subdomains)) return reject(res, 403);
       if (req.method !== "GET" && req.method !== "HEAD") return reject(res, 405);
       const raw = req.url?.split("?")[0] ?? "";
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||
@@ -106,7 +107,8 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
-        const file = publicRequestFile(raw);
+        const appHost = subdomains && req.headers.host === "app.localhost:2000";
+        const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
@@ -137,6 +139,19 @@ export function createPreviewServer({ root = ROOT } = {}) {
             : html;
           body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
         }
+      }
+      if (subdomains && type === TYPES[".html"]) {
+        const appOrigin = "http://app.localhost:2000", siteOrigin = "http://localhost:2000";
+        const config = '<script>document.documentElement.dataset.faDevAppOrigin="' + appOrigin +
+          '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';
+        body = Buffer.from(body.toString("utf8").replace("</head>", config + "\n</head>")
+          .replace(/(\bhref=")([^"#]+)(")/g, (all, prefix, href, quote) => {
+            if (/^\/(?:dashboard|calendar|settings|competitions)(?:[/?#]|$)/.test(href))
+              return prefix + appOrigin + href + quote;
+            if (href === "/" || /^\/guide(?:[/?#]|$)/.test(href))
+              return prefix + siteOrigin + (href === "/" ? "" : href) + quote;
+            return all;
+          }), "utf8");
       }
       res.writeHead(200, {
         "Content-Type": type,

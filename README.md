@@ -182,3 +182,18 @@ The shared generator produces 21 checked-in app pages. Run `node tools/generate-
 App navigation uses `/dashboard`, `/calendar`, `/settings`, `/competitions` and `/competitions/<division-id>` without an `/app` prefix or trailing slash. Physical generated files remain under `app/`; this is a source directory, not a URL prefix. Use `node tools/dev-standings-preview.mjs` for canonical local routing on `http://127.0.0.1:2000`. The server also accepts old `/app/...` requests. A plain Python static server does not implement these canonical aliases.
 
 App assets use absolute `/assets/...` paths; the competition manifest is requested from `/competitions/_shared/manifest.json`. Future public `app.` hosting must map these canonical requests to the allowlisted app files and retain shared assets. This source change does not configure hosting or deploy it.
+
+### Separate local subdomain preview
+
+From the repository root in PowerShell, stop the existing preview with Ctrl+C, then run:
+
+```powershell
+node tools/dev-app-preview.mjs
+```
+
+- Site: `http://localhost:2000`
+- App: `http://app.localhost:2000/dashboard` (the app host root also opens Dashboard)
+- Competitions: `http://app.localhost:2000/competitions`
+- Fixtures: `http://app.localhost:2000/competitions/it-1?season=2&view=fixtures`
+
+This separate launcher opts into the two local hostnames, preserves port 2000 across site/app links and only binds to 127.0.0.1. It does not change DNS, public hosting, deployment or databases. The ordinary standings server keeps its existing behavior and LAN opt-in. Both launchers use port 2000; run one at a time. `app.localhost` is for the same PC: on iPhone use the ordinary LAN preview with the PC's private IPv4 address instead. Browser preferences are stored per origin, so site and app localStorage are separate, as with public subdomains.

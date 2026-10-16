@@ -222,6 +222,7 @@ test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal
     }
     assert.equal((await get("/app/competitions/it-1/",{host:"attacker.example:2000"})).status,403);
     assert.equal((await get("/app/competitions/it-1/",{host:"localhost:2000"})).status,403);
+    assert.equal((await get("/dashboard",{host:"app.localhost:2000"})).status,403);
     assert.equal((await get("/app/competitions/it-1/",{method:"POST"})).status,405);
     assert.equal((await get("/app/competitions/it-1/",{method:"HEAD"})).body,"");
   });
@@ -452,8 +453,8 @@ test("DEV-LAN: LAN access is opt-in and limited to private IPv4 clients and host
  assert.ok(serverSource.includes('process.env.FA_DEV_LAN === "1"'));
  assert.ok(serverSource.includes('const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK'));
  assert.ok(serverSource.includes("function isPrivateIPv4(value)"));
- assert.ok(serverSource.includes("if (!isLoopback(remote) && !(LAN_ENABLED && isPrivateIPv4(remote)))"));
- assert.ok(serverSource.includes("if (!allowedHost(req.headers.host))"));
+ assert.ok(serverSource.includes("if (!isLoopback(remote) && !(!subdomains && LAN_ENABLED && isPrivateIPv4(remote)))"));
+ assert.ok(serverSource.includes("if (!allowedHost(req.headers.host, subdomains))"));
  assert.ok(serverSource.includes('"LAN opt-in"'));
 });
 

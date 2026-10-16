@@ -572,6 +572,11 @@
   function appHref(route) {
     route = route.replace(/^\/app(?=\/|$)/, "") || "/";
     const host = (window.location.hostname || "").toLowerCase();
+    const previewOrigin = document.documentElement.dataset.faDevAppOrigin;
+    if (previewOrigin) {
+      const path = route.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1") || "/";
+      return host === "app.localhost" ? path : previewOrigin + path;
+    }
     const local = !host || host === "localhost" || host === "::1" ||
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
       host.endsWith(".localhost") || host.endsWith(".local") ||
@@ -584,6 +589,8 @@
     return (window.location.protocol || "https:") + "//app." + mainHost + clean;
   }
   function siteHref(path) {
+    const previewOrigin = document.documentElement.dataset.faDevSiteOrigin;
+    if (previewOrigin) return previewOrigin + (path === "/" ? "" : path.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1"));
     const host = (window.location.hostname || "").toLowerCase();
     if (!host.startsWith("app.")) return path;
     const origin = (window.location.protocol || "https:") + "//" + host.slice(4);
