@@ -59,7 +59,7 @@
   const listeners=new Set();let state;
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Season 2 is an isolated DEV preview, never a public competition season.
-  const devSeasonTwo=!!document.querySelector('script[src="/__fa_dev__/standings-client.mjs"]');
+  const devSeasonTwo=!!document.querySelector('script[data-fa-dev-preview]');
   // Season 1 is a provisional display context, not an official calendar/history.
   function read(){
     const params=new URL(window.location.href).searchParams;
