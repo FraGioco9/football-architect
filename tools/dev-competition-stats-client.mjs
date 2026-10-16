@@ -261,7 +261,7 @@ if (panel && divisionId) {
           const all=create("ol",undefined,"fa-dev-stats-top");
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
           dialog.append(header,all);
-          dialog.addEventListener("close",()=>dialog.remove());
+          dialog.addEventListener("close",()=>{dialog.remove();expand.blur();});
           document.body.append(dialog);
           dialog.showModal();
           close.focus();
