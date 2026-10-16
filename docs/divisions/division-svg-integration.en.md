@@ -12,7 +12,9 @@ unchanged. No backing surfaces, frames, shadows or theme-specific variants exist
 
 ## Generation and runtime
 
-- Competition cards select Compact; competition headers select Primary.
+- Competition cards and competition headers explicitly select Compact.
+  Both approved source variants remain available; Primary is not rendered in
+  these contexts, following the owner’s subsequent display decision.
 - HTML contains SVG markup before delivery. Declarative shadow roots isolate
   the original `.s0`/`.s1` styles without rewriting the artwork or fetching it.
 - Full detail documents replace tiny asynchronous route entries so logos are

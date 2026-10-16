@@ -265,7 +265,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const selected=index?["IT","ENG","ES","DE","FR","PT","NL","BR"].flatMap(c=>divisions.filter(d=>d.countryId===c)):divisions.filter(d=>route.includes('/'+d.id.toLowerCase()+'/'));
         for(let i=0;i<logos.length;i++){
           const logo=logos[i],d=selected[i];
-          assert.equal(logo.variant,index?"compact":"primary");
+          assert.equal(logo.variant,"compact");
           assert.equal(logo.hidden,"true");
           assert.ok(logo.width>0&&logo.height>0&&logo.ratio>0);
           assert.ok(logo.width<=logo.hostWidth+0.1&&logo.height<=logo.hostHeight+0.1,"SVG viewport fits reserved frame");

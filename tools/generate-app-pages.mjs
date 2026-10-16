@@ -136,7 +136,7 @@ const detailContent = function detailContent(d,root){
  if(!c)throw Error("unknown detail "+d.id);
  const level=d.tier===1?"divisionTier1":"divisionTier2";
  return '          <header class="app-competition-header">\n'+
- '            '+renderDivisionLogo(d.id,"primary",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')+'\n'+
+ '            '+renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')+'\n'+
  '            <div class="app-competition-identity">\n'+
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(d.name)+'</span></h1>\n'+
  '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
@@ -172,7 +172,7 @@ const sharedTemplate = function sharedTemplate(html,first=divisionData.find(d=>d
  if(neutral)replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
  if(neutral)replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
  if(neutral){
-  const logo=renderDivisionLogo(first.id,"primary",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ');
+  const logo=renderDivisionLogo(first.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ');
   replaceOne(logo,'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>',"badge");
  }
  replaceOne('class="app-world-flag" alt="" src="../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../'+encode(country.flagAsset)+'"',"flag");
@@ -186,7 +186,7 @@ const sharedTemplate = function sharedTemplate(html,first=divisionData.find(d=>d
  html=html.replace(match[0],match[1].replace("<tbody>","<tbody id=\"app-standings-body\">")+match[3]);
  return html;
 };
-// Full generated routes keep the approved Primary SVG in the initial response.
+// Full generated routes keep the approved Compact SVG in the initial response.
 const competitionRoute = d=>{
  let html=template.replaceAll("../../","../../../");
  for(const [token,value] of Object.entries(worldPageReplacements(3,d)))html=html.replace(token,value);

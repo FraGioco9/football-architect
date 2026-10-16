@@ -38,7 +38,7 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
 
 });
 
-test("COMPETITIONS-06 generates 16 complete routes with inline Primary logos",()=>{
+test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()=>{
  const common=["app/dashboard/index.html","app/calendar/index.html",
   "app/settings/index.html","app/competitions/index.html",
   "app/competitions/_shared/index.html"];
@@ -58,7 +58,7 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Primary logos",()
   assert.ok(html.includes('<meta name="fa-division" content="'+division.id+'">'),file);
   assert.ok(html.includes('<title>'+division.name.replaceAll("&","&amp;")+' — Football Architect</title>'),file);
   assert.ok(html.includes('src="../../../assets/competition-page.js" defer'),file);
-  assert.ok(html.includes('data-division-variant="primary"'),file);
+  assert.ok(html.includes('data-division-variant="compact"'),file);
   assert.ok(html.includes('class="app-world-standing-table"'),file);
   assert.ok(html.includes('class="fa-career-shell"'),file);
   assert.ok(!existsSync(new URL("../app/world/divisions/"+division.id.toLowerCase()+"/index.html",import.meta.url)));
@@ -298,7 +298,7 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
   const html=read(file);
-  assert.ok(html.includes('data-division-variant="primary"'),division.id);
+  assert.ok(html.includes('data-division-variant="compact"'),division.id);
   assert.ok(!html.includes("app-world-club-crest-placeholder"),division.id);
  }
 });

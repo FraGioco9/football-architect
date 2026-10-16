@@ -84,7 +84,10 @@ test('DIV-ASSET-07: every logo is inline at first paint with isolated original s
  for(const d of canonical){
   const page=read('app/competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(page.includes('shadowrootmode="open"'),d.id);
-  assert.ok(page.includes('data-division-variant="primary"'),d.id);
+  assert.ok(page.includes('data-division-variant="compact"'),d.id);
+  const artwork=validateDivisionAssets().divisions.get(d.id);
+  assert.ok(page.includes(artwork.compact),d.id+" original Compact markup");
+  assert.ok(!page.includes(artwork.primary),d.id+" Primary is not rendered in the detail");
   assert.ok(page.includes('id="app-competition-badge"'),d.id);
   assert.doesNotMatch(page,/Loading competition/);
  }
