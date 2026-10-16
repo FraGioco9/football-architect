@@ -115,7 +115,11 @@
     prepare(fixtures,{currentMatchday:current=null}={}){
       const next=validate(fixtures);
       if(current!==null&&(!Number.isInteger(current)||current<1||current>30))throw Error("Invalid current matchday");
-      return ()=>{rounds=next;currentMatchday=next?current:null;render()};
+      return ()=>{
+        rounds=next;currentMatchday=next?current:null;
+        navigation.defaultMatchday(currentMatchday??1);
+        render();
+      };
     },
     snapshot(){const previous=rounds,current=currentMatchday;return ()=>{
       rounds=previous;currentMatchday=current;selected=navigation.get().matchday;render()};}
