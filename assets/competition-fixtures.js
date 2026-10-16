@@ -70,18 +70,19 @@
     const item=element("li","app-fixture-match");
     item.dataset.fixtureMatch=game.round+":"+game.homeId+":"+game.awayId;
     item.dataset.fixtureRound=String(game.round);
-    const meta=element("div","app-fixture-meta");
-    if(game.kickoff===null)meta.append(word("fixturesTimingUnknown","Date/time to be confirmed"));
+    const result=element("div","app-fixture-result"),played=game.homeGoals!==null;
+    let status;
+    if(played)status=word("fixturesFullTime","Full time","app-fixture-status");
+    else if(game.kickoff===null)status=word("fixturesTimingUnknown","Date/time to be confirmed","app-fixture-status");
     else{
-      const time=element("time");time.dateTime=game.kickoff;
-      time.textContent=new Intl.DateTimeFormat(document.documentElement.lang||"en",
+      status=element("time","app-fixture-status");status.dateTime=game.kickoff;
+      status.textContent=new Intl.DateTimeFormat(document.documentElement.lang||"en",
         {dateStyle:"medium",timeStyle:"short"}).format(new Date(game.kickoff));
-      meta.append(time);
     }
-    const played=game.homeGoals!==null;
-    meta.append(word(played?"fixturesFullTime":"fixturesScheduled",played?"Full time":"Scheduled","app-fixture-status"));
-    const score=element("strong","app-fixture-score",played?game.homeGoals+" – "+game.awayGoals:"—");
-    item.append(identity(game.homeId,true),score,identity(game.awayId,false),meta);
+    result.append(status,
+      element("strong","app-fixture-score",played?game.homeGoals+" – "+game.awayGoals:"—"),
+      element("span","app-fixture-stadium",clubs.get(game.homeId).stadiumName));
+    item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;
   }
   function render(){

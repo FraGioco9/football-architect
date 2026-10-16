@@ -89,7 +89,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
    const club=clubs.find(c=>c.countryId===record.countryId&&c.clubId===record.clubId);
    const key=record.countryId+"-"+record.clubId;
    assert.ok(club,key);
-   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.primaryName});
+   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.primaryName,stadiumName:club.stadiumName});
    assert.ok(!seen.has(key),"duplicate "+key);
    seen.add(key);
   }

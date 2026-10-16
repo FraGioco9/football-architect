@@ -81,7 +81,7 @@ test('FIXTURES-04: names are plain text, timing stays unknown unless supplied an
  view.prepare(fixtures)();assert.ok(contents(fields.get('app-fixtures-list')).includes('<img src=x onerror=alert(1)>'));
  const walk=n=>[n,...n.children.flatMap(walk)];
  assert.equal(walk(fields.get('app-fixtures-list')).filter(n=>n.tagName==='img').length,0);
- assert.equal(walk(fields.get('app-fixtures-list')).filter(n=>n.tagName==='time').length,1);
+ assert.equal(walk(fields.get('app-fixtures-list')).filter(n=>n.tagName==='time').length,0);
  route.set({matchday:23});view.prepare(schedule(d,30))();assert.equal(round.value,'23');
  route.set({matchday:NaN});assert.equal(round.value,'23');
 });
@@ -117,4 +117,32 @@ test('FIXTURES-06: matchday controls stay hidden without a schedule and recover 
  const restore=view.snapshot();view.prepare(null)();
  assert.equal(toolbar.hidden,true,'removing schedule hides controls');
  restore();assert.equal(toolbar.hidden,false,'rollback restores navigation');
+});
+
+
+test('FIXTURES-07: result groups show full time or supplied date above the score and the canonical home stadium below',()=>{
+ const canonical=JSON.parse(read('data/clubs.json'));
+ for(const d of divisions){
+  const {view,fields,route}=setup(d),fixtures=schedule(d);
+  fixtures.find(f=>f.round===1).kickoff='2026-10-20T12:30:00Z';
+  fixtures.find(f=>f.round===16).kickoff='2026-10-20T12:30:00Z';
+  view.prepare(fixtures)();
+  const check=played=>{
+   for(const row of fields.get('app-fixtures-list').children){
+    const homeId=Number(row.dataset.fixtureMatch.split(':')[1]);
+    const home=canonical.find(c=>c.countryId===d.countryId&&c.clubId===homeId);
+    const result=row.children.find(n=>n.className==='app-fixture-result');
+    assert.ok(result,'one result group per match');
+    const [status,score,stadium]=result.children;
+    assert.equal(score.className,'app-fixture-score');
+    assert.equal(stadium.className,'app-fixture-stadium');
+    assert.equal(stadium.textContent,home.stadiumName);
+    if(played){assert.equal(contents(status),'Full time');assert.equal(status.tagName,'span');}
+    else if(row===fields.get('app-fixtures-list').children[0]){
+     assert.equal(status.tagName,'time');assert.equal(status.dateTime,'2026-10-20T12:30:00Z');
+    }else assert.equal(contents(status),'Date/time to be confirmed');
+   }
+  };
+  check(true);route.set({matchday:16});check(false);
+ }
 });

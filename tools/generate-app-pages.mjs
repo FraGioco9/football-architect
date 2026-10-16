@@ -223,7 +223,7 @@ const competitionManifest = {
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
-   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c)}))};
+   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c),stadiumName:c.stadiumName}))};
  })
 };
 if(competitionManifest.approved!==false)throw Error("Do not publish an approved competition allocation");
