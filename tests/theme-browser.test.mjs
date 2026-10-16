@@ -120,7 +120,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
-          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")||label.startsWith("STANDINGS-MOBILE ")||label.startsWith("TABS-MOBILE ")){
+          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")||label.startsWith("STANDINGS-MOBILE ")||label.startsWith("TABS-MOBILE ")||label.startsWith("FIXTURES-DESKTOP ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
         chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
@@ -174,6 +174,16 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           assert.equal(columns.length,3);
           if(scoreColumns)columns.forEach((c,i)=>{assert.ok(Math.abs(c.center-scoreColumns[i].center)<0.1,"goal and separator centers stay fixed across score values");assert.equal(c.width,scoreColumns[i].width)});
           scoreColumns=columns;
+        }
+        if(name==='desktop'){
+          const stadiumNames=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.flatMap(d=>d.clubs.map(c=>c.stadiumName));
+          for(const viewport of [621,1024,1440]){
+            await cmd("Emulation.setDeviceMetricsOverride",{width:viewport,height:h,deviceScaleFactor:1,mobile:false,screenWidth:viewport,screenHeight:h});
+            const stadiumFit=await run("(()=>{const s=document.querySelector('.app-fixture-stadium'),original=s.textContent;const fit="+JSON.stringify(stadiumNames)+".every(name=>{s.textContent=name;const r=s.getBoundingClientRect(),style=getComputedStyle(s);return s.scrollWidth<=s.clientWidth+1&&r.height<=parseFloat(style.lineHeight)+1});s.textContent=original;return fit})()");
+            assert.equal(stadiumFit,true,"all canonical stadium names fit one full desktop line at "+viewport);
+          }
+          await snap("FIXTURES-DESKTOP "+theme+" stadium width",1440,h);
+          await cmd("Emulation.setDeviceMetricsOverride",{width:w,height:h,deviceScaleFactor:1,mobile,screenWidth:w,screenHeight:h});
         }
         await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("document.getElementById('app-fixtures-round').getClientRects().length"),0,"removing schedule hides controls again");
@@ -446,10 +456,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const layout=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')],r=e=>e.getBoundingClientRect(),n=r(document.querySelector('.app-fixtures-navigation')),c=r(document.getElementById('app-fixtures-current'));return {rows:rows.length,scroll:document.documentElement.scrollWidth,width:innerWidth,fit:rows.every(e=>r(e).left>=0&&r(e).right<=innerWidth),names:rows.every(e=>[...e.querySelectorAll('.app-fixture-name')].every(n=>n.scrollWidth<=n.clientWidth+1)),controls:n.right<=c.left+1&&c.right<=innerWidth}})()");
         assert.equal(layout.rows,8);assert.ok(layout.scroll<=layout.width,width+" "+theme+" "+lang+" no horizontal page overflow");assert.equal(layout.fit,true);assert.equal(layout.names,true,"club names wrap without clipping");assert.equal(layout.controls,true,"round controls and current shortcut do not overlap");
       }
-      const matchDetails=await run("(()=>{const clubs=window.faCompetitionDivision.clubs,r=e=>e.getBoundingClientRect();return [...document.querySelectorAll('[data-fixture-match]')].every(row=>{const home=clubs.find(c=>c.clubId===Number(row.dataset.fixtureMatch.split(':')[1])),status=row.querySelector('.app-fixture-status'),score=row.querySelector('.app-fixture-score'),stadium=row.querySelector('.app-fixture-stadium');return stadium.textContent===home.stadiumName&&r(status).bottom<=r(score).top&&r(score).bottom<=r(stadium).top&&r(stadium).height<=parseFloat(getComputedStyle(stadium).lineHeight)+1&&getComputedStyle(stadium).whiteSpace==='nowrap'&&getComputedStyle(stadium).textOverflow==='ellipsis'&&getComputedStyle(stadium).overflowX==='hidden'})})()");
-      assert.equal(matchDetails,true,"status above result and complete home stadium text retained in one visually ellipsized line");
+      const matchDetails=await run("(()=>{const clubs=window.faCompetitionDivision.clubs,r=e=>e.getBoundingClientRect();return [...document.querySelectorAll('[data-fixture-match]')].every(row=>{const home=clubs.find(c=>c.clubId===Number(row.dataset.fixtureMatch.split(':')[1])),status=row.querySelector('.app-fixture-status'),score=row.querySelector('.app-fixture-score'),stadium=row.querySelector('.app-fixture-stadium');return stadium.textContent===home.stadiumName&&r(status).bottom<=r(score).top&&r(score).bottom<=r(stadium).top&&Math.abs(r(stadium).height-2*parseFloat(getComputedStyle(stadium).lineHeight))<=1&&getComputedStyle(stadium).whiteSpace==='normal'&&getComputedStyle(stadium).webkitLineClamp==='2'})})()");
+      assert.equal(matchDetails,true,"status above result and home stadium below with exactly two reserved mobile lines");
       const hierarchy=await run("(()=>{const row=document.querySelector('[data-fixture-match]'),result=row.querySelector('.app-fixture-result'),name=row.querySelector('.app-fixture-home'),score=row.querySelector('.app-fixture-score'),status=row.querySelector('.app-fixture-status');return {resultWidth:result.getBoundingClientRect().width,nameWidth:name.getBoundingClientRect().width,scoreSize:parseFloat(getComputedStyle(score).fontSize),statusSize:parseFloat(getComputedStyle(status).fontSize)}})()");
-      assert.ok(hierarchy.resultWidth<=80&&hierarchy.nameWidth>hierarchy.resultWidth,"mobile gives team names more width than the compact result column");
+      assert.ok(hierarchy.resultWidth<=100&&hierarchy.nameWidth>hierarchy.resultWidth,"mobile gives team names more width than the compact result column");
       assert.ok(hierarchy.scoreSize>=18&&hierarchy.scoreSize>hierarchy.statusSize,"score leads the card hierarchy");
 
       await run("document.documentElement.lang='en';window.faAppRenderLanguage?.();document.getElementById('competition-panel-fixtures').scrollIntoView({block:'start'})");
