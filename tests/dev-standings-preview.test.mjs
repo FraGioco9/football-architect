@@ -511,3 +511,20 @@ test("STANDINGS-UX-01D: mobile compact form keeps its appearance and opens toolt
  assert.ok(canonical.includes('element("span","app-world-form-dot app-world-form-"'));
  assert.ok(!client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
 });
+
+test("DEV-FIXTURES-READY: restored preview waits for Fixtures runtime as well as standings rows",async()=>{
+ const start=client.indexOf('function waitForRows() {'),end=client.indexOf('\nasync function boot(',start);
+ const body={rows:Array.from({length:16},()=>({}))};
+ let notify,settled=false;
+ const window={};
+ const context={window,document:{documentElement:{},getElementById:()=>body,querySelector:()=>({})},
+  MutationObserver:class{constructor(fn){notify=fn}observe(){}disconnect(){}},setTimeout,clearTimeout};
+ const wait=runInNewContext(client.slice(start,end)+'\nwaitForRows',context);
+ const pending=wait().then(value=>{settled=true;return value});
+ await new Promise(resolve=>setImmediate(resolve));
+ const early=settled;
+ window.faCompetitionRoute={get(){}};window.faFixtures={prepare(){},snapshot(){}};
+ notify();
+ assert.equal(await pending,body);
+ assert.equal(early,false,'standings rows alone must not release initial DEV hydration');
+});

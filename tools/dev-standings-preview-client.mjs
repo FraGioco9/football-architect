@@ -186,7 +186,9 @@ function waitForRows() {
     let done = false;
     const table = () => {
       const tbody = document.getElementById("app-standings-body");
-      if (tbody?.rows.length === 16 && document.querySelector(".app-world-standing-table")) {
+      if (tbody?.rows.length === 16 && document.querySelector(".app-world-standing-table") &&
+          typeof window.faCompetitionRoute?.get === "function" &&
+          typeof window.faFixtures?.prepare === "function") {
         finish(null, tbody);
       }
     };
