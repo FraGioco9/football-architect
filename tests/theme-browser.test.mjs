@@ -334,6 +334,28 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=2&view=fixtures&matchday=1"});
     await expectSeason(2,1);
     devFixturesDelay=0;
+    // Observe every rendered frame when season 2 auto-enables DEV after refresh.
+    const observer=await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`
+      window.__faEmptyFrames=[];window.__faObserveEmpty=true;
+      const sample=()=>{
+        const empty=document.getElementById('app-fixtures-empty');
+        if(empty&&!empty.hidden&&empty.getClientRects().length&&getComputedStyle(empty).visibility==='visible')window.__faEmptyFrames.push(location.search);
+        if(window.__faObserveEmpty)requestAnimationFrame(sample);
+      };requestAnimationFrame(sample);
+    `});
+    await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
+    devManifestDelay=250;devFixturesDelay=500;
+    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=2&view=fixtures&matchday=1"});
+    await expectSeason(2,1);
+    await run("window.__faObserveEmpty=false");
+    assert.deepEqual(await run("window.__faEmptyFrames"),[],"no empty Fixtures frame while DEV season 2 is restoring");
+    await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:observer.identifier});
+    devManifestDelay=0;devFixturesDelay=0;
+    // Public season 1 still exposes its honest empty state once DEV is OFF.
+    await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
+    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=fixtures&matchday=1"});
+    await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
+    assert.equal(await run("(()=>{const e=document.getElementById('app-fixtures-empty');return !e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()"),true,"DEV OFF reveals the legitimate empty state");
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}
