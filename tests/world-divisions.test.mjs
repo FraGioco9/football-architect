@@ -193,7 +193,6 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes("data.approved !== false"));
  assert.ok(renderer.includes("clubs.size === 256"));
  assert.ok(renderer.includes('document.createElement("tr")'));
- assert.ok(renderer.includes("name.textContent = club.primaryName"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
