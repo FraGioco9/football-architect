@@ -29,8 +29,10 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
+const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data supports more.
+const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
-  '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
+  `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list{visibility:hidden}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
 ].join("\n");
@@ -116,7 +118,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
           body = Buffer.from(body.toString("utf8").replace(
             /(<a class="app-division-card")/g, '$1 data-dev-latest-season=""'
           ).replaceAll(
-            "?season=1&amp;view=standings", "?season=2&amp;view=standings"
+            "?season=1&amp;view=standings", `?season=${latestDevSeason}&amp;view=standings`
           ), "utf8");
         }
         if (DETAIL.test(raw)) {
@@ -124,10 +126,11 @@ export function createPreviewServer({ root = ROOT } = {}) {
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.
           const params = new URL(req.url, "http://localhost").searchParams;
-          const season = params.get("season") === "1" ? "1" : "2";
-          const seasonHtml = season === "2"
+          const requested = params.get("season");
+          const season = requested && DEV_SEASONS.includes(Number(requested)) ? requested : latestDevSeason;
+          const seasonHtml = season !== "1"
             ? html.replace('id="app-competition-season-value">1</span>',
-                'id="app-competition-season-value">2</span>')
+                `id="app-competition-season-value">${season}</span>`)
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
