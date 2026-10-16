@@ -90,7 +90,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     };
     const visit=async(route,condition="true")=>{
       const url=origin+route;await cmd("Page.navigate",{url});
-      await wait("location.pathname==="+JSON.stringify(new URL(url).pathname)+"&&document.readyState==='complete'&&("+condition+")");
+      await wait("location.pathname.replace(/\\/$/,\"\")==="+JSON.stringify(new URL(url).pathname.replace(/\/$/, ""))+"&&document.readyState==='complete'&&("+condition+")");
     };
     const snap=async(label,w,h)=>{
       const out=await cmd("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});
