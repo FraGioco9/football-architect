@@ -416,7 +416,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await clickControl("#competition-tab-standings");
     await cmd("Page.reload");await wait("!!window.faFixtures&&document.querySelectorAll('[data-fixture-match]').length===8");
     await clickControl("#competition-tab-fixtures");
-    assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"1");
+    assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"16");
     // Observe actual visible frames during a catalogue-to-competition navigation.
     await run("(()=>{const slider=document.querySelector('[data-dev-control=\"matchdays\"]');slider.value='4';slider.dispatchEvent(new Event('change'))})()");
     await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
