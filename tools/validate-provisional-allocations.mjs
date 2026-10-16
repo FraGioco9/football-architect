@@ -5,7 +5,7 @@ export function validateProvisionalAllocations(manifest,divisionData,clubData){
   check(manifest?.schema==="football-architect-provisional-division-allocation-v1","unexpected schema");
   check(manifest.status==="provisional"&&manifest.approved===false,"allocation must remain provisional");
   check(manifest.sources?.clubs==="data/clubs.json"&&manifest.sources?.divisions==="data/divisions.json","source catalogues changed");
-  const divisions=divisionData,clubs=clubData?.clubs;
+  const divisions=divisionData,clubs=clubData;
   const expectedCountries=["IT","ENG","ES","DE","FR","PT","NL","BR"];
   check(Array.isArray(divisions)&&divisions.length===16,"expected flat 16-division registry");
   const countries=[...new Set(divisions.map(d=>d.countryId))];
@@ -18,11 +18,17 @@ export function validateProvisionalAllocations(manifest,divisionData,clubData){
   check(Array.isArray(clubs)&&clubs.length===320,"expected 320 identities");
   check(Array.isArray(manifest.allocations)&&manifest.allocations.length===16,"expected 16 allocations");
   const byClub=new Map(),byDivision=new Map(),seen=new Set(),excluded=new Set();
+  const fields=["countryId","clubId","city","primaryName","fullName","compactName","abbr","nickname","description","primaryColor","secondaryColor","stadiumName"];
+  const abbreviations=new Set(),fullNames=new Set();
   for(const club of clubs){
     const key=club.countryId+":"+club.clubId;
     check(expectedCountries.includes(club.countryId)&&Number.isInteger(club.clubId)&&club.clubId>=1&&club.clubId<=40,"invalid club key "+key);
     check(!byClub.has(key),"duplicate club identity "+key);
-    check(typeof club.fullName==="string"&&club.fullName.length>0&&typeof club.abbr==="string"&&club.abbr.length>0,"incomplete club identity "+key);
+    check(Object.keys(club).length===fields.length&&fields.every(field=>Object.hasOwn(club,field)),"unexpected club fields "+key);
+    check(fields.filter(field=>field!=="clubId").every(field=>typeof club[field]==="string"&&club[field].trim().length>0),"incomplete club identity "+key);
+    check(/^[A-Z]{3}$/.test(club.abbr)&&!abbreviations.has(club.abbr)&&!fullNames.has(club.fullName),"duplicate or invalid club name/abbreviation "+key);
+    check([club.primaryColor,club.secondaryColor].every(color=>/^#[0-9A-Fa-f]{6}$/.test(color)),"invalid club colors "+key);
+    abbreviations.add(club.abbr);fullNames.add(club.fullName);
     byClub.set(key,club);
   }
   for(const countryId of expectedCountries)for(let id=1;id<=40;id++){
@@ -30,10 +36,6 @@ export function validateProvisionalAllocations(manifest,divisionData,clubData){
     check(byClub.has(key),"missing club "+key);
     if(id>=33)excluded.add(key);
   }
-  const historical=new Set(clubs.filter(c=>c.firstDivisionReference).map(c=>c.countryId+":"+c.clubId));
-  check(historical.size===160,"historical reference count changed");
-  for(const countryId of expectedCountries)for(let id=1;id<=20;id++)
-    check(historical.has(countryId+":"+id),"historical reference changed "+countryId+":"+id);
   const allocationById=new Map(manifest.allocations.map(entry=>[entry.divisionId,entry]));
   check(allocationById.size===16,"duplicate allocation division");
   let tier1=0,tier2=0;

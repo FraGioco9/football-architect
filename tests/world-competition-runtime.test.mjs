@@ -181,7 +181,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     assert.equal(crest.attrs["aria-hidden"],"true");
     assert.equal(name.className,"app-world-club-name");
     assert.equal(name.textContent,club.primaryName);
-    assert.notEqual(name.textContent,club.fullName);
+    // Approved primary and full names may legitimately be identical.
     if(preview){
      assert.equal(row.children[0].textContent,String(i+1));
      assert.equal(row.children[2].textContent,"15");

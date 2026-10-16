@@ -14,114 +14,114 @@
         {
           "countryId": "IT",
           "clubId": 1,
-          "abbr": "VEL",
-          "fullName": "Unione Sportiva Velaria Torino",
-          "primaryName": "US Velaria Torino"
+          "abbr": "MEN",
+          "fullName": "Associazione Calcio Meneghina",
+          "primaryName": "AC Meneghina"
         },
         {
           "countryId": "IT",
           "clubId": 2,
-          "abbr": "RIN",
-          "fullName": "Associazione Calcio Rinascenti Bologna",
-          "primaryName": "AC Rinascenti Bologna"
+          "abbr": "CAP",
+          "fullName": "Unione Sportiva Capitolina",
+          "primaryName": "US Capitolina"
         },
         {
           "countryId": "IT",
           "clubId": 3,
-          "abbr": "POG",
-          "fullName": "Football Club Portuale Genova",
-          "primaryName": "FC Portuale Genova"
+          "abbr": "SUB",
+          "fullName": "Football Club Subalpina",
+          "primaryName": "FC Subalpina"
         },
         {
           "countryId": "IT",
           "clubId": 4,
-          "abbr": "COL",
-          "fullName": "Associazione Calcio Collina Firenze",
-          "primaryName": "AC Collina Firenze"
+          "abbr": "PAR",
+          "fullName": "Società Sportiva Partenopea",
+          "primaryName": "SS Partenopea"
         },
         {
           "countryId": "IT",
           "clubId": 5,
-          "abbr": "COR",
-          "fullName": "Unione Sportiva Corallo Verona",
-          "primaryName": "US Corallo Verona"
+          "abbr": "AMB",
+          "fullName": "Unione Sportiva Ambrosiana",
+          "primaryName": "US Ambrosiana"
         },
         {
           "countryId": "IT",
           "clubId": 6,
-          "abbr": "ALT",
-          "fullName": "Football Club Altavia Parma",
-          "primaryName": "FC Altavia Parma"
+          "abbr": "AVT",
+          "fullName": "Associazione Calcio Aventina",
+          "primaryName": "AC Aventina"
         },
         {
           "countryId": "IT",
           "clubId": 7,
-          "abbr": "VAL",
-          "fullName": "Unione Sportiva Valtena Modena",
-          "primaryName": "US Valtena Modena"
+          "abbr": "VES",
+          "fullName": "Associazione Calcio Vesuviana",
+          "primaryName": "AC Vesuviana"
         },
         {
           "countryId": "IT",
           "clubId": 8,
-          "abbr": "LEV",
-          "fullName": "Associazione Calcio Levantina Trieste",
-          "primaryName": "AC Levantina Trieste"
+          "abbr": "SBA",
+          "fullName": "Associazione Calcio Sabauda",
+          "primaryName": "AC Sabauda"
         },
         {
           "countryId": "IT",
           "clubId": 9,
-          "abbr": "ADR",
-          "fullName": "Unione Sportiva Adriatica Bari",
-          "primaryName": "US Adriatica Bari"
+          "abbr": "ORB",
+          "fullName": "Unione Sportiva Orobica",
+          "primaryName": "US Orobica"
         },
         {
           "countryId": "IT",
           "clubId": 10,
-          "abbr": "FON",
-          "fullName": "Unione Sportiva Fontechiara Perugia",
-          "primaryName": "US Fontechiara Perugia"
+          "abbr": "FEL",
+          "fullName": "Associazione Calcio Felsina",
+          "primaryName": "AC Felsina"
         },
         {
           "countryId": "IT",
           "clubId": 11,
-          "abbr": "SME",
-          "fullName": "Football Club Smeralda Cagliari",
-          "primaryName": "FC Smeralda Cagliari"
+          "abbr": "MDC",
+          "fullName": "Associazione Sportiva Medicea",
+          "primaryName": "AS Medicea"
         },
         {
           "countryId": "IT",
           "clubId": 12,
-          "abbr": "BEL",
-          "fullName": "Associazione Calcio Bellariva Lecce",
-          "primaryName": "AC Bellariva Lecce"
+          "abbr": "LNT",
+          "fullName": "Unione Sportiva Lanterna",
+          "primaryName": "US Lanterna"
         },
         {
           "countryId": "IT",
           "clubId": 13,
-          "abbr": "NAV",
-          "fullName": "Associazione Calcio Naviglio Milano",
-          "primaryName": "AC Naviglio Milano"
+          "abbr": "COM",
+          "fullName": "Associazione Sportiva Comasca",
+          "primaryName": "AS Comasca"
         },
         {
           "countryId": "IT",
           "clubId": 14,
-          "abbr": "PAR",
-          "fullName": "Unione Sportiva Partenope Napoli",
-          "primaryName": "US Partenope Napoli"
+          "abbr": "CRC",
+          "fullName": "Unione Sportiva Crociata",
+          "primaryName": "US Crociata"
         },
         {
           "countryId": "IT",
           "clubId": 15,
-          "abbr": "TRI",
-          "fullName": "Associazione Calcio Trinacria Palermo",
-          "primaryName": "AC Trinacria Palermo"
+          "abbr": "PET",
+          "fullName": "Unione Sportiva Petroniana",
+          "primaryName": "US Petroniana"
         },
         {
           "countryId": "IT",
           "clubId": 16,
-          "abbr": "EUG",
-          "fullName": "Associazione Calcio Euganea Padova",
-          "primaryName": "AC Euganea Padova"
+          "abbr": "CVC",
+          "fullName": "Unione Sportiva Coverciano",
+          "primaryName": "US Coverciano"
         }
       ]
     },
@@ -137,114 +137,114 @@
         {
           "countryId": "IT",
           "clubId": 17,
-          "abbr": "ARV",
-          "fullName": "Unione Sportiva Arnoverde Pisa",
-          "primaryName": "US Arnoverde Pisa"
+          "abbr": "MAR",
+          "fullName": "Associazione Calcio Marassi",
+          "primaryName": "AC Marassi"
         },
         {
           "countryId": "IT",
           "clubId": 18,
-          "abbr": "DOR",
-          "fullName": "Football Club Dorica Ancona",
-          "primaryName": "FC Dorica Ancona"
+          "abbr": "SCL",
+          "fullName": "Unione Sportiva Scaligera",
+          "primaryName": "US Scaligera"
         },
         {
           "countryId": "IT",
           "clubId": 19,
-          "abbr": "BIZ",
-          "fullName": "Unione Sportiva Bizantina Ravenna",
-          "primaryName": "US Bizantina Ravenna"
+          "abbr": "SSL",
+          "fullName": "Associazione Calcio Sassolese",
+          "primaryName": "AC Sassolese"
         },
         {
           "countryId": "IT",
           "clubId": 20,
-          "abbr": "FER",
-          "fullName": "Associazione Calcio Ferrea Brescia",
-          "primaryName": "AC Ferrea Brescia"
+          "abbr": "BAR",
+          "fullName": "Football Club Barcola",
+          "primaryName": "FC Barcola"
         },
         {
           "countryId": "IT",
           "clubId": 21,
-          "abbr": "REC",
-          "fullName": "Associazione Calcio Rocca Estense",
-          "primaryName": "AC Rocca Estense"
+          "abbr": "FRI",
+          "fullName": "Unione Sportiva Friulana",
+          "primaryName": "US Friulana"
         },
         {
           "countryId": "IT",
           "clubId": 22,
-          "abbr": "PPD",
-          "fullName": "Unione Sportiva Ponte Padova",
-          "primaryName": "US Ponte Padova"
+          "abbr": "CAS",
+          "fullName": "Unione Sportiva Casteddu",
+          "primaryName": "US Casteddu"
         },
         {
           "countryId": "IT",
           "clubId": 23,
-          "abbr": "FRM",
-          "fullName": "Football Club Faro Messina",
-          "primaryName": "FC Faro Messina"
+          "abbr": "LAG",
+          "fullName": "Unione Sportiva Lagunare",
+          "primaryName": "US Lagunare"
         },
         {
           "countryId": "IT",
           "clubId": 24,
-          "abbr": "MPN",
-          "fullName": "Unione Sportiva Montepiano Siena",
-          "primaryName": "US Montepiano Siena"
+          "abbr": "ARN",
+          "fullName": "Associazione Sportiva Arenella",
+          "primaryName": "AS Arenella"
         },
         {
           "countryId": "IT",
           "clubId": 25,
-          "abbr": "BAS",
-          "fullName": "Associazione Calcio Bastioni Modena",
-          "primaryName": "AC Bastioni Modena"
+          "abbr": "SAL",
+          "fullName": "Associazione Calcio Salento",
+          "primaryName": "AC Salento"
         },
         {
           "countryId": "IT",
           "clubId": 26,
-          "abbr": "LIT",
-          "fullName": "Football Club Litorale Pescara",
-          "primaryName": "FC Litorale Pescara"
+          "abbr": "BRT",
+          "fullName": "Associazione Calcio Briantea",
+          "primaryName": "AC Briantea"
         },
         {
           "countryId": "IT",
           "clubId": 27,
-          "abbr": "VAR",
-          "fullName": "Unione Sportiva Varesina",
-          "primaryName": "US Varesina"
+          "abbr": "TRM",
+          "fullName": "Football Club Tramontana",
+          "primaryName": "FC Tramontana"
         },
         {
           "countryId": "IT",
           "clubId": 28,
-          "abbr": "ACC",
-          "fullName": "Unione Sportiva Acciaio Terni",
-          "primaryName": "US Acciaio Terni"
+          "abbr": "CRE",
+          "fullName": "Football Club Cremonella",
+          "primaryName": "FC Cremonella"
         },
         {
           "countryId": "IT",
           "clubId": 29,
-          "abbr": "MAR",
-          "fullName": "Associazione Calcio Maremma Grosseto",
-          "primaryName": "AC Maremma Grosseto"
+          "abbr": "FRU",
+          "fullName": "Unione Sportiva Frusinate",
+          "primaryName": "US Frusinate"
         },
         {
           "countryId": "IT",
           "clubId": 30,
-          "abbr": "LVS",
-          "fullName": "Football Club Levante Spezia",
-          "primaryName": "FC Levante Spezia"
+          "abbr": "LEO",
+          "fullName": "Unione Sportiva Leonessa",
+          "primaryName": "US Leonessa"
         },
         {
           "countryId": "IT",
           "clubId": 31,
-          "abbr": "LUC",
-          "fullName": "Unione Sportiva Lucania Potenza",
-          "primaryName": "US Lucania Potenza"
+          "abbr": "PEU",
+          "fullName": "Unione Sportiva Peuceta",
+          "primaryName": "US Peuceta"
         },
         {
           "countryId": "IT",
           "clubId": 32,
-          "abbr": "PNV",
-          "fullName": "Football Club Porto Nuovo",
-          "primaryName": "FC Porto Nuovo"
+          "abbr": "MON",
+          "fullName": "Unione Sportiva Mongibello",
+          "primaryName": "US Mongibello"
         }
       ]
     },
@@ -260,114 +260,114 @@
         {
           "countryId": "ENG",
           "clubId": 1,
-          "abbr": "SWK",
-          "fullName": "Southwick Football Club",
-          "primaryName": "Southwick FC"
+          "abbr": "THA",
+          "fullName": "Thames Athletic Football Club",
+          "primaryName": "Thames Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 2,
-          "abbr": "CRB",
-          "fullName": "Crownbridge Association Football Club",
-          "primaryName": "Crownbridge AFC"
+          "abbr": "MED",
+          "fullName": "Medlock United Football Club",
+          "primaryName": "Medlock United"
         },
         {
           "countryId": "ENG",
           "clubId": 3,
-          "abbr": "WME",
-          "fullName": "Westmere Athletic Football Club",
-          "primaryName": "Westmere Athletic"
+          "abbr": "MRA",
+          "fullName": "Mersey Albion Football Club",
+          "primaryName": "Mersey Albion"
         },
         {
           "countryId": "ENG",
           "clubId": 4,
-          "abbr": "DCF",
-          "fullName": "Dockfield Football Club",
-          "primaryName": "Dockfield FC"
+          "abbr": "BNB",
+          "fullName": "Bournbrook United Football Club",
+          "primaryName": "Bournbrook United"
         },
         {
           "countryId": "ENG",
           "clubId": 5,
-          "abbr": "MRF",
-          "fullName": "Moorfield Football Club",
-          "primaryName": "Moorfield FC"
+          "abbr": "SWA",
+          "fullName": "Southwark Athletic Football Club",
+          "primaryName": "Southwark Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 6,
-          "abbr": "ALW",
-          "fullName": "Alderwick Town Football Club",
-          "primaryName": "Alderwick Town"
+          "abbr": "HUA",
+          "fullName": "Hulme Athletic Football Club",
+          "primaryName": "Hulme Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 7,
-          "abbr": "NVA",
-          "fullName": "Northvale Athletic Football Club",
-          "primaryName": "Northvale Athletic"
+          "abbr": "WLR",
+          "fullName": "Walton Rovers Football Club",
+          "primaryName": "Walton Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 8,
-          "abbr": "OAK",
-          "fullName": "Oakspire Football Club",
-          "primaryName": "Oakspire FC"
+          "abbr": "AVF",
+          "fullName": "Aire Valley Football Club",
+          "primaryName": "Aire Valley FC"
         },
         {
           "countryId": "ENG",
           "clubId": 9,
-          "abbr": "RVB",
-          "fullName": "Riverbank Association Football Club",
-          "primaryName": "Riverbank AFC"
+          "abbr": "TYA",
+          "fullName": "Tyne Athletic Football Club",
+          "primaryName": "Tyne Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 10,
-          "abbr": "SBK",
-          "fullName": "Seabrook Rovers Football Club",
-          "primaryName": "Seabrook Rovers"
+          "abbr": "RVA",
+          "fullName": "Rivelin Athletic Football Club",
+          "primaryName": "Rivelin Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 11,
-          "abbr": "KRE",
-          "fullName": "Kingsreach Town Football Club",
-          "primaryName": "Kingsreach Town"
+          "abbr": "SHA",
+          "fullName": "Sherwood Athletic Football Club",
+          "primaryName": "Sherwood Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 12,
-          "abbr": "HBS",
-          "fullName": "Harbourside Football Club",
-          "primaryName": "Harbourside FC"
+          "abbr": "HOV",
+          "fullName": "Hove Athletic Football Club",
+          "primaryName": "Hove Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 13,
-          "abbr": "FNW",
-          "fullName": "Fenwick Wanderers Football Club",
-          "primaryName": "Fenwick Wanderers"
+          "abbr": "BNA",
+          "fullName": "Bournville Athletic Football Club",
+          "primaryName": "Bournville Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 14,
-          "abbr": "STF",
-          "fullName": "Stoneford Albion Football Club",
-          "primaryName": "Stoneford Albion"
+          "abbr": "CLA",
+          "fullName": "Clifton Athletic Football Club",
+          "primaryName": "Clifton Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 15,
-          "abbr": "BCT",
-          "fullName": "Bellcroft United Football Club",
-          "primaryName": "Bellcroft United"
+          "abbr": "LAB",
+          "fullName": "Clarendon Rovers Football Club",
+          "primaryName": "Clarendon Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 16,
-          "abbr": "ASH",
-          "fullName": "Ashcombe Athletic Football Club",
-          "primaryName": "Ashcombe Athletic"
+          "abbr": "WEA",
+          "fullName": "Wearside Athletic Football Club",
+          "primaryName": "Wearside Athletic"
         }
       ]
     },
@@ -383,114 +383,114 @@
         {
           "countryId": "ENG",
           "clubId": 17,
-          "abbr": "EQY",
-          "fullName": "Eastquay Football Club",
-          "primaryName": "Eastquay FC"
+          "abbr": "KHU",
+          "fullName": "Kelham United Football Club",
+          "primaryName": "Kelham United"
         },
         {
           "countryId": "ENG",
           "clubId": 18,
-          "abbr": "WDC",
-          "fullName": "Willowden County Football Club",
-          "primaryName": "Willowden County"
+          "abbr": "MDA",
+          "fullName": "Meadows Athletic Football Club",
+          "primaryName": "Meadows Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 19,
-          "abbr": "MTV",
-          "fullName": "Maritime Rovers Football Club",
-          "primaryName": "Maritime Rovers"
+          "abbr": "FSH",
+          "fullName": "Foleshill Athletic Football Club",
+          "primaryName": "Foleshill Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 20,
-          "abbr": "RCL",
-          "fullName": "Redcliff Town Football Club",
-          "primaryName": "Redcliff Town"
+          "abbr": "ITR",
+          "fullName": "Itchen Rovers Football Club",
+          "primaryName": "Itchen Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 21,
-          "abbr": "LFD",
-          "fullName": "Lincoln Foundry Football Club",
-          "primaryName": "Lincoln Foundry"
+          "abbr": "PNR",
+          "fullName": "Penn Rovers Football Club",
+          "primaryName": "Penn Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 22,
-          "abbr": "WRC",
-          "fullName": "Willowreach Football Club",
-          "primaryName": "Willowreach FC"
+          "abbr": "MRK",
+          "fullName": "Markeaton Football Club",
+          "primaryName": "FC Markeaton"
         },
         {
           "countryId": "ENG",
           "clubId": 23,
-          "abbr": "CRS",
-          "fullName": "Crescent Athletic Football Club",
-          "primaryName": "Crescent Athletic"
+          "abbr": "SBR",
+          "fullName": "Southbourne Rovers Football Club",
+          "primaryName": "Southbourne Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 24,
-          "abbr": "BRD",
-          "fullName": "Broadstone Rovers Football Club",
-          "primaryName": "Broadstone Rovers"
+          "abbr": "PTU",
+          "fullName": "Potteries United Football Club",
+          "primaryName": "Potteries United"
         },
         {
           "countryId": "ENG",
           "clubId": 25,
-          "abbr": "IRF",
-          "fullName": "Ironfield United Football Club",
-          "primaryName": "Ironfield United"
+          "abbr": "CLR",
+          "fullName": "Acklam Rovers Football Club",
+          "primaryName": "Acklam Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 26,
-          "abbr": "DNH",
-          "fullName": "Dunehaven Football Club",
-          "primaryName": "Dunehaven FC"
+          "abbr": "WEN",
+          "fullName": "Wensum Athletic Football Club",
+          "primaryName": "Wensum Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 27,
-          "abbr": "TDF",
-          "fullName": "Tideford Association Football Club",
-          "primaryName": "Tideford AFC"
+          "abbr": "ORW",
+          "fullName": "Orwell Football Club",
+          "primaryName": "FC Orwell"
         },
         {
           "countryId": "ENG",
           "clubId": 28,
-          "abbr": "WRF",
-          "fullName": "Wearfield Athletic Football Club",
-          "primaryName": "Wearfield Athletic"
+          "abbr": "EWA",
+          "fullName": "Ewood Athletic Football Club",
+          "primaryName": "Ewood Athletic"
         },
         {
           "countryId": "ENG",
           "clubId": 29,
-          "abbr": "RDB",
-          "fullName": "Redbrook Football Club",
-          "primaryName": "Redbrook FC"
+          "abbr": "DPD",
+          "fullName": "Deepdale Rovers Football Club",
+          "primaryName": "Deepdale Rovers"
         },
         {
           "countryId": "ENG",
           "clubId": 30,
-          "abbr": "CBN",
-          "fullName": "Claybank Town Football Club",
-          "primaryName": "Claybank Town"
+          "abbr": "FNT",
+          "fullName": "Farnworth United Football Club",
+          "primaryName": "Farnworth United"
         },
         {
           "countryId": "ENG",
           "clubId": 31,
-          "abbr": "WFR",
-          "fullName": "Wolfridge United Football Club",
-          "primaryName": "Wolfridge United"
+          "abbr": "MAN",
+          "fullName": "Manningham Football Club",
+          "primaryName": "FC Manningham"
         },
         {
           "countryId": "ENG",
           "clubId": 32,
-          "abbr": "ELM",
-          "fullName": "Elmstead Albion Football Club",
-          "primaryName": "Elmstead Albion"
+          "abbr": "HDF",
+          "fullName": "Humber Dock Football Club",
+          "primaryName": "Humber Dock FC"
         }
       ]
     },
@@ -506,114 +506,114 @@
         {
           "countryId": "ES",
           "clubId": 1,
-          "abbr": "ALB",
-          "fullName": "Club Deportivo Alborada Madrid",
-          "primaryName": "CD Alborada"
+          "abbr": "IMP",
+          "fullName": "Club Deportivo Imperial Madrid",
+          "primaryName": "CD Imperial Madrid"
         },
         {
           "countryId": "ES",
           "clubId": 2,
-          "abbr": "MDC",
-          "fullName": "Futbol Club Mar de Cobre Barcelona",
-          "primaryName": "FC Mar de Cobre"
+          "abbr": "DRA",
+          "fullName": "Club Esportiu Drassanes",
+          "primaryName": "CE Drassanes"
         },
         {
           "countryId": "ES",
           "clubId": 3,
-          "abbr": "MTA",
-          "fullName": "Unión Deportiva Monteazul Valencia",
-          "primaryName": "UD Monteazul"
+          "abbr": "CAE",
+          "fullName": "Sociedad Deportiva Castellana",
+          "primaryName": "SD Castellana"
         },
         {
           "countryId": "ES",
           "clubId": 4,
-          "abbr": "RBC",
-          "fullName": "Club Deportivo Ribera Clara Sevilla",
-          "primaryName": "CD Ribera Clara"
+          "abbr": "AZA",
+          "fullName": "Unión Deportiva Azahar",
+          "primaryName": "UD Azahar"
         },
         {
           "countryId": "ES",
           "clubId": 5,
-          "abbr": "AVS",
-          "fullName": "Club Atlético Viento Sur Málaga",
-          "primaryName": "Atlético Viento Sur"
+          "abbr": "HIS",
+          "fullName": "Club Deportivo Hispalense",
+          "primaryName": "CD Hispalense"
         },
         {
           "countryId": "ES",
           "clubId": 6,
-          "abbr": "ENC",
-          "fullName": "Sociedad Deportiva Encinar Zaragoza",
-          "primaryName": "SD Encinar"
+          "abbr": "MOT",
+          "fullName": "Unió Esportiva Montjuïc",
+          "primaryName": "UE Montjuïc"
         },
         {
           "countryId": "ES",
           "clubId": 7,
-          "abbr": "HRZ",
-          "fullName": "Club Deportivo Harizti Bilbao",
-          "primaryName": "CD Harizti"
+          "abbr": "BEG",
+          "fullName": "Sociedad Deportiva Begoña",
+          "primaryName": "SD Begoña"
         },
         {
           "countryId": "ES",
           "clubId": 8,
-          "abbr": "IZA",
-          "fullName": "Unión Deportiva Izarra Donostia",
-          "primaryName": "Unión Izarra"
+          "abbr": "CER",
+          "fullName": "Club Deportivo Cerámico",
+          "primaryName": "CD Cerámico"
         },
         {
           "countryId": "ES",
           "clubId": 9,
-          "abbr": "LMB",
-          "fullName": "Club de Fútbol Lumbre Granada",
-          "primaryName": "CF Lumbre"
+          "abbr": "PIL",
+          "fullName": "Sociedad Deportiva Pilarica",
+          "primaryName": "SD Pilarica"
         },
         {
           "countryId": "ES",
           "clubId": 10,
-          "abbr": "RBL",
-          "fullName": "Club Deportivo Robledal Valladolid",
-          "primaryName": "CD Robledal"
+          "abbr": "MAL",
+          "fullName": "Unión Deportiva Malagueta",
+          "primaryName": "UD Malagueta"
         },
         {
           "countryId": "ES",
           "clubId": 11,
-          "abbr": "BRV",
-          "fullName": "Unión Deportiva Bravura Salamanca",
-          "primaryName": "UD Bravura"
+          "abbr": "DON",
+          "fullName": "Sociedad Deportiva Donostiarra",
+          "primaryName": "SD Donostiarra"
         },
         {
           "countryId": "ES",
           "clubId": 12,
-          "abbr": "BRT",
-          "fullName": "Sociedade Deportiva Brétema da Coruña",
-          "primaryName": "SD Brétema"
+          "abbr": "OLI",
+          "fullName": "Club Deportivo Olívico",
+          "primaryName": "CD Olívico"
         },
         {
           "countryId": "ES",
           "clubId": 13,
-          "abbr": "CLZ",
-          "fullName": "Club Deportivo Calzada Córdoba",
-          "primaryName": "CD Calzada"
+          "abbr": "HER",
+          "fullName": "Sociedad Deportiva Herculina",
+          "primaryName": "SD Herculina"
         },
         {
           "countryId": "ES",
           "clubId": 14,
-          "abbr": "BHD",
-          "fullName": "Unión Deportiva Bahía Dorada Cádiz",
-          "primaryName": "UD Bahía Dorada"
+          "abbr": "GAV",
+          "fullName": "Futbol Club Gavarres",
+          "primaryName": "FC Gavarres"
         },
         {
           "countryId": "ES",
           "clubId": 15,
-          "abbr": "MVD",
-          "fullName": "Sociedad Deportiva Monteverde Oviedo",
-          "primaryName": "SD Monteverde"
+          "abbr": "LEV",
+          "fullName": "Sociedad Deportiva Levantina",
+          "primaryName": "SD Levantina"
         },
         {
           "countryId": "ES",
           "clubId": 16,
-          "abbr": "PNC",
-          "fullName": "Racing Club Peñaclara Santander",
-          "primaryName": "Racing Peñaclara"
+          "abbr": "GIR",
+          "fullName": "Sociedad Deportiva Giralda",
+          "primaryName": "SD Giralda"
         }
       ]
     },
@@ -629,114 +629,114 @@
         {
           "countryId": "ES",
           "clubId": 17,
-          "abbr": "AMA",
-          "fullName": "Club Atlético Almadraba Almería",
-          "primaryName": "Atlético Almadraba"
+          "abbr": "IND",
+          "fullName": "Club de Fútbol Indautxu",
+          "primaryName": "CF Indautxu"
         },
         {
           "countryId": "ES",
           "clubId": 18,
-          "abbr": "CIG",
-          "fullName": "Club Deportivo Cigarral Toledo",
-          "primaryName": "CD Cigarral"
+          "abbr": "GUI",
+          "fullName": "Agrupación Deportiva Guiniguada",
+          "primaryName": "AD Guiniguada"
         },
         {
           "countryId": "ES",
           "clubId": 19,
-          "abbr": "LVA",
-          "fullName": "Unión Deportiva Levantina Alicante",
-          "primaryName": "UD Levantina"
+          "abbr": "GIB",
+          "fullName": "Club Deportivo Gibralfaro",
+          "primaryName": "CD Gibralfaro"
         },
         {
           "countryId": "ES",
           "clubId": 20,
-          "abbr": "VLD",
-          "fullName": "Sporting Club Valduna Gijón",
-          "primaryName": "Sporting Valduna"
+          "abbr": "PON",
+          "fullName": "Unión Deportiva Ponent",
+          "primaryName": "UD Ponent"
         },
         {
           "countryId": "ES",
           "clubId": 21,
-          "abbr": "VGA",
-          "fullName": "Club Deportivo Vega Alta Murcia",
-          "primaryName": "CD Vega Alta"
+          "abbr": "NAV",
+          "fullName": "Club de Fútbol Navarrería",
+          "primaryName": "CF Navarrería"
         },
         {
           "countryId": "ES",
           "clubId": 22,
-          "abbr": "SAT",
-          "fullName": "Club Atlético Salitre Vigo",
-          "primaryName": "Atlético Salitre"
+          "abbr": "GET",
+          "fullName": "Unión Deportiva Getafense",
+          "primaryName": "UD Getafense"
         },
         {
           "countryId": "ES",
           "clubId": 23,
-          "abbr": "ARG",
-          "fullName": "Unión Deportiva Arga Pamplona",
-          "primaryName": "UD Arga"
-        },
-        {
-          "countryId": "ES",
-          "clubId": 24,
-          "abbr": "ARL",
-          "fullName": "Club de Fútbol Arlanzón Burgos",
-          "primaryName": "CF Arlanzón"
-        },
-        {
-          "countryId": "ES",
-          "clubId": 25,
-          "abbr": "BNS",
-          "fullName": "Club Atlético Bernesga León",
-          "primaryName": "Atlético Bernesga"
-        },
-        {
-          "countryId": "ES",
-          "clubId": 26,
-          "abbr": "EBC",
-          "fullName": "Sociedad Deportiva Ebro Claro Logroño",
-          "primaryName": "SD Ebro Claro"
-        },
-        {
-          "countryId": "ES",
-          "clubId": 27,
-          "abbr": "LLN",
-          "fullName": "Club Deportivo Llanura Albacete",
-          "primaryName": "CD Llanura"
-        },
-        {
-          "countryId": "ES",
-          "clubId": 28,
-          "abbr": "PLM",
-          "fullName": "Unión Deportiva Palmeral Elche",
+          "abbr": "PAL",
+          "fullName": "Unión Deportiva Palmeral",
           "primaryName": "UD Palmeral"
         },
         {
           "countryId": "ES",
+          "clubId": 24,
+          "abbr": "ZAB",
+          "fullName": "Club Deportivo Zabalgana",
+          "primaryName": "CD Zabalgana"
+        },
+        {
+          "countryId": "ES",
+          "clubId": 25,
+          "abbr": "PIS",
+          "fullName": "Club Deportivo Pisuerga",
+          "primaryName": "CD Pisuerga"
+        },
+        {
+          "countryId": "ES",
+          "clubId": 26,
+          "abbr": "ALB",
+          "fullName": "Unión Deportiva Albaicín",
+          "primaryName": "UD Albaicín"
+        },
+        {
+          "countryId": "ES",
+          "clubId": 27,
+          "abbr": "HUE",
+          "fullName": "Club Deportivo Huertano",
+          "primaryName": "CD Huertano"
+        },
+        {
+          "countryId": "ES",
+          "clubId": 28,
+          "abbr": "CIM",
+          "fullName": "Sociedad Deportiva Cimavilla",
+          "primaryName": "SD Cimavilla"
+        },
+        {
+          "countryId": "ES",
           "clubId": 29,
-          "abbr": "DRS",
-          "fullName": "Club de Fútbol Dársena Cartagena",
-          "primaryName": "CF Dársena"
+          "abbr": "NAR",
+          "fullName": "Club Deportivo Naranco",
+          "primaryName": "CD Naranco"
         },
         {
           "countryId": "ES",
           "clubId": 30,
-          "abbr": "CPN",
-          "fullName": "Club Atlético Campiña Jerez",
-          "primaryName": "Atlético Campiña"
+          "abbr": "ALA",
+          "fullName": "Sociedad Deportiva Alacantina",
+          "primaryName": "SD Alacantina"
         },
         {
           "countryId": "ES",
           "clubId": 31,
-          "abbr": "AZH",
-          "fullName": "Club Deportivo Azahar Castellón",
-          "primaryName": "CD Azahar"
+          "abbr": "CAL",
+          "fullName": "Club Deportivo Califal",
+          "primaryName": "CD Califal"
         },
         {
           "countryId": "ES",
           "clubId": 32,
-          "abbr": "MVT",
-          "fullName": "Unió Esportiva Miravent Tarragona",
-          "primaryName": "UE Miravent"
+          "abbr": "SAR",
+          "fullName": "Sociedad Deportiva Sardinero",
+          "primaryName": "SD Sardinero"
         }
       ]
     },
@@ -752,114 +752,114 @@
         {
           "countryId": "DE",
           "clubId": 1,
-          "abbr": "MGR",
-          "fullName": "Sportverein Morgenrot Berlin",
-          "primaryName": "SV Morgenrot"
+          "abbr": "FCM",
+          "fullName": "Fußballclub Münchner Freiheit",
+          "primaryName": "FC Münchner Freiheit"
         },
         {
           "countryId": "DE",
           "clubId": 2,
-          "abbr": "HST",
-          "fullName": "Fußballclub Hafenstern Hamburg",
-          "primaryName": "FC Hafenstern"
+          "abbr": "REI",
+          "fullName": "Sportverein Reinickendorf",
+          "primaryName": "SV Reinickendorf"
         },
         {
           "countryId": "DE",
           "clubId": 3,
-          "abbr": "SBW",
-          "fullName": "Turn- und Sportverein Silberwald München",
-          "primaryName": "TSV Silberwald"
+          "abbr": "EVG",
+          "fullName": "Fußballclub Eving",
+          "primaryName": "FC Eving"
         },
         {
           "countryId": "DE",
           "clubId": 4,
-          "abbr": "RHG",
-          "fullName": "Sport-Club Rheinglanz Köln",
-          "primaryName": "SC Rheinglanz"
+          "abbr": "ALV",
+          "fullName": "Alster Sportverein",
+          "primaryName": "Alster SV"
         },
         {
           "countryId": "DE",
           "clubId": 5,
-          "abbr": "HBL",
-          "fullName": "Verein für Bewegungsspiele Höhenblick Stuttgart",
-          "primaryName": "VfB Höhenblick"
+          "abbr": "SPA",
+          "fullName": "Sportclub Spandau",
+          "primaryName": "SC Spandau"
         },
         {
           "countryId": "DE",
           "clubId": 6,
-          "abbr": "LHD",
-          "fullName": "Sportverein Lindenhof Leipzig",
-          "primaryName": "SV Lindenhof"
+          "abbr": "FCT",
+          "fullName": "Fußballclub Pleißestadt",
+          "primaryName": "FC Pleißestadt"
         },
         {
           "countryId": "DE",
           "clubId": 7,
-          "abbr": "EBG",
-          "fullName": "Dresdner Sport-Club Elbengrün",
-          "primaryName": "SC Elbengrün"
+          "abbr": "VFT",
+          "fullName": "Verein für Bewegungsspiele Frankfurt-West",
+          "primaryName": "VfB Frankfurt-West"
         },
         {
           "countryId": "DE",
           "clubId": 8,
-          "abbr": "NDW",
-          "fullName": "Fußballclub Nordweide Bremen",
-          "primaryName": "FC Nordweide"
+          "abbr": "EHF",
+          "fullName": "Sportclub Ehrenfeld Köln",
+          "primaryName": "SC Ehrenfeld"
         },
         {
           "countryId": "DE",
           "clubId": 9,
-          "abbr": "EFD",
-          "fullName": "Turn- und Sportverein Eichenfeld Hannover",
-          "primaryName": "TSV Eichenfeld"
+          "abbr": "HEN",
+          "fullName": "Turn- und Sportverein Isar München",
+          "primaryName": "TSV Isar München"
         },
         {
           "countryId": "DE",
           "clubId": 10,
-          "abbr": "SHN",
-          "fullName": "Freiburger Sportverein Sonnenhain",
-          "primaryName": "SV Sonnenhain"
+          "abbr": "CAN",
+          "fullName": "Fußballclub Cannstatt",
+          "primaryName": "FC Cannstatt"
         },
         {
           "countryId": "DE",
           "clubId": 11,
-          "abbr": "BGL",
-          "fullName": "Fußballclub Burglicht Nürnberg",
-          "primaryName": "FC Burglicht"
+          "abbr": "OPL",
+          "fullName": "Turn- und Sportverein Opladen",
+          "primaryName": "TSV Opladen"
         },
         {
           "countryId": "DE",
           "clubId": 12,
-          "abbr": "RBG",
-          "fullName": "Bonner Fußballverein Rheinbogen",
-          "primaryName": "FV Rheinbogen"
+          "abbr": "SVW",
+          "fullName": "Sportverein Weser Bremen",
+          "primaryName": "SV Weser Bremen"
         },
         {
           "countryId": "DE",
           "clubId": 13,
-          "abbr": "WFD",
-          "fullName": "Sport-Club Westfelde Dortmund",
-          "primaryName": "SC Westfelde"
+          "abbr": "ALT",
+          "fullName": "Sportclub Altona",
+          "primaryName": "SC Altona"
         },
         {
           "countryId": "DE",
           "clubId": 14,
-          "abbr": "KPH",
-          "fullName": "Essener Sportverein Kupferhain",
-          "primaryName": "SV Kupferhain"
+          "abbr": "TRE",
+          "fullName": "Turn- und Sportverein Tremonia",
+          "primaryName": "TSV Tremonia"
         },
         {
           "countryId": "DE",
           "clubId": 15,
-          "abbr": "AFD",
-          "fullName": "Düsseldorfer Fußballclub Auenfeld",
-          "primaryName": "FC Auenfeld"
+          "abbr": "URT",
+          "fullName": "Verein für Leibesübungen Main Frankfurt",
+          "primaryName": "VfL Main Frankfurt"
         },
         {
           "countryId": "DE",
           "clubId": 16,
-          "abbr": "LCH",
-          "fullName": "Augsburger Turn- und Sportverein Lechhöhe",
-          "primaryName": "TSV Lechhöhe"
+          "abbr": "LIN",
+          "fullName": "Fußballclub Lindenau",
+          "primaryName": "FC Lindenau"
         }
       ]
     },
@@ -875,114 +875,114 @@
         {
           "countryId": "DE",
           "clubId": 17,
-          "abbr": "FWD",
-          "fullName": "Kieler Sport-Club Fördewind",
-          "primaryName": "SC Fördewind"
+          "abbr": "MUE",
+          "fullName": "Fußballclub Mülheim",
+          "primaryName": "FC Mülheim"
         },
         {
           "countryId": "DE",
           "clubId": 18,
-          "abbr": "RBT",
-          "fullName": "Mainzer Fußballverein Rebental",
-          "primaryName": "FV Rebental"
+          "abbr": "VER",
+          "fullName": "Verein für Leibesübungen Leine Hannover",
+          "primaryName": "VfL Leine Hannover"
         },
         {
           "countryId": "DE",
           "clubId": 19,
-          "abbr": "HFT",
-          "fullName": "Rostocker Fußballclub Hafentor",
-          "primaryName": "FC Hafentor"
+          "abbr": "GOS",
+          "fullName": "Fußballclub Gostenhof",
+          "primaryName": "FC Gostenhof"
         },
         {
           "countryId": "DE",
           "clubId": 20,
-          "abbr": "WKR",
-          "fullName": "Münsteraner Sportverein Waldkrone",
-          "primaryName": "SV Waldkrone"
+          "abbr": "OBK",
+          "fullName": "Fußballclub Oberkassel Düsseldorf",
+          "primaryName": "FC Oberkassel"
         },
         {
           "countryId": "DE",
           "clubId": 21,
-          "abbr": "HVB",
-          "fullName": "Potsdamer Sportverein Havelblick",
-          "primaryName": "SV Havelblick"
+          "abbr": "FAL",
+          "fullName": "Verein für Leibesübungen Fallersleben",
+          "primaryName": "VfL Fallersleben"
         },
         {
           "countryId": "DE",
           "clubId": 22,
-          "abbr": "BKS",
-          "fullName": "Lübecker Verein für Leibesübungen Backstein",
-          "primaryName": "VfL Backstein"
+          "abbr": "DRI",
+          "fullName": "Fußballclub Dreisam",
+          "primaryName": "FC Dreisam"
         },
         {
           "countryId": "DE",
           "clubId": 23,
-          "abbr": "EBW",
-          "fullName": "Magdeburger Sport-Club Elbwarte",
-          "primaryName": "SC Elbwarte"
+          "abbr": "BRM",
+          "fullName": "Bremer Neustadt Sportverein",
+          "primaryName": "Bremer Neustadt SV"
         },
         {
           "countryId": "DE",
           "clubId": 24,
-          "abbr": "KMB",
-          "fullName": "Erfurter Fußballclub Krämerbrücke",
-          "primaryName": "FC Krämerbrücke"
+          "abbr": "BUE",
+          "fullName": "Sportverein Buer",
+          "primaryName": "SV Buer"
         },
         {
           "countryId": "DE",
           "clubId": 25,
-          "abbr": "SLB",
-          "fullName": "Jenaer Sportverein Saalebogen",
-          "primaryName": "SV Saalebogen"
+          "abbr": "BOE",
+          "fullName": "Verein für Bewegungsspiele Bökelberg",
+          "primaryName": "VfB Bökelberg"
         },
         {
           "countryId": "DE",
           "clubId": 26,
-          "abbr": "WRK",
-          "fullName": "Chemnitzer Sportgemeinschaft Werkhof",
-          "primaryName": "SG Werkhof"
+          "abbr": "GON",
+          "fullName": "Turn- und Sportverein Gonsenheim",
+          "primaryName": "TSV Gonsenheim"
         },
         {
           "countryId": "DE",
           "clubId": 27,
-          "abbr": "SZB",
-          "fullName": "Hallescher Fußballverein Salzbrücke",
-          "primaryName": "FV Salzbrücke"
+          "abbr": "KRA",
+          "fullName": "Sportverein Kraichgau",
+          "primaryName": "SV Kraichgau"
         },
         {
           "countryId": "DE",
           "clubId": 28,
-          "abbr": "LNF",
-          "fullName": "Bielefelder Verein für Bewegungsspiele Leinenfeld",
-          "primaryName": "VfB Leinenfeld"
+          "abbr": "FUV",
+          "fullName": "Fuggerstadt Sportverein",
+          "primaryName": "Fuggerstadt SV"
         },
         {
           "countryId": "DE",
           "clubId": 29,
-          "abbr": "HSW",
-          "fullName": "Osnabrücker Sportverein Hasewiese",
-          "primaryName": "SV Hasewiese"
+          "abbr": "WEI",
+          "fullName": "Verein für Leibesübungen Weitmar",
+          "primaryName": "VfL Weitmar"
         },
         {
           "countryId": "DE",
           "clubId": 30,
-          "abbr": "LWT",
-          "fullName": "Braunschweiger Fußballclub Löwentor",
-          "primaryName": "FC Löwentor"
+          "abbr": "HLS",
+          "fullName": "Holstein Kieler Fußballclub",
+          "primaryName": "Holstein Kieler FC"
         },
         {
           "countryId": "DE",
           "clubId": 31,
-          "abbr": "FDH",
-          "fullName": "Kasseler Sport-Club Fuldahain",
-          "primaryName": "SC Fuldahain"
+          "abbr": "UHE",
+          "fullName": "Verein für Bewegungsspiele Karlsruhe",
+          "primaryName": "VfB Karlsruhe"
         },
         {
           "countryId": "DE",
           "clubId": 32,
-          "abbr": "QHF",
-          "fullName": "Wiesbadener Fußballverein Quellenhof",
-          "primaryName": "FV Quellenhof"
+          "abbr": "VFM",
+          "fullName": "Verein für Bewegungsspiele Heidenheim",
+          "primaryName": "VfB Heidenheim"
         }
       ]
     },
@@ -998,114 +998,114 @@
         {
           "countryId": "FR",
           "clubId": 1,
-          "abbr": "EQX",
-          "fullName": "Union Sportive Équinoxe Paris",
-          "primaryName": "US Équinoxe"
+          "abbr": "FCP",
+          "fullName": "Football Club Parisien",
+          "primaryName": "FC Parisien"
         },
         {
           "countryId": "FR",
           "clubId": 2,
-          "abbr": "MCL",
-          "fullName": "Football Club Montclair Lyon",
-          "primaryName": "FC Montclair"
+          "abbr": "LIA",
+          "fullName": "Football Club Massalia",
+          "primaryName": "FC Massalia"
         },
         {
           "countryId": "FR",
           "clubId": 3,
-          "abbr": "AZL",
-          "fullName": "Sporting Club Azurline Marseille",
-          "primaryName": "Sporting Azurline"
+          "abbr": "ERE",
+          "fullName": "Racing Club de Fourvière",
+          "primaryName": "RC Fourvière"
         },
         {
           "countryId": "FR",
           "clubId": 4,
-          "abbr": "ECT",
-          "fullName": "Stade de l’Éclat Toulouse",
-          "primaryName": "Stade Éclat"
+          "abbr": "ETO",
+          "fullName": "Étoile Sportive de Paris",
+          "primaryName": "ES Paris"
         },
         {
           "countryId": "FR",
           "clubId": 5,
-          "abbr": "BLR",
-          "fullName": "Association Sportive Belrive Bordeaux",
-          "primaryName": "AS Belrive"
+          "abbr": "DLE",
+          "fullName": "Sporting Club de la Deûle",
+          "primaryName": "SC Deûle"
         },
         {
           "countryId": "FR",
           "clubId": 6,
-          "abbr": "AVL",
-          "fullName": "Football Club Aveline Nantes",
-          "primaryName": "FC Aveline"
+          "abbr": "FCR",
+          "fullName": "Football Club du Rocher",
+          "primaryName": "FC Rocher"
         },
         {
           "countryId": "FR",
           "clubId": 7,
-          "abbr": "CLB",
-          "fullName": "Union Sportive Clairbois Lille",
-          "primaryName": "US Clairbois"
+          "abbr": "RAC",
+          "fullName": "Racing Club Azur",
+          "primaryName": "RC Azur"
         },
         {
           "countryId": "FR",
           "clubId": 8,
-          "abbr": "BML",
-          "fullName": "Racing Club Brumelune Strasbourg",
-          "primaryName": "Racing Brumelune"
+          "abbr": "LLE",
+          "fullName": "Football Club Maritime Marseille",
+          "primaryName": "FC Maritime Marseille"
         },
         {
           "countryId": "FR",
           "clubId": 9,
-          "abbr": "EMR",
-          "fullName": "Étoile Sportive Méridienne Nice",
-          "primaryName": "Étoile Méridienne"
+          "abbr": "ISE",
+          "fullName": "Étoile Sportive Lyonnaise",
+          "primaryName": "ES Lyonnaise"
         },
         {
           "countryId": "FR",
           "clubId": 10,
-          "abbr": "CHT",
-          "fullName": "Stade Chanterive Rennes",
-          "primaryName": "Stade Chanterive"
+          "abbr": "NNE",
+          "fullName": "Football Club Garonne",
+          "primaryName": "FC Garonne"
         },
         {
           "countryId": "FR",
           "clubId": 11,
-          "abbr": "VRM",
-          "fullName": "Cercle Sportif Vermeil Montpellier",
-          "primaryName": "CS Vermeil"
+          "abbr": "NDE",
+          "fullName": "Racing Club de Gironde",
+          "primaryName": "RC de Gironde"
         },
         {
           "countryId": "FR",
           "clubId": 12,
-          "abbr": "VLF",
-          "fullName": "Association Sportive Valfleuri Dijon",
-          "primaryName": "AS Valfleuri"
+          "abbr": "UNE",
+          "fullName": "Union Sportive Lensienne",
+          "primaryName": "US Lensienne"
         },
         {
           "countryId": "FR",
           "clubId": 13,
-          "abbr": "CTX",
-          "fullName": "Union Sportive des Coteaux Reims",
-          "primaryName": "US Coteaux"
+          "abbr": "UCN",
+          "fullName": "Union Sportive des Chantiers Nantais",
+          "primaryName": "US Chantiers Nantais"
         },
         {
           "countryId": "FR",
           "clubId": 14,
-          "abbr": "ARD",
-          "fullName": "Cercle Sportif Ardoise Angers",
-          "primaryName": "CS Ardoise"
+          "abbr": "ETE",
+          "fullName": "Étoile Sportive Alsacienne",
+          "primaryName": "ES Alsacienne"
         },
         {
           "countryId": "FR",
           "clubId": 15,
-          "abbr": "PNR",
-          "fullName": "Football Club Pennaroc Brest",
-          "primaryName": "FC Pennaroc"
+          "abbr": "ASR",
+          "fullName": "Association Sportive Rennaise",
+          "primaryName": "AS Rennaise"
         },
         {
           "countryId": "FR",
           "clubId": 16,
-          "abbr": "BLD",
-          "fullName": "Sporting Club Belledonne Grenoble",
-          "primaryName": "Sporting Belledonne"
+          "abbr": "FUR",
+          "fullName": "Football Club du Furan",
+          "primaryName": "FC Furan"
         }
       ]
     },
@@ -1121,114 +1121,114 @@
         {
           "countryId": "FR",
           "clubId": 17,
-          "abbr": "TNL",
-          "fullName": "Union Sportive des Tonneliers Tours",
-          "primaryName": "US Tonneliers"
+          "abbr": "STE",
+          "fullName": "Stade Vauban Lille",
+          "primaryName": "Stade Vauban Lille"
         },
         {
           "countryId": "FR",
           "clubId": 18,
-          "abbr": "VBR",
-          "fullName": "Football Club Valbrume Amiens",
-          "primaryName": "FC Valbrume"
+          "abbr": "ASE",
+          "fullName": "Association Sportive Riviera Niçoise",
+          "primaryName": "AS Riviera Niçoise"
         },
         {
           "countryId": "FR",
           "clubId": 19,
-          "abbr": "MSL",
-          "fullName": "Association Sportive Mosellane Metz",
-          "primaryName": "AS Mosellane"
+          "abbr": "AIS",
+          "fullName": "Sporting Club Lauragais",
+          "primaryName": "SC Lauragais"
         },
         {
           "countryId": "FR",
           "clubId": 20,
-          "abbr": "OLR",
-          "fullName": "Olympique du Loiret Orléans",
-          "primaryName": "Olympique Loiret"
+          "abbr": "ASB",
+          "fullName": "Association Sportive Bordelaise",
+          "primaryName": "AS Bordelaise"
         },
         {
           "countryId": "FR",
           "clubId": 21,
-          "abbr": "BSP",
-          "fullName": "Football Club Briseport du Havre",
-          "primaryName": "FC Briseport"
+          "abbr": "CHY",
+          "fullName": "Football Club de Chantenay",
+          "primaryName": "FC Chantenay"
         },
         {
           "countryId": "FR",
           "clubId": 22,
-          "abbr": "VPT",
-          "fullName": "Union Sportive du Vieux-Pont de Rouen",
-          "primaryName": "US Vieux-Pont"
+          "abbr": "PNF",
+          "fullName": "Football Club de la Penfeld",
+          "primaryName": "FC Penfeld"
         },
         {
           "countryId": "FR",
           "clubId": 23,
-          "abbr": "ONV",
-          "fullName": "Association Sportive Orneval de Caen",
-          "primaryName": "AS Orneval"
+          "abbr": "ASO",
+          "fullName": "Association Sportive Montpelliéraine",
+          "primaryName": "AS Montpelliéraine"
         },
         {
           "countryId": "FR",
           "clubId": 24,
-          "abbr": "HND",
-          "fullName": "Cercle Sportif des Hunaudières du Mans",
-          "primaryName": "CS Hunaudières"
+          "abbr": "ASI",
+          "fullName": "Association Sportive Rémoise",
+          "primaryName": "AS Rémoise"
         },
         {
           "countryId": "FR",
           "clubId": 25,
-          "abbr": "FGV",
-          "fullName": "Sporting Club Forgeval de Saint-Étienne",
-          "primaryName": "SC Forgeval"
+          "abbr": "ASH",
+          "fullName": "Association Sportive Havraise",
+          "primaryName": "AS Havraise"
         },
         {
           "countryId": "FR",
           "clubId": 26,
-          "abbr": "VLC",
-          "fullName": "Association Sportive Volcanis de Clermont-Ferrand",
-          "primaryName": "AS Volcanis"
+          "abbr": "INE",
+          "fullName": "Étoile Sportive Angevine",
+          "primaryName": "ES Angevine"
         },
         {
           "countryId": "FR",
           "clubId": 27,
-          "abbr": "EMX",
-          "fullName": "Football Club des Émaux de Limoges",
-          "primaryName": "FC Émaux"
+          "abbr": "AUX",
+          "fullName": "Racing Club Auxerrois",
+          "primaryName": "Racing Auxerrois"
         },
         {
           "countryId": "FR",
           "clubId": 28,
-          "abbr": "UCL",
-          "fullName": "Union Sportive du Clain de Poitiers",
-          "primaryName": "US Clain"
+          "abbr": "LAN",
+          "fullName": "Football Club Mosellan",
+          "primaryName": "FC Mosellan"
         },
         {
           "countryId": "FR",
           "clubId": 29,
-          "abbr": "MVE",
-          "fullName": "Racing Club Marévent de La Rochelle",
-          "primaryName": "RC Marévent"
+          "abbr": "AND",
+          "fullName": "Stade Normand",
+          "primaryName": "Stade Normand"
         },
         {
           "countryId": "FR",
           "clubId": 30,
-          "abbr": "ADL",
-          "fullName": "Association Sportive Adourline de Bayonne",
-          "primaryName": "AS Adourline"
+          "abbr": "ASC",
+          "fullName": "Association Sportive Champenoise",
+          "primaryName": "AS Champenoise"
         },
         {
           "countryId": "FR",
           "clubId": 31,
-          "abbr": "GVC",
-          "fullName": "Football Club Gaveclair de Pau",
-          "primaryName": "FC Gaveclair"
+          "abbr": "RSB",
+          "fullName": "Union Sportive du Risban",
+          "primaryName": "US Risban"
         },
         {
           "countryId": "FR",
           "clubId": 32,
-          "abbr": "TRM",
-          "fullName": "Union Sportive Tramontane de Perpignan",
-          "primaryName": "US Tramontane"
+          "abbr": "SCO",
+          "fullName": "Football Club du Scorff",
+          "primaryName": "FC Scorff"
         }
       ]
     },
@@ -1244,114 +1244,114 @@
         {
           "countryId": "PT",
           "clubId": 1,
-          "abbr": "MIR",
-          "fullName": "Sport Clube Miradouro de Lisboa",
-          "primaryName": "SC Miradouro"
+          "abbr": "BEM",
+          "fullName": "Futebol Clube de Belém",
+          "primaryName": "FC Belém"
         },
         {
           "countryId": "PT",
           "clubId": 2,
-          "abbr": "RBA",
-          "fullName": "Futebol Clube Ribeiralta do Porto",
-          "primaryName": "FC Ribeiralta"
+          "abbr": "ATP",
+          "fullName": "Atlético Clube Portuense",
+          "primaryName": "Atlético Portuense"
         },
         {
           "countryId": "PT",
           "clubId": 3,
-          "abbr": "CRV",
-          "fullName": "Atlético Clube Carvalho de Braga",
-          "primaryName": "AC Carvalho"
+          "abbr": "ALC",
+          "fullName": "Clube de Futebol de Alcântara",
+          "primaryName": "CF Alcântara"
         },
         {
           "countryId": "PT",
           "clubId": 4,
-          "abbr": "MDV",
-          "fullName": "União Desportiva Mondeverde de Coimbra",
-          "primaryName": "União Mondeverde"
+          "abbr": "NOG",
+          "fullName": "Futebol Clube de Nogueiró",
+          "primaryName": "FC Nogueiró"
         },
         {
           "countryId": "PT",
           "clubId": 5,
-          "abbr": "SSN",
-          "fullName": "Sporting Clube Sol Nascente de Faro",
-          "primaryName": "Sporting Sol Nascente"
+          "abbr": "CMP",
+          "fullName": "Clube de Futebol de Campanhã",
+          "primaryName": "CF Campanhã"
         },
         {
           "countryId": "PT",
           "clubId": 6,
-          "abbr": "MRC",
-          "fullName": "Atlético Clube Maré Clara de Aveiro",
-          "primaryName": "AC Maré Clara"
+          "abbr": "OLV",
+          "fullName": "Sporting Clube de Oliveira",
+          "primaryName": "SC Oliveira"
         },
         {
           "countryId": "PT",
           "clubId": 7,
-          "abbr": "ALJ",
-          "fullName": "Grupo Desportivo Alentejar de Évora",
-          "primaryName": "GD Alentejar"
+          "abbr": "ARZ",
+          "fullName": "Futebol Clube de Arzila",
+          "primaryName": "FC Arzila"
         },
         {
           "countryId": "PT",
           "clubId": 8,
-          "abbr": "SRM",
-          "fullName": "Futebol Clube Serramar de Setúbal",
-          "primaryName": "FC Serramar"
+          "abbr": "AZO",
+          "fullName": "Futebol Clube de Azeitão",
+          "primaryName": "FC Azeitão"
         },
         {
           "countryId": "PT",
           "clubId": 9,
-          "abbr": "MTB",
-          "fullName": "União Desportiva Montebrilho de Guimarães",
-          "primaryName": "União Montebrilho"
+          "abbr": "AFR",
+          "fullName": "Futebol Clube de Alfragide",
+          "primaryName": "FC Alfragide"
         },
         {
           "countryId": "PT",
           "clubId": 10,
-          "abbr": "ASV",
-          "fullName": "Clube Académico Serra Nova de Viseu",
-          "primaryName": "Académico Serra Nova"
+          "abbr": "GDB",
+          "fullName": "Grupo Desportivo Bracarense",
+          "primaryName": "GD Bracarense"
         },
         {
           "countryId": "PT",
           "clubId": 11,
-          "abbr": "PNB",
-          "fullName": "Sport Clube Pinhal Nobre de Leiria",
-          "primaryName": "SC Pinhal Nobre"
+          "abbr": "SMT",
+          "fullName": "Futebol Clube de São Martinho",
+          "primaryName": "FC São Martinho"
         },
         {
           "countryId": "PT",
           "clubId": 12,
-          "abbr": "MAT",
-          "fullName": "Clube Marítimo Atlante do Funchal",
-          "primaryName": "Marítimo Atlante"
+          "abbr": "ESG",
+          "fullName": "Sporting Clube de Esgueira",
+          "primaryName": "SC Esgueira"
         },
         {
           "countryId": "PT",
           "clubId": 13,
-          "abbr": "UPL",
-          "fullName": "Grupo União Desportiva da Planície de Beja",
-          "primaryName": "União Planície"
+          "abbr": "MNG",
+          "fullName": "Sporting Clube de Montenegro",
+          "primaryName": "SC Montenegro"
         },
         {
           "countryId": "PT",
           "clubId": 14,
-          "abbr": "VDM",
-          "fullName": "Atlético Clube Vila do Monte de Vila Real",
-          "primaryName": "AC Vila do Monte"
+          "abbr": "AVE",
+          "fullName": "Grupo Desportivo do Ave",
+          "primaryName": "GD do Ave"
         },
         {
           "countryId": "PT",
           "clubId": 15,
-          "abbr": "CVD",
-          "fullName": "Sporting Clube Costa Verde de Viana do Castelo",
-          "primaryName": "SC Costa Verde"
+          "abbr": "AZR",
+          "fullName": "Sporting Clube de Azurém",
+          "primaryName": "SC Azurém"
         },
         {
           "countryId": "PT",
           "clubId": 16,
-          "abbr": "SRO",
-          "fullName": "Futebol Clube Portalegrense do Serrado",
-          "primaryName": "FC Serrado"
+          "abbr": "MDG",
+          "fullName": "Futebol Clube do Mondego",
+          "primaryName": "FC Mondego"
         }
       ]
     },
@@ -1367,114 +1367,114 @@
         {
           "countryId": "PT",
           "clubId": 17,
-          "abbr": "RBJ",
-          "fullName": "União Desportiva Ribatejana de Santarém",
-          "primaryName": "União Ribatejana"
+          "abbr": "SAD",
+          "fullName": "Sporting Clube do Sado",
+          "primaryName": "SC Sado"
         },
         {
           "countryId": "PT",
           "clubId": 18,
-          "abbr": "VLA",
-          "fullName": "Sport Clube Albicastrense Valealto",
-          "primaryName": "SC Valealto"
+          "abbr": "ATM",
+          "fullName": "Atlético Clube Matosinhense",
+          "primaryName": "Atlético Matosinhense"
         },
         {
           "countryId": "PT",
           "clubId": 19,
-          "abbr": "MTN",
-          "fullName": "Atlético Clube Montesinho de Bragança",
-          "primaryName": "AC Montesinho"
+          "abbr": "ATV",
+          "fullName": "Atlético Clube Vilacondense",
+          "primaryName": "Atlético Vilacondense"
         },
         {
           "countryId": "PT",
           "clubId": 20,
-          "abbr": "TPL",
-          "fullName": "Futebol Clube Templário Novo de Tomar",
-          "primaryName": "FC Templário"
+          "abbr": "MTE",
+          "fullName": "Sporting Clube do Monte Estoril",
+          "primaryName": "SC Monte Estoril"
         },
         {
           "countryId": "PT",
           "clubId": 21,
-          "abbr": "BAL",
-          "fullName": "Sport Clube Barroalto de Barcelos",
-          "primaryName": "SC Barroalto"
+          "abbr": "TML",
+          "fullName": "Sporting Clube de Tamel",
+          "primaryName": "SC Tamel"
         },
         {
           "countryId": "PT",
           "clubId": 22,
-          "abbr": "MLT",
-          "fullName": "Futebol Clube Maralto de Matosinhos",
-          "primaryName": "FC Maralto"
+          "abbr": "SNT",
+          "fullName": "Grupo Desportivo de São Neutel",
+          "primaryName": "GD São Neutel"
         },
         {
           "countryId": "PT",
           "clubId": 23,
-          "abbr": "PNH",
-          "fullName": "Atlético Clube dos Pinhais de Espinho",
-          "primaryName": "AC Pinhais"
+          "abbr": "PFL",
+          "fullName": "União Desportiva Penafidelis",
+          "primaryName": "UD Penafidelis"
         },
         {
           "countryId": "PT",
           "clubId": 24,
-          "abbr": "MRE",
-          "fullName": "Grupo Desportivo Marevento da Póvoa de Varzim",
-          "primaryName": "GD Marevento"
+          "abbr": "PRC",
+          "fullName": "Futebol Clube de Parceiros",
+          "primaryName": "FC Parceiros"
         },
         {
           "countryId": "PT",
           "clubId": 25,
-          "abbr": "CDR",
-          "fullName": "União Desportiva do Cais Dourado de Vila Nova de Gaia",
-          "primaryName": "União Cais Dourado"
+          "abbr": "ACP",
+          "fullName": "Atlético Clube Poveiro",
+          "primaryName": "Atlético Poveiro"
         },
         {
           "countryId": "PT",
           "clubId": 26,
-          "abbr": "TGV",
-          "fullName": "Futebol Clube Tâmegaviva de Amarante",
-          "primaryName": "FC Tâmegaviva"
+          "abbr": "MXG",
+          "fullName": "União Desportiva da Mexilhoeira Grande",
+          "primaryName": "UD Mexilhoeira"
         },
         {
           "countryId": "PT",
           "clubId": 27,
-          "abbr": "TMA",
-          "fullName": "Sport Clube Termas Altas de Chaves",
-          "primaryName": "SC Termas Altas"
+          "abbr": "XIR",
+          "fullName": "União Desportiva de Alhandra",
+          "primaryName": "UD Alhandra"
         },
         {
           "countryId": "PT",
           "clubId": 28,
-          "abbr": "TUV",
-          "fullName": "Grupo Desportivo Tua Verde de Mirandela",
-          "primaryName": "GD Tua Verde"
+          "abbr": "FTL",
+          "fullName": "Grupo Desportivo do Fontelo",
+          "primaryName": "GD Fontelo"
         },
         {
           "countryId": "PT",
           "clubId": 29,
-          "abbr": "LMR",
-          "fullName": "Atlético Clube Lameiral de Lamego",
-          "primaryName": "AC Lameiral"
+          "abbr": "TAG",
+          "fullName": "União Desportiva de Tagilde",
+          "primaryName": "UD Tagilde"
         },
         {
           "countryId": "PT",
           "clubId": 30,
-          "abbr": "SRF",
-          "fullName": "União Desportiva Serra Fria da Guarda",
-          "primaryName": "União Serra Fria"
+          "abbr": "BOU",
+          "fullName": "União Desportiva de Bougado",
+          "primaryName": "UD Bougado"
         },
         {
           "countryId": "PT",
           "clubId": 31,
-          "abbr": "LFC",
-          "fullName": "Grupo Desportivo Lanifício da Covilhã",
-          "primaryName": "GD Lanifício"
+          "abbr": "ESP",
+          "fullName": "Clube Desportivo de Espargo",
+          "primaryName": "CD Espargo"
         },
         {
           "countryId": "PT",
           "clubId": 32,
-          "abbr": "DNM",
-          "fullName": "Futebol Clube Dunamar da Figueira da Foz",
-          "primaryName": "FC Dunamar"
+          "abbr": "MRM",
+          "fullName": "Futebol Clube da Marmeleira",
+          "primaryName": "FC Marmeleira"
         }
       ]
     },
@@ -1490,114 +1490,114 @@
         {
           "countryId": "NL",
           "clubId": 1,
-          "abbr": "WPT",
-          "fullName": "Amsterdamse Voetbalvereniging Waterpoort",
-          "primaryName": "VV Waterpoort"
+          "abbr": "IJD",
+          "fullName": "Football Club IJdok",
+          "primaryName": "FC IJdok"
         },
         {
           "countryId": "NL",
           "clubId": 2,
-          "abbr": "HVL",
-          "fullName": "Sportvereniging Havenlicht Rotterdam",
-          "primaryName": "SV Havenlicht"
+          "abbr": "RIJ",
+          "fullName": "Football Club Rijnmond",
+          "primaryName": "FC Rijnmond"
         },
         {
           "countryId": "NL",
           "clubId": 3,
-          "abbr": "GNV",
-          "fullName": "Utrechtse Voetbalvereniging Groenveld",
-          "primaryName": "VV Groenveld"
+          "abbr": "KEM",
+          "fullName": "Sportvereniging Kempenland",
+          "primaryName": "SV Kempenland"
         },
         {
           "countryId": "NL",
           "clubId": 4,
-          "abbr": "BLM",
-          "fullName": "Eindhovense Football Club Blauwmeer",
-          "primaryName": "FC Blauwmeer"
+          "abbr": "WES",
+          "fullName": "Amsterdamse Sportvereniging Westerpark",
+          "primaryName": "ASV Westerpark"
         },
         {
           "countryId": "NL",
           "clubId": 5,
-          "abbr": "NWD",
-          "fullName": "Groninger Voetbalvereniging Noorderwind",
-          "primaryName": "VV Noorderwind"
+          "abbr": "SCH",
+          "fullName": "Voetbalvereniging Schiehaven",
+          "primaryName": "VV Schiehaven"
         },
         {
           "countryId": "NL",
           "clubId": 6,
-          "abbr": "DUS",
-          "fullName": "Haarlemse Football Club Duinroos",
-          "primaryName": "HFC Duinroos"
+          "abbr": "ZUI",
+          "fullName": "Sportvereniging Zuilen",
+          "primaryName": "SV Zuilen"
         },
         {
           "countryId": "NL",
           "clubId": 7,
-          "abbr": "ZVB",
-          "fullName": "Bredase Sportvereniging Zilverbeek",
-          "primaryName": "SV Zilverbeek"
+          "abbr": "GEN",
+          "fullName": "Eindhovense Voetbalvereniging Genneper",
+          "primaryName": "EVV Genneper"
         },
         {
           "countryId": "NL",
           "clubId": 8,
-          "abbr": "BSK",
-          "fullName": "Tilburgse Voetbalvereniging Boskant",
-          "primaryName": "VV Boskant"
+          "abbr": "BIN",
+          "fullName": "Sportclub Binnenhof",
+          "primaryName": "SC Binnenhof"
         },
         {
           "countryId": "NL",
           "clubId": 9,
-          "abbr": "RVR",
-          "fullName": "Nijmeegse Football Club Rivieren",
-          "primaryName": "FC Rivieren"
+          "abbr": "OMM",
+          "fullName": "Football Club Ommeland",
+          "primaryName": "FC Ommeland"
         },
         {
           "countryId": "NL",
           "clubId": 10,
-          "abbr": "HVR",
-          "fullName": "Arnhemse Sportvereniging Heuvelrand",
-          "primaryName": "SV Heuvelrand"
+          "abbr": "TIL",
+          "fullName": "Rooms-Katholieke Voetbalvereniging Tilburgia",
+          "primaryName": "RKVV Tilburgia"
         },
         {
           "countryId": "NL",
           "clubId": 11,
-          "abbr": "MLW",
-          "fullName": "Delftse Voetbalvereniging Molenwijk",
-          "primaryName": "VV Molenwijk"
+          "abbr": "GMR",
+          "fullName": "Football Club Gooimeer",
+          "primaryName": "FC Gooimeer"
         },
         {
           "countryId": "NL",
           "clubId": 12,
-          "abbr": "MLI",
-          "fullName": "Maastrichtse Football Club Maaslicht",
-          "primaryName": "FC Maaslicht"
+          "abbr": "MKD",
+          "fullName": "Football Club Markdal",
+          "primaryName": "FC Markdal"
         },
         {
           "countryId": "NL",
           "clubId": 13,
-          "abbr": "WTR",
-          "fullName": "Leidse Voetbalvereniging Wetering",
-          "primaryName": "VV Wetering"
+          "abbr": "DUK",
+          "fullName": "Sportvereniging Dukenburg",
+          "primaryName": "SV Dukenburg"
         },
         {
           "countryId": "NL",
           "clubId": 14,
-          "abbr": "ZHF",
-          "fullName": "Zwolse Sportvereniging Zandhof",
-          "primaryName": "SV Zandhof"
+          "abbr": "RMB",
+          "fullName": "Enschedese Voetbalvereniging Roombeek",
+          "primaryName": "EVV Roombeek"
         },
         {
           "countryId": "NL",
           "clubId": 15,
-          "abbr": "IJR",
-          "fullName": "Deventer Football Club IJsselrand",
-          "primaryName": "FC IJsselrand"
+          "abbr": "SON",
+          "fullName": "Sportvereniging Sonsbeek",
+          "primaryName": "SV Sonsbeek"
         },
         {
           "countryId": "NL",
           "clubId": 16,
-          "abbr": "VHK",
-          "fullName": "Enschedese Voetbalvereniging Veldhoek",
-          "primaryName": "VV Veldhoek"
+          "abbr": "SPR",
+          "fullName": "Christelijke Sportvereniging Sprengen",
+          "primaryName": "CSV Sprengen"
         }
       ]
     },
@@ -1613,114 +1613,114 @@
         {
           "countryId": "NL",
           "clubId": 17,
-          "abbr": "DNR",
-          "fullName": "Apeldoornse Sportvereniging Dennenrust",
-          "primaryName": "SV Dennenrust"
+          "abbr": "HHT",
+          "fullName": "Football Club Haarlemmerhout",
+          "primaryName": "FC Haarlemmerhout"
         },
         {
           "countryId": "NL",
           "clubId": 18,
-          "abbr": "PZT",
-          "fullName": "Amersfoortse Football Club Poortzicht",
-          "primaryName": "FC Poortzicht"
+          "abbr": "RAP",
+          "fullName": "Voetbalvereniging Rapenburg",
+          "primaryName": "VV Rapenburg"
         },
         {
           "countryId": "NL",
           "clubId": 19,
-          "abbr": "PDV",
-          "fullName": "Alkmaarse Voetbalvereniging Polderveen",
-          "primaryName": "VV Polderveen"
+          "abbr": "HEU",
+          "fullName": "Voetbalvereniging Heuvelland",
+          "primaryName": "VV Heuvelland"
         },
         {
           "countryId": "NL",
           "clubId": 20,
-          "abbr": "WSW",
-          "fullName": "Leeuwarder Sportclub Westerwier",
-          "primaryName": "SC Westerwier"
+          "abbr": "DES",
+          "fullName": "Voetbalvereniging De Staart",
+          "primaryName": "VV De Staart"
         },
         {
           "countryId": "NL",
           "clubId": 21,
-          "abbr": "DPT",
-          "fullName": "Haagse Voetbalvereniging Duinpoort",
-          "primaryName": "VV Duinpoort"
+          "abbr": "SEH",
+          "fullName": "Sportvereniging Seghwaert",
+          "primaryName": "SV Seghwaert"
         },
         {
           "countryId": "NL",
           "clubId": 22,
-          "abbr": "KDZ",
-          "fullName": "Dordtse Sportvereniging Kadezicht",
-          "primaryName": "SV Kadezicht"
+          "abbr": "DIE",
+          "fullName": "Voetbalvereniging Diezerpoort",
+          "primaryName": "VV Diezerpoort"
         },
         {
           "countryId": "NL",
           "clubId": 23,
-          "abbr": "GLW",
-          "fullName": "Schiedamse Sportclub Glaswerf",
-          "primaryName": "SC Glaswerf"
+          "abbr": "BRI",
+          "fullName": "Football Club Brinkgreven",
+          "primaryName": "FC Brinkgreven"
         },
         {
           "countryId": "NL",
           "clubId": 24,
-          "abbr": "GWV",
-          "fullName": "Goudse Voetbalvereniging Gouweveld",
-          "primaryName": "VV Gouweveld"
+          "abbr": "BIL",
+          "fullName": "Leeuwarder Voetbalvereniging Bilgaard",
+          "primaryName": "LVV Bilgaard"
         },
         {
           "countryId": "NL",
           "clubId": 25,
-          "abbr": "ZDH",
-          "fullName": "Hoornse Football Club Zuiderhoorn",
-          "primaryName": "FC Zuiderhoorn"
+          "abbr": "EEM",
+          "fullName": "Amersfoortse Voetbalvereniging Eemland",
+          "primaryName": "AVV Eemland"
         },
         {
           "countryId": "NL",
           "clubId": 26,
-          "abbr": "ZSP",
-          "fullName": "Zaanse Sportvereniging Zaanspoor",
-          "primaryName": "SV Zaanspoor"
+          "abbr": "UGC",
+          "fullName": "Voetbalvereniging Ugchelen",
+          "primaryName": "VV Ugchelen"
         },
         {
           "countryId": "NL",
           "clubId": 27,
-          "abbr": "RTM",
-          "fullName": "Almeerse Football Club Rietmark",
-          "primaryName": "FC Rietmark"
+          "abbr": "KRL",
+          "fullName": "Sportvereniging Kerkelanden",
+          "primaryName": "SV Kerkelanden"
         },
         {
           "countryId": "NL",
           "clubId": 28,
-          "abbr": "PDL",
-          "fullName": "Lelystadse Sportvereniging Polderlicht",
-          "primaryName": "SV Polderlicht"
+          "abbr": "POE",
+          "fullName": "Amstelveense Voetbalvereniging Poelmeer",
+          "primaryName": "AVV Poelmeer"
         },
         {
           "countryId": "NL",
           "clubId": 29,
-          "abbr": "HDZ",
-          "fullName": "Hilversumse Voetbalvereniging Heidezicht",
-          "primaryName": "VV Heidezicht"
+          "abbr": "WDV",
+          "fullName": "Football Club Weidevenne",
+          "primaryName": "FC Weidevenne"
         },
         {
           "countryId": "NL",
           "clubId": 30,
-          "abbr": "VSD",
-          "fullName": "Bossche Sportclub Vestingdam",
-          "primaryName": "SC Vestingdam"
+          "abbr": "AMT",
+          "fullName": "Sportclub Ambacht",
+          "primaryName": "SC Ambacht"
         },
         {
           "countryId": "NL",
           "clubId": 31,
-          "abbr": "KNW",
-          "fullName": "Helmondse Football Club Kanaalwijk",
-          "primaryName": "FC Kanaalwijk"
+          "abbr": "NIE",
+          "fullName": "Sportclub Nieuwland",
+          "primaryName": "SC Nieuwland"
         },
         {
           "countryId": "NL",
           "clubId": 32,
-          "abbr": "MHV",
-          "fullName": "Venlose Voetbalvereniging Maashaven",
-          "primaryName": "VV Maashaven"
+          "abbr": "HOU",
+          "fullName": "Voetbalvereniging Houttil",
+          "primaryName": "VV Houttil"
         }
       ]
     },
@@ -1736,114 +1736,114 @@
         {
           "countryId": "BR",
           "clubId": 1,
-          "abbr": "MRS",
-          "fullName": "Atlético Clube Sol das Marés do Rio de Janeiro",
-          "primaryName": "AC Marés"
+          "abbr": "BIX",
+          "fullName": "Esporte Clube Bixiga",
+          "primaryName": "EC Bixiga"
         },
         {
           "countryId": "BR",
           "clubId": 2,
-          "abbr": "VBL",
-          "fullName": "Associação Atlética Vila Brilhante de São Paulo",
-          "primaryName": "AA Vila Brilhante"
+          "abbr": "EST",
+          "fullName": "Estrela Carioca Futebol Clube",
+          "primaryName": "Estrela Carioca"
         },
         {
           "countryId": "BR",
           "clubId": 3,
-          "abbr": "PDD",
-          "fullName": "Esporte Clube Porto do Dendê de Salvador",
-          "primaryName": "EC Porto Dendê"
+          "abbr": "MOO",
+          "fullName": "Esporte Clube Mooca",
+          "primaryName": "EC Mooca"
         },
         {
           "countryId": "BR",
           "clubId": 4,
-          "abbr": "MRA",
-          "fullName": "União Esportiva Maré Alta do Recife",
-          "primaryName": "União Maré Alta"
+          "abbr": "LAR",
+          "fullName": "Futebol Clube Laranjeiras",
+          "primaryName": "FC Laranjeiras"
         },
         {
           "countryId": "BR",
           "clubId": 5,
-          "abbr": "LTR",
-          "fullName": "Futebol Clube Ventos do Litoral de Fortaleza",
-          "primaryName": "FC Litoral"
+          "abbr": "PAM",
+          "fullName": "Atlético Clube Pampulha",
+          "primaryName": "Atlético Pampulha"
         },
         {
           "countryId": "BR",
           "clubId": 6,
-          "abbr": "SCR",
-          "fullName": "Clube Atlético Serra Clara de Belo Horizonte",
-          "primaryName": "CA Serra Clara"
+          "abbr": "UFA",
+          "fullName": "União Farroupilha Futebol Clube",
+          "primaryName": "União Farroupilha"
         },
         {
           "countryId": "BR",
           "clubId": 7,
-          "abbr": "PMP",
-          "fullName": "Grêmio Esportivo Pampa Dourado de Porto Alegre",
-          "primaryName": "Grêmio Pampa"
+          "abbr": "ABA",
+          "fullName": "Atlético da Bahia Futebol Clube",
+          "primaryName": "Atlético da Bahia"
         },
         {
           "countryId": "BR",
           "clubId": 8,
-          "abbr": "PAZ",
-          "fullName": "Esporte Clube Pinheiro Azul de Curitiba",
-          "primaryName": "EC Pinheiro Azul"
+          "abbr": "PLN",
+          "fullName": "Esporte Clube Pilarzinho",
+          "primaryName": "EC Pilarzinho"
         },
         {
           "countryId": "BR",
           "clubId": 9,
-          "abbr": "PVN",
-          "fullName": "Associação Atlética Planalto Verde de Brasília",
-          "primaryName": "AA Planalto Verde"
+          "abbr": "ABE",
+          "fullName": "Atlético Belorizontino Futebol Clube",
+          "primaryName": "Atlético Belorizontino"
         },
         {
           "countryId": "BR",
           "clubId": 10,
-          "abbr": "MJZ",
-          "fullName": "Sport Club Marajó Azul de Belém",
-          "primaryName": "SC Marajó Azul"
+          "abbr": "GCE",
+          "fullName": "Gaúcho Central Futebol Clube",
+          "primaryName": "Gaúcho Central"
         },
         {
           "countryId": "BR",
           "clubId": 11,
-          "abbr": "RNB",
-          "fullName": "União Esportiva Rio Neblina de Manaus",
-          "primaryName": "União Rio Neblina"
+          "abbr": "MUC",
+          "fullName": "União Mucuripe Futebol Clube",
+          "primaryName": "União Mucuripe"
         },
         {
           "countryId": "BR",
           "clubId": 12,
-          "abbr": "CSD",
-          "fullName": "Atlético Clube Cerrado Solar de Goiânia",
-          "primaryName": "AC Cerrado Solar"
+          "abbr": "AFG",
+          "fullName": "Esporte Clube Afogados",
+          "primaryName": "EC Afogados"
         },
         {
           "countryId": "BR",
           "clubId": 13,
-          "abbr": "ESV",
-          "fullName": "Esporte Clube Estação Velha de Campinas",
-          "primaryName": "EC Estação Velha"
+          "abbr": "ASA",
+          "fullName": "Atlético Santista Futebol Clube",
+          "primaryName": "Atlético Santista"
         },
         {
           "countryId": "BR",
           "clubId": 14,
-          "abbr": "ILB",
-          "fullName": "Associação Atlética Ilha Branca de Florianópolis",
-          "primaryName": "AA Ilha Branca"
+          "abbr": "PNA",
+          "fullName": "Esporte Clube Paranoá",
+          "primaryName": "EC Paranoá"
         },
         {
           "countryId": "BR",
           "clubId": 15,
-          "abbr": "DNS",
-          "fullName": "Futebol Clube Dunas do Norte de Natal",
-          "primaryName": "FC Dunas"
+          "abbr": "ACA",
+          "fullName": "Atlético Campineiro Futebol Clube",
+          "primaryName": "Atlético Campineiro"
         },
         {
           "countryId": "BR",
           "clubId": 16,
-          "abbr": "FCL",
-          "fullName": "Esporte Clube Falésia Clara de João Pessoa",
-          "primaryName": "EC Falésia Clara"
+          "abbr": "APA",
+          "fullName": "Atlético Paraense Futebol Clube",
+          "primaryName": "Atlético Paraense"
         }
       ]
     },
@@ -1859,114 +1859,114 @@
         {
           "countryId": "BR",
           "clubId": 17,
-          "abbr": "MNV",
-          "fullName": "União Esportiva Marinha Nova de Aracaju",
-          "primaryName": "União Marinha Nova"
+          "abbr": "GOA",
+          "fullName": "Esporte Clube Goiabeiras",
+          "primaryName": "EC Goiabeiras"
         },
         {
           "countryId": "BR",
           "clubId": 18,
-          "abbr": "BTZ",
-          "fullName": "Associação Atlética Buritizal de Teresina",
-          "primaryName": "AA Buritizal"
+          "abbr": "ECI",
+          "fullName": "Esporte Clube Itapuã",
+          "primaryName": "EC Itapuã"
         },
         {
           "countryId": "BR",
           "clubId": 19,
-          "abbr": "LGS",
-          "fullName": "Sport Club Lagoa Serena de Maceió",
-          "primaryName": "SC Lagoa Serena"
+          "abbr": "AGV",
+          "fullName": "Esporte Clube Água Verde",
+          "primaryName": "EC Água Verde"
         },
         {
           "countryId": "BR",
           "clubId": 20,
-          "abbr": "PDC",
-          "fullName": "União Esportiva Pedra da Costa de Vitória",
-          "primaryName": "Pedra da Costa"
+          "abbr": "MEI",
+          "fullName": "Atlético Clube Meireles",
+          "primaryName": "Atlético Meireles"
         },
         {
           "countryId": "BR",
           "clubId": 21,
-          "abbr": "CDO",
-          "fullName": "Esporte Clube Cais Dourado de Santos",
-          "primaryName": "EC Cais Dourado"
+          "abbr": "UDV",
+          "fullName": "União da Várzea Futebol Clube",
+          "primaryName": "União da Várzea"
         },
         {
           "countryId": "BR",
           "clubId": 22,
-          "abbr": "PTC",
-          "fullName": "Associação Atlética Ponta Clara de Niterói",
-          "primaryName": "AA Ponta Clara"
+          "abbr": "RIB",
+          "fullName": "Futebol Clube Ribeirão",
+          "primaryName": "FC Ribeirão"
         },
         {
           "countryId": "BR",
           "clubId": 23,
-          "abbr": "TRB",
-          "fullName": "Clube Atlético Terra Rubra de Ribeirão Preto",
-          "primaryName": "CA Terra Rubra"
+          "abbr": "UJO",
+          "fullName": "União Joseense Futebol Clube",
+          "primaryName": "União Joseense"
         },
         {
           "countryId": "BR",
           "clubId": 24,
-          "abbr": "VDS",
-          "fullName": "Futebol Clube Veredas de Uberlândia",
-          "primaryName": "FC Veredas"
+          "abbr": "DRC",
+          "fullName": "Dourado Cuiabano Futebol Clube",
+          "primaryName": "Dourado Cuiabano"
         },
         {
           "countryId": "BR",
           "clubId": 25,
-          "abbr": "MAA",
-          "fullName": "Sport Club Mata Alta de Juiz de Fora",
-          "primaryName": "SC Mata Alta"
+          "abbr": "UCX",
+          "fullName": "União Caxiense Futebol Clube",
+          "primaryName": "União Caxiense"
         },
         {
           "countryId": "BR",
           "clubId": 26,
-          "abbr": "CFN",
-          "fullName": "Atlético Clube Café Novo de Londrina",
-          "primaryName": "AC Café Novo"
+          "abbr": "APO",
+          "fullName": "Atlético Potiguar Futebol Clube",
+          "primaryName": "Atlético Potiguar"
         },
         {
           "countryId": "BR",
           "clubId": 27,
-          "abbr": "FVL",
-          "fullName": "Grêmio Esportivo Ferrovale de Joinville",
-          "primaryName": "Grêmio Ferrovale"
+          "abbr": "UTA",
+          "fullName": "União Tabajara Futebol Clube",
+          "primaryName": "União Tabajara"
         },
         {
           "countryId": "BR",
           "clubId": 28,
-          "abbr": "SRB",
-          "fullName": "Esporte Clube Serra Brava de Caxias do Sul",
-          "primaryName": "EC Serra Brava"
+          "abbr": "AMA",
+          "fullName": "Atlético Maceioense Futebol Clube",
+          "primaryName": "Atlético Maceioense"
         },
         {
           "countryId": "BR",
           "clubId": 29,
-          "abbr": "ARC",
-          "fullName": "União Esportiva Arroio Claro de Pelotas",
-          "primaryName": "União Arroio Claro"
+          "abbr": "USE",
+          "fullName": "União Sergipana Futebol Clube",
+          "primaryName": "União Sergipana"
         },
         {
           "countryId": "BR",
           "clubId": 30,
-          "abbr": "FNV",
-          "fullName": "Associação Atlética Feira Nova de Feira de Santana",
-          "primaryName": "AA Feira Nova"
+          "abbr": "API",
+          "fullName": "Atlético Piauiense Futebol Clube",
+          "primaryName": "Atlético Piauiense"
         },
         {
           "countryId": "BR",
           "clubId": 31,
-          "abbr": "CCD",
-          "fullName": "Futebol Clube Cacau Dourado de Ilhéus",
-          "primaryName": "FC Cacau Dourado"
+          "abbr": "EMA",
+          "fullName": "Estrela Maranhense Futebol Clube",
+          "primaryName": "Estrela Maranhense"
         },
         {
           "countryId": "BR",
           "clubId": 32,
-          "abbr": "AGV",
-          "fullName": "Esporte Clube Agreste Vivo de Caruaru",
-          "primaryName": "EC Agreste Vivo"
+          "abbr": "ELO",
+          "fullName": "Estrela Londrinense Futebol Clube",
+          "primaryName": "Estrela Londrinense"
         }
       ]
     }

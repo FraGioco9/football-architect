@@ -7,7 +7,7 @@ const html = read("guide/index.html");
 const css = read("assets/guide.css");
 const js = read("assets/landing.js");
 const source = JSON.parse(read("data/divisions.json"));
-const clubs = JSON.parse(read("data/clubs.json")).clubs;
+const clubs = JSON.parse(read("data/clubs.json"));
 const options = [...html.matchAll(/<div class="language-option" role="option" id="([^"]+)" data-language="([^"]+)" aria-selected="(?:true|false)">([^<]+)<\/div>/g)];
 function mock(dataset = {}, content = "") {
   return { dataset, textContent:content, hidden:false, listeners:{},attributes:{},

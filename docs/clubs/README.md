@@ -1,24 +1,30 @@
-# Football Architect — Club identity documentation
+# Club identity catalogue
 
-This is the **English operational entry point** for the 320-club identity catalogue. It preserves the source-of-truth data, approval boundaries and historical audit trail without rewriting original Italian primary-source records.
+The sole approved club registry is [the canonical CSV](../../data/clubs-registry.csv), mirrored by [the flat JSON array](../../data/clubs.json). Both contain 320 clubs across eight countries, 40 clubs per country, ordered by country code and national club ID.
 
-## Current reference documents
+## Fields
 
-- **[Complete 320-club name reference](fullnames-reference.en.md)** — a generated English table of exact `countryId`, `clubId`, `fullName`, `abbr` and explicitly reconciled `approvedShortName` fields read from [data/clubs.json](../../data/clubs.json).
-- **[Club registry and provenance (English)](registry-audit.en.md)** — reconciliations, later approvals, historic counts and scope rules.
-- **[Original name transcripts](fullnames-source.md)** — **unaltered Italian-language historical evidence**, including the original 318-row user transcription and follow-up annotations. Earlier notes in this archive may have become outdated.
-- **[Original club identity audit](registry-history.md)** — **unaltered Italian-language historical evidence**, including former roadmap text, abbreviation inventories and incremental audits. Later sections override historical interim counts.
+| Field | JSON type | Meaning |
+|---|---|---|
+| countryId | string | Permanent country code |
+| clubId | integer | Permanent national ID, 1–40 |
+| city | string | Approved location, copied unchanged |
+| primaryName | string | Default club display name |
+| fullName | string | Official full name |
+| compactName | string | Approved compact display label |
+| abbr | string | Globally unique uppercase three-letter abbreviation |
+| nickname | string | Permanent nickname in its original language |
+| description | string | Canonical description in its original language |
+| primaryColor | string | Primary social color in hex notation |
+| secondaryColor | string | Secondary social color in hex notation |
+| stadiumName | string | Permanent stadium name |
 
-## Non-negotiable identity rules
+The stable identity is the pair `(countryId, clubId)`, independent of division, simulation state or names. No field is inferred or normalized. The only CSV-to-JSON type conversion is numeric `clubId`.
 
-- Eight countries, **40 clubs each**; **320 club IDs** and **320 unique three-letter abbreviations**.
-- Never infer a club's `approvedShortName` from `fullName` or a historical `legacyName`: only six short names are explicitly reconciled in `data/clubs.json`.
-- The original 160 `firstDivisionReference` city/stadium/name entries are historical; the remaining 160 clubs have no historical `firstDivisionReference`.
-- The full-name evidence reaches **320/320**, but explicit approval of the **complete reconciled list** has not been conferred by transcribing source text.
-- The **CLUB-ASSET #61 roadmap remains 0/5**, with no finalized club badge SVGs.
+## Approved source
 
-## Preservation policy
+Imported from `football_architect_320_clubs_final_approved_offline(1).csv`, approved by the owner on 2026-10-16. Its SHA-256 is `6940d8bc1abebb6ef06c6d3f56077b4899877a66476b182d14f2fda097ae6d0f`. The checked-in CSV preserves those exact bytes. The regression suite fingerprints both the approved CSV and the full JSON payload, including every description and Unicode character.
 
-Original Italian descriptions are preserved as evidence, **not active GitHub authoring language**. Never translate names, approved abbreviations, city/stadium proper nouns, original filenames or historical Git SHA references. Any further corrections require a separate explicit authorization and update to canonical data, not a documentation-only language change.
+Competition pages and their generated manifest read primary names directly from this JSON. The [provisional allocation](../divisions/initial-club-allocation.md) remains separate: IDs 1–16 per country in tier 1, 17–32 in tier 2, and 33–40 outside the division lists. All 320 club records remain in the catalogue.
 
-See [CLUB-ASSET #61](https://github.com/FraGioco9/football-architect/issues/61) and [DIV-ASSET #60](https://github.com/FraGioco9/football-architect/issues/60).
+Superseded anagraphic records, parallel naming catalogues and archival identity tables have been removed from the current tree. Earlier versions remain in Git history. The [design specification](clubs-design-specification.en.md) describes broader identity rules; this import does not create crest artwork, kits, rivalry links, translations or game state.

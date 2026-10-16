@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {createHash} from "node:crypto";
 import {validateProvisionalAllocations} from "../tools/validate-provisional-allocations.mjs";
 const read=path=>JSON.parse(readFileSync(new URL("../"+path,import.meta.url),"utf8"));
 const manifest=read("data/division-allocations.provisional.json");
@@ -8,6 +9,29 @@ const divisions=read("data/divisions.json");
 const countries=[...new Set(divisions.map(d=>d.countryId))].map(id=>({id}));
 const clubs=read("data/clubs.json");
 const clone=value=>JSON.parse(JSON.stringify(value));
+
+test("CLUB-REGISTRY-01: all approved identities use the flat twelve-field catalogue",()=>{
+  assert.ok(Array.isArray(clubs), "club catalogue must be a flat array");
+  const fields=["countryId","clubId","city","primaryName","fullName","compactName","abbr","nickname","description","primaryColor","secondaryColor","stadiumName"];
+  assert.equal(clubs.length,320);
+  assert.equal(new Set(clubs.map(c=>c.countryId+":"+c.clubId)).size,320);
+  assert.equal(new Set(clubs.map(c=>c.abbr)).size,320);
+  assert.equal(new Set(clubs.map(c=>c.fullName)).size,320);
+  for(const c of clubs){
+    assert.deepEqual(Object.keys(c),fields);
+    assert.ok(Number.isInteger(c.clubId)&&c.clubId>=1&&c.clubId<=40);
+    for(const key of fields.filter(k=>k!=="clubId"))assert.ok(typeof c[key]==="string"&&c[key].trim(),key);
+    assert.match(c.abbr,/^[A-Z]{3}$/);
+    assert.match(c.primaryColor,/^#[0-9A-Fa-f]{6}$/);
+    assert.match(c.secondaryColor,/^#[0-9A-Fa-f]{6}$/);
+  }
+});
+
+test("CLUB-REGISTRY-02: CSV bytes and all JSON values match the owner-approved source",()=>{
+  const hash=value=>createHash("sha256").update(value).digest("hex");
+  assert.equal(hash(readFileSync(new URL("../data/clubs-registry.csv",import.meta.url))),"6940d8bc1abebb6ef06c6d3f56077b4899877a66476b182d14f2fda097ae6d0f");
+  assert.equal(hash(JSON.stringify(clubs)),"1ef2697d892fe53a387bb583e25be94a9beb5a49d788ee372be1564c267bc489");
+});
 
 test("REGISTRY-01: CSV and JSON use the same flat division fields and records",()=>{
   const lines=readFileSync(new URL("../data/divisions-registry.csv",import.meta.url),"utf8").trimEnd().split(/\r?\n/);
@@ -49,14 +73,14 @@ test("ALLOCATION-01: preserve v1 data and 320 identities; use 16+16+8 national g
     assert.equal(roster.length,16);
     assert.deepEqual(roster.map(c=>c.clubId),Array.from({length:16},(_,i)=>start+i));
   }
-  assert.equal(clubs.clubs.length,320);
+  assert.equal(clubs.length,320);
   for(const country of countries){
-    const national=clubs.clubs.filter(c=>c.countryId===country.id);
+    const national=clubs.filter(c=>c.countryId===country.id);
     assert.equal(national.length,40);
     assert.deepEqual(national.map(c=>c.clubId).sort((a,b)=>a-b),Array.from({length:40},(_,i)=>i+1));
   }
 });
-test("ALLOCATION-02: invalid memberships, origin and history fail closed",()=>{
+test("ALLOCATION-02: invalid memberships, origin and identities fail closed",()=>{
   const reject=change=>{
     const modified=clone(manifest);change(modified);
     assert.throws(()=>validateProvisionalAllocations(modified,divisions,clubs),/Provisional division allocations:/);
@@ -72,6 +96,6 @@ test("ALLOCATION-02: invalid memberships, origin and history fail closed",()=>{
   reject(x=>{x.allocations[0].divisionId="IT-2";});
   reject(x=>{x.allocations[0].evidenceType="historical-first-division-reference";});
   const corrupt=clone(clubs);
-  delete corrupt.clubs.find(c=>c.countryId==="IT"&&c.clubId===1).firstDivisionReference;
+  delete corrupt.find(c=>c.countryId==="IT"&&c.clubId===1).primaryName;
   assert.throws(()=>validateProvisionalAllocations(manifest,divisions,corrupt),/Provisional division allocations:/);
 });
