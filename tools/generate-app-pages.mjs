@@ -145,7 +145,7 @@ const detailContent = function detailContent(d,root){
  '            '+renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')+'\n'+
  '            <div class="app-competition-identity">\n'+
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(d.name)+'</span></h1>\n'+
- '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="24" height="16"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
+ '              <div class="app-world-detail-meta">'+inlineCountryFlag(c)+' <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
  '            </div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>\n'+
  '          </header>\n'+competitionTabs(d,detailAppend(d));
@@ -181,7 +181,7 @@ const sharedTemplate = function sharedTemplate(html,first=divisionData.find(d=>d
   const logo=renderDivisionLogo(first.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ');
   replaceOne(logo,'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>',"badge");
  }
- replaceOne('class="app-world-flag" alt="" src="../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../'+encode(country.flagAsset)+'"',"flag");
+ replaceOne('<span class="app-world-flag-frame" aria-hidden="true"><svg class="app-world-flag"','<span class="app-world-flag-frame" aria-hidden="true"><svg class="app-world-flag" id="app-competition-flag"',"flag");
  replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="'+(neutral?'':first.countryId)+'">'+(neutral?'Country':encode(country.name.en))+'</span>',"country");
  const tier=first.tier===1?'divisionTier1':'divisionTier2',label=first.tier===1?'First division':'Second division';
  replaceOne('data-app-i18n="'+tier+'">'+label+'</span>','id="app-competition-tier" data-app-i18n="'+tier+'">'+label+'</span>',"tier");
