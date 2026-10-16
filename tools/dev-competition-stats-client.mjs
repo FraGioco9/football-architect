@@ -40,6 +40,7 @@ if (panel && divisionId) {
   panel.replaceChildren(root);
   let manifest = null;
   let view = "overview";
+  let teamMode = "performance";
   let sortKey = "points";
   let descending = true;
   const columns = ["clubName","mp","w","d","l","gf","ga","gd","points","ppg","cs","fts","homeWinPct","awayWinPct"];
@@ -103,10 +104,17 @@ if (panel && divisionId) {
       }
       return;
     }
+    const subnav=create("div",undefined,"fa-dev-stats-subnav");
+    for(const [id,label] of [["performance","Performance"],["additional","Additional"]]){
+      const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamMode===id));
+      button.addEventListener("click",()=>{teamMode=id;sortKey=id==="performance"?"points":"cs";descending=true;render();});subnav.append(button);
+    }
+    root.append(subnav);
+    const visibleColumns=teamMode==="performance"?["clubName","mp","w","d","l","gf","ga","gd","ppg"]:["clubName","cs","fts","homeWinPct","awayWinPct"];
     const table = create("table",undefined,"fa-dev-stats-table");
     const thead = create("thead"), header = create("tr");
-    columns.forEach((key,index)=>{
-      const th = create("th"), button = create("button",labels[index]);
+    visibleColumns.forEach(key=>{
+      const th = create("th"), button = create("button",labels[columns.indexOf(key)]);
       th.scope = "col";
       button.type = "button";
       button.addEventListener("click",()=>{
@@ -125,7 +133,7 @@ if (panel && divisionId) {
     });
     for (const team of teams) {
       const row = create("tr");
-      for (const key of columns) {
+      for (const key of visibleColumns) {
         const value = key.endsWith("Pct") ? pct(team[key]) : key === "ppg" ? number(team[key]) : team[key];
         row.append(create("td",value));
       }
