@@ -251,7 +251,6 @@ async function boot(routeId) {
     const mobileList=document.getElementById("app-standings-compact-list");
     if(!mobileList)throw Error("Mobile standings list unavailable");
     const canonicalMobile=[...mobileList.childNodes];
-    const mobileEntries=[];
     const captionI18n=caption.getAttribute("data-app-i18n");
     const captionText=caption.textContent;
     const listeners=new AbortController();
@@ -371,26 +370,6 @@ async function boot(routeId) {
     // Commit to DOM only after all integrity checks and node construction passed.
     tbody.replaceChildren(fragment);
     commitMobile();
-    // The canonical mobile view uses non-interactive form marks inside <summary>.
-    // Upgrade only the isolated DEV preview marks to buttons so taps open match
-    // tooltips instead of toggling the expanded compact statistics panel.
-    [...mobileList.querySelectorAll(".app-world-mobile-item")].forEach((item,rowIndex)=>{
-      const row=rows[rowIndex];
-      if(!row)throw Error("Mobile standings row/model mismatch");
-      const marks=[...item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")];
-      if(marks.length!==row.recent.length)throw Error("Mobile recent-form count mismatch");
-      marks.forEach((mark,index)=>{
-        const game=row.recent[index];
-        const button=node("button","app-world-form-dot app-world-form-control app-world-form-"+
-          game.result.toLowerCase()+(index===0?" app-world-form-last":""),mark.textContent);
-        button.type="button";
-        const key=mark.dataset.appI18n;
-        if(key)button.dataset.appI18n=key;
-        button.setAttribute("aria-haspopup","true");
-        mark.replaceWith(button);
-        mobileEntries.push({button,glyph:button,game,ownId:row.club.clubId,latest:index===0,mobile:true});
-      });
-    });
     caption.dataset.appI18n="standingsFilledCaption";
     window.faAppRenderLanguage?.();
     document.body.appendChild(tooltip);
@@ -398,11 +377,8 @@ async function boot(routeId) {
     languageObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
-    for (const entry of [...entries,...mobileEntries]) {
+    for (const entry of entries) {
       const btn = entry.button;
-      if(entry.mobile){
-        listen(btn,"click",e=>{e.preventDefault();e.stopPropagation();},{capture:true});
-      }
       listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
       });
