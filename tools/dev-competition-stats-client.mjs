@@ -39,6 +39,8 @@ if (panel && divisionId) {
 .fa-dev-stats-nav{padding:5px;border-radius:12px;background:rgba(128,145,145,.08);border:1px solid rgba(128,145,145,.22)}
 .fa-dev-stats-nav button{border:0;border-radius:8px;background:transparent;color:inherit;padding:11px 8px}
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff}
+.fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
+.fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;border-color:rgba(128,145,145,.25)}
 .fa-dev-stats-card span{font-size:.85rem;opacity:.75}
 .fa-dev-stats-card strong{font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
@@ -145,7 +147,7 @@ if (panel && divisionId) {
       const button = create("button",label,"language-trigger");
       button.type = "button";
       button.setAttribute("aria-pressed",String(view === id));
-      button.addEventListener("click",()=>{view=id;render();});
+      button.addEventListener("click",()=>{const keyboardFocus=button.matches(":focus-visible");view=id;render();if(keyboardFocus){const selected=nav.querySelector('button[aria-pressed="true"]');selected?.focus();}});
       nav.append(button);
     }
     root.append(nav);
