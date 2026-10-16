@@ -81,7 +81,15 @@ if (panel && divisionId) {
 .fa-dev-stats-top li[hidden]{display:none}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
 .fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
-.fa-dev-stats-dialog::backdrop{background:rgba(0,0,0,.65)}
+.fa-dev-stats-dialog[open]{animation:fa-stats-dialog-in .2s ease-out both}
+.fa-dev-stats-dialog.fa-dev-stats-closing{animation:fa-stats-dialog-out .16s ease-in both}
+.fa-dev-stats-dialog::backdrop{background:rgba(0,0,0,.65);animation:fa-stats-backdrop-in .2s ease-out both}
+.fa-dev-stats-dialog.fa-dev-stats-closing::backdrop{animation:fa-stats-backdrop-out .16s ease-in both}
+@keyframes fa-stats-dialog-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fa-stats-dialog-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(8px) scale(.98)}}
+@keyframes fa-stats-backdrop-in{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.65)}}
+@keyframes fa-stats-backdrop-out{from{background:rgba(0,0,0,.65)}to{background:rgba(0,0,0,0)}}
+@media(prefers-reduced-motion:reduce){.fa-dev-stats-dialog[open],.fa-dev-stats-dialog.fa-dev-stats-closing,.fa-dev-stats-dialog::backdrop{animation:none!important}}
 .fa-dev-stats-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
 .fa-dev-stats-dialog-header h3{margin:0;font-size:1rem}
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
@@ -216,7 +224,28 @@ if (panel && divisionId) {
           const title=create("h3",label);
           const close=create("button","×","fa-dev-stats-dialog-close");
           close.type="button";close.setAttribute("aria-label","Close");
-          close.addEventListener("click",()=>dialog.close());
+          let closing=false;
+          const dismiss=()=>{
+            if(closing)return;
+            if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){dialog.close();return;}
+            closing=true;
+            dialog.classList.add("fa-dev-stats-closing");
+            dialog.addEventListener("animationend",event=>{
+              if(event.target===dialog)dialog.close();
+            },{once:true});
+          };
+          close.addEventListener("click",dismiss);
+          dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
+          dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss();});
+          dialog.addEventListener("keydown",event=>{
+            if(event.key==="ArrowDown"||event.key==="ArrowUp"){
+              event.preventDefault();
+              dialog.scrollBy({top:event.key==="ArrowDown"?64:-64,behavior:"smooth"});
+            }else if(event.key==="Home"||event.key==="End"){
+              event.preventDefault();
+              dialog.scrollTo({top:event.key==="Home"?0:dialog.scrollHeight,behavior:"smooth"});
+            }
+          });
           header.append(title,close);
           const all=create("ol",undefined,"fa-dev-stats-top");
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
@@ -224,6 +253,7 @@ if (panel && divisionId) {
           dialog.addEventListener("close",()=>dialog.remove());
           document.body.append(dialog);
           dialog.showModal();
+          close.focus();
         });
         card.append(expand);
       }
