@@ -155,7 +155,7 @@ if(validPath){
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
     const previous=activePreview;
-    const replacement=await boot(validPath[1].toUpperCase(),previous);
+    const replacement=await boot(validPath[1].toUpperCase(),previous,()=>request===seasonRequest&&selectedSeason()===next);
     if(typeof replacement!=="function"){
      if(request===seasonRequest)previewState="OFF";
      return;
@@ -233,7 +233,7 @@ function waitForRows() {
   });
 }
 
-async function boot(routeId,restorePrevious=null) {
+async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
   try {
     const response = await fetch("/competitions/_shared/manifest.json",
       { cache: "no-store", credentials: "same-origin" });
@@ -261,6 +261,8 @@ async function boot(routeId,restorePrevious=null) {
     }));
     // Complete all asynchronous preparation before touching the visible table.
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
+    // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
+    if(!isCurrent())return;
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
