@@ -179,8 +179,10 @@
 
   // Public CTA uses app.<domain>; local and unconfigured previews use canonical paths.
   const previewHost = (window.location?.hostname || "").toLowerCase();
-  const preview = [...document.querySelectorAll('a[href="/dashboard"]')][0];
-  if (preview && previewHost.startsWith("app.")) {
+  const preview = [...document.querySelectorAll('a.cta-primary')][0];
+  if (preview && document.documentElement.dataset.faDevAppOrigin) {
+    preview.href = document.documentElement.dataset.faDevAppOrigin + "/dashboard";
+  } else if (preview && previewHost.startsWith("app.")) {
     preview.href = "/dashboard";
   } else if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
       !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(previewHost) &&

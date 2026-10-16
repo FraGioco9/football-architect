@@ -167,7 +167,7 @@ function simulateApp(pathname,fragment="") {
     };
   }
   const document = {
-    title:"",documentElement:{lang:"en"},
+    title:"",documentElement:{lang:"en",dataset:{}},
     querySelectorAll(selector){return selector==="[data-app-i18n]"?translated:selector==="[data-app-aria]"?labeled:[];},
     getElementById(id){return nodes[id]??null;}
   };
@@ -290,7 +290,7 @@ test("APP-HOST-URL-01: production app subdomain and local static preview routes"
  assert.ok(match,"shared app URL resolver exists");
  const resolve=(hostname,pathname,protocol="https:")=>
   runInNewContext(match[0]+"\nappHref("+JSON.stringify(pathname)+")",
-   {window:{location:{hostname,protocol}}});
+   {document:{documentElement:{dataset:{}}},window:{location:{hostname,protocol}}});
  for(const [host,path,expected] of [
   ["football.example","/dashboard/","https://app.football.example/dashboard"],
   ["www.football.example","/competitions/it-1","https://app.football.example/competitions/it-1"],
@@ -311,7 +311,7 @@ test("SITE-HOST-URL: app-subdomain links preserve a bare origin, queries and fra
  const match=js.match(/  function siteHref\(path\) \{[\s\S]*?\n  \}/);
  assert.ok(match);
  const resolve=path=>runInNewContext(match[0]+"\nsiteHref("+JSON.stringify(path)+")",
-  {window:{location:{hostname:"app.football.example",protocol:"https:"}}});
+  {document:{documentElement:{dataset:{}}},window:{location:{hostname:"app.football.example",protocol:"https:"}}});
  assert.equal(resolve("/"),"https://football.example");
  assert.equal(resolve("/guide/"),"https://football.example/guide");
  assert.equal(resolve("/guide/?lang=it#clubs"),"https://football.example/guide?lang=it#clubs");
@@ -327,7 +327,7 @@ test("COMPETITION-LINK: DEV season metadata preserves a valid division path",()=
  }).join("\n");
  runInNewContext(code+"\nrewriteAppLinks()",{
   window:{location:{hostname:"localhost",protocol:"http:"}},links:{},
-  document:{querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}
+  document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}
  });
  assert.equal(hrefs.href,"/competitions/it-1?season=2&view=standings");
 });
