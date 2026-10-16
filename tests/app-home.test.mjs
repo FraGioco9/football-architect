@@ -1,3 +1,4 @@
+import { publicRequestFile } from "../tools/publication-guard.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync, existsSync} from "node:fs";
@@ -17,9 +18,9 @@ const js = read("assets/app.js");
 
 test("HOME-01 uses canonical static pages rather than legacy hash routing", () => {
   const expectedLinks = {
-    dashboard: ["/app/dashboard","/app/calendar","/app/settings"],
-    calendar: ["/app/dashboard","/app/calendar","/app/settings"],
-    settings: ["/app/dashboard","/app/calendar","/app/settings"]
+    dashboard: ["/dashboard","/calendar","/settings"],
+    calendar: ["/dashboard","/calendar","/settings"],
+    settings: ["/dashboard","/calendar","/settings"]
   };
   for (const [page,markup] of Object.entries(pages)) {
     assert.match(markup, /class="fa-career-shell"/);
@@ -51,9 +52,7 @@ test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destina
     const base = new URL("../"+path,import.meta.url);
     for (const [,target] of markup.matchAll(/(?:href|src)="([^"]+)"/g)) {
       if (target.startsWith("#")) continue;
-      const loc = target.startsWith("/") ? new URL(target === "/" ? "../index.html" : "../"+target.slice(1)+( /\.[a-z0-9]+$/i.test(target) ? "" : "/index.html"),import.meta.url) : new URL(target,base);
-      // Directory URLs are served as index.html by a normal static HTTP server.
-      const file = loc.pathname.endsWith("/") ? new URL("index.html",loc) : loc;
+      const file = new URL("../"+publicRequestFile(new URL(target,"https://fa.invalid/"+path).pathname),import.meta.url);
       assert.ok(existsSync(fileURLToPath(file)),page+": missing "+target);
     }
     assert.match(markup, /assets\/brand\/symbol-dark\.svg/);
@@ -187,8 +186,8 @@ function simulateApp(pathname,fragment="") {
 
 test("HOME-01 selects the actual page from pathname, including after refresh and unrelated URL fragments", () => {
   const locations=[
-    ["/app/dashboard/","dashboard"],["/app/dashboard","dashboard"],["/app/calendar/","calendar"],["/app/settings/","settings"],
-    ["/app/calendar","calendar"],["/app/settings","settings"]
+    ["/dashboard/","dashboard"],["/dashboard","dashboard"],["/calendar/","calendar"],["/settings/","settings"],
+    ["/calendar","calendar"],["/settings","settings"]
   ];
   for(const [path,current] of locations) {
     const app=simulateApp(path);
@@ -201,8 +200,8 @@ test("HOME-01 selects the actual page from pathname, including after refresh and
     assert.equal(fragmentApp.nodes["app-"+current].hidden,false);
   }
   // Former hashes are ignored, not redirected or treated as routes.
-  assert.equal(simulateApp("/app/dashboard/","#calendar").nodes["app-dashboard"].hidden,false);
-  assert.equal(simulateApp("/app/dashboard/","#settings").nodes["app-dashboard"].hidden,false);
+  assert.equal(simulateApp("/dashboard/","#calendar").nodes["app-dashboard"].hidden,false);
+  assert.equal(simulateApp("/dashboard/","#settings").nodes["app-dashboard"].hidden,false);
 });
 
 test("HOME-01 translates all three page titles across five supported languages", () => {
@@ -212,7 +211,7 @@ test("HOME-01 translates all three page titles across five supported languages",
     settings:{en:"Settings",de:"Einstellungen",es:"Ajustes",fr:"Paramètres",it:"Impostazioni"}
   };
   for (const [view,labels] of Object.entries(titles)) {
-    const app=simulateApp(view==="dashboard"?"/app/dashboard/":"/app/"+view+"/");
+    const app=simulateApp(view==="dashboard"?"/dashboard/":"/app/"+view+"/");
     for(const [lang,title] of Object.entries(labels)) {
       app.document.documentElement.lang=lang;
       app.changed();
@@ -227,14 +226,14 @@ test("HOME-01 translates all three page titles across five supported languages",
 test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
   const redirect=read("app/index.html");
   const dashboard=read("app/dashboard/index.html");
-  assert.match(redirect,/window\.location\.replace\("\/app\/dashboard" \+ window\.location\.search \+ window\.location\.hash\)/);
-  assert.match(redirect,/<noscript><meta http-equiv="refresh" content="0;url=\/app\/dashboard"><\/noscript>/);
-  assert.match(redirect,/href="\/app\/dashboard"/);
+  assert.match(redirect,/window\.location\.replace\("\/dashboard" \+ window\.location\.search \+ window\.location\.hash\)/);
+  assert.match(redirect,/<noscript><meta http-equiv="refresh" content="0;url=\/dashboard"><\/noscript>/);
+  assert.match(redirect,/href="\/dashboard"/);
   assert.doesNotMatch(redirect,/class="fa-career-shell"/);
   assert.match(dashboard,/id="app-dashboard"/);
   const script=redirect.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script);
-  for(const [search,hash,expected] of [["","","/app/dashboard"],["?lang=it","#world-heading","/app/dashboard?lang=it#world-heading"]]){
+  for(const [search,hash,expected] of [["","","/dashboard"],["?lang=it","#world-heading","/dashboard?lang=it#world-heading"]]){
     const redirects=[];
     runInNewContext(script,{window:{location:{search,hash,replace(path){redirects.push(path)}}}},{timeout:2000});
     assert.deepEqual(redirects,[expected]);
@@ -293,17 +292,17 @@ test("APP-HOST-URL-01: production app subdomain and local static preview routes"
   runInNewContext(match[0]+"\nappHref("+JSON.stringify(pathname)+")",
    {window:{location:{hostname,protocol}}});
  for(const [host,path,expected] of [
-  ["football.example","/app/dashboard/","https://app.football.example/dashboard"],
-  ["www.football.example","/app/competitions/it-1","https://app.football.example/competitions/it-1"],
-  ["app.football.example","/app/competitions/it-1","/competitions/it-1"],
-  ["app.football.example","/app/settings#app-language-heading","/settings#app-language-heading"],
-  ["localhost","/app/competitions/it-1","/app/competitions/it-1"],
-  ["localhost","/app/competitions/it-1/?season=2&view=fixtures#matchday","/app/competitions/it-1?season=2&view=fixtures#matchday"],
-  ["football.example","/app/settings/#app-language-heading","https://app.football.example/settings#app-language-heading"],
-  ["localhost","/app/settings/?next=/guide/#section/","/app/settings?next=/guide/#section/"],
-  ["football.example","/app/settings/?next=/guide/#section/","https://app.football.example/settings?next=/guide/#section/"],
-  ["192.168.1.90","/app/calendar","/app/calendar"],
-  ["football-architect.vercel.app","/app/calendar","/app/calendar"]
+  ["football.example","/dashboard/","https://app.football.example/dashboard"],
+  ["www.football.example","/competitions/it-1","https://app.football.example/competitions/it-1"],
+  ["app.football.example","/competitions/it-1","/competitions/it-1"],
+  ["app.football.example","/settings#app-language-heading","/settings#app-language-heading"],
+  ["localhost","/competitions/it-1","/competitions/it-1"],
+  ["localhost","/competitions/it-1/?season=2&view=fixtures#matchday","/competitions/it-1?season=2&view=fixtures#matchday"],
+  ["football.example","/settings/#app-language-heading","https://app.football.example/settings#app-language-heading"],
+  ["localhost","/settings/?next=/guide/#section/","/settings?next=/guide/#section/"],
+  ["football.example","/settings/?next=/guide/#section/","https://app.football.example/settings?next=/guide/#section/"],
+  ["192.168.1.90","/calendar","/calendar"],
+  ["football-architect.vercel.app","/calendar","/calendar"]
  ]) assert.equal(resolve(host,path),expected,host);
 });
 
@@ -320,7 +319,7 @@ test("SITE-HOST-URL: app-subdomain links preserve a bare origin, queries and fra
 });
 
 test("COMPETITION-LINK: DEV season metadata preserves a valid division path",()=>{
- const hrefs={href:"/app/competitions/it-1?season=1&view=standings","data-dev-latest-season":"2"};
+ const hrefs={href:"/competitions/it-1?season=1&view=standings","data-dev-latest-season":"2"};
  const card={getAttribute:key=>hrefs[key],setAttribute:(key,value)=>{hrefs[key]=value;}};
  const code=["appHref","siteHref","rewriteAppLinks"].map(name=>{
   const match=js.match(new RegExp("  function "+name+"\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}"));
@@ -330,5 +329,5 @@ test("COMPETITION-LINK: DEV season metadata preserves a valid division path",()=
   window:{location:{hostname:"localhost",protocol:"http:"}},links:{},
   document:{querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}
  });
- assert.equal(hrefs.href,"/app/competitions/it-1?season=2&view=standings");
+ assert.equal(hrefs.href,"/competitions/it-1?season=2&view=standings");
 });

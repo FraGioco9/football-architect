@@ -21,18 +21,18 @@
   };
   // Exact, real in-app destinations. Expand only when the underlying pages exist.
   const entries = [
-    ["page","dashboard-title","careerStatusText","/app/dashboard"],
-    ["page","calendar-title","calendarStatusText","/app/calendar"],
-    ["page","settings-title","languageHelp","/app/settings"],
-    ["section","career-status-heading","careerStatusText","/app/dashboard#career-status-heading"],
-    ["section","world-heading","worldText","/app/dashboard#world-heading"],
-    ["section","app-language-heading","languageHelp","/app/settings#app-language-heading"],
-    ["section","app-career-heading","dataText","/app/settings#app-career-heading"],
-    ["section","app-data-heading","dataText","/app/settings#app-data-heading"],
-    ["section","app-about-heading","aboutText","/app/settings#app-about-heading"]
+    ["page","dashboard-title","careerStatusText","/dashboard"],
+    ["page","calendar-title","calendarStatusText","/calendar"],
+    ["page","settings-title","languageHelp","/settings"],
+    ["section","career-status-heading","careerStatusText","/dashboard#career-status-heading"],
+    ["section","world-heading","worldText","/dashboard#world-heading"],
+    ["section","app-language-heading","languageHelp","/settings#app-language-heading"],
+    ["section","app-career-heading","dataText","/settings#app-career-heading"],
+    ["section","app-data-heading","dataText","/settings#app-data-heading"],
+    ["section","app-about-heading","aboutText","/settings#app-about-heading"]
   ];
   // Read canonical division identities from the same-origin static catalogue.
-  if (document.getElementById("divisions-title")) entries.push(["page","divisions-title","navCompetitions","/app/competitions"]);
+  if (document.getElementById("divisions-title")) entries.push(["page","divisions-title","navCompetitions","/competitions"]);
   const divisionEntries = [];
   const fold = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase().trim();
   const words = () => translations[document.documentElement.lang] || translations.en;
@@ -69,7 +69,7 @@
       const score = !query ? 0 : name === query || fold(item.id) === query ? 4
         : name.startsWith(query) ? 3
         : name.includes(query) ? 2 : searchable.includes(query) ? 1 : 0;
-      return {kind:"division",label,detail,href:"/app/competitions/" + item.id.toLowerCase(),score};
+      return {kind:"division",label,detail,href:"/competitions/" + item.id.toLowerCase(),score};
     })].filter(item => item.label && item.score > 0)
       .sort((a,b) => b.score - a.score).slice(0,8);
     const nodes = matches.map(item => {

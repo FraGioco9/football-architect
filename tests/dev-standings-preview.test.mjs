@@ -187,7 +187,7 @@ test("DEV-ROUTES: canonical slashless pages, assets and season links load direct
   await withServer(async get=>{
     const pages=["/","/guide","/app","/app/dashboard","/app/calendar","/app/settings","/app/competitions",
       ...allIds.map(id=>"/app/competitions/"+id.toLowerCase())];
-    for(const page of pages){
+    for(const page of [...pages,...pages.filter(p=>p.startsWith("/app/")).map(p=>p.slice(4))]){
       const response=await get(page);
       assert.equal(response.status,200,page);
       assert.match(response.headers["content-type"],/text\/html/,page);
@@ -197,12 +197,12 @@ test("DEV-ROUTES: canonical slashless pages, assets and season links load direct
         assert.equal((await get(asset.pathname)).status,200,page+" -> "+asset.pathname);
       }
     }
-    const index=await get("/app/competitions");
+    const index=await get("/competitions");
     assert.equal((index.body.match(/data-dev-latest-season="2"/g)||[]).length,16);
     assert.equal((index.body.match(/\?season=2&amp;view=standings/g)||[]).length,16);
     assert.ok(!index.body.includes("?season=1"));
     for(const id of allIds){
-      const path="/app/competitions/"+id.toLowerCase();
+      const path="/competitions/"+id.toLowerCase();
       const response=await get(path+"?season=2&view=fixtures");
       assert.ok(response.body.includes('data-fa-dev-preview'),path);
       assert.ok(response.body.includes('id="app-competition-season-value">2</span>'),path);

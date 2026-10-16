@@ -1,3 +1,4 @@
+import { publicRequestFile } from "../tools/publication-guard.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {existsSync,readFileSync} from "node:fs";
@@ -28,8 +29,8 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
  assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
-  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'?season=1&amp;view=standings"'),division.id);
-  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'?season=1&amp;view=standings">'),division.id);
+  assert.ok(index.includes('href="/competitions/'+division.id.toLowerCase()+'?season=1&amp;view=standings"'),division.id);
+  assert.ok(index.includes('href="/competitions/'+division.id.toLowerCase()+'?season=1&amp;view=standings">'),division.id);
  }
  assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
@@ -46,9 +47,8 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
    if(href.startsWith("#")||href.startsWith("data:"))continue;
    assert.doesNotMatch(href,/^https?:/);
-   const path=href.startsWith("/") ? new URL(href === "/" ? "../index.html" : "../"+href.slice(1)+( /\.[a-z0-9]+$/i.test(href) ? "" : "/index.html"),import.meta.url) : new URL(href,base);
-   const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
-   const localPath = href.startsWith("/") ? new URL("../"+href.slice(1),import.meta.url) : filePath;
+   const pathname = new URL(href, "https://fa.invalid/"+file).pathname;
+   const localPath = new URL("../"+publicRequestFile(pathname),import.meta.url);
    assert.ok(existsSync(fileURLToPath(localPath)),file+" -> "+href);
   }
  }
@@ -57,7 +57,7 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   assert.equal((html.match(/shadowrootmode="open"/g)||[]).length,1,file);
   assert.ok(html.includes('<meta name="fa-division" content="'+division.id+'">'),file);
   assert.ok(html.includes('<title>'+division.name.replaceAll("&","&amp;")+' — Football Architect</title>'),file);
-  assert.ok(html.includes('src="../../../assets/competition-page.js" defer'),file);
+  assert.ok(html.includes('src="/assets/competition-page.js" defer'),file);
   assert.ok(html.includes('data-division-variant="compact"'),file);
   assert.ok(html.includes('class="app-world-standing-table"'),file);
   assert.ok(html.includes('class="fa-career-shell"'),file);
@@ -116,7 +116,7 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",
  assert.ok(shared.includes('data-app-i18n="navCompetitions">Competitions'));
  assert.ok(shared.includes('class="app-competition-header"'));
  assert.ok(shared.includes('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"'));
- assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/app/competitions" data-app-i18n="allDivisions"'));
+ assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions"'));
  assert.equal((shared.match(/<th scope="col"/g)||[]).length,11);
  for(const key of cols)assert.ok(shared.includes('data-app-i18n="'+key+'"'),key);
  assert.equal((shared.match(/<tr data-world-club="/g)||[]).length,0);
@@ -348,5 +348,5 @@ test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",
  assert.ok(css.includes(".app-competition-return{display:inline-flex;"),"desktop link unchanged");
  assert.ok(css.includes("@media(max-width:620px){.app-competition-header{"));
  assert.ok(css.includes(".app-competition-return{display:none}"),"hidden on mobile");
- assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/app/competitions"'));
+ assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions"'));
 });

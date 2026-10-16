@@ -177,9 +177,9 @@
     if (event.key === "Escape" && !menu.hidden) closeMenu(true);
   });
 
-  // Public CTA uses app.<domain>; local and unconfigured previews keep /app.
+  // Public CTA uses app.<domain>; local and unconfigured previews use canonical paths.
   const previewHost = (window.location?.hostname || "").toLowerCase();
-  const preview = [...document.querySelectorAll('a[href="/app/dashboard"]')][0];
+  const preview = [...document.querySelectorAll('a[href="/dashboard"]')][0];
   if (preview && previewHost.startsWith("app.")) {
     preview.href = "/dashboard";
   } else if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&

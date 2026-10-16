@@ -89,3 +89,11 @@ export function stagePublicArtifact(sourceRoot,destination) {
  assertPublicArtifact(destination,{sourceRoot});
  return files;
 }
+
+// Map canonical request paths to the existing allowlisted physical app files.
+export function publicRequestFile(pathname) {
+  const canonical = /^\/(?:dashboard|calendar|settings|competitions)(?:\/|$)/.test(pathname)
+    ? "/app" + pathname : pathname;
+  return (canonical.endsWith("/") ? canonical + "index.html"
+    : /\.[a-z0-9]+$/i.test(canonical) ? canonical : canonical + "/index.html").slice(1);
+}
