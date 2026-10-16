@@ -252,9 +252,6 @@ async function boot(routeId) {
       awayGoals:game.round<=matchdays?game.awayGoals:null}));
     const commitFixtures=fixtures.prepare(schedule);
     const restoreFixtures=fixtures.snapshot();
-    const fixturePreview=document.getElementById("app-fixtures-preview");
-    if(!fixturePreview)throw Error("Fixtures preview notice unavailable");
-    const previewWasHidden=fixturePreview.hidden;
 
     const caption = document.getElementById("app-standings-caption");
     if(!caption)throw Error("Missing standings caption");
@@ -368,7 +365,6 @@ async function boot(routeId) {
        attempt(()=>tbody.replaceChildren(...canonicalRows));
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
        attempt(()=>restoreFixtures());
-       attempt(()=>{fixturePreview.hidden=previewWasHidden});
        attempt(()=>{
         if(captionI18n===null)caption.removeAttribute("data-app-i18n");
         else caption.setAttribute("data-app-i18n",captionI18n);
@@ -385,7 +381,6 @@ async function boot(routeId) {
     tbody.replaceChildren(fragment);
     commitMobile();
     commitFixtures();
-    fixturePreview.hidden=false;
     // Preserve the canonical compact-form marks exactly as rendered. Bind taps
     // directly to those marks and cancel the enclosing <summary> activation.
     const mobileItems=[...mobileList.querySelectorAll(".app-world-mobile-item")];

@@ -152,6 +152,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.getElementById('competition-tab-fixtures').click()");
         const emptyFixtures=await run("({count:document.querySelectorAll('[data-fixture-match]').length,empty:!document.getElementById('app-fixtures-empty').hidden,disabled:document.getElementById('app-fixtures-round').disabled})");
         assert.deepEqual(emptyFixtures,{count:0,empty:true,disabled:true});
+        const fixtureControls=await run("(()=>{const panel=document.getElementById('competition-panel-fixtures'),select=document.getElementById('app-fixtures-round'),p=panel.getBoundingClientRect(),s=select.getBoundingClientRect();return {centered:Math.abs((s.left+s.right)-(p.left+p.right))<2,title:!!panel.querySelector('h2'),notice:!!document.getElementById('app-fixtures-preview'),siteStyle:select.classList.contains('language-trigger'),height:s.height}})()");
+        assert.deepEqual(fixtureControls,{centered:true,title:false,notice:false,siteStyle:true,height:44});
         const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
         await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
@@ -290,8 +292,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const completed of [0,1,2,3,4,15,30]){
       await run("(()=>{const s=document.querySelector('[data-dev-control=\"matchdays\"]');s.value='"+completed+"';s.dispatchEvent(new Event('change'))})()");
       await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='"+completed+"'");
-      const preview=await run("(()=>{const round=document.getElementById('app-fixtures-round');round.value='1';round.dispatchEvent(new Event('change'));const matches=[...document.querySelectorAll('[data-fixture-match]')];return {count:matches.length,scores:matches.map(row=>row.querySelector('.app-fixture-score').textContent),notice:!document.getElementById('app-fixtures-preview').hidden,allPlayed:[...document.querySelectorAll('#app-standings-body tr')].every(row=>row.cells[2].textContent==='"+completed+"')}})()");
-      assert.equal(preview.count,8);assert.equal(preview.notice,true);assert.equal(preview.allPlayed,true);
+      const preview=await run("(()=>{const round=document.getElementById('app-fixtures-round');round.value='1';round.dispatchEvent(new Event('change'));const matches=[...document.querySelectorAll('[data-fixture-match]')];return {count:matches.length,scores:matches.map(row=>row.querySelector('.app-fixture-score').textContent),notice:!!document.getElementById('app-fixtures-preview'),allPlayed:[...document.querySelectorAll('#app-standings-body tr')].every(row=>row.cells[2].textContent==='"+completed+"')}})()");
+      assert.equal(preview.count,8);assert.equal(preview.notice,false);assert.equal(preview.allPlayed,true);
       assert.ok(preview.scores.every(score=>completed===0?score==="—":/^\d+ – \d+$/.test(score)));
     }
     // Compare every match score and each club's goal totals against the same deterministic model.
@@ -299,7 +301,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     assert.equal(agreement,true,"Fixtures and standings share the same 240 results");
     await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
     await wait("document.querySelectorAll('[data-fixture-match]').length===0");
-    assert.equal(await run("document.getElementById('app-fixtures-preview').hidden&&document.getElementById('app-fixtures-round').disabled"),true);
+    assert.equal(await run("!document.getElementById('app-fixtures-preview')&&document.getElementById('app-fixtures-round').disabled"),true);
     // OFF remains OFF after refresh; it never leaks fictional matches into the public view.
     await cmd("Page.reload");
     await wait("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");

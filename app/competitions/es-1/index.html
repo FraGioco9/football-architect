@@ -246,12 +246,11 @@
           </div>
           </div>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
             <div class="app-fixtures-toolbar">
               <label for="app-fixtures-round" data-app-i18n="fixturesMatchday">Matchday</label>
               <div class="app-fixtures-navigation">
                 <button type="button" class="app-link app-link-secondary" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled>‹</button>
-                <select id="app-fixtures-round" disabled>
+                <select id="app-fixtures-round" class="language-trigger" disabled>
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3</option>
@@ -287,7 +286,6 @@
               </div>
               <p id="app-fixtures-summary" class="app-fixtures-summary" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             </div>
-            <p id="app-fixtures-preview" class="app-fixtures-preview" data-app-i18n="fixturesPreview" hidden>Fictional preview — not official results.</p>
             <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
             <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>
           </section>

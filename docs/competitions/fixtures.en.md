@@ -4,7 +4,8 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 
 ## Display decisions for review
 
-- One round at a time, with a labeled 1–30 selector and previous/next buttons.
+- One round at a time, with a top-centered, labeled 1–30 selector styled with
+  the shared site control and previous/next buttons. No repeated Fixtures heading.
   Round 1 is the initial selection. Changing data preserves the selected round.
 - Eight matches per round; home club, score when played, away club, timing and
   scheduled/full-time state. On narrow screens home/away clubs stack beside the
@@ -29,7 +30,7 @@ The existing DEV **Fictional standings** switch, **0–30 matchdays** slider,
 **Reset current page**, **Reset all** and sessionStorage preferences apply to
 Fixtures too. There is no additional debug panel, switch or persistence key.
 The existing deterministic DEV model supplies both views; future scores are
-removed and marked scheduled. The preview notice identifies fictional results.
+removed and marked scheduled. No fictional-preview notice is displayed in Fixtures.
 Turning the switch OFF or resetting restores both views. Preview data and its
 generator remain excluded from publication.
 
