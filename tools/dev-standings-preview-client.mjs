@@ -69,6 +69,7 @@ const LANG = {
 const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
 let previewState="OFF";
+function savedPreviewEnabled(){try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}}
 function isPreviewEnabled(){return previewState==="ON";}
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
@@ -88,6 +89,7 @@ function setPreviewEnabled(enabled) {
    if(typeof cleanup!=="function")return false;
    activePreview=cleanup;
    previewState="ON";
+   try{sessionStorage.setItem(FLAG,"on")}catch{}
    return true;
   }
   try{activePreview()}
@@ -100,6 +102,7 @@ function setPreviewEnabled(enabled) {
   }
   activePreview=null;
   previewState="OFF";
+  try{sessionStorage.removeItem(FLAG)}catch{}
   return true;
  });
  return transition;
@@ -119,6 +122,7 @@ if(validPath){
    return widgetRoot?.resetWidgetState()===true;
   }}]);
   widgetRoot=createDebugWidget({page:"standings"});
+  if(savedPreviewEnabled())setPreviewEnabled(true);
   let renderedSeason=selectedSeason();
   let seasonRefresh=Promise.resolve();
   function syncSeason(){
