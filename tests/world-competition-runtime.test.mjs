@@ -14,7 +14,6 @@ assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
-const sharedHtml=read("app/competitions/_shared/index.html");
 const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
@@ -39,9 +38,10 @@ function node(tag){
  return n;
 }
 
-async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetchFailure=false,demo=false}){
+async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false}){
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
+ shell??=read("app/competitions/"+selected.toLowerCase()+"/index.html");
  const path="/app/competitions/"+selected.toLowerCase()+ending;
  const initial=node("main");
  fields.set("main-content",initial);
@@ -58,6 +58,13 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
 
   }
  });
+ // The real browser starts with the complete generated route, including its logo.
+ body.innerHTML=shell;
+ body.className="app-body";
+ for(const id of ids)if(!shell.includes('id="'+id+'"')&&!id.startsWith('app-standings-compact')&&id!=='app-standings-full')fields.delete(id);
+ const standings=node("div");
+ let standingsMarkup=shell.match(/<div class="app-world-standings">[\s\S]*?<\/table>\s*<\/div>\s*<\/div>/)?.[0];
+ Object.defineProperty(standings,"outerHTML",{get(){return standingsMarkup},set(value){standingsMarkup=value;for(const id of ['app-standings-compact','app-standings-compact-list','app-standings-full'])fields.set(id,node('div'));}});
  const document={
   events:{},activeElement:null,
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
@@ -74,6 +81,7 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   querySelector(selector){
    if(selector==='meta[name="fa-division"]')return {content:selected};
    if(selector===".fa-shell-topbar")return topbar;
+   if(selector===".app-world-standings")return standingsMarkup?standings:null;
    return null;
   },
   getElementById(id){return fields.get(id)??null},
@@ -84,28 +92,14 @@ async function simulate({division,ending="/",data=manifest,shell=sharedHtml,fetc
   const u=new URL(url);
   requested.push(u.pathname);
   if(fetchFailure)return {ok:false};
-  if(u.pathname==="/app/competitions/_shared/index.html")
-   return {ok:true,text:async()=>shell};
   if(u.pathname==="/app/competitions/_shared/manifest.json")
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- class FakeDOMParser{
-  parseFromString(html,mime){
-   assert.equal(mime,"text/html");
-   const bodyMatch=html.match(/<body class="([^"]+)">([\s\S]*?)<\/body>/);
-   if(!bodyMatch)throw Error("Missing shared body");
-   return {
-    body:{className:bodyMatch[1],innerHTML:bodyMatch[2]},
-    getElementById(id){return html.includes('id="'+id+'"')?{}:null},
-    querySelectorAll(selector){assert.equal(selector,"script");return []}
-   };
-  }
- }
  const window={location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(demo?demoSource:source,{document,window,DOMParser:FakeDOMParser,URL,fetch:fakeFetch});
+ runInNewContext(demo?demoSource:source,{document,window,URL,fetch:fakeFetch});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
@@ -130,7 +124,6 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
   for(const ending of ["/","/index.html"]){
    const r=await simulate({division,ending});
    assert.deepEqual(r.requested,[
-    "/app/competitions/_shared/index.html",
     "/app/competitions/_shared/manifest.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
@@ -138,7 +131,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     "/assets/app-search.js","/assets/competition-tabs.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
-   assert.equal(r.fields.get("app-competition-badge").textContent,division.id);
+   assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");
    assert.equal(r.fields.get("app-competition-flag").src,"../../../"+division.flagAsset);
    assert.equal(r.fields.get("app-competition-country").dataset.worldCountry,division.countryId);
    assert.equal(r.fields.get("app-competition-tier").dataset.appI18n,
