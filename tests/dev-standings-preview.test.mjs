@@ -253,7 +253,7 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   assert.ok(!html.includes('id="app-standings-compact-list"'));
   for (const id of ["app-standings-compact-list","app-standings-full"])
     assert.ok(runtime.includes('id="'+id+'"'),id);
-  assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
+  assert.ok(runtime.includes("withMobileShell(standings.outerHTML)"));
   for (const key of ["standingsMobileRecent","standingsMobileDetails"])
     assert.equal(localization.split(key+":").length,6,"five localizations for "+key);
   for (const removed of ["app-standings-layout-switch","app-standings-show-compact",
@@ -286,12 +286,12 @@ test("UX-01A integration: approved division logos and theme rebind survive mobil
   const theme = read("assets/theme.js").toString();
   const css = read("assets/app.css").toString();
   const manifest = JSON.parse(read("app/competitions/_shared/manifest.json").toString());
-  assert.ok(runtime.includes("withMobileShell(parsed.body.innerHTML)"));
+  assert.ok(runtime.includes("withMobileShell(standings.outerHTML)"));
   assert.ok(runtime.includes("window.faThemeRebind?.()"));
-  assert.ok(runtime.includes("if(division.visualAsset)"));
-  assert.ok(runtime.includes("badge.replaceChildren(picture)"));
-  assert.ok(runtime.indexOf("badge.replaceChildren(picture)") < runtime.indexOf("window.faThemeRebind?.()"));
-  assert.ok(theme.includes("picture[data-division-logo]"));
+  assert.ok(!runtime.includes("visualAsset"));
+  assert.ok(!runtime.includes("badge.replaceChildren"));
+  assert.ok(!runtime.includes("document.body.innerHTML ="));
+  assert.ok(!theme.includes("data-division-logo"));
   assert.ok(css.includes('html[data-theme="light"] .app-world-mobile-points'));
   assert.equal(manifest.divisions.length, 16);
   assert.equal(manifest.approved, false);
@@ -321,7 +321,7 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
 });
 test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
-  assert.ok(runtime.includes("document.body.innerHTML = withMobileShell(parsed.body.innerHTML)"));
+  assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
   const start = client.indexOf("if(validPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");

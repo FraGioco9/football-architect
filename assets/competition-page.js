@@ -19,7 +19,6 @@
     main.appendChild(back);
     document.body.appendChild(main);
   }
-  const divisionSlugs = {"IT-1":"it-1-lega-federale","IT-2":"it-2-lega-delle-citta","ENG-1":"eng-1-crown-league","ENG-2":"eng-2-shield-league","ES-1":"es-1-liga-de-la-union","ES-2":"es-2-liga-de-las-regiones","DE-1":"de-1-meisterliga","DE-2":"de-2-vereinsliga","FR-1":"fr-1-ligue-des-societes","FR-2":"fr-2-ligue-des-regions","PT-1":"pt-1-liga-lusitana","PT-2":"pt-2-liga-atlantica","NL-1":"nl-1-oranjeliga","NL-2":"nl-2-bondsklasse","BR-1":"br-1-liga-das-associacoes","BR-2":"br-2-liga-das-regioes"};
   function validManifest(data) {
     if (data?.schemaVersion !== 1 || data.approved !== false ||
         !Array.isArray(data.divisions) || data.divisions.length !== 16) return false;
@@ -31,15 +30,6 @@
           !/^assets\/flags\/[a-z0-9-]+\.svg$/.test(d.flagAsset) ||
           ![1,2].includes(d.tier) || d.capacity !== 16 ||
           !Array.isArray(d.clubs) || d.clubs.length !== d.capacity) return false;
-      if(d.visualAsset!==undefined){
-        const dir=divisionSlugs[d.id];
-        if(!dir)return false;
-        for(const variant of ["primary","primary-dark","compact","compact-dark"]){
-          const entry=d.visualAsset[variant];
-          for(const ext of ["png","webp"])
-            if(entry?.[ext]!==`assets/divisions/${dir}/${dir}-${variant}.${ext}`)return false;
-        }
-      }
       ids.add(d.id);
       let previous = d.tier === 1 ? 0 : 16;
       for (const club of d.clubs) {
@@ -61,7 +51,7 @@
     L:["standingsDemoFormLoss","Loss","standingsDemoLossLetter"]
   };
   const demoFormTriggers = [];
-  // The shared HTML is a checked-in generated artifact; inject mobile shell only in memory.
+  // Enhance only the standings region; logos remain in their original declarative shadow roots.
   function withMobileShell(html) {
     const open = '<div class="app-world-standings">';
     const close = '</table>\n            </div>\n          </div>';
@@ -395,43 +385,22 @@
     if (!sourceUrl || !/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     if (path.split("/").pop() !== routeId.toLowerCase()) throw Error("Route identity mismatch");
-    const [shellResponse, dataResponse] = await Promise.all([
-      fetch(new URL("index.html",root),{credentials:"same-origin"}),
-      fetch(new URL("manifest.json",root),{credentials:"same-origin"})
-    ]);
-    if (!shellResponse.ok || !dataResponse.ok) throw Error("Shared competition content unavailable");
-    const [shellMarkup,manifest] = await Promise.all([shellResponse.text(),dataResponse.json()]);
-    if (!validManifest(manifest)) throw Error("Invalid or approved competition manifest");
-    const division = manifest.divisions.find(d => d.id === routeId);
-    if (!division) throw Error("Unknown division");
-    const parsed = new DOMParser().parseFromString(shellMarkup,"text/html");
-    const required = ["app-divisions","app-competition-badge","app-competition-flag",
+    const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
+    if(!dataResponse.ok)throw Error("Competition data unavailable");
+    const manifest=await dataResponse.json();
+    if(!validManifest(manifest))throw Error("Invalid or approved competition manifest");
+    const division=manifest.divisions.find(d=>d.id===routeId);
+    if(!division)throw Error("Unknown division");
+    const required=["app-divisions","app-competition-badge","app-competition-flag",
       "app-competition-country","app-competition-tier","app-competition-capacity",
-      "app-competition-level","app-standings-body",
-      "app-standings-caption","app-search-dialog"];
-    if (required.some(id => !parsed.getElementById(id))) throw Error("Incomplete shared page");
-    // Inert parsed scripts are discarded; load shared scripts only after content is ready.
-    parsed.querySelectorAll("script").forEach(script => script.remove());
-    document.body.innerHTML = withMobileShell(parsed.body.innerHTML);
-    document.body.className = parsed.body.className;
-    document.getElementById("division-detail-name").textContent = division.name;
-    const badge=document.getElementById("app-competition-badge");
-    badge.textContent=division.id;
-    if(division.visualAsset){
-      const a=division.visualAsset;
-      const picture=document.createElement("picture"),source=document.createElement("source"),img=document.createElement("img");
-      const absolute=path=>"../../../"+path;
-      picture.setAttribute("data-division-logo","");
-      for(const [key,path] of Object.entries({lightWebp:a.compact.webp,darkWebp:a["compact-dark"].webp,lightPng:a.compact.png,darkPng:a["compact-dark"].png}))
-        picture.dataset[key]=absolute(path);
-      source.type="image/webp";source.srcset=picture.dataset.darkWebp;
-      img.alt="";img.decoding="async";img.width=60;img.height=60;img.src=picture.dataset.darkPng;
-      img.onerror=()=>{badge.textContent=division.id;badge.className=badge.className.replace(" app-competition-logo-approved","");};
-      picture.append(source,img);
-      badge.className+=" app-competition-logo-approved";
-      badge.replaceChildren(picture);
-    }
-    window.faThemeRebind?.(); // Rebind branding + approved division logos after hydration.
+      "app-competition-level","app-standings-body","app-standings-caption","app-search-dialog"];
+    if(required.some(id=>!document.getElementById(id)))throw Error("Incomplete generated page");
+    // Only standings are enhanced; the original inline logo DOM is never replaced.
+    const standings=document.querySelector(".app-world-standings");
+    if(!standings)throw Error("Missing standings");
+    standings.outerHTML=withMobileShell(standings.outerHTML);
+    document.getElementById("division-detail-name").textContent=division.name;
+    window.faThemeRebind?.(); // Rebind unrelated branding/theme controls.
     document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset;
     const country = document.getElementById("app-competition-country");
     country.dataset.worldCountry = division.countryId;

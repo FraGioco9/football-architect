@@ -2,17 +2,291 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="fa-division" content="FR-2">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
-  <meta name="fa-division" content="FR-2">
+  <meta name="description" content="Football Architect — career workspace shell.">
   <title>Ligue des Régions — Football Architect</title>
-  <link rel="icon" href="../../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="32x32" href="../../../assets/brand/favicon-32.png">
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="../../../favicon.ico">
   <script src="../../../assets/theme.js"></script>
   <link rel="stylesheet" href="../../../assets/landing.css">
   <link rel="stylesheet" href="../../../assets/app.css">
   <script src="../../../assets/competition-page.js" defer></script>
 </head>
 <body class="app-body">
-  <main id="main-content" class="app-main" role="status">Loading competition…</main>
+  <a class="app-skip" href="#main-content" data-app-i18n="skip">Skip to main content</a>
+  <div class="fa-career-shell">
+    <aside class="fa-shell-sidebar" aria-label="Career navigation" data-app-aria="sidebarLabel">
+      <div class="fa-shell-sidebar-head">
+        <a class="app-brand" href="../../../" aria-label="Football Architect home" data-app-aria="brandHome">
+          <img src="../../../assets/brand/symbol-dark.svg" class="app-brand-symbol" width="512" height="512" alt="">
+          <span class="app-brand-copy">FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span>
+        </a>
+      </div>
+      <nav class="fa-shell-nav" aria-label="Career pages" data-app-aria="pagesLabel">
+        <section class="fa-shell-nav-group" aria-labelledby="app-nav-home-title">
+          <h2 class="fa-shell-nav-group-title" id="app-nav-home-title" data-app-i18n="navHome">Home</h2>
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link" id="app-nav-dashboard" href="../../dashboard/" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span data-app-i18n="dashboard">Dashboard</span>
+            </a>
+            <a class="fa-shell-link" id="app-nav-calendar" href="../../calendar/" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span data-app-i18n="calendar">Calendar</span>
+            </a>
+          </div>
+        </section>
+        <section class="fa-shell-nav-group" aria-labelledby="app-nav-world-title">
+          <h2 class="fa-shell-nav-group-title" id="app-nav-world-title" data-app-i18n="navWorld">World</h2>
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link is-active" id="app-nav-divisions" href="../" data-app-view="divisions" aria-current="page" aria-label="Competitions" data-app-aria="navCompetitions">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4M12 14v4M8 21h8M9 18h6v3H9Z"/></svg>
+              <span data-app-i18n="navCompetitions">Competitions</span>
+            </a>
+          </div>
+        </section>
+        <section class="fa-shell-nav-group fa-shell-nav-secondary">
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link" id="app-nav-settings" href="../../settings/" data-app-view="settings" aria-label="Settings" data-app-aria="settings">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.96 4.37 L10.44 2.12 L13.56 2.12 L14.04 4.37 L15.95 5.16 L17.88 3.91 L20.09 6.12 L18.84 8.05 L19.63 9.96 L21.88 10.44 L21.88 13.56 L19.63 14.04 L18.84 15.95 L20.09 17.88 L17.88 20.09 L15.95 18.84 L14.04 19.63 L13.56 21.88 L10.44 21.88 L9.96 19.63 L8.05 18.84 L6.12 20.09 L3.91 17.88 L5.16 15.95 L4.37 14.04 L2.12 13.56 L2.12 10.44 L4.37 9.96 L5.16 8.05 L3.91 6.12 L6.12 3.91 L8.05 5.16 Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+              <span data-app-i18n="settings">Settings</span>
+            </a>
+          </div>
+        </section>
+      </nav>
+    </aside>
+    <div class="fa-shell-workspace">
+      <header class="fa-shell-topbar">
+        <div class="fa-shell-club">
+          <span class="app-crest" aria-hidden="true">—</span>
+          <strong data-app-i18n="noClub">No club selected</strong>
+        </div>
+        <div class="fa-shell-search">
+          <button id="app-search-trigger" class="app-search-trigger" type="button" aria-label="Search the app" aria-haspopup="dialog" aria-controls="app-search-dialog">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.2 4.2"/></svg>
+            <span aria-hidden="true">Search the app</span>
+          </button>
+        </div>
+        <div class="fa-shell-time" aria-label="Career date and phase" data-app-aria="timeLabel">
+          <svg class="fa-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>
+          <span class="fa-shell-date-full" data-app-i18n="noSeason">No active season</span>
+          <span class="fa-shell-date-short" aria-hidden="true">—</span>
+        </div>
+                <div class="fa-shell-primary">
+          <button class="app-continue" type="button" disabled aria-label="Continue unavailable: no active career" data-app-aria="continueDisabled">
+            <svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+            <span data-app-i18n="continue">Continue</span>
+          </button>
+        </div>
+      </header>
+      <div class="fa-shell-content-scroll">
+      <main class="app-main" id="main-content" tabindex="-1">
+        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title" hidden>
+          <h1 class="app-page-title" id="dashboard-title" data-app-i18n="dashboard">Dashboard</h1>
+          <div class="app-panels">
+            <section class="app-panel" aria-labelledby="career-status-heading">
+              <h2 id="career-status-heading" data-app-i18n="careerStatus">Career status</h2>
+              <p data-app-i18n="careerStatusText">No active career. Club selection, match dates and the Continue action will be enabled when career management is implemented.</p>
+              <div class="app-panel-actions">
+                <a class="app-link app-link-primary" href="../../../guide/" data-app-i18n="openGuide">Explore the game guide</a>
+                <a class="app-link app-link-secondary" href="../../../" data-app-i18n="backToSite">Back to website</a>
+              </div>
+            </section>
+            <section class="app-panel" aria-labelledby="world-heading">
+              <h2 id="world-heading" data-app-i18n="world">World foundations</h2>
+              <p data-app-i18n="worldText">The fictional world catalogues are available, but these identities are not yet an active playable league system.</p>
+              <div class="app-stats">
+                <div><strong>8</strong><span data-app-i18n="countries">Countries</span></div>
+                <div><strong>16</strong><span data-app-i18n="divisions">Divisions</span></div>
+                <div><strong>320</strong><span data-app-i18n="clubs">Documented clubs</span></div>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>
+          <h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>
+          <div class="app-panel app-calendar-empty">
+            <h2 data-app-i18n="calendarStatus">Schedule not available</h2>
+            <p data-app-i18n="calendarStatusText">Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.</p>
+            <a class="app-link app-link-secondary" href="../../dashboard/" data-app-i18n="backDashboard">Back to Dashboard</a>
+          </div>
+        </section>
+        <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>
+          <h1 class="app-page-title" id="settings-title" data-app-i18n="settings">Settings</h1>
+          <div class="app-settings-grid">
+            <section class="app-panel app-settings-panel" aria-labelledby="app-language-heading">
+              <h2 id="app-language-heading" data-app-i18n="languageHeading">Language</h2>
+              <div class="app-settings-panel-content">
+                <p class="app-settings-hint" data-app-i18n="languageHelp">Choose the interface language. This preference is shared with the Landing and Guide on this device.</p>
+                <div class="settings-language-control language-control" id="language-control">
+                          <span class="sr-only" id="language-label" data-i18n="language">Language</span>
+                          <button type="button" class="language-trigger" id="site-language" role="combobox"
+                                  aria-labelledby="language-label language-value" aria-haspopup="listbox"
+                                  aria-expanded="false" aria-controls="language-options">
+                            <span id="language-value">English</span>
+                            <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                              <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </button>
+                          <div class="language-menu" id="language-options" role="listbox" aria-labelledby="language-label" hidden>
+                            <div class="language-option" role="option" id="language-en" data-language="en" aria-selected="true">English</div>
+                            <div class="language-option" role="option" id="language-de" data-language="de" aria-selected="false">Deutsch</div>
+                            <div class="language-option" role="option" id="language-es" data-language="es" aria-selected="false">Español</div>
+                            <div class="language-option" role="option" id="language-fr" data-language="fr" aria-selected="false">Français</div>
+                            <div class="language-option" role="option" id="language-it" data-language="it" aria-selected="false">Italiano</div>
+                          </div>
+                        </div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-theme-heading">
+              <h2 id="app-theme-heading" data-app-i18n="themeHeading">Appearance</h2>
+              <div class="app-settings-panel-content">
+                <p class="app-settings-hint" data-app-i18n="themeHelp">Choose the site theme. It applies across the website and app on this device.</p>
+                <div class="app-theme-choices" role="group" aria-labelledby="app-theme-heading">
+                  <button type="button" class="app-theme-choice" id="theme-dark" data-theme-choice="dark" aria-pressed="true" data-app-i18n="themeDark">Dark</button>
+                  <button type="button" class="app-theme-choice" id="theme-light" data-theme-choice="light" aria-pressed="false" data-app-i18n="themeLight">Light</button>
+                </div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">
+              <h2 id="app-career-heading" data-app-i18n="careerPanel">Your career</h2>
+              <div class="app-settings-panel-content">
+                <div class="app-setting-fact"><span data-app-i18n="saveStatus">Saves</span><strong data-app-i18n="notAvailable">Not available yet</strong></div>
+                <div class="app-setting-fact"><span data-app-i18n="account">Account</span><strong data-app-i18n="noAccount">Not required</strong></div>
+                <div class="app-setting-fact"><span data-app-i18n="gameplayStatus">Game runtime</span><strong data-app-i18n="notAvailable">Not available yet</strong></div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-data-heading">
+              <h2 id="app-data-heading" data-app-i18n="dataHeading">Data management</h2>
+              <div class="app-settings-panel-content">
+                <p data-app-i18n="dataText">Import, export and career management will be available only when the save system is implemented. This preview does not create or modify careers.</p>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-about-heading">
+              <h2 id="app-about-heading" data-app-i18n="aboutHeading">About the game</h2>
+              <div class="app-settings-panel-content">
+                <p data-app-i18n="aboutText">Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.</p>
+                <a class="app-link app-link-secondary app-about-guide" href="../../../guide/" data-app-i18n="openGuide">Explore the game guide</a>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">
+          <header class="app-competition-header">
+            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="primary" aria-hidden="true"><template shadowrootmode="open"><style>:host{position:relative}svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible}</style><svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="84 52 855 1358">
+	<style>
+		tspan { white-space:pre } 
+		.s0 { fill: #66628d } 
+		.s1 { fill: #243039 } 
+	</style>
+	<g>
+		<g>
+			<g>
+				<path fill-rule="evenodd" class="s0" d="m152 1371h305v18h-305z"/>
+				<path fill-rule="evenodd" class="s0" d="m567 1371h305v18h-305z"/>
+				<path class="s1" d="m512 1351.01l28.99 28.99-28.99 28.99-28.99-28.99z"/>
+			</g>
+			<g>
+				<g data-lettering="RÉGIONS" class="s0" transform="translate(79.46686536 1301.52685950) scale(0.15808956 -0.17665289)"><path d="M305 700H426Q471 700 518.0 692.0Q565 684 604.0 663.5Q643 643 667.0 606.0Q691 569 691 511Q691 473 677.0 432.5Q663 392 628.5 361.5Q594 331 531 321Q573 309 604.0 280.0Q635 251 653 221Q655 218 663.0 204.0Q671 190 683.5 169.5Q696 149 710.0 127.0Q724 105 738 86Q761 55 778.0 39.0Q795 23 812.5 17.0Q830 11 854 10V0H729Q669 0 618.0 7.0Q567 14 526.5 38.0Q486 62 455 114Q444 132 437.0 150.0Q430 168 425.0 185.0Q420 202 416.5 217.5Q413 233 410.0 247.5Q407 262 403 275Q393 311 379.0 324.0Q365 337 351 342V352Q355 352 360.0 352.0Q365 352 367 352Q395 352 417.0 365.0Q439 378 454.0 405.0Q469 432 474 475Q475 483 476.0 492.5Q477 502 476 516Q472 590 439.5 619.0Q407 648 362 648Q357 648 349.0 648.0Q341 648 332.0 648.0Q323 648 315 648Q315 648 312.5 661.0Q310 674 307.5 687.0Q305 700 305 700ZM318 700V0H112V700ZM115 73V0H35V10Q37 10 42.0 10.0Q47 10 48 10Q74 10 92.5 28.5Q111 47 112 73ZM115 627H112Q111 653 92.5 671.5Q74 690 48 690Q47 690 42.0 690.0Q37 690 35 690V700H115ZM315 73H318Q318 47 337.0 28.5Q356 10 382 10Q384 10 388.5 10.0Q393 10 394 10V0H315Z" transform="translate(0.00000 0)"/><path d="M312 700V0H107V700ZM572 51 612 0H309V51ZM539 370V320H309V370ZM592 700V649H309V700ZM653 232 615 0H399L435 51Q483 51 524.5 72.5Q566 94 597.0 134.5Q628 175 643 232ZM539 322V206H529V211Q529 258 498.5 288.5Q468 319 421 320V322ZM539 484V368H421V370Q468 371 499.0 402.0Q530 433 529 480V484ZM592 652V512H582V520Q582 580 548.0 614.5Q514 649 453 650V652ZM592 718V689L470 700Q492 700 516.5 703.0Q541 706 562.0 710.0Q583 714 592 718ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q106 653 87.5 671.5Q69 690 43 690Q43 690 36.5 690.0Q30 690 30 690V700H110ZM315 768Q329 801 357.0 837.0Q385 873 416.0 904.0Q447 935 469 954Q506 938 525.5 913.5Q545 889 555 854Q523 833 482.5 813.5Q442 794 400.5 780.0Q359 766 322 761Z" transform="translate(843.00000 0)"/><path d="M784 280V115Q760 85 707.0 55.0Q654 25 581.5 5.5Q509 -14 425 -14Q307 -14 219.5 29.5Q132 73 83.5 155.0Q35 237 35 352Q35 465 82.5 546.0Q130 627 220.0 670.5Q310 714 435 714Q490 714 547.5 707.5Q605 701 654.5 691.0Q704 681 733 668L723 477H714Q693 552 656.0 592.5Q619 633 574.5 648.5Q530 664 485 664Q405 664 354.0 626.0Q303 588 279.0 516.5Q255 445 255 342Q255 248 275.5 179.0Q296 110 338.5 73.0Q381 36 447 36Q480 36 510.0 48.0Q540 60 559.5 84.0Q579 108 579 143L580 280Q580 325 529 325H513V335H849V325H834Q782 325 784 280Z" transform="translate(1560.00000 0)"/><path d="M312 700V0H107V700ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q106 653 87.5 671.5Q69 690 43 690Q43 690 36.5 690.0Q30 690 30 690V700H110ZM309 73H312Q313 47 331.5 28.5Q350 10 376 10Q376 10 382.0 10.0Q388 10 389 10V0H309ZM309 627V700H389V690Q388 690 382.0 690.0Q376 690 376 690Q350 690 331.5 671.5Q313 653 312 627Z" transform="translate(2471.00000 0)"/><path d="M450 714Q579 714 672.5 670.5Q766 627 816.0 546.0Q866 465 866 350Q866 236 816.0 154.5Q766 73 672.5 29.5Q579 -14 450 -14Q321 -14 228.0 29.5Q135 73 85.0 154.0Q35 235 35 350Q35 464 85.0 545.5Q135 627 228.0 670.5Q321 714 450 714ZM450 36Q512 36 555.5 73.5Q599 111 622.0 181.0Q645 251 645 350Q645 449 622.0 519.0Q599 589 555.5 626.5Q512 664 450 664Q389 664 345.5 626.5Q302 589 279.0 519.0Q256 449 256 350Q256 251 279.0 181.0Q302 111 345.5 73.5Q389 36 450 36Z" transform="translate(2939.00000 0)"/><path d="M97 715 772 115 785 -14 110 585ZM103 71V0H20V10Q20 10 29.0 10.0Q38 10 39 10Q64 10 82.0 28.0Q100 46 100 71ZM306 71Q306 46 324.0 28.0Q342 10 367 10Q368 10 377.0 10.0Q386 10 386 10V0H303V71ZM97 715 305 499 306 0H100V590Q100 649 93.5 682.0Q87 715 87 715ZM781 700V114Q781 73 784.5 44.0Q788 15 791.0 0.5Q794 -14 794 -14H785L576 218V700ZM861 700V690Q861 690 852.0 690.0Q843 690 843 690Q818 690 800.0 672.5Q782 655 781 629H778V700ZM495 700H578V629H576Q575 655 557.5 672.5Q540 690 514 690Q514 690 505.0 690.0Q496 690 495 690Z" transform="translate(3894.00000 0)"/><path d="M294 714Q316 714 353.0 712.0Q390 710 430.0 706.5Q470 703 500.0 699.5Q530 696 539 692L519 541H509Q509 596 466.5 630.0Q424 664 350 664Q289 664 253.0 640.5Q217 617 214 580Q211 544 238.5 524.0Q266 504 303 487L490 400Q546 375 578.0 327.0Q610 279 605 206Q598 99 515.5 42.5Q433 -14 291 -14Q233 -14 186.0 -5.0Q139 4 105.5 18.5Q72 33 54 51Q43 76 45.0 112.0Q47 148 58.5 183.5Q70 219 86 240H95Q92 188 117.0 141.0Q142 94 192.0 65.0Q242 36 312 36Q384 36 418.5 66.0Q453 96 453 134Q453 166 428.5 192.0Q404 218 347 244L184 320Q115 352 83.5 408.0Q52 464 61 535Q68 593 98.0 633.0Q128 673 177.5 693.5Q227 714 294 714ZM541 704 538 683H393V704Z" transform="translate(4825.00000 0)"/></g><g data-lettering="LIGUE DES" class="s0" transform="translate(264.46091667 1122.71857923) scale(0.08463611 -0.09153005)"><path d="M312 700V0H107V700ZM572 51 612 0H309V51ZM653 232 615 0H399L435 51Q483 51 524.5 72.5Q566 94 597.0 134.5Q628 175 643 232ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q106 653 87.5 671.5Q69 690 43 690Q43 690 36.5 690.0Q30 690 30 690V700H110ZM309 627V700H389V690Q388 690 382.0 690.0Q376 690 376 690Q350 690 331.5 671.5Q313 653 312 627Z" transform="translate(0.00000 0)"/><path d="M312 700V0H107V700ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q106 653 87.5 671.5Q69 690 43 690Q43 690 36.5 690.0Q30 690 30 690V700H110ZM309 73H312Q313 47 331.5 28.5Q350 10 376 10Q376 10 382.0 10.0Q388 10 389 10V0H309ZM309 627V700H389V690Q388 690 382.0 690.0Q376 690 376 690Q350 690 331.5 671.5Q313 653 312 627Z" transform="translate(652.00000 0)"/><path d="M784 280V115Q760 85 707.0 55.0Q654 25 581.5 5.5Q509 -14 425 -14Q307 -14 219.5 29.5Q132 73 83.5 155.0Q35 237 35 352Q35 465 82.5 546.0Q130 627 220.0 670.5Q310 714 435 714Q490 714 547.5 707.5Q605 701 654.5 691.0Q704 681 733 668L723 477H714Q693 552 656.0 592.5Q619 633 574.5 648.5Q530 664 485 664Q405 664 354.0 626.0Q303 588 279.0 516.5Q255 445 255 342Q255 248 275.5 179.0Q296 110 338.5 73.0Q381 36 447 36Q480 36 510.0 48.0Q540 60 559.5 84.0Q579 108 579 143L580 280Q580 325 529 325H513V335H849V325H834Q782 325 784 280Z" transform="translate(1070.00000 0)"/><path d="M304 700V260Q304 190 326.0 140.0Q348 90 388.5 63.5Q429 37 486 37Q544 37 584.5 62.0Q625 87 647.0 134.0Q669 181 669 247V700H756V257Q756 173 721.0 112.0Q686 51 619.0 18.5Q552 -14 456 -14Q334 -14 254.5 18.5Q175 51 137.0 111.5Q99 172 99 256V700ZM102 700V640H99Q99 662 83.5 676.0Q68 690 46 690Q46 690 38.0 690.0Q30 690 30 690V700ZM373 700V690Q373 690 365.0 690.0Q357 690 357 690Q335 690 319.5 676.0Q304 662 304 640H302V700ZM672 700V640H669Q669 662 653.5 676.0Q638 690 616 690Q616 690 608.0 690.0Q600 690 600 690V700ZM825 700V690Q825 690 817.0 690.0Q809 690 809 690Q787 690 771.5 676.0Q756 662 756 640H754V700Z" transform="translate(1931.00000 0)"/><path d="M312 700V0H107V700ZM572 51 612 0H309V51ZM539 370V320H309V370ZM592 700V649H309V700ZM653 232 615 0H399L435 51Q483 51 524.5 72.5Q566 94 597.0 134.5Q628 175 643 232ZM539 322V206H529V211Q529 258 498.5 288.5Q468 319 421 320V322ZM539 484V368H421V370Q468 371 499.0 402.0Q530 433 529 480V484ZM592 652V512H582V520Q582 580 548.0 614.5Q514 649 453 650V652ZM592 718V689L470 700Q492 700 516.5 703.0Q541 706 562.0 710.0Q583 714 592 718ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q106 653 87.5 671.5Q69 690 43 690Q43 690 36.5 690.0Q30 690 30 690V700H110Z" transform="translate(2776.00000 0)"/><path d="M409 700Q534 700 623.5 658.5Q713 617 760.5 538.5Q808 460 808 350Q808 240 760.5 161.5Q713 83 623.5 41.5Q534 0 409 0H155L154 50Q202 50 240.0 50.0Q278 50 306.0 50.0Q334 50 352.5 50.0Q371 50 380.0 50.0Q389 50 389 50Q452 50 496.5 86.0Q541 122 564.5 189.0Q588 256 588 350Q588 444 564.5 511.0Q541 578 496.5 614.0Q452 650 389 650Q389 650 379.5 650.0Q370 650 350.5 650.0Q331 650 302.0 650.0Q273 650 233.5 650.0Q194 650 144 650V700ZM312 700V0H107V700ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q107 653 88.0 671.5Q69 690 43 690Q43 690 37.0 690.0Q31 690 31 690L30 700H110Z" transform="translate(3693.00000 0)"/><path d="M312 700V0H107V700ZM572 51 612 0H309V51ZM539 370V320H309V370ZM592 700V649H309V700ZM653 232 615 0H399L435 51Q483 51 524.5 72.5Q566 94 597.0 134.5Q628 175 643 232ZM539 322V206H529V211Q529 258 498.5 288.5Q468 319 421 320V322ZM539 484V368H421V370Q468 371 499.0 402.0Q530 433 529 480V484ZM592 652V512H582V520Q582 580 548.0 614.5Q514 649 453 650V652ZM592 718V689L470 700Q492 700 516.5 703.0Q541 706 562.0 710.0Q583 714 592 718ZM110 73V0H30V10Q30 10 36.5 10.0Q43 10 43 10Q69 10 87.5 28.5Q106 47 107 73ZM110 627H107Q106 653 87.5 671.5Q69 690 43 690Q43 690 36.5 690.0Q30 690 30 690V700H110Z" transform="translate(4535.00000 0)"/><path d="M294 714Q316 714 353.0 712.0Q390 710 430.0 706.5Q470 703 500.0 699.5Q530 696 539 692L519 541H509Q509 596 466.5 630.0Q424 664 350 664Q289 664 253.0 640.5Q217 617 214 580Q211 544 238.5 524.0Q266 504 303 487L490 400Q546 375 578.0 327.0Q610 279 605 206Q598 99 515.5 42.5Q433 -14 291 -14Q233 -14 186.0 -5.0Q139 4 105.5 18.5Q72 33 54 51Q43 76 45.0 112.0Q47 148 58.5 183.5Q70 219 86 240H95Q92 188 117.0 141.0Q142 94 192.0 65.0Q242 36 312 36Q384 36 418.5 66.0Q453 96 453 134Q453 166 428.5 192.0Q404 218 347 244L184 320Q115 352 83.5 408.0Q52 464 61 535Q68 593 98.0 633.0Q128 673 177.5 693.5Q227 714 294 714ZM541 704 538 683H393V704Z" transform="translate(5202.00000 0)"/></g></g>
+			<g>
+				<path class="s0" d="m512 53c52 75 108 47 170 71 6 16 6 33-6 46-10 22-41 41-59 67-26 37-38 115-68 177-17-6-28-12-37-12-9 0-20 6-37 12-30-62-42-140-68-177-18-26-49-45-59-67-12-13-12-30-6-46 62-24 118 4 170-71z"/>
+				<path class="s0" d="m909.51 741.5c-38.96-82.53 13.29-117.03 23.51-182.72-10.86-13.2-25.58-21.7-42.84-17.81-24.05-2.34-56.01 15.01-87.52 17.6-45.05 4.01-118.6-24.59-187.29-29.61-3.3 17.72-3.61 30.25-8.11 38.04-4.5 7.79-15.19 14.32-28.89 26.04 38.69 56.98 100.24 106.38 119.29 147.39 13.51 28.59 14.47 64.94 28.52 84.6 5.26 16.89 19.98 25.39 36.84 28.19 51.78-41.69 55.53-104.19 146.49-111.72z"/>
+				<path class="s0" d="m114.49 741.5c38.96-82.53-13.29-117.03-23.51-182.72 10.86-13.2 25.58-21.7 42.84-17.81 24.05-2.34 56.01 15.01 87.52 17.6 45.05 4.01 118.6-24.59 187.29-29.61 3.3 17.72 3.61 30.25 8.11 38.04 4.5 7.79 15.19 14.32 28.89 26.04-38.69 56.98-100.24 106.38-119.29 147.39-13.51 28.59-14.47 64.94-28.52 84.6-5.26 16.89-19.98 25.39-36.84 28.19-51.78-41.69-55.53-104.19-146.49-111.72z"/>
+				<path class="s1" d="m512 971c-50-67-109-57-172-76-11-21 6-38 25-53 28-24 45-52 56-79 21-35 31-97 52-149 20 10 30 16 39 16 9 0 19-6 39-16 21 52 31 114 52 149 11 27 28 55 56 79 19 15 36 32 25 53-63 19-122 9-172 76z"/>
+				<path class="s1" d="m909.51 282.5c-83.03-9.8-103.87-65.9-151.82-110.96-23.69 0.98-29.91 24.2-33.4 48.15-6.79 36.25-22.53 64.98-40.42 88-19.81 35.69-68.5 75.35-103.04 119.53 18.66 12.33 28.86 17.99 33.36 25.78 4.5 7.79 4.3 19.45 5.64 41.77 55.54-7.81 114.23-30.15 155.04-29.46 28.89-3.98 61.63-3.25 96.42 9 22.49 8.95 45.71 15.17 58.4-4.85-15.05-64.06-53.21-110.16-20.18-186.96z"/>
+				<path class="s1" d="m114.49 282.5c83.03-9.8 103.87-65.9 151.82-110.96 23.69 0.98 29.91 24.2 33.4 48.15 6.79 36.25 22.53 64.98 40.42 88 19.81 35.69 68.5 75.35 103.04 119.53-18.66 12.33-28.86 17.99-33.36 25.78-4.5 7.79-4.3 19.45-5.64 41.77-55.54-7.81-114.23-30.15-155.04-29.46-28.89-3.98-61.63-3.25-96.42 9-22.49 8.95-45.71 15.17-58.4-4.85 15.05-64.06 53.21-110.16 20.18-186.96z"/>
+				<path class="s1" d="m512 445l58 33.5v67l-58 33.5-58-33.5v-67z"/>
+			</g>
+		</g>
+	</g>
+</svg></template><span>FR-2</span></div>
+            <div class="app-competition-identity">
+              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Ligue des Régions</span></h1>
+              <div class="app-world-detail-meta"><img class="app-world-flag" id="app-competition-flag" alt="" src="../../../assets/flags/fr.svg" width="28" height="20"> <span id="app-competition-country" data-world-country="FR">France</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="divisionTier2">Second division</span></div>
+            </div>
+            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>
+          </header>
+          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
+            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
+          </div>
+          <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
+          <div class="app-world-standings">
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+              <table class="app-world-standing-table">
+                <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  <th scope="col" data-app-i18n="standingsForm">Form</th>
+                  </tr>
+                </thead>
+                <tbody id="app-standings-body">
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </div>
+          <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
+            <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+          </section>
+          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabStats">Stats</h2>
+            <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
+          </section>
+          <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabHistory">History</h2>
+            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">No completed seasons or past winners are available.</p>
+          </section>
+          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabRules">Rules</h2>
+            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>
+            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">16</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">2</dd></div></dl>
+          </section>
+          <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabAwards">Awards</h2>
+            <p class="app-competition-status" data-app-i18n="competitionAwardsEmpty">No season awards are available.</p>
+          </section>
+        </section>
+      </main>
+      <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
+      </div>
+    </div>
+  </div>
+  <dialog id="app-search-dialog" class="app-search-dialog" aria-labelledby="app-search-heading" aria-describedby="app-search-scope">
+    <section class="app-search-panel">
+      <h2 id="app-search-heading" class="sr-only">Search the app</h2>
+      <div class="app-search-input-row">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.2 4.2"/></svg>
+        <input id="app-search-input" type="search" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search the app" placeholder="Find a page or setting…">
+        <button id="app-search-close" class="app-search-close" type="button" aria-label="Close search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p id="app-search-scope" class="sr-only">Search available app pages and sections only.</p>
+      <p id="app-search-status" class="app-search-status" role="status" aria-live="polite"></p>
+      <ul id="app-search-results" class="app-search-results" aria-label="Search the app"></ul>
+      <p id="app-search-empty" class="app-search-empty" hidden>No matching pages or sections.</p>
+    </section>
+  </dialog>
+
 </body>
 </html>

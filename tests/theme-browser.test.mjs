@@ -176,7 +176,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             {width,height:h,deviceScaleFactor:1,mobile,screenWidth:width,screenHeight:h});
           const compactExpected=width<=620;
           await wait("(()=>{if(innerWidth!=="+width+")return false;const c=document.getElementById('app-standings-compact'),f=document.getElementById('app-standings-full');return !!c&&!!f&&c.hidden==="+(!compactExpected)+"&&f.hidden==="+compactExpected+"})()");
-          const state=await run("(()=>{const full=document.getElementById('app-standings-full'),compact=document.getElementById('app-standings-compact'),items=[...document.querySelectorAll('#app-standings-compact-list > li')],table=document.querySelector('.app-world-standing-table'),first=items[0]?.querySelector('details'),summary=first?.querySelector('summary'),points=summary?.querySelector('.app-world-mobile-points'),fg=points?getComputedStyle(points):null;return {inner:innerWidth,scroll:document.documentElement.scrollWidth,compact:compact.hidden,full:full.hidden,compactDisplay:getComputedStyle(compact).display,fullDisplay:getComputedStyle(full).display,rows:document.querySelectorAll('#app-standings-body tr').length,clubs:items.length,idsMatch:items.every((li,i)=>li.dataset.worldClub===document.querySelectorAll('#app-standings-body tr')[i]?.dataset.worldClub),cells:table.querySelector('tbody tr').children.length,stats:first?.querySelectorAll('.app-world-mobile-stat').length,form:summary?.querySelectorAll('.app-world-form-dot').length,points:points?.firstChild?.textContent,color:fg?.color,background:fg?.backgroundColor,summaryTag:summary?.tagName,logo:!!document.querySelector('#app-competition-badge picture[data-division-logo]')}})()");
+          const state=await run("(()=>{const full=document.getElementById('app-standings-full'),compact=document.getElementById('app-standings-compact'),items=[...document.querySelectorAll('#app-standings-compact-list > li')],table=document.querySelector('.app-world-standing-table'),first=items[0]?.querySelector('details'),summary=first?.querySelector('summary'),points=summary?.querySelector('.app-world-mobile-points'),fg=points?getComputedStyle(points):null;return {inner:innerWidth,scroll:document.documentElement.scrollWidth,compact:compact.hidden,full:full.hidden,compactDisplay:getComputedStyle(compact).display,fullDisplay:getComputedStyle(full).display,rows:document.querySelectorAll('#app-standings-body tr').length,clubs:items.length,idsMatch:items.every((li,i)=>li.dataset.worldClub===document.querySelectorAll('#app-standings-body tr')[i]?.dataset.worldClub),cells:table.querySelector('tbody tr').children.length,stats:first?.querySelectorAll('.app-world-mobile-stat').length,form:summary?.querySelectorAll('.app-world-form-dot').length,points:points?.firstChild?.textContent,color:fg?.color,background:fg?.backgroundColor,summaryTag:summary?.tagName,logo:!!document.querySelector('#app-competition-badge')?.shadowRoot?.querySelector('svg')}})()");
           assert.equal(state.inner,width,"responsive viewport "+width);
           assert.ok(state.scroll<=width+1,"no page-wide overflow at "+width+"px "+theme);
           assert.equal(state.rows,16,"canonical public rows "+width);
@@ -251,6 +251,38 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         checks.push(name+"/"+theme);
       }
     }
+    // DIV-ASSET-07: artwork must render from the HTML with all page scripts disabled.
+    // Declarative shadow DOM prevents the original .s0/.s1 rules crossing logo boundaries.
+    const divisions=JSON.parse(await readFile(join(root,"data/divisions.json"),"utf8"));
+    await cmd("Emulation.setScriptExecutionDisabled",{value:true});
+    for(const theme of ["dark","light"]){
+      for(const route of ["/app/competitions/",...divisions.map(d=>"/app/competitions/"+d.id.toLowerCase()+"/")]){
+        const index=route==="/app/competitions/";
+        await visit(route,"true");
+        await run("document.documentElement.dataset.theme='"+theme+"'");
+        const logos=await run("(()=>{const attack=document.createElement('style');attack.textContent='.s0,.s1{fill:magenta!important}';document.head.append(attack);return [...document.querySelectorAll('[data-division-variant]')].map(host=>{const svg=host.shadowRoot?.querySelector('svg'),rect=svg?.getBoundingClientRect(),box=svg?.viewBox.baseVal;return {variant:host.dataset.divisionVariant,hidden:host.getAttribute('aria-hidden'),viewBox:svg?.getAttribute('viewBox'),ratio:box?box.width/box.height:null,scaleX:svg?.getScreenCTM().a,scaleY:svg?.getScreenCTM().d,align:svg?.preserveAspectRatio.baseVal.align,meet:svg?.preserveAspectRatio.baseVal.meetOrSlice,width:rect?.width,height:rect?.height,hostWidth:host.getBoundingClientRect().width,hostHeight:host.getBoundingClientRect().height,paint:[...new Set([...svg.querySelectorAll('path')].map(p=>getComputedStyle(p).fill))],background:getComputedStyle(host).backgroundColor,border:getComputedStyle(host).borderWidth,requests:performance.getEntriesByType('resource').filter(r=>/assets\\/divisions\\//.test(r.name)).length}})})()");
+        assert.equal(logos.length,index?16:1,route+" initial logo count");
+        const selected=index?["IT","ENG","ES","DE","FR","PT","NL","BR"].flatMap(c=>divisions.filter(d=>d.countryId===c)):divisions.filter(d=>route.includes('/'+d.id.toLowerCase()+'/'));
+        for(let i=0;i<logos.length;i++){
+          const logo=logos[i],d=selected[i];
+          assert.equal(logo.variant,index?"compact":"primary");
+          assert.equal(logo.hidden,"true");
+          assert.ok(logo.width>0&&logo.height>0&&logo.ratio>0);
+          assert.ok(logo.width<=logo.hostWidth+0.1&&logo.height<=logo.hostHeight+0.1,"SVG viewport fits reserved frame");
+          assert.ok(Math.abs(logo.scaleX-logo.scaleY)<1e-9,"uniform artwork scaling");
+          assert.equal(logo.align,6,"xMidYMid");
+          assert.equal(logo.meet,1,"meet: no cropping");
+          assert.equal(logo.background,"rgba(0, 0, 0, 0)");
+          assert.equal(logo.border,"0px");
+          assert.equal(logo.requests,0,"no logo resource fetches");
+          const rgb=hex=>"rgb("+[1,3,5].map(n=>parseInt(hex.slice(n,n+2),16)).join(", ")+")";
+          const colors=[d.primaryHex,d.secondaryHex,d.ivoryHex].map(rgb);
+          for(const paint of logo.paint)assert.ok(colors.includes(paint),d.id+" original CSS is isolated: "+paint);
+        }
+        await snap("DIV-ASSET-07 "+theme+" "+route,320,700);
+      }
+    }
+    await cmd("Emulation.setScriptExecutionDisabled",{value:false});
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}

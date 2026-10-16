@@ -2,17 +2,294 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="fa-division" content="NL-2">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
-  <meta name="fa-division" content="NL-2">
+  <meta name="description" content="Football Architect — career workspace shell.">
   <title>Bondsklasse — Football Architect</title>
-  <link rel="icon" href="../../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="32x32" href="../../../assets/brand/favicon-32.png">
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="../../../favicon.ico">
   <script src="../../../assets/theme.js"></script>
   <link rel="stylesheet" href="../../../assets/landing.css">
   <link rel="stylesheet" href="../../../assets/app.css">
   <script src="../../../assets/competition-page.js" defer></script>
 </head>
 <body class="app-body">
-  <main id="main-content" class="app-main" role="status">Loading competition…</main>
+  <a class="app-skip" href="#main-content" data-app-i18n="skip">Skip to main content</a>
+  <div class="fa-career-shell">
+    <aside class="fa-shell-sidebar" aria-label="Career navigation" data-app-aria="sidebarLabel">
+      <div class="fa-shell-sidebar-head">
+        <a class="app-brand" href="../../../" aria-label="Football Architect home" data-app-aria="brandHome">
+          <img src="../../../assets/brand/symbol-dark.svg" class="app-brand-symbol" width="512" height="512" alt="">
+          <span class="app-brand-copy">FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span>
+        </a>
+      </div>
+      <nav class="fa-shell-nav" aria-label="Career pages" data-app-aria="pagesLabel">
+        <section class="fa-shell-nav-group" aria-labelledby="app-nav-home-title">
+          <h2 class="fa-shell-nav-group-title" id="app-nav-home-title" data-app-i18n="navHome">Home</h2>
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link" id="app-nav-dashboard" href="../../dashboard/" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span data-app-i18n="dashboard">Dashboard</span>
+            </a>
+            <a class="fa-shell-link" id="app-nav-calendar" href="../../calendar/" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span data-app-i18n="calendar">Calendar</span>
+            </a>
+          </div>
+        </section>
+        <section class="fa-shell-nav-group" aria-labelledby="app-nav-world-title">
+          <h2 class="fa-shell-nav-group-title" id="app-nav-world-title" data-app-i18n="navWorld">World</h2>
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link is-active" id="app-nav-divisions" href="../" data-app-view="divisions" aria-current="page" aria-label="Competitions" data-app-aria="navCompetitions">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4M12 14v4M8 21h8M9 18h6v3H9Z"/></svg>
+              <span data-app-i18n="navCompetitions">Competitions</span>
+            </a>
+          </div>
+        </section>
+        <section class="fa-shell-nav-group fa-shell-nav-secondary">
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link" id="app-nav-settings" href="../../settings/" data-app-view="settings" aria-label="Settings" data-app-aria="settings">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.96 4.37 L10.44 2.12 L13.56 2.12 L14.04 4.37 L15.95 5.16 L17.88 3.91 L20.09 6.12 L18.84 8.05 L19.63 9.96 L21.88 10.44 L21.88 13.56 L19.63 14.04 L18.84 15.95 L20.09 17.88 L17.88 20.09 L15.95 18.84 L14.04 19.63 L13.56 21.88 L10.44 21.88 L9.96 19.63 L8.05 18.84 L6.12 20.09 L3.91 17.88 L5.16 15.95 L4.37 14.04 L2.12 13.56 L2.12 10.44 L4.37 9.96 L5.16 8.05 L3.91 6.12 L6.12 3.91 L8.05 5.16 Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+              <span data-app-i18n="settings">Settings</span>
+            </a>
+          </div>
+        </section>
+      </nav>
+    </aside>
+    <div class="fa-shell-workspace">
+      <header class="fa-shell-topbar">
+        <div class="fa-shell-club">
+          <span class="app-crest" aria-hidden="true">—</span>
+          <strong data-app-i18n="noClub">No club selected</strong>
+        </div>
+        <div class="fa-shell-search">
+          <button id="app-search-trigger" class="app-search-trigger" type="button" aria-label="Search the app" aria-haspopup="dialog" aria-controls="app-search-dialog">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.2 4.2"/></svg>
+            <span aria-hidden="true">Search the app</span>
+          </button>
+        </div>
+        <div class="fa-shell-time" aria-label="Career date and phase" data-app-aria="timeLabel">
+          <svg class="fa-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>
+          <span class="fa-shell-date-full" data-app-i18n="noSeason">No active season</span>
+          <span class="fa-shell-date-short" aria-hidden="true">—</span>
+        </div>
+                <div class="fa-shell-primary">
+          <button class="app-continue" type="button" disabled aria-label="Continue unavailable: no active career" data-app-aria="continueDisabled">
+            <svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+            <span data-app-i18n="continue">Continue</span>
+          </button>
+        </div>
+      </header>
+      <div class="fa-shell-content-scroll">
+      <main class="app-main" id="main-content" tabindex="-1">
+        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title" hidden>
+          <h1 class="app-page-title" id="dashboard-title" data-app-i18n="dashboard">Dashboard</h1>
+          <div class="app-panels">
+            <section class="app-panel" aria-labelledby="career-status-heading">
+              <h2 id="career-status-heading" data-app-i18n="careerStatus">Career status</h2>
+              <p data-app-i18n="careerStatusText">No active career. Club selection, match dates and the Continue action will be enabled when career management is implemented.</p>
+              <div class="app-panel-actions">
+                <a class="app-link app-link-primary" href="../../../guide/" data-app-i18n="openGuide">Explore the game guide</a>
+                <a class="app-link app-link-secondary" href="../../../" data-app-i18n="backToSite">Back to website</a>
+              </div>
+            </section>
+            <section class="app-panel" aria-labelledby="world-heading">
+              <h2 id="world-heading" data-app-i18n="world">World foundations</h2>
+              <p data-app-i18n="worldText">The fictional world catalogues are available, but these identities are not yet an active playable league system.</p>
+              <div class="app-stats">
+                <div><strong>8</strong><span data-app-i18n="countries">Countries</span></div>
+                <div><strong>16</strong><span data-app-i18n="divisions">Divisions</span></div>
+                <div><strong>320</strong><span data-app-i18n="clubs">Documented clubs</span></div>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>
+          <h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>
+          <div class="app-panel app-calendar-empty">
+            <h2 data-app-i18n="calendarStatus">Schedule not available</h2>
+            <p data-app-i18n="calendarStatusText">Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.</p>
+            <a class="app-link app-link-secondary" href="../../dashboard/" data-app-i18n="backDashboard">Back to Dashboard</a>
+          </div>
+        </section>
+        <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>
+          <h1 class="app-page-title" id="settings-title" data-app-i18n="settings">Settings</h1>
+          <div class="app-settings-grid">
+            <section class="app-panel app-settings-panel" aria-labelledby="app-language-heading">
+              <h2 id="app-language-heading" data-app-i18n="languageHeading">Language</h2>
+              <div class="app-settings-panel-content">
+                <p class="app-settings-hint" data-app-i18n="languageHelp">Choose the interface language. This preference is shared with the Landing and Guide on this device.</p>
+                <div class="settings-language-control language-control" id="language-control">
+                          <span class="sr-only" id="language-label" data-i18n="language">Language</span>
+                          <button type="button" class="language-trigger" id="site-language" role="combobox"
+                                  aria-labelledby="language-label language-value" aria-haspopup="listbox"
+                                  aria-expanded="false" aria-controls="language-options">
+                            <span id="language-value">English</span>
+                            <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                              <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </button>
+                          <div class="language-menu" id="language-options" role="listbox" aria-labelledby="language-label" hidden>
+                            <div class="language-option" role="option" id="language-en" data-language="en" aria-selected="true">English</div>
+                            <div class="language-option" role="option" id="language-de" data-language="de" aria-selected="false">Deutsch</div>
+                            <div class="language-option" role="option" id="language-es" data-language="es" aria-selected="false">Español</div>
+                            <div class="language-option" role="option" id="language-fr" data-language="fr" aria-selected="false">Français</div>
+                            <div class="language-option" role="option" id="language-it" data-language="it" aria-selected="false">Italiano</div>
+                          </div>
+                        </div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-theme-heading">
+              <h2 id="app-theme-heading" data-app-i18n="themeHeading">Appearance</h2>
+              <div class="app-settings-panel-content">
+                <p class="app-settings-hint" data-app-i18n="themeHelp">Choose the site theme. It applies across the website and app on this device.</p>
+                <div class="app-theme-choices" role="group" aria-labelledby="app-theme-heading">
+                  <button type="button" class="app-theme-choice" id="theme-dark" data-theme-choice="dark" aria-pressed="true" data-app-i18n="themeDark">Dark</button>
+                  <button type="button" class="app-theme-choice" id="theme-light" data-theme-choice="light" aria-pressed="false" data-app-i18n="themeLight">Light</button>
+                </div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">
+              <h2 id="app-career-heading" data-app-i18n="careerPanel">Your career</h2>
+              <div class="app-settings-panel-content">
+                <div class="app-setting-fact"><span data-app-i18n="saveStatus">Saves</span><strong data-app-i18n="notAvailable">Not available yet</strong></div>
+                <div class="app-setting-fact"><span data-app-i18n="account">Account</span><strong data-app-i18n="noAccount">Not required</strong></div>
+                <div class="app-setting-fact"><span data-app-i18n="gameplayStatus">Game runtime</span><strong data-app-i18n="notAvailable">Not available yet</strong></div>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-data-heading">
+              <h2 id="app-data-heading" data-app-i18n="dataHeading">Data management</h2>
+              <div class="app-settings-panel-content">
+                <p data-app-i18n="dataText">Import, export and career management will be available only when the save system is implemented. This preview does not create or modify careers.</p>
+              </div>
+            </section>
+            <section class="app-panel app-settings-panel" aria-labelledby="app-about-heading">
+              <h2 id="app-about-heading" data-app-i18n="aboutHeading">About the game</h2>
+              <div class="app-settings-panel-content">
+                <p data-app-i18n="aboutText">Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.</p>
+                <a class="app-link app-link-secondary app-about-guide" href="../../../guide/" data-app-i18n="openGuide">Explore the game guide</a>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">
+          <header class="app-competition-header">
+            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="primary" aria-hidden="true"><template shadowrootmode="open"><style>:host{position:relative}svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible}</style><svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 1024 1480" width="1024" height="1480">
+	<style>
+		tspan { white-space:pre } 
+		.s0 { fill: #88683c } 
+		.s1 { fill: #243039 } 
+	</style>
+	<g>
+		<g>
+			<g>
+				<path class="s0" d="m152 1318h305v18h-305z"/>
+				<path class="s0" d="m567 1318h305v18h-305z"/>
+				<path class="s1" d="m512 1298.01l28.99 28.99-28.99 28.99-28.99-28.99z"/>
+			</g>
+			<g>
+				<path class="s1" d="M356.13973922902494 1064.4678287981858Q356.13973922902494 1057.5864512471655 353.1695719954648 1054.5280612244896Q350.19940476190476 1051.469671201814 343.37684240362813 1051.469671201814H335.2015306122449V1078.9363662131518H343.84736394557825Q350.14058956916097 1078.9363662131518 353.14016439909295 1075.6427154195012Q356.13973922902494 1072.3490646258504 356.13973922902494 1064.4678287981858ZM362.0800736961451 1100.874433106576Q362.0800736961451 1093.0520124716552 358.1688633786848 1089.2290249433106Q354.25765306122446 1085.406037414966 345.3765589569161 1085.406037414966H335.2015306122449V1117.4015022675737Q343.6709183673469 1117.7543934240362 348.55257936507934 1117.7543934240362Q355.43395691609976 1117.7543934240362 358.7570153061224 1113.578514739229Q362.0800736961451 1109.4026360544217 362.0800736961451 1100.874433106576ZM306.49971655328795 1123.8711734693877V1119.577664399093L316.67474489795916 1117.9896541950113V1050.8227040816325L306.49971655328795 1049.2935090702947V1045.0H344.78840702947844Q360.4920634920635 1045.0 367.96159297052156 1049.2052862811793Q375.4311224489796 1053.4105725623583 375.4311224489796 1062.8210034013605Q375.4311224489796 1069.8788265306123 371.01998299319723 1074.9957482993198Q366.60884353741494 1080.1126700680272 359.19812925170066 1081.700680272109Q370.1965702947846 1082.8181689342402 375.8428287981859 1087.670422335601Q381.4890873015873 1092.5226757369614 381.4890873015873 1100.874433106576Q381.4890873015873 1112.3433956916099 373.01969954648524 1118.2837301587301Q364.5503117913832 1124.2240646258504 348.72902494331066 1124.2240646258504L321.9092970521542 1123.8711734693877Z"/><path class="s1" d="M410.249716553288 1084.347363945578Q410.249716553288 1103.109410430839 415.39604591836735 1111.137684240363Q420.54237528344675 1119.1659580498865 431.7172619047619 1119.1659580498865Q442.8333333333333 1119.1659580498865 447.97966269841265 1111.1082766439908Q453.12599206349205 1103.0505952380952 453.12599206349205 1084.347363945578Q453.12599206349205 1065.702947845805 447.97966269841265 1057.8805272108843Q442.8333333333333 1050.0581065759636 431.7172619047619 1050.0581065759636Q420.54237528344675 1050.0581065759636 415.39604591836735 1057.8805272108843Q410.249716553288 1065.702947845805 410.249716553288 1084.347363945578ZM390.7230725623583 1084.347363945578Q390.7230725623583 1044.1177721088434 431.7172619047619 1044.1177721088434Q451.9496882086168 1044.1177721088434 462.3011621315193 1054.3222080498865Q472.6526360544218 1064.5266439909296 472.6526360544218 1084.347363945578Q472.6526360544218 1104.4033446712017 462.1835317460318 1114.7254109977323Q451.71442743764175 1125.047477324263 431.7172619047619 1125.047477324263Q411.77891156462584 1125.047477324263 401.25099206349205 1114.754818594104Q390.7230725623583 1104.4621598639455 390.7230725623583 1084.347363945578Z"/><path class="s1" d="M546.4657029478458 1050.8227040816325 535.8789682539683 1049.2935090702947V1045.0H563.9338151927437V1049.2935090702947L553.8176020408164 1050.8227040816325V1123.8711734693877H546.9362244897959L498.29606009070295 1060.4683956916099V1117.9896541950113L508.8827947845805 1119.577664399093V1123.8711734693877H480.827947845805V1119.577664399093L490.9441609977324 1117.9896541950113V1050.8227040816325L480.827947845805 1049.2935090702947V1045.0H507.82412131519277L546.4657029478458 1095.4046201814058Z"/><path class="s1" d="M627.1013321995464 1084.4649943310658Q627.1013321995464 1067.4085884353742 620.8669217687075 1059.4391298185942Q614.6325113378684 1051.469671201814 600.5756802721088 1051.469671201814H596.2233560090702V1117.1662414965986Q601.8696145124716 1117.6367630385487 606.4571995464852 1117.6367630385487Q614.1031746031745 1117.6367630385487 618.5437216553287 1114.3431122448978Q622.9842687074829 1111.0494614512472 625.0428004535147 1104.0210459183672Q627.1013321995464 1096.9926303854875 627.1013321995464 1084.4649943310658ZM605.1044501133786 1045.0Q626.3367346938775 1045.0 636.4823554421769 1054.6162840136053Q646.6279761904761 1064.2325680272108 646.6279761904761 1083.9944727891157Q646.6279761904761 1104.2857142857142 636.9234693877551 1114.1960742630386Q627.218962585034 1124.1064342403627 607.5746882086166 1124.1064342403627L581.1666666666666 1123.8711734693877H567.6391723356008V1119.577664399093L577.7553854875282 1117.9896541950113V1050.8227040816325L567.6391723356008 1049.2935090702947V1045.0Z"/><path class="s1" d="M658.9203514739228 1099.6981292517007H664.0960884353741L666.7427721088435 1112.3433956916099Q669.2130102040816 1115.2253401360545 674.2123015873015 1117.1662414965986Q679.2115929705215 1119.107142857143 684.563775510204 1119.107142857143Q701.4437358276643 1119.107142857143 701.4437358276643 1105.2267573696145Q701.4437358276643 1100.874433106576 698.2383078231292 1097.8748582766439Q695.032879818594 1094.875283446712 688.1515022675736 1092.5226757369614Q678.0352891156462 1089.1702097505668 673.594742063492 1087.0822704081631Q669.1541950113378 1084.9943310657595 666.095804988662 1082.1712018140588Q663.0374149659863 1079.3480725623583 661.2141439909296 1075.3192318594106Q659.3908730158729 1071.2903911564626 659.3908730158729 1065.408871882086Q659.3908730158729 1054.9985827664398 666.4781037414965 1049.5581774376415Q673.5653344671201 1044.1177721088434 687.2104591836734 1044.1177721088434Q697.0914115646258 1044.1177721088434 709.0897108843536 1046.6468253968253V1065.408871882086H703.8551587301587L701.2084750566893 1054.5868764172335Q695.2093253968253 1050.234552154195 687.2104591836734 1050.234552154195Q679.9761904761904 1050.234552154195 676.0943877551019 1052.9106434240362Q672.2125850340135 1055.5867346938776 672.2125850340135 1061.1153628117913Q672.2125850340135 1065.0559807256236 675.4474206349205 1067.8497023809523Q678.6822562358276 1070.6434240362812 685.563633786848 1072.8195861678005Q699.03231292517 1077.2307256235827 704.0610119047618 1080.4949688208617Q709.0897108843536 1083.7592120181405 711.736394557823 1088.5820578231292Q714.3830782312924 1093.4049036281178 714.3830782312924 1099.9333900226757Q714.3830782312924 1125.047477324263 684.799036281179 1125.047477324263Q678.0352891156462 1125.047477324263 671.0068735827663 1123.9005810657595Q663.9784580498865 1122.7536848072561 658.9203514739228 1120.8715986394557Z"/><path class="s0" d="M289.2333580796832 1145.0V1151.3226924028706L275.02895322939867 1153.574610244989L236.6597376886909 1187.4399901014601L287.7609502598367 1252.4857708487998L298.58747834694384 1254.824300915615V1261.1469933184856H260.6513239297204L217.2585993565949 1205.1954961643157L207.21158129175947 1213.8567186340015V1252.4857708487998L223.9277406582529 1254.824300915615V1261.1469933184856H165.03142786439V1254.824300915615L179.92873051224944 1252.4857708487998V1153.574610244989L165.03142786439 1151.3226924028706V1145.0H222.19549616431576V1151.3226924028706L207.21158129175947 1153.574610244989V1200.864884929473L260.13165058153925 1153.574610244989L249.47834694382578 1151.3226924028706V1145.0Z"/><path class="s0" d="M363.11358574610244 1151.3226924028706 345.184855233853 1153.574610244989V1251.9660975006186H368.82999257609504Q387.2783964365256 1251.9660975006186 395.93961890621136 1250.2338530066816L403.0418213313536 1226.0690423162584H410.8369215540708L407.5456570155902 1261.1469933184856H303.0047018064836V1254.824300915615L317.902004454343 1252.4857708487998V1153.574610244989L303.0913140311804 1151.3226924028706V1145.0H363.11358574610244Z"/><path class="s0" d="M455.35560504825537 1254.824300915615V1261.1469933184856H420.0178173719376V1254.824300915615L428.67903984162336 1252.4857708487998L469.99307102202425 1144.0472655283347H495.1106161841128L536.25142291512 1252.4857708487998L545.0858698341995 1254.824300915615V1261.1469933184856H493.3783716901757V1254.824300915615L506.8032665181886 1252.4857708487998L495.71690175699086 1222.4313288789904H451.11160603810936L440.45830240039595 1252.4857708487998ZM473.80400890868594 1161.5429349170997 454.6627072506805 1212.9039841623362H492.42563721851025Z"/><path class="s0" d="M555.8257856966097 1225.5493689680773H563.4476614699332L567.3452115812918 1244.1709972779015Q570.9829250185597 1248.4149962880476 578.3449641177926 1251.273199703044Q585.7070032170254 1254.1314031180402 593.5887156644395 1254.1314031180402Q618.4464241524375 1254.1314031180402 618.4464241524375 1233.6909180895818Q618.4464241524375 1227.2816134620143 613.7260579064589 1222.8643900024747Q609.0056916604801 1218.447166542935 598.8720613709478 1214.9826775550607Q583.9747587230884 1210.04578074734 577.4355357584757 1206.9710467706013Q570.8963127938629 1203.896312793863 566.3924771096263 1199.7389260084137Q561.8886414253898 1195.5815392229647 559.2036624597872 1189.6486018312298Q556.5186834941846 1183.7156644394952 556.5186834941846 1175.0544419698094Q556.5186834941846 1159.7240781984658 566.9554565701559 1151.7124474140064Q577.3922296461271 1143.7008166295473 597.4862657757981 1143.7008166295473Q612.03711952487 1143.7008166295473 629.7060133630289 1147.425142291512V1175.0544419698094H621.9975253650086L618.0999752536501 1159.1177926255878Q609.2655283345706 1152.7084879980202 597.4862657757981 1152.7084879980202Q586.8329621380847 1152.7084879980202 581.1165553080921 1156.6493442217272Q575.4001484780995 1160.5902004454342 575.4001484780995 1168.731749566939Q575.4001484780995 1174.5347686216282 580.1638208364266 1178.648849294729Q584.9274931947538 1182.7629299678297 595.0611234842861 1185.9675822816134Q614.8953229398663 1192.4634991338778 622.3006681514476 1197.2704776045534Q629.7060133630289 1202.0774560752288 633.6035634743876 1209.1796585003713Q637.5011135857461 1216.2818609255135 637.5011135857461 1225.8958178668647Q637.5011135857461 1262.8792378124226 593.9351645632269 1262.8792378124226Q583.9747587230884 1262.8792378124226 573.6245978718139 1261.1902994308339Q563.2744370205395 1259.5013610492454 555.8257856966097 1256.729769858946Z"/><path class="s0" d="M654.4771096263302 1225.5493689680773H662.0989853996537L665.9965355110122 1244.1709972779015Q669.6342489482802 1248.4149962880476 676.996288047513 1251.273199703044Q684.3583271467459 1254.1314031180402 692.24003959416 1254.1314031180402Q717.097748082158 1254.1314031180402 717.097748082158 1233.6909180895818Q717.097748082158 1227.2816134620143 712.3773818361792 1222.8643900024747Q707.6570155902006 1218.447166542935 697.5233853006682 1214.9826775550607Q682.6260826528088 1210.04578074734 676.086859688196 1206.9710467706013Q669.5476367235833 1203.896312793863 665.0438010393468 1199.7389260084137Q660.5399653551102 1195.5815392229647 657.8549863895076 1189.6486018312298Q655.1700074239051 1183.7156644394952 655.1700074239051 1175.0544419698094Q655.1700074239051 1159.7240781984658 665.6067804998763 1151.7124474140064Q676.0435535758477 1143.7008166295473 696.1375897055185 1143.7008166295473Q710.6884434545905 1143.7008166295473 728.3573372927494 1147.425142291512V1175.0544419698094H720.6488492947291L716.7512991833705 1159.1177926255878Q707.916852264291 1152.7084879980202 696.1375897055185 1152.7084879980202Q685.4842860678051 1152.7084879980202 679.7678792378125 1156.6493442217272Q674.0514724078199 1160.5902004454342 674.0514724078199 1168.731749566939Q674.0514724078199 1174.5347686216282 678.8151447661471 1178.648849294729Q683.5788171244742 1182.7629299678297 693.7124474140065 1185.9675822816134Q713.5466468695868 1192.4634991338778 720.9519920811681 1197.2704776045534Q728.3573372927494 1202.0774560752288 732.254887404108 1209.1796585003713Q736.1524375154665 1216.2818609255135 736.1524375154665 1225.8958178668647Q736.1524375154665 1262.8792378124226 692.5864884929474 1262.8792378124226Q682.6260826528088 1262.8792378124226 672.2759218015344 1261.1902994308339Q661.9257609502599 1259.5013610492454 654.4771096263302 1256.729769858946Z"/><path class="s0" d="M746.7191289284831 1254.824300915615 761.6164315763425 1252.4857708487998V1153.574610244989L746.7191289284831 1151.3226924028706V1145.0H845.630289532294V1174.5347686216282H837.74857708488L834.9769858945806 1155.7399158624103Q825.2764167285326 1154.5273447166544 806.9146250927988 1154.5273447166544H788.8992823558525V1197.140559267508H819.3001732244494L821.985152190052 1184.3219500123732H829.6936401880723V1220.0061865874784H821.985152190052L819.3001732244494 1206.8411284335562H788.8992823558525V1251.6196486018312H810.8121752041574Q833.1581291759466 1251.6196486018312 840.0871071516951 1250.2338530066816L845.024003959416 1228.754021281861H852.90571640683L851.2600841375897 1261.1469933184856H746.7191289284831Z"/></g>
+			<g>
+				<path class="s1" d="m512 53.89l85.92 85.92-85.92 85.1-85.92-85.1z"/>
+				<path class="s1" d="m142.92 581.81c91.16-2.31 135.95 68.37 158.62 112.36v261.89h-117.31v-228.02c1.31-67.83-12.16-105.93-41.31-146.23z"/>
+				<path class="s1" d="m881.08 581.81c-91.16-2.31-135.95 68.37-158.62 112.36v261.89h117.31v-228.02c-1.31-67.83 12.16-105.93 41.31-146.23z"/>
+				<path class="s1" d="m318.89 718.95c13.31 33.72 26.61 74.22 40.81 113.82 14.2 39.6 38.3 97.1 77.33 123.29h-118.14z"/>
+				<path class="s1" d="m705.11 718.95c-13.31 33.72-26.61 74.22-40.81 113.82-14.2 39.6-38.3 97.1-77.33 123.29h118.14z"/>
+				<path class="s0" d="m512 236.47l69.4 75.18c-25.61 22.31-38.83 52.88-38.83 90.06v568.39h-61.14v-568.39c0-37.18-13.22-67.75-38.83-90.06z"/>
+				<path class="s0" d="m207.36 224.08h109.88c68.54 9.87 129.81 88.61 138.8 187.54v267.68c-29.76-53.89-60.37-106.77-111.54-146.24v-82.61c-4.7-91.4-39.43-146.59-137.14-226.37z"/>
+				<path class="s0" d="m816.64 224.08h-109.88c-68.54 9.87-129.81 88.61-138.8 187.54v267.68c29.76-53.89 60.37-106.77 111.54-146.24v-82.61c4.7-91.4 39.43-146.59 137.14-226.37z"/>
+				<path class="s0" d="m52.04 488.45h99.14c96.82 0 184.82 49.92 248.82 128.92 25 31 57.69 77 57.69 119.76v207.36c-29.59-21.82-57.49-66.72-79.99-124.62-35.7-91.8-67.4-151.2-113.7-199.5-39.7-40.8-99-59-147.52-64.17-21.48-2.43-43.48-42.83-64.44-67.75z"/>
+				<path class="s0" d="m971.96 488.45h-99.14c-96.82 0-184.82 49.92-248.82 128.92-25 31-57.69 77-57.69 119.76v207.36c29.59-21.82 57.49-66.72 79.99-124.62 35.7-91.8 67.4-151.2 113.7-199.5 39.7-40.8 99-59 147.52-64.17 21.48-2.43 43.48-42.83 64.44-67.75z"/>
+			</g>
+		</g>
+	</g>
+</svg></template><span>NL-2</span></div>
+            <div class="app-competition-identity">
+              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Bondsklasse</span></h1>
+              <div class="app-world-detail-meta"><img class="app-world-flag" id="app-competition-flag" alt="" src="../../../assets/flags/nl.svg" width="28" height="20"> <span id="app-competition-country" data-world-country="NL">Netherlands</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="divisionTier2">Second division</span></div>
+            </div>
+            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>
+          </header>
+          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
+            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
+          </div>
+          <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
+          <div class="app-world-standings">
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+              <table class="app-world-standing-table">
+                <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  <th scope="col" data-app-i18n="standingsForm">Form</th>
+                  </tr>
+                </thead>
+                <tbody id="app-standings-body">
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </div>
+          <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
+            <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+          </section>
+          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabStats">Stats</h2>
+            <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
+          </section>
+          <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabHistory">History</h2>
+            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">No completed seasons or past winners are available.</p>
+          </section>
+          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabRules">Rules</h2>
+            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>
+            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">16</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">2</dd></div></dl>
+          </section>
+          <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabAwards">Awards</h2>
+            <p class="app-competition-status" data-app-i18n="competitionAwardsEmpty">No season awards are available.</p>
+          </section>
+        </section>
+      </main>
+      <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
+      </div>
+    </div>
+  </div>
+  <dialog id="app-search-dialog" class="app-search-dialog" aria-labelledby="app-search-heading" aria-describedby="app-search-scope">
+    <section class="app-search-panel">
+      <h2 id="app-search-heading" class="sr-only">Search the app</h2>
+      <div class="app-search-input-row">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.2 4.2"/></svg>
+        <input id="app-search-input" type="search" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search the app" placeholder="Find a page or setting…">
+        <button id="app-search-close" class="app-search-close" type="button" aria-label="Close search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p id="app-search-scope" class="sr-only">Search available app pages and sections only.</p>
+      <p id="app-search-status" class="app-search-status" role="status" aria-live="polite"></p>
+      <ul id="app-search-results" class="app-search-results" aria-label="Search the app"></ul>
+      <p id="app-search-empty" class="app-search-empty" hidden>No matching pages or sections.</p>
+    </section>
+  </dialog>
+
 </body>
 </html>

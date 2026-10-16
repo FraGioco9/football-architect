@@ -13,13 +13,6 @@
     if (meta) meta.setAttribute("content", theme === "light" ? "#F4F7F4" : "#101A1D");
     for (const button of document.querySelectorAll("[data-theme-choice]"))
       button.setAttribute("aria-pressed", String(button.dataset.themeChoice === theme));
-    for(const picture of document.querySelectorAll("picture[data-division-logo]")){
-      const source=picture.querySelector("source"),img=picture.querySelector("img");
-      const webp=theme==="light"?picture.dataset.lightWebp:picture.dataset.darkWebp;
-      const png=theme==="light"?picture.dataset.lightPng:picture.dataset.darkPng;
-      if(source&&source.getAttribute("srcset")!==webp)source.setAttribute("srcset",webp);
-      if(img&&img.getAttribute("src")!==png)img.setAttribute("src",png);
-    }
     for (const img of document.querySelectorAll(".brand-image, .app-brand-symbol")) {
       const src = img.getAttribute("src");
       if (src && /-(?:dark|light)\.svg$/.test(src))

@@ -1,7 +1,7 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
-import {validateDivisionAssets} from "./validate-division-assets.mjs";
+import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-assets.mjs";
 
 // Normalize the source template too: Windows clones may retain CRLF from an earlier checkout.
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8").replace(/\r\n/g,"\n");
@@ -65,26 +65,17 @@ const worldSection = function worldSection(content,active,division=null){
  const h=division ? '' : '          <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>\n';
  return '        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title"'+(active?'':' hidden')+'>\n'+h+(content?content+'\n':'')+'        </section>';
 };
-// The documented color variants are explicit; theme.js selects one source pair.
-const logoPicture=(id,root,kind,large)=>{
- const a=finalLogos.get(id),light=a[kind],dark=a[kind+"-dark"];
- const path=p=>root+encode(p);
- return '<span class="app-competition-logo-placeholder app-competition-logo-approved'+(large?' app-competition-logo-placeholder-large':'')+'" aria-hidden="true">'+
-  '<picture data-division-logo data-light-webp="'+path(light.webp)+'" data-dark-webp="'+path(dark.webp)+'" data-light-png="'+path(light.png)+'" data-dark-png="'+path(dark.png)+'">'+
-  '<source type="image/webp" srcset="'+path(dark.webp)+'">'+
-  '<img src="'+path(dark.png)+'" width="'+(large?60:36)+'" height="'+(large?60:36)+'" alt="" decoding="async"></picture></span>';
-};
 const indexContent = function indexContent(root){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
  const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+encode(d.id)+'</span><span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
  '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
  }).join("\n");
- return '          <div class="app-world-countries">\n'+cards+'\n          </div>\n          <script src="'+root+'assets/division-logos.js" defer></script>';
+ return '          <div class="app-world-countries">\n'+cards+'\n          </div>';
 };
 const detailAppend = function detailAppend(d){
  const cs=provisionalClubs.get(d.id);
@@ -145,7 +136,7 @@ const detailContent = function detailContent(d,root){
  if(!c)throw Error("unknown detail "+d.id);
  const level=d.tier===1?"divisionTier1":"divisionTier2";
  return '          <header class="app-competition-header">\n'+
- '            <span class="app-competition-logo-placeholder app-competition-logo-placeholder-large" role="img" aria-label="Temporary division badge" data-app-aria="crestPlaceholder">'+encode(d.id)+'</span>\n'+
+ '            '+renderDivisionLogo(d.id,"primary",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')+'\n'+
  '            <div class="app-competition-identity">\n'+
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(d.name)+'</span></h1>\n'+
  '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
@@ -171,54 +162,45 @@ const worldPageReplacements = (depth, division = null) => {
   };
 };
 // Shared competition shell: one markup source and one validated data manifest.
-// Small route files preserve deep links on local/static hosting.
-const sharedTemplate = function sharedTemplate(html) {
- const first=divisionData.find(d=>d.id==="IT-1"),country=countryById[first.countryId];
+// Full generated route documents preserve deep links and SVG first paint.
+const sharedTemplate = function sharedTemplate(html,first=divisionData.find(d=>d.id==="IT-1"),neutral=true) {
+ const country=countryById[first.countryId];
  const replaceOne=(before,after,label)=>{
   if(html.split(before).length!==2)throw Error("Shared template contract changed: "+label);
   html=html.replace(before,after);
  };
- replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
- replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
- replaceOne('data-app-aria="crestPlaceholder">'+encode(first.id)+'</span>','id="app-competition-badge" data-app-aria="crestPlaceholder">—</span>',"badge");
+ if(neutral)replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
+ if(neutral)replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
+ if(neutral){
+  const logo=renderDivisionLogo(first.id,"primary",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ');
+  replaceOne(logo,'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>',"badge");
+ }
  replaceOne('class="app-world-flag" alt="" src="../../../'+encode(country.flagAsset)+'"','class="app-world-flag" id="app-competition-flag" alt="" src="../../../'+encode(country.flagAsset)+'"',"flag");
- replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="">Country</span>',"country");
- replaceOne('data-app-i18n="divisionTier1">First division</span>','id="app-competition-tier" data-app-i18n="divisionTier1">First division</span>',"tier");
- replaceOne('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">—</dd>',"capacity");
- replaceOne('data-app-i18n="tierLabel">Tier</dt><dd>'+first.tier+'</dd>','data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">—</dd>',"level");
+ replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="'+(neutral?'':first.countryId)+'">'+(neutral?'Country':encode(country.name.en))+'</span>',"country");
+ const tier=first.tier===1?'divisionTier1':'divisionTier2',label=first.tier===1?'First division':'Second division';
+ replaceOne('data-app-i18n="'+tier+'">'+label+'</span>','id="app-competition-tier" data-app-i18n="'+tier+'">'+label+'</span>',"tier");
+ replaceOne('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">'+(neutral?'—':first.capacity)+'</dd>',"capacity");
+ replaceOne('data-app-i18n="tierLabel">Tier</dt><dd>'+first.tier+'</dd>','data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">'+(neutral?'—':first.tier)+'</dd>',"level");
  const match=html.match(/(<tbody>\n)([\s\S]*?)(\n\s*<\/tbody>)/);
  if(!match||!match[2].includes('data-world-club="'))throw Error("Cannot isolate shared standings rows");
  html=html.replace(match[0],match[1].replace("<tbody>","<tbody id=\"app-standings-body\">")+match[3]);
  return html;
 };
-const competitionRoute = d=>[
- '<!doctype html>',
- '<html lang="en">',
- '<head>',
- '  <meta charset="utf-8">',
- '  <meta name="viewport" content="width=device-width,initial-scale=1">',
- '  <meta name="theme-color" content="#101A1D">',
- '  <meta name="fa-division" content="'+encode(d.id)+'">',
- '  <title>'+encode(d.name)+' — Football Architect</title>',
- '  <link rel="icon" href="../../../favicon.svg" type="image/svg+xml">',
- '  <script src="../../../assets/theme.js"></script>',
- '  <link rel="stylesheet" href="../../../assets/landing.css">',
- '  <link rel="stylesheet" href="../../../assets/app.css">',
- '  <script src="../../../assets/competition-page.js" defer></script>',
- '</head>',
- '<body class="app-body">',
- '  <main id="main-content" class="app-main" role="status">Loading competition…</main>',
- '</body>',
- '</html>',
- ''
-].join("\n");
+// Full generated routes keep the approved Primary SVG in the initial response.
+const competitionRoute = d=>{
+ let html=template.replaceAll("../../","../../../");
+ for(const [token,value] of Object.entries(worldPageReplacements(3,d)))html=html.replace(token,value);
+ html=sharedTemplate(html,d,false);
+ html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
+ html=html.replace(/\s*<script src="\.\.\/\.\.\/\.\.\/assets\/(?:landing|app|app-search|competition-tabs)\.js" defer><\/script>/g,"");
+ return html.replace('</head>','  <script src="../../../assets/competition-page.js" defer></script>\n</head>');
+};
 const competitionManifest = {
  schemaVersion:1,approved:provisionalAssignments.approved,
  divisions:[...divisionData].sort((a,b)=>["IT","ENG","ES","DE","FR","PT","NL","BR"].indexOf(a.countryId)-["IT","ENG","ES","DE","FR","PT","NL","BR"].indexOf(b.countryId)||a.tier-b.tier).map(d=>{
   const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
-   ...(finalLogos.has(d.id)?{visualAsset:finalLogos.get(d.id)}:{}),
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
    clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c)}))};
  })
@@ -231,8 +213,7 @@ const outputPages = [
    "@@FA_WORLD_LINK@@":worldNav("../competitions/",false),
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
- {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2),
-  transform:html=>html.replace('<body class="app-body">','<body class="app-body division-logos-pending">').replace('<script src="../../assets/division-logos.js" defer></script>','<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>')},
+ {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2)},
  {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
   replacements:worldPageReplacements(3,divisionData.find(d=>d.id==="IT-1")),transform:sharedTemplate},
  ...divisionData.map(division=>({

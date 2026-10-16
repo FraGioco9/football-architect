@@ -10,7 +10,6 @@ const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json")).clubs;
 const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
-const logoIds=new Set(JSON.parse(read("data/division-assets.final.json")).divisions.map(d=>d.id));
 const shared=read("app/competitions/_shared/index.html");
 const index=read("app/competitions/index.html");
 const routes=divisions.map(d=>({division:d,file:"app/competitions/"+d.id.toLowerCase()+"/index.html"}));
@@ -19,7 +18,7 @@ const cols=["standingsPosition","standingsClub","standingsPlayed","standingsWon"
  "standingsPoints","standingsForm"];
 const views=["standings","fixtures","stats","history","rules","awards"];
 
-test("COMPETITIONS-06 keeps the index and renders logos from the manifest",()=>{
+test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",()=>{
  assert.equal(countries.length,8);
  assert.equal(divisions.length,16);
  assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
@@ -31,20 +30,15 @@ test("COMPETITIONS-06 keeps the index and renders logos from the manifest",()=>{
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
   assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"><span class="app-competition-logo-placeholder" aria-hidden="true">'+division.id+'</span>'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/">'),division.id);
  }
- assert.ok(index.includes('<script src="../../assets/division-logos.js" defer onerror="document.body.classList.remove(\'division-logos-pending\')"></script>'));
- assert.ok(!index.includes("assets/divisions/"),"logo asset paths must not be hardcoded in the HTML");
- const logoRenderer=read("assets/division-logos.js");
- assert.ok(logoRenderer.includes('fetch(manifestUrl'));
- assert.ok(logoRenderer.includes('division.visualAsset'));
- assert.ok(logoRenderer.includes('app-competition-logo-approved'));
- for(const division of manifest.divisions){
-  if(logoIds.has(division.id))assert.ok(division.visualAsset,division.id);
- }
+ assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
+ assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
+ for(const division of manifest.divisions)assert.equal(division.visualAsset,undefined);
+
 });
 
-test("COMPETITIONS-06 replaces 16 full documents with tiny route entries",()=>{
+test("COMPETITIONS-06 generates 16 complete routes with inline Primary logos",()=>{
  const common=["app/dashboard/index.html","app/calendar/index.html",
   "app/settings/index.html","app/competitions/index.html",
   "app/competitions/_shared/index.html"];
@@ -60,13 +54,13 @@ test("COMPETITIONS-06 replaces 16 full documents with tiny route entries",()=>{
  }
  for(const {division,file} of routes){
   const html=read(file);
-  assert.ok(html.length<1200,"route must remain small: "+file);
+  assert.equal((html.match(/shadowrootmode="open"/g)||[]).length,1,file);
   assert.ok(html.includes('<meta name="fa-division" content="'+division.id+'">'),file);
   assert.ok(html.includes('<title>'+division.name.replaceAll("&","&amp;")+' — Football Architect</title>'),file);
   assert.ok(html.includes('src="../../../assets/competition-page.js" defer'),file);
-  assert.ok(html.includes('role="status">Loading competition'),file);
-  assert.ok(!html.includes('class="app-world-standing-table"'),file);
-  assert.ok(!html.includes('class="fa-career-shell"'),file);
+  assert.ok(html.includes('data-division-variant="primary"'),file);
+  assert.ok(html.includes('class="app-world-standing-table"'),file);
+  assert.ok(html.includes('class="fa-career-shell"'),file);
   assert.ok(!existsSync(new URL("../app/world/divisions/"+division.id.toLowerCase()+"/index.html",import.meta.url)));
  }
 });
@@ -304,7 +298,7 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
   const html=read(file);
-  assert.ok(html.length<1200,division.id);
+  assert.ok(html.includes('data-division-variant="primary"'),division.id);
   assert.ok(!html.includes("app-world-club-crest-placeholder"),division.id);
  }
 });

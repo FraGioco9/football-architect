@@ -91,7 +91,7 @@ test("all published static pages bootstrap theme ahead of their first stylesheet
     assert.equal((html.match(/assets\/theme\.js/g)||[]).length,1,path);
   }
   const generator=read("tools/generate-app-pages.mjs");
-  assert.match(generator,/assets\/theme\.js/);
+  assert.match(read("templates/app-page.html"),/assets\/theme\.js/);
 });
 
 test("Settings theme control is accessible and localized in all five languages",()=>{

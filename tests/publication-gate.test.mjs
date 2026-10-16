@@ -8,6 +8,10 @@ import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact}
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
  assert.ok(files.includes("assets/theme.js"),"runtime theme bootstrap must be public");
+ const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));
+ assert.equal(divisionAssets.length,32);
+ assert.ok(divisionAssets.every(p=>/\/(?:primary|compact)\.svg$/.test(p)));
+ assert.ok(!files.includes("assets/division-logos.js"));
  assert.equal(files.filter(p=>/^app\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(p)).length,16);
  for(const path of ["tests/fixtures/it-1-demo.mjs","tests/world-competition-runtime.test.mjs",
                     "tools/publication-guard.mjs","data/division-allocations.provisional.json"])
