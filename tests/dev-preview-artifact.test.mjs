@@ -134,7 +134,7 @@ test('DEBUG-FIRST-PAINT: stored DEV state is gated synchronously and failure can
  const script=DEBUG_FIRST_PAINT.match(/<script>([\s\S]+)<\/script>/)[1];
  for(const value of ['on',null]){
   const document={documentElement:{dataset:{}}};const window={};let timeout;
-  runInNewContext(script,{document,window,location:{pathname:'/app/competitions/eng-1'},sessionStorage:{getItem:()=>value},setTimeout:fn=>{timeout=fn;return 1},clearTimeout(){}});
+  runInNewContext(script,{document,window,location:{pathname:'/competitions/eng-1'},sessionStorage:{getItem:()=>value},setTimeout:fn=>{timeout=fn;return 1},clearTimeout(){}});
   assert.equal(document.documentElement.dataset.faDebugPending,value==='on'?'true':undefined);
   if(value==='on'){timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)}
  }

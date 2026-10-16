@@ -4,7 +4,7 @@ import { readFile, realpath, lstat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
-import { isAllowlistedPublicPath } from "./publication-guard.mjs";
+import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
 import { DEBUG_FIRST_PAINT } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -29,7 +29,7 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/(?:app\/)?competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
 const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data supports more.
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
@@ -54,10 +54,11 @@ function isPrivateIPv4(value) {
 function isLoopback(value) {
   return ipv4(value) === LOOPBACK || value === "::1";
 }
-function allowedHost(value) {
+function allowedHost(value, subdomains) {
+  if (subdomains && (value === "localhost:2000" || value === "app.localhost:2000")) return true;
   if (typeof value !== "string" || !value.endsWith(":" + PORT)) return false;
   const address = value.slice(0, -(String(PORT).length + 1));
-  return isLoopback(address) || (LAN_ENABLED && isPrivateIPv4(address));
+  return isLoopback(address) || (!subdomains && LAN_ENABLED && isPrivateIPv4(address));
 }
 function reject(res, status = 404) {
   res.writeHead(status, {
@@ -88,12 +89,12 @@ async function safeFile(root, relativePath) {
 }
 
 // Exported solely to test the server without opening a production or LAN socket.
-export function createPreviewServer({ root = ROOT } = {}) {
+export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
   return createServer(async (req, res) => {
     try {
       const remote = req.socket.remoteAddress;
-      if (!isLoopback(remote) && !(LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
-      if (!allowedHost(req.headers.host)) return reject(res, 403);
+      if (!isLoopback(remote) && !(!subdomains && LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
+      if (!allowedHost(req.headers.host, subdomains)) return reject(res, 403);
       if (req.method !== "GET" && req.method !== "HEAD") return reject(res, 405);
       const raw = req.url?.split("?")[0] ?? "";
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||
@@ -106,14 +107,15 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
-        const file = (raw.endsWith("/") ? raw + "index.html" : DETAIL.test(raw) && !raw.endsWith("/index.html") ? raw + "/index.html" : raw).slice(1);
+        const appHost = subdomains && req.headers.host === "app.localhost:2000";
+        const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
         // The public competition index links to season 1. In the isolated DEV
         // server, point those links to the latest preview season instead.
-        if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
+        if (file === "app/competitions/index.html") {
           // Every season=1 occurrence on this index is a generated division link.
           // Rewrite the HTML directly rather than depending on href formatting.
           body = Buffer.from(body.toString("utf8").replace(
@@ -138,6 +140,19 @@ export function createPreviewServer({ root = ROOT } = {}) {
           body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
         }
       }
+      if (subdomains && type === TYPES[".html"]) {
+        const appOrigin = "http://app.localhost:2000", siteOrigin = "http://localhost:2000";
+        const config = '<script>document.documentElement.dataset.faDevAppOrigin="' + appOrigin +
+          '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';
+        body = Buffer.from(body.toString("utf8").replace("</head>", config + "\n</head>")
+          .replace(/(\bhref=")([^"#]+)(")/g, (all, prefix, href, quote) => {
+            if (/^\/(?:dashboard|calendar|settings|competitions)(?:[/?#]|$)/.test(href))
+              return prefix + appOrigin + href + quote;
+            if (href === "/" || /^\/guide(?:[/?#]|$)/.test(href))
+              return prefix + siteOrigin + (href === "/" ? "" : href) + quote;
+            return all;
+          }), "utf8");
+      }
       res.writeHead(200, {
         "Content-Type": type,
         "Cache-Control": "no-store",
@@ -157,8 +172,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const addresses = LAN_ENABLED
       ? Object.values(networkInterfaces()).flatMap(items => items || [])
         .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
-        .map(item => "http://" + item.address + ":" + PORT + "/app/competitions/it-1/")
-      : ["http://" + LOOPBACK + ":" + PORT + "/app/competitions/it-1/"];
+        .map(item => "http://" + item.address + ":" + PORT + "/competitions/it-1")
+      : ["http://" + LOOPBACK + ":" + PORT + "/competitions/it-1"];
     process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):" + String.fromCharCode(10) +
       addresses.join(String.fromCharCode(10)) + String.fromCharCode(10));
   });

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','fixtures','stats','history','rules','awards'];
-function setup(path='/app/competitions/it-1/'){
+function setup(path='/competitions/it-1/'){
  const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
@@ -27,8 +27,8 @@ function setup(path='/app/competitions/it-1/'){
  return {window,tabs,fields,tablist,events,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{
- const s=setup('/app/competitions/it-1/?season=1&view=fixtures&matchday=12');
- assert.equal(s.window.location.pathname,'/app/competitions/it-1');
+ const s=setup('/competitions/it-1/?season=1&view=fixtures&matchday=12');
+ assert.equal(s.window.location.pathname,'/competitions/it-1');
  assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.window.faCompetitionRoute.set({matchday:13});
@@ -40,10 +40,10 @@ test('COMPETITION-URL: canonical deep links restore every view, round and browse
  for(let i=0;i<views.length;i++){s.tabs[i].events.click();assert.equal(s.window.faCompetitionRoute.get().view,views[i]);assert.equal([...s.fields].filter(([id,p])=>id.startsWith('competition-panel-')&&!p.hidden).length,1);}
 });
 test('COMPETITION-URL: invalid parameters normalize, unavailable seasons never show another season',()=>{
- const s=setup('/app/competitions/it-1/index.html?season=bad&view=unknown&matchday=999');
- assert.equal(s.window.location.pathname,'/app/competitions/it-1');
+ const s=setup('/competitions/it-1/index.html?season=bad&view=unknown&matchday=999');
+ assert.equal(s.window.location.pathname,'/competitions/it-1');
  assert.equal(s.window.location.search,'?season=1&view=standings');assert.equal(s.count(),1);
- const missing=setup('/app/competitions/it-1?season=2&view=fixtures&matchday=4');
+ const missing=setup('/competitions/it-1?season=2&view=fixtures&matchday=4');
  assert.equal(missing.window.faCompetitionRoute.get().season,'2');
  assert.equal(missing.fields.get('app-competition-season-unavailable').hidden,false);
  assert.equal(views.every(v=>missing.fields.get('competition-panel-'+v).hidden),true);
@@ -70,7 +70,7 @@ test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views
 });
 
 test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes retain the in-page selection',()=>{
- const s=setup('/app/competitions/it-1?season=1&view=fixtures&matchday=12');
+ const s=setup('/competitions/it-1?season=1&view=fixtures&matchday=12');
  s.tabs[0].events.click();
  assert.equal(s.window.location.search,'?season=1&view=standings');
  const refreshed=setup(s.window.location.href);
@@ -84,7 +84,7 @@ test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes ret
 
 
 test('COMPETITION-TABS-SCROLL: edge hints follow scrolling and selection stays visible on direct load, navigation and resize',()=>{
- const s=setup('/app/competitions/it-1?season=1&view=awards');
+ const s=setup('/competitions/it-1?season=1&view=awards');
  assert.equal(s.tablist.dataset.canScrollLeft,'true');
  assert.equal(s.tablist.dataset.canScrollRight,'false');
  assert.equal(s.tablist.scrollLeft,380,'direct link reveals the last tab');

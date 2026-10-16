@@ -1,3 +1,4 @@
+import { publicRequestFile } from "../tools/publication-guard.mjs";
 // UI-THEME #96: true headless Chrome render QA, isolated loopback server; no npm.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -16,7 +17,7 @@ const mime={".html":"text/html",".css":"text/css",".js":"application/javascript"
 const server=createServer(async(req,res)=>{
   try{
     const route=new URL(req.url,"http://localhost").pathname;
-    let file=resolve(root,"."+decodeURIComponent(route));
+    let file=resolve(root,publicRequestFile(decodeURIComponent(route)));
     if(file!==root&&!file.startsWith(root+sep))throw Error("outside root");
     if(!extname(file))file=join(file,"index.html");
     res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});

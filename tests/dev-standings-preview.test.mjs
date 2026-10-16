@@ -183,6 +183,36 @@ async function withServer(callback) {
   } finally { await new Promise((ok,fail)=>server.close(e=>e?fail(e):ok())); }
 }
 
+test("DEV-ROUTES: canonical slashless pages, assets and season links load directly", async()=>{
+  await withServer(async get=>{
+    const pages=["/","/guide","/app","/app/dashboard","/app/calendar","/app/settings","/app/competitions",
+      ...allIds.map(id=>"/app/competitions/"+id.toLowerCase())];
+    for(const page of [...pages,...pages.filter(p=>p.startsWith("/app/")).map(p=>p.slice(4))]){
+      const response=await get(page);
+      assert.equal(response.status,200,page);
+      assert.match(response.headers["content-type"],/text\/html/,page);
+      const base=response.body.match(/<base href="([^"]+)"/)?.[1];
+      for(const match of response.body.matchAll(/(?:src|href)="([^"]+\.(?:js|css|svg|png|ico))"/g)){
+        const asset=new URL(match[1],new URL(base||page,"http://localhost:2000"));
+        assert.equal((await get(asset.pathname)).status,200,page+" -> "+asset.pathname);
+      }
+    }
+    const index=await get("/competitions");
+    assert.equal((index.body.match(/data-dev-latest-season="2"/g)||[]).length,16);
+    assert.equal((index.body.match(/\?season=2&amp;view=standings/g)||[]).length,16);
+    assert.ok(!index.body.includes("?season=1"));
+    for(const id of allIds){
+      const path="/competitions/"+id.toLowerCase();
+      const response=await get(path+"?season=2&view=fixtures");
+      assert.ok(response.body.includes('data-fa-dev-preview'),path);
+      assert.ok(response.body.includes('id="app-competition-season-value">2</span>'),path);
+      assert.equal((await get(path,{method:"HEAD"})).body,"");
+    }
+    for(const path of ["/unknown","/app/unknown","/app/competitions/unknown","/data/clubs","/tools/dev-standings-preview"])
+      assert.equal((await get(path)).status,404,path);
+  });
+});
+
 test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal", async () => {
   await withServer(async get => {
     for (const path of ["/%2e%2e/data/clubs.json","/../data/clubs.json",
@@ -192,6 +222,7 @@ test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal
     }
     assert.equal((await get("/app/competitions/it-1/",{host:"attacker.example:2000"})).status,403);
     assert.equal((await get("/app/competitions/it-1/",{host:"localhost:2000"})).status,403);
+    assert.equal((await get("/dashboard",{host:"app.localhost:2000"})).status,403);
     assert.equal((await get("/app/competitions/it-1/",{method:"POST"})).status,405);
     assert.equal((await get("/app/competitions/it-1/",{method:"HEAD"})).body,"");
   });
@@ -422,8 +453,8 @@ test("DEV-LAN: LAN access is opt-in and limited to private IPv4 clients and host
  assert.ok(serverSource.includes('process.env.FA_DEV_LAN === "1"'));
  assert.ok(serverSource.includes('const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK'));
  assert.ok(serverSource.includes("function isPrivateIPv4(value)"));
- assert.ok(serverSource.includes("if (!isLoopback(remote) && !(LAN_ENABLED && isPrivateIPv4(remote)))"));
- assert.ok(serverSource.includes("if (!allowedHost(req.headers.host))"));
+ assert.ok(serverSource.includes("if (!isLoopback(remote) && !(!subdomains && LAN_ENABLED && isPrivateIPv4(remote)))"));
+ assert.ok(serverSource.includes("if (!allowedHost(req.headers.host, subdomains))"));
  assert.ok(serverSource.includes('"LAN opt-in"'));
 });
 
