@@ -8,10 +8,10 @@
 
 ## Names and identity
 
-- **CLUB-ESSENTIAL-01 — Approved A (2026-10-15):** Each club has exactly three naming fields: a **primary name**, a **full official name**, and a **three-letter abbreviation**.
+- **CLUB-ESSENTIAL-01 — Approved A (2026-10-15):** The approved 2026-10-16 CSV supplies four naming fields: a **primary name**, a **full official name**, a **compact name**, and a **three-letter abbreviation**.
 - Abbreviations are explicit, uppercase, stable, and globally unique across all 320 clubs.
 - Clubs are fictional, with original names consistent with their country's linguistic and football traditions.
-- **CLUB-ESSENTIAL-04 — Approved A (2026-10-15):** Each club has a `city` field containing the official name of its real, permanent city. Multiple clubs may share a city.
+- **CLUB-ESSENTIAL-04 — Approved A (2026-10-15):** Each club has a `city` field containing its approved permanent location. Preserve the approved CSV value verbatim, including district and locality names. Multiple clubs may share a city.
 - **CLUB-ESSENTIAL-05 — Approved A (2026-10-15):** Each club has one permanent official nickname, recorded in the club’s original language and displayed unchanged in every interface language.
 - Each club has exactly two permanent official social colors: one **primary** and one **secondary** (**CLUB-ESSENTIAL-03 — Approved A, 2026-10-15**).
 
@@ -26,3 +26,7 @@
 
 - **CLUB-ESSENTIAL-06 — Approved A (2026-10-15):** Each club has one permanent exclusive stadium in its city. The stadium has an original fictional official name that remains permanent throughout the simulation.
 - **CLUB-ESSENTIAL-07 — Approved A (2026-10-15):** Every club has at least one permanent historical rival and may have multiple historical rivals. Rivalries are reciprocal, between clubs of the same country, and permanent.
+
+## Canonical implementation
+
+The approved twelve-field CSV and flat JSON catalogue are documented in [the registry guide](README.md). Names, colors, nicknames, stadiums and original-language descriptions are imported unchanged. Division membership stays separate. Crest artwork, kits, reciprocal rivalries and translated descriptions require their own approved data and are not inferred from the identity registry.
