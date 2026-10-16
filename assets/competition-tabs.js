@@ -57,6 +57,7 @@
   const unavailable=document.getElementById("app-competition-season-unavailable");
   if(tabs.length!==6||panels.some(panel=>!panel)||!season||!unavailable||!seasonMenu||!seasonValue)return;
   const listeners=new Set();let state;
+  let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Season 1 is a provisional display context, not an official calendar/history.
   function read(){
     const params=new URL(window.location.href).searchParams;
@@ -89,12 +90,18 @@
     for(const listener of listeners)listener({...state});
   }
   function set(patch,options){
+    if(Object.hasOwn(patch,"matchday"))pendingDefaultMatchday=false;
     const next={...state,...patch};
     if(!views.includes(next.view)||!/^[1-9]\d{0,8}$/.test(next.season)||
       !Number.isInteger(next.matchday)||next.matchday<1||next.matchday>30)return;
     apply(next,options);
   }
   window.faCompetitionRoute={get:()=>({...state}),set,
+    defaultMatchday(round){
+      if(!pendingDefaultMatchday||state.view!=="fixtures"||state.season!=="1")return;
+      pendingDefaultMatchday=false;
+      if(Number.isInteger(round)&&round>=1&&round<=30)apply({...state,matchday:round},{replace:true});
+    },
     subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn)}};
   tabs.forEach((tab,index)=>{
     tab.addEventListener("click",()=>set({view:views[index]}));
@@ -111,6 +118,9 @@
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,
     [...seasonMenu.querySelectorAll("[data-menu-value]")],value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
-  window.addEventListener("popstate",()=>apply(read(),{replace:true}));
+  window.addEventListener("popstate",()=>{
+    pendingDefaultMatchday=false;
+    apply(read(),{replace:true});
+  });
   apply(read(),{replace:true});
 })();
