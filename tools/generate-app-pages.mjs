@@ -267,7 +267,7 @@ for(const page of outputPages){
   if(/@@FA_(?:LINE_|WORLD_)/.test(html))throw Error("Unresolved template token in "+page.path);
   if(page.transform)html=page.transform(html);
  }
- writeOutput(page.path,html);
+ writeOutput(page.path,normalizeRouteLinks(html,page.path));
 }
 writeOutput("app/competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest");
