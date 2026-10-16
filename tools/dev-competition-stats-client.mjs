@@ -78,6 +78,8 @@ if (panel && divisionId) {
 .fa-dev-stats-leader-card .fa-dev-stats-top{max-width:none;list-style:none}
 .fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
 .fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
+.fa-dev-stats-top li[hidden]{display:none}
+.fa-dev-stats-expand{display:block;margin:12px auto 0;padding:7px 18px;cursor:pointer}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
 .fa-dev-stats-leader-card .app-world-club-identity{min-width:0}
 .fa-dev-stats-leader-card .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -182,8 +184,10 @@ if (panel && divisionId) {
       const card=create("section",undefined,"fa-dev-stats-leader-card");
       card.append(create("h4",label,"fa-dev-stats-leader-title"));
       const top=create("ol",undefined,"fa-dev-stats-top");
-      ranked(key,ascending).slice(0,5).forEach((team,index)=>{
+      const teams=ranked(key,ascending);
+      teams.forEach((team,index)=>{
         const li=create("li");
+        if(index>=5)li.hidden=true;
         const position=create("span",String(index+1),"fa-dev-stats-rank");
         const identity=create("span",undefined,"app-world-club-identity");
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
@@ -193,7 +197,18 @@ if (panel && divisionId) {
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         top.append(li);
       });
-      card.append(top);leaderGrid.append(card);
+      const expand=create("button","Show all","fa-dev-stats-expand");
+      expand.type="button";
+      expand.setAttribute("aria-expanded","false");
+      expand.addEventListener("click",()=>{
+        const expanded=expand.getAttribute("aria-expanded")==="true";
+        for(const li of Array.from(top.children).slice(5))li.hidden=expanded;
+        expand.setAttribute("aria-expanded",String(!expanded));
+        expand.textContent=expanded?"Show all":"Show top 5";
+      });
+      card.append(top);
+      if(teams.length>5)card.append(expand);
+      leaderGrid.append(card);
     }
     leaders.append(leaderGrid);root.append(leaders);
 
