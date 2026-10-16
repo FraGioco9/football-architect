@@ -80,6 +80,7 @@ if (panel && divisionId) {
 .fa-dev-stats-leader-card .fa-dev-stats-top{max-width:none;list-style:none}
 .fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
 .fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
+.fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 .fa-dev-stats-top li[hidden]{display:none}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
 .fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
@@ -156,8 +157,19 @@ if (panel && divisionId) {
     if (!fictionalEnabled) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
     if (stats.overview.matchesPlayed === 0) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
     if (view === "players") {
-      root.append(create("h3","Top 5 players","fa-dev-stats-heading"));
-      root.append(create("p","No player statistics available yet.","app-competition-status"));
+      const section=create("section",undefined,"fa-dev-stats-section");
+      const grid=create("div",undefined,"fa-dev-stats-leader-grid");
+      const categories=["Goals","Assists","Average rating","Clean sheets"];
+      for(const label of categories){
+        const card=create("section",undefined,"fa-dev-stats-leader-card");
+        card.append(create("h4",label,"fa-dev-stats-leader-title"));
+        const list=create("ol",undefined,"fa-dev-stats-top");
+        const empty=create("li","No player statistics available yet.","fa-dev-stats-player-empty");
+        list.append(empty);
+        card.append(list);
+        grid.append(card);
+      }
+      section.append(grid);root.append(section);
       return;
     }
     const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
