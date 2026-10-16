@@ -122,10 +122,15 @@ if(validPath){
    return widgetRoot?.resetWidgetState()===true;
   }}]);
   widgetRoot=createDebugWidget({page:"standings"});
-  if(savedPreviewEnabled())setPreviewEnabled(true).then(ok=>{
-   const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
-   if(toggle)toggle.checked=ok;
-  });
+  // Keep the canonical placeholders invisible until DEV results are ready.
+  // A failed preview must release the guard rather than leave an empty table.
+  const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending};
+  if(savedPreviewEnabled()||selectedSeason()===2){
+   setPreviewEnabled(true).then(ok=>{
+    const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
+    if(toggle)toggle.checked=ok;
+   }).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  }else reveal();
   let renderedSeason=selectedSeason();
   let seasonRefresh=Promise.resolve();
   function syncSeason(){
@@ -157,6 +162,7 @@ if(validPath){
   window.addEventListener("fa:competition-route-change",syncSeason);
   window.addEventListener("popstate",syncSeason);
  }).catch(error => {
+  delete document.documentElement.dataset.faDevStandingsPending;
   console.error("DEV Debug unavailable:", error);
  });
 }
