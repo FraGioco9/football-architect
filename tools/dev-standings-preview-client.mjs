@@ -131,16 +131,10 @@ if(validPath){
      if(next===2)await setPreviewEnabled(true);
      return;
     }
-    // Restore the original DOM before installing another season. Restoring
-    // afterward would overwrite the newly rendered season's standings.
+    // Prepare the next season while keeping the current one visible.
+    // Restore and replace synchronously after the asynchronous work finishes.
     const previous=activePreview;
-    try{previous()}catch(error){
-     previewState="ERROR";
-     console.error("DEV season restore failed:",error);
-     return;
-    }
-    activePreview=null;
-    const replacement=await boot(validPath[1].toUpperCase());
+    const replacement=await boot(validPath[1].toUpperCase(),previous);
     if(typeof replacement!=="function"){
      previewState="OFF";
      return;
@@ -191,7 +185,7 @@ function waitForRows() {
   });
 }
 
-async function boot(routeId) {
+async function boot(routeId,restorePrevious=null) {
   try {
     const response = await fetch("/app/competitions/_shared/manifest.json",
       { cache: "no-store", credentials: "same-origin" });
@@ -217,12 +211,14 @@ async function boot(routeId) {
       awayGoals:game.round<=matchdays?game.awayGoals:null,
       kickoff:null
     }));
+    // Complete all asynchronous preparation before touching the visible table.
+    const tbody = await waitForRows();
+    if(restorePrevious)restorePrevious();
     const fixturesApi=window.faFixtures;
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:Math.min(30,matchdays+1)}):null;
-    const tbody = await waitForRows();
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
