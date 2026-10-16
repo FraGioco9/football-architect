@@ -66,3 +66,11 @@ The existing `football-architect` Vercel project reports `ssoProtection.enabled=
 A read-only Vercel API query for access groups scoped to the Football Architect project returned **403 Forbidden** (`GET /v1/access-groups`). Consequently, no access-group membership or project enforcement configuration has been verified. Do not infer that an access group exists or that Vercel Authentication alone enforces individual selection.
 
 Before selecting Vercel-native groups as the implementation, obtain authorized read access to the project's access-group configuration and verify that it gates requests to the actual protected deployment. If that is not supported, design a separate server-side allowlist gateway. No permissions or deployment settings were changed during this check.
+
+## Plan constraint and revised design (2026-10-16)
+
+The owner reports that Vercel's Access Groups UI prompts an **Enterprise upgrade** on the current team. Do not depend on Access Groups, assume an Enterprise subscription, or broaden access to all team members.
+
+**Revised candidate:** an application-controlled server-side authorization gateway in front of the protected artifact, backed by a per-identity allowlist. Authenticate identities using a provider whose verified identity claims can be checked server-side, then enforce the allowlist on **every** protected request before serving any bytes. Prefer existing supported identity infrastructure over a new password store. Deny requests when identity verification, membership lookup, or gateway execution fails.
+
+Architecture selection remains provisional until the deployment topology is verified: a static artifact alone cannot enforce a server-side allowlist, and Vercel Authentication must not be assumed to pass a suitable verified identity claim to the application. Assess supported Vercel Functions/middleware and identity integration before choosing the implementation. Maintain the protected publication block and require separate G10 approval.
