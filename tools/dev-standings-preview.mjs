@@ -116,7 +116,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
           // Every season=1 occurrence on this index is a generated division link.
           // Rewrite the HTML directly rather than depending on href formatting.
           body = Buffer.from(body.toString("utf8").replace(
-            /(<a class="app-division-card")/g, '$1 data-dev-latest-season=""'
+            /(<a class="app-division-card")/g, `$1 data-dev-latest-season="${latestDevSeason}"`
           ).replaceAll(
             "?season=1&amp;view=standings", `?season=${latestDevSeason}&amp;view=standings`
           ), "utf8");
