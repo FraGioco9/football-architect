@@ -129,6 +129,10 @@
     option.textContent="2";
     seasonMenu.append(option);
   }
+  // Show the newest available season first, including DEV-only seasons.
+  [...seasonMenu.querySelectorAll("[data-menu-value]")]
+    .sort((a,b)=>Number(b.dataset.menuValue)-Number(a.dataset.menuValue))
+    .forEach(option=>seasonMenu.append(option));
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,
     [...seasonMenu.querySelectorAll("[data-menu-value]")],value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
