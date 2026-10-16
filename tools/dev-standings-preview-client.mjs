@@ -266,8 +266,11 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
+    const routeState=window.faCompetitionRoute?.get?.();
+    const defaultRound=routeState?.view==="fixtures"&&Number.isInteger(routeState.matchday)
+      ?routeState.matchday:Math.min(30,matchdays+1);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:Math.min(30,matchdays+1)}):null;
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:defaultRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
