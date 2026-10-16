@@ -183,6 +183,36 @@ async function withServer(callback) {
   } finally { await new Promise((ok,fail)=>server.close(e=>e?fail(e):ok())); }
 }
 
+test("DEV-ROUTES: canonical slashless pages, assets and season links load directly", async()=>{
+  await withServer(async get=>{
+    const pages=["/","/guide","/app","/app/dashboard","/app/calendar","/app/settings","/app/competitions",
+      ...allIds.map(id=>"/app/competitions/"+id.toLowerCase())];
+    for(const page of pages){
+      const response=await get(page);
+      assert.equal(response.status,200,page);
+      assert.match(response.headers["content-type"],/text\/html/,page);
+      const base=response.body.match(/<base href="([^"]+)"/)?.[1];
+      for(const match of response.body.matchAll(/(?:src|href)="([^"]+\.(?:js|css|svg|png|ico))"/g)){
+        const asset=new URL(match[1],new URL(base||page,"http://localhost:2000"));
+        assert.equal((await get(asset.pathname)).status,200,page+" -> "+asset.pathname);
+      }
+    }
+    const index=await get("/app/competitions");
+    assert.equal((index.body.match(/data-dev-latest-season="2"/g)||[]).length,16);
+    assert.equal((index.body.match(/\?season=2&amp;view=standings/g)||[]).length,16);
+    assert.ok(!index.body.includes("?season=1"));
+    for(const id of allIds){
+      const path="/app/competitions/"+id.toLowerCase();
+      const response=await get(path+"?season=2&view=fixtures");
+      assert.ok(response.body.includes('data-fa-dev-preview'),path);
+      assert.ok(response.body.includes('id="app-competition-season-value">2</span>'),path);
+      assert.equal((await get(path,{method:"HEAD"})).body,"");
+    }
+    for(const path of ["/unknown","/app/unknown","/app/competitions/unknown","/data/clubs","/tools/dev-standings-preview"])
+      assert.equal((await get(path)).status,404,path);
+  });
+});
+
 test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal", async () => {
   await withServer(async get => {
     for (const path of ["/%2e%2e/data/clubs.json","/../data/clubs.json",
@@ -336,8 +366,12 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
+      window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
+      selectedSeason: () => 1,
+      savedPreviewEnabled: () => enabled,
+      document: {documentElement:{dataset:{}},querySelector:()=>null},
       waitForRows: () => hydration,
-      createDebugWidget: () => { operations.push("widget"); signalMounted(); },
+      createDebugWidget: () => { operations.push("widget"); signalMounted(); return {syncVisibility(){}}; },
       registerDebugControls: () => {},
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
@@ -351,6 +385,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
     await widgetMounted;
+    if (enabled) await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
   }
 });

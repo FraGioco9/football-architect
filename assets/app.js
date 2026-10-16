@@ -60,6 +60,19 @@
       competitionTabHistory:"History",
       competitionTabRules:"Rules",
       competitionTabAwards:"Awards",
+      competitionSeason:"Season",
+      competitionSeasonUnavailable:"Season unavailable",
+      fixturesMatchday:"Matchday",
+      fixturesPrevious:"Previous matchday",
+      fixturesNext:"Next matchday",
+      fixturesCurrent:"Current matchday",
+      fixturesMatches:"Competition matches",
+      fixturesHome:"Home",
+      fixturesAway:"Away",
+      fixturesFullTime:"Full time",
+      fixturesScheduled:"Scheduled",
+      fixturesTimingUnknown:"Date/time to be confirmed",
+      fixturesMatchCount:"8 matches",
       competitionFixturesEmpty:"No scheduled matches or results are available.",
       competitionStatsEmpty:"Competition statistics are not available before matches are played.",
       competitionHistoryEmpty:"No completed seasons or past winners are available.",
@@ -157,6 +170,19 @@
       competitionTabHistory:"Historie",
       competitionTabRules:"Regeln",
       competitionTabAwards:"Auszeichnungen",
+      competitionSeason:"Saison",
+      competitionSeasonUnavailable:"Saison nicht verfügbar",
+      fixturesMatchday:"Spieltag",
+      fixturesPrevious:"Vorheriger Spieltag",
+      fixturesNext:"Nächster Spieltag",
+      fixturesCurrent:"Aktueller Spieltag",
+      fixturesMatches:"Ligaspiele",
+      fixturesHome:"Heim",
+      fixturesAway:"Auswärts",
+      fixturesFullTime:"Beendet",
+      fixturesScheduled:"Angesetzt",
+      fixturesTimingUnknown:"Datum/Uhrzeit noch offen",
+      fixturesMatchCount:"8 Spiele",
       competitionFixturesEmpty:"Es sind noch keine Spiele oder Ergebnisse verfügbar.",
       competitionStatsEmpty:"Vor den ersten Spielen sind keine Wettbewerbsstatistiken verfügbar.",
       competitionHistoryEmpty:"Es sind keine abgeschlossenen Saisons oder früheren Sieger verfügbar.",
@@ -254,6 +280,19 @@
       competitionTabHistory:"Historia",
       competitionTabRules:"Reglas",
       competitionTabAwards:"Premios",
+      competitionSeason:"Temporada",
+      competitionSeasonUnavailable:"Temporada no disponible",
+      fixturesMatchday:"Jornada",
+      fixturesPrevious:"Jornada anterior",
+      fixturesNext:"Jornada siguiente",
+      fixturesCurrent:"Jornada actual",
+      fixturesMatches:"Partidos de la competición",
+      fixturesHome:"Local",
+      fixturesAway:"Visitante",
+      fixturesFullTime:"Finalizado",
+      fixturesScheduled:"Programado",
+      fixturesTimingUnknown:"Fecha/hora por confirmar",
+      fixturesMatchCount:"8 partidos",
       competitionFixturesEmpty:"Todavía no hay partidos programados ni resultados.",
       competitionStatsEmpty:"No hay estadísticas de la competición antes de disputarse los partidos.",
       competitionHistoryEmpty:"No hay temporadas completadas ni campeones anteriores.",
@@ -351,6 +390,19 @@
       competitionTabHistory:"Historique",
       competitionTabRules:"Règlement",
       competitionTabAwards:"Récompenses",
+      competitionSeason:"Saison",
+      competitionSeasonUnavailable:"Saison indisponible",
+      fixturesMatchday:"Journée",
+      fixturesPrevious:"Journée précédente",
+      fixturesNext:"Journée suivante",
+      fixturesCurrent:"Journée actuelle",
+      fixturesMatches:"Matchs de la compétition",
+      fixturesHome:"Domicile",
+      fixturesAway:"Extérieur",
+      fixturesFullTime:"Terminé",
+      fixturesScheduled:"Programmé",
+      fixturesTimingUnknown:"Date/heure à confirmer",
+      fixturesMatchCount:"8 matchs",
       competitionFixturesEmpty:"Aucun match programmé ni résultat disponible.",
       competitionStatsEmpty:"Les statistiques ne sont pas disponibles avant les premiers matchs.",
       competitionHistoryEmpty:"Aucune saison terminée ni ancien champion disponible.",
@@ -448,6 +500,19 @@
       competitionTabHistory:"Albo d'oro",
       competitionTabRules:"Regolamento",
       competitionTabAwards:"Premi",
+      competitionSeason:"Stagione",
+      competitionSeasonUnavailable:"Stagione non disponibile",
+      fixturesMatchday:"Giornata",
+      fixturesPrevious:"Giornata precedente",
+      fixturesNext:"Giornata successiva",
+      fixturesCurrent:"Giornata attuale",
+      fixturesMatches:"Partite della competizione",
+      fixturesHome:"Casa",
+      fixturesAway:"Trasferta",
+      fixturesFullTime:"Terminata",
+      fixturesScheduled:"In programma",
+      fixturesTimingUnknown:"Data/ora da definire",
+      fixturesMatchCount:"8 partite",
       competitionFixturesEmpty:"Non sono ancora disponibili partite in programma o risultati.",
       competitionStatsEmpty:"Le statistiche non sono disponibili prima delle partite.",
       competitionHistoryEmpty:"Non sono disponibili stagioni concluse o vincitori precedenti.",
@@ -511,9 +576,9 @@
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
       host.endsWith(".localhost") || host.endsWith(".local") ||
       host.endsWith(".vercel.app") || host.endsWith(".github.io");
-    if (local) return route === "/" ? route : route.replace(/\/+$/, "") + "/";
+    if (local) return route.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1") || "/";
     const raw = route.slice(4) || "/";
-    const clean = raw === "/" ? raw : raw.replace(/\/+$/, "") + "/";
+    const clean = raw === "/" ? raw : raw.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");
     if (host.startsWith("app.")) return clean;
     const mainHost = host.startsWith("www.") ? host.slice(4) : host;
     return (window.location.protocol || "https:") + "//app." + mainHost + clean;
@@ -522,12 +587,12 @@
     const host = (window.location.hostname || "").toLowerCase();
     if (!host.startsWith("app.")) return path;
     const origin = (window.location.protocol || "https:") + "//" + host.slice(4);
-    return path === "/" ? origin : origin + path.replace(/\/+$/, "") + "/";
+    return path === "/" ? origin : origin + path.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
-    const routes = {dashboard:"/app/dashboard/",calendar:"/app/calendar/",
-      settings:"/app/settings/",divisions:"/app/competitions/"};
+    const routes = {dashboard:"/app/dashboard",calendar:"/app/calendar",
+      settings:"/app/settings",divisions:"/app/competitions"};
     for (const [view,link] of Object.entries(links)) {
       if (link) link.setAttribute("href",appHref(routes[view]));
     }
@@ -535,8 +600,11 @@
       link.setAttribute("href",appHref(routes.dashboard));
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
-      const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?$/i);
-      if (slug) link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"/"));
+      const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?(?:\?.*)?$/i);
+      if (slug) {
+        const season = link.getAttribute("data-dev-latest-season") || "1";
+        link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"?season="+season+"&view=standings"));
+      }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
       link.setAttribute("href",appHref(routes.divisions));

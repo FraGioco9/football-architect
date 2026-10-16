@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <base href="/app/competitions/de-1/">
   <meta name="fa-division" content="DE-1">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
   <meta name="description" content="Football Architect — career workspace shell.">
   <title>Meisterliga — Football Architect</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="../../../assets/brand/favicon-32.png">
-  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
-  <link rel="alternate icon" type="image/x-icon" href="../../../favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
   <script src="../../../assets/theme.js"></script>
-  <link rel="stylesheet" href="../../../assets/landing.css">
-  <link rel="stylesheet" href="../../../assets/app.css">
+  <link rel="stylesheet" href="/assets/landing.css">
+  <link rel="stylesheet" href="/assets/app.css">
+  <script>(()=>{const p=new URLSearchParams(location.search),v=p.get("view"),s=p.get("season");document.documentElement.dataset.competitionView=["standings","fixtures","stats","history","rules","awards"].includes(v)?v:"standings";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\d{0,8}$/.test(s||"")&&s!=="1")})();</script>
   <script src="../../../assets/competition-page.js" defer></script>
 </head>
 <body class="app-body">
@@ -29,11 +31,11 @@
         <section class="fa-shell-nav-group" aria-labelledby="app-nav-home-title">
           <h2 class="fa-shell-nav-group-title" id="app-nav-home-title" data-app-i18n="navHome">Home</h2>
           <div class="fa-shell-nav-group-items">
-            <a class="fa-shell-link" id="app-nav-dashboard" href="/app/dashboard/" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">
+            <a class="fa-shell-link" id="app-nav-dashboard" href="/app/dashboard" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               <span data-app-i18n="dashboard">Dashboard</span>
             </a>
-            <a class="fa-shell-link" id="app-nav-calendar" href="/app/calendar/" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">
+            <a class="fa-shell-link" id="app-nav-calendar" href="/app/calendar" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
               <span data-app-i18n="calendar">Calendar</span>
             </a>
@@ -42,7 +44,7 @@
         <section class="fa-shell-nav-group" aria-labelledby="app-nav-world-title">
           <h2 class="fa-shell-nav-group-title" id="app-nav-world-title" data-app-i18n="navWorld">World</h2>
           <div class="fa-shell-nav-group-items">
-            <a class="fa-shell-link is-active" id="app-nav-divisions" href="/app/competitions/" data-app-view="divisions" aria-current="page" aria-label="Competitions" data-app-aria="navCompetitions">
+            <a class="fa-shell-link is-active" id="app-nav-divisions" href="/app/competitions" data-app-view="divisions" aria-current="page" aria-label="Competitions" data-app-aria="navCompetitions">
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4M12 14v4M8 21h8M9 18h6v3H9Z"/></svg>
               <span data-app-i18n="navCompetitions">Competitions</span>
             </a>
@@ -50,7 +52,7 @@
         </section>
         <section class="fa-shell-nav-group fa-shell-nav-secondary">
           <div class="fa-shell-nav-group-items">
-            <a class="fa-shell-link" id="app-nav-settings" href="/app/settings/" data-app-view="settings" aria-label="Settings" data-app-aria="settings">
+            <a class="fa-shell-link" id="app-nav-settings" href="/app/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">
               <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.96 4.37 L10.44 2.12 L13.56 2.12 L14.04 4.37 L15.95 5.16 L17.88 3.91 L20.09 6.12 L18.84 8.05 L19.63 9.96 L21.88 10.44 L21.88 13.56 L19.63 14.04 L18.84 15.95 L20.09 17.88 L17.88 20.09 L15.95 18.84 L14.04 19.63 L13.56 21.88 L10.44 21.88 L9.96 19.63 L8.05 18.84 L6.12 20.09 L3.91 17.88 L5.16 15.95 L4.37 14.04 L2.12 13.56 L2.12 10.44 L4.37 9.96 L5.16 8.05 L3.91 6.12 L6.12 3.91 L8.05 5.16 Z"/><circle cx="12" cy="12" r="3.2"/></svg>
               <span data-app-i18n="settings">Settings</span>
             </a>
@@ -91,7 +93,7 @@
               <h2 id="career-status-heading" data-app-i18n="careerStatus">Career status</h2>
               <p data-app-i18n="careerStatusText">No active career. Club selection, match dates and the Continue action will be enabled when career management is implemented.</p>
               <div class="app-panel-actions">
-                <a class="app-link app-link-primary" href="/guide/" data-app-i18n="openGuide">Explore the game guide</a>
+                <a class="app-link app-link-primary" href="/guide" data-app-i18n="openGuide">Explore the game guide</a>
                 <a class="app-link app-link-secondary" href="/" data-app-i18n="backToSite">Back to website</a>
               </div>
             </section>
@@ -111,7 +113,7 @@
           <div class="app-panel app-calendar-empty">
             <h2 data-app-i18n="calendarStatus">Schedule not available</h2>
             <p data-app-i18n="calendarStatusText">Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.</p>
-            <a class="app-link app-link-secondary" href="/app/dashboard/" data-app-i18n="backDashboard">Back to Dashboard</a>
+            <a class="app-link app-link-secondary" href="/app/dashboard" data-app-i18n="backDashboard">Back to Dashboard</a>
           </div>
         </section>
         <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>
@@ -169,7 +171,7 @@
               <h2 id="app-about-heading" data-app-i18n="aboutHeading">About the game</h2>
               <div class="app-settings-panel-content">
                 <p data-app-i18n="aboutText">Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.</p>
-                <a class="app-link app-link-secondary app-about-guide" href="/guide/" data-app-i18n="openGuide">Explore the game guide</a>
+                <a class="app-link app-link-secondary app-about-guide" href="/guide" data-app-i18n="openGuide">Explore the game guide</a>
               </div>
             </section>
           </div>
@@ -198,8 +200,10 @@
               <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Meisterliga</span></h1>
               <div class="app-world-detail-meta"><span class="app-world-flag-frame" aria-hidden="true"><svg class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 3"><defs><mask id="fa-flag-rounded-de" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="5.0" height="3.0"><rect x="0.0" y="0.0" width="5.0" height="3.0" rx="0.5625" ry="0.5625" fill="#fff" /></mask></defs><g mask="url(#fa-flag-rounded-de)"><path d="M0 0h5v3H0z" /><path fill="#D00" d="M0 1h5v2H0z" /><path fill="#FFCE00" d="M0 2h5v1H0z" /></g></svg></span> <span id="app-competition-country" data-world-country="DE">Germany</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="divisionTier1">First division</span></div>
             </div>
-            <a class="app-competition-return app-link app-link-secondary" href="/app/competitions/" data-app-i18n="allDivisions">All competitions</a>
+            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>
+            <a class="app-competition-return app-link app-link-secondary" href="/app/competitions" data-app-i18n="allDivisions">All competitions</a>
           </header>
+          <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>
           <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
             <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
@@ -208,6 +212,7 @@
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
           </div>
+          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>
           <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
@@ -236,8 +241,51 @@
           </div>
           </div>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabFixtures">Fixtures</h2>
-            <p class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <div class="app-fixtures-toolbar">
+              <div class="app-fixtures-navigation">
+                <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+                <div class="language-control app-fixtures-select">
+                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-1" data-menu-value="1" data-fixture-round-choice="1" aria-selected="true"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;1</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-2" data-menu-value="2" data-fixture-round-choice="2" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;2</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-3" data-menu-value="3" data-fixture-round-choice="3" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;3</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-4" data-menu-value="4" data-fixture-round-choice="4" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;4</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-5" data-menu-value="5" data-fixture-round-choice="5" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;5</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-6" data-menu-value="6" data-fixture-round-choice="6" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;6</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-7" data-menu-value="7" data-fixture-round-choice="7" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;7</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-8" data-menu-value="8" data-fixture-round-choice="8" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;8</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-9" data-menu-value="9" data-fixture-round-choice="9" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;9</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-10" data-menu-value="10" data-fixture-round-choice="10" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;10</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-11" data-menu-value="11" data-fixture-round-choice="11" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;11</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-12" data-menu-value="12" data-fixture-round-choice="12" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;12</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-13" data-menu-value="13" data-fixture-round-choice="13" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;13</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-14" data-menu-value="14" data-fixture-round-choice="14" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;14</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-15" data-menu-value="15" data-fixture-round-choice="15" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;15</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-16" data-menu-value="16" data-fixture-round-choice="16" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;16</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-17" data-menu-value="17" data-fixture-round-choice="17" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;17</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-18" data-menu-value="18" data-fixture-round-choice="18" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;18</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-19" data-menu-value="19" data-fixture-round-choice="19" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;19</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-20" data-menu-value="20" data-fixture-round-choice="20" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;20</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-21" data-menu-value="21" data-fixture-round-choice="21" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;21</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-22" data-menu-value="22" data-fixture-round-choice="22" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;22</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-23" data-menu-value="23" data-fixture-round-choice="23" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;23</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-24" data-menu-value="24" data-fixture-round-choice="24" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;24</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-25" data-menu-value="25" data-fixture-round-choice="25" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;25</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-26" data-menu-value="26" data-fixture-round-choice="26" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;26</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-27" data-menu-value="27" data-fixture-round-choice="27" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;27</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-28" data-menu-value="28" data-fixture-round-choice="28" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;28</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-29" data-menu-value="29" data-fixture-round-choice="29" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;29</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-30" data-menu-value="30" data-fixture-round-choice="30" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;30</div>
+                </div>
+                </div>
+                <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+              </div>
+              <button type="button" class="language-trigger app-fixtures-current" id="app-fixtures-current" data-app-aria="fixturesCurrent" aria-label="Current matchday" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg><span data-app-i18n="fixturesCurrent">Current matchday</span></button>
+              <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+            </div>
+            <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>
           </section>
           <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabStats">Stats</h2>

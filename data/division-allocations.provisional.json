@@ -7,7 +7,7 @@
     "clubs": "data/clubs.json",
     "divisions": "data/divisions.json"
   },
-  "evidenceNote": "firstDivisionReference is a historical city/stadium/name reference, not a user-approved current league assignment.",
+  "evidenceNote": "Club identity fields do not imply current league membership; initial ID ranges remain provisional UI data.",
   "decisionRule": "Owner-approved future initial placement by national club ID: 1–16 tier 1, 17–32 tier 2, and 33–40 outside gameplay (identities and artwork preserved). UI allocation remains provisional, with no active season; ID order is not league rank.",
   "allocations": [
     {

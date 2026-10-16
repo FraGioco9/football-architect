@@ -2,3 +2,5 @@
 app/**/index.html text eol=lf
 app/competitions/_shared/manifest.json text eol=lf
 templates/app-page.html text eol=lf
+# Preserve the approved CSV fingerprint in Windows checkouts.
+data/clubs-registry.csv text eol=lf

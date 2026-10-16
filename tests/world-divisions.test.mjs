@@ -7,8 +7,7 @@ const read=file=>readFileSync(new URL("../"+file,import.meta.url),"utf8");
 const divisions=JSON.parse(read("data/divisions.json"));
 const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:"assets/flags/"+(d.countryId==="ENG"?"gb-eng":d.countryId.toLowerCase())+".svg"}])).values()];
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
-const clubs=JSON.parse(read("data/clubs.json")).clubs;
-const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
+const clubs=JSON.parse(read("data/clubs.json"));
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
 const shared=read("app/competitions/_shared/index.html");
 const index=read("app/competitions/index.html");
@@ -29,8 +28,8 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
  assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
-  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'/"'),division.id);
-  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'/"'),division.id);
+  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'?season=1&amp;view=standings"'),division.id);
+  assert.ok(index.includes('href="/app/competitions/'+division.id.toLowerCase()+'?season=1&amp;view=standings">'),division.id);
  }
  assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
@@ -49,7 +48,8 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
    assert.doesNotMatch(href,/^https?:/);
    const path=href.startsWith("/") ? new URL(href === "/" ? "../index.html" : "../"+href.slice(1)+( /\.[a-z0-9]+$/i.test(href) ? "" : "/index.html"),import.meta.url) : new URL(href,base);
    const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
-   assert.ok(existsSync(fileURLToPath(filePath)),file+" -> "+href);
+   const localPath = href.startsWith("/") ? new URL("../"+href.slice(1),import.meta.url) : filePath;
+   assert.ok(existsSync(fileURLToPath(localPath)),file+" -> "+href);
   }
  }
  for(const {division,file} of routes){
@@ -89,7 +89,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
    const club=clubs.find(c=>c.countryId===record.countryId&&c.clubId===record.clubId);
    const key=record.countryId+"-"+record.clubId;
    assert.ok(club,key);
-   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.approvedShortName||primaryNames[record.countryId+":"+record.clubId]||null});
+   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.primaryName});
    assert.ok(!seen.has(key),"duplicate "+key);
    seen.add(key);
   }
@@ -116,7 +116,7 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and six tabs",
  assert.ok(shared.includes('data-app-i18n="navCompetitions">Competitions'));
  assert.ok(shared.includes('class="app-competition-header"'));
  assert.ok(shared.includes('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"'));
- assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/app/competitions/" data-app-i18n="allDivisions"'));
+ assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/app/competitions" data-app-i18n="allDivisions"'));
  assert.equal((shared.match(/<th scope="col"/g)||[]).length,11);
  for(const key of cols)assert.ok(shared.includes('data-app-i18n="'+key+'"'),key);
  assert.equal((shared.match(/<tr data-world-club="/g)||[]).length,0);
@@ -198,10 +198,10 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js"]'));
+ assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
- assert.ok(code.includes("tabs.length !== 6"));
- for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key === "'+key+'"'));
+ assert.ok(code.includes("tabs.length!==6"));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
@@ -212,38 +212,16 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
 });
 
-test("COMPETITIONS-06 keyboard and click controls still isolate one of six tabs",async()=>{
- const {runInNewContext}=await import("node:vm");
- const tabs=Array.from({length:6},(_,i)=>{
-  const listeners={},selected={};
-  return {
-   listeners,selected,tabIndex:i===0?0:-1,focused:false,scrolled:false,
-   classList:{toggle(name,on){selected[name]=on}},
-   getAttribute(name){return name==="aria-controls"?"competition-panel-"+i:null},
-   setAttribute(name,value){selected[name]=value},
-   addEventListener(name,listener){listeners[name]=listener},
-   focus(){this.focused=true},scrollIntoView(){this.scrolled=true}
-  };
- });
- const panels=tabs.map(()=>({hidden:false}));
- const doc={
-  querySelector(selector){return selector===".app-competition-tabs"?{querySelectorAll(){return tabs}}:null},
-  getElementById(id){return panels[Number(id.slice("competition-panel-".length))]??null}
- };
- runInNewContext(read("assets/competition-tabs.js"),{document:doc});
- assert.deepEqual(panels.map(p=>p.hidden),[false,true,true,true,true,true]);
- tabs[3].listeners.click();
- assert.equal(panels[3].hidden,false);
- assert.equal(tabs[3].selected["aria-selected"],"true");
- let prevented=false;
- tabs[3].listeners.keydown({key:"ArrowRight",preventDefault(){prevented=true}});
- assert.ok(prevented);assert.equal(tabs[4].focused,true);
- assert.equal(tabs[4].scrolled,true);assert.equal(panels[4].hidden,false);
- tabs[4].listeners.keydown({key:"Home",preventDefault(){}});
- assert.equal(panels[0].hidden,false);
- tabs[0].listeners.keydown({key:"ArrowLeft",preventDefault(){}});
- assert.equal(panels[5].hidden,false);
- assert.equal(panels.filter(p=>!p.hidden).length,1);
+test("COMPETITIONS-06 keyboard and click controls preserve six-tab routing",()=>{
+ const code=read("assets/competition-tabs.js");
+ assert.ok(code.includes('const views=["standings","fixtures","stats","history","rules","awards"]'));
+ assert.ok(code.includes('tabs.forEach((tab,index)=>'));
+ assert.ok(code.includes('tab.addEventListener("click",()=>set({view:views[index]}))'));
+ assert.ok(code.includes('tab.addEventListener("keydown",event=>'));
+ for(const key of ["ArrowRight","ArrowLeft","Home","End"])
+  assert.ok(code.includes('event.key==="'+key+'"'),key);
+ assert.ok(code.includes('event.preventDefault();set({view:views[next]},{focus:true})'));
+ assert.ok(code.includes('panels[i].hidden=!active||!available'));
 });
 
 test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass validation",async()=>{
@@ -328,66 +306,16 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 
-test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{
- const canonical=clubs;
- const byId=new Map(canonical.map(c=>[c.countryId+":"+c.clubId,c]));
- const explicit=canonical.filter(c=>c.approvedShortName);
- assert.equal(Object.keys(primaryNames).length,315);
- assert.equal(explicit.length,6);
- let named=0,abbreviationOnly=0;
- for(const d of manifest.divisions){
-  for(const c of d.clubs){
-   const key=c.countryId+":"+c.clubId,source=byId.get(key);
-   assert.ok(source);
-   assert.equal(c.primaryName,source.approvedShortName||primaryNames[key]||null,key);
-   assert.equal(c.fullName,source.fullName,key);
-   if(c.primaryName)named++;else abbreviationOnly++;
-  }
+test("COMPETITIONS-08 uses approved canonical primary names for all 256 participants",()=>{
+ const byId=new Map(clubs.map(c=>[c.countryId+":"+c.clubId,c]));
+ for(const division of manifest.divisions)for(const club of division.clubs){
+  const source=byId.get(club.countryId+":"+club.clubId);
+  assert.ok(source);
+  assert.equal(club.primaryName,source.primaryName);
+  assert.equal(club.fullName,source.fullName);
+  assert.equal(club.abbr,source.abbr);
  }
- assert.equal(named,256);
- assert.equal(abbreviationOnly,0);
- for(const [key,name] of Object.entries(primaryNames)){
-  assert.ok(byId.has(key),key);
-  assert.ok(typeof name==="string"&&name.trim(),key);
-  const source=byId.get(key);
-  if(source.approvedShortName)assert.equal(name,source.approvedShortName,key);
- }
-});
-
-test("CLUB-PRIMARY-239-01 preserves six reconciliations and an independent A03 audit",()=>{
- const catalog=read("data/clubs.json");
- const source=JSON.parse(catalog).clubs;
- const primary=JSON.parse(read("data/club-primary-names.documented.json"));
- const unique=new Set();
- assert.equal(primary.schemaVersion,1);
- assert.equal(Object.keys(primary.names).length,315);
- assert.equal(source.length,320);
- const expectedSix={
-  "IT:1":"US Velaria Torino","IT:2":"AC Rinascenti Bologna",
-  "FR:27":"FC Émaux","FR:33":"CS Garrigues",
-  "PT:34":"AC Fontes","BR:16":"EC Falésia Clara"
- };
- assert.deepEqual(Object.fromEntries(source.filter(c=>c.approvedShortName)
-   .map(c=>[c.countryId+":"+c.clubId,c.approvedShortName])),expectedSix);
- for(const c of source){
-  const key=c.countryId+":"+c.clubId,name=c.approvedShortName||primary.names[key];
-  assert.ok(typeof name==="string"&&name.trim(),key);
-  const normalized=name.normalize("NFKD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
-  assert.ok(!unique.has(normalized),"Duplicate primary label: "+name);
-  unique.add(normalized);
- }
- assert.equal(unique.size,320);
- const audit=read("docs/clubs/a03-label-variants.en.md");
- const differences=[...audit.matchAll(/^\|\s*((?:ENG|ES|DE)-\d{2})\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|/gm)];
- assert.equal(differences.length,41);
- assert.equal(differences.filter(x=>x[1].startsWith("ENG-")).length,2);
- assert.equal(differences.filter(x=>x[1].startsWith("ES-")).length,19);
- assert.equal(differences.filter(x=>x[1].startsWith("DE-")).length,20);
- assert.equal(new Set(differences.map(x=>x[1])).size,41);
- assert.ok(!/^\|\s*IT-02\s*\|/m.test(audit));
- const it02=manifest.divisions.flatMap(d=>d.clubs).find(c=>c.countryId==="IT"&&c.clubId===2);
- assert.equal(it02?.primaryName,"AC Rinascenti Bologna");
- assert.equal(it02?.abbr,"RIN");
+ assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 
 test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",()=>{

@@ -179,7 +179,7 @@
 
   // Public CTA uses app.<domain>; local and unconfigured previews keep /app.
   const previewHost = (window.location?.hostname || "").toLowerCase();
-  const preview = [...document.querySelectorAll('a[href="/app/dashboard/"]')][0];
+  const preview = [...document.querySelectorAll('a[href="/app/dashboard"]')][0];
   if (preview && previewHost.startsWith("app.")) {
     preview.href = "/dashboard";
   } else if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
@@ -191,7 +191,7 @@
   // The preview is a native link; only the Guide button needs scripted navigation.
   for (const button of actions) {
     if (button.dataset.destination !== "guide") continue;
-    button.addEventListener("click", () => window.location.assign("/guide/"));
+    button.addEventListener("click", () => window.location.assign("/guide"));
   }
   // Highlight the Guide section selected by click or URL hash.
   const guideLinks = [...document.querySelectorAll("[data-guide-section]")];
