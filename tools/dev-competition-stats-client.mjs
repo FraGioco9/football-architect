@@ -241,7 +241,7 @@ if (panel && divisionId) {
           const all=create("ol",undefined,"fa-dev-stats-top");
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
           dialog.append(header,all);
-          dialog.addEventListener("close",()=>{expand.blur();dialog.remove();});
+          dialog.addEventListener("close",()=>{expand.blur();dialog.remove();requestAnimationFrame(()=>{expand.blur();root.querySelector(".fa-dev-stats-nav button:focus")?.blur();});});
           window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
           dialog.showModal();
