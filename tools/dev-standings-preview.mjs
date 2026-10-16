@@ -107,7 +107,16 @@ export function createPreviewServer({ root = ROOT } = {}) {
         if (DETAIL.test(raw)) {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
-          body = Buffer.from(html.replace("</head>", INJECT + "\n</head>"), "utf8");
+          // Resolve the requested DEV season before the browser paints the selector.
+          const params = new URL(req.url, "http://localhost").searchParams;
+          const season = params.get("season") === "2" ? "2" : "1";
+          const seasonHtml = season === "2"
+            ? html.replace('id="app-competition-season-value">1</span>',
+                'id="app-competition-season-value">2</span>')
+              .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
+                'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
+            : html;
+          body = Buffer.from(seasonHtml.replace("</head>", INJECT + "\n</head>"), "utf8");
         }
       }
       res.writeHead(200, {
