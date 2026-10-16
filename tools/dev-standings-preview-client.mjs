@@ -16,7 +16,7 @@ function selectedSeason(){
  // Prefer the canonical router state once it exists; it is updated before route-change events.
  const routed=Number(window.faCompetitionRoute?.get?.().season);
  if([1,2].includes(routed))return routed;
- const requested=Number(new URLSearchParams(window.location.href).searchParams.get("season"));
+ const requested=Number(new URL(window.location.href).searchParams.get("season"));
  if([1,2].includes(requested))return requested;
  return available.includes(1)||available.includes(2)?Math.max(...available.filter(season=>[1,2].includes(season))):1;
 }
