@@ -34,7 +34,7 @@ const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data sup
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
   `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
-  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list{visibility:hidden}</style>',
+  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
 ].join("\n");
 
