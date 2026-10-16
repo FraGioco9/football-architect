@@ -226,18 +226,29 @@ if (panel && divisionId) {
           close.type="button";close.setAttribute("aria-label","Close");
           let closing=false;
           const dismiss=()=>{
-            if(closing)return;
-            if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){dialog.close();return;}
+            if(closing||!dialog.open)return;
             closing=true;
+            if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+              dialog.close();return;
+            }
             dialog.classList.add("fa-dev-stats-closing");
-            dialog.addEventListener("animationend",event=>{
-              if(event.target===dialog)dialog.close();
-            },{once:true});
+            const finish=event=>{
+              if(event.target!==dialog||event.animationName!=="fa-stats-dialog-out")return;
+              dialog.removeEventListener("animationend",finish);
+              dialog.close();
+            };
+            dialog.addEventListener("animationend",finish);
           };
           close.addEventListener("click",dismiss);
           dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
-          dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss();});
+          dialog.addEventListener("click",event=>{
+            if(event.target!==dialog)return;
+            const bounds=dialog.getBoundingClientRect();
+            if(event.clientX<bounds.left||event.clientX>bounds.right||
+               event.clientY<bounds.top||event.clientY>bounds.bottom)dismiss();
+          });
           dialog.addEventListener("keydown",event=>{
+            if(event.altKey||event.ctrlKey||event.metaKey)return;
             if(event.key==="ArrowDown"||event.key==="ArrowUp"){
               event.preventDefault();
               dialog.scrollBy({top:event.key==="ArrowDown"?64:-64,behavior:"smooth"});
