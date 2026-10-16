@@ -33,6 +33,20 @@ if (panel && divisionId) {
 .fa-dev-stats-table th:first-child,.fa-dev-stats-table td:first-child{text-align:left}
 .fa-dev-stats-table button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .fa-dev-stats-table-wrap{overflow-x:auto}
+
+.fa-dev-stats-section{margin:0 0 20px}
+.fa-dev-stats-heading{font-size:1rem;margin:0 0 12px;font-weight:700}
+.fa-dev-stats-nav{padding:5px;border-radius:12px;background:rgba(128,145,145,.08);border:1px solid rgba(128,145,145,.22)}
+.fa-dev-stats-nav button{border:0;border-radius:8px;background:transparent;color:inherit;padding:11px 8px}
+.fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff}
+.fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;border-color:rgba(128,145,145,.25)}
+.fa-dev-stats-card span{font-size:.85rem;opacity:.75}
+.fa-dev-stats-card strong{font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.fa-dev-stats-subnav{display:flex;gap:8px;margin-bottom:14px}
+.fa-dev-stats-subnav button{border:1px solid rgba(128,145,145,.35);border-radius:8px;background:transparent;color:inherit;padding:9px 14px;cursor:pointer}
+.fa-dev-stats-subnav button[aria-pressed=true]{font-weight:700;border-color:currentColor}
+@media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
+@media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
 `;
   document.head.append(style);
   const root = create("div");
