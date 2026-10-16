@@ -22,48 +22,31 @@ const create = (tag, text, className) => {
 if (panel && divisionId) {
   const style = create("style");
   style.textContent = `
-.fa-dev-stats-nav{display:flex;gap:8px;margin-bottom:16px}
-.fa-dev-stats-nav button{flex:1;min-width:0}
-.fa-dev-stats-nav button[aria-pressed=true]{font-weight:700;border-color:currentColor}
-.fa-dev-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.fa-dev-stats-card{padding:16px;border:1px solid currentColor;border-radius:12px}
-.fa-dev-stats-card strong{display:block;font-size:1.4rem}
-
-.fa-dev-stats-section{margin:0 0 20px}
-.fa-dev-stats-heading{font-size:1rem;margin:0 0 12px;font-weight:700}
-.fa-dev-stats-nav{padding:5px;border-radius:12px;background:rgba(128,145,145,.08);border:1px solid rgba(128,145,145,.22)}
-.fa-dev-stats-nav button{border:0;border-radius:8px;background:transparent;color:inherit;padding:11px 8px}
-.fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff}
+.fa-dev-stats-nav{display:flex;justify-content:center;gap:8px;margin-bottom:16px}
+.fa-dev-stats-nav button{display:flex;align-items:center;justify-content:center;flex:0 1 132px;min-width:0;width:132px;max-width:33%;padding:11px 8px;border:1px solid rgba(128,145,145,.25);border-radius:8px;background:transparent;color:inherit;text-align:center}
+.fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-.fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;border-color:rgba(128,145,145,.25)}
+.fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
 .fa-dev-stats-card span{font-size:.85rem;opacity:.75}
-.fa-dev-stats-card strong{font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-@media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
-@media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
-`;
-  style.textContent += `
-.fa-dev-stats-nav{justify-content:center;gap:8px;background:transparent;border:0}
-.fa-dev-stats-nav button{flex:0 1 132px;width:132px;max-width:33%;border:1px solid rgba(128,145,145,.25);text-align:center;display:flex;align-items:center;justify-content:center}
-.fa-dev-stats-top{list-style:decimal inside;margin:0;padding:0;max-width:680px}
-.fa-dev-stats-top li{display:flex;justify-content:space-between;gap:16px;padding:12px;border-bottom:1px solid rgba(128,145,145,.2)}
-.fa-dev-stats-top strong{font-variant-numeric:tabular-nums}
-@media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
-`;
-  style.textContent += `
-.fa-dev-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.fa-dev-stats-card{border-color:rgba(128,145,145,.12);padding:14px}
-`;
-  style.textContent += `
+.fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
 .fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
-.fa-dev-stats-leader-card .fa-dev-stats-top{max-width:none;list-style:none}
-.fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
-.fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
+.fa-dev-stats-top{list-style:none;margin:0;padding:0}
+.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(128,145,145,.2)}
+.fa-dev-stats-top li:last-child{border-bottom:0}
+.fa-dev-stats-top li>strong{justify-self:end;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
-.fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
+.fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
+.fa-dev-stats-top .app-world-club-identity{min-width:0}
+.fa-dev-stats-top .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
+.fa-dev-stats-expand:hover{opacity:1;text-decoration:underline}
+.fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
 .fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
 .fa-dev-stats-dialog[open]{animation:fa-stats-dialog-in .2s ease-out both}
 .fa-dev-stats-dialog.fa-dev-stats-closing{animation:fa-stats-dialog-out .16s ease-in both}
@@ -78,14 +61,10 @@ if (panel && divisionId) {
 .fa-dev-stats-dialog-header h3{margin:0;font-size:1rem}
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
 .fa-dev-stats-dialog-close:focus,.fa-dev-stats-dialog-close:focus-visible{outline:none;box-shadow:none;background:transparent}
-.fa-dev-stats-dialog .fa-dev-stats-top{max-width:none;list-style:none;padding:0;margin:0}
-.fa-dev-stats-dialog .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px}
-.fa-dev-stats-expand:hover{opacity:1;background:transparent;text-decoration:underline}
-.fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
-.fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
-.fa-dev-stats-leader-card .app-world-club-identity{min-width:0}
-.fa-dev-stats-leader-card .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:760px){.fa-dev-stats-leader-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
+@media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
+@media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
 `;
   document.head.append(style);
   const root = create("div");
@@ -138,7 +117,7 @@ if (panel && divisionId) {
         const card=create("section",undefined,"fa-dev-stats-leader-card");
         card.append(create("h4",label,"fa-dev-stats-leader-title"));
         const list=create("ol",undefined,"fa-dev-stats-top");
-        const empty=create("li","No player statistics available yet.","fa-dev-stats-player-empty");
+        const empty=create("li",hasMatches?"No player statistics available yet.":"No statistics available yet.","fa-dev-stats-player-empty");
         list.append(empty);
         card.append(list);
         grid.append(card);
@@ -168,7 +147,8 @@ if (panel && divisionId) {
       const teams=ranked(key,ascending);
       const buildRow=(team,index)=>{
         const li=create("li");
-        const position=create("span",String(index+1),"fa-dev-stats-rank");
+        const rank=teams.findIndex(candidate=>candidate[key]===team[key])+1;
+        const position=create("span",String(rank),"fa-dev-stats-rank");
         const identity=create("span",undefined,"app-world-club-identity");
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
         crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
