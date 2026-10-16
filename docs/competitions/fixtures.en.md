@@ -11,10 +11,13 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
   select. Both share keyboard/pointer behavior: Up/Down, Home/End, Enter/Space,
   Escape, Tab and outside-click dismissal, with active-descendant focus. No repeated Fixtures heading.
   The round/match-count announcement is available only to assistive technology.
-  Round 1 is the default when the URL has no valid matchday. Changing data or
-  resetting DEV results preserves the URL-selected round.
-- Eight matches per round; home club, score when played, away club, timing and
-  scheduled/full-time state. On narrow screens home/away clubs stack beside the
+  On the first Fixtures visit without an explicit round, use the supplied current
+  matchday; fall back to round 1 when unavailable. Later data updates preserve the
+  consulted round. Explicit Fixtures URLs restore their selected round.
+- Eight matches per round; home club, score when played and away club. Show
+  Full time above completed scores, otherwise supplied date/time or Date TBD.
+  Show the canonical home stadium below. Goals and separator occupy three fixed
+  columns, preserving alignment across single- and double-digit scores. On narrow screens home/away clubs stack beside the
   score, preserving readable space for long names without truncation.
 - Dropdown menus match their trigger width. Season uses a compact 88px control;
   previous/next use site-style SVG chevrons and have no disabled hover effect.
@@ -23,13 +26,14 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 - Dates and times remain unknown unless supplied. Supplied ISO timestamps must
   carry a time-zone offset; they are displayed in the browser's local time.
   This does not choose world-clock, kickoff or seasonal scheduling rules.
-- Public pages contain an empty state with disabled navigation until a complete
+- Public pages contain an empty state with hidden navigation until a complete
   schedule is supplied. There are no fabricated official matches or results.
 
 ## URL and season context
 
-Competition catalogue links explicitly open Standings in the current provisional
-season (1). Canonical detail URLs have no trailing slash:
+Competition catalogue links open Standings in the latest available season.
+Public data currently supplies provisional season 1; the isolated DEV preview
+also supplies season 2. Canonical detail URLs have no trailing slash:
 `/app/competitions/it-1?season=1&view=fixtures&matchday=12`.
 The six supported views are `standings`, `fixtures`, `stats`, `history`, `rules`
 and `awards`. Only Fixtures carries `matchday` (1–30). Switching tabs preserves
@@ -39,7 +43,7 @@ restore the selected view/round. Default or malformed values normalize with
 
 Season `1` is a provisional display context for the existing data, not a newly
 approved sporting season, calendar year or historical dataset. Other valid numeric
-season IDs retain their URL but show "Season unavailable" and hide every data
+season IDs without supplied data retain their URL but show "Season unavailable" and hide every data
 panel. Selecting season 1 restores the requested view. No unavailable season
 silently falls back to season 1 results. Real season metadata and history remain
 unconnected.
@@ -70,7 +74,7 @@ The existing DEV **Fictional standings** switch, **0–30 matchdays** slider,
 **Reset current page**, **Reset all** and sessionStorage preferences apply to
 Fixtures too. There is no additional debug panel, switch or persistence key.
 The existing deterministic DEV model supplies both views; future scores are
-removed and marked scheduled. No fictional-preview notice is displayed in Fixtures.
+removed. DEV seasons share pairings while completed scores vary with the seed. No fictional-preview notice is displayed in Fixtures.
 On navigation/refresh with DEV already ON, a DEV-only head bootstrap keeps the
 standings and Fixtures regions pending until the session model commits, so the
 first visible values are the saved DEV values. Header/logo rendering is unaffected.
@@ -85,7 +89,8 @@ generator remain excluded from publication.
 - [x] Connect the existing DEV controls to the same result model as standings.
 - [x] Verify all 16 routes, 30 rounds, unknown/zero scores, invalid data, themes,
   five languages, 1440/390/320 widths, session restoration and both resets.
-- [ ] Owner review and manual PC/iPhone Safari QA of the dedicated Draft PR.
+- [x] Owner manual PC/iPhone Safari QA, including the final score alignment and
+  mobile readability refinements.
 
 The existing competition tabs, standings, inline Compact division logos, club
 identities, flags and branding remain in scope only for regression checks.
@@ -103,6 +108,5 @@ the DEV slider updates this target without moving the round being consulted;
 OFF/reset removes the target, and rollback restores it with the schedule.
 
 The `matchday` parameter appears only in Fixtures URLs. Switching tabs within the
-loaded page retains the selected round in memory. Refreshing another tab starts
-from round 1 when returning to Fixtures; direct Fixtures links and Back/Forward
+loaded page retains the selected round in memory. Refreshing another tab uses the supplied current round on the first Fixtures visit; direct Fixtures links and Back/Forward
 restore their URL round. No additional persistence key is introduced.
