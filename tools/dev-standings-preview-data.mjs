@@ -36,12 +36,12 @@ function randomSource(key) {
 }
 
 export function createPreviewStandings(division, matchdays = 15, season = 1) {
-  if (season !== 1 && season !== 2) throw Error("Invalid DEV season");
+  if (!Number.isInteger(season) || season < 1 || season > 4) throw Error("Invalid DEV season");
   assertDivision(division);
   if (!Number.isInteger(matchdays) || matchdays < 0 || matchdays > 30) throw Error("Invalid DEV matchday count");
   const clubs = [...division.clubs].sort((a, b) => a.clubId - b.clubId);
   const random = randomSource("FA-STANDINGS-DEV-v" + PREVIEW_SCHEMA_VERSION + ":" +
-    division.id + (season === 1 ? ":" : ":season-2:") + clubs.map(c => c.clubId).join(","));
+    division.id + (season === 1 ? ":" : ":season-" + season + ":") + clubs.map(c => c.clubId).join(","));
   const rotation = clubs.map(c => c.clubId);
   const fixtures = [];
   const byId = new Map(clubs.map(club => [club.clubId, {
