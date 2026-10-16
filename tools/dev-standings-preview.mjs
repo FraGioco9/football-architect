@@ -16,7 +16,9 @@ const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
-  "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs"
+  "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs",
+  "/__fa_dev__/stats-data.mjs": "dev-competition-stats-data.mjs",
+  "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs"
 });
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -35,7 +37,8 @@ const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
   `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
-  '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
+  '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
+  '<script type="module" data-fa-dev-stats src="/__fa_dev__/stats-client.mjs"></script>'
 ].join("\n");
 
 function ipv4(value) {
