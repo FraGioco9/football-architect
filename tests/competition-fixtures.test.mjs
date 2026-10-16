@@ -112,7 +112,9 @@ test('FIXTURES-06: matchday controls stay hidden without a schedule and recover 
  view.prepare(schedule(divisions[0],0))();
  assert.equal(toolbar.hidden,false,'unplayed scheduled rounds still provide navigation');
  route.set({season:'2'});assert.equal(toolbar.hidden,false,'DEV season 2 retains navigation');
- route.set({season:'3'});assert.equal(toolbar.hidden,true,'unavailable season');
+ route.set({season:'3'});assert.equal(toolbar.hidden,false,'DEV season 3 retains navigation');
+ route.set({season:'4'});assert.equal(toolbar.hidden,false,'DEV season 4 retains navigation');
+ route.set({season:'5'});assert.equal(toolbar.hidden,true,'unavailable season');
  route.set({season:'1'});assert.equal(toolbar.hidden,false,'available season restored');
  const restore=view.snapshot();view.prepare(null)();
  assert.equal(toolbar.hidden,true,'removing schedule hides controls');
