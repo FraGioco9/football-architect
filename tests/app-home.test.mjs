@@ -17,9 +17,9 @@ const js = read("assets/app.js");
 
 test("HOME-01 uses canonical static pages rather than legacy hash routing", () => {
   const expectedLinks = {
-    dashboard: ["./","../calendar/","../settings/"],
-    calendar: ["../dashboard/","./","../settings/"],
-    settings: ["../dashboard/","../calendar/","./"]
+    dashboard: ["/app/dashboard","/app/calendar","/app/settings"],
+    calendar: ["/app/dashboard","/app/calendar","/app/settings"],
+    settings: ["/app/dashboard","/app/calendar","/app/settings"]
   };
   for (const [page,markup] of Object.entries(pages)) {
     assert.match(markup, /class="fa-career-shell"/);
@@ -51,7 +51,7 @@ test("HOME-01 all three standalone pages resolve icons, scripts, CSS and destina
     const base = new URL("../"+path,import.meta.url);
     for (const [,target] of markup.matchAll(/(?:href|src)="([^"]+)"/g)) {
       if (target.startsWith("#")) continue;
-      const loc = new URL(target,base);
+      const loc = target.startsWith("/") ? new URL(".."+target,base) : new URL(target,base);
       // Directory URLs are served as index.html by a normal static HTTP server.
       const file = loc.pathname.endsWith("/") ? new URL("index.html",loc) : loc;
       assert.ok(existsSync(fileURLToPath(file)),page+": missing "+target);
@@ -234,7 +234,7 @@ test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
   assert.match(dashboard,/id="app-dashboard"/);
   const script=redirect.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script);
-  for(const [search,hash,expected] of [["","","./dashboard/"],["?lang=it","#world-heading","./dashboard/?lang=it#world-heading"]]){
+  for(const [search,hash,expected] of [["","","/app/dashboard"],["?lang=it","#world-heading","/app/dashboard?lang=it#world-heading"]]){
     const redirects=[];
     runInNewContext(script,{window:{location:{search,hash,replace(path){redirects.push(path)}}}},{timeout:2000});
     assert.deepEqual(redirects,[expected]);
