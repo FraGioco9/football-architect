@@ -73,7 +73,7 @@
     const result=element("div","app-fixture-result"),played=game.homeGoals!==null;
     let status;
     if(played)status=word("fixturesFullTime","Full time","app-fixture-status");
-    else if(game.kickoff===null)status=word("fixturesTimingUnknown","Date/time to be confirmed","app-fixture-status");
+    else if(game.kickoff===null)status=word("fixturesTimingUnknown","Date TBD","app-fixture-status");
     else{
       status=element("time","app-fixture-status");status.dateTime=game.kickoff;
       status.textContent=new Intl.DateTimeFormat(document.documentElement.lang||"en",

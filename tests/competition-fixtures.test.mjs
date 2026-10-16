@@ -140,7 +140,7 @@ test('FIXTURES-07: result groups show full time or supplied date above the score
     if(played){assert.equal(contents(status),'Full time');assert.equal(status.tagName,'span');}
     else if(row===fields.get('app-fixtures-list').children[0]){
      assert.equal(status.tagName,'time');assert.equal(status.dateTime,'2026-10-20T12:30:00Z');
-    }else assert.equal(contents(status),'Date/time to be confirmed');
+    }else assert.equal(contents(status),'Date TBD');
    }
   };
   check(true);route.set({matchday:16});check(false);
