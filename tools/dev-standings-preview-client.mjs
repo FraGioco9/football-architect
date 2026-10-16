@@ -190,6 +190,18 @@ function node(tag, className = "", value = "") {
   el.textContent = value;
   return el;
 }
+function waitForFixturesApi(timeoutMs=7000) {
+  if(typeof window.faFixtures?.prepare==="function")return Promise.resolve(window.faFixtures);
+  return new Promise((resolve,reject)=>{
+    const started=Date.now();
+    const check=()=>{
+      if(typeof window.faFixtures?.prepare==="function"){resolve(window.faFixtures);return;}
+      if(Date.now()-started>=timeoutMs){reject(Error("Fixtures DEV hydration timeout"));return;}
+      setTimeout(check,25);
+    };
+    check();
+  });
+}
 function waitForRows() {
   return new Promise((resolve, reject) => {
     let done = false;
@@ -243,9 +255,8 @@ async function boot(routeId,restorePrevious=null) {
       kickoff:null
     }));
     // Complete all asynchronous preparation before touching the visible table.
-    const tbody = await waitForRows();
+    const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     if(restorePrevious)restorePrevious();
-    const fixturesApi=window.faFixtures;
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
     const commitFixtures=typeof fixturesApi?.prepare==="function"
