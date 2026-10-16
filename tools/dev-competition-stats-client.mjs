@@ -1,6 +1,16 @@
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
-const panel = document.getElementById("competition-panel-stats");
+// The shared competition shell is hydrated asynchronously by competition-page.js.
+const panel = await new Promise(resolve => {
+  const existing = document.getElementById("competition-panel-stats");
+  if (existing) return resolve(existing);
+  const observer = new MutationObserver(() => {
+    const found = document.getElementById("competition-panel-stats");
+    if (found) { observer.disconnect(); clearTimeout(timeout); resolve(found); }
+  });
+  const timeout = setTimeout(() => { observer.disconnect(); resolve(null); }, 7000);
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+});
 const divisionId = document.querySelector('meta[name="fa-division"]')?.content;
 const matchdayKey = "football-architect:standings-dev-matchdays";
 const create = (tag, text, className) => {
