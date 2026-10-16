@@ -47,7 +47,7 @@ if (panel && divisionId) {
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
 .fa-dev-stats-expand:hover{opacity:1;text-decoration:underline}
 .fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
-.fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
+.fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:12px 20px 20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
 .fa-dev-stats-dialog[open]{animation:fa-stats-dialog-in .2s ease-out both}
 .fa-dev-stats-dialog.fa-dev-stats-closing{animation:fa-stats-dialog-out .16s ease-in both}
 .fa-dev-stats-dialog::backdrop{background:rgba(0,0,0,.65);animation:fa-stats-backdrop-in .2s ease-out both}
@@ -57,9 +57,9 @@ if (panel && divisionId) {
 @keyframes fa-stats-backdrop-in{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.65)}}
 @keyframes fa-stats-backdrop-out{from{background:rgba(0,0,0,.65)}to{background:rgba(0,0,0,0)}}
 @media(prefers-reduced-motion:reduce){.fa-dev-stats-dialog[open],.fa-dev-stats-dialog.fa-dev-stats-closing,.fa-dev-stats-dialog::backdrop{animation:none!important}}
-.fa-dev-stats-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.fa-dev-stats-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;min-height:40px}
 .fa-dev-stats-dialog-header h3{margin:0;font-size:1rem}
-.fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
+.fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;padding:0}
 .fa-dev-stats-dialog-close:focus,.fa-dev-stats-dialog-close:focus-visible{outline:none;box-shadow:none;background:transparent}
 @media(max-width:760px){.fa-dev-stats-leader-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
