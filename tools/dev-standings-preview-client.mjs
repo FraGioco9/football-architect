@@ -150,11 +150,11 @@ if(validPath){
   }
   // The competition router notifies subscribers after updating its URL state.
   // Avoid delayed document click polling (which can briefly display stale scores).
-  if(typeof window.faCompetitionRoute?.subscribe==="function"){
-   window.faCompetitionRoute.subscribe(syncSeason);
-  }else{
-   window.addEventListener("popstate",syncSeason);
-  }
+  // A DEV module can initialize before the public router. Listen to its
+  // explicit route event rather than relying on popstate (pushState does not
+  // emit popstate), and handle browser back/forward navigation as well.
+  window.addEventListener("fa:competition-route-change",syncSeason);
+  window.addEventListener("popstate",syncSeason);
  }).catch(error => {
   console.error("DEV Debug unavailable:", error);
  });
