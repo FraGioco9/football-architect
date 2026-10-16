@@ -67,9 +67,6 @@ const LANG = {
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
-function isPreviewEnabled() {
- try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}
-}
 let activePreview=null;
 let previewState="OFF";
 let transition=Promise.resolve();
@@ -88,24 +85,10 @@ function setPreviewEnabled(enabled) {
   if(enabled){
    const cleanup=await boot(validPath[1].toUpperCase());
    if(typeof cleanup!=="function")return false;
-   try{sessionStorage.setItem(FLAG,"on")}
-   catch(error){
-    try{cleanup()}
-    catch(restoreError){
-     activePreview=cleanup;
-     previewState="ERROR";
-     console.error("DEV preview rollback failed:",restoreError);
-    }
-    console.error("DEV preview storage unavailable:",error);
-    return false;
-   }
    activePreview=cleanup;
    previewState="ON";
    return true;
   }
-  // Reject OFF without changing the DOM if persistence is unavailable.
-  try{sessionStorage.removeItem(FLAG)}
-  catch(error){console.error("DEV preview storage unavailable:",error);return false}
   try{activePreview()}
   catch(error){
    previewState="ERROR";
@@ -157,13 +140,6 @@ if(validPath){
   }else{
    window.addEventListener("popstate",syncSeason);
   }
-  if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
-   widgetRoot?.syncVisibility();
-  if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
-    const input=document.querySelector('[data-dev-control="fictional-standings"]');
-    if(input)input.checked=false;
-   }
-  });
  }).catch(error => {
   console.error("DEV Debug unavailable:", error);
  });
