@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "status": "scaffold",
+  "sourceOfTruth": "data/history/competitions/*.json",
+  "generatedAt": "2026-10-17",
+  "note": "Scaffold only. No authoritative historical final standings for Seasons 1–4 were found in the repository audit. Empty seasons arrays mean unavailable, not zero seasons played.",
+  "competitionManifest": {
+    "path": "app/competitions/_shared/manifest.json",
+    "approved": false
+  },
+  "competitions": [
+    {
+      "competitionId": "IT-1",
+      "file": "competitions/it-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "IT-2",
+      "file": "competitions/it-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "ENG-1",
+      "file": "competitions/eng-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "ENG-2",
+      "file": "competitions/eng-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "ES-1",
+      "file": "competitions/es-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "ES-2",
+      "file": "competitions/es-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "DE-1",
+      "file": "competitions/de-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "DE-2",
+      "file": "competitions/de-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "FR-1",
+      "file": "competitions/fr-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "FR-2",
+      "file": "competitions/fr-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "PT-1",
+      "file": "competitions/pt-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "PT-2",
+      "file": "competitions/pt-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "NL-1",
+      "file": "competitions/nl-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "NL-2",
+      "file": "competitions/nl-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "BR-1",
+      "file": "competitions/br-1.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    },
+    {
+      "competitionId": "BR-2",
+      "file": "competitions/br-2.json",
+      "dataStatus": "unavailable",
+      "availableSeasons": []
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "competitionId": "DE-1",
+  "dataStatus": "unavailable",
+  "seasons": [],
+  "provenance": {
+    "kind": "unavailable",
+    "note": "No authoritative historical final standings for Seasons 1–4 were found in the repository audit. Do not populate from fictional DEV preview data."
+  }
+}
