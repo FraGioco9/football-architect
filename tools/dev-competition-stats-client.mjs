@@ -242,6 +242,7 @@ if (panel && divisionId) {
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
           dialog.append(header,all);
           dialog.addEventListener("close",()=>{expand.blur();dialog.remove();});
+          window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
           dialog.showModal();
           close.focus();
