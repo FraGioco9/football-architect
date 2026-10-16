@@ -30,6 +30,7 @@ jobs:
           node --check assets/app.js
           node --check assets/app-search.js
           node --check assets/competition-page.js
+          node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
       - name: Site contracts
         run: node --test tests/*.test.mjs

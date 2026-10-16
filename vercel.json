@@ -1,0 +1,20 @@
+{
+  "redirects": [
+    {
+      "source": "/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/",
+      "destination": "/app/competitions/:division",
+      "permanent": true
+    },
+    {
+      "source": "/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html",
+      "destination": "/app/competitions/:division",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])",
+      "destination": "/app/competitions/:division/index.html"
+    }
+  ]
+}
