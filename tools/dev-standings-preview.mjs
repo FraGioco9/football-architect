@@ -107,9 +107,10 @@ export function createPreviewServer({ root = ROOT } = {}) {
         // The public competition index links to season 1. In the isolated DEV
         // server, point those links to the latest preview season instead.
         if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
-          body = Buffer.from(body.toString("utf8").replace(
-            /(href=["']\.\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\?season=)1(?=&amp;|&|["'])/g,
-            (_, prefix) => prefix + "2"
+          // Every season=1 occurrence on this index is a generated division link.
+          // Rewrite the HTML directly rather than depending on href formatting.
+          body = Buffer.from(body.toString("utf8").replaceAll(
+            "?season=1&amp;view=standings", "?season=2&amp;view=standings"
           ), "utf8");
         }
         if (DETAIL.test(raw)) {
