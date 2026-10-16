@@ -327,7 +327,15 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 .app-competition-facts dt{color:var(--muted);font-size:11px}
 .app-competition-facts dd{margin:5px 0 0;font-weight:700;font-size:14px}
 /* Scale the competition tabs as one group, regardless of translated label length. */
-@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:clamp(92px,24.5vw,108px)}.app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)}}
+@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:max(92px,calc((100% - 8px)/2.5))}.app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)}}
+
+
+/* A partial next tab and edge fades expose horizontal navigation on phones. */
+@media(max-width:620px){
+ .app-competition-tabs{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px;scroll-padding-inline:16px;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent)}
+ .app-competition-tabs[data-can-scroll-left="true"]{--app-tabs-fade-left:16px}
+ .app-competition-tabs[data-can-scroll-right="false"]{--app-tabs-fade-right:0px}
+}
 
 /* UI-THEME #96: light-only overrides preserve the historic dark appearance. */
 html[data-theme="light"] .app-body{--fa-shell-border:#D4E0DA;--fa-shell-accent:#17664E}

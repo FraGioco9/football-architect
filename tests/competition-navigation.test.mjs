@@ -14,13 +14,17 @@ function setup(path='/app/competitions/it-1/'){
  const menu=item();menu.querySelector=()=>option;menu.append=()=>{};menu.querySelectorAll=()=>[option];fields.set('app-competition-season-menu',menu);
  fields.set('app-competition-season-value',item());fields.set('app-competition-season-control',{contains:()=>false});
  fields.set('app-competition-season-option-1',option);
- const document={addEventListener(){},documentElement:{dataset:{}},getElementById:id=>fields.get(id),querySelector:()=>({querySelectorAll:()=>tabs})};
+ const tablist=item();tablist.clientWidth=240;tablist.scrollWidth=620;let scroll=0;
+ Object.defineProperty(tablist,'scrollLeft',{get:()=>scroll,set:value=>scroll=Math.max(0,Math.min(380,value))});
+ tablist.querySelectorAll=()=>tabs;tablist.getBoundingClientRect=()=>({left:0,right:240});
+ tabs.forEach((tab,i)=>tab.getBoundingClientRect=()=>({left:i*104-scroll,right:i*104+100-scroll}));
+ const document={addEventListener(){},documentElement:{dataset:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist};
  const window={get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
  runInNewContext(source,{document,window,URL,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
- return {window,tabs,fields,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
+ return {window,tabs,fields,tablist,events,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{
  const s=setup('/app/competitions/it-1/?season=1&view=fixtures&matchday=12');
@@ -76,4 +80,21 @@ test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes ret
  s.tabs[1].events.click();
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.back();s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
+});
+
+
+test('COMPETITION-TABS-SCROLL: edge hints follow scrolling and selection stays visible on direct load, navigation and resize',()=>{
+ const s=setup('/app/competitions/it-1?season=1&view=awards');
+ assert.equal(s.tablist.dataset.canScrollLeft,'true');
+ assert.equal(s.tablist.dataset.canScrollRight,'false');
+ assert.equal(s.tablist.scrollLeft,380,'direct link reveals the last tab');
+ s.tabs[0].events.click();assert.equal(s.tablist.scrollLeft,0);
+ assert.equal(s.tablist.dataset.canScrollLeft,'false');assert.equal(s.tablist.dataset.canScrollRight,'true');
+ s.tablist.scrollLeft=150;s.tablist.events.scroll();
+ assert.equal(s.tablist.dataset.canScrollLeft,'true');assert.equal(s.tablist.dataset.canScrollRight,'true');
+ s.tabs[3].events.click();const rect=s.tabs[3].getBoundingClientRect();
+ assert.ok(rect.left>=16&&rect.right<=224,'selected middle tab clears both fades');
+ s.tablist.scrollLeft=0;s.events.resize();assert.ok(s.tablist.scrollLeft>0,'resize reveals selected tab');
+ s.tablist.clientWidth=700;s.tablist.scrollWidth=620;s.tablist.scrollLeft=0;s.tablist.events.scroll();
+ assert.equal(s.tablist.dataset.canScrollLeft,'false');assert.equal(s.tablist.dataset.canScrollRight,'false');
 });

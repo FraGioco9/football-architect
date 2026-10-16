@@ -120,7 +120,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
       if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
-          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")||label.startsWith("STANDINGS-MOBILE ")){
+          "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")||label.startsWith("STANDINGS-MOBILE ")||label.startsWith("TABS-MOBILE ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
         chunks.forEach((part,i)=>console.log("FA_VISUAL_FRAME|"+label+"|"+i+"|"+chunks.length+"|"+part));
@@ -391,6 +391,19 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=standings"});
       await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
       assert.equal(await run("document.documentElement.dataset.theme"),theme);
+      const tabState=()=>run("(()=>{const t=document.querySelector('.app-competition-tabs'),b=t.getBoundingClientRect(),a=t.querySelector('[aria-selected=true]').getBoundingClientRect(),third=t.children[2].getBoundingClientRect(),style=getComputedStyle(t);return {left:t.dataset.canScrollLeft,right:t.dataset.canScrollRight,selected:a.left>=b.left-1&&a.right<=b.right+1,peek:third.left<b.right-16&&third.right>b.right,width:t.clientWidth,tabWidth:t.children[0].getBoundingClientRect().width,mask:style.maskImage||style.webkitMaskImage,scroll:t.scrollLeft,page:document.documentElement.scrollWidth,viewport:innerWidth}})()");
+      let tabGeometry=await tabState();
+      assert.equal(tabGeometry.left,'false');assert.equal(tabGeometry.right,'true');assert.equal(tabGeometry.peek,true,'a readable slice of the next view invites scrolling');assert.equal(tabGeometry.selected,true);assert.notEqual(tabGeometry.mask,'none');assert.ok(tabGeometry.page<=tabGeometry.viewport);
+      await snap("TABS-MOBILE "+width+" "+theme+" start",width,height);
+      await run("document.querySelector('.app-competition-tabs').scrollLeft=120");
+      await wait("document.querySelector('.app-competition-tabs').dataset.canScrollLeft==='true'");
+      tabGeometry=await tabState();assert.equal(tabGeometry.right,'true','both edges indicate more views in the middle');
+      await snap("TABS-MOBILE "+width+" "+theme+" middle",width,height);
+      await run("window.faCompetitionRoute.set({view:'awards'})");
+      tabGeometry=await tabState();assert.equal(tabGeometry.left,'true');assert.equal(tabGeometry.right,'false');assert.equal(tabGeometry.selected,true,'last view is fully visible and has no right fade');
+      await snap("TABS-MOBILE "+width+" "+theme+" end",width,height);
+      await run("window.faCompetitionRoute.set({view:'standings'})");
+      tabGeometry=await tabState();assert.equal(tabGeometry.selected,true);assert.equal(tabGeometry.left,'false');
       const expectedStadiums=createPreviewStandings(division,7,1).rows.map(row=>({homeId:row.recent[0].homeId,stadium:division.clubs.find(c=>c.clubId===row.recent[0].homeId).stadiumName}));
       for(const index of [0,1]){
         await tap('#app-standings-compact-list > li:nth-child('+(index+1)+') .app-world-form-dot');
