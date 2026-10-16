@@ -401,7 +401,10 @@
     standings.outerHTML=withMobileShell(standings.outerHTML);
     document.getElementById("division-detail-name").textContent=division.name;
     window.faThemeRebind?.(); // Rebind unrelated branding/theme controls.
-    document.getElementById("app-competition-flag").src = "../../../" + division.flagAsset;
+    const flag = document.getElementById("app-competition-flag");
+    const expectedFlag = new URL("../../../" + division.flagAsset, window.location.href);
+    // Deep-link HTML already supplies the correct flag at first paint.
+    if (flag.src !== expectedFlag.href) flag.src = expectedFlag.href;
     const country = document.getElementById("app-competition-country");
     country.dataset.worldCountry = division.countryId;
     country.textContent = division.countryName;
