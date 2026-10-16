@@ -7,11 +7,12 @@ export function aggregatePreviewStats(division, matchdays=15, season=1) {
   const matches=preview.fixtures;
   const byId=new Map(preview.clubs.map(club=>[club.clubId,{
     clubId:club.clubId,clubName:club.primaryName,mp:0,w:0,d:0,l:0,
-    gf:0,ga:0,gd:0,points:0,ppg:0,cs:0,fts:0,
+    gf:0,ga:0,gd:0,points:0,ppg:0,cs:0,fts:0,unbeatenStreak:0,
     homePlayed:0,homeWins:0,homeWinPct:0,awayPlayed:0,awayWins:0,awayWinPct:0
   }]));
   let homeWins=0,draws=0,awayWins=0,totalGoals=0,cleanSheets=0;
   const scores=new Map();
+  const unbeaten=new Map(preview.clubs.map(club=>[club.clubId,0]));
   let maxGoals=-1;
   const highestScoringMatches=[];
   for(const game of matches){
@@ -28,12 +29,15 @@ export function aggregatePreviewStats(division, matchdays=15, season=1) {
     if(hg>ag){h.w++;a.l++;h.homeWins++;homeWins++}
     else if(hg<ag){a.w++;h.l++;a.awayWins++;awayWins++}
     else{h.d++;a.d++;draws++}
+    unbeaten.set(h.clubId,hg>=ag?unbeaten.get(h.clubId)+1:0);
+    unbeaten.set(a.clubId,ag>=hg?unbeaten.get(a.clubId)+1:0);
     totalGoals+=goals;
     const score=hg+"-"+ag;scores.set(score,(scores.get(score)||0)+1);
     if(goals>maxGoals){maxGoals=goals;highestScoringMatches.length=0}
     if(goals===maxGoals)highestScoringMatches.push({...game});
   }
   const teams=[...byId.values()].map(row=>{
+    row.unbeatenStreak=unbeaten.get(row.clubId);
     row.gd=row.gf-row.ga;row.points=3*row.w+row.d;
     row.ppg=row.mp?row.points/row.mp:0;
     row.homeWinPct=row.homePlayed?100*row.homeWins/row.homePlayed:0;
