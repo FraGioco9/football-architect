@@ -48,6 +48,17 @@ if (panel && divisionId) {
 @media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
 @media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
 `;
+  style.textContent += `
+.fa-dev-stats-nav{justify-content:center;gap:8px;background:transparent;border:0}
+.fa-dev-stats-nav button{flex:0 1 132px;width:132px;max-width:33%;border:1px solid rgba(128,145,145,.25)}
+.fa-dev-stats-categories{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.fa-dev-stats-categories button{border:1px solid rgba(128,145,145,.3);border-radius:8px;background:transparent;color:inherit;padding:8px 12px;cursor:pointer}
+.fa-dev-stats-categories button[aria-pressed=true]{border-color:currentColor;font-weight:700}
+.fa-dev-stats-top{list-style:decimal inside;margin:0;padding:0;max-width:680px}
+.fa-dev-stats-top li{display:flex;justify-content:space-between;gap:16px;padding:12px;border-bottom:1px solid rgba(128,145,145,.2)}
+.fa-dev-stats-top strong{font-variant-numeric:tabular-nums}
+@media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
+`;
   document.head.append(style);
   const root = create("div");
   root.id = "fa-dev-stats";
@@ -55,6 +66,7 @@ if (panel && divisionId) {
   let manifest = null;
   let view = "overview";
   let teamMode = "performance";
+  let teamCategory = "gf";
   let sortKey = "points";
   let descending = true;
   const columns = ["clubName","mp","w","d","l","gf","ga","gd","points","ppg","cs","fts","homeWinPct","awayWinPct"];
@@ -96,14 +108,18 @@ if (panel && divisionId) {
     root.append(nav);
     if (stats.overview.matchesPlayed === 0) { root.append(create("p","No matches played yet.","app-competition-status")); return; }
     if (view === "players") {
+      root.append(create("h3","Top 5 players","fa-dev-stats-heading"));
       root.append(create("p","No player statistics available yet.","app-competition-status"));
       return;
     }
+    const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
     if (view === "overview") {
       const o = stats.overview;
+      const best = (key,ascending=false) => {const t=ranked(key,ascending)[0];return t?t.clubName+" · "+number(t[key]):"—";};
       const groups = [
         ["General",[["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]],
         ["Results",[["Home wins",o.homeWins+" ("+pct(o.homeWinPct)+")"],["Draws",o.draws+" ("+pct(o.drawPct)+")"],["Away wins",o.awayWins+" ("+pct(o.awayWinPct)+")"]]],
+        ["Team records",[["Best attack",best("gf")],["Worst attack",best("gf",true)],["Best defence",best("ga",true)],["Worst defence",best("ga")],["Most wins",best("w")],["Most clean sheets",best("cs")]]],
         ["Records",[["Clean sheets",o.cleanSheets],["Most frequent score",o.mostFrequentScoreline?o.mostFrequentScoreline.score+" ("+o.mostFrequentScoreline.count+")":"—"],["Highest-scoring matches",o.highestScoringMatches.length?o.highestScoringMatches.map(g=>g.homeGoals+"–"+g.awayGoals+" (MD "+g.round+")").join(", "):"—"]]]
       ];
       for(const [heading,cards] of groups){
@@ -118,6 +134,15 @@ if (panel && divisionId) {
       }
       return;
     }
+    const leaders=create("section",undefined,"fa-dev-stats-section");
+    leaders.append(create("h3","Top 5 teams","fa-dev-stats-heading"));
+    const categoryNav=create("div",undefined,"fa-dev-stats-categories");
+    const categories=[["gf","Goals scored"],["ga","Fewest conceded"],["w","Wins"],["cs","Clean sheets"],["ppg","Points per match"]];
+    for(const [key,label] of categories){const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamCategory===key));button.addEventListener("click",()=>{teamCategory=key;render();});categoryNav.append(button);}
+    leaders.append(categoryNav);
+    const top=create("ol",undefined,"fa-dev-stats-top");
+    ranked(teamCategory,teamCategory==="ga").slice(0,5).forEach(t=>{const li=create("li");li.append(create("span",t.clubName),create("strong",number(t[teamCategory])));top.append(li);});
+    leaders.append(top);root.append(leaders);
     const subnav=create("div",undefined,"fa-dev-stats-subnav");
     for(const [id,label] of [["performance","Performance"],["additional","Additional"]]){
       const button=create("button",label);button.type="button";button.setAttribute("aria-pressed",String(teamMode===id));
