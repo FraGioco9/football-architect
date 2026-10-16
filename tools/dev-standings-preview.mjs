@@ -4,7 +4,7 @@ import { readFile, realpath, lstat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
-import { isAllowlistedPublicPath } from "./publication-guard.mjs";
+import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
 import { DEBUG_FIRST_PAINT } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -29,7 +29,7 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/(?:app\/)?competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
 const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data supports more.
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
@@ -106,14 +106,14 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
-        const file = (raw.endsWith("/") ? raw + "index.html" : DETAIL.test(raw) && !raw.endsWith("/index.html") ? raw + "/index.html" : raw).slice(1);
+        const file = publicRequestFile(raw);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
         // The public competition index links to season 1. In the isolated DEV
         // server, point those links to the latest preview season instead.
-        if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
+        if (file === "app/competitions/index.html") {
           // Every season=1 occurrence on this index is a generated division link.
           // Rewrite the HTML directly rather than depending on href formatting.
           body = Buffer.from(body.toString("utf8").replace(
@@ -157,8 +157,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const addresses = LAN_ENABLED
       ? Object.values(networkInterfaces()).flatMap(items => items || [])
         .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
-        .map(item => "http://" + item.address + ":" + PORT + "/app/competitions/it-1/")
-      : ["http://" + LOOPBACK + ":" + PORT + "/app/competitions/it-1/"];
+        .map(item => "http://" + item.address + ":" + PORT + "/competitions/it-1")
+      : ["http://" + LOOPBACK + ":" + PORT + "/competitions/it-1"];
     process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):" + String.fromCharCode(10) +
       addresses.join(String.fromCharCode(10)) + String.fromCharCode(10));
   });

@@ -568,16 +568,17 @@
     divisions: document.getElementById("app-nav-divisions")
   };
   // Use app.<domain> for public app links without hard-coding a final domain.
-  // Local static files and unconfigured preview hosts keep their /app routes.
+  // Local and unconfigured preview hosts use the same canonical app paths.
   function appHref(route) {
-    if (!/^\/app(?:\/|$)/.test(route)) return route;
+    route = route.replace(/^\/app(?=\/|$)/, "") || "/";
     const host = (window.location.hostname || "").toLowerCase();
     const local = !host || host === "localhost" || host === "::1" ||
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
       host.endsWith(".localhost") || host.endsWith(".local") ||
       host.endsWith(".vercel.app") || host.endsWith(".github.io");
-    if (local) return route;
-    const clean = route.slice(4) || "/";
+    if (local) return route.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1") || "/";
+    const raw = route;
+    const clean = raw === "/" ? raw : raw.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");
     if (host.startsWith("app.")) return clean;
     const mainHost = host.startsWith("www.") ? host.slice(4) : host;
     return (window.location.protocol || "https:") + "//app." + mainHost + clean;
@@ -585,12 +586,13 @@
   function siteHref(path) {
     const host = (window.location.hostname || "").toLowerCase();
     if (!host.startsWith("app.")) return path;
-    return (window.location.protocol || "https:") + "//" + host.slice(4) + path;
+    const origin = (window.location.protocol || "https:") + "//" + host.slice(4);
+    return path === "/" ? origin : origin + path.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
-    const routes = {dashboard:"/app/dashboard/",calendar:"/app/calendar/",
-      settings:"/app/settings/",divisions:"/app/competitions/"};
+    const routes = {dashboard:"/dashboard",calendar:"/calendar",
+      settings:"/settings",divisions:"/competitions"};
     for (const [view,link] of Object.entries(links)) {
       if (link) link.setAttribute("href",appHref(routes[view]));
     }
@@ -601,7 +603,7 @@
       const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?(?:\?.*)?$/i);
       if (slug) {
         const season = link.getAttribute("data-dev-latest-season") || "1";
-        link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"?season="+season+"&view=standings"));
+        link.setAttribute("href",appHref("/competitions/"+slug[1].toLowerCase()+"?season="+season+"&view=standings"));
       }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
@@ -611,7 +613,7 @@
       link.setAttribute("href",siteHref("/"));
     }
     for (const link of document.querySelectorAll('[data-app-i18n="openGuide"]')) {
-      link.setAttribute("href",siteHref("/guide/"));
+      link.setAttribute("href",siteHref("/guide"));
     }
     for (const link of document.querySelectorAll('[data-app-i18n="backToSite"]')) {
       link.setAttribute("href",siteHref("/"));

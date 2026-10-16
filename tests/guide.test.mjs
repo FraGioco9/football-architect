@@ -86,7 +86,7 @@ test("sidebar links, selection and hash navigation are synchronized",()=>{
   assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
 });
 test("navigation, responsive layout and no duplicate language logic",()=>{
-  assert.match(html,/href="\.\.\/"/);
+  assert.match(html,/href="\/" aria-label="Football Architect home"/);
   assert.match(html,/src="\.\.\/assets\/landing\.js"/);
   assert.match(html,/href="\.\.\/favicon\.ico"/);
   assert.match(css,/max-width:700px/);

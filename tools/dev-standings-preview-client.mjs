@@ -47,7 +47,7 @@ async function resetPreview(){
  if(matchdayRow)matchdayRow.hidden=true
  return true;
 }
-const DETAIL = /^\/app\/competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/(?:app\/)?competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
 const LANG = {
   en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
@@ -214,7 +214,7 @@ function waitForRows() {
 
 async function boot(routeId,restorePrevious=null) {
   try {
-    const response = await fetch("/app/competitions/_shared/manifest.json",
+    const response = await fetch("/competitions/_shared/manifest.json",
       { cache: "no-store", credentials: "same-origin" });
     if (!response.ok) throw Error("DEV manifest unavailable");
     const manifest = await response.json();

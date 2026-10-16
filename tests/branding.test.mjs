@@ -9,8 +9,8 @@ const guide = read("guide/index.html");
 const css = read("assets/landing.css");
 
 test("shared branding is linked from Landing and Guide", () => {
-  assert.match(index, /href="\.\/" aria-label="Football Architect home"/);
-  assert.match(guide, /href="\.\.\/" aria-label="Football Architect home"/);
+  assert.match(index, /href="\/" aria-label="Football Architect home"/);
+  assert.match(guide, /href="\/" aria-label="Football Architect home"/);
   for (const [page, prefix] of [[index,"./"],[guide,"../"]]) {
     assert.ok(page.includes(prefix+"assets/brand/horizontal-dark.svg"));
     assert.ok(page.includes(prefix+"assets/brand/symbol-dark.svg"));

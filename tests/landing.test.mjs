@@ -158,7 +158,7 @@ test("outside pointer press, Tab and Escape dismiss without changing the languag
 });
 
 test("HOME-ENTRY-01 exposes a native, no-JavaScript Dashboard preview link", () => {
-  assert.match(html, /<a class="cta cta-primary" href="\.\/app\/dashboard\/" data-i18n="enter">Explore app preview<\/a>/);
+  assert.match(html, /<a class="cta cta-primary" href="\/dashboard" data-i18n="enter">Explore app preview<\/a>/);
   assert.doesNotMatch(html, /data-destination="app"|id="action-status"|action-status-message|status-close/);
   assert.doesNotMatch(js, /unavailableApp|unavailableGuide|toastTimer|statusMessage|showToast/);
   assert.match(css, /a\.cta:focus-visible\{outline:2px solid var\(--focus\);outline-offset:2px\}/);
@@ -177,7 +177,7 @@ test("HOME-ENTRY-01 renders the preview CTA in all five languages", () => {
 test("HOME-ENTRY-01 preserves Guide navigation and keyboard language controls", () => {
   const r = render("it");
   r.guide.fire("click");
-  assert.deepEqual(r.navigation, ["./guide/"]);
+  assert.deepEqual(r.navigation, ["/guide"]);
   assert.match(js, /button\.dataset\.destination !== "guide"/);
   assert.match(html, /data-destination="guide"/);
 });
@@ -226,7 +226,7 @@ test("HOME-ENTRY-01 does not enable gameplay in the static Dashboard", () => {
   const app = readFileSync(new URL("../assets/app.js", import.meta.url), "utf8");
   assert.match(dashboard, /class="app-continue" type="button" disabled/);
   assert.match(app, /No active career/);
-  assert.match(html, /href="\.\/app\/dashboard\/"/);
+  assert.match(html, /href="\/dashboard"/);
 });
 
 test("ENG-ALL-ENGLISH-01 keeps default English and localizes the landmark brand name", () => {

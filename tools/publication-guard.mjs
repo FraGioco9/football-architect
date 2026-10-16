@@ -21,13 +21,12 @@ const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg",
  "app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
-const runtimeAssets=new Set(["landing.js","landing.css","app.js","app.css",
- "app-search.js","competition-page.js","competition-tabs.js","theme.js",
- "competition-fixtures.js"
+const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","app.css",
+ "app-search.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js",
 ]);
 
-// Only competition URL routing is allowed; no hosting, auth or build overrides.
-const competitionRouting={"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]};
+// Only explicit app URL aliases are allowed; no hosting, auth or build overrides.
+const competitionRouting={"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"},{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/app/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/app/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]};
 
 export function isAllowlistedPublicPath(path) {
  if(path.startsWith("assets/divisions/"))return validateDivisionAssets().paths.has(path);
@@ -95,4 +94,12 @@ export function stagePublicArtifact(sourceRoot,destination) {
  }
  assertPublicArtifact(destination,{sourceRoot});
  return files;
+}
+
+// Map canonical request paths to the existing allowlisted physical app files.
+export function publicRequestFile(pathname) {
+  const canonical = /^\/(?:dashboard|calendar|settings|competitions)(?:\/|$)/.test(pathname)
+    ? "/app" + pathname : pathname;
+  return (canonical.endsWith("/") ? canonical + "index.html"
+    : /\.[a-z0-9]+$/i.test(canonical) ? canonical : canonical + "/index.html").slice(1);
 }

@@ -17,7 +17,7 @@ test("SEARCH-01 identical searchable top bar and native dialog on all three stat
     assert.match(source, /<dialog id="app-search-dialog"[^>]+aria-labelledby="app-search-heading"/);
     assert.match(source, /aria-haspopup="dialog" aria-controls="app-search-dialog"/);
     assert.match(source, /role="status" aria-live="polite"/);
-    assert.ok(source.includes('src="'+"../../"+'assets/app-search.js" defer'));
+    assert.ok(source.includes('src="/assets/app-search.js" defer'));
     assert.match(source, /<div class="fa-shell-search">[\s\S]*?<div class="fa-shell-time"/);
     assert.doesNotMatch(source, /href="[^"]*#(?:calendar|settings)"/);
     assert.match(source, /<dialog id="app-search-dialog"[^>]+aria-describedby="app-search-scope"/);
@@ -52,9 +52,9 @@ test("SEARCH-01 search destinations are limited to real internal routes and head
   assert.equal(destinations.length,10);
   const known=new Set([...pages,"app/competitions/index.html"]);
   for(const [,kind,id,description,url] of destinations){
-    assert.match(url,/^\/app\/(?:dashboard\/|calendar\/|settings\/|competitions\/)(?:#[a-z-]+)?$/);
+    assert.match(url,/^\/(?:dashboard|calendar|settings|competitions)(?:\/[a-z0-9-]+)?(?:#[a-z-]+)?$/);
     const [pathname,fragment] = url.slice(1).split("#");
-    const file=pathname+"index.html";
+    const file="app/"+pathname+"/index.html";
     assert.ok(known.has(file),url);
     const target=html[file] ?? read(file);
     assert.ok(target.includes('id="'+id+'"'),id);
@@ -150,7 +150,7 @@ test("SEARCH-01 opens with four real page suggestions, focuses input, and closes
   app.trigger.emit("click");
   assert.equal(app.dialog.open,true);
   assert.equal(app.document.activeElement,app.input);
-  assert.deepEqual(app.links().map(a=>a.href),["/app/dashboard/","/app/calendar/","/app/settings/","/app/competitions/"]);
+  assert.deepEqual(app.links().map(a=>a.href),["/dashboard","/calendar","/settings","/competitions"]);
   app.dialog.emit("cancel");
   assert.equal(app.dialog.open,false);
   assert.equal(app.document.activeElement,app.trigger);
@@ -163,14 +163,14 @@ test("SEARCH-01 filters immediately, matches accents, and reports empty results"
   app.trigger.emit("click");
   app.input.value="parametres";
   app.input.emit("input");
-  assert.equal(app.links()[0].href,"/app/settings/");
+  assert.equal(app.links()[0].href,"/settings");
   app.input.value="zz__unknown__zz";
   app.input.emit("input");
   assert.equal(app.links().length,0);
   assert.equal(app.nodes["app-search-empty"].hidden,false);
   app.input.value="calendar";
   app.input.emit("input");
-  assert.equal(app.links()[0].href,"/app/calendar/");
+  assert.equal(app.links()[0].href,"/calendar");
 });
 
 test("SEARCH-01 Arrow keys and Enter work without a global shortcut",()=>{
@@ -200,7 +200,7 @@ test("SEARCH-01 follows shared language changes while open",()=>{
   assert.equal(app.trigger.attributes["aria-label"],"Cerca nell’app");
   app.input.value="impostazioni";
   app.input.emit("input");
-  assert.equal(app.links()[0].href,"/app/settings/");
+  assert.equal(app.links()[0].href,"/settings");
 });
 
 
@@ -328,7 +328,7 @@ test("SEARCH-01 compact results show only label and kind, with descriptions stil
   assert.equal(first.children[1].className,"app-search-kind");
   app.input.value="320 documented clubs";
   app.input.emit("input");
-  assert.equal(app.links()[0].href,"/app/dashboard/#world-heading");
+  assert.equal(app.links()[0].href,"/dashboard#world-heading");
 });
 
 test("SEARCH-01 translates the visible desktop search trigger",()=>{
@@ -402,7 +402,7 @@ test("SEARCH-01 full-row suggestion hover beats transparent base background and 
 
 test("SEARCH-01 uses direct canonical Dashboard suggestions and anchors",()=>{
   assert.doesNotMatch(script,/"\/app\/(?:#|")/);
-  for(const href of ["/app/dashboard/","/app/dashboard/#career-status-heading","/app/dashboard/#world-heading"]){
+  for(const href of ["/dashboard","/dashboard#career-status-heading","/dashboard#world-heading"]){
     assert.ok(script.includes('"'+href+'"'),"Missing canonical Dashboard destination: "+href);
   }
 });
@@ -414,10 +414,10 @@ test("UI-WORLD resolves all canonical divisions by name and identifier",async()=
   assert.deepEqual(app.requestedUrls,["http://127.0.0.1:2000/data/divisions.json"]);
   app.trigger.emit("click");
   for(const [query,path] of [
-    ["pt-1","/app/competitions/pt-1"],
-    ["atlantica","/app/competitions/pt-2"],
-    ["liga lusitana","/app/competitions/pt-1"],
-    ["bondsklasse","/app/competitions/nl-2"]
+    ["pt-1","/competitions/pt-1"],
+    ["atlantica","/competitions/pt-2"],
+    ["liga lusitana","/competitions/pt-1"],
+    ["bondsklasse","/competitions/nl-2"]
   ]){
     app.input.value=query;
     app.input.emit("input");
@@ -425,7 +425,7 @@ test("UI-WORLD resolves all canonical divisions by name and identifier",async()=
   }
   app.input.value="competitions";
   app.input.emit("input");
-  assert.ok(app.links().some(link=>link.href==="/app/competitions/"));
+  assert.ok(app.links().some(link=>link.href==="/competitions"));
   app.input.value="unlikely-missing-game-data";
   app.input.emit("input");
   assert.equal(app.links().length,0);

@@ -3,7 +3,7 @@
   "use strict";
   const sourceUrl = document.currentScript?.src;
   const routeId = document.querySelector('meta[name="fa-division"]')?.content;
-  const root = new URL("../app/competitions/_shared/", sourceUrl);
+  const root = new URL("../competitions/_shared/", sourceUrl);
   const status = document.getElementById("main-content");
 
   function fail() {
