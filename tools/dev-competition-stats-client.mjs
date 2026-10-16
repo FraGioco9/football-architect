@@ -79,7 +79,9 @@ if (panel && divisionId) {
 .fa-dev-stats-leader-card .fa-dev-stats-top li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0}
 .fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li[hidden]{display:none}
-.fa-dev-stats-expand{display:block;margin:12px auto 0;padding:7px 18px;cursor:pointer}
+.fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
+.fa-dev-stats-expand:hover,.fa-dev-stats-expand:focus-visible{opacity:1;background:rgba(128,145,145,.1)}
+.fa-dev-stats-expand:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
 .fa-dev-stats-leader-card .app-world-club-identity{min-width:0}
 .fa-dev-stats-leader-card .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -197,14 +199,14 @@ if (panel && divisionId) {
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         top.append(li);
       });
-      const expand=create("button","Show all","fa-dev-stats-expand");
+      const expand=create("button","Show all ↓","fa-dev-stats-expand");
       expand.type="button";
       expand.setAttribute("aria-expanded","false");
       expand.addEventListener("click",()=>{
         const expanded=expand.getAttribute("aria-expanded")==="true";
         for(const li of Array.from(top.children).slice(5))li.hidden=expanded;
         expand.setAttribute("aria-expanded",String(!expanded));
-        expand.textContent=expanded?"Show all":"Show top 5";
+        expand.textContent=expanded?"Show all ↓":"Show less ↑";
       });
       card.append(top);
       if(teams.length>5)card.append(expand);
