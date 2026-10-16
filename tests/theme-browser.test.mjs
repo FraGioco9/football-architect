@@ -166,6 +166,15 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(game=>({...game,kickoff:null,homeGoals:null,awayGoals:null}));
         await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
         assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length>0)"),true,"scheduled rounds restore controls even before matches are played");
+        let scoreColumns;
+        for(const [homeGoals,awayGoals] of [[0,0],[1,11],[10,2]]){
+          const scored=fixtureModel.map(game=>({...game,homeGoals,awayGoals}));
+          await run("window.faFixtures.prepare("+JSON.stringify(scored)+")()");
+          const columns=await run("(()=>{const s=document.querySelector('.app-fixture-score');return [...s.children].map(e=>{const r=e.getBoundingClientRect();return {center:(r.left+r.right)/2,width:r.width}})})()");
+          assert.equal(columns.length,3);
+          if(scoreColumns)columns.forEach((c,i)=>{assert.ok(Math.abs(c.center-scoreColumns[i].center)<0.1,"goal and separator centers stay fixed across score values");assert.equal(c.width,scoreColumns[i].width)});
+          scoreColumns=columns;
+        }
         await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("document.getElementById('app-fixtures-round').getClientRects().length"),0,"removing schedule hides controls again");
         await run("document.getElementById('competition-tab-standings').click()");

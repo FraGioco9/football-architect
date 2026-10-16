@@ -79,8 +79,13 @@
       status.textContent=new Intl.DateTimeFormat(document.documentElement.lang||"en",
         {dateStyle:"medium",timeStyle:"short"}).format(new Date(game.kickoff));
     }
-    result.append(status,
-      element("strong","app-fixture-score",played?game.homeGoals+" – "+game.awayGoals:"—"),
+    const score=element("strong","app-fixture-score");
+    if(played)score.append(
+      element("span","app-fixture-goals",String(game.homeGoals)),
+      element("span","app-fixture-separator"," – "),
+      element("span","app-fixture-goals",String(game.awayGoals)));
+    else score.append(element("span","app-fixture-pending","—"));
+    result.append(status,score,
       element("span","app-fixture-stadium",clubs.get(game.homeId).stadiumName));
     item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;

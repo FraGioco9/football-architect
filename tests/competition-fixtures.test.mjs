@@ -40,7 +40,7 @@ function setup(d=divisions[0]){
 }
 const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...f,kickoff:null,
  homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
-const contents=n=>n.textContent+n.children.map(contents).join(' ');
+const contents=n=>n.textContent+n.children.map(contents).join('');
 
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){
@@ -144,5 +144,17 @@ test('FIXTURES-07: result groups show full time or supplied date above the score
    }
   };
   check(true);route.set({matchday:16});check(false);
+ }
+});
+
+
+test('FIXTURES-08: played scores have separate home, separator and away cells',()=>{
+ const {view,fields}=setup(),fixtures=schedule(divisions[0]);
+ for(const [homeGoals,awayGoals] of [[0,0],[1,11],[10,2]]){
+  fixtures.filter(f=>f.round===1).forEach(f=>Object.assign(f,{homeGoals,awayGoals}));
+  view.prepare(fixtures)();
+  const score=fields.get('app-fixtures-list').children[0].children.find(n=>n.className==='app-fixture-result').children[1];
+  assert.deepEqual(score.children.map(n=>n.className),['app-fixture-goals','app-fixture-separator','app-fixture-goals']);
+  assert.equal(contents(score),homeGoals+' – '+awayGoals);
  }
 });
