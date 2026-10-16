@@ -251,6 +251,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     }
     const division = manifest.divisions.find(d => d.id === routeId);
     if (!division) throw Error("Unknown DEV division");
+    // Resolve the season only after the manifest is loaded, then capture it for both
+    // standings and fixtures. Read router state first only when it agrees with the
+    // current URL; URL remains canonical for direct navigation and browser refresh.
     const season=selectedSeason();
     const { rows, clubs } = createPreviewStandings(division,matchdays,season);
     // Prepare the complete DEV calendar from the same deterministic season seed.
@@ -267,7 +270,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // Complete all asynchronous preparation before touching the visible table.
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
-    if(!isCurrent())return;
+    if(!isCurrent()||selectedSeason()!==season)return;
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
