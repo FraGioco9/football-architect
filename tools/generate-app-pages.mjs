@@ -169,24 +169,26 @@ const worldPageReplacements = (depth, division = null) => {
 };
 // Shared competition shell: one markup source and one validated data manifest.
 // Full generated route documents preserve deep links and SVG first paint.
+const replaceExactlyOnce = (source,before,after,label) => {
+ if(source.split(before).length!==2)throw Error("Shared template contract changed: "+label);
+ return source.replace(before,after);
+};
+// Shared competition shell: one markup source and one validated data manifest.
+// Full generated route documents preserve deep links and SVG first paint.
 const sharedTemplate = function sharedTemplate(html,first=divisionData.find(d=>d.id==="IT-1"),neutral=true) {
  const country=countryById[first.countryId];
- const replaceOne=(before,after,label)=>{
-  if(html.split(before).length!==2)throw Error("Shared template contract changed: "+label);
-  html=html.replace(before,after);
- };
- if(neutral)replaceOne("<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
- if(neutral)replaceOne('id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
+ if(neutral)html=replaceExactlyOnce(html,"<title>"+encode(first.name)+" — Football Architect</title>","<title>Competition — Football Architect</title>","title");
+ if(neutral)html=replaceExactlyOnce(html,'id="division-detail-name">'+encode(first.name)+'</span>','id="division-detail-name">Competition</span>',"heading");
  if(neutral){
   const logo=renderDivisionLogo(first.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ');
-  replaceOne(logo,'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>',"badge");
+  html=replaceExactlyOnce(html,logo,'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>',"badge");
  }
  if(!html.includes('<svg class="app-world-flag" id="app-competition-flag"'))throw Error("Missing competition flag contract");
- replaceOne('data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="'+(neutral?'':first.countryId)+'">'+(neutral?'Country':encode(country.name.en))+'</span>',"country");
+ html=replaceExactlyOnce(html,'data-world-country="'+first.countryId+'">'+encode(country.name.en)+'</span>','id="app-competition-country" data-world-country="'+(neutral?'':first.countryId)+'">'+(neutral?'Country':encode(country.name.en))+'</span>',"country");
  const tier=first.tier===1?'divisionTier1':'divisionTier2',label=first.tier===1?'First division':'Second division';
- replaceOne('data-app-i18n="'+tier+'">'+label+'</span>','id="app-competition-tier" data-app-i18n="'+tier+'">'+label+'</span>',"tier");
- replaceOne('data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">'+(neutral?'—':first.capacity)+'</dd>',"capacity");
- replaceOne('data-app-i18n="tierLabel">Tier</dt><dd>'+first.tier+'</dd>','data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">'+(neutral?'—':first.tier)+'</dd>',"level");
+ html=replaceExactlyOnce(html,'data-app-i18n="'+tier+'">'+label+'</span>','id="app-competition-tier" data-app-i18n="'+tier+'">'+label+'</span>',"tier");
+ html=replaceExactlyOnce(html,'data-app-i18n="capacityLabel">Planned club places</dt><dd>'+first.capacity+'</dd>','data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">'+(neutral?'—':first.capacity)+'</dd>',"capacity");
+ html=replaceExactlyOnce(html,'data-app-i18n="tierLabel">Tier</dt><dd>'+first.tier+'</dd>','data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">'+(neutral?'—':first.tier)+'</dd>',"level");
  const match=html.match(/(<tbody>\n)([\s\S]*?)(\n\s*<\/tbody>)/);
  if(!match||!match[2].includes('data-world-club="'))throw Error("Cannot isolate shared standings rows");
  html=html.replace(match[0],match[1].replace("<tbody>","<tbody id=\"app-standings-body\">")+match[3]);
