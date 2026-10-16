@@ -75,7 +75,7 @@ const indexContent = function indexContent(root){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
  const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="./'+d.id.toLowerCase()+'/">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="/app/competitions/'+d.id.toLowerCase()+'">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
@@ -147,7 +147,7 @@ const detailContent = function detailContent(d,root){
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(d.name)+'</span></h1>\n'+
  '              <div class="app-world-detail-meta">'+inlineCountryFlag(c,"app-competition-flag")+' <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
  '            </div>\n'+
- '            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>\n'+
+ '            <a class="app-competition-return app-link app-link-secondary" href="/app/competitions" data-app-i18n="allDivisions">All competitions</a>\n'+
  '          </header>\n'+competitionTabs(d,detailAppend(d));
 };
 const worldPageReplacements = (depth, division = null) => {
@@ -156,9 +156,9 @@ const worldPageReplacements = (depth, division = null) => {
   const title = division ? division.name : "Competitions";
   return {
     "@@FA_LINE_008@@": "  <title>" + encode(title) + " — Football Architect</title>",
-    "@@FA_LINE_032@@": '            <a class="fa-shell-link" id="app-nav-dashboard" href="' + upToApp + 'dashboard/" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">',
-    "@@FA_LINE_036@@": '            <a class="fa-shell-link" id="app-nav-calendar" href="' + upToApp + 'calendar/" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">',
-    "@@FA_LINE_044@@": '            <a class="fa-shell-link" id="app-nav-settings" href="' + upToApp + 'settings/" data-app-view="settings" aria-label="Settings" data-app-aria="settings">',
+    "@@FA_LINE_032@@": '            <a class="fa-shell-link" id="app-nav-dashboard" href="/app/dashboard" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">',
+    "@@FA_LINE_036@@": '            <a class="fa-shell-link" id="app-nav-calendar" href="/app/calendar" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">',
+    "@@FA_LINE_044@@": '            <a class="fa-shell-link" id="app-nav-settings" href="/app/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">',
     "@@FA_LINE_077@@": '        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title" hidden>',
     "@@FA_LINE_099@@": '        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>',
     "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="' + upToApp + 'dashboard/" data-app-i18n="backDashboard">Back to Dashboard</a>',
