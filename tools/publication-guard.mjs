@@ -72,7 +72,7 @@ export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot}={}) 
   if(!bytes.equals(readFileSync(join(sourceRoot,path))))
    throw Error("Public artifact source mismatch: "+path);
   if(/\.(?:js|html|css|json)$/.test(path)&&
-     /\bit1Demo\b|__faFixtureHooks|tests\/fixtures\/it-1-demo/.test(bytes.toString("utf8")))
+     /\bit1Demo\b|__faFixtureHooks|tests\/fixtures\/it-1-demo|__fa_dev__\/|dev-debug-settings/.test(bytes.toString("utf8")))
    throw Error("Private development fixture referenced by public asset: "+path);
  }
  return actual;
