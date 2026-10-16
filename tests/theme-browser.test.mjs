@@ -393,6 +393,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await tap('#app-competition-season');await wait("!document.getElementById('app-competition-season-menu').hidden");await menuFits('app-competition-season-menu');
         const stacking=await run("(()=>{const menu=document.getElementById('app-competition-season-menu'),m=menu.getBoundingClientRect(),controls=[...document.querySelectorAll('.app-fixtures-navigation button')];let overlaps=0;const above=controls.every(e=>{const r=e.getBoundingClientRect(),l=Math.max(m.left,r.left),t=Math.max(m.top,r.top),right=Math.min(m.right,r.right),bottom=Math.min(m.bottom,r.bottom);if(right<=l||bottom<=t)return true;overlaps++;return menu.contains(document.elementFromPoint((l+right)/2,(t+bottom)/2))});return {above,overlaps}})()");
         assert.equal(stacking.above,true,'season menu paints above overlapping matchday controls');
+        if(season===2){
+          console.log("SEASON_MENU_STACK|"+width+"|"+theme+"|overlapping controls="+stacking.overlaps);
+          await snap("FIXTURES-MOBILE "+width+" "+theme+" season menu",width,height);
+        }
         await tap('#app-competition-season-option-'+season);await expectSeason(season,1);
       }
       for(const lang of ['en','it','de','es','fr']){
