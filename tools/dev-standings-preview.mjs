@@ -30,7 +30,7 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/(?:app\/)?competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
-const DEV_SEASONS = [1, 2]; // Available simulated seasons; extend when data supports more.
+const DEV_SEASONS = [1, 2, 3, 4]; // Isolated fictional DEV previews only; never official season data.
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
   `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,

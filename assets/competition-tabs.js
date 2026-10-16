@@ -73,7 +73,7 @@
   window.addEventListener("resize",revealSelectedTab);
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
-  // Season 2 is an isolated DEV preview, never a public competition season.
+  // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
   const availableSeasons=[...new Set(["1",...devSeasons])];
   const latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
@@ -138,7 +138,7 @@
     });
   });
   // The checked-in competition markup has the season 1 option only.
-  // Add season 2 without duplicating the menu in all generated pages.
+  // Add available DEV seasons without duplicating the menu in all generated pages.
   for(const value of availableSeasons.filter(value=>!seasonMenu.querySelector(`[data-menu-value="${value}"]`))){
     const option=document.createElement("div");
     option.id="app-competition-season-option-"+value;
