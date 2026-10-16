@@ -121,7 +121,7 @@ function setPreviewEnabled(enabled) {
 }
 
 if(validPath){
- waitForRows().then(() => {
+ waitForRows().then(async() => {
   registerDebugControls("standings",[{
    type:"switch",id:"fictional-standings",label:"Fictional standings",
    checked:isPreviewEnabled,onChange:setPreviewEnabled
@@ -134,16 +134,17 @@ if(validPath){
    return widgetRoot?.resetWidgetState()===true;
   }}]);
   widgetRoot=createDebugWidget({page:"standings"});
-  if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
+  if(isPreviewEnabled()){
+   const ok=await setPreviewEnabled(true);
    widgetRoot?.syncVisibility();
-  if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
+   if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
     const input=document.querySelector('[data-dev-control="fictional-standings"]');
     if(input)input.checked=false;
    }
-  });
+  }
  }).catch(error => {
   console.error("DEV Debug unavailable:", error);
- });
+ }).finally(()=>window.faDebugFirstPaintRelease?.());
 }
 
 function strings() { return LANG[document.documentElement.lang] || LANG.en; }

@@ -25,7 +25,13 @@ const server=createServer(async(req,res)=>{
 });
 // Adapter exercises the actual DEV server on an isolated ephemeral test port.
 const devRouter=createPreviewServer();
-const devServer=createServer((req,res)=>{req.headers.host="127.0.0.1:2000";devRouter.emit("request",req,res)});
+let devResourceDelay=0;
+const devServer=createServer((req,res)=>{
+ req.headers.host="127.0.0.1:2000";
+ const send=()=>devRouter.emit("request",req,res);
+ if(devResourceDelay&&(req.url.startsWith("/__fa_dev__/")||req.url.includes("manifest.json")))setTimeout(send,devResourceDelay);
+ else send();
+});
 const chrome=()=>{
   const windows=process.platform==="win32"?[
     process.env.ProgramFiles&&join(process.env.ProgramFiles,"Google","Chrome","Application","chrome.exe"),
@@ -379,6 +385,22 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     assert.equal(await run("!document.getElementById(\"app-competition-season-unavailable\").hidden&&[...document.querySelectorAll(\".app-competition-panel\")].every(p=>p.hidden)"),true);
     await run("document.getElementById(\"app-competition-season\").click();document.getElementById(\"app-competition-season-option-1\").click()");
     assert.equal(await run("!document.getElementById(\"competition-panel-fixtures\").hidden"),true);
+    // Observe actual visible frames during a catalogue-to-competition navigation.
+    await run("(()=>{const slider=document.querySelector('[data-dev-control=\"matchdays\"]');slider.value='4';slider.dispatchEvent(new Event('change'))})()");
+    await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
+    devResourceDelay=350;
+    const observeSource="(()=>{if(location.origin!==\"PLACEHOLDER\")return;const checks=window.__faDevPaintChecks={wrong:0,correct:0,pendingLogo:false};function frame(){const region=document.querySelector('.app-world-standings'),logo=document.getElementById('app-competition-badge');if(document.documentElement.dataset.faDebugPending==='true'&&logo?.getBoundingClientRect().width>0&&getComputedStyle(logo).visibility==='visible')checks.pendingLogo=true;if(region?.getBoundingClientRect().height>0&&getComputedStyle(region).visibility==='visible'&&!region.closest('[hidden]')){const rows=[...document.querySelectorAll('#app-standings-body tr')];if(rows.length===16&&rows.every(r=>r.cells[2].textContent==='4'))checks.correct++;else checks.wrong++}requestAnimationFrame(frame)}requestAnimationFrame(frame)})();".replace("\"PLACEHOLDER\"",JSON.stringify(devOrigin));
+    const observerScript=await cmd("Page.addScriptToEvaluateOnNewDocument",{source:observeSource});
+    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/"});
+    await wait("document.readyState==='complete'&&!!document.querySelector('a.app-division-card')");
+    await run("document.querySelectorAll('a.app-division-card')[2].click()");
+    await wait("window.__faDevPaintChecks?.correct>0");
+    const paints=await run("window.__faDevPaintChecks");
+    assert.equal(paints.wrong,0,"no visible default standings before saved DEV values");
+    assert.equal(paints.pendingLogo,true,"logo remains visible while saved DEV values restore");
+    assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"4");
+    await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:observerScript.identifier});
+    devResourceDelay=0;
     // DIV-ASSET-07: artwork must render from the HTML with all page scripts disabled.
     // Declarative shadow DOM prevents the original .s0/.s1 rules crossing logo boundaries.
     const divisions=JSON.parse(await readFile(join(root,"data/divisions.json"),"utf8"));

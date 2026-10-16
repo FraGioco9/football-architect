@@ -340,6 +340,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
+      window:{faDebugFirstPaintRelease:()=>operations.push("reveal")},
       waitForRows: () => hydration,
       createDebugWidget: () => { operations.push("widget"); signalMounted(); },
       registerDebugControls: () => {},
@@ -356,6 +357,8 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     hydrate();
     await widgetMounted;
     assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(operations.at(-1),"reveal","initial visibility waits for DEV restoration");
   }
 });
 

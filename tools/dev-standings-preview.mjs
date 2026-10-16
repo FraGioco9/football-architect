@@ -5,6 +5,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath } from "./publication-guard.mjs";
+import { DEBUG_FIRST_PAINT } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -107,7 +108,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
         if (DETAIL.test(raw)) {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
-          body = Buffer.from(html.replace("</head>", INJECT + "\n</head>"), "utf8");
+          body = Buffer.from(html.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
         }
       }
       res.writeHead(200, {

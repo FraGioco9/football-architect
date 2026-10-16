@@ -67,6 +67,10 @@ The existing DEV **Fictional standings** switch, **0–30 matchdays** slider,
 Fixtures too. There is no additional debug panel, switch or persistence key.
 The existing deterministic DEV model supplies both views; future scores are
 removed and marked scheduled. No fictional-preview notice is displayed in Fixtures.
+On navigation/refresh with DEV already ON, a DEV-only head bootstrap keeps the
+standings and Fixtures regions pending until the session model commits, so the
+first visible values are the saved DEV values. Header/logo rendering is unaffected.
+Public HTML is unchanged. Errors and a bounded fallback release pending content.
 Turning the switch OFF or resetting restores both views. Preview data and its
 generator remain excluded from publication.
 
