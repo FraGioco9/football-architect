@@ -28,7 +28,7 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12]\/(?:index\.html)?$/;
+const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
 const INJECT = '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>';
 
 function ipv4(value) {
@@ -99,7 +99,7 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
-        const file = (raw.endsWith("/") ? raw + "index.html" : raw).slice(1);
+        const file = (raw.endsWith("/") ? raw + "index.html" : DETAIL.test(raw) ? raw + "/index.html" : raw).slice(1);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
