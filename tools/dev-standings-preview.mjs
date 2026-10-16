@@ -29,7 +29,11 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
-const INJECT = '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>';
+const INJECT = [
+  '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
+  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list{visibility:hidden}</style>',
+  '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
+].join("\n");
 
 function ipv4(value) {
   if (typeof value !== "string") return null;
