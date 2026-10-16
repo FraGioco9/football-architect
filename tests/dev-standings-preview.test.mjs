@@ -97,6 +97,22 @@ test("DEV-LEAGUES: deterministic complete 16x16 standings and 1,920 DEV fixture 
   assert.equal(snapshots.length, 16);
 });
 
+test("DEV-SEASONS: seasons 1–4 generate deterministic, distinct fictional schedules", () => {
+  const division = manifest.divisions[0];
+  const seasons = [1, 2, 3, 4].map(season => createPreviewStandings(division, 30, season));
+  for (let index = 0; index < seasons.length; index++) {
+    const season = index + 1;
+    const first = seasons[index];
+    assert.equal(first.season, season);
+    assert.equal(first.rows.length, 16);
+    assert.equal(first.fixtures.length, 240);
+    assert.deepEqual(createPreviewStandings(division, 30, season), first);
+  }
+  assert.equal(new Set(seasons.map(model => JSON.stringify(model.fixtures))).size, 4,
+    "each season must have a distinct deterministic schedule");
+  assert.throws(() => createPreviewStandings(division, 30, 5), /Invalid DEV season/);
+});
+
 test("DEV-GATE-01: published artifact excludes all preview sources and private fixtures", () => {
   const preview = ["tools/dev-debug-widget.mjs","tools/dev-standings-preview.mjs",
     "tools/dev-standings-preview-client.mjs","tools/dev-standings-preview-data.mjs",
