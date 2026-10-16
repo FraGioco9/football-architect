@@ -115,6 +115,18 @@
       event.preventDefault();set({view:views[next]},{focus:true});
     });
   });
+  // The checked-in competition markup has the season 1 option only.
+  // Add season 2 without duplicating the menu in all generated pages.
+  if(!seasonMenu.querySelector('[data-menu-value="2"]')){
+    const option=document.createElement("div");
+    option.id="app-competition-season-option-2";
+    option.className="language-option";
+    option.setAttribute("role","option");
+    option.dataset.menuValue="2";
+    option.setAttribute("aria-selected","false");
+    option.textContent="2";
+    seasonMenu.append(option);
+  }
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,
     [...seasonMenu.querySelectorAll("[data-menu-value]")],value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
