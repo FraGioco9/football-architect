@@ -293,12 +293,12 @@ test("APP-HOST-URL-01: production app subdomain and local static preview routes"
   runInNewContext(match[0]+"\nappHref("+JSON.stringify(pathname)+")",
    {window:{location:{hostname,protocol}}});
  for(const [host,path,expected] of [
-  ["football.example","/app/dashboard/","https://app.football.example/dashboard/"],
-  ["www.football.example","/app/competitions/it-1/","https://app.football.example/competitions/it-1/"],
-  ["app.football.example","/app/competitions/it-1/","/competitions/it-1/"],
-  ["app.football.example","/app/settings/#app-language-heading","/settings/#app-language-heading"],
-  ["localhost","/app/competitions/it-1/","/app/competitions/it-1/"],
-  ["192.168.1.90","/app/calendar/","/app/calendar/"],
-  ["football-architect.vercel.app","/app/calendar/","/app/calendar/"]
+  ["football.example","/app/dashboard","https://app.football.example/dashboard"],
+  ["www.football.example","/app/competitions/it-1","https://app.football.example/competitions/it-1"],
+  ["app.football.example","/app/competitions/it-1","/competitions/it-1"],
+  ["app.football.example","/app/settings#app-language-heading","/settings#app-language-heading"],
+  ["localhost","/app/competitions/it-1","/app/competitions/it-1"],
+  ["192.168.1.90","/app/calendar","/app/calendar"],
+  ["football-architect.vercel.app","/app/calendar","/app/calendar"]
  ]) assert.equal(resolve(host,path),expected,host);
 });
