@@ -201,6 +201,7 @@ if (panel && divisionId) {
           const dismiss=()=>{
             if(closing||!dialog.open)return;
             closing=true;
+            if(pointerDismiss){close.blur();expand.blur();}
             if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){
               dialog.close();return;
             }
