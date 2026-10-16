@@ -59,12 +59,14 @@
   const listeners=new Set();let state;
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Season 2 is an isolated DEV preview, never a public competition season.
-  const devSeasonTwo=!!document.querySelector('script[data-fa-dev-preview]');
+  const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\\d*$/.test(x));
+  const availableSeasons=[...new Set(["1",...devSeasons])];
+  const latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
   function read(){
     const params=new URL(window.location.href).searchParams;
     const id=params.get("season"),round=params.get("matchday");
-    return {season:/^[1-9]\d{0,8}$/.test(id||"")?id:(devSeasonTwo?"2":"1"),
+    return {season:/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason,
       view:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:/^(?:[1-9]|[12]\d|30)$/.test(round||"")?Number(round):1};
   }
@@ -76,7 +78,7 @@
     url.searchParams.set("season",state.season);url.searchParams.set("view",state.view);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
-    const index=views.indexOf(state.view),available=state.season==="1"||(devSeasonTwo&&state.season==="2");
+    const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
     document.documentElement.dataset.competitionView=state.view;
     document.documentElement.dataset.competitionSeasonUnavailable=String(!available);
     seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available;
@@ -102,7 +104,7 @@
   }
   window.faCompetitionRoute={get:()=>({...state}),set,
     defaultMatchday(round){
-      if(!pendingDefaultMatchday||state.view!=="fixtures"||!(state.season==="1"||(devSeasonTwo&&state.season==="2")))return;
+      if(!pendingDefaultMatchday||state.view!=="fixtures"||!(availableSeasons.includes(state.season)))return;
       pendingDefaultMatchday=false;
       if(Number.isInteger(round)&&round>=1&&round<=30)apply({...state,matchday:round},{replace:true});
     },
@@ -121,14 +123,14 @@
   });
   // The checked-in competition markup has the season 1 option only.
   // Add season 2 without duplicating the menu in all generated pages.
-  if(devSeasonTwo&&!seasonMenu.querySelector('[data-menu-value="2"]')){
+  for(const value of availableSeasons.filter(value=>!seasonMenu.querySelector(`[data-menu-value="${value}"]`))){
     const option=document.createElement("div");
-    option.id="app-competition-season-option-2";
+    option.id="app-competition-season-option-"+value;
     option.className="language-option";
     option.setAttribute("role","option");
-    option.dataset.menuValue="2";
+    option.dataset.menuValue=value;
     option.setAttribute("aria-selected","false");
-    option.textContent="2";
+    option.textContent=value;
     seasonMenu.append(option);
   }
   // Show the newest available season first, including DEV-only seasons.
