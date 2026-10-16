@@ -74,3 +74,15 @@ The owner reports that Vercel's Access Groups UI prompts an **Enterprise upgrade
 **Revised candidate:** an application-controlled server-side authorization gateway in front of the protected artifact, backed by a per-identity allowlist. Authenticate identities using a provider whose verified identity claims can be checked server-side, then enforce the allowlist on **every** protected request before serving any bytes. Prefer existing supported identity infrastructure over a new password store. Deny requests when identity verification, membership lookup, or gateway execution fails.
 
 Architecture selection remains provisional until the deployment topology is verified: a static artifact alone cannot enforce a server-side allowlist, and Vercel Authentication must not be assumed to pass a suitable verified identity claim to the application. Assess supported Vercel Functions/middleware and identity integration before choosing the implementation. Maintain the protected publication block and require separate G10 approval.
+
+## Owner architecture decision — Cloudflare Access (2026-10-16)
+
+The owner selected **Cloudflare Access** instead of Vercel Enterprise Access Groups or a custom login. Keep Vercel as the hosting provider and retain the existing public site unchanged.
+
+**Proposed protected path:** Cloudflare Zero Trust Access application for a dedicated Debug hostname; email one-time PIN as the initial identity method, with an explicit per-email allow policy (owner and individually approved collaborators). Deny everyone else. The protected application must cover all paths and resources, including assets and direct navigation.
+
+**Mandatory origin-bypass gate:** Cloudflare Access on a custom hostname does not, by itself, prevent direct requests to a Vercel-generated deployment URL. Before any G10 publication, demonstrate an enforceable origin-side restriction that denies unauthenticated direct-origin access, or adopt a deployment topology with equivalent independently tested guarantees. Do not rely on hostname secrecy, DNS, robots.txt, or client-side checks. Verify interactions with Vercel deployment protection and custom-domain exclusions.
+
+**Pre-implementation checks:** confirm the available Cloudflare Zero Trust plan limits and identity policy features; verify DNS/hostname ownership, Vercel project deployment-protection behavior, exact origin routing, and whether a server-side Access JWT validation gateway is needed. Never put a Cloudflare service token in a public static artifact.
+
+No Cloudflare application, DNS change, identity policy, deployment, or Vercel setting is authorized by this design decision alone. Existing G10 rejection remains active.
