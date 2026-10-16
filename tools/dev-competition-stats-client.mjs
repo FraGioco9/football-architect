@@ -171,22 +171,34 @@ if (panel && divisionId) {
           close.type="button";close.setAttribute("aria-label","Close");
           let closing=false;
           let pointerDismiss=false;
+          let fallbackClose;
           close.addEventListener("pointerdown",()=>{pointerDismiss=true});
+          const finishClose=()=>{
+            if(!dialog.open)return;
+            clearTimeout(fallbackClose);
+            // Safari restores focus to the modal opener when close() runs.
+            // Redirect touch dismissal focus to a neutral, non-visible target.
+            if(pointerDismiss){
+              const neutral=document.createElement("span");
+              neutral.tabIndex=-1;
+              neutral.style.cssText="position:fixed;width:0;height:0;overflow:hidden";
+              document.body.append(neutral);
+              neutral.focus({preventScroll:true});
+              dialog.close();
+              requestAnimationFrame(()=>neutral.remove());
+            }else dialog.close();
+          };
           const dismiss=()=>{
             if(closing||!dialog.open)return;
             closing=true;
-            if(pointerDismiss){close.blur();expand.blur();}
             if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){
-              dialog.close();return;
+              finishClose();return;
             }
             dialog.classList.add("fa-dev-stats-closing");
-            const finish=event=>{
-              if(event.target!==dialog||event.animationName!=="fa-stats-dialog-out")return;
-              dialog.removeEventListener("animationend",finish);
-              dialog.close();
-            };
-            dialog.addEventListener("animationend",finish);
-            dialog.addEventListener("animationcancel",()=>{if(dialog.open)dialog.close();},{once:true});
+            dialog.addEventListener("animationend",event=>{
+              if(event.target===dialog&&event.animationName==="fa-stats-dialog-out")finishClose();
+            });
+            fallbackClose=setTimeout(finishClose,250);
           };
           close.addEventListener("click",dismiss);
           dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
@@ -219,11 +231,9 @@ if (panel && divisionId) {
           teams.forEach((team,index)=>all.append(buildRow(team,index)));
           dialog.append(header,all);
           dialog.addEventListener("close",()=>{
+            clearTimeout(fallbackClose);
             dialog.remove();
-            requestAnimationFrame(()=>{
-              if(pointerDismiss&&document.activeElement instanceof HTMLElement)document.activeElement.blur();
-              expand.blur();
-            });
+            if(pointerDismiss)requestAnimationFrame(()=>expand.blur());
           });
           window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
