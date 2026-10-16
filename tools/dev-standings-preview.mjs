@@ -104,12 +104,20 @@ export function createPreviewServer({ root = ROOT } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
+        // The public competition index links to season 1. In the isolated DEV
+        // server, point those links to the latest preview season instead.
+        if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
+          body = Buffer.from(body.toString("utf8").replace(
+            /(\\/app\\/competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\\?season=)1(?=&amp;|&|["'])/g,
+            "$12"
+          ), "utf8");
+        }
         if (DETAIL.test(raw)) {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.
           const params = new URL(req.url, "http://localhost").searchParams;
-          const season = params.get("season") === "2" ? "2" : "1";
+          const season = params.get("season") === "1" ? "1" : "2";
           const seasonHtml = season === "2"
             ? html.replace('id="app-competition-season-value">1</span>',
                 'id="app-competition-season-value">2</span>')
