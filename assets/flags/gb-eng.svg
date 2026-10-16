@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 12"><g clip-path="url(#GB-ENG_svg__a)"><path fill="#fff" d="M0 0H16V12H0z"/><path fill="#F7FCFF" d="M0 0H16V12H0z"/><path fill="#F50302" fill-rule="evenodd" d="M8.87512 0H7.09734V5H0V7H7.09734V12H8.87512V7H16V5H8.87512V0Z" clip-rule="evenodd"/></g><defs><clipPath id="GB-ENG_svg__a"><path fill="#fff" d="M0 0H16V12H0z"/></clipPath></defs></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 15">
+<rect width="25" height="15" fill="#FFF"/>
+<g fill="#CE1124">
+<rect width="3" height="15" x="11"/>
+<rect width="25" height="3" y="6"/>
+</g>
+</svg>
