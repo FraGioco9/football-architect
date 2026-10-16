@@ -501,7 +501,7 @@ test("STANDINGS-UX-01D: mobile compact form keeps its appearance and opens toolt
  const client=read("tools/dev-standings-preview-client.mjs").toString();
  const canonical=read("assets/competition-page.js").toString();
  assert.ok(client.includes('item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")'));
- assert.ok(client.includes('listen(btn,"click",e=>{e.preventDefault();e.stopPropagation();},{capture:true})'));
+ assert.ok(client.includes('if(entry.mobile){e.preventDefault();e.stopPropagation();}'));
  assert.ok(client.includes('[...entries,...mobileEntries]'));
  assert.ok(canonical.includes('element("span","app-world-form-dot app-world-form-"'));
  assert.ok(!client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
