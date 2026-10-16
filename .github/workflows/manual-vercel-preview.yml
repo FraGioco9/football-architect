@@ -13,6 +13,14 @@ on:
         description: Exact 40-character PR HEAD approved for Preview
         required: true
         type: string
+      artifact_contract:
+        description: Explicit artifact contract (protected DEV publication is disabled)
+        required: true
+        default: public
+        type: choice
+        options:
+          - public
+          - protected_debug
 
 permissions:
   contents: read
@@ -24,7 +32,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-contract:
+    name: Reject unknown artifact contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail closed for unknown contract
+        env:
+          ARTIFACT_CONTRACT: ${{ inputs.artifact_contract }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_CONTRACT" == "public" || "$ARTIFACT_CONTRACT" == "protected_debug" ]] || exit 1
+  stage-protected-debug:
+    name: Protected Debug publication guard (disabled)
+    needs: validate-contract
+    if: ${{ inputs.artifact_contract == 'protected_debug' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Block protected Debug until independent G10 deployment authorization
+        run: |
+          echo 'Protected Debug publication remains disabled until G10 is PASS and separately authorized'
+          exit 1
   stage-public:
+    needs: validate-contract
+    if: ${{ inputs.artifact_contract == 'public' }}
     name: Exact-head CI and public artifact
     runs-on: ubuntu-latest
     timeout-minutes: 20
