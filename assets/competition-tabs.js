@@ -77,9 +77,9 @@
   try{const raw=sessionStorage.getItem(tabScrollKey);if(raw!==null&&Number.isFinite(Number(raw)))savedTabScroll=Math.max(0,Number(raw))}catch{}
   tablist.addEventListener("scroll",()=>{syncTabOverflow();if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}},{passive:true});
   window.addEventListener("pagehide",()=>{if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}});
-  // Resizing and late layout hydration must not override a manually scrolled tab strip.
-  window.addEventListener("resize",syncTabOverflow);
-  if(typeof ResizeObserver!=="undefined")new ResizeObserver(syncTabOverflow).observe(tablist);
+  // Keep the selected view visible when viewport size or tab layout changes.
+  window.addEventListener("resize",revealSelectedTab);
+  if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Season 2 is an isolated DEV preview, never a public competition season.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
