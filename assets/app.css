@@ -318,6 +318,7 @@ html[data-competition-view="history"] #competition-tab-history,
 html[data-competition-view="rules"] #competition-tab-rules,
 html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);background:#21483d}
 .app-competition-tab:focus-visible,.app-competition-panel:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(hover:none){.app-competition-tab:hover{background:transparent;color:var(--muted)}.app-competition-tab:focus:not(:focus-visible),.app-competition-panel:focus:not(:focus-visible){outline:none;box-shadow:none}.app-competition-panel:focus-visible{outline:none}}
 .app-competition-panel{margin-top:14px;min-width:0}
 .app-competition-panel[hidden]{display:none}
 .app-competition-panel>.app-world-standings{margin-top:0}
