@@ -14,10 +14,8 @@
   const choices=[...picker.querySelectorAll("[data-fixture-round-choice]")];
   if(choices.length!==30)return;
   let rounds=null,selected=navigation.get().matchday;
-  function closePicker(focus=false){
-    picker.hidden=true;fields.round.setAttribute("aria-expanded","false");
-    if(focus)fields.round.focus();
-  }
+  const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
+    document.querySelector(".app-fixtures-navigation"));
   const element=(tag,cls="",text="")=>{
     const item=document.createElement(tag);item.className=cls;item.textContent=text;return item;
   };
@@ -90,8 +88,8 @@
     const available=rounds!==null&&navigation.get().season==="1";
     fields.round.value=String(selected);fields.round.disabled=!available;
     number.textContent=String(selected);
-    for(const choice of choices)choice.setAttribute("aria-pressed",String(Number(choice.dataset.fixtureRoundChoice)===selected));
-    if(!available)closePicker();
+    roundMenu.sync(String(selected));
+    if(!available)roundMenu.close();
     fields.previous.disabled=!available||selected===1;
     fields.next.disabled=!available||selected===30;
     fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
@@ -104,39 +102,10 @@
   function select(value){
     const round=Number(value);
     if(rounds&&Number.isInteger(round)&&round>=1&&round<=30){
-      const returnFocus=!picker.hidden;navigation.set({matchday:round});closePicker(returnFocus);
+      navigation.set({matchday:round});
     }
   }
-  navigation.subscribe(route=>{selected=route.matchday;closePicker();render()});
-  fields.round.addEventListener("click",()=>{
-    if(fields.round.disabled)return;
-    const open=picker.hidden;picker.hidden=!open;
-    fields.round.setAttribute("aria-expanded",String(open));
-    if(open)choices[selected-1].focus();
-  });
-  choices.forEach((choice,index)=>{
-    choice.addEventListener("click",()=>select(choice.dataset.fixtureRoundChoice));
-    choice.addEventListener("keydown",event=>{
-      let next=index;
-      if(event.key==="ArrowRight")next=Math.min(29,index+1);
-      else if(event.key==="ArrowLeft")next=Math.max(0,index-1);
-      else if(event.key==="ArrowDown")next=Math.min(29,index+6);
-      else if(event.key==="ArrowUp")next=Math.max(0,index-6);
-      else if(event.key==="Home")next=0;
-      else if(event.key==="End")next=29;
-      else return;
-      event.preventDefault();choices[next].focus();
-    });
-  });
-  picker.addEventListener("keydown",event=>{
-    if(event.key==="Escape"){event.preventDefault();event.stopPropagation();closePicker(true)}
-  });
-  document.addEventListener("click",event=>{
-    if(!picker.hidden&&!picker.contains(event.target)&&!fields.round.contains(event.target))closePicker();
-  });
-  picker.addEventListener("focusout",event=>{
-    if(!picker.contains(event.relatedTarget)&&event.relatedTarget!==fields.round)closePicker();
-  });
+  navigation.subscribe(route=>{selected=route.matchday;roundMenu.close();render()});
   fields.previous.addEventListener("click",()=>select(selected-1));
   fields.next.addEventListener("click",()=>select(selected+1));
   // Validate before returning a commit function; rejected input leaves the view intact.

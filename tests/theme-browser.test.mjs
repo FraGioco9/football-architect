@@ -158,11 +158,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
         await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
         await run("document.getElementById('app-fixtures-round').click()");
-        const picker=await run("(()=>{const p=document.getElementById('app-fixtures-picker'),b=p.getBoundingClientRect();return {open:!p.hidden,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded'),focused:document.activeElement.dataset.fixtureRoundChoice,fit:b.left>=0&&b.right<=innerWidth}})()");
-        assert.deepEqual(picker,{open:true,expanded:"true",focused:"1",fit:true});
+        const picker=await run("(()=>{const p=document.getElementById('app-fixtures-picker'),b=p.getBoundingClientRect();return {open:!p.hidden,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded'),focused:document.activeElement.id,active:document.getElementById('app-fixtures-round').getAttribute('aria-activedescendant'),fit:b.left>=0&&b.right<=innerWidth}})()");
+        assert.deepEqual(picker,{open:true,expanded:"true",focused:"app-fixtures-round",active:"app-fixtures-round-option-1",fit:true});
+        const sameMenuStyle=await run("(()=>{const keys=['backgroundColor','borderColor','borderRadius','boxShadow','padding'],reference=getComputedStyle(document.getElementById('language-options'));return ['app-fixtures-picker','app-competition-season-menu'].every(id=>{const style=getComputedStyle(document.getElementById(id));return keys.every(key=>style[key]===reference[key])})})()");
+        assert.equal(sameMenuStyle,true,"competition dropdowns share Settings menu styles");
         await snap(name+" "+theme+" round picker",w,h);
-        await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));document.activeElement.click()");
-        assert.equal(await run("window.faCompetitionRoute.get().matchday"),7);
+        await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
+        assert.equal(await run("window.faCompetitionRoute.get().matchday"),2);
         assert.equal(await run("document.activeElement.id"),"app-fixtures-round");
         await run("document.getElementById('app-fixtures-round').click();document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
         assert.equal(await run("document.getElementById('app-fixtures-picker').hidden"),true);
@@ -356,7 +358,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     assert.equal(await run("!!document.querySelector('[data-dev-control=\"fictional-standings\"]').checked"),true);
     await run("window.faCompetitionRoute.set({season:\"2\"})");
     assert.equal(await run("!document.getElementById(\"app-competition-season-unavailable\").hidden&&[...document.querySelectorAll(\".app-competition-panel\")].every(p=>p.hidden)"),true);
-    await run("const season=document.getElementById(\"app-competition-season\");season.value=\"1\";season.dispatchEvent(new Event(\"change\"))");
+    await run("document.getElementById(\"app-competition-season\").click();document.getElementById(\"app-competition-season-option-1\").click()");
     assert.equal(await run("!document.getElementById(\"competition-panel-fixtures\").hidden"),true);
     // DIV-ASSET-07: artwork must render from the HTML with all page scripts disabled.
     // Declarative shadow DOM prevents the original .s0/.s1 rules crossing logo boundaries.

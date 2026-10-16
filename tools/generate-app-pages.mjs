@@ -104,16 +104,14 @@ ${rows}
             </div>
           </div>`;
 };
+const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const fixturesContent = ()=>`
             <div class="app-fixtures-toolbar">
               <div class="app-fixtures-navigation">
                 <button type="button" class="app-link app-link-secondary" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled>‹</button>
-                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" aria-haspopup="dialog" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span data-app-i18n="fixturesMatchday">Matchday</span> <strong id="app-fixtures-round-number">1</strong><span class="language-chevron" aria-hidden="true">⌄</span></button>
-                <div id="app-fixtures-picker" class="app-fixtures-picker" role="dialog" aria-labelledby="app-fixtures-picker-label" hidden>
-                  <span id="app-fixtures-picker-label" class="sr-only" data-app-i18n="fixturesMatchday">Matchday</span>
-                  <div class="app-fixtures-round-grid">
-${Array.from({length:30},(_,i)=>'                    <button type="button" class="app-theme-choice" data-fixture-round-choice="'+(i+1)+'" aria-pressed="'+(i===0)+'"><span class="sr-only" data-app-i18n="fixturesMatchday">Matchday</span> '+(i+1)+'</button>').join("\n")}
-                  </div>
+                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span>${menuChevron}</button>
+                <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
+${Array.from({length:30},(_,i)=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+(i+1)+'" data-menu-value="'+(i+1)+'" data-fixture-round-choice="'+(i+1)+'" aria-selected="'+(i===0)+'"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+(i+1)+'</div>').join("\n")}
                 </div>
                 <button type="button" class="app-link app-link-secondary" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled>›</button>
               </div>
@@ -159,7 +157,7 @@ const detailContent = function detailContent(d,root){
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+encode(d.name)+'</span></h1>\n'+
  '              <div class="app-world-detail-meta"><img class="app-world-flag" alt="" src="'+root+encode(c.flagAsset)+'" width="28" height="20"> <span data-world-country="'+d.countryId+'">'+encode(c.name.en)+'</span><span aria-hidden="true">·</span> <span data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
  '            </div>\n'+
- '            <div class="app-competition-season"><label for="app-competition-season" data-app-i18n="competitionSeason">Season</label><select id="app-competition-season" class="language-trigger"><option value="" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</option><option value="1" selected>1</option></select></div>\n'+
+ '            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span>'+menuChevron+'</button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="../" data-app-i18n="allDivisions">All competitions</a>\n'+
  '          </header>\n'+
  '          <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>\n'+competitionTabs(d,detailAppend(d));

@@ -22,18 +22,19 @@ test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an h
 function node(tag='div'){
  const n={tagName:tag,children:[],dataset:{},attrs:{},events:{},textContent:'',value:'1',disabled:true,hidden:false,
   append(...items){this.children.push(...items)},appendChild(item){this.children.push(item);return item},
-  replaceChildren(...items){this.children=[...items]},setAttribute(k,v){this.attrs[k]=String(v)},
+  replaceChildren(...items){this.children=[...items]},removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=String(v)},
   focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
  return n;
 }
 function setup(d=divisions[0]){
  const fields=new Map(['round','previous','next','list','empty','summary','picker','round-number'].map(id=>['app-fixtures-'+id,node()]));
- const choices=Array.from({length:30},(_,i)=>({...node('button'),dataset:{fixtureRoundChoice:String(i+1)}}));
+ const choices=Array.from({length:30},(_,i)=>({...node('button'),id:"app-fixtures-round-option-"+(i+1),dataset:{fixtureRoundChoice:String(i+1),menuValue:String(i+1)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),set(patch){if(patch.matchday!==undefined&&(!Number.isInteger(patch.matchday)||patch.matchday<1||patch.matchday>30))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
  const window={faCompetitionDivision:d,faCompetitionRoute:route,faAppRenderLanguage(){}};
- const document={addEventListener(){},documentElement:{lang:'en'},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
+ const document={querySelector:selector=>selector===".app-fixtures-navigation"?node():null,addEventListener(){},documentElement:{lang:'en'},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
+ runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
  return {view:window.faFixtures,fields,route,choices};
 }

@@ -7,10 +7,14 @@ const views=['standings','fixtures','stats','history','rules','awards'];
 function setup(path='/app/competitions/it-1/'){
  const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
-  setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
+  removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
  const tabs=views.map(view=>{const tab=item();tab.id='competition-tab-'+view;tab.getAttribute=()=> 'competition-panel-'+view;fields.set('competition-panel-'+view,item());return tab});
  fields.set('app-competition-season',item());fields.set('app-competition-season-unavailable',item());
- const document={documentElement:{dataset:{}},getElementById:id=>fields.get(id),querySelector:()=>({querySelectorAll:()=>tabs})};
+ const option=item();option.id='app-competition-season-option-1';option.dataset.menuValue='1';
+ const menu=item();menu.querySelectorAll=()=>[option];fields.set('app-competition-season-menu',menu);
+ fields.set('app-competition-season-value',item());fields.set('app-competition-season-control',{contains:()=>false});
+ fields.set('app-competition-season-option-1',option);
+ const document={addEventListener(){},documentElement:{dataset:{}},getElementById:id=>fields.get(id),querySelector:()=>({querySelectorAll:()=>tabs})};
  const window={get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
@@ -39,7 +43,7 @@ test('COMPETITION-URL: invalid parameters normalize, unavailable seasons never s
  assert.equal(missing.window.faCompetitionRoute.get().season,'2');
  assert.equal(missing.fields.get('app-competition-season-unavailable').hidden,false);
  assert.equal(views.every(v=>missing.fields.get('competition-panel-'+v).hidden),true);
- missing.fields.get('app-competition-season').value='1';missing.fields.get('app-competition-season').events.change();
+ missing.fields.get('app-competition-season-option-1').events.click();
  assert.equal(missing.fields.get('competition-panel-fixtures').hidden,false);
 });
 test('COMPETITION-URL: keyboard navigation retains one active tab and does not duplicate history entries',()=>{
@@ -54,7 +58,7 @@ test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views
  const html=readFileSync(new URL('../app/competitions/it-1/index.html',import.meta.url),'utf8');
  const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
  for(const season of ['1','2','12','999999999']){
-  const document={documentElement:{dataset:{}}};
+  const document={addEventListener(){},documentElement:{dataset:{}}};
   runInNewContext(bootstrap,{document,URLSearchParams,location:{search:'?season='+season+'&view=fixtures&matchday=12'}});
   assert.equal(document.documentElement.dataset.competitionView,'fixtures');
   assert.equal(document.documentElement.dataset.competitionSeasonUnavailable,String(season!=='1'));

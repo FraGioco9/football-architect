@@ -5,9 +5,11 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 ## Display decisions for review
 
 - One round at a time, with a top-centered Matchday button and previous/next
-  buttons. The Matchday button opens a 30-button picker in the shared site style.
-  Arrow keys move within the picker; Home/End jump to its ends, Escape closes
-  it and returns focus, and choosing a round closes it. No repeated Fixtures heading.
+  buttons. The Matchday button opens a vertical, scrollable list of 30 options using
+  the same language-control, language-trigger, language-menu and language-option
+  styling as Settings. Season uses the same custom combobox, without a native
+  select. Both share keyboard/pointer behavior: Up/Down, Home/End, Enter/Space,
+  Escape, Tab and outside-click dismissal, with active-descendant focus. No repeated Fixtures heading.
   The round/match-count announcement is available only to assistive technology.
   Round 1 is the default when the URL has no valid matchday. Changing data or
   resetting DEV results preserves the URL-selected round.
