@@ -13,9 +13,11 @@ import {createPreviewServer} from "../tools/dev-standings-preview.mjs";
 import {setTimeout as delay} from "node:timers/promises";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"};
+let competitionResourceDelay=0;
 const server=createServer(async(req,res)=>{
   try{
     const route=new URL(req.url,"http://localhost").pathname;
+    if(competitionResourceDelay&&route==="/assets/competition-page.js")await delay(competitionResourceDelay);
     let file=resolve(root,"."+decodeURIComponent(route));
     if(file!==root&&!file.startsWith(root+sep))throw Error("outside root");
     if(!extname(file))file=join(file,"index.html");
@@ -429,6 +431,35 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     assert.equal(await run("document.querySelector('[data-dev-control=\"matchdays\"]').value"),"4");
     await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:observerScript.identifier});
     devResourceDelay=0;
+    // URL-selected tab must be highlighted on every visible frame before runtime hydration.
+    competitionResourceDelay=350;
+    const tabObserver=await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`(()=>{
+      const expected=new URLSearchParams(location.search).get('view');
+      const frames=window.__faTabPaint={wrong:0,correct:0};
+      function frame(){
+        const tabs=[...document.querySelectorAll('.app-competition-tab')];
+        if(tabs.length===6&&tabs[0].getBoundingClientRect().height>0){
+          const color=document.documentElement.dataset.theme==='light'?'rgb(217, 238, 225)':'rgb(33, 72, 61)';
+          const active=tabs.filter(tab=>getComputedStyle(tab).backgroundColor===color);
+          if(active.length===1&&active[0].id==='competition-tab-'+expected&&active[0].getAttribute('aria-selected')==='true'&&active[0].tabIndex===0&&tabs.filter(tab=>tab.getAttribute('aria-selected')==='true').length===1)frames.correct++;else frames.wrong++;
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();`});
+    for(const theme of ['dark','light']){
+      await run("localStorage.setItem('football-architect:theme','"+theme+"')");
+      for(const view of ['fixtures','stats','history','rules','awards']){
+        await cmd("Page.navigate",{url:origin+'/app/competitions/it-1?season=1&view='+view});
+        await wait("document.readyState==='complete'&&window.__faTabPaint?.correct>0");
+        assert.equal(await run("window.__faTabPaint.wrong"),0,theme+'/'+view+' initial tab paint');
+        await cmd("Page.reload");
+        await wait("document.readyState==='complete'&&window.__faTabPaint?.correct>0");
+        assert.equal(await run("window.__faTabPaint.wrong"),0,theme+'/'+view+' refresh tab paint');
+      }
+    }
+    await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:tabObserver.identifier});
+    competitionResourceDelay=0;
     // DIV-ASSET-07: artwork must render from the HTML with all page scripts disabled.
     // Declarative shadow DOM prevents the original .s0/.s1 rules crossing logo boundaries.
     const divisions=JSON.parse(await readFile(join(root,"data/divisions.json"),"utf8"));

@@ -46,7 +46,11 @@ unconnected.
 
 The generated detail pages have a fixed same-origin base URL so assets/links work
 with or without the directory slash. A small head bootstrap hides another
-view/season before the shared runtime binds URL state. The DEV server accepts
+view/season before the shared runtime binds URL state. The same head URL state
+also controls the active tab colors immediately; a synchronous post-tab bootstrap
+sets the selected ARIA state and tab stop before the external runtime loads.
+Direct load and refresh are checked frame by frame under delayed runtime loading
+for every non-Standings view in both themes. The DEV server accepts
 canonical URLs without broadening its host, network or file allowlists.
 `vercel.json` contains only competition-specific redirects and rewrites. The
 publication guard validates its exact structure; the manual Preview workflow

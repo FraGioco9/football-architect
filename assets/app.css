@@ -309,7 +309,13 @@ html{scroll-padding-top:72px}
 .app-competition-tabs::-webkit-scrollbar-track{background:transparent}
 .app-competition-tab{flex:0 0 112px;box-sizing:border-box;width:112px;min-width:112px;max-width:112px;overflow:hidden;text-overflow:ellipsis;text-align:center;border:0;border-radius:8px;padding:10px 6px;min-height:40px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
 .app-competition-tab:hover{color:var(--text);background:rgba(100,203,169,.08)}
-.app-competition-tab.is-active{color:var(--text);background:#21483d}
+html:not([data-competition-view]) .app-competition-tab.is-active,
+html[data-competition-view="standings"] #competition-tab-standings,
+html[data-competition-view="fixtures"] #competition-tab-fixtures,
+html[data-competition-view="stats"] #competition-tab-stats,
+html[data-competition-view="history"] #competition-tab-history,
+html[data-competition-view="rules"] #competition-tab-rules,
+html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);background:#21483d}
 .app-competition-tab:focus-visible,.app-competition-panel:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-competition-panel{margin-top:14px;min-width:0}
 .app-competition-panel[hidden]{display:none}
@@ -375,7 +381,13 @@ html[data-theme="light"] .app-world-standing-table tr>*:nth-child(10){background
 html[data-theme="light"] .app-world-standing-table thead tr>*:nth-child(10){background:#B7DCC7;color:#173F30}
 html[data-theme="light"] .app-world-club-crest-placeholder{border-color:#9BB9AA;background:#EAF4EE;color:#507F67}
 html[data-theme="light"] .app-competition-tab:hover{background:#EAF4EE}
-html[data-theme="light"] .app-competition-tab.is-active{background:#D9EEE1;color:#174C37}
+html[data-theme="light"]:not([data-competition-view]) .app-competition-tab.is-active,
+html[data-theme="light"][data-competition-view="standings"] #competition-tab-standings,
+html[data-theme="light"][data-competition-view="fixtures"] #competition-tab-fixtures,
+html[data-theme="light"][data-competition-view="stats"] #competition-tab-stats,
+html[data-theme="light"][data-competition-view="history"] #competition-tab-history,
+html[data-theme="light"][data-competition-view="rules"] #competition-tab-rules,
+html[data-theme="light"][data-competition-view="awards"] #competition-tab-awards{background:#D9EEE1;color:#174C37}
 .app-theme-choices{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .app-theme-choice{display:inline-flex;align-items:center;justify-content:center;min-width:112px;min-height:44px;padding:9px 18px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .app-theme-choice:hover{border-color:var(--primary);background:rgba(91,142,121,.12)}
