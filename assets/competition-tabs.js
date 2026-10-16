@@ -70,7 +70,11 @@
     syncTabOverflow();
   }
   const tabScrollKey="football-architect:competition-tabs-scroll:"+location.pathname;
-  tablist.addEventListener("scroll",()=>{syncTabOverflow();try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}},{passive:true});
+  let restoringTabScroll=true;
+  let savedTabScroll=null;
+  try{const raw=sessionStorage.getItem(tabScrollKey);if(raw!==null&&Number.isFinite(Number(raw)))savedTabScroll=Math.max(0,Number(raw))}catch{}
+  tablist.addEventListener("scroll",()=>{syncTabOverflow();if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}},{passive:true});
+  window.addEventListener("pagehide",()=>{if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}});
   window.addEventListener("resize",revealSelectedTab);
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
@@ -162,8 +166,12 @@
     apply(read(),{replace:true});
   });
   apply(read(),{replace:true});
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    try{const saved=Number(sessionStorage.getItem(tabScrollKey));if(Number.isFinite(saved)&&saved>=0)tablist.scrollLeft=saved}catch{}
+  const restoreTabScroll=()=>{
+    if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
     syncTabOverflow();
-  }));
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(restoreTabScroll));
+  window.addEventListener("load",()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    restoreTabScroll();restoringTabScroll=false;
+  })),{once:true});
 })();
