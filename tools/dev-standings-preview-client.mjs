@@ -208,7 +208,22 @@ async function boot(routeId) {
     }
     const division = manifest.divisions.find(d => d.id === routeId);
     if (!division) throw Error("Unknown DEV division");
-    const { rows, clubs } = createPreviewStandings(division,matchdays,selectedSeason());
+    const season=selectedSeason();
+    const { rows, clubs } = createPreviewStandings(division,matchdays,season);
+    // Prepare the complete DEV calendar from the same deterministic season seed.
+    // Future rounds have no result; standings and fixtures share completed scores.
+    const complete=createPreviewStandings(division,30,season);
+    const fixtureData=complete.fixtures.map(game=>({
+      ...game,
+      homeGoals:game.round<=matchdays?game.homeGoals:null,
+      awayGoals:game.round<=matchdays?game.awayGoals:null,
+      kickoff:null
+    }));
+    const fixturesApi=window.faFixtures;
+    const restoreFixtures=typeof fixturesApi?.snapshot==="function"
+      ?fixturesApi.snapshot():null;
+    const commitFixtures=typeof fixturesApi?.prepare==="function"
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:Math.min(30,matchdays+1)}):null;
     const tbody = await waitForRows();
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
@@ -372,6 +387,7 @@ async function boot(routeId) {
       attempt(()=>languageObserver.disconnect());
       attempt(()=>tooltip.remove());
       if(committed){
+       if(restoreFixtures)attempt(restoreFixtures);
        attempt(()=>tbody.replaceChildren(...canonicalRows));
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
        attempt(()=>{
@@ -387,6 +403,7 @@ async function boot(routeId) {
     try {
     committed=true;
     // Commit to DOM only after all integrity checks and node construction passed.
+    if(commitFixtures)commitFixtures();
     tbody.replaceChildren(fragment);
     commitMobile();
     // Preserve the canonical compact-form marks exactly as rendered. Bind taps
