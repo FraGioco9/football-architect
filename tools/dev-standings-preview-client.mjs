@@ -133,7 +133,7 @@ if(validPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(savedPreviewEnabled()||selectedSeason()>1){
+  if(savedPreviewEnabled()){
    setPreviewEnabled(true).then(ok=>{
     const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
     if(toggle)toggle.checked=ok;
@@ -148,7 +148,6 @@ if(validPath){
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"){
-     if(next>1)await setPreviewEnabled(true);
      return;
     }
     // Prepare the next season while keeping the current one visible.
