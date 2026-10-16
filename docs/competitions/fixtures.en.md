@@ -86,3 +86,19 @@ generator remain excluded from publication.
 The existing competition tabs, standings, inline Compact division logos, club
 identities, flags and branding remain in scope only for regression checks.
 No deploy, database change or manual workflow is part of this implementation.
+
+
+## Returning to the current matchday
+
+The centered **Current matchday** button appears below the round picker only when
+a current round is explicitly supplied and differs from the selected round. It
+updates the URL and returns keyboard focus to the picker. Unknown public current
+rounds do not produce a button. DEV supplies the next unplayed round (completed
+matchdays + 1), capped at round 30 when the preview season is complete. Changing
+the DEV slider updates this target without moving the round being consulted;
+OFF/reset removes the target, and rollback restores it with the schedule.
+
+A selected round above 1 remains in the URL across all competition tabs, so
+switching to Standings, refreshing and returning to Fixtures preserves it.
+Default round 1 is omitted outside Fixtures. Back/Forward uses the URL state;
+no additional persistence key is introduced.

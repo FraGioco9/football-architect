@@ -27,7 +27,7 @@ function node(tag='div'){
  return n;
 }
 function setup(d=divisions[0]){
- const fields=new Map(['round','previous','next','list','empty','summary','picker','round-number'].map(id=>['app-fixtures-'+id,node()]));
+ const fields=new Map(['current','round','previous','next','list','empty','summary','picker','round-number'].map(id=>['app-fixtures-'+id,node()]));
  const choices=Array.from({length:30},(_,i)=>({...node('button'),id:"app-fixtures-round-option-"+(i+1),dataset:{fixtureRoundChoice:String(i+1),menuValue:String(i+1)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
@@ -84,4 +84,23 @@ test('FIXTURES-04: names are plain text, timing stays unknown unless supplied an
  assert.equal(walk(fields.get('app-fixtures-list')).filter(n=>n.tagName==='time').length,1);
  route.set({matchday:23});view.prepare(schedule(d,30))();assert.equal(round.value,'23');
  route.set({matchday:NaN});assert.equal(round.value,'23');
+});
+
+test('FIXTURES-05: return to supplied current round is conditional, transactional and preserves selected round',()=>{
+ const {view,fields,route}=setup(),button=fields.get('app-fixtures-current');
+ assert.equal(button.hidden,true);
+ view.prepare(schedule(divisions[0]),{currentMatchday:16})();
+ assert.equal(button.hidden,false);
+ button.emit('click');assert.equal(route.get().matchday,16);assert.equal(button.hidden,true);
+ assert.equal(fields.get('app-fixtures-round').focused,true);
+ route.set({matchday:12});assert.equal(button.hidden,false);
+ const restore=view.snapshot();view.prepare(null)();assert.equal(button.hidden,true);
+ restore();button.emit('click');assert.equal(route.get().matchday,16);
+ for(const invalid of [0,31,NaN,'16'])assert.throws(()=>view.prepare(schedule(divisions[0]),{currentMatchday:invalid}));
+ route.set({season:'2'});assert.equal(button.hidden,true);
+ route.set({season:'1'});view.prepare(schedule(divisions[0]))();assert.equal(button.hidden,true,'unknown current round is never inferred');
+ for(const currentMatchday of [1,30]){
+  view.prepare(schedule(divisions[0],currentMatchday===1?0:30),{currentMatchday})();
+  button.emit('click');assert.equal(route.get().matchday,currentMatchday);assert.equal(button.hidden,true);
+ }
 });

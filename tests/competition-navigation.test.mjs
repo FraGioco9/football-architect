@@ -29,7 +29,7 @@ test('COMPETITION-URL: canonical deep links restore every view, round and browse
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.window.faCompetitionRoute.set({matchday:13});
  assert.equal(s.window.location.search,'?season=1&view=fixtures&matchday=13');
- s.tabs[2].events.click();assert.equal(s.window.location.search,'?season=1&view=stats');
+ s.tabs[2].events.click();assert.equal(s.window.location.search,'?season=1&view=stats&matchday=13');
  s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,13);assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.forward();assert.equal(s.window.faCompetitionRoute.get().matchday,13);
@@ -63,4 +63,16 @@ test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views
   assert.equal(document.documentElement.dataset.competitionView,'fixtures');
   assert.equal(document.documentElement.dataset.competitionSeasonUnavailable,String(season!=='1'));
  }
+});
+
+test('COMPETITION-URL: selected matchday survives another tab, refresh and history',()=>{
+ const s=setup('/app/competitions/it-1?season=1&view=fixtures&matchday=12');
+ s.tabs[0].events.click();
+ assert.equal(s.window.location.search,'?season=1&view=standings&matchday=12');
+ const refreshed=setup(s.window.location.href);
+ refreshed.tabs[1].events.click();
+ assert.equal(refreshed.window.faCompetitionRoute.get().matchday,12);
+ assert.equal(refreshed.window.location.search,'?season=1&view=fixtures&matchday=12');
+ s.back();s.forward();s.tabs[1].events.click();
+ assert.equal(s.window.faCompetitionRoute.get().matchday,12);
 });

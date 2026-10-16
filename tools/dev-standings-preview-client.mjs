@@ -251,7 +251,7 @@ async function boot(routeId) {
     const schedule=createPreviewStandings(division,30).fixtures.map(game=>({...game,kickoff:null,
       homeGoals:game.round<=matchdays?game.homeGoals:null,
       awayGoals:game.round<=matchdays?game.awayGoals:null}));
-    const commitFixtures=fixtures.prepare(schedule);
+    const commitFixtures=fixtures.prepare(schedule,{currentMatchday:Math.min(matchdays+1,30)});
     const restoreFixtures=fixtures.snapshot();
 
     const caption = document.getElementById("app-standings-caption");

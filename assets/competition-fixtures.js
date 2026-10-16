@@ -2,7 +2,7 @@
 (() => {
   "use strict";
   const division=window.faCompetitionDivision;
-  const fields=Object.fromEntries(["round","previous","next","list","empty","summary"]
+  const fields=Object.fromEntries(["current","round","previous","next","list","empty","summary"]
     .map(key=>[key,document.getElementById("app-fixtures-"+key)]));
   if(!division||Object.values(fields).some(field=>!field))return;
   const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
@@ -13,7 +13,7 @@
   if(!navigation||!picker||!number)return;
   const choices=[...picker.querySelectorAll("[data-fixture-round-choice]")];
   if(choices.length!==30)return;
-  let rounds=null,selected=navigation.get().matchday;
+  let currentMatchday=null,rounds=null,selected=navigation.get().matchday;
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
     document.querySelector(".app-fixtures-select"));
   const element=(tag,cls="",text="")=>{
@@ -86,6 +86,7 @@
   }
   function render(){
     const available=rounds!==null&&navigation.get().season==="1";
+    fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
     fields.round.value=String(selected);fields.round.disabled=!available;
     number.textContent=String(selected);
     roundMenu.sync(String(selected));
@@ -106,12 +107,18 @@
     }
   }
   navigation.subscribe(route=>{selected=route.matchday;roundMenu.close();render()});
+  fields.current.addEventListener("click",()=>{if(!fields.current.hidden){select(currentMatchday);fields.round.focus()}});
   fields.previous.addEventListener("click",()=>select(selected-1));
   fields.next.addEventListener("click",()=>select(selected+1));
   // Validate before returning a commit function; rejected input leaves the view intact.
   window.faFixtures={
-    prepare(fixtures){const next=validate(fixtures);return ()=>{rounds=next;render()};},
-    snapshot(){const previous=rounds;return ()=>{rounds=previous;selected=navigation.get().matchday;render()};}
+    prepare(fixtures,{currentMatchday:current=null}={}){
+      const next=validate(fixtures);
+      if(current!==null&&(!Number.isInteger(current)||current<1||current>30))throw Error("Invalid current matchday");
+      return ()=>{rounds=next;currentMatchday=next?current:null;render()};
+    },
+    snapshot(){const previous=rounds,current=currentMatchday;return ()=>{
+      rounds=previous;currentMatchday=current;selected=navigation.get().matchday;render()};}
   };
   new MutationObserver(()=>{if(rounds)render()}).observe(document.documentElement,
     {attributes:true,attributeFilter:["lang"]});

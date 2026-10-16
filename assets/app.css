@@ -419,6 +419,8 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 
 /* Competition Fixtures: one eight-match round, shared desktop/mobile markup. */
 .app-fixtures-toolbar{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 16px}
+.app-fixtures-current[hidden]{display:none}
+.app-fixtures-current{width:auto;min-height:44px;justify-content:center}
 .app-fixtures-navigation{position:relative;display:flex;gap:6px;align-items:center}
 .app-fixtures-arrow{width:44px;min-width:44px!important;height:44px;padding:0;justify-content:center}
 .app-fixtures-select{width:132px}

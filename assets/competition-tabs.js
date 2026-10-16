@@ -71,7 +71,7 @@
     url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     url.search="";url.hash="";
     url.searchParams.set("season",state.season);url.searchParams.set("view",state.view);
-    if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
+    if(state.view==="fixtures"||state.matchday!==1)url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=state.season==="1";
     document.documentElement.dataset.competitionView=state.view;

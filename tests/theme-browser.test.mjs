@@ -162,11 +162,12 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.getElementById('competition-tab-fixtures').click()");
         const emptyFixtures=await run("({count:document.querySelectorAll('[data-fixture-match]').length,empty:!document.getElementById('app-fixtures-empty').hidden,disabled:document.getElementById('app-fixtures-round').disabled})");
         assert.deepEqual(emptyFixtures,{count:0,empty:true,disabled:true});
+        assert.equal(await run("document.getElementById('app-fixtures-current').getClientRects().length"),0);
         const fixtureControls=await run("(()=>{const panel=document.getElementById('competition-panel-fixtures'),select=document.getElementById('app-fixtures-round'),p=panel.getBoundingClientRect(),s=select.getBoundingClientRect();return {centered:Math.abs((s.left+s.right)-(p.left+p.right))<2,title:!!panel.querySelector('h2'),notice:!!document.getElementById('app-fixtures-preview'),siteStyle:select.classList.contains('language-trigger'),height:s.height}})()");
         assert.deepEqual(fixtureControls,{centered:true,title:false,notice:false,siteStyle:true,height:44});
         const fixtureDivision=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(g=>({...g,kickoff:null,homeGoals:g.round<=15?g.homeGoals:null,awayGoals:g.round<=15?g.awayGoals:null}));
-        await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+")()");
+        await run("window.faFixtures.prepare("+JSON.stringify(fixtureModel)+",{currentMatchday:16})()");
         await run("document.getElementById('app-fixtures-round').click()");
         const picker=await run("(()=>{const p=document.getElementById('app-fixtures-picker'),b=p.getBoundingClientRect();return {open:!p.hidden,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded'),focused:document.activeElement.id,active:document.getElementById('app-fixtures-round').getAttribute('aria-activedescendant'),fit:b.left>=0&&b.right<=innerWidth}})()");
         assert.deepEqual(picker,{open:true,expanded:"true",focused:"app-fixtures-round",active:"app-fixtures-round-option-1",fit:true});
@@ -197,6 +198,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         for(const lang of ["en","it","de","es","fr"]){
           await run("document.documentElement.lang='"+lang+"'");
           const fixtures=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')];return {count:rows.length,options:document.querySelectorAll('[data-fixture-round-choice]').length,previous:document.getElementById('app-fixtures-previous').disabled,fit:rows.every(row=>{const b=row.getBoundingClientRect(),score=row.querySelector('.app-fixture-score').getBoundingClientRect(),home=row.querySelector('.app-fixture-home').getBoundingClientRect(),away=row.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&home.right<=score.left&&(innerWidth<=620?(away.right<=score.left&&home.width>=120&&away.width>=120):away.left>=score.right)}),statuses:rows.map(r=>r.querySelector('.app-fixture-status').textContent),text:getComputedStyle(rows[0]).color,background:getComputedStyle(rows[0]).backgroundColor}})()");
+          const currentButton=await run("(()=>{const b=document.getElementById('app-fixtures-current'),r=b.getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect();return {visible:!b.hidden,fit:r.left>=0&&r.right<=innerWidth,centered:Math.abs((r.left+r.right)-(p.left+p.right))<2,label:b.textContent}})()");
+          assert.deepEqual(currentButton,{visible:true,fit:true,centered:true,label:({en:"Current matchday",it:"Giornata attuale",de:"Aktueller Spieltag",es:"Jornada actual",fr:"Journée actuelle"})[lang]});
           assert.equal(fixtures.count,8);assert.equal(fixtures.options,30);assert.equal(fixtures.previous,true);
           assert.ok(fixtures.fit,"Fixtures fit "+name+"/"+theme+"/"+lang);
           assert.ok(ratio(fixtures.text,fixtures.background)>=4.5);
@@ -332,6 +335,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const preview=await run("(()=>{window.faCompetitionRoute.set({matchday:1});const matches=[...document.querySelectorAll('[data-fixture-match]')];return {count:matches.length,scores:matches.map(row=>row.querySelector('.app-fixture-score').textContent),notice:!!document.getElementById('app-fixtures-preview'),allPlayed:[...document.querySelectorAll('#app-standings-body tr')].every(row=>row.cells[2].textContent==='"+completed+"')}})()");
       assert.equal(preview.count,8);assert.equal(preview.notice,false);assert.equal(preview.allPlayed,true);
       assert.ok(preview.scores.every(score=>completed===0?score==="—":/^\d+ – \d+$/.test(score)));
+      const current=Math.min(completed+1,30);
+      assert.equal(await run("document.getElementById('app-fixtures-current').hidden"),current===1);
+      if(current!==1){
+        await run("document.getElementById('app-fixtures-current').click()");
+        assert.equal(await run("window.faCompetitionRoute.get().matchday"),current);
+        assert.equal(await run("document.getElementById('app-fixtures-current').getClientRects().length===0&&document.activeElement.id==='app-fixtures-round'"),true);
+      }
     }
     // Compare every match score and each club's goal totals against the same deterministic model.
     const agreement=await run("(()=>{const totals=new Map([...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,{gf:Number(row.cells[6].textContent),ga:Number(row.cells[7].textContent),actualFor:0,actualAgainst:0}]));for(let n=1;n<=30;n++){window.faCompetitionRoute.set({matchday:n});for(const row of document.querySelectorAll('[data-fixture-match]')){const scores=row.querySelector('.app-fixture-score').textContent.split(' – ').map(Number),crests=[...row.querySelectorAll('[data-club-crest]')],home=totals.get(crests[0].dataset.clubCrest),away=totals.get(crests[1].dataset.clubCrest);home.actualFor+=scores[0];home.actualAgainst+=scores[1];away.actualFor+=scores[1];away.actualAgainst+=scores[0]}}return [...totals.values()].every(c=>c.gf===c.actualFor&&c.ga===c.actualAgainst)})()");
@@ -374,7 +384,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await clickControl("#app-fixtures-round");
     await clickControl('[data-fixture-round-choice="13"]');
     await clickControl("#competition-tab-history");
-    assert.equal(await run("location.search"),"?season=1&view=history");
+    assert.equal(await run("location.search"),"?season=1&view=history&matchday=13");
     await run("history.back()");await wait("location.search==='?season=1&view=fixtures&matchday=13'&&window.faCompetitionRoute.get().view==='fixtures'&&window.faCompetitionRoute.get().matchday===13");
     await run("history.back()");await wait("window.faCompetitionRoute.get().matchday===12");
     await run("history.forward()");await wait("window.faCompetitionRoute.get().matchday===13");
@@ -385,6 +395,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     assert.equal(await run("!document.getElementById(\"app-competition-season-unavailable\").hidden&&[...document.querySelectorAll(\".app-competition-panel\")].every(p=>p.hidden)"),true);
     await run("document.getElementById(\"app-competition-season\").click();document.getElementById(\"app-competition-season-option-1\").click()");
     assert.equal(await run("!document.getElementById(\"competition-panel-fixtures\").hidden"),true);
+    await clickControl("#app-fixtures-current");
+    assert.equal(await run("window.faCompetitionRoute.get().matchday"),16);
+    await clickControl("#competition-tab-standings");
+    assert.equal(await run("location.search"),"?season=1&view=standings&matchday=16");
+    await cmd("Page.reload");await wait("!!window.faFixtures&&document.querySelectorAll('[data-fixture-match]').length===8");
+    await clickControl("#competition-tab-fixtures");
+    assert.equal(await run("document.getElementById('app-fixtures-round-number').textContent"),"16");
+    assert.equal(await run("document.getElementById('app-fixtures-current').hidden"),true);
     // Observe actual visible frames during a catalogue-to-competition navigation.
     await run("(()=>{const slider=document.querySelector('[data-dev-control=\"matchdays\"]');slider.value='4';slider.dispatchEvent(new Event('change'))})()");
     await wait("document.querySelector('#app-standings-body tr td:nth-child(3)')?.textContent==='4'");
