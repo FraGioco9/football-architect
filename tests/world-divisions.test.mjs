@@ -29,8 +29,8 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
  assert.ok(!existsSync(new URL("../app/world/competitions/index.html",import.meta.url)));
  for(const c of countries)assert.ok(index.includes('id="world-country-'+c.id.toLowerCase()+'"'));
  for(const {division} of routes){
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/"'),division.id);
-  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'/">'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'?season=1&amp;view=standings"'),division.id);
+  assert.ok(index.includes('href="./'+division.id.toLowerCase()+'?season=1&amp;view=standings">'),division.id);
  }
  assert.equal((index.match(/data-division-variant="compact"/g)||[]).length,16);
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
@@ -199,7 +199,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js"]'));
+ assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
  assert.ok(code.includes("tabs.length !== 6"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('event.key === "'+key+'"'));
