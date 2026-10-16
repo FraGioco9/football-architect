@@ -600,7 +600,7 @@
     for (const link of document.querySelectorAll("a.app-division-card")) {
       const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?(?:\?.*)?$/i);
       if (slug) {
-        const season = link.hasAttribute("data-dev-latest-season") ? "2" : "1";
+        const season = link.getAttribute("data-dev-latest-season") || "1";
         link.setAttribute("href",appHref("/app/competitions/"+slug[1].toLowerCase()+"?season="+season+"&view=standings"));
       }
     }
