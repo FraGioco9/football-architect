@@ -29,7 +29,7 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/app\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12]\/(?:index\.html)?$/;
-const INJECT = '<script type="module" src="/__fa_dev__/standings-client.mjs"></script>';
+const INJECT = '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>';
 
 function ipv4(value) {
   if (typeof value !== "string") return null;
