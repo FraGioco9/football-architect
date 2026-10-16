@@ -134,6 +134,7 @@ function setPreviewEnabled(enabled) {
    activePreview=cleanup;
    previewState="ON";
    widgetRoot?.syncVisibility();
+   syncHistoryPreview();
    try{sessionStorage.setItem(FLAG,"on")}catch{}
    return true;
   }
@@ -148,6 +149,7 @@ function setPreviewEnabled(enabled) {
   activePreview=null;
   previewState="OFF";
   widgetRoot?.syncVisibility();
+  clearHistoryPreview();
   try{sessionStorage.removeItem(FLAG)}catch{}
   return true;
  });
