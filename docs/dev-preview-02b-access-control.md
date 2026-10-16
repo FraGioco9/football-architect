@@ -47,7 +47,7 @@ This document does **not** approve implementation, publishing, deployment, DNS/a
 
 The existing `football-architect` Vercel project reports `ssoProtection.enabled=true` with `deploymentType=all_except_custom_domains`. Password protection and trusted-IP protection are disabled. This is evidence of Vercel Authentication being configured for covered deployment URLs, **not** proof that custom domains, every protected asset, or the proposed identity allowlist are secured.
 
-**Preferred candidate:** Vercel Authentication on an independently verified protected deployment URL, subject to the following conditions:
+**Evaluated candidate (not selected):** Vercel Authentication on an independently verified protected deployment URL, subject to the following conditions:
 
 - Use a hostname that falls within the enforced deployment-protection scope; never assume a custom alias is covered by `all_except_custom_domains`.
 - Confirm actual membership/access rules for the chosen project and environment; do not assume that every authenticated Vercel user is an approved Debug user.
@@ -75,22 +75,10 @@ The owner reports that Vercel's Access Groups UI prompts an **Enterprise upgrade
 
 Architecture selection remains provisional until the deployment topology is verified: a static artifact alone cannot enforce a server-side allowlist, and Vercel Authentication must not be assumed to pass a suitable verified identity claim to the application. Assess supported Vercel Functions/middleware and identity integration before choosing the implementation. Maintain the protected publication block and require separate G10 approval.
 
-## Owner architecture decision — Cloudflare Access (2026-10-16)
+## Current scope and owner decision (2026-10-17)
 
-The owner selected **Cloudflare Access** instead of Vercel Enterprise Access Groups or a custom login. Keep Vercel as the hosting provider and retain the existing public site unchanged.
+Public player login is **deferred** to issue #170 and is **out of scope** for DEV-PREVIEW-02 and this PR. Do not provision Supabase, Cloudflare, Firebase, or any other player-login provider here. The public website remains accessible without authentication.
 
-**Proposed protected path:** Cloudflare Zero Trust Access application for a dedicated Debug hostname; email one-time PIN as the initial identity method, with an explicit per-email allow policy (owner and individually approved collaborators). Deny everyone else. The protected application must cover all paths and resources, including assets and direct navigation.
+For protected Debug access, the owner still requires access limited to the owner and **individually approved collaborators**. The Debug authentication provider and server-side gateway are **not yet selected**. Previous Vercel Authentication and Access Groups research above is retained as feasibility evidence, not as an implementation decision; Vercel Access Groups require Enterprise on the current plan.
 
-**Mandatory origin-bypass gate:** Cloudflare Access on a custom hostname does not, by itself, prevent direct requests to a Vercel-generated deployment URL. Before any G10 publication, demonstrate an enforceable origin-side restriction that denies unauthenticated direct-origin access, or adopt a deployment topology with equivalent independently tested guarantees. Do not rely on hostname secrecy, DNS, robots.txt, or client-side checks. Verify interactions with Vercel deployment protection and custom-domain exclusions.
-
-**Pre-implementation checks:** confirm the available Cloudflare Zero Trust plan limits and identity policy features; verify DNS/hostname ownership, Vercel project deployment-protection behavior, exact origin routing, and whether a server-side Access JWT validation gateway is needed. Never put a Cloudflare service token in a public static artifact.
-
-No Cloudflare application, DNS change, identity policy, deployment, or Vercel setting is authorized by this design decision alone. Existing G10 rejection remains active.
-
-## Supabase consolidation decision (2026-10-17)
-
-The owner subsequently selected **Supabase for authentication, authorization, and application data**, replacing the earlier Cloudflare Access proposal. Public visitors can browse the landing, guides, and competition pages anonymously; entering the game requires an account authenticated with **email and password**. Include email verification, password reset, and session handling in the public-auth design.
-
-The protected Debug runtime uses the same Supabase identity system but requires a **separate, explicit, per-user server-side authorization check**. A valid player account must not grant Debug access. Public game authorization and protected artifact authorization remain distinct security boundaries. Every protected asset request must be enforced server-side, including direct Vercel origin URLs; RLS alone does not protect static HTML/JS files.
-
-**Supersession:** Cloudflare Access and Vercel Access Groups are no longer the selected approach. Previous sections document historical evaluation only. Do not configure Cloudflare or deploy Debug. A dedicated Supabase project for Football Architect is required; no existing unrelated project should be reused. The G10 block remains in force.
+The next design step is to compare independently enforceable Debug-only authentication options with minimal operational overhead. Whatever is selected must protect every static asset and deny direct-origin bypass. The protected publication workflow remains blocked until independent G10 authorization. No public login, database, DNS, deployment, or live environment changes are part of this PR.
