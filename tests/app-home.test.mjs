@@ -227,9 +227,9 @@ test("HOME-01 translates all three page titles across five supported languages",
 test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
   const redirect=read("app/index.html");
   const dashboard=read("app/dashboard/index.html");
-  assert.match(redirect,/window\\.location\\.replace\\("\\/app\\/dashboard" \\+ window\\.location\\.search \\+ window\\.location\\.hash\\)/);
-  assert.match(redirect,/<noscript><meta http-equiv="refresh" content="0;url=\\/app\\/dashboard"><\\/noscript>/);
-  assert.match(redirect,/href="\\/app\\/dashboard"/);
+  assert.match(redirect,/window\.location\.replace\("\/app\/dashboard" \+ window\.location\.search \+ window\.location\.hash\)/);
+  assert.match(redirect,/<noscript><meta http-equiv="refresh" content="0;url=\/app\/dashboard"><\/noscript>/);
+  assert.match(redirect,/href="\/app\/dashboard"/);
   assert.doesNotMatch(redirect,/class="fa-career-shell"/);
   assert.match(dashboard,/id="app-dashboard"/);
   const script=redirect.match(/<script>([\s\S]*?)<\/script>/)?.[1];
