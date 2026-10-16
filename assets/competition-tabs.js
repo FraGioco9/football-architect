@@ -59,7 +59,7 @@
   const listeners=new Set();let state;
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Season 2 is an isolated DEV preview, never a public competition season.
-  const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\\d*$/.test(x));
+  const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
   const availableSeasons=[...new Set(["1",...devSeasons])];
   const latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
