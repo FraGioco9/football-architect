@@ -82,7 +82,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     });
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
-      if(out.exceptionDetails)throw Error(out.exceptionDetails.text);
+      if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
       return out.result.value;
     };
     const wait=async expr=>{
