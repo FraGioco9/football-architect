@@ -521,7 +521,7 @@
     const host = (window.location.hostname || "").toLowerCase();
     if (!host.startsWith("app.")) return path;
     const origin = (window.location.protocol || "https:") + "//" + host.slice(4);
-    return path === "/" ? origin : origin + path.replace(/\\/+$/, "");
+    return path === "/" ? origin : origin + path.replace(/\/+$/, "");
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
