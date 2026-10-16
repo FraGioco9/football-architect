@@ -47,7 +47,7 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
    if(href.startsWith("#")||href.startsWith("data:"))continue;
    assert.doesNotMatch(href,/^https?:/);
-   const path=href.startsWith("/") ? new URL(".."+href,base) : new URL(href,base);
+   const path=href.startsWith("/app/") ? new URL("../"+href.slice(1)+"/index.html",import.meta.url) : new URL(href,base);
    const filePath=path.pathname.endsWith("/")?new URL("index.html",path):path;
    assert.ok(existsSync(fileURLToPath(filePath)),file+" -> "+href);
   }
@@ -420,5 +420,5 @@ test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",
  assert.ok(css.includes(".app-competition-return{display:inline-flex;"),"desktop link unchanged");
  assert.ok(css.includes("@media(max-width:620px){.app-competition-header{"));
  assert.ok(css.includes(".app-competition-return{display:none}"),"hidden on mobile");
- assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="../"'));
+ assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/app/competitions"'));
 });
