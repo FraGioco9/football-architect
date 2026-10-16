@@ -17,9 +17,9 @@ const js = read("assets/app.js");
 
 test("HOME-01 uses canonical static pages rather than legacy hash routing", () => {
   const expectedLinks = {
-    dashboard: ["/app/dashboard","/app/calendar","/app/settings"],
-    calendar: ["/app/dashboard","/app/calendar","/app/settings"],
-    settings: ["/app/dashboard","/app/calendar","/app/settings"]
+    dashboard: ["/app/dashboard/","/app/calendar/","/app/settings/"],
+    calendar: ["/app/dashboard/","/app/calendar/","/app/settings/"],
+    settings: ["/app/dashboard/","/app/calendar/","/app/settings/"]
   };
   for (const [page,markup] of Object.entries(pages)) {
     assert.match(markup, /class="fa-career-shell"/);
@@ -234,7 +234,7 @@ test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
   assert.match(dashboard,/id="app-dashboard"/);
   const script=redirect.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script);
-  for(const [search,hash,expected] of [["","","/app/dashboard"],["?lang=it","#world-heading","/app/dashboard?lang=it#world-heading"]]){
+  for(const [search,hash,expected] of [["","","/app/dashboard"],["?lang=it","#world-heading","/app/dashboard/?lang=it#world-heading"]]){
     const redirects=[];
     runInNewContext(script,{window:{location:{search,hash,replace(path){redirects.push(path)}}}},{timeout:2000});
     assert.deepEqual(redirects,[expected]);
@@ -293,7 +293,7 @@ test("APP-HOST-URL-01: production app subdomain and local static preview routes"
   runInNewContext(match[0]+"\nappHref("+JSON.stringify(pathname)+")",
    {window:{location:{hostname,protocol}}});
  for(const [host,path,expected] of [
-  ["football.example","/app/dashboard","https://app.football.example/dashboard"],
+  ["football.example","/app/dashboard/","https://app.football.example/dashboard/"],
   ["www.football.example","/app/competitions/it-1","https://app.football.example/competitions/it-1"],
   ["app.football.example","/app/competitions/it-1","/competitions/it-1"],
   ["app.football.example","/app/settings#app-language-heading","/settings#app-language-heading"],
