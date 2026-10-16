@@ -60,3 +60,9 @@ The existing `football-architect` Vercel project reports `ssoProtection.enabled=
 **Individual-selection decision (owner, 2026-10-16):** only individually selected collaborators may access the protected Debug runtime. Do not authorize the whole Vercel team. Verify the chosen Vercel protection configuration actually supports this narrower per-user boundary; if not, require an additional server-side authorization layer before enabling access.
 
 **Decisions still pending:** the specific approved user identities, protected hostname class, session/revocation policy, and independent security acceptance.
+
+## Access-group verification status (2026-10-16)
+
+A read-only Vercel API query for access groups scoped to the Football Architect project returned **403 Forbidden** (`GET /v1/access-groups`). Consequently, no access-group membership or project enforcement configuration has been verified. Do not infer that an access group exists or that Vercel Authentication alone enforces individual selection.
+
+Before selecting Vercel-native groups as the implementation, obtain authorized read access to the project's access-group configuration and verify that it gates requests to the actual protected deployment. If that is not supported, design a separate server-side allowlist gateway. No permissions or deployment settings were changed during this check.
