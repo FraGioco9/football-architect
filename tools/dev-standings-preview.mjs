@@ -109,7 +109,9 @@ export function createPreviewServer({ root = ROOT } = {}) {
         if (raw === "/app/competitions/" || raw === "/app/competitions/index.html") {
           // Every season=1 occurrence on this index is a generated division link.
           // Rewrite the HTML directly rather than depending on href formatting.
-          body = Buffer.from(body.toString("utf8").replaceAll(
+          body = Buffer.from(body.toString("utf8").replace(
+            /(<a class="app-division-card")/g, '$1 data-dev-latest-season=""'
+          ).replaceAll(
             "?season=1&amp;view=standings", "?season=2&amp;view=standings"
           ), "utf8");
         }
