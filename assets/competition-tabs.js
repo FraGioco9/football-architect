@@ -173,10 +173,11 @@
     if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
     syncTabOverflow();
   };
+  const scheduleFrame=typeof window.requestAnimationFrame==="function"?window.requestAnimationFrame.bind(window):callback=>callback();
   restoreTabScroll();
-  requestAnimationFrame(()=>{
+  scheduleFrame(()=>{
     restoreTabScroll();
-    requestAnimationFrame(()=>{
+    scheduleFrame(()=>{
       restoreTabScroll();
       restoringTabScroll=false;
       // Keep the route-selected tab visible after restoring the previous strip offset.
