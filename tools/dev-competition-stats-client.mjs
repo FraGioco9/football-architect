@@ -86,23 +86,21 @@ if (panel && divisionId) {
     }
     if (view === "overview") {
       const o = stats.overview;
-      const cards = [
-        ["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],
-        ["Goals per match",number(o.goalsPerMatch)],
-        ["Home wins",o.homeWins+" ("+pct(o.homeWinPct)+")"],
-        ["Draws",o.draws+" ("+pct(o.drawPct)+")"],
-        ["Away wins",o.awayWins+" ("+pct(o.awayWinPct)+")"],
-        ["Clean sheets",o.cleanSheets],
-        ["Most frequent score",o.mostFrequentScoreline ? o.mostFrequentScoreline.score+" ("+o.mostFrequentScoreline.count+")" : "—"],
-        ["Highest-scoring matches",o.highestScoringMatches.length ? o.highestScoringMatches.map(g=>g.homeGoals+"–"+g.awayGoals+" (MD "+g.round+")").join(", ") : "—"]
+      const groups = [
+        ["General",[["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]],
+        ["Results",[["Home wins",o.homeWins+" ("+pct(o.homeWinPct)+")"],["Draws",o.draws+" ("+pct(o.drawPct)+")"],["Away wins",o.awayWins+" ("+pct(o.awayWinPct)+")"]]],
+        ["Records",[["Clean sheets",o.cleanSheets],["Most frequent score",o.mostFrequentScoreline?o.mostFrequentScoreline.score+" ("+o.mostFrequentScoreline.count+")":"—"],["Highest-scoring matches",o.highestScoringMatches.length?o.highestScoringMatches.map(g=>g.homeGoals+"–"+g.awayGoals+" (MD "+g.round+")").join(", "):"—"]]]
       ];
-      const grid = create("div",undefined,"fa-dev-stats-grid");
-      for (const [label,value] of cards) {
-        const card = create("div",undefined,"fa-dev-stats-card");
-        card.append(create("span",label),create("strong",value));
-        grid.append(card);
+      for(const [heading,cards] of groups){
+        const section=create("section",undefined,"fa-dev-stats-section");
+        section.append(create("h3",heading,"fa-dev-stats-heading"));
+        const grid=create("div",undefined,"fa-dev-stats-grid");
+        for(const [label,value] of cards){
+          const card=create("div",undefined,"fa-dev-stats-card");
+          card.append(create("span",label),create("strong",value));grid.append(card);
+        }
+        section.append(grid);root.append(section);
       }
-      root.append(grid);
       return;
     }
     const table = create("table",undefined,"fa-dev-stats-table");
