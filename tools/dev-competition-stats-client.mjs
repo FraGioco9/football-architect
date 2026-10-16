@@ -80,6 +80,13 @@ if (panel && divisionId) {
 .fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li[hidden]{display:none}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
+.fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
+.fa-dev-stats-dialog::backdrop{background:rgba(0,0,0,.65)}
+.fa-dev-stats-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.fa-dev-stats-dialog-header h3{margin:0;font-size:1rem}
+.fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;padding:0 6px}
+.fa-dev-stats-dialog .fa-dev-stats-top{max-width:none;list-style:none;padding:0;margin:0}
+.fa-dev-stats-dialog .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px}
 .fa-dev-stats-expand:hover,.fa-dev-stats-expand:focus-visible{opacity:1;background:rgba(128,145,145,.1)}
 .fa-dev-stats-expand:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
@@ -187,9 +194,8 @@ if (panel && divisionId) {
       card.append(create("h4",label,"fa-dev-stats-leader-title"));
       const top=create("ol",undefined,"fa-dev-stats-top");
       const teams=ranked(key,ascending);
-      teams.forEach((team,index)=>{
+      const buildRow=(team,index)=>{
         const li=create("li");
-        if(index>=5)li.hidden=true;
         const position=create("span",String(index+1),"fa-dev-stats-rank");
         const identity=create("span",undefined,"app-world-club-identity");
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
@@ -197,19 +203,30 @@ if (panel && divisionId) {
         crest.setAttribute("aria-hidden","true");
         identity.append(crest,create("span",team.clubName));
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
-        top.append(li);
-      });
-      const expand=create("button","Show all ↓","fa-dev-stats-expand");
-      expand.type="button";
-      expand.setAttribute("aria-expanded","false");
-      expand.addEventListener("click",()=>{
-        const expanded=expand.getAttribute("aria-expanded")==="true";
-        for(const li of Array.from(top.children).slice(5))li.hidden=expanded;
-        expand.setAttribute("aria-expanded",String(!expanded));
-        expand.textContent=expanded?"Show all ↓":"Show less ↑";
-      });
+        return li;
+      };
+      teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
       card.append(top);
-      if(teams.length>5)card.append(expand);
+      if(teams.length>5){
+        const expand=create("button","Show all","fa-dev-stats-expand");
+        expand.type="button";
+        expand.addEventListener("click",()=>{
+          const dialog=create("dialog",undefined,"fa-dev-stats-dialog");
+          const header=create("div",undefined,"fa-dev-stats-dialog-header");
+          const title=create("h3",label);
+          const close=create("button","×","fa-dev-stats-dialog-close");
+          close.type="button";close.setAttribute("aria-label","Close");
+          close.addEventListener("click",()=>dialog.close());
+          header.append(title,close);
+          const all=create("ol",undefined,"fa-dev-stats-top");
+          teams.forEach((team,index)=>all.append(buildRow(team,index)));
+          dialog.append(header,all);
+          dialog.addEventListener("close",()=>dialog.remove());
+          document.body.append(dialog);
+          dialog.showModal();
+        });
+        card.append(expand);
+      }
       leaderGrid.append(card);
     }
     leaders.append(leaderGrid);root.append(leaders);
