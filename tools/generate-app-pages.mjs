@@ -161,7 +161,7 @@ const worldPageReplacements = (depth, division = null) => {
     "@@FA_LINE_044@@": '            <a class="fa-shell-link" id="app-nav-settings" href="/app/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">',
     "@@FA_LINE_077@@": '        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title" hidden>',
     "@@FA_LINE_099@@": '        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>',
-    "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="' + upToApp + 'dashboard/" data-app-i18n="backDashboard">Back to Dashboard</a>',
+    "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="/app/dashboard" data-app-i18n="backDashboard">Back to Dashboard</a>',
     "@@FA_LINE_107@@": '        <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>',
     "@@FA_WORLD_LINK@@": worldNav("/app/competitions", true),
     "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,root) : indexContent(root), true,division)
