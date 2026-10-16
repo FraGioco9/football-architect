@@ -9,6 +9,7 @@ import {join,resolve,extname,sep} from "node:path";
 import {fileURLToPath} from "node:url";
 import {once} from "node:events";
 import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
+import {createPreviewServer} from "../tools/dev-standings-preview.mjs";
 import {setTimeout as delay} from "node:timers/promises";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"};
@@ -21,6 +22,14 @@ const server=createServer(async(req,res)=>{
     res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});
     res.end(await readFile(file));
   }catch{res.writeHead(404);res.end("Not found");}
+});
+const devRouter=createPreviewServer();
+let devManifestDelay=0,devFixturesDelay=0;
+const devServer=createServer((req,res)=>{
+ req.headers.host="127.0.0.1:2000";
+ const pause=req.url.includes("manifest.json")?devManifestDelay:req.url.startsWith("/assets/competition-fixtures.js")?devFixturesDelay:0;
+ if(pause)setTimeout(()=>devRouter.emit("request",req,res),pause);
+ else devRouter.emit("request",req,res);
 });
 const chrome=()=>{
   const windows=process.platform==="win32"?[
@@ -48,6 +57,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
   const browser=chrome();
   server.listen(0,"127.0.0.1");await once(server,"listening");
   const origin="http://127.0.0.1:"+server.address().port;
+  devServer.listen(0,"127.0.0.1");await once(devServer,"listening");
+  const devOrigin="http://127.0.0.1:"+devServer.address().port;
   const dir=await mkdtemp(join(tmpdir(),"fa-theme-browser-"));
   const proc=spawn(browser,["--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
     "--no-proxy-server","--disable-background-networking","--disable-extensions","--disable-sync",
@@ -294,10 +305,39 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
     }
     await cmd("Emulation.setScriptExecutionDisabled",{value:false});
+    // Exercise the real DEV runtime across season changes, without a refresh.
+    const division=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
+    const signature="JSON.stringify([...document.querySelectorAll('[data-fixture-match]')].map(n=>[n.dataset.fixtureMatch,n.querySelector('.app-fixture-score').textContent]))";
+    const expected=(season,round,days=7)=>JSON.stringify(createPreviewStandings(division,30,season).fixtures
+      .filter(g=>g.round===round).sort((a,b)=>a.homeId-b.homeId||a.awayId-b.awayId)
+      .map(g=>[g.round+":"+g.homeId+":"+g.awayId,g.round<=days?g.homeGoals+" – "+g.awayGoals:"—"]));
+    const expectSeason=async(season,round)=>{
+      await wait("window.faCompetitionRoute?.get().season==="+JSON.stringify(String(season))+"&&"+signature+"==="+JSON.stringify(expected(season,round)));
+      assert.equal(await run(signature),expected(season,round),"Fixtures match the selected season "+season+" round "+round);
+    };
+    const chooseSeason=async season=>{
+      await run("document.getElementById('app-competition-season').click();document.querySelector('#app-competition-season-menu [data-menu-value=\""+season+"\"]').click()");
+    };
+    await cmd("Page.navigate",{url:devOrigin+"/"});
+    await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
+    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=fixtures&matchday=1"});
+    await expectSeason(1,1);
+    for(const season of [2,1,2]){await chooseSeason(season);await expectSeason(season,1);}
+    devManifestDelay=150;
+    await chooseSeason(1);await chooseSeason(2);await chooseSeason(1);
+    await expectSeason(1,1);
+    await delay(600);assert.equal(await run(signature),expected(1,1),"delayed season work cannot overwrite the final selection");
+    devManifestDelay=0;
+    await cmd("Page.reload",{ignoreCache:true});await expectSeason(1,1);
+    devFixturesDelay=500;
+    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=2&view=fixtures&matchday=1"});
+    await expectSeason(2,1);
+    devFixturesDelay=0;
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}
-    proc.kill("SIGTERM");server.close();
+    proc.kill("SIGTERM");devServer.close();server.close();
     await new Promise(ok=>server.once("close",ok));
     for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);
     if(proc.exitCode===null)proc.kill("SIGKILL");
