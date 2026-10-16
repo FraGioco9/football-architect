@@ -96,6 +96,7 @@ function setPreviewEnabled(enabled) {
    previewState="ON";
    widgetRoot?.syncVisibility();
    try{sessionStorage.setItem(FLAG,"on")}catch{}
+   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:true}}));
    return true;
   }
   try{activePreview()}
@@ -110,6 +111,7 @@ function setPreviewEnabled(enabled) {
   previewState="OFF";
   widgetRoot?.syncVisibility();
   try{sessionStorage.removeItem(FLAG)}catch{}
+  window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
   return true;
  });
  return transition;
