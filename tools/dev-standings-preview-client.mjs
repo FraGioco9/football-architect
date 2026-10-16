@@ -11,7 +11,7 @@ function readMatchdays(){
  }catch{return 15}
 }
 let matchdays=readMatchdays();
-function selectedSeason(){return new URLSearchParams(location.search).get("season")==="2"?2:1;}
+function selectedSeason(){return new URLSearchParams(location.search).get("season")==="1"?1:2;}
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
  const old=matchdays;if(value===old)return true;
