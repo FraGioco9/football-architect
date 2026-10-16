@@ -131,10 +131,21 @@ if(validPath){
      if(next===2)await setPreviewEnabled(true);
      return;
     }
+    // Restore the original DOM before installing another season. Restoring
+    // afterward would overwrite the newly rendered season's standings.
     const previous=activePreview;
+    try{previous()}catch(error){
+     previewState="ERROR";
+     console.error("DEV season restore failed:",error);
+     return;
+    }
+    activePreview=null;
     const replacement=await boot(validPath[1].toUpperCase());
-    if(typeof replacement!=="function")return;
-    activePreview=()=>{try{replacement()}finally{previous()}};
+    if(typeof replacement!=="function"){
+     previewState="OFF";
+     return;
+    }
+    activePreview=replacement;
    }).catch(error=>console.error("DEV season preview refresh failed:",error));
   }
   // The competition router notifies subscribers after updating its URL state.
