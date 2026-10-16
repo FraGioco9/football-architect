@@ -41,22 +41,13 @@ const pages = {
 const finalLogos=validateDivisionAssets().divisions;
 const divisionData = JSON.parse(readFileSync(new URL("../data/divisions.json", import.meta.url), "utf8"));
 const clubData = JSON.parse(readFileSync(new URL("../data/clubs.json", import.meta.url), "utf8"));
-if (!Array.isArray(clubData.clubs) || clubData.clubs.length !== 320) throw new Error("Expected 320 canonical club identities");
+if (!Array.isArray(clubData) || clubData.length !== 320) throw new Error("Expected 320 canonical club identities");
 const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division-allocations.provisional.json", import.meta.url), "utf8"));
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const flagForCountry = id => "assets/flags/" + (id === "ENG" ? "gb-eng" : id.toLowerCase()) + ".svg";
 const countryById = Object.fromEntries(new Map(divisionData.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:flagForCountry(d.countryId)}])));
-const primaryReference = JSON.parse(readFileSync(new URL("../data/club-primary-names.documented.json",import.meta.url),"utf8"));
-if(primaryReference.schemaVersion!==1 || Object.keys(primaryReference.names??{}).length!==315)throw Error("Primary-name reference mismatch");
-const namesById=new Map(clubData.clubs.map(club=>[club.countryId+":"+club.clubId,club]));
-for(const [key,name] of Object.entries(primaryReference.names)){
- const club=namesById.get(key);
- if(!club || typeof name!=="string" || !name.trim() || (club.approvedShortName && club.approvedShortName!==name))
-  throw Error("Undocumented or conflicting primary club name "+key);
-}
-const primaryName=club=>club.approvedShortName||primaryReference.names[club.countryId+":"+club.clubId]||null;
-if(clubData.clubs.some(club=>!primaryName(club)))throw Error("Incomplete approved primary-name registry");
+const primaryName=club=>club.primaryName;
 
 const worldNav = function worldNav(href,active){
  return '            <a class="fa-shell-link'+(active?' is-active':'')+'" id="app-nav-divisions" href="'+href+'" data-app-view="divisions"'+(active?' aria-current="page"':'')+' aria-label="Competitions" data-app-aria="navCompetitions">';

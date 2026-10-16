@@ -4,7 +4,7 @@
 
 ## Source contracts
 
-- [Club identities](../../data/clubs.json): all **320** permanent `(countryId, clubId)` identities (40 per country), with existing abbreviations, approved primary names and historical references preserved.
+- [Club identities](../../data/clubs.json): all **320** permanent `(countryId, clubId)` identities (40 per country), with all twelve approved identity fields preserved.
 - [Divisions](../../data/divisions.json): the same eight countries, 16 competition IDs, original-language names, flags and logos; **16 places per division**.
 - [Initial UI allocation](../../data/division-allocations.provisional.json): **256** participants in 16 provisional club lists, each protected by [the allocation validator](../../tools/validate-provisional-allocations.mjs).
 - [CLUB-ASSET #61](https://github.com/FraGioco9/football-architect/issues/61): continue the **640 planned PNGs** for all 320 clubs, including 128 images for the 64 excluded clubs.
@@ -22,7 +22,7 @@
 | Netherlands | NL-1 | NL-2 | 8 asset-only clubs |
 | Brazil | BR-1 | BR-2 | 8 asset-only clubs |
 
-**Totals:** first division **128** + second division **128** = **256** provisional participants; **64** excluded from gameplay; all **320** identities remain in the catalogue. Club ID order is not a league ranking. The 160 historical first-tier references on IDs 1–20 document archival club details, **not** the current placement of IDs 17–20.
+**Totals:** first division **128** + second division **128** = **256** provisional participants; **64** excluded from gameplay; all **320** identities remain in the catalogue. Club ID order is not a league ranking. Club names and identity fields do not determine league membership.
 
 ## Integrity and scope
 

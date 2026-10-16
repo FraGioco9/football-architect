@@ -7,8 +7,7 @@ const read=file=>readFileSync(new URL("../"+file,import.meta.url),"utf8");
 const divisions=JSON.parse(read("data/divisions.json"));
 const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:"assets/flags/"+(d.countryId==="ENG"?"gb-eng":d.countryId.toLowerCase())+".svg"}])).values()];
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
-const clubs=JSON.parse(read("data/clubs.json")).clubs;
-const primaryNames=JSON.parse(read("data/club-primary-names.documented.json")).names;
+const clubs=JSON.parse(read("data/clubs.json"));
 const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
 const shared=read("app/competitions/_shared/index.html");
 const index=read("app/competitions/index.html");
@@ -89,7 +88,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
    const club=clubs.find(c=>c.countryId===record.countryId&&c.clubId===record.clubId);
    const key=record.countryId+"-"+record.clubId;
    assert.ok(club,key);
-   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.approvedShortName||primaryNames[record.countryId+":"+record.clubId]||null});
+   assert.deepEqual(record,{countryId:club.countryId,clubId:club.clubId,abbr:club.abbr,fullName:club.fullName,primaryName:club.primaryName});
    assert.ok(!seen.has(key),"duplicate "+key);
    seen.add(key);
   }
@@ -328,66 +327,16 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 
-test("COMPETITIONS-08 uses only documented primary names, never inferred shortened names",()=>{
- const canonical=clubs;
- const byId=new Map(canonical.map(c=>[c.countryId+":"+c.clubId,c]));
- const explicit=canonical.filter(c=>c.approvedShortName);
- assert.equal(Object.keys(primaryNames).length,315);
- assert.equal(explicit.length,6);
- let named=0,abbreviationOnly=0;
- for(const d of manifest.divisions){
-  for(const c of d.clubs){
-   const key=c.countryId+":"+c.clubId,source=byId.get(key);
-   assert.ok(source);
-   assert.equal(c.primaryName,source.approvedShortName||primaryNames[key]||null,key);
-   assert.equal(c.fullName,source.fullName,key);
-   if(c.primaryName)named++;else abbreviationOnly++;
-  }
+test("COMPETITIONS-08 uses approved canonical primary names for all 256 participants",()=>{
+ const byId=new Map(clubs.map(c=>[c.countryId+":"+c.clubId,c]));
+ for(const division of manifest.divisions)for(const club of division.clubs){
+  const source=byId.get(club.countryId+":"+club.clubId);
+  assert.ok(source);
+  assert.equal(club.primaryName,source.primaryName);
+  assert.equal(club.fullName,source.fullName);
+  assert.equal(club.abbr,source.abbr);
  }
- assert.equal(named,256);
- assert.equal(abbreviationOnly,0);
- for(const [key,name] of Object.entries(primaryNames)){
-  assert.ok(byId.has(key),key);
-  assert.ok(typeof name==="string"&&name.trim(),key);
-  const source=byId.get(key);
-  if(source.approvedShortName)assert.equal(name,source.approvedShortName,key);
- }
-});
-
-test("CLUB-PRIMARY-239-01 preserves six reconciliations and an independent A03 audit",()=>{
- const catalog=read("data/clubs.json");
- const source=JSON.parse(catalog).clubs;
- const primary=JSON.parse(read("data/club-primary-names.documented.json"));
- const unique=new Set();
- assert.equal(primary.schemaVersion,1);
- assert.equal(Object.keys(primary.names).length,315);
- assert.equal(source.length,320);
- const expectedSix={
-  "IT:1":"US Velaria Torino","IT:2":"AC Rinascenti Bologna",
-  "FR:27":"FC Émaux","FR:33":"CS Garrigues",
-  "PT:34":"AC Fontes","BR:16":"EC Falésia Clara"
- };
- assert.deepEqual(Object.fromEntries(source.filter(c=>c.approvedShortName)
-   .map(c=>[c.countryId+":"+c.clubId,c.approvedShortName])),expectedSix);
- for(const c of source){
-  const key=c.countryId+":"+c.clubId,name=c.approvedShortName||primary.names[key];
-  assert.ok(typeof name==="string"&&name.trim(),key);
-  const normalized=name.normalize("NFKD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
-  assert.ok(!unique.has(normalized),"Duplicate primary label: "+name);
-  unique.add(normalized);
- }
- assert.equal(unique.size,320);
- const audit=read("docs/clubs/a03-label-variants.en.md");
- const differences=[...audit.matchAll(/^\|\s*((?:ENG|ES|DE)-\d{2})\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|/gm)];
- assert.equal(differences.length,41);
- assert.equal(differences.filter(x=>x[1].startsWith("ENG-")).length,2);
- assert.equal(differences.filter(x=>x[1].startsWith("ES-")).length,19);
- assert.equal(differences.filter(x=>x[1].startsWith("DE-")).length,20);
- assert.equal(new Set(differences.map(x=>x[1])).size,41);
- assert.ok(!/^\|\s*IT-02\s*\|/m.test(audit));
- const it02=manifest.divisions.flatMap(d=>d.clubs).find(c=>c.countryId==="IT"&&c.clubId===2);
- assert.equal(it02?.primaryName,"AC Rinascenti Bologna");
- assert.equal(it02?.abbr,"RIN");
+ assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 
 test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",()=>{
