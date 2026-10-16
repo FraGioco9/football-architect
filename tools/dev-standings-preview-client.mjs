@@ -11,6 +11,7 @@ function readMatchdays(){
  }catch{return 15}
 }
 let matchdays=readMatchdays();
+function selectedSeason(){return new URLSearchParams(location.search).get("season")==="2"?2:1;}
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
  const old=matchdays;if(value===old)return true;
@@ -134,6 +135,23 @@ if(validPath){
    return widgetRoot?.resetWidgetState()===true;
   }}]);
   widgetRoot=createDebugWidget({page:"standings"});
+  let renderedSeason=selectedSeason();
+  let seasonRefresh=Promise.resolve();
+  function syncSeason(){
+   const next=selectedSeason();
+   if(next===renderedSeason)return;
+   renderedSeason=next;
+   seasonRefresh=seasonRefresh.then(async()=>{
+    await transition;
+    if(previewState!=="ON")return;
+    const previous=activePreview;
+    const replacement=await boot(validPath[1].toUpperCase());
+    if(typeof replacement!=="function")return;
+    activePreview=()=>{try{replacement()}finally{previous()}};
+   }).catch(error=>console.error("DEV season preview refresh failed:",error));
+  }
+  window.addEventListener("popstate",syncSeason);
+  document.addEventListener("click",()=>setTimeout(syncSeason,0),true);
   if(isPreviewEnabled())setPreviewEnabled(true).then(ok=>{
    widgetRoot?.syncVisibility();
   if(!ok){try{sessionStorage.removeItem(FLAG)}catch{}
@@ -190,7 +208,7 @@ async function boot(routeId) {
     }
     const division = manifest.divisions.find(d => d.id === routeId);
     if (!division) throw Error("Unknown DEV division");
-    const { rows, clubs } = createPreviewStandings(division,matchdays);
+    const { rows, clubs } = createPreviewStandings(division,matchdays,selectedSeason());
     const tbody = await waitForRows();
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
