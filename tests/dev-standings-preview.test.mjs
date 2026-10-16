@@ -336,7 +336,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const operations = [];
     runInNewContext(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],
-      window: {faCompetitionRoute:{subscribe(){}}},
+      window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
       savedPreviewEnabled: () => enabled,
       document: {documentElement:{dataset:{}},querySelector:()=>null},
