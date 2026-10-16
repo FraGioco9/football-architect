@@ -394,14 +394,14 @@ test("CLUB-PRIMARY-239-01 preserves six reconciliations and an independent A03 a
  assert.equal(it02?.abbr,"RIN");
 });
 
-test("COMPETITIONS-ROUTE-02 resolves flags from the three-level competition path",()=>{
+test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",()=>{
  const shared=read("app/competitions/_shared/index.html"),loader=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
- assert.ok(shared.includes('id="app-competition-flag" alt="" src="../../../assets/flags/it.svg"'));
- assert.ok(!shared.includes('id="app-competition-flag" alt="" src="../../../../'));
- assert.ok(loader.includes('new URL("../../../" + division.flagAsset, window.location.href)'));
- assert.ok(loader.includes('if (flag.src !== expectedFlag.href) flag.src = expectedFlag.href'));
- assert.ok(generator.includes('id="app-competition-flag" alt="" src="../../../'));
+ assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
+ assert.ok(shared.includes('class="app-world-flag-frame" aria-hidden="true"'));
+ assert.ok(!shared.includes('id="app-competition-flag" alt="" src='));
+ assert.ok(loader.includes('flag.tagName.toLowerCase() !== "svg"'));
+ assert.ok(generator.includes("inlineCountryFlag(c)"));
 });
 
 test("COMPETITION-TABS-UNIFORM-01: all six tabs have identical widths in five languages",()=>{

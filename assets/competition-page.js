@@ -402,9 +402,10 @@
     document.getElementById("division-detail-name").textContent=division.name;
     window.faThemeRebind?.(); // Rebind unrelated branding/theme controls.
     const flag = document.getElementById("app-competition-flag");
-    const expectedFlag = new URL("../../../" + division.flagAsset, window.location.href);
-    // Deep-link HTML already supplies the correct flag at first paint.
-    if (flag.src !== expectedFlag.href) flag.src = expectedFlag.href;
+    // The server-generated inline SVG is already correct at first paint.
+    // Validate the route identity instead of replacing the flag DOM.
+    if (flag.tagName.toLowerCase() !== "svg" ||
+        !flag.closest(".app-world-flag-frame")) throw Error("Invalid inline competition flag");
     const country = document.getElementById("app-competition-country");
     country.dataset.worldCountry = division.countryId;
     country.textContent = division.countryName;
