@@ -8,6 +8,8 @@
   const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
   if(clubs.size!==16)return;
   const navigation=window.faCompetitionRoute;
+  const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(value=>/^[1-9]\\d*$/.test(value));
+  const availableSeasons=new Set(["1",...devSeasons]);
   const picker=document.getElementById("app-fixtures-picker");
   const number=document.getElementById("app-fixtures-round-number");
   if(!navigation||!picker||!number)return;
@@ -91,7 +93,7 @@
     return item;
   }
   function render(){
-    const available=rounds!==null&&["1","2"].includes(navigation.get().season);
+    const available=rounds!==null&&availableSeasons.has(navigation.get().season);
     fields.toolbar.hidden=!available;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
     fields.round.value=String(selected);fields.round.disabled=!available;
