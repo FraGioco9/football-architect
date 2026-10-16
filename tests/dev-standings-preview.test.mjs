@@ -589,3 +589,14 @@ test('STANDINGS-TOOLTIP-DATE: supplied kickoff is localized and missing dates st
  const kickoff='2026-10-20T12:30:00Z';
  for(const lang of ['en','it','de','es','fr'])assert.equal(format({kickoff},lang),new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(kickoff)));
 });
+
+
+test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives its sections from deterministic seasons",()=>{
+ const client=read("tools/dev-standings-preview-client.mjs"),html=read("app/competitions/_shared/index.html"),css=read("assets/app.css");
+ assert.match(client,/function renderHistoryPreview\(\)/);
+ assert.match(client,/if\(!isPreviewEnabled\(\)\)\{clearHistoryPreview\(\);return\}/);
+ assert.match(client,/createPreviewStandings\(division,30,season\)/);
+ for(const key of ["historyHallOfChampions","historySeasonArchive","historyFinalStandings","historyHistoricalRecords","historyMostTitles","historyMostPodiums","historyLongestTitleStreak","historyPreviewNotice"])assert.ok(client.includes(key),key);
+ assert.match(client,/clearHistoryPreview\(\)/);assert.match(html,/<section id="competition-panel-history"/);assert.match(css,/\.app-history-dev-records/);
+ assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-client.mjs"),false);assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-data.mjs"),false);
+});

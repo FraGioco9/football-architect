@@ -76,6 +76,45 @@ let previewState="OFF";
 let widgetRoot;
 function savedPreviewEnabled(){try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}}
 function isPreviewEnabled(){return previewState==="ON";}
+
+let historyRenderVersion=0;
+function clearHistoryPreview(){const panel=document.getElementById("competition-panel-history");if(!panel)return;panel.querySelector(".app-history-dev")?.remove();const empty=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"]');if(empty)empty.hidden=false;}
+function historyNode(tag,className="",text){const element=document.createElement(tag);if(className)element.className=className;if(text!==undefined)element.textContent=String(text);return element;}
+function historyCell(row,tag,text,className=""){const cell=historyNode(tag,className,text);row.appendChild(cell);return cell;}
+function recordWinners(records,metric){const maximum=Math.max(...records.map(item=>item[metric]));return{maximum,clubs:[...new Set(records.filter(item=>item[metric]===maximum).map(item=>item.name))]};}
+async function renderHistoryPreview(){
+ const route=window.faCompetitionRoute?.get?.(),panel=document.getElementById("competition-panel-history");if(!panel)return;
+ if(!isPreviewEnabled()){clearHistoryPreview();return}if(route?.view!=="history")return;
+ const version=++historyRenderVersion,response=await fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"});
+ if(!response.ok)throw Error("DEV History manifest unavailable");const manifest=await response.json();
+ if(manifest.schemaVersion!==1||manifest.approved!==false||!Array.isArray(manifest.divisions)||manifest.divisions.length!==16||manifest.divisions.reduce((n,d)=>n+(d.clubs?.length||0),0)!==256)throw Error("Invalid DEV History manifest");
+ const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
+ const seasons=[1,2,3,4].map(season=>({season,rows:createPreviewStandings(division,30,season).rows}));
+ if(version!==historyRenderVersion||!isPreviewEnabled()||window.faCompetitionRoute?.get?.().view!=="history")return;
+ const selected=Number(route.season),chosen=seasons.find(item=>item.season===selected)||seasons[3],root=historyNode("div","app-history-dev");
+ const banner=historyNode("p","app-history-dev-banner");banner.dataset.appI18n="historyPreviewNotice";root.appendChild(banner);
+ const section=key=>{const box=historyNode("section","app-history-dev-section"),h=historyNode("h3");h.dataset.appI18n=key;box.appendChild(h);root.appendChild(box);return box;};
+ const table=(parent,headers)=>{const wrap=historyNode("div","app-history-dev-table-wrap"),tbl=historyNode("table","app-history-dev-table"),thead=historyNode("thead"),tr=historyNode("tr");for(const [key,numeric] of headers){const th=historyNode("th",numeric?"numeric":"");th.scope="col";th.dataset.appI18n=key;tr.appendChild(th);}thead.appendChild(tr);tbl.appendChild(thead);tbl.appendChild(historyNode("tbody"));wrap.appendChild(tbl);parent.appendChild(wrap);return tbl.querySelector("tbody");};
+ const hall=section("historyHallOfChampions"),championRows=table(hall,[["historySeasonLabel",false],["historyChampionLabel",false],["historyPodiumLabel",false]]);
+ for(const item of [...seasons].reverse()){const row=historyNode("tr");historyCell(row,"td",item.season);historyCell(row,"td",item.rows[0].club.primaryName);historyCell(row,"td",item.rows.slice(0,3).map(r=>r.club.primaryName).join(" · "));championRows.appendChild(row);}
+ const archive=section("historySeasonArchive"),buttons=historyNode("div","app-history-dev-archive");archive.appendChild(buttons);
+ for(const item of [...seasons].reverse()){const button=historyNode("button","app-history-dev-season-button");button.type="button";button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen.season));button.setAttribute("aria-label",`${strings().historySelectSeason||"View final standings"} — ${item.season}`);button.textContent=(strings().competitionSeason||"Season")+" "+item.season;button.addEventListener("click",()=>window.faCompetitionRoute?.set?.({season:String(item.season),view:"history"}));buttons.appendChild(button);}
+ const finalSection=section("historyFinalStandings"),finalRows=table(finalSection,[["standingsPosition",true],["standingsClub",false],["standingsPlayed",true],["standingsWon",true],["standingsDrawn",true],["standingsLost",true],["standingsFor",true],["standingsAgainst",true],["standingsDifference",true],["standingsPoints",true]]);
+ finalSection.querySelector("h3").textContent=(strings().historyFinalStandings||"Final standings")+": "+(strings().competitionSeason||"Season")+" "+chosen.season;
+ chosen.rows.forEach((item,index)=>{const row=historyNode("tr",index===0?"is-champion":"");[index+1,item.club.primaryName,item.played,item.won,item.drawn,item.lost,item.gf,item.ga,item.gd>0?"+"+item.gd:item.gd,item.pts].forEach((value,column)=>historyCell(row,"td",value,column===1?"":"numeric"));finalRows.appendChild(row);});
+ const records=section("historyHistoricalRecords"),grid=historyNode("div","app-history-dev-records");records.appendChild(grid);
+ const titleMap=new Map(),podiumMap=new Map();
+ for(const item of seasons)item.rows.forEach((row,index)=>{const id=row.club.countryId+"-"+row.club.clubId,base={clubId:id,name:row.club.primaryName};const t=titleMap.get(id)||{...base,titles:0};if(index===0)t.titles++;titleMap.set(id,t);const p=podiumMap.get(id)||{...base,podiums:0};if(index<3)p.podiums++;podiumMap.set(id,p);});
+ const titleRecord=recordWinners([...titleMap.values()],"titles"),podiumRecord=recordWinners([...podiumMap.values()],"podiums"),winners=seasons.map(item=>item.rows[0].club.countryId+"-"+item.rows[0].club.clubId);
+ let bestStreak=0,streakIds=new Set();for(let start=0;start<winners.length;start++){let end=start+1;while(end<winners.length&&winners[end]===winners[start])end++;const length=end-start;if(length>bestStreak){bestStreak=length;streakIds=new Set([winners[start]]);}else if(length===bestStreak)streakIds.add(winners[start]);}
+ const names=new Map([...titleMap.values()].map(item=>[item.clubId,item.name])),cards=[["historyMostTitles",titleRecord.maximum,titleRecord.clubs.join(", ")],["historyMostPodiums",podiumRecord.maximum,podiumRecord.clubs.join(", ")],["historyLongestTitleStreak",bestStreak,[...streakIds].map(id=>names.get(id)).join(", ")]];
+ for(const [key,value,clubNames] of cards){const card=historyNode("article","app-history-dev-record"),h=historyNode("h4");h.dataset.appI18n=key;card.appendChild(h);card.appendChild(historyNode("p","",clubNames));card.appendChild(historyNode("p","app-history-dev-subtle",String(value)));grid.appendChild(card);}
+ panel.querySelector('[data-app-i18n="competitionHistoryEmpty"]')?.setAttribute("hidden","");panel.querySelector(".app-history-dev")?.remove();panel.appendChild(root);window.faAppRenderLanguage?.();
+ finalSection.querySelector("h3").textContent=(strings().historyFinalStandings||"Final standings")+": "+(strings().competitionSeason||"Season")+" "+chosen.season;
+ for(const button of buttons.querySelectorAll("button"))button.textContent=(strings().competitionSeason||"Season")+" "+button.dataset.historySeason;
+}
+function syncHistoryPreview(){const route=window.faCompetitionRoute?.get?.();if(!isPreviewEnabled()){clearHistoryPreview();return;}if(route?.view==="history")renderHistoryPreview().catch(error=>{console.error("DEV History preview unavailable:",error);clearHistoryPreview();});}
+
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
  transition=transition.catch(()=>false).then(async()=>{
@@ -166,7 +205,9 @@ if(validPath){
   // explicit route event rather than relying on popstate (pushState does not
   // emit popstate), and handle browser back/forward navigation as well.
   window.addEventListener("fa:competition-route-change",syncSeason);
+  window.addEventListener("fa:competition-route-change",syncHistoryPreview);
   window.addEventListener("popstate",syncSeason);
+  window.addEventListener("popstate",syncHistoryPreview);
  }).catch(error => {
   delete document.documentElement.dataset.faDevStandingsPending;
   window.faDebugFirstPaintRelease?.();
