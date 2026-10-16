@@ -1,4 +1,4 @@
-import {aggregatePreviewStats} from "./stats-data.mjs";
+import {aggregatePreviewStats} from "./dev-competition-stats-data.mjs";
 
 // The shared competition shell is hydrated asynchronously by competition-page.js.
 const panel = await new Promise(resolve => {
@@ -28,11 +28,6 @@ if (panel && divisionId) {
 .fa-dev-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .fa-dev-stats-card{padding:16px;border:1px solid currentColor;border-radius:12px}
 .fa-dev-stats-card strong{display:block;font-size:1.4rem}
-.fa-dev-stats-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.fa-dev-stats-table th,.fa-dev-stats-table td{padding:9px 7px;text-align:right;border-bottom:1px solid currentColor}
-.fa-dev-stats-table th:first-child,.fa-dev-stats-table td:first-child{text-align:left}
-.fa-dev-stats-table button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-.fa-dev-stats-table-wrap{overflow-x:auto}
 
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-heading{font-size:1rem;margin:0 0 12px;font-weight:700}
@@ -44,18 +39,12 @@ if (panel && divisionId) {
 .fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;border-color:rgba(128,145,145,.25)}
 .fa-dev-stats-card span{font-size:.85rem;opacity:.75}
 .fa-dev-stats-card strong{font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.fa-dev-stats-subnav{display:flex;gap:8px;margin-bottom:14px}
-.fa-dev-stats-subnav button{border:1px solid rgba(128,145,145,.35);border-radius:8px;background:transparent;color:inherit;padding:9px 14px;cursor:pointer}
-.fa-dev-stats-subnav button[aria-pressed=true]{font-weight:700;border-color:currentColor}
 @media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
 @media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
 `;
   style.textContent += `
 .fa-dev-stats-nav{justify-content:center;gap:8px;background:transparent;border:0}
 .fa-dev-stats-nav button{flex:0 1 132px;width:132px;max-width:33%;border:1px solid rgba(128,145,145,.25);text-align:center;display:flex;align-items:center;justify-content:center}
-.fa-dev-stats-categories{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.fa-dev-stats-categories button{border:1px solid rgba(128,145,145,.3);border-radius:8px;background:transparent;color:inherit;padding:8px 12px;cursor:pointer}
-.fa-dev-stats-categories button[aria-pressed=true]{border-color:currentColor;font-weight:700}
 .fa-dev-stats-top{list-style:decimal inside;margin:0;padding:0;max-width:680px}
 .fa-dev-stats-top li{display:flex;justify-content:space-between;gap:16px;padding:12px;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top strong{font-variant-numeric:tabular-nums}
@@ -64,14 +53,6 @@ if (panel && divisionId) {
   style.textContent += `
 .fa-dev-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 .fa-dev-stats-card{border-color:rgba(128,145,145,.12);padding:14px}
-.fa-dev-stats-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.fa-dev-stats-record{border:1px solid rgba(128,145,145,.12);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
-.fa-dev-stats-record-label{font-size:.82rem;opacity:.7}
-.fa-dev-stats-record strong{font-variant-numeric:tabular-nums;font-size:1.1rem}
-.fa-dev-stats-record .app-world-club-identity,.fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;gap:9px;min-width:0}
-.fa-dev-stats-record .app-world-club-crest-placeholder,.fa-dev-stats-top .app-world-club-crest-placeholder{flex:none}
-@media(max-width:700px){.fa-dev-stats-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:420px){.fa-dev-stats-record-grid{grid-template-columns:1fr}}
 `;
   style.textContent += `
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -82,7 +63,6 @@ if (panel && divisionId) {
 .fa-dev-stats-leader-card .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
-.fa-dev-stats-top li[hidden]{display:none}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s,background-color .15s}
 .fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
 .fa-dev-stats-dialog[open]{animation:fa-stats-dialog-in .2s ease-out both}
@@ -113,12 +93,6 @@ if (panel && divisionId) {
   panel.replaceChildren(root);
   let manifest = null;
   let view = "overview";
-  let teamMode = "performance";
-  let sortKey = "points";
-  let descending = true;
-  const columns = ["clubName","mp","w","d","l","gf","ga","gd","points","ppg","cs","fts","homeWinPct","awayWinPct"];
-  const labels = ["Club","MP","W","D","L","GF","GA","GD","Pts","PPG","CS","FTS","Home W%","Away W%"];
-  const pct = value => value.toFixed(1) + "%";
   const number = value => Number.isInteger(value) ? String(value) : value.toFixed(2);
   function selectedSeason() {
     const value = Number(new URLSearchParams(location.search).get("season"));
