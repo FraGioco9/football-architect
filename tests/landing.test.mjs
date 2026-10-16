@@ -177,7 +177,7 @@ test("HOME-ENTRY-01 renders the preview CTA in all five languages", () => {
 test("HOME-ENTRY-01 preserves Guide navigation and keyboard language controls", () => {
   const r = render("it");
   r.guide.fire("click");
-  assert.deepEqual(r.navigation, ["./guide/"]);
+  assert.deepEqual(r.navigation, ["/guide"]);
   assert.match(js, /button\.dataset\.destination !== "guide"/);
   assert.match(html, /data-destination="guide"/);
 });
