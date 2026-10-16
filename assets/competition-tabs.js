@@ -74,11 +74,11 @@
     url.searchParams.set("season",state.season);url.searchParams.set("view",state.view);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
-    const index=views.indexOf(state.view),available=state.season==="1";
+    const index=views.indexOf(state.view),available=state.season==="1"||state.season==="2";
     document.documentElement.dataset.competitionView=state.view;
     document.documentElement.dataset.competitionSeasonUnavailable=String(!available);
-    seasonPicker.sync(available?"1":"");seasonPicker.close();unavailable.hidden=available;
-    seasonValue.textContent=available?"1":unavailable.textContent;
+    seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available;
+    seasonValue.textContent=available?state.season:unavailable.textContent;
     if(available)seasonValue.removeAttribute("data-app-i18n");
     else seasonValue.setAttribute("data-app-i18n","competitionSeasonUnavailable");
     for(let i=0;i<tabs.length;i++){
@@ -98,7 +98,7 @@
   }
   window.faCompetitionRoute={get:()=>({...state}),set,
     defaultMatchday(round){
-      if(!pendingDefaultMatchday||state.view!=="fixtures"||state.season!=="1")return;
+      if(!pendingDefaultMatchday||state.view!=="fixtures"||!["1","2"].includes(state.season))return;
       pendingDefaultMatchday=false;
       if(Number.isInteger(round)&&round>=1&&round<=30)apply({...state,matchday:round},{replace:true});
     },
