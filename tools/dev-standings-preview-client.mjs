@@ -122,7 +122,10 @@ if(validPath){
    return widgetRoot?.resetWidgetState()===true;
   }}]);
   widgetRoot=createDebugWidget({page:"standings"});
-  if(savedPreviewEnabled())setPreviewEnabled(true);
+  if(savedPreviewEnabled())setPreviewEnabled(true).then(ok=>{
+   const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
+   if(toggle)toggle.checked=ok;
+  });
   let renderedSeason=selectedSeason();
   let seasonRefresh=Promise.resolve();
   function syncSeason(){
