@@ -50,7 +50,7 @@ if (panel && divisionId) {
 `;
   style.textContent += `
 .fa-dev-stats-nav{justify-content:center;gap:8px;background:transparent;border:0}
-.fa-dev-stats-nav button{flex:0 1 132px;width:132px;max-width:33%;border:1px solid rgba(128,145,145,.25)}
+.fa-dev-stats-nav button{flex:0 1 132px;width:132px;max-width:33%;border:1px solid rgba(128,145,145,.25);text-align:center;display:flex;align-items:center;justify-content:center}
 .fa-dev-stats-categories{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .fa-dev-stats-categories button{border:1px solid rgba(128,145,145,.3);border-radius:8px;background:transparent;color:inherit;padding:8px 12px;cursor:pointer}
 .fa-dev-stats-categories button[aria-pressed=true]{border-color:currentColor;font-weight:700}
