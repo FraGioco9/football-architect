@@ -33,7 +33,7 @@ function setup(d=divisions[0]){
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch){if(patch.matchday!==undefined&&(!Number.isInteger(patch.matchday)||patch.matchday<1||patch.matchday>30))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
  const window={faCompetitionDivision:d,faCompetitionRoute:route,faAppRenderLanguage(){}};
- const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en'},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
+ const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
  return {view:window.faFixtures,fields,route,choices};
@@ -97,7 +97,7 @@ test('FIXTURES-05: return to supplied current round is conditional, transactiona
  const restore=view.snapshot();view.prepare(null)();assert.equal(button.hidden,true);
  restore();button.emit('click');assert.equal(route.get().matchday,16);
  for(const invalid of [0,31,NaN,'16'])assert.throws(()=>view.prepare(schedule(divisions[0]),{currentMatchday:invalid}));
- route.set({season:'3'});assert.equal(button.hidden,true);
+ route.set({season:'5'});assert.equal(button.hidden,true,'unavailable season hides return-to-current-round control');
  route.set({season:'1'});view.prepare(schedule(divisions[0]))();assert.equal(button.hidden,true,'unknown current round is never inferred');
  for(const currentMatchday of [1,30]){
   view.prepare(schedule(divisions[0],currentMatchday===1?0:30),{currentMatchday})();
@@ -112,7 +112,9 @@ test('FIXTURES-06: matchday controls stay hidden without a schedule and recover 
  view.prepare(schedule(divisions[0],0))();
  assert.equal(toolbar.hidden,false,'unplayed scheduled rounds still provide navigation');
  route.set({season:'2'});assert.equal(toolbar.hidden,false,'DEV season 2 retains navigation');
- route.set({season:'3'});assert.equal(toolbar.hidden,true,'unavailable season');
+ route.set({season:'3'});assert.equal(toolbar.hidden,false,'DEV season 3 retains navigation');
+ route.set({season:'4'});assert.equal(toolbar.hidden,false,'DEV season 4 retains navigation');
+ route.set({season:'5'});assert.equal(toolbar.hidden,true,'unavailable season');
  route.set({season:'1'});assert.equal(toolbar.hidden,false,'available season restored');
  const restore=view.snapshot();view.prepare(null)();
  assert.equal(toolbar.hidden,true,'removing schedule hides controls');
