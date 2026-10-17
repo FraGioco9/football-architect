@@ -118,7 +118,7 @@ test('Stats Overview and Players stay at 88px; Teams can grow',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
  assert.match(css,/\.app-competition-stat-card--compact\{[^}]*height:88px;min-height:88px;max-height:88px/);
- assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*height:auto;min-height:88px;max-height:none/);
+ assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:minmax\(30px,auto\) auto;[^}]*height:auto;min-height:88px;max-height:none/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
@@ -134,6 +134,28 @@ test('Stats Teams rows align rank, crest, wrapping name and numeric value withou
  assert.match(source,/app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
  assert.doesNotMatch(source,/\.fa-dev-stats-top \.app-world-club-identity>span:last-child\{overflow:hidden/);
  assert.doesNotMatch(source,/\.fa-dev-stats-top\{[^}]*overflow-y:auto/);
+});
+test('DEV Stats labels and messages use the five-language app dictionary',()=>{
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ const names=['en','de','es','fr','it'];
+ const keys=['statsDevOverview','statsDevTeams','statsDevPlayers','statsDevGoals',
+ 'statsDevAssists','statsDevAverageRating','statsDevCleanSheets','statsDevMatchesPlayed',
+ 'statsDevTotalGoals','statsDevGoalsPerMatch','statsDevGoalsScored','statsDevFewestConceded',
+ 'statsDevWins','statsDevPointsPerMatch','statsDevGoalDifference','statsDevUnbeatenStreak',
+ 'statsDevNoData','statsDevNoPlayerData','statsDevShowAll','statsDevClose','statsDevUnavailable'];
+ for(const lang of names){
+  const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
+  assert.ok(start>=0&&end>start,'Language block '+lang);
+  const segment=app.slice(start,end);
+  for(const key of keys)assert.equal((segment.match(new RegExp('\\\\b'+key+':','g'))||[]).length,1,lang+' '+key);
+ }
+ assert.match(dev,/const localized = \(tag, key, english, className\) =>/);
+ assert.match(dev,/el\.dataset\.appI18n = key/);
+ assert.match(dev,/window\.faAppRenderLanguage\?\.\(\)/);
+ assert.match(dev,/close\.dataset\.appAria="statsDevClose"/);
+ assert.match(dev,/dialog\.setAttribute\("aria-labelledby",title\.id\)/);
+ assert.doesNotMatch(dev,/aria-label",label\+" leaderboard"/);
 });
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[

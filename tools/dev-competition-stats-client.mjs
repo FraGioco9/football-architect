@@ -19,6 +19,13 @@ const create = (tag, text, className) => {
   if (className) el.className = className;
   return el;
 };
+// DEV content participates in the app's existing data-app-i18n system.
+const localized = (tag, key, english, className) => {
+  const el = create(tag, english, className);
+  el.dataset.appI18n = key;
+  return el;
+};
+const syncLanguage = () => window.faAppRenderLanguage?.();
 if (panel && divisionId) {
   const style = create("style");
   style.textContent = `
@@ -89,13 +96,14 @@ if (panel && divisionId) {
     try { stats = aggregatePreviewStats(division, selectedMatchdays(), selectedSeason()); }
     catch (error) {
       console.error(error);
-      root.replaceChildren(create("p","DEV statistics unavailable"));
+      root.replaceChildren(localized("p","statsDevUnavailable","DEV statistics unavailable"));
+      syncLanguage();
       return;
     }
     root.replaceChildren();
     const nav = create("div", undefined, "fa-dev-stats-nav");
-    for (const [id,label] of [["overview","Overview"],["teams","Teams"],["players","Players"]]) {
-      const button = create("button",label,"language-trigger");
+    for (const [id,key,label] of [["overview","statsDevOverview","Overview"],["teams","statsDevTeams","Teams"],["players","statsDevPlayers","Players"]]) {
+      const button = localized("button",key,label,"language-trigger");
       button.type = "button";
       button.setAttribute("aria-pressed",String(view === id));
       button.addEventListener("click",()=>{const keyboardFocus=button.matches(":focus-visible");view=id;render();if(keyboardFocus){const selected=nav.querySelector('button[aria-pressed="true"]');selected?.focus();}});
@@ -108,36 +116,40 @@ if (panel && divisionId) {
     if (view === "players") {
       const section=create("section",undefined,"fa-dev-stats-section");
       const grid=create("div",undefined,"fa-dev-stats-leader-grid");
-      const categories=["Goals","Assists","Average rating","Clean sheets"];
-      for(const label of categories){
+      const categories=[["statsDevGoals","Goals"],["statsDevAssists","Assists"],["statsDevAverageRating","Average rating"],["statsDevCleanSheets","Clean sheets"]];
+      for(const [key,label] of categories){
         const card=create("section",undefined,"app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card");
-        card.append(create("h4",label,"app-competition-stat-label fa-dev-stats-leader-title"));
+        card.append(localized("h4",key,label,"app-competition-stat-label fa-dev-stats-leader-title"));
         // No player-level records exist in this preview, so use a shared
         // empty-state element instead of an oversized padded list row.
-        card.append(create("p",hasMatches?"No player statistics available yet.":"No statistics available yet.","fa-dev-stats-empty"));
+        card.append(localized("p",hasMatches?"statsDevNoPlayerData":"statsDevNoData",
+          hasMatches?"No player statistics yet.":"No statistics yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       section.append(grid);root.append(section);
+      syncLanguage();
       return;
     }
     const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
     if (view === "overview") {
       const o = stats.overview;
       const grid=create("div",undefined,"app-competition-stat-grid fa-dev-stats-grid");
-      for(const [label,value] of [["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]){
+      for(const [key,label,value] of [["statsDevMatchesPlayed","Matches played",o.matchesPlayed],["statsDevTotalGoals","Total goals",o.totalGoals],["statsDevGoalsPerMatch","Goals per match",number(o.goalsPerMatch)]]){
         const card=create("div",undefined,"app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card");
-        card.append(create("span",label,"app-competition-stat-label"),hasMatches?create("strong",value,"app-competition-stat-value"):create("p","No statistics available yet.","fa-dev-stats-empty"));
+        card.append(localized("span",key,label,"app-competition-stat-label"),
+          hasMatches?create("strong",value,"app-competition-stat-value"):localized("p","statsDevNoData","No statistics yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       root.append(grid);
+      syncLanguage();
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
     const leaderGrid=create("div",undefined,"fa-dev-stats-leader-grid");
-    const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false],["gd","Goal difference",false],["unbeatenStreak","Unbeaten streak",false]];
-    for(const [key,label,ascending] of categories){
+    const categories=[["gf","statsDevGoalsScored","Goals scored",false],["ga","statsDevFewestConceded","Fewest conceded",true],["w","statsDevWins","Wins",false],["cs","statsDevCleanSheets","Clean sheets",false],["ppg","statsDevPointsPerMatch","Points per match",false],["gd","statsDevGoalDifference","Goal difference",false],["unbeatenStreak","statsDevUnbeatenStreak","Unbeaten streak",false]];
+    for(const [key,labelKey,label,ascending] of categories){
       const card=create("section",undefined,"app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card");
-      card.append(create("h4",label,"app-competition-stat-label fa-dev-stats-leader-title"));
+      card.append(localized("h4",labelKey,label,"app-competition-stat-label fa-dev-stats-leader-title"));
       const top=create("ol",undefined,"fa-dev-stats-top");
       const teams=ranked(key,ascending);
       const buildRow=(team,index)=>{
@@ -156,18 +168,20 @@ if (panel && divisionId) {
         teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
         card.append(top);
       }else{
-        card.append(create("p","No statistics available yet.","fa-dev-stats-empty"));
+        card.append(localized("p","statsDevNoData","No statistics yet.","fa-dev-stats-empty"));
       }
       if(hasMatches&&teams.length>5){
-        const expand=create("button","Show all","fa-dev-stats-expand");
+        const expand=localized("button","statsDevShowAll","Show all","fa-dev-stats-expand");
         expand.type="button";
         expand.addEventListener("click",()=>{
           const dialog=create("dialog",undefined,"fa-dev-stats-dialog");
           const header=create("div",undefined,"fa-dev-stats-dialog-header");
-          const title=create("h3",label);
-          dialog.setAttribute("aria-label",label+" leaderboard");
+          const title=localized("h3",labelKey,label);
+          title.id="fa-dev-stats-dialog-title";
+          dialog.setAttribute("aria-labelledby",title.id);
           const close=create("button","×","fa-dev-stats-dialog-close");
-          close.type="button";close.setAttribute("aria-label","Close");
+          close.type="button";close.dataset.appAria="statsDevClose";
+          close.setAttribute("aria-label","Close");
           let closing=false;
           let pointerDismiss=false;
           let fallbackClose;
@@ -240,6 +254,7 @@ if (panel && divisionId) {
           window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
           dialog.showModal();
+          syncLanguage();
           close.focus();
         });
         card.append(expand);
@@ -247,6 +262,7 @@ if (panel && divisionId) {
       leaderGrid.append(card);
     }
     leaders.append(leaderGrid);root.append(leaders);
+    syncLanguage();
 
   }
   fetch("/competitions/_shared/manifest.json",{cache:"no-store"})
@@ -256,7 +272,7 @@ if (panel && divisionId) {
         throw Error("Invalid DEV manifest");
       manifest=data;render();
     })
-    .catch(error=>{console.error(error);root.replaceChildren(create("p","DEV statistics unavailable"));});
+    .catch(error=>{console.error(error);root.replaceChildren(localized("p","statsDevUnavailable","DEV statistics unavailable"));syncLanguage();});
   window.addEventListener("fa:competition-route-change",()=>{
     document.querySelector("dialog.fa-dev-stats-dialog[open]")?.close();
     render();
