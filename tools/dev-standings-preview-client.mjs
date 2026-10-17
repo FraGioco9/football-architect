@@ -102,12 +102,13 @@ function clearHistoryPreview(){
 function historyRecords(seasons){
  const clubs=new Map();let previous=null,previousSeason=null,run=0;
  for(const {season,rows} of [...seasons].sort((a,b)=>a.season-b.season)){
-  rows.forEach(({club,won,gf},index)=>{
+  rows.forEach(({club,won,gf,pts},index)=>{
    const id=club.countryId+"-"+club.clubId;
-   if(!clubs.has(id))clubs.set(id,{club,titles:0,podiums:0,streak:0,totalWins:0,totalGoals:0});
+   if(!clubs.has(id))clubs.set(id,{club,titles:0,podiums:0,streak:0,totalWins:0,totalGoals:0,totalPoints:0});
    const entry=clubs.get(id);if(index===0)entry.titles++;if(index<3)entry.podiums++;
    if(Number.isFinite(won))entry.totalWins+=won;
    if(Number.isFinite(gf))entry.totalGoals+=gf;
+   if(Number.isFinite(pts))entry.totalPoints+=pts;
   });
   const winner=rows[0]?.club;if(!winner)continue;
   const id=winner.countryId+"-"+winner.clubId;
@@ -119,14 +120,15 @@ function historyRecords(seasons){
   const value=Math.max(0,...[...clubs.values()].map(entry=>entry[key]));
   return {value,clubs:[...clubs.values()].filter(entry=>entry[key]===value).map(entry=>entry.club)};
  };
- const seasonalRecord=(field,extreme)=>{
-  const entries=[...seasons].sort((a,b)=>a.season-b.season).flatMap(({season,rows})=>
+ const seasonalRecord=(field,extreme,tables=seasons)=>{
+  const entries=[...tables].sort((a,b)=>a.season-b.season).flatMap(({season,rows})=>
    rows.filter(row=>Number.isFinite(row[field])).map(row=>({club:row.club,season,value:row[field]})));
   if(!entries.length)return {value:null,entries:[]};
   const value=extreme(...entries.map(entry=>entry.value));
   return {value,entries:entries.filter(entry=>entry.value===value).map(({club,season})=>({club,season}))};
  };
- return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals")};
+ const margins=seasons.map(({season,rows})=>({season,rows:Number.isFinite(rows[0]?.pts)&&Number.isFinite(rows[1]?.pts)?[{club:rows[0].club,margin:rows[0].pts-rows[1].pts}]:[]}));
+ return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals"),points:seasonalRecord("pts",Math.max),goalDifference:seasonalRecord("gd",Math.max),margin:seasonalRecord("margin",Math.max,margins),totalPoints:record("totalPoints")};
 }
 function historyNode(tag,className="",text){
  const element=document.createElement(tag);if(className)element.className=className;
@@ -195,14 +197,14 @@ async function renderHistoryPreview(){
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
   records.append(grid);
   const values=historyRecords(seasons);
-  for(const [key,metric] of [["historyBestAttack","attack"],["historyBestDefence","defence"],["historyMostSeasonWins","wins"],["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyMostTotalWins","totalWins"],["historyMostTotalGoals","totalGoals"]]){
+  for(const [key,metric] of [["historyBestAttack","attack"],["historyBestDefence","defence"],["historyMostSeasonWins","wins"],["historyMostSeasonPoints","points"],["historyBestGoalDifference","goalDifference"],["historyLargestTitleMargin","margin"],["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyMostTotalWins","totalWins"],["historyMostTotalGoals","totalGoals"],["historyMostTotalPoints","totalPoints"]]){
    const card=historyNode("article","app-competition-stat-card app-history-dev-record");card.dataset.historyRecord=metric;
    card.dataset.historyScope=values[metric].entries?"season":"all-time";
    card.hidden=card.dataset.historyScope!==(panel.dataset.historyRecordScope||"season");
    const label=historyLabel(key,"h4");label.className="app-competition-stat-label";
    card.append(label,historyNode("strong","app-competition-stat-value",values[metric].value));
    if(values[metric].entries){
-    if(metric!=="wins"){
+    if(metric==="attack"||metric==="defence"){
      const unit=historyLabel(metric==="attack"?"historyGoalsScored":"historyGoalsConceded");unit.className="app-competition-stat-label";card.append(unit);
     }
     for(const {club,season} of values[metric].entries){

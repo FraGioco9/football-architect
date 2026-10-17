@@ -13,6 +13,20 @@ function records(seasons){
 }
 const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
 const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('Points, goal difference and champion margin records preserve seasonal ties and cumulative points',()=>{
+ const seasons=[
+  {season:2,rows:[{club:club(2),pts:80,gd:40},{club:club(1),pts:70,gd:30},{club:club(3),pts:20,gd:-20}]},
+  {season:1,rows:[{club:club(1),pts:80,gd:40},{club:club(2),pts:70,gd:35},{club:club(3),pts:10,gd:-30}]}
+ ];
+ const result=records(seasons),tied=[{club:club(1),season:1},{club:club(2),season:2}];
+ assert.deepEqual(result.points,{value:80,entries:tied});
+ assert.deepEqual(result.goalDifference,{value:40,entries:tied});
+ assert.deepEqual(result.margin,{value:10,entries:tied});
+ assert.deepEqual(result.totalPoints,{value:150,clubs:[club(1),club(2)]});
+ assert.deepEqual(records([{season:1,rows:[{club:club(1),pts:50,gd:-2},{club:club(2),pts:50,gd:-3}]}]).margin,{value:0,entries:[{club:club(1),season:1}]});
+ assert.equal(records([{season:1,rows:[{club:club(1),gd:-2},{club:club(2),gd:-3}]}]).goalDifference.value,-2);
+ assert.deepEqual(records([table(1,[1])]).margin,{value:null,entries:[]});
+});
 test('Seasonal wins and all-time wins and goals keep distinct winners and tied identities',()=>{
  const result=records([
   {season:1,rows:[{club:club(1),won:25,gf:90},{club:club(2),won:20,gf:80},{club:club(3),won:20,gf:80}]},
@@ -83,12 +97,14 @@ test('History totals reconcile with all 16 deterministic four-season final table
  for(const division of manifest.divisions){
   const seasons=[1,2,3,4].map(season=>({season,rows:createPreviewStandings(division,30,season).rows}));
   const actual=records(seasons);
-  for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min],['wins','won',Math.max]]){
+  for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min],['wins','won',Math.max],['points','pts',Math.max],['goalDifference','gd',Math.max]]){
    const value=extreme(...seasons.flatMap(s=>s.rows.map(row=>row[field])));
    assert.equal(actual[metric].value,value,division.id+' '+metric);
    assert.deepEqual(actual[metric].entries,seasons.flatMap(s=>s.rows.filter(row=>row[field]===value).map(row=>({club:row.club,season:s.season}))));
   }
-  for(const [metric,field] of [['totalWins','won'],['totalGoals','gf']]){
+  const margin=Math.max(...seasons.map(s=>s.rows[0].pts-s.rows[1].pts));
+  assert.deepEqual(actual.margin,{value:margin,entries:seasons.filter(s=>s.rows[0].pts-s.rows[1].pts===margin).map(s=>({club:s.rows[0].club,season:s.season}))});
+  for(const [metric,field] of [['totalWins','won'],['totalGoals','gf'],['totalPoints','pts']]){
    const totals=new Map();for(const {rows} of seasons)for(const row of rows)totals.set(row.club.clubId,(totals.get(row.club.clubId)||0)+row[field]);
    const value=Math.max(...totals.values());assert.equal(actual[metric].value,value);
    assert.deepEqual(actual[metric].clubs.map(c=>c.clubId),[...totals].filter(([,n])=>n===value).map(([id])=>id));
