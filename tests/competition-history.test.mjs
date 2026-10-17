@@ -98,18 +98,24 @@ test('History scope does not retain the previous grid height and preserves avail
     assert.equal(grid.style.minHeight,undefined,'No retained minimum height');
   }
 });
-test('Stats compact cards align every empty message without inheriting list padding',()=>{
+test('History Team and Player empty states use the same Stats-style title/content grid',()=>{
+  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+  assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:30px auto/);
+  assert.match(css,/\.app-history-record-group \.app-competition-stat-card>\.app-competition-empty\{[^}]*text-align:left/);
+  assert.match(css,/\.app-history-player-card\{[^}]*height:128px/);
+  assert.match(css,/\.app-history-player-card\[data-history-filled="true"\]\{[^}]*height:160px/);
+  assert.doesNotMatch(css,/\.app-history-player-card[^{]*\{[^}]*justify-content:space-between/);
+  assert.doesNotMatch(css,/\.app-history-player-card \.app-competition-empty\{[^}]*text-align:center/);
+});
+test('Stats Overview and Players have identical fixed 88px cards; only Teams can expand',()=>{
   const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
-  assert.match(source,/\.fa-dev-stats-card\{[^}]*grid-template-rows:30px auto/);
-  assert.match(source,/\.fa-dev-stats-card\{[^}]*min-height:88px/);
-  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*grid-template-rows:30px auto/);
-  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*min-height:88px/);
+  assert.match(source,/\.fa-dev-stats-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
+  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
+  assert.match(source,/\.fa-dev-stats-leader-card\.fa-dev-stats-team-card\{[^}]*height:auto;min-height:88px;max-height:none/);
+  assert.match(source,/const card=create\("section",undefined,"fa-dev-stats-leader-card fa-dev-stats-team-card"\)/);
   assert.match(source,/\.fa-dev-stats-empty\{[^}]*padding:0!important/);
   assert.match(source,/\.fa-dev-stats-top li\{[^}]*padding:4px 0/);
-  assert.match(source,/card\.append\(create\("p",hasMatches\?"No player statistics available yet\."/);
-  assert.match(source,/card\.append\(create\("p","No statistics available yet\.","fa-dev-stats-empty"\)\)/);
   assert.doesNotMatch(source,/app-competition-empty-row fa-dev-stats-player-empty/);
-  assert.doesNotMatch(source,/\.fa-dev-stats-card:has\(\.app-competition-stat-value\)\{min-height:160px\}/);
 });
 
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{

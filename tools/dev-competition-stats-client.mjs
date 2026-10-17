@@ -27,15 +27,17 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-/* Every empty Stats card reserves the same title slot: messages start at the same y position. */
-.fa-dev-stats-card{box-sizing:border-box;display:grid;grid-template-rows:30px auto;align-content:start;gap:4px;min-width:0;min-height:88px;padding:10px 12px}
-.fa-dev-stats-card .app-competition-stat-label{margin:0;line-height:1.25}
-.fa-dev-stats-card .app-competition-stat-value{align-self:start;margin:0;font-size:clamp(1.25rem,2.5vw,1.7rem)}
+/* Overview always uses one fixed-size tile, with or without values. */
+.fa-dev-stats-card{box-sizing:border-box;display:grid;grid-template-rows:30px minmax(0,1fr);align-content:start;gap:4px;min-width:0;height:88px;min-height:88px;max-height:88px;overflow:hidden;padding:10px 12px}
+.fa-dev-stats-card .app-competition-stat-label{min-width:0;max-height:30px;overflow:hidden;margin:0;font-size:.78rem;line-height:1.2}
+.fa-dev-stats-card .app-competition-stat-value{align-self:start;margin:0;font-size:clamp(1.25rem,2.5vw,1.7rem);line-height:1.25}
 .fa-dev-stats-section{margin:0 0 14px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-/* The same title slot as Overview, even for two-line headings. */
-.fa-dev-stats-leader-card{box-sizing:border-box;display:grid;grid-template-rows:30px auto;align-content:start;gap:4px;min-width:0;min-height:88px;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:10px 12px;background:transparent}
-.fa-dev-stats-leader-title{margin:0;font-size:.88rem;font-weight:700;line-height:1.2}
+/* Player summaries share the fixed Overview height. Team leaderboards alone
+   grow naturally to hold the verified rows and optional "Show all" control. */
+.fa-dev-stats-leader-card{box-sizing:border-box;display:grid;grid-template-rows:30px minmax(0,1fr);align-content:start;gap:4px;min-width:0;height:88px;min-height:88px;max-height:88px;overflow:hidden;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:10px 12px;background:transparent}
+.fa-dev-stats-leader-card.fa-dev-stats-team-card{grid-template-rows:30px auto;height:auto;min-height:88px;max-height:none;overflow:visible}
+.fa-dev-stats-leader-title{max-height:30px;overflow:hidden;margin:0;font-size:.78rem;font-weight:700;line-height:1.2}
 .fa-dev-stats-empty{align-self:start;justify-self:stretch;margin:0!important;padding:0!important;color:var(--muted);font-size:.78rem;line-height:1.3;text-align:left;overflow-wrap:anywhere}
 .fa-dev-stats-top{list-style:none;margin:0;padding:0}
 .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(128,145,145,.2)}
@@ -139,7 +141,7 @@ if (panel && divisionId) {
     const leaderGrid=create("div",undefined,"fa-dev-stats-leader-grid");
     const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false],["gd","Goal difference",false],["unbeatenStreak","Unbeaten streak",false]];
     for(const [key,label,ascending] of categories){
-      const card=create("section",undefined,"fa-dev-stats-leader-card");
+      const card=create("section",undefined,"fa-dev-stats-leader-card fa-dev-stats-team-card");
       card.append(create("h4",label,"fa-dev-stats-leader-title"));
       const top=create("ol",undefined,"fa-dev-stats-top");
       const teams=ranked(key,ascending);
