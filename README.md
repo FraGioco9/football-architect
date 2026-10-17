@@ -28,7 +28,7 @@ The generator enforces byte-identical UTF-8 HTML in `--check` mode, which the No
 
 The repository also provides a standalone static Landing page (`index.html`) and a short World Guide (`guide/index.html`) explaining Divisions and Clubs, styled in Graphite & Petrol. It is not a playable game. The current `main` branch also includes static application-shell previews at `/app/dashboard/`, `/app/calendar/`, and `/app/settings/`, without an active career runtime.
 
-To preview locally on Windows, run `py -m http.server 2000 --bind 127.0.0.1`; open `http://127.0.0.1:2000/` for the Landing or `http://127.0.0.1:2000/guide/` for the Guide. No npm, Docker, or build step is needed. Run `node --test tests/*.test.mjs` for all site contract checks.
+For the canonical local preview on Windows, run `node tools/dev-app-preview.mjs` from the repository root. Use `http://localhost:2000/` for the Landing and Guide, and `http://app.localhost:2000/` for the app and competition pages. No npm, Docker, or build step is needed. Run `node --test tests/*.test.mjs` for all site contract checks.
 
 English is the default language, with Deutsch, Español, Français, and Italiano selectable through a custom accessible dropdown. The language preference is persisted locally.
 
@@ -38,18 +38,23 @@ These static informational pages do not enable gameplay or deployment.
 
 ### Reproducible local DEV (ENV-02)
 
-Use Windows PowerShell in the repository root (the directory containing `README.md`, `index.html`, `assets/`, and `tests/`). DEV is a local-only preview of the current static site and is **not** a playable game or a deployment. Python 3 with the Windows `py` launcher and **Node.js 22** are the only tools needed; no Docker, npm install, build, backend, or database is required.
+Use Windows PowerShell in the repository root (the directory containing `README.md`, `index.html`, `assets/`, and `tests/`). The canonical local preview uses two loopback-only origins to match the intended site/app URL split. Node.js 22 is required; no Docker, npm install, build, backend, or database is needed.
 
 **Setup and start (terminal 1):**
 
 ```powershell
 git rev-parse --show-toplevel
-py --version
 node --version
-py -m http.server 2000 --bind 127.0.0.1
+node tools/dev-app-preview.mjs
 ```
 
-Run from the repository root so URL paths resolve correctly. Keep terminal 1 open while browsing `http://127.0.0.1:2000/`. Stop only this server with **Ctrl+C**. Binding to `127.0.0.1` prevents LAN exposure; do not replace it with `0.0.0.0` for normal local DEV.
+Keep terminal 1 open. The launcher prints the canonical URLs:
+- Site (Landing and Guide): `http://localhost:2000/`
+- App: `http://app.localhost:2000/dashboard`
+- Competitions: `http://app.localhost:2000/competitions`
+- Local DEV History preview: `http://app.localhost:2000/competitions/it-1?season=4&view=history`
+
+The History preview uses fictional standings only while the local DEV preview setting is enabled; it is not canonical historical data. Stop the server with **Ctrl+C**. Do not bind this launcher to `0.0.0.0`; it is intended for this PC only.
 
 **Static checks (terminal 2, same repository root; server not required):**
 
@@ -60,40 +65,41 @@ node --check assets/app-search.js
 node --test (Get-ChildItem .\tests\*.test.mjs | Select-Object -ExpandProperty FullName)
 ```
 
-All five existing `tests/*.test.mjs` modules use the built-in Node test runner. Verify each command exits successfully; a CI result does not replace the local browser smoke test.
+All `tests/*.test.mjs` modules use Node's built-in test runner. A CI result does not replace the local browser smoke test.
 
-**HTTP smoke test (terminal 2, while terminal 1 serves port 2000):**
+**HTTP smoke test (terminal 2, while terminal 1 is running):**
 
 ```powershell
-$origin = 'http://127.0.0.1:2000'
-$routes = @('/', '/guide/', '/app/', '/app/dashboard/', '/app/calendar/', '/app/settings/')
+$routes = @(
+  @{ Origin = 'http://localhost:2000'; Path = '/' },
+  @{ Origin = 'http://localhost:2000'; Path = '/guide/' },
+  @{ Origin = 'http://app.localhost:2000'; Path = '/dashboard' },
+  @{ Origin = 'http://app.localhost:2000'; Path = '/calendar' },
+  @{ Origin = 'http://app.localhost:2000'; Path = '/settings' },
+  @{ Origin = 'http://app.localhost:2000'; Path = '/competitions' },
+  @{ Origin = 'http://app.localhost:2000'; Path = '/competitions/it-1?season=4&view=history' }
+)
 foreach ($route in $routes) {
-  $response = Invoke-WebRequest -Uri ($origin + $route) -UseBasicParsing -ErrorAction Stop
-  if ($response.StatusCode -ne 200) { throw "Unexpected HTTP status: $route" }
-  Write-Output ('{0}: HTTP {1}' -f $route, $response.StatusCode)
-}
-try {
-  Invoke-WebRequest -Uri ($origin + '/missing-env02/') -UseBasicParsing -ErrorAction Stop | Out-Null
-  throw 'An unknown route unexpectedly succeeded'
-} catch {
-  if (-not $_.Exception.Response -or [int]$_.Exception.Response.StatusCode -ne 404) { throw }
-  Write-Output 'Unknown route: HTTP 404 (expected)'
+  $response = Invoke-WebRequest -Uri ($route.Origin + $route.Path) -UseBasicParsing -ErrorAction Stop
+  if ($response.StatusCode -ne 200) { throw "Unexpected HTTP status: $($route.Origin)$($route.Path)" }
+  Write-Output ('{0}{1}: HTTP {2}' -f $route.Origin, $route.Path, $response.StatusCode)
 }
 ```
 
-All six listed URLs return HTTP **200**; the deliberately missing route returns HTTP **404**. `/app/` serves static `app/index.html` with HTTP 200, then **redirects in the browser via JavaScript** to `/app/dashboard/` (with a no-JavaScript meta-refresh fallback): it is **not** an HTTP 3xx redirect. Also manually open and refresh Landing, Guide, Dashboard, Calendar, and Settings, and check their internal links, styles and language selector across the five supported languages.
+Open and refresh each URL in the browser. Confirm site links navigate to `localhost`, app and competition links navigate to `app.localhost`, and the History preview is labelled as fictional DEV data when the local preview setting is active.
 
-**Reset only the DEV language preference:** in the browser developer console at `http://127.0.0.1:2000/`, run:
+**Optional LAN preview:** use `node tools/dev-standings-preview.mjs` only when specifically testing LAN access from another device. That mode is separate from the canonical loopback-only site/app preview; do not use its IP-based URL as the standard same-PC app URL.
+
+**Reset only the DEV language preference:** in the browser developer console at `http://localhost:2000/`, run:
 
 ```javascript
 localStorage.removeItem('football-architect:language');
 location.reload();
 ```
 
-This removes only the stored language for that browser origin; it does **not** delete other site data or browser storage. English is the default. If local storage is unavailable, the UI should still work with the in-memory/default language. There are no current career saves, IndexedDB records, or remote databases to reset.
+This removes only the language preference for the site origin. Since `localhost` and `app.localhost` are different origins, each origin has separate browser storage.
 
-**Errors and fixtures:** if `py`/`node` is not recognized, check the local Python 3 launcher/Node.js 22 installation and PATH. If port 2000 is occupied, stop the existing process you own before retrying; do not kill unrelated processes or silently use another port. If pages or assets return 404, run the server from the repository root and check the exact case-sensitive paths and trailing slashes. Use the existing in-test DOM/localStorage mocks and canonical `data/divisions.json` and `data/clubs.json` as read-only catalogue fixtures; **no separate fixture folder, test data generation, career simulation, or reset script exists or is required**.
-
+**Errors and fixtures:** if Node.js is not recognized, check the Node.js 22 installation and PATH. If port 2000 is occupied, stop the preview process you own before retrying; do not kill unrelated processes or silently use another port. If a page or asset returns 404, run the launcher from the repository root and check the exact case-sensitive path. No separate fixture folder, generated historical dataset, or database reset is required.
 
 ## Pull request workflow (PR-ONLY)
 
@@ -179,7 +185,7 @@ The shared generator produces 21 checked-in app pages. Run `node tools/generate-
 
 ### Canonical app routes (PR #161)
 
-App navigation uses `/dashboard`, `/calendar`, `/settings`, `/competitions` and `/competitions/<division-id>` without an `/app` prefix or trailing slash. Physical generated files remain under `app/`; this is a source directory, not a URL prefix. Use `node tools/dev-standings-preview.mjs` for canonical local routing on `http://127.0.0.1:2000`. The server also accepts old `/app/...` requests. A plain Python static server does not implement these canonical aliases.
+App navigation uses `/dashboard`, `/calendar`, `/settings`, `/competitions` and `/competitions/<division-id>` without an `/app` prefix or trailing slash. Physical generated files remain under `app/`; this is a source directory, not a URL prefix. Use `node tools/dev-app-preview.mjs` for canonical local routing: site pages use `http://localhost:2000`, while app and competition pages use `http://app.localhost:2000`. The server also accepts old `/app/...` requests. A plain Python static server does not implement these canonical aliases.
 
 App assets use absolute `/assets/...` paths; the competition manifest is requested from `/competitions/_shared/manifest.json`. Future public `app.` hosting must map these canonical requests to the allowlisted app files and retain shared assets. This source change does not configure hosting or deploy it.
 
@@ -196,4 +202,4 @@ node tools/dev-app-preview.mjs
 - Competitions: `http://app.localhost:2000/competitions`
 - Fixtures: `http://app.localhost:2000/competitions/it-1?season=2&view=fixtures`
 
-This separate launcher opts into the two local hostnames, preserves port 2000 across site/app links and only binds to 127.0.0.1. It does not change DNS, public hosting, deployment or databases. The ordinary standings server keeps its existing behavior and LAN opt-in. Both launchers use port 2000; run one at a time. `app.localhost` is for the same PC: on iPhone use the ordinary LAN preview with the PC's private IPv4 address instead. Browser preferences are stored per origin, so site and app localStorage are separate, as with public subdomains.
+This is the canonical loopback-only launcher for same-PC development. It preserves port 2000 across site/app links and does not change DNS, public hosting, deployment or databases. Use the separate standings launcher only for an explicit LAN preview. `app.localhost` is for the same PC; on iPhone use the LAN preview with the PC private IPv4 address instead. Browser preferences are stored per origin, so site and app localStorage are separate, as with public subdomains.
