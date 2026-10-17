@@ -44,3 +44,16 @@ test('landing runtime keeps the opt-in app destination after HTML link rewriting
  runInNewContext(code,{document,window:{location:{hostname:'localhost',protocol:'http:'}}});
  assert.equal(link.href,'http://app.localhost:2000/dashboard');
 });
+
+test('canonical local launcher advertises one consistent site/app URL split',()=>{
+ const launcher=readFileSync(new URL('../tools/dev-app-preview.mjs',import.meta.url),'utf8');
+ const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
+ assert.ok(launcher.includes('Site: http://localhost:2000/'));
+ assert.ok(launcher.includes('App: http://app.localhost:2000/dashboard'));
+ assert.ok(launcher.includes('Competitions: http://app.localhost:2000/competitions'));
+ assert.ok(launcher.includes('History DEV preview: http://app.localhost:2000/competitions/it-1?season=4&view=history'));
+ assert.ok(readme.includes('node tools/dev-app-preview.mjs'));
+ assert.ok(readme.includes('http://localhost:2000/'));
+ assert.ok(readme.includes('http://app.localhost:2000/competitions'));
+ assert.equal(readme.includes('Use `node tools/dev-standings-preview.mjs` for canonical local routing on `http://127.0.0.1:2000`'),false);
+});
