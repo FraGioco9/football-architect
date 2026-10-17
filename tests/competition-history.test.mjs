@@ -98,16 +98,18 @@ test('History scope does not retain the previous grid height and preserves avail
     assert.equal(grid.style.minHeight,undefined,'No retained minimum height');
   }
 });
-test('Stats overview and leader cards stay compact with aligned unavailable messages',()=>{
+test('Stats compact cards align every empty message without inheriting list padding',()=>{
   const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
-  assert.match(source,/\.fa-dev-stats-card\{[^}]*grid-template-rows:34px auto/);
-  assert.match(source,/\.fa-dev-stats-card\{[^}]*min-height:96px/);
-  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*min-height:104px/);
-  assert.match(source,/\.fa-dev-stats-leader-title\{[^}]*min-height:2\.6em/);
-  assert.match(source,/\.fa-dev-stats-top \.fa-dev-stats-player-empty\{[^}]*padding:0!important/);
+  assert.match(source,/\.fa-dev-stats-card\{[^}]*grid-template-rows:30px auto/);
+  assert.match(source,/\.fa-dev-stats-card\{[^}]*min-height:88px/);
+  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*grid-template-rows:30px auto/);
+  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*min-height:88px/);
+  assert.match(source,/\.fa-dev-stats-empty\{[^}]*padding:0!important/);
+  assert.match(source,/\.fa-dev-stats-top li\{[^}]*padding:4px 0/);
+  assert.match(source,/card\.append\(create\("p",hasMatches\?"No player statistics available yet\."/);
+  assert.match(source,/card\.append\(create\("p","No statistics available yet\.","fa-dev-stats-empty"\)\)/);
+  assert.doesNotMatch(source,/app-competition-empty-row fa-dev-stats-player-empty/);
   assert.doesNotMatch(source,/\.fa-dev-stats-card:has\(\.app-competition-stat-value\)\{min-height:160px\}/);
-  assert.doesNotMatch(source,/\.fa-dev-stats-leader-card\{[^}]*max-height:/);
-  assert.match(source,/hasMatches\?create\("strong",value,"app-competition-stat-value"\):create\("span","No statistics available yet\."/);
 });
 
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{

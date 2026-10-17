@@ -27,19 +27,18 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-/* Compact Stats tiles: reserve a common title row for aligned values and empty messages. */
-.fa-dev-stats-card{box-sizing:border-box;display:grid;grid-template-rows:34px auto;align-content:start;row-gap:4px;min-height:96px;padding:12px}
-.fa-dev-stats-card .app-competition-stat-label{line-height:1.35}
-.fa-dev-stats-card .app-competition-stat-value,.fa-dev-stats-card .fa-dev-stats-empty{align-self:start;margin:0}
-.fa-dev-stats-card .fa-dev-stats-empty{line-height:1.45}
-.fa-dev-stats-section{margin:0 0 20px}
-.fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-/* Reserve two heading lines so empty/error states start at the same vertical offset. */
-.fa-dev-stats-leader-card{box-sizing:border-box;display:flex;flex-direction:column;min-width:0;min-height:104px;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:12px 14px;background:transparent}
-.fa-dev-stats-leader-title{min-height:2.6em;margin:0 0 6px;font-size:.95rem;font-weight:700;line-height:1.3}
-.fa-dev-stats-top .fa-dev-stats-player-empty{box-sizing:border-box;min-height:24px;margin:0;padding:0!important;font-size:.82rem;line-height:1.45}
+/* Every empty Stats card reserves the same title slot: messages start at the same y position. */
+.fa-dev-stats-card{box-sizing:border-box;display:grid;grid-template-rows:30px auto;align-content:start;gap:4px;min-width:0;min-height:88px;padding:10px 12px}
+.fa-dev-stats-card .app-competition-stat-label{margin:0;line-height:1.25}
+.fa-dev-stats-card .app-competition-stat-value{align-self:start;margin:0;font-size:clamp(1.25rem,2.5vw,1.7rem)}
+.fa-dev-stats-section{margin:0 0 14px}
+.fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+/* The same title slot as Overview, even for two-line headings. */
+.fa-dev-stats-leader-card{box-sizing:border-box;display:grid;grid-template-rows:30px auto;align-content:start;gap:4px;min-width:0;min-height:88px;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:10px 12px;background:transparent}
+.fa-dev-stats-leader-title{margin:0;font-size:.88rem;font-weight:700;line-height:1.2}
+.fa-dev-stats-empty{align-self:start;justify-self:stretch;margin:0!important;padding:0!important;color:var(--muted);font-size:.78rem;line-height:1.3;text-align:left;overflow-wrap:anywhere}
 .fa-dev-stats-top{list-style:none;margin:0;padding:0}
-.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(128,145,145,.2)}
+.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
@@ -116,10 +115,9 @@ if (panel && divisionId) {
       for(const label of categories){
         const card=create("section",undefined,"fa-dev-stats-leader-card");
         card.append(create("h4",label,"fa-dev-stats-leader-title"));
-        const list=create("ol",undefined,"fa-dev-stats-top");
-        const empty=create("li",hasMatches?"No player statistics available yet.":"No statistics available yet.","app-competition-empty-row fa-dev-stats-player-empty");
-        list.append(empty);
-        card.append(list);
+        // No player-level records exist in this preview, so use a shared
+        // empty-state element instead of an oversized padded list row.
+        card.append(create("p",hasMatches?"No player statistics available yet.":"No statistics available yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       section.append(grid);root.append(section);
@@ -131,7 +129,7 @@ if (panel && divisionId) {
       const grid=create("div",undefined,"app-competition-stat-grid fa-dev-stats-grid");
       for(const [label,value] of [["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]){
         const card=create("div",undefined,"app-competition-stat-card fa-dev-stats-card");
-        card.append(create("span",label,"app-competition-stat-label"),hasMatches?create("strong",value,"app-competition-stat-value"):create("span","No statistics available yet.","app-competition-empty fa-dev-stats-empty"));
+        card.append(create("span",label,"app-competition-stat-label"),hasMatches?create("strong",value,"app-competition-stat-value"):create("p","No statistics available yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       root.append(grid);
@@ -157,9 +155,12 @@ if (panel && divisionId) {
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         return li;
       };
-      if(hasMatches)teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
-      else top.append(create("li","No statistics available yet.","app-competition-empty-row fa-dev-stats-player-empty"));
-      card.append(top);
+      if(hasMatches){
+        teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
+        card.append(top);
+      }else{
+        card.append(create("p","No statistics available yet.","fa-dev-stats-empty"));
+      }
       if(hasMatches&&teams.length>5){
         const expand=create("button","Show all","fa-dev-stats-expand");
         expand.type="button";
