@@ -186,6 +186,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GH_TOKEN: ${{ github.token }}
+          SOURCE: ${{ inputs.source }}
           PR_NUMBER: ${{ inputs.pr_number }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
@@ -194,7 +195,12 @@ jobs:
           mkdir -p preview-public/.vercel
           printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > preview-public/.vercel/project.json
           # Production is forbidden: never add production flags or promotion.
-          deployment_url="$(vercel deploy ./preview-public --yes --target=preview --archive=tgz --scope fra-gioco9 --token "$VERCEL_TOKEN" --meta "pr=$PR_NUMBER" --meta "source_sha=$EXPECTED_SHA")"
+          deploy_args=(vercel deploy ./preview-public --yes --target=preview --archive=tgz --scope fra-gioco9 --token "$VERCEL_TOKEN" --meta "source=$SOURCE" --meta "source_sha=$EXPECTED_SHA")
+          if [[ "$SOURCE" == "merged_pr" ]]; then
+            [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid PR number for merged_pr source'; exit 1; }
+            deploy_args+=(--meta "pr=$PR_NUMBER")
+          fi
+          deployment_url="$("${deploy_args[@]}")"
           [[ "$deployment_url" =~ ^https://[a-z0-9-]+\.vercel\.app/?$ ]] || { echo 'Unrecognized Vercel URL'; exit 1; }
           host="${deployment_url#https://}"
           host="${host%/}"
@@ -204,8 +210,15 @@ jobs:
             and (.target == null or .target == "preview")
             and (.readyState == "READY" or .state == "READY")
           ' <<< "$info" >/dev/null || { echo 'Not a READY Preview on the exact project'; exit 1; }
-          pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
-          jq -e --arg sha "$EXPECTED_SHA" '.state == "open" and .head.sha == $sha' <<< "$pr_json" >/dev/null || { echo 'PR moved; alias unchanged'; exit 1; }
+          if [[ "$SOURCE" == "merged_pr" ]]; then
+            pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+            jq -e --arg sha "$EXPECTED_SHA" '.state == "closed" and .merged_at != null and .merge_commit_sha == $sha' <<< "$pr_json" >/dev/null || { echo 'Merged PR changed; alias unchanged'; exit 1; }
+          elif [[ "$SOURCE" == "main" ]]; then
+            current_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
+            [[ "$current_main" == "$EXPECTED_SHA" ]] || { echo 'main moved during deployment; alias unchanged'; exit 1; }
+          else
+            echo 'Unsupported source; alias unchanged'; exit 1
+          fi
           # A new .vercel.app name can only be claimed by assigning it to a READY Preview.
           # Never reassign an existing alias from another project or unknown provider response.
           alias_response="$(mktemp)"
@@ -232,7 +245,11 @@ jobs:
             '.projectId == $id and .alias == $alias and .deploymentId == $deployment' <<< "$alias_info" >/dev/null || { echo 'Preview alias verification failed'; exit 1; }
           {
             echo "### Manual Football Architect Preview"
-            echo "- PR #$PR_NUMBER exact HEAD: $EXPECTED_SHA"
+            if [[ "$SOURCE" == "merged_pr" ]]; then
+            echo "- PR #$PR_NUMBER merge commit: $EXPECTED_SHA"
+          else
+            echo "- Source: main ($EXPECTED_SHA)"
+          fi
             echo "- Target: Preview (verified by Vercel API)"
             echo "- Stable protected URL: https://$STABLE_PREVIEW_ALIAS"
             echo "- Immutable deployment URL: $deployment_url"
