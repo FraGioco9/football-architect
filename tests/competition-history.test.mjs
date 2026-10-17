@@ -13,6 +13,32 @@ function records(seasons){
 }
 const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
 const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('Seasonal wins and all-time wins and goals keep distinct winners and tied identities',()=>{
+ const result=records([
+  {season:1,rows:[{club:club(1),won:25,gf:90},{club:club(2),won:20,gf:80},{club:club(3),won:20,gf:80}]},
+  {season:2,rows:[{club:club(1),won:10,gf:10},{club:club(2),won:20,gf:80},{club:club(3),won:20,gf:80}]}
+ ]);
+ assert.deepEqual(result.wins,{value:25,entries:[{club:club(1),season:1}]});
+ assert.deepEqual(result.totalWins,{value:40,clubs:[club(2),club(3)]});
+ assert.deepEqual(result.totalGoals,{value:160,clubs:[club(2),club(3)]});
+});
+test('History scope switch updates all matching controls and cards without changing the route',()=>{
+ const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+ const start=source.indexOf('// History record scope');assert.ok(start>=0);
+ const controls=['season','all-time','season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},attrs:{},setAttribute(k,v){this.attrs[k]=v}}));
+ const cards=['season','all-time','season','all-time'].map(scope=>({dataset:{historyScope:scope},hidden:false}));
+ const events={};const panel={dataset:{},querySelectorAll:s=>s==='[data-history-record-scope]'?controls:cards,addEventListener:(key,fn)=>events[key]=fn,contains:()=>true};
+ const window={};runInNewContext(source.slice(start),{document:{getElementById:()=>panel},window});
+ assert.equal(panel.dataset.historyRecordScope,'season');
+ assert.deepEqual(cards.map(c=>c.hidden),[false,true,false,true]);
+ events.click({target:{closest:()=>controls[1]}});
+ assert.equal(panel.dataset.historyRecordScope,'all-time');
+ assert.deepEqual(controls.map(c=>c.attrs['aria-pressed']),['false','true','false','true']);
+ assert.deepEqual(cards.map(c=>c.hidden),[true,false,true,false]);
+ const added={dataset:{historyScope:'season'},hidden:false};cards.push(added);
+ window.faSyncHistoryRecords();assert.equal(added.hidden,true,'A refreshed preview retains the chosen scope');
+ events.click({target:{closest:()=>controls[0]}});assert.equal(added.hidden,false);
+});
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[
   {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},
@@ -43,10 +69,15 @@ test('History totals reconcile with all 16 deterministic four-season final table
  for(const division of manifest.divisions){
   const seasons=[1,2,3,4].map(season=>({season,rows:createPreviewStandings(division,30,season).rows}));
   const actual=records(seasons);
-  for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min]]){
+  for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min],['wins','won',Math.max]]){
    const value=extreme(...seasons.flatMap(s=>s.rows.map(row=>row[field])));
    assert.equal(actual[metric].value,value,division.id+' '+metric);
    assert.deepEqual(actual[metric].entries,seasons.flatMap(s=>s.rows.filter(row=>row[field]===value).map(row=>({club:row.club,season:s.season}))));
+  }
+  for(const [metric,field] of [['totalWins','won'],['totalGoals','gf']]){
+   const totals=new Map();for(const {rows} of seasons)for(const row of rows)totals.set(row.club.clubId,(totals.get(row.club.clubId)||0)+row[field]);
+   const value=Math.max(...totals.values());assert.equal(actual[metric].value,value);
+   assert.deepEqual(actual[metric].clubs.map(c=>c.clubId),[...totals].filter(([,n])=>n===value).map(([id])=>id));
   }
   const titles=new Map(),podiums=new Map();
   for(const {rows} of seasons){

@@ -298,12 +298,19 @@
               </section>
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
+                <div class="app-history-record-controls" data-history-record-controls role="group" data-app-aria="historyRecordScope" aria-label="Record scope">
+                  <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season records</button>
+                  <button type="button" data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time records</button>
+                </div>
                 <div class="app-competition-stat-grid">
-                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyMostTitles">Most league titles</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
-                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyMostPodiums">Most podium finishes</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
-                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyLongestTitleStreak">Most consecutive league titles</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
-                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyBestAttack">Best attack in a season</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
-                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyBestDefence">Best defence in a season</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h4 class="app-competition-stat-label" data-app-i18n="historyBestAttack">Best attack in a season</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h4 class="app-competition-stat-label" data-app-i18n="historyBestDefence">Best defence in a season</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h4 class="app-competition-stat-label" data-app-i18n="historyMostSeasonWins">Most wins in a season</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h4 class="app-competition-stat-label" data-app-i18n="historyMostTitles">Most league titles</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h4 class="app-competition-stat-label" data-app-i18n="historyMostPodiums">Most podium finishes</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h4 class="app-competition-stat-label" data-app-i18n="historyLongestTitleStreak">Most consecutive league titles</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h4 class="app-competition-stat-label" data-app-i18n="historyMostTotalWins">Most wins overall</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h4 class="app-competition-stat-label" data-app-i18n="historyMostTotalGoals">Most goals scored overall</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
                 </div>
               </section>
             </div>

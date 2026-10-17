@@ -186,3 +186,19 @@
     });
   });
 })();
+
+// History record scope is shared by the public empty state and the DEV preview.
+(() => {
+ const panel=document.getElementById("competition-panel-history");if(!panel?.querySelectorAll)return;
+ const sync=()=>{
+  const scope=panel.dataset.historyRecordScope==="all-time"?"all-time":"season";
+  panel.dataset.historyRecordScope=scope;
+  for(const button of panel.querySelectorAll('[data-history-record-scope]'))button.setAttribute("aria-pressed",String(button.dataset.historyRecordScope===scope));
+  for(const element of panel.querySelectorAll('[data-history-scope]'))element.hidden=element.dataset.historyScope!==scope;
+ };
+ panel.addEventListener("click",event=>{
+  const button=event.target.closest('[data-history-record-scope]');if(!button||!panel.contains(button))return;
+  panel.dataset.historyRecordScope=button.dataset.historyRecordScope;sync();
+ });
+ window.faSyncHistoryRecords=sync;sync();
+})();

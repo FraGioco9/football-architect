@@ -499,10 +499,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>b.dataset.historySeason)"),['4','3','2','1']);
       const podiums=[4,3,2,1].map(season=>createPreviewStandings(division,30,season).rows.slice(0,3).map(row=>row.club.countryId+'-'+row.club.clubId));
       assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>[...b.querySelectorAll('[data-club-crest]')].map(c=>c.dataset.clubCrest))"),podiums);
-      const records={titles:new Map(),podiums:new Map(),streak:new Map()};let previous=null,streak=0;
+      const records={titles:new Map(),podiums:new Map(),streak:new Map(),totalWins:new Map(),totalGoals:new Map()};let previous=null,streak=0;
       for(const season of [1,2,3,4]){
         const rows=createPreviewStandings(division,30,season).rows,id=club=>club.countryId+'-'+club.clubId,winner=id(rows[0].club);
         records.titles.set(winner,(records.titles.get(winner)||0)+1);
+        for(const row of rows){
+          records.totalWins.set(id(row.club),(records.totalWins.get(id(row.club))||0)+row.won);
+          records.totalGoals.set(id(row.club),(records.totalGoals.get(id(row.club))||0)+row.gf);
+        }
         for(const row of rows.slice(0,3)){const clubId=id(row.club);records.podiums.set(clubId,(records.podiums.get(clubId)||0)+1);}
         streak=winner===previous?streak+1:1;previous=winner;records.streak.set(winner,Math.max(records.streak.get(winner)||0,streak));
       }
@@ -512,12 +516,16 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(card.value,maximum,division.id+' '+metric);
         assert.deepEqual(card.clubs,[...counts].filter(([,count])=>count===maximum).map(([id])=>id).sort());
       }
-      for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min]]){
+      for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min],['wins','won',Math.max]]){
         const entries=[1,2,3,4].flatMap(season=>createPreviewStandings(division,30,season).rows.map(row=>({season,club:row.club.countryId+'-'+row.club.clubId,value:row[field]})));
         const value=extreme(...entries.map(entry=>entry.value));
         const card=await run("(()=>{const c=document.querySelector('[data-history-record=\""+metric+"\"]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
         assert.deepEqual(card,{value,entries:entries.filter(entry=>entry.value===value).map(({season,club})=>({season,club}))},division.id+' '+metric);
       }
+      assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['attack','defence','wins']);
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
+      assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals']);
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await run("document.querySelector('[data-history-season=\"3\"]').click()");
       const standings=createPreviewStandings(division,7,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
       const standingsState="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])";
@@ -548,10 +556,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
       await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
-      assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card').length===5&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History retains five record cards without invented values');
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with three seasonal cards without invented values');
+      await run("document.querySelector('[data-history-empty] [data-history-record-scope=\"all-time\"]').click()");
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])').length"),5);
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await run(toggle+".checked=true;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("document.querySelectorAll('[data-history-season]').length===4");
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),5,'Debug restoration preserves All-time scope');
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await snap('HISTORY '+width+' '+theme,width,900);
     }
     console.log('HISTORY_BROWSER_PASS|16 divisions; archive and records; 5 viewport widths; Dark/Light; 5 locales; season links to Standings; debug OFF/ON');
