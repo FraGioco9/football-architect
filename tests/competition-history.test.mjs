@@ -98,34 +98,31 @@ test('History scope does not retain the previous grid height and preserves avail
     assert.equal(grid.style.minHeight,undefined,'No retained minimum height');
   }
 });
-test('History Team and Player empty states use the same Stats-style title/content grid',()=>{
-  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
-  assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:30px auto/);
-  assert.match(css,/\.app-history-record-group \.app-competition-stat-card>\.app-competition-empty\{[^}]*text-align:left/);
-  assert.match(css,/\.app-history-player-card\{[^}]*height:128px/);
-  assert.match(css,/\.app-history-player-card\[data-history-filled="true"\]\{[^}]*height:160px/);
-  assert.doesNotMatch(css,/\.app-history-player-card[^{]*\{[^}]*justify-content:space-between/);
-  assert.doesNotMatch(css,/\.app-history-player-card \.app-competition-empty\{[^}]*text-align:center/);
+test('Stats and History use a shared card with uniform bold labels and empty messages',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:var\(--fa-record-heading\) auto/);
+ assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
+ assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{--fa-record-heading:42px;min-height:128px/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card:has\(\.app-competition-stat-value\)\{min-height:160px/);
+ assert.match(css,/@media\(max-width:650px\)\{[\s\S]*--fa-record-heading:56px/);
+ assert.match(css,/\.app-history-player-card\[data-history-filled="true"\]\{[^}]*min-height:160px/);
+ assert.doesNotMatch(css,/\.app-history-player-card\{[^}]*overflow:hidden/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
+ assert.match(dev,/app-competition-stat-label fa-dev-stats-leader-title/);
+ assert.doesNotMatch(dev,/\.fa-dev-stats-leader-card\{[^}]*height:/);
 });
-test('Shared Stats and History card labels are bold without changing layout sizing',()=>{
-  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
-  const stats=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
-  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
-  assert.match(css,/\.app-history-record-group \.app-competition-stat-label\{[^}]*max-height:30px/);
-  assert.match(stats,/\.fa-dev-stats-leader-title\{[^}]*font-weight:700/);
-  assert.match(stats,/\.fa-dev-stats-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
+test('Stats Overview and Players stay at 88px; Teams can grow',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ assert.match(css,/\.app-competition-stat-card--compact\{[^}]*height:88px;min-height:88px;max-height:88px/);
+ assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*height:auto;min-height:88px;max-height:none/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
 });
-test('Stats Overview and Players have identical fixed 88px cards; only Teams can expand',()=>{
-  const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
-  assert.match(source,/\.fa-dev-stats-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
-  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
-  assert.match(source,/\.fa-dev-stats-leader-card\.fa-dev-stats-team-card\{[^}]*height:auto;min-height:88px;max-height:none/);
-  assert.match(source,/const card=create\("section",undefined,"fa-dev-stats-leader-card fa-dev-stats-team-card"\)/);
-  assert.match(source,/\.fa-dev-stats-empty\{[^}]*padding:0!important/);
-  assert.match(source,/\.fa-dev-stats-top li\{[^}]*padding:4px 0/);
-  assert.doesNotMatch(source,/app-competition-empty-row fa-dev-stats-player-empty/);
-});
-
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[
   {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},
