@@ -92,8 +92,9 @@ function clearHistoryPreview(){
  historyRenderVersion++;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
  panel.querySelector(".app-history-dev")?.remove();
- const empty=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyUnavailable"]');
- if(empty){empty.dataset.appI18n="competitionHistoryEmpty";empty.hidden=false;}
+ const empty=panel.querySelector('[data-history-empty]');
+ if(empty)empty.hidden=false;
+ const error=panel.querySelector('[data-history-error]');if(error)error.hidden=true;
  window.faAppRenderLanguage?.();
 }
 // Records are derived from complete final tables, keyed by canonical club identity.
@@ -144,7 +145,8 @@ async function renderHistoryPreview(){
  if(route?.view!=="history")return;
  const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
   window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
- const status=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyUnavailable"]');
+ const status=panel.querySelector('[data-history-empty]');
+ const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
  try{
   if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
@@ -156,7 +158,7 @@ async function renderHistoryPreview(){
   const manifest=await historyManifest;if(!current())return;
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
   const seasons=availablePreviewSeasons().map(season=>({season,rows:createPreviewStandings(division,30,season).rows})).sort((a,b)=>a.season-b.season);
-  const chosen=seasons.find(item=>item.season===Number(route.season));if(!chosen)return;
+  const chosen=seasons.find(item=>item.season===Number(route.season));if(!chosen){if(status)status.hidden=false;return;}
   const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
@@ -193,7 +195,9 @@ async function renderHistoryPreview(){
  }catch(error){
   if(!current())return;
   console.error("DEV History preview unavailable:",error);panel.querySelector(".app-history-dev")?.remove();
-  if(status){status.dataset.appI18n="historyUnavailable";status.hidden=false;window.faAppRenderLanguage?.();}
+  if(status)status.hidden=false;
+  if(errorMessage)errorMessage.hidden=false;
+  window.faAppRenderLanguage?.();
  }
 }
 function syncHistoryPreview(){

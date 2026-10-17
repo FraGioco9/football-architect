@@ -35,8 +35,6 @@ if (panel && divisionId) {
 .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
-.fa-dev-stats-empty{font-size:.85rem;opacity:.65}
-.fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 .fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
 .fa-dev-stats-top .app-world-club-identity{min-width:0}
 .fa-dev-stats-top .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -112,7 +110,7 @@ if (panel && divisionId) {
         const card=create("section",undefined,"fa-dev-stats-leader-card");
         card.append(create("h4",label,"fa-dev-stats-leader-title"));
         const list=create("ol",undefined,"fa-dev-stats-top");
-        const empty=create("li",hasMatches?"No player statistics available yet.":"No statistics available yet.","fa-dev-stats-player-empty");
+        const empty=create("li",hasMatches?"No player statistics available yet.":"No statistics available yet.","app-competition-empty-row fa-dev-stats-player-empty");
         list.append(empty);
         card.append(list);
         grid.append(card);
@@ -126,7 +124,7 @@ if (panel && divisionId) {
       const grid=create("div",undefined,"app-competition-stat-grid fa-dev-stats-grid");
       for(const [label,value] of [["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]){
         const card=create("div",undefined,"app-competition-stat-card fa-dev-stats-card");
-        card.append(create("span",label,"app-competition-stat-label"),hasMatches?create("strong",value,"app-competition-stat-value"):create("span","No statistics available yet.","fa-dev-stats-empty"));
+        card.append(create("span",label,"app-competition-stat-label"),hasMatches?create("strong",value,"app-competition-stat-value"):create("span","No statistics available yet.","app-competition-empty fa-dev-stats-empty"));
         grid.append(card);
       }
       root.append(grid);
@@ -153,7 +151,7 @@ if (panel && divisionId) {
         return li;
       };
       if(hasMatches)teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
-      else top.append(create("li","No statistics available yet.","fa-dev-stats-player-empty"));
+      else top.append(create("li","No statistics available yet.","app-competition-empty-row fa-dev-stats-player-empty"));
       card.append(top);
       if(hasMatches&&teams.length>5){
         const expand=create("button","Show all","fa-dev-stats-expand");

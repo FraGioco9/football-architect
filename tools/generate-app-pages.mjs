@@ -119,6 +119,20 @@ ${Array.from({length:30},(_,i)=>'                  <div class="language-option" 
             </div>
             <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
             <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>`;
+const historyEmptyContent = ()=>`
+            <div class="app-history-empty" data-history-empty>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
+                <div class="app-world-standings"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+              </section>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
+                <div class="app-competition-stat-grid">
+${[["historyMostTitles","Most league titles"],["historyMostPodiums","Most podium finishes"],["historyLongestTitleStreak","Most consecutive league titles"]].map(([key,label])=>`                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>`).join("\n")}
+                </div>
+              </section>
+            </div>
+            <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;
 const competitionTabs = function competitionTabs(d,standings) {
  const views=[
   ["standings","competitionTabStandings","Standings"],
@@ -131,17 +145,16 @@ const competitionTabs = function competitionTabs(d,standings) {
  const nav=views.map(([id,key,label],i)=>
   `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`
  ).join("\n");
- const emptyKeys={fixtures:"competitionFixturesEmpty",stats:"competitionStatsEmpty",history:"competitionHistoryEmpty",awards:"competitionAwardsEmpty"};
+ const emptyKeys={fixtures:"competitionFixturesEmpty",stats:"competitionStatsEmpty",awards:"competitionAwardsEmpty"};
  const messages={
   fixtures:"No scheduled matches or results are available.",
   stats:"Competition statistics are not available before matches are played.",
-  history:"No completed seasons or past winners are available.",
   awards:"No season awards are available."
  };
  const panels=views.map(([id,key,label],i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
-  if(id==="history")return `          <section ${attrs}>\n            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">${messages.history}</p>\n          </section>`;
+  if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent()}\n          </section>`;
   if(id==="rules")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>\n            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd>${d.capacity}</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd>${d.tier}</dd></div></dl>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;

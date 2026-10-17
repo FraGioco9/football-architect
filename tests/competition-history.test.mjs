@@ -67,7 +67,8 @@ test('History discards a pending render after debug is disabled and restores the
  const start=client.indexOf('let historyRenderVersion=0;'),end=client.indexOf('\nlet transition=',start);
  let resolveFetch,enabled=true,renders=0,generated=0;
  const status={dataset:{appI18n:'competitionHistoryEmpty'},hidden:false,setAttribute(){}};
- const panel={querySelector(selector){return selector==='.app-history-dev'?null:status}};
+ const error={hidden:true};
+ const panel={querySelector(selector){return selector==='[data-history-empty]'?status:selector==='[data-history-error]'?error:null}};
  const context={
   window:{faCompetitionRoute:{get:()=>({view:'history',season:'4'})},faAppRenderLanguage(){renders++}},
   document:{getElementById:()=>panel,createElement(){generated++;throw Error('Stale render constructed DOM')}},

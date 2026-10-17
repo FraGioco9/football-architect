@@ -294,7 +294,21 @@
             <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
           </section>
           <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
-            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">No completed seasons or past winners are available.</p>
+            <div class="app-history-empty" data-history-empty>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
+                <div class="app-world-standings"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+              </section>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
+                <div class="app-competition-stat-grid">
+                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyMostTitles">Most league titles</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyMostPodiums">Most podium finishes</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="historyLongestTitleStreak">Most consecutive league titles</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                </div>
+              </section>
+            </div>
+            <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>
           </section>
           <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabRules">Rules</h2>

@@ -533,7 +533,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
       const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
       await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
-      await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-app-i18n=\"competitionHistoryEmpty\"]').hidden");
+      await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History retains three record cards without invented values');
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await run(toggle+".checked=true;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("document.querySelectorAll('[data-history-season]').length===4");
