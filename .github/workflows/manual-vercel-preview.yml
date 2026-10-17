@@ -158,7 +158,9 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$SOURCE" == "main" ]]; then
-            main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+            main_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')" || { echo 'Unable to resolve current main SHA from GitHub API'; exit 1; }
+            echo "Approved SHA: $EXPECTED_SHA"
+            echo "Current main SHA: $main_sha"
             [[ "$main_sha" == "$EXPECTED_SHA" ]] || { echo 'main moved since approval; rerun with the current main SHA'; exit 1; }
           elif [[ "$SOURCE" == "merged_pr" ]]; then
             pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
