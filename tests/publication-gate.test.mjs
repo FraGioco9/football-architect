@@ -67,7 +67,8 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
    assert.match(source,/^  workflow_dispatch:$/m);
    assert.doesNotMatch(source,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
    for(const gate of [
-    /GITHUB_ACTOR/,/inputs\.expected_sha/,/\.head\.sha == \$sha/,
+    /GITHUB_ACTOR/,/inputs\.expected_sha/,/source == "main"/,
+    /\.merge_commit_sha == \$sha/,/PR_HEAD_SHA|pr_head_sha/,
     /landing-checks\.yml\/runs\?head_sha=/,/node --test tests\/\*\.test\.mjs/,
     /stagePublicArtifact/,/assertPublicArtifact/,/artifact_contract:/,
      /stage-protected-debug:/,/Protected Debug publication remains disabled/,
