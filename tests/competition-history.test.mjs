@@ -148,7 +148,7 @@ test('DEV Stats labels and messages use the five-language app dictionary',()=>{
   const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
   assert.ok(start>=0&&end>start,'Language block '+lang);
   const segment=app.slice(start,end);
-  for(const key of keys)assert.equal((segment.match(new RegExp('\\\\b'+key+':','g'))||[]).length,1,lang+' '+key);
+  for(const key of keys)assert.equal((segment.match(new RegExp('\\b'+key+':','g'))||[]).length,1,lang+' '+key);
  }
  assert.match(dev,/const localized = \(tag, key, english, className\) =>/);
  assert.match(dev,/el\.dataset\.appI18n = key/);
