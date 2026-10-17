@@ -91,7 +91,8 @@
     const id=params.get("season"),round=params.get("matchday");
     return {season:/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason,
       view:views.includes(params.get("view"))?params.get("view"):"standings",
-      matchday:/^(?:[1-9]|[12]\d|30)$/.test(round||"")?Number(round):1};
+      matchday:/^(?:[1-9]|[12]\d|30)$/.test(round||"")?Number(round):1,
+      ...(params.get("view")==="history"&&params.get("history")==="final"?{historyDetail:true}:{})};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
@@ -100,6 +101,7 @@
     url.search="";url.hash="";
     url.searchParams.set("season",state.season);url.searchParams.set("view",state.view);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
+    if(state.view==="history"&&state.historyDetail===true)url.searchParams.set("history","final");
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
     document.documentElement.dataset.competitionView=state.view;
@@ -122,6 +124,7 @@
   function set(patch,options){
     if(Object.hasOwn(patch,"matchday"))pendingDefaultMatchday=false;
     const next={...state,...patch};
+    if(next.view!=="history"||next.historyDetail!==true)delete next.historyDetail;
     if(!views.includes(next.view)||!/^[1-9]\d{0,8}$/.test(next.season)||
       !Number.isInteger(next.matchday)||next.matchday<1||next.matchday>30)return;
     apply(next,options);

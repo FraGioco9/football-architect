@@ -27,10 +27,6 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-.fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
-.fa-dev-stats-card span{font-size:.85rem;opacity:.75}
-.fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
@@ -62,9 +58,7 @@ if (panel && divisionId) {
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;padding:0}
 .fa-dev-stats-dialog-close:focus,.fa-dev-stats-dialog-close:focus-visible{outline:none;box-shadow:none;background:transparent}
 @media(max-width:760px){.fa-dev-stats-leader-grid{grid-template-columns:1fr}}
-@media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
 @media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
-@media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
 `;
   document.head.append(style);
   const root = create("div");
@@ -129,10 +123,10 @@ if (panel && divisionId) {
     const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
     if (view === "overview") {
       const o = stats.overview;
-      const grid=create("div",undefined,"fa-dev-stats-grid");
+      const grid=create("div",undefined,"app-competition-stat-grid fa-dev-stats-grid");
       for(const [label,value] of [["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]){
-        const card=create("div",undefined,"fa-dev-stats-card");
-        card.append(create("span",label),hasMatches?create("strong",value):create("span","No statistics available yet.","fa-dev-stats-empty"));
+        const card=create("div",undefined,"app-competition-stat-card fa-dev-stats-card");
+        card.append(create("span",label,"app-competition-stat-label"),hasMatches?create("strong",value,"app-competition-stat-value"):create("span","No statistics available yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       root.append(grid);

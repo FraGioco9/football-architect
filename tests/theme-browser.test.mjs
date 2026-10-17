@@ -491,9 +491,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     }
     // HISTORY-DEV: compare actual rendered clubs, tables and records to the DEV model.
     const historyManifest=JSON.parse(await readFile(join(root,'app/competitions/_shared/manifest.json'),'utf8'));
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on')");
     for(const division of historyManifest.divisions){
       await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
       await wait("document.querySelectorAll('.app-history-dev-table tbody tr').length===16");
+      assert.equal(await run("document.getElementById('app-history-final').hidden&&!document.getElementById('app-history-archive').hidden"),true,'History starts at the archive overview');
       const final=createPreviewStandings(division,30,4).rows;
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev-table tbody tr')].map(row=>[row.dataset.historyClub,Number(row.lastChild.textContent)])"),final.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]),division.id+' final table');
       assert.equal(await run("document.querySelector('.app-history-dev-champion [data-club-crest]').dataset.clubCrest"),final[0].club.countryId+'-'+final[0].club.clubId);
@@ -515,20 +517,29 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
 
       assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>[...b.querySelectorAll('[data-club-crest]')].map(c=>c.dataset.clubCrest))"),podiums);
     }
-    for(const width of [1440,390,320])for(const theme of ['dark','light']){
+    for(const width of [1440,621,620,390,320])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+");sessionStorage.setItem('football-architect:standings-dev-preview','on')");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
       await wait("document.querySelector('.app-history-dev-table tbody tr')&&document.querySelector('#app-history-final h3').textContent.includes('3')");
+      assert.equal(await run("document.getElementById('app-history-final').hidden"),true);
+      await run("document.querySelector('[data-history-season=\"3\"]').click()");
+      await wait("!document.getElementById('app-history-final').hidden&&location.search.includes('history=final')");
+      const variant=await run("(()=>{const full=document.querySelector('.app-history-dev-standings .app-world-standing-scroll'),mobile=document.querySelector('.app-history-dev-standings .app-world-compact');return {full:getComputedStyle(full).display,mobile:getComputedStyle(mobile).display}})()");
+      assert.equal(variant.full==='none',width<=620,'History shares Standings 620px breakpoint');
+      assert.equal(variant.mobile==='none',width>620);
       for(const lang of ['en','de','es','fr','it']){
         await run("document.documentElement.lang="+JSON.stringify(lang));
         await wait("document.querySelector('#app-history-final h3').textContent.includes('3')");
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),rows:r.querySelectorAll('.app-history-dev-compact li').length,title:document.querySelector('#app-history-final h3').textContent,emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
         assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.rows,16);assert.equal(layout.emptyLabels,false);
       }
+      await run("document.querySelector('.app-history-dev-back').click()");
+      await wait("!document.getElementById('app-history-archive').hidden");
       await run("document.querySelector('[data-history-season=\"1\"]').click()");
       await wait("document.activeElement===document.querySelector('#app-history-final h3')&&document.querySelector('#app-history-final h3').textContent.includes('1')");
       await run("document.querySelector('.app-history-dev-back').click()");
+      await wait("document.activeElement.dataset.historySeason==='1'&&document.getElementById('app-history-final').hidden");
       assert.equal(await run("document.activeElement.dataset.historySeason"),'1','Back restores archive keyboard focus');
       await run("window.faCompetitionRoute.set({season:'3'});window.faCompetitionRoute.set({season:'4'});window.faCompetitionRoute.set({season:'1'})");
       await wait("document.querySelector('#app-history-final h3').textContent.includes('1')");
@@ -540,7 +551,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await wait("document.querySelectorAll('.app-history-dev-table tbody tr').length===16");
       await snap('HISTORY '+width+' '+theme,width,900);
     }
-    console.log('HISTORY_BROWSER_PASS|16 divisions; 1440/390/320 Dark/Light; 5 locales; season selection; keyboard return; debug OFF/ON');
+    console.log('HISTORY_BROWSER_PASS|16 divisions; 1440/621/620/390/320 Dark/Light; 5 locales; season selection; keyboard return; debug OFF/ON');
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}

@@ -598,6 +598,6 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
  assert.match(client,/if\(!isPreviewEnabled\(\)\)\{clearHistoryPreview\(\);return\}/);
  assert.match(client,/createPreviewStandings\(division,30,season\)/);
  for(const key of ["historyHallOfChampions","historySeasonArchive","historyFinalStandings","historyHistoricalRecords","historyMostTitles","historyMostPodiums","historyLongestTitleStreak","historyPreviewNotice"])assert.ok(client.includes(key),key);
- assert.match(client,/clearHistoryPreview\(\)/);assert.match(html,/<section id="competition-panel-history"/);assert.match(css,/\.app-history-dev-records/);
+ assert.match(client,/clearHistoryPreview\(\)/);assert.match(html,/<section id="competition-panel-history"/);assert.match(css,/\.app-competition-stat-grid/);
  assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-client.mjs"),false);assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-data.mjs"),false);
 });
