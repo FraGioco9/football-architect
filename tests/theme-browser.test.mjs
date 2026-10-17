@@ -562,6 +562,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
         assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.emptyLabels,false);
+        const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
+        assert.ok(cards.every(c=>c.min===c.expected&&c.height>=c.expected-.5&&!c.overflow&&c.max==='none'&&c.align==='flex-start'),width+' '+theme+' '+lang+' History cards keep minimum heights and grow with content');
       }
       const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
       const scrollCheck=await run("(()=>{const s=document.querySelector('.fa-shell-content-scroll');s.scrollTop=Math.min(180,s.scrollHeight-s.clientHeight);const top=s.scrollTop;const results=[];for(const scope of ['all-time','season','all-time','season']){document.querySelector('.app-history-dev [data-history-record-scope=\"'+scope+'\"]').click();results.push(s.scrollTop)}return {top,results,period:!!document.querySelector('.app-history-record-period')}})()");
@@ -570,6 +572,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
       assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length===6&&document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with six team and three player seasonal cards without invented values');
+      assert.equal(await run("[...document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])')].every(c=>getComputedStyle(c).minHeight==='128px'&&c.getBoundingClientRect().height>=127.5&&c.scrollHeight<=c.clientHeight+1)"),true,'All empty History cards use the 128px minimum');
       await run("document.querySelector('[data-history-empty] [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length"),6);
       assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length"),4);
