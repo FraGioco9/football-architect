@@ -130,6 +130,10 @@ function historyRecords(seasons){
  const margins=seasons.map(({season,rows})=>({season,rows:Number.isFinite(rows[0]?.pts)&&Number.isFinite(rows[1]?.pts)?[{club:rows[0].club,margin:rows[0].pts-rows[1].pts}]:[]}));
  return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals"),points:seasonalRecord("pts",Math.max),goalDifference:seasonalRecord("gd",Math.max),margin:seasonalRecord("margin",Math.max,margins),totalPoints:record("totalPoints")};
 }
+function historyRecordValue(metric,value){
+ if(metric==="goalDifference")return value>0?"+"+value:value<0?"−"+Math.abs(value):"0";
+ return String(value);
+}
 function historyNode(tag,className="",text){
  const element=document.createElement(tag);if(className)element.className=className;
  if(text!==undefined)element.textContent=String(text);return element;
@@ -202,11 +206,8 @@ async function renderHistoryPreview(){
    card.dataset.historyScope=values[metric].entries?"season":"all-time";
    card.hidden=card.dataset.historyScope!==(panel.dataset.historyRecordScope||"season");
    const label=historyLabel(key,"h4");label.className="app-competition-stat-label";
-   card.append(label,historyNode("strong","app-competition-stat-value",values[metric].value));
+   card.append(label,historyNode("strong","app-competition-stat-value",historyRecordValue(metric,values[metric].value)));
    if(values[metric].entries){
-    if(metric==="attack"||metric==="defence"){
-     const unit=historyLabel(metric==="attack"?"historyGoalsScored":"historyGoalsConceded");unit.className="app-competition-stat-label";card.append(unit);
-    }
     for(const {club,season} of values[metric].entries){
      const entry=historyNode("div","app-history-dev-record-entry");entry.dataset.historyRecordSeason=String(season);
      entry.append(historyIdentity(club),historySeasonLabel(season));card.append(entry);

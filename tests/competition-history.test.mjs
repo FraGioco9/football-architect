@@ -13,6 +13,15 @@ function records(seasons){
 }
 const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
 const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('History goal difference displays positive and negative signs without signing other records',()=>{
+ const start=client.indexOf('function historyRecordValue('),end=client.indexOf('\nfunction historyNode',start);
+ assert.ok(start>=0&&end>start);
+ const format=runInNewContext(client.slice(start,end)+';historyRecordValue');
+ assert.equal(format('goalDifference',12),'+12');
+ assert.equal(format('goalDifference',-12),'−12');
+ assert.equal(format('goalDifference',0),'0');
+ assert.equal(format('points',12),'12');
+});
 test('Points, goal difference and champion margin records preserve seasonal ties and cumulative points',()=>{
  const seasons=[
   {season:2,rows:[{club:club(2),pts:80,gd:40},{club:club(1),pts:70,gd:30},{club:club(3),pts:20,gd:-20}]},

@@ -522,7 +522,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const value=extreme(...entries.map(entry=>entry.value));
         const card=await run("(()=>{const c=document.querySelector('[data-history-record=\""+metric+"\"]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
         assert.deepEqual(card,{value,entries:entries.filter(entry=>entry.value===value).map(({season,club})=>({season,club}))},division.id+' '+metric);
+        if(metric==='goalDifference')assert.equal(await run("document.querySelector('[data-history-record=goalDifference] strong').textContent"),value>0?'+'+value:String(value));
       }
+      assert.equal(await run("!!document.querySelector('.app-history-dev [data-app-i18n=historyGoalsScored],.app-history-dev [data-app-i18n=historyGoalsConceded]')"),false);
       const margins=[1,2,3,4].map(season=>{const rows=createPreviewStandings(division,30,season).rows;return {season,club:rows[0].club.countryId+'-'+rows[0].club.clubId,value:rows[0].pts-rows[1].pts}});
       const marginValue=Math.max(...margins.map(item=>item.value));
       const marginCard=await run("(()=>{const c=document.querySelector('[data-history-record=margin]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
