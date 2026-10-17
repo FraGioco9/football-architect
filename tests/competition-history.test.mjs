@@ -93,3 +93,17 @@ test('Selecting a History season opens the shared Standings view with that exact
   assert.deepEqual(calls,[[{season:String(season),view:'standings'},{focus:true}]]);
  }
 });
+
+test('Restoring debug waits for History before completing the first-paint release',async()=>{
+ const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nif(validPath){',start);
+ let finishHistory,settled=false;
+ const historyReady=new Promise(resolve=>{finishHistory=resolve});
+ const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],
+  boot:async()=>()=>{},widgetRoot:{syncVisibility(){}},syncHistoryPreview:()=>historyReady,
+  FLAG:'preview',sessionStorage:{setItem(){}},window:{dispatchEvent(){}},CustomEvent:class{},console};
+ const toggle=runInNewContext(client.slice(start,end)+';setPreviewEnabled',context);
+ const pending=toggle(true).then(value=>{settled=true;return value});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(settled,false,'The preview must not reveal the shorter empty History before its populated layout is ready');
+ finishHistory();assert.equal(await pending,true);
+});

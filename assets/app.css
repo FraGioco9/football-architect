@@ -496,7 +496,9 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
 
 /* Keep DEV restoration guards effective when a running server has an older injected style. */
 html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures,
-html[data-fa-debug-pending="true"] #competition-panel-fixtures{visibility:hidden}
+html[data-fa-debug-pending="true"] #competition-panel-fixtures,
+html[data-fa-dev-standings-pending="true"] #competition-panel-history,
+html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 
 /* Shared competition summary cards: Stats and History use the same geometry. */
 .app-competition-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}

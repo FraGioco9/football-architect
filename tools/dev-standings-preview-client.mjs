@@ -203,7 +203,7 @@ async function renderHistoryPreview(){
 function syncHistoryPreview(){
  const route=window.faCompetitionRoute?.get?.();
  if(!isPreviewEnabled()){clearHistoryPreview();return;}
- if(route?.view==="history")void renderHistoryPreview();else historyRenderVersion++;
+ if(route?.view==="history")return renderHistoryPreview();else historyRenderVersion++;
 }
 
 let transition=Promise.resolve();
@@ -228,7 +228,7 @@ function setPreviewEnabled(enabled) {
    // its pre-hydration default season, which would override a valid deep-link URL.
    // Real router events are handled by syncSeason after initialization.
    widgetRoot?.syncVisibility();
-   syncHistoryPreview();
+   await syncHistoryPreview();
    try{sessionStorage.setItem(FLAG,"on")}catch{}
    window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:true}}));
    return true;
