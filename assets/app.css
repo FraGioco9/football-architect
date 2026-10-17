@@ -318,6 +318,7 @@ html[data-competition-view="history"] #competition-tab-history,
 html[data-competition-view="rules"] #competition-tab-rules,
 html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);background:#21483d}
 .app-competition-tab:focus-visible,.app-competition-panel:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(hover:none){.app-competition-tab:hover{background:transparent;color:var(--muted)}.app-competition-tab:focus:not(:focus-visible),.app-competition-panel:focus:not(:focus-visible){outline:none;box-shadow:none}.app-competition-panel:focus-visible{outline:none}}
 .app-competition-panel{margin-top:14px;min-width:0}
 .app-competition-panel[hidden]{display:none}
 .app-competition-panel>.app-world-standings{margin-top:0}
@@ -496,3 +497,10 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
 /* Keep DEV restoration guards effective when a running server has an older injected style. */
 html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures,
 html[data-fa-debug-pending="true"] #competition-panel-fixtures{visibility:hidden}
+
+/* Keep the current-matchday shortcut beside, not over, mobile round controls. */
+@media(max-width:620px){
+ .app-fixtures-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
+ .app-fixtures-navigation{grid-column:2;grid-row:1;justify-self:center;min-width:0}
+ .app-fixtures-current{position:relative;inset-inline-end:auto;top:auto;grid-column:3;grid-row:1;justify-self:end;align-self:center;flex:0 0 32px;margin:0}
+}

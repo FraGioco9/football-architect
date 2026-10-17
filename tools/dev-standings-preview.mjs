@@ -16,7 +16,10 @@ const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
-  "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs"
+  "/__fa_dev__/dev-standings-preview-data.mjs": "dev-standings-preview-data.mjs",
+  "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs",
+  "/__fa_dev__/stats-data.mjs": "dev-competition-stats-data.mjs",
+  "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs"
 });
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -34,8 +37,10 @@ const DEV_SEASONS = [1, 2, 3, 4]; // Isolated fictional DEV previews only; never
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
   `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
+  '<style>html:not([data-fa-tabs-restored="true"]) .app-competition-tabs{visibility:hidden}</style>',
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
-  '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>'
+  '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
+  '<script type="module" data-fa-dev-stats src="/__fa_dev__/stats-client.mjs"></script>'
 ].join("\n");
 
 function ipv4(value) {
@@ -168,13 +173,13 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.length !== 2) throw Error("DEV preview server accepts no CLI flags");
-  createPreviewServer().listen(PORT, HOST, () => {
+  createPreviewServer({ subdomains: !LAN_ENABLED }).listen(PORT, HOST, () => {
     const addresses = LAN_ENABLED
       ? Object.values(networkInterfaces()).flatMap(items => items || [])
         .filter(item => item.family === "IPv4" && !item.internal && isPrivateIPv4(item.address))
         .map(item => "http://" + item.address + ":" + PORT + "/competitions/it-1")
-      : ["http://" + LOOPBACK + ":" + PORT + "/competitions/it-1"];
-    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "loopback only") + "):" + String.fromCharCode(10) +
+      : ["http://app.localhost:" + PORT + "/competitions/it-1"];
+    process.stdout.write("Standings DEV preview (" + (LAN_ENABLED ? "LAN opt-in" : "local subdomains") + "):" + String.fromCharCode(10) +
       addresses.join(String.fromCharCode(10)) + String.fromCharCode(10));
   });
 }
