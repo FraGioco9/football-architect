@@ -157,6 +157,33 @@ test('DEV Stats labels and messages use the five-language app dictionary',()=>{
  assert.match(dev,/dialog\.setAttribute\("aria-labelledby",title\.id\)/);
  assert.doesNotMatch(dev,/aria-label",label\+" leaderboard"/);
 });
+test('Stats DEV switches language through the shared live translation renderer',()=>{
+ const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ const begin=source.indexOf('  const copies = {'),end=source.indexOf('  const worldCountryNames',begin);
+ const rendererStart=source.indexOf('  function language() {'),rendererEnd=source.indexOf('  function renderView() {',rendererStart);
+ assert.ok(begin>=0&&end>begin&&rendererStart>0&&rendererEnd>rendererStart);
+ const code=source.slice(begin,end)+
+   '\n const worldCountryNames={};'+
+   '\n const words=()=>document.querySelectorAll("[data-app-i18n]");'+
+   '\n const accessible=()=>document.querySelectorAll("[data-app-aria]");'+
+   source.slice(rendererStart,rendererEnd)+'\n;({renderLanguage,copies})';
+ const labels=['statsDevOverview','statsDevTeams','statsDevPlayers','statsDevGoals','statsDevNoData','statsDevShowAll']
+   .map(key=>({dataset:{appI18n:key},textContent:'English fallback'}));
+ const close={dataset:{appAria:'statsDevClose'},setAttribute(key,value){this[key]=value}};
+ const document={documentElement:{lang:'en'},title:'',
+   querySelectorAll(selector){return selector==='[data-app-i18n]'?labels:selector==='[data-app-aria]'?[close]:[]},
+   getElementById(){return null}};
+ const api=runInNewContext(code,{document,window:{location:{pathname:'/competitions/it-1'}}});
+ for(const lang of ['en','de','es','fr','it']){
+   document.documentElement.lang=lang;
+   api.renderLanguage();
+   assert.equal(document.title,api.copies[lang].navCompetitions+' — Football Architect');
+   for(const node of labels)assert.equal(node.textContent,api.copies[lang][node.dataset.appI18n]);
+   assert.equal(close['aria-label'],api.copies[lang].statsDevClose);
+ }
+ assert.notEqual(api.copies.de.statsDevOverview,api.copies.en.statsDevOverview);
+ assert.notEqual(api.copies.it.statsDevTeams,api.copies.en.statsDevTeams);
+});
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[
   {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},
