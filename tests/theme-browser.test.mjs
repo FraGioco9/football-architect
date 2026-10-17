@@ -99,6 +99,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error("CDP timeout "+method));},15000);
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
     });
+    await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -106,7 +107,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     };
     const wait=async expr=>{
       for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}
-      throw Error("Timed out: "+expr);
+      let diagnostic="unavailable";
+      try{diagnostic=JSON.stringify(await run(`(()=>({url:location.href,readyState:document.readyState,route:window.faCompetitionRoute?.get?.()||null,preview:sessionStorage.getItem('football-architect:standings-dev-preview'),pending:document.documentElement.dataset.faDevStandingsPending||null,fixturesApi:typeof window.faFixtures,prepare:typeof window.faFixtures?.prepare,fixtureRows:[...document.querySelectorAll('[data-fixture-match]')].map(n=>({id:n.dataset.fixtureMatch,score:n.querySelector('.app-fixture-score')?.textContent||null})),empty:(()=>{const e=document.getElementById('app-fixtures-empty');return e?{hidden:e.hidden,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility,text:e.textContent}:null})(),errors:window.__faRuntimeErrors||[]}))()`));}catch(error){diagnostic=String(error)}
+      throw Error("Timed out: "+expr+"; browser state: "+diagnostic);
     };
     const visit=async(route,condition="true")=>{
       const url=origin+route;await cmd("Page.navigate",{url});
@@ -370,7 +373,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         if(window.__faObserveEmpty)requestAnimationFrame(sample);
       };requestAnimationFrame(sample);
     `});
-    await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
+    // Keep DEV enabled across the navigation so this specifically tests restoration
+    // during delayed manifest/Fixtures hydration, rather than expecting a removed
+    // session flag to enable fictional standings by itself.
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on')");
     devManifestDelay=250;devFixturesDelay=500;devLegacyGuard=true;
     await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=2&view=fixtures&matchday=1"});
     await expectSeason(2,1);
@@ -454,8 +460,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
       for(const lang of ['en','it','de','es','fr']){
         await run("document.documentElement.lang="+JSON.stringify(lang)+";window.faAppRenderLanguage?.()");
-        const layout=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')],r=e=>e.getBoundingClientRect(),n=r(document.querySelector('.app-fixtures-navigation')),c=r(document.getElementById('app-fixtures-current'));return {rows:rows.length,scroll:document.documentElement.scrollWidth,width:innerWidth,fit:rows.every(e=>r(e).left>=0&&r(e).right<=innerWidth),names:rows.every(e=>[...e.querySelectorAll('.app-fixture-name')].every(n=>n.scrollWidth<=n.clientWidth+1)),controls:n.right<=c.left+1&&c.right<=innerWidth}})()");
-        assert.equal(layout.rows,8);assert.ok(layout.scroll<=layout.width,width+" "+theme+" "+lang+" no horizontal page overflow");assert.equal(layout.fit,true);assert.equal(layout.names,true,"club names wrap without clipping");assert.equal(layout.controls,true,"round controls and current shortcut do not overlap");
+        const layout=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')],r=e=>e.getBoundingClientRect(),toolbar=r(document.querySelector('.app-fixtures-toolbar')),n=r(document.querySelector('.app-fixtures-navigation')),c=r(document.getElementById('app-fixtures-current'));return {rows:rows.length,scroll:document.documentElement.scrollWidth,width:innerWidth,fit:rows.every(e=>r(e).left>=0&&r(e).right<=innerWidth),names:rows.every(e=>[...e.querySelectorAll('.app-fixture-name')].every(n=>n.scrollWidth<=n.clientWidth+1)),controls:(!c.width&&!c.height)||((n.right<=c.left+1||c.right<=n.left+1)&&c.right<=innerWidth),geometry:{toolbar:{left:toolbar.left,right:toolbar.right,width:toolbar.width},navigation:{left:n.left,right:n.right,width:n.width,center:n.left+n.width/2},current:{left:c.left,right:c.right,width:c.width},lang:document.documentElement.lang}}})()");
+        assert.equal(layout.rows,8);assert.ok(layout.scroll<=layout.width,width+" "+theme+" "+lang+" no horizontal page overflow");assert.equal(layout.fit,true);assert.equal(layout.names,true,"club names wrap without clipping");assert.equal(layout.controls,true,"round controls and current shortcut do not overlap; "+JSON.stringify(layout.geometry));
       }
       const matchDetails=await run("(()=>{const clubs=window.faCompetitionDivision.clubs,r=e=>e.getBoundingClientRect();return [...document.querySelectorAll('[data-fixture-match]')].every(row=>{const home=clubs.find(c=>c.clubId===Number(row.dataset.fixtureMatch.split(':')[1])),status=row.querySelector('.app-fixture-status'),score=row.querySelector('.app-fixture-score'),stadium=row.querySelector('.app-fixture-stadium');return stadium.textContent===home.stadiumName&&r(status).bottom<=r(score).top&&r(score).bottom<=r(stadium).top&&Math.abs(r(stadium).height-2*parseFloat(getComputedStyle(stadium).lineHeight))<=1&&getComputedStyle(stadium).whiteSpace==='normal'&&getComputedStyle(stadium).webkitLineClamp==='2'})})()");
       assert.equal(matchDetails,true,"status above result and home stadium below with exactly two reserved mobile lines");
@@ -483,6 +489,58 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"DEV OFF hides all navigation and shows the empty state");
       console.log("FIXTURES_MOBILE_PASS|"+width+"|"+theme+"|touch menus, arrows, season changes, current round, refresh, empty state, zero completed games, five-language layout");
     }
+    // HISTORY-DEV: compare actual rendered clubs, tables and records to the DEV model.
+    const historyManifest=JSON.parse(await readFile(join(root,'app/competitions/_shared/manifest.json'),'utf8'));
+    for(const division of historyManifest.divisions){
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
+      await wait("document.querySelectorAll('.app-history-dev-table tbody tr').length===16");
+      const final=createPreviewStandings(division,30,4).rows;
+      assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev-table tbody tr')].map(row=>[row.dataset.historyClub,Number(row.lastChild.textContent)])"),final.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]),division.id+' final table');
+      assert.equal(await run("document.querySelector('.app-history-dev-champion [data-club-crest]').dataset.clubCrest"),final[0].club.countryId+'-'+final[0].club.clubId);
+      assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>b.dataset.historySeason)"),['4','3','2','1']);
+      const podiums=[4,3,2,1].map(season=>createPreviewStandings(division,30,season).rows.slice(0,3).map(row=>row.club.countryId+'-'+row.club.clubId));
+      const records={titles:new Map(),podiums:new Map(),streak:new Map()};let previous=null,streak=0;
+      for(const season of [1,2,3,4]){
+        const rows=createPreviewStandings(division,30,season).rows,id=club=>club.countryId+'-'+club.clubId,winner=id(rows[0].club);
+        records.titles.set(winner,(records.titles.get(winner)||0)+1);
+        for(const row of rows.slice(0,3)){const clubId=id(row.club);records.podiums.set(clubId,(records.podiums.get(clubId)||0)+1);}
+        streak=winner===previous?streak+1:1;previous=winner;records.streak.set(winner,Math.max(records.streak.get(winner)||0,streak));
+      }
+      for(const [metric,counts] of Object.entries(records)){
+        const maximum=Math.max(...counts.values());
+        const card=await run("(()=>{const c=document.querySelector('[data-history-record=\""+metric+"\"]');return {value:Number(c.querySelector('strong').textContent),clubs:[...c.querySelectorAll('[data-club-crest]')].map(n=>n.dataset.clubCrest).sort()}})()");
+        assert.equal(card.value,maximum,division.id+' '+metric);
+        assert.deepEqual(card.clubs,[...counts].filter(([,count])=>count===maximum).map(([id])=>id).sort());
+      }
+
+      assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>[...b.querySelectorAll('[data-club-crest]')].map(c=>c.dataset.clubCrest))"),podiums);
+    }
+    for(const width of [1440,390,320])for(const theme of ['dark','light']){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
+      await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+");sessionStorage.setItem('football-architect:standings-dev-preview','on')");
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
+      await wait("document.querySelector('.app-history-dev-table tbody tr')&&document.querySelector('#app-history-final h3').textContent.includes('3')");
+      for(const lang of ['en','de','es','fr','it']){
+        await run("document.documentElement.lang="+JSON.stringify(lang));
+        await wait("document.querySelector('#app-history-final h3').textContent.includes('3')");
+        const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),rows:r.querySelectorAll('.app-history-dev-compact li').length,title:document.querySelector('#app-history-final h3').textContent,emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
+        assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.rows,16);assert.equal(layout.emptyLabels,false);
+      }
+      await run("document.querySelector('[data-history-season=\"1\"]').click()");
+      await wait("document.activeElement===document.querySelector('#app-history-final h3')&&document.querySelector('#app-history-final h3').textContent.includes('1')");
+      await run("document.querySelector('.app-history-dev-back').click()");
+      assert.equal(await run("document.activeElement.dataset.historySeason"),'1','Back restores archive keyboard focus');
+      await run("window.faCompetitionRoute.set({season:'3'});window.faCompetitionRoute.set({season:'4'});window.faCompetitionRoute.set({season:'1'})");
+      await wait("document.querySelector('#app-history-final h3').textContent.includes('1')");
+      const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
+      await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
+      await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-app-i18n=\"competitionHistoryEmpty\"]').hidden");
+      assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
+      await run(toggle+".checked=true;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
+      await wait("document.querySelectorAll('.app-history-dev-table tbody tr').length===16");
+      await snap('HISTORY '+width+' '+theme,width,900);
+    }
+    console.log('HISTORY_BROWSER_PASS|16 divisions; 1440/390/320 Dark/Light; 5 locales; season selection; keyboard return; debug OFF/ON');
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}

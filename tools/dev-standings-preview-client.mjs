@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { createPreviewStandings } from "./standings-data.mjs";
+import { createPreviewStandings } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -11,10 +11,19 @@ function readMatchdays(){
  }catch{return 15}
 }
 let matchdays=readMatchdays();
+let routeSeasonOverride=null;
+function availablePreviewSeasons(){
+ return (document.documentElement.dataset.faDevSeasons||"1").split(",").map(Number)
+  .filter(season=>Number.isSafeInteger(season)&&season>=1&&season<=4);
+}
 function selectedSeason(){
- const available=(document.documentElement.dataset.faDevSeasons||"1").split(",").map(Number).filter(Number.isSafeInteger);
- const requested=Number(new URLSearchParams(location.search).get("season"));
- return available.includes(requested)?requested:Math.max(...available);
+ const available=availablePreviewSeasons();
+ // Preserve explicit URL season until the router has applied its state.
+ if(available.includes(routeSeasonOverride))return routeSeasonOverride;
+ const requested=Number(new URL(window.location.href).searchParams.get("season"));
+ if(available.includes(requested))return requested;
+ const routed=Number(window.faCompetitionRoute?.get?.().season);
+ return available.includes(routed)?routed:Math.max(1,...available);
 }
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
@@ -78,42 +87,141 @@ function savedPreviewEnabled(){try{return sessionStorage.getItem(FLAG)==="on"}ca
 function isPreviewEnabled(){return previewState==="ON";}
 
 let historyRenderVersion=0;
-function clearHistoryPreview(){const panel=document.getElementById("competition-panel-history");if(!panel)return;panel.querySelector(".app-history-dev")?.remove();const empty=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"]');if(empty)empty.hidden=false;}
-function historyNode(tag,className="",text){const element=document.createElement(tag);if(className)element.className=className;if(text!==undefined)element.textContent=String(text);return element;}
-function historyCell(row,tag,text,className=""){const cell=historyNode(tag,className,text);row.appendChild(cell);return cell;}
-function recordWinners(records,metric){const maximum=Math.max(...records.map(item=>item[metric]));return{maximum,clubs:[...new Set(records.filter(item=>item[metric]===maximum).map(item=>item.name))]};}
-async function renderHistoryPreview(){
- const route=window.faCompetitionRoute?.get?.(),panel=document.getElementById("competition-panel-history");if(!panel)return;
- if(!isPreviewEnabled()){clearHistoryPreview();return}if(route?.view!=="history")return;
- const version=++historyRenderVersion,response=await fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"});
- if(!response.ok)throw Error("DEV History manifest unavailable");const manifest=await response.json();
- if(manifest.schemaVersion!==1||manifest.approved!==false||!Array.isArray(manifest.divisions)||manifest.divisions.length!==16||manifest.divisions.reduce((n,d)=>n+(d.clubs?.length||0),0)!==256)throw Error("Invalid DEV History manifest");
- const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
- const seasons=[1,2,3,4].map(season=>({season,rows:createPreviewStandings(division,30,season).rows}));
- if(version!==historyRenderVersion||!isPreviewEnabled()||window.faCompetitionRoute?.get?.().view!=="history")return;
- const selected=Number(route.season),chosen=seasons.find(item=>item.season===selected)||seasons[3],root=historyNode("div","app-history-dev");
- const banner=historyNode("p","app-history-dev-banner");banner.dataset.appI18n="historyPreviewNotice";root.appendChild(banner);
- const section=key=>{const box=historyNode("section","app-history-dev-section"),h=historyNode("h3");h.dataset.appI18n=key;box.appendChild(h);root.appendChild(box);return box;};
- const table=(parent,headers)=>{const wrap=historyNode("div","app-history-dev-table-wrap"),tbl=historyNode("table","app-history-dev-table"),thead=historyNode("thead"),tr=historyNode("tr");for(const [key,numeric] of headers){const th=historyNode("th",numeric?"numeric":"");th.scope="col";th.dataset.appI18n=key;tr.appendChild(th);}thead.appendChild(tr);tbl.appendChild(thead);tbl.appendChild(historyNode("tbody"));wrap.appendChild(tbl);parent.appendChild(wrap);return tbl.querySelector("tbody");};
- const hall=section("historyHallOfChampions"),championRows=table(hall,[["historySeasonLabel",false],["historyChampionLabel",false],["historyPodiumLabel",false]]);
- for(const item of [...seasons].reverse()){const row=historyNode("tr");historyCell(row,"td",item.season);historyCell(row,"td",item.rows[0].club.primaryName);historyCell(row,"td",item.rows.slice(0,3).map(r=>r.club.primaryName).join(" · "));championRows.appendChild(row);}
- const archive=section("historySeasonArchive"),buttons=historyNode("div","app-history-dev-archive");archive.appendChild(buttons);
- for(const item of [...seasons].reverse()){const button=historyNode("button","app-history-dev-season-button");button.type="button";button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen.season));button.setAttribute("aria-label",`${strings().historySelectSeason||"View final standings"} — ${item.season}`);button.textContent=(strings().season||"Season")+" "+item.season;button.addEventListener("click",()=>window.faCompetitionRoute?.set?.({season:String(item.season),view:"history"}));buttons.appendChild(button);}
- const finalSection=section("historyFinalStandings"),finalRows=table(finalSection,[["standingsPosition",true],["standingsClub",false],["standingsPlayed",true],["standingsWon",true],["standingsDrawn",true],["standingsLost",true],["standingsFor",true],["standingsAgainst",true],["standingsDifference",true],["standingsPoints",true]]);
- finalSection.querySelector("h3").textContent=(strings().finalStandings||"Final standings")+": "+(strings().season||"Season")+" "+chosen.season;
- chosen.rows.forEach((item,index)=>{const row=historyNode("tr",index===0?"is-champion":"");[index+1,item.club.primaryName,item.played,item.won,item.drawn,item.lost,item.gf,item.ga,item.gd>0?"+"+item.gd:item.gd,item.pts].forEach((value,column)=>historyCell(row,"td",value,column===1?"":"numeric"));finalRows.appendChild(row);});
- const records=section("historyHistoricalRecords"),grid=historyNode("div","app-history-dev-records");records.appendChild(grid);
- const titleMap=new Map(),podiumMap=new Map();
- for(const item of seasons)item.rows.forEach((row,index)=>{const id=row.club.countryId+"-"+row.club.clubId,base={clubId:id,name:row.club.primaryName};const t=titleMap.get(id)||{...base,titles:0};if(index===0)t.titles++;titleMap.set(id,t);const p=podiumMap.get(id)||{...base,podiums:0};if(index<3)p.podiums++;podiumMap.set(id,p);});
- const titleRecord=recordWinners([...titleMap.values()],"titles"),podiumRecord=recordWinners([...podiumMap.values()],"podiums"),winners=seasons.map(item=>item.rows[0].club.countryId+"-"+item.rows[0].club.clubId);
- let bestStreak=0,streakIds=new Set();for(let start=0;start<winners.length;start++){let end=start+1;while(end<winners.length&&winners[end]===winners[start])end++;const length=end-start;if(length>bestStreak){bestStreak=length;streakIds=new Set([winners[start]]);}else if(length===bestStreak)streakIds.add(winners[start]);}
- const names=new Map([...titleMap.values()].map(item=>[item.clubId,item.name])),cards=[["historyMostTitles",titleRecord.maximum,titleRecord.clubs.join(", ")],["historyMostPodiums",podiumRecord.maximum,podiumRecord.clubs.join(", ")],["historyLongestTitleStreak",bestStreak,[...streakIds].map(id=>names.get(id)).join(", ")]];
- for(const [key,value,clubNames] of cards){const card=historyNode("article","app-history-dev-record"),h=historyNode("h4");h.dataset.appI18n=key;card.appendChild(h);card.appendChild(historyNode("p","",clubNames));card.appendChild(historyNode("p","app-history-dev-subtle",String(value)));grid.appendChild(card);}
- panel.querySelector('[data-app-i18n="competitionHistoryEmpty"]')?.setAttribute("hidden","");panel.querySelector(".app-history-dev")?.remove();panel.appendChild(root);window.faAppRenderLanguage?.();
- finalSection.querySelector("h3").textContent=(strings().finalStandings||"Final standings")+": "+(strings().season||"Season")+" "+chosen.season;
- for(const button of buttons.querySelectorAll("button"))button.textContent=(strings().season||"Season")+" "+button.dataset.historySeason;
+let historyManifest=null;
+let historyFocus=null;
+function clearHistoryPreview(){
+ historyRenderVersion++;
+ const panel=document.getElementById("competition-panel-history");if(!panel)return;
+ panel.querySelector(".app-history-dev")?.remove();
+ const empty=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyLoading"], [data-app-i18n="historyUnavailable"]');
+ if(empty){empty.dataset.appI18n="competitionHistoryEmpty";empty.hidden=false;}
+ window.faAppRenderLanguage?.();
 }
-function syncHistoryPreview(){const route=window.faCompetitionRoute?.get?.();if(!isPreviewEnabled()){clearHistoryPreview();return;}if(route?.view==="history")renderHistoryPreview().catch(error=>{console.error("DEV History preview unavailable:",error);clearHistoryPreview();});}
+// Records are derived from complete final tables, keyed by canonical club identity.
+function historyRecords(seasons){
+ const clubs=new Map();let previous=null,previousSeason=null,run=0;
+ for(const {season,rows} of [...seasons].sort((a,b)=>a.season-b.season)){
+  rows.forEach(({club},index)=>{
+   const id=club.countryId+"-"+club.clubId;
+   if(!clubs.has(id))clubs.set(id,{club,titles:0,podiums:0,streak:0});
+   const entry=clubs.get(id);if(index===0)entry.titles++;if(index<3)entry.podiums++;
+  });
+  const winner=rows[0]?.club;if(!winner)continue;
+  const id=winner.countryId+"-"+winner.clubId;
+  run=id===previous&&season===previousSeason+1?run+1:1;
+  clubs.get(id).streak=Math.max(clubs.get(id).streak,run);
+  previous=id;previousSeason=season;
+ }
+ const record=key=>{
+  const value=Math.max(0,...[...clubs.values()].map(entry=>entry[key]));
+  return {value,clubs:[...clubs.values()].filter(entry=>entry[key]===value).map(entry=>entry.club)};
+ };
+ return {titles:record("titles"),podiums:record("podiums"),streak:record("streak")};
+}
+function historyNode(tag,className="",text){
+ const element=document.createElement(tag);if(className)element.className=className;
+ if(text!==undefined)element.textContent=String(text);return element;
+}
+function historyLabel(key,tag="span"){
+ const element=historyNode(tag);element.dataset.appI18n=key;return element;
+}
+function historyIdentity(club){
+ const identity=historyNode("span","app-world-club-identity");
+ const crest=historyNode("span","app-world-club-crest-placeholder");
+ crest.dataset.clubCrest=club.countryId+"-"+club.clubId;crest.setAttribute("aria-hidden","true");
+ identity.append(crest,historyNode("span","app-history-dev-club-name",club.primaryName));return identity;
+}
+function historySeasonLabel(season){
+ const label=historyNode("span","app-history-dev-season");
+ label.append(historyLabel("historySeasonLabel"),document.createTextNode(" "+season));return label;
+}
+async function renderHistoryPreview(){
+ const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.();
+ const panel=document.getElementById("competition-panel-history");if(!panel)return;
+ if(!isPreviewEnabled()){clearHistoryPreview();return}
+ if(route?.view!=="history")return;
+ const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
+  window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
+ const status=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyLoading"], [data-app-i18n="historyUnavailable"]');
+ if(!panel.querySelector(".app-history-dev")&&status){status.hidden=false;status.dataset.appI18n="historyLoading";status.setAttribute("role","status");window.faAppRenderLanguage?.();}
+ try{
+  if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
+   if(!response.ok)throw Error("DEV History manifest unavailable");
+   const manifest=await response.json();
+   if(manifest.schemaVersion!==1||manifest.approved!==false||!Array.isArray(manifest.divisions)||manifest.divisions.length!==16||manifest.divisions.reduce((n,d)=>n+(d.clubs?.length||0),0)!==256)throw Error("Invalid DEV History manifest");
+   return manifest;
+  }).catch(error=>{historyManifest=null;throw error});
+  const manifest=await historyManifest;if(!current())return;
+  const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
+  const seasons=availablePreviewSeasons().map(season=>({season,rows:createPreviewStandings(division,30,season).rows})).sort((a,b)=>a.season-b.season);
+  const chosen=seasons.find(item=>item.season===Number(route.season));if(!chosen)return;
+  const latest=seasons.at(-1),root=historyNode("div","app-history-dev");
+  root.append(historyLabel("historyPreviewNotice","p"));root.firstChild.className="app-history-dev-banner";
+  const section=(key,id)=>{
+   const box=historyNode("section","app-history-dev-section");box.id=id;
+   const h=historyLabel(key,"h3");box.append(h);root.append(box);return box;
+  };
+  const hall=section("historyHallOfChampions","app-history-hall");
+  const hero=historyNode("div","app-history-dev-champion");
+  hero.append(historySeasonLabel(latest.season),historyLabel("historyChampionLabel"),historyIdentity(latest.rows[0].club));hall.append(hero);
+  const podium=historyNode("ol","app-history-dev-podium");podium.start=2;
+  latest.rows.slice(1,3).forEach(row=>{const li=historyNode("li");li.append(historyIdentity(row.club));podium.append(li)});hall.append(podium);
+  const archive=section("historySeasonArchive","app-history-archive"),list=historyNode("ol","app-history-dev-archive");archive.append(list);
+  for(const item of [...seasons].reverse()){
+   const li=historyNode("li"),button=historyNode("button","app-history-dev-season-button");button.type="button";
+   button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen.season));
+   const action=historyLabel("historySelectSeason");action.className="app-history-dev-action";
+   button.append(historySeasonLabel(item.season),action);
+   item.rows.slice(0,3).forEach((row,index)=>{
+    const rank=historyNode("span","app-history-dev-archive-club");rank.append(historyNode("span","app-history-dev-rank",index+1),historyIdentity(row.club));button.append(rank);
+   });
+   button.addEventListener("click",()=>{historyFocus="detail";window.faCompetitionRoute?.set?.({season:String(item.season),view:"history"})});
+   li.append(button);list.append(li);
+  }
+  const final=section("historyFinalStandings","app-history-final");
+  const heading=final.querySelector("h3");heading.tabIndex=-1;heading.append(document.createTextNode(" — "),historySeasonLabel(chosen.season));
+  // Translate only the label span, preserving the selected-season context.
+  const title=historyLabel("historyFinalStandings");heading.removeAttribute("data-app-i18n");heading.prepend(title);
+  const back=historyLabel("historyBackToArchive","button");back.type="button";back.className="app-history-dev-back language-trigger";
+  back.addEventListener("click",()=>{archive.querySelector('[data-history-season="'+chosen.season+'"]')?.focus();archive.scrollIntoView({block:"start"})});final.append(back);
+  const headers=["standingsPosition","standingsClub","standingsPlayed","standingsWon","standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference","standingsPoints"];
+  const table=historyNode("table","app-history-dev-table"),caption=historyNode("caption","sr-only");
+  caption.append(historyLabel("historyFinalStandings"),document.createTextNode(" — "),historySeasonLabel(chosen.season));table.append(caption);
+  const thead=historyNode("thead"),tr=historyNode("tr");
+  headers.forEach(key=>{const th=historyLabel(key,"th");th.scope="col";tr.append(th)});thead.append(tr);table.append(thead);
+  const tbody=historyNode("tbody"),compact=historyNode("ol","app-history-dev-compact");
+  chosen.rows.forEach((item,index)=>{
+   const values=[index+1,item.club.primaryName,item.played,item.won,item.drawn,item.lost,item.gf,item.ga,item.gd>0?"+"+item.gd:item.gd,item.pts];
+   const row=historyNode("tr");row.dataset.historyClub=item.club.countryId+"-"+item.club.clubId;
+   values.forEach((value,column)=>{const cell=historyNode(column===1?"th":"td","",column===1?undefined:value);if(column===1){cell.scope="row";cell.append(historyIdentity(item.club))}row.append(cell)});tbody.append(row);
+   const li=historyNode("li"),details=historyNode("details"),summary=historyNode("summary");
+   summary.append(historyNode("span","",index+1),historyIdentity(item.club));
+   const points=historyNode("span","app-history-dev-points",item.pts+" ");points.append(historyLabel("standingsPoints"));summary.append(points);
+   const stats=historyNode("dl","app-history-dev-stat-grid");
+   values.forEach((value,column)=>{if(column<2||column===9)return;const pair=historyNode("div");pair.append(historyLabel(headers[column],"dt"),historyNode("dd","",value));stats.append(pair)});
+   details.append(summary,stats);li.append(details);compact.append(li);
+  });table.append(tbody);final.append(table,compact);
+  const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-history-dev-records");records.append(grid);
+  const values=historyRecords(seasons);
+  for(const [key,metric] of [["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"]]){
+   const card=historyNode("article","app-history-dev-record");card.dataset.historyRecord=metric;
+   card.append(historyLabel(key,"h4"),historyNode("strong","app-history-dev-value",values[metric].value));
+   for(const club of values[metric].clubs)card.append(historyIdentity(club));grid.append(card);
+  }
+  if(!current())return;
+  panel.querySelector(".app-history-dev")?.remove();if(status)status.hidden=true;panel.append(root);window.faAppRenderLanguage?.();
+  if(historyFocus==="detail"){historyFocus=null;heading.focus();final.scrollIntoView({block:"start"});}
+ }catch(error){
+  if(!current())return;
+  console.error("DEV History preview unavailable:",error);panel.querySelector(".app-history-dev")?.remove();
+  if(status){status.dataset.appI18n="historyUnavailable";status.hidden=false;window.faAppRenderLanguage?.();}
+ }
+}
+function syncHistoryPreview(){
+ const route=window.faCompetitionRoute?.get?.();
+ if(!isPreviewEnabled()){clearHistoryPreview();return;}
+ if(route?.view==="history")void renderHistoryPreview();else historyRenderVersion++;
+}
 
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
@@ -133,9 +241,13 @@ function setPreviewEnabled(enabled) {
    if(typeof cleanup!=="function")return false;
    activePreview=cleanup;
    previewState="ON";
+   // Do not synthesize a route-change event here: the router may still expose
+   // its pre-hydration default season, which would override a valid deep-link URL.
+   // Real router events are handled by syncSeason after initialization.
    widgetRoot?.syncVisibility();
    syncHistoryPreview();
    try{sessionStorage.setItem(FLAG,"on")}catch{}
+   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:true}}));
    return true;
   }
   try{activePreview()}
@@ -151,6 +263,7 @@ function setPreviewEnabled(enabled) {
   widgetRoot?.syncVisibility();
   clearHistoryPreview();
   try{sessionStorage.removeItem(FLAG)}catch{}
+  window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
   return true;
  });
  return transition;
@@ -172,7 +285,7 @@ if(validPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(savedPreviewEnabled()||selectedSeason()>1){
+  if(savedPreviewEnabled()){
    setPreviewEnabled(true).then(ok=>{
     const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
     if(toggle)toggle.checked=ok;
@@ -180,22 +293,30 @@ if(validPath){
   }else reveal();
   let renderedSeason=selectedSeason();
   let seasonRefresh=Promise.resolve();
+  let seasonRequest=0;
   function syncSeason(){
+   const routed=Number(window.faCompetitionRoute?.get?.().season);
+   if(availablePreviewSeasons().includes(routed))routeSeasonOverride=routed;
    const next=selectedSeason();
    if(next===renderedSeason)return;
+   // Route changes can arrive while initial DEV hydration is still pending.
+   // Do not mark the new season rendered until the preview is active.
+   if(previewState!=="ON")return;
    renderedSeason=next;
+   const request=++seasonRequest;
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
-    if(previewState!=="ON"){
-     if(next>1)await setPreviewEnabled(true);
+    if(previewState!=="ON"||request!==seasonRequest)return;
+    const previous=activePreview;
+    const replacement=await boot(validPath[1].toUpperCase(),previous,()=>request===seasonRequest&&selectedSeason()===next);
+    if(typeof replacement!=="function"){
+     if(request===seasonRequest)previewState="OFF";
      return;
     }
-    // Prepare the next season while keeping the current one visible.
-    // Restore and replace synchronously after the asynchronous work finishes.
-    const previous=activePreview;
-    const replacement=await boot(validPath[1].toUpperCase(),previous);
-    if(typeof replacement!=="function"){
-     previewState="OFF";
+    // A newer route may have been selected while this season was hydrating.
+    // Discard stale work and let the newest queued request render instead.
+    if(request!==seasonRequest||selectedSeason()!==next){
+     try{replacement()}catch(error){console.error("Stale DEV season cleanup failed:",error)}
      return;
     }
     activePreview=replacement;
@@ -229,6 +350,18 @@ function node(tag, className = "", value = "") {
   el.textContent = value;
   return el;
 }
+function waitForFixturesApi(timeoutMs=7000) {
+  if(typeof window.faFixtures?.prepare==="function")return Promise.resolve(window.faFixtures);
+  return new Promise((resolve,reject)=>{
+    const started=Date.now();
+    const check=()=>{
+      if(typeof window.faFixtures?.prepare==="function"){resolve(window.faFixtures);return;}
+      if(Date.now()-started>=timeoutMs){reject(Error("Fixtures DEV hydration timeout"));return;}
+      setTimeout(check,25);
+    };
+    check();
+  });
+}
 function waitForRows() {
   return new Promise((resolve, reject) => {
     let done = false;
@@ -255,7 +388,7 @@ function waitForRows() {
   });
 }
 
-async function boot(routeId,restorePrevious=null) {
+async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
   try {
     const response = await fetch("/competitions/_shared/manifest.json",
       { cache: "no-store", credentials: "same-origin" });
@@ -268,6 +401,9 @@ async function boot(routeId,restorePrevious=null) {
     }
     const division = manifest.divisions.find(d => d.id === routeId);
     if (!division) throw Error("Unknown DEV division");
+    // Resolve the season only after the manifest is loaded, then capture it for both
+    // standings and fixtures. Read router state first only when it agrees with the
+    // current URL; URL remains canonical for direct navigation and browser refresh.
     const season=selectedSeason();
     const { rows, clubs } = createPreviewStandings(division,matchdays,season);
     // Prepare the complete DEV calendar from the same deterministic season seed.
@@ -282,13 +418,18 @@ async function boot(routeId,restorePrevious=null) {
       kickoff:null
     }));
     // Complete all asynchronous preparation before touching the visible table.
-    const tbody = await waitForRows();
+    const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
+    // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
+    if(!isCurrent()||selectedSeason()!==season)return;
     if(restorePrevious)restorePrevious();
-    const fixturesApi=window.faFixtures;
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
+    // This value powers the "current matchday" shortcut, not the selected
+    // round. The router already owns the selected round from the URL/state;
+    // reusing ?matchday=1 here incorrectly turns the shortcut into round 1.
+    const defaultRound=Math.min(30,matchdays+1);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:Math.min(30,matchdays+1)}):null;
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:defaultRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {

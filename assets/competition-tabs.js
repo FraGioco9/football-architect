@@ -50,6 +50,8 @@
   if(!tablist)return;
   const views=["standings","fixtures","stats","history","rules","awards"];
   const tabs=[...tablist.querySelectorAll('[role="tab"]')];
+  // Safari may briefly restore touch focus to the active tab when a modal closes.
+  for(const tab of tabs)if(tab.style)tab.style.webkitTapHighlightColor="transparent";
   const panels=tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
   const season=document.getElementById("app-competition-season");
   const seasonMenu=document.getElementById("app-competition-season-menu");
@@ -69,7 +71,13 @@
     else if(rect.right>bounds.right-16)tablist.scrollLeft+=rect.right-bounds.right+16;
     syncTabOverflow();
   }
-  tablist.addEventListener("scroll",syncTabOverflow,{passive:true});
+  const tabScrollKey="football-architect:competition-tabs-scroll:"+new URL(window.location.href).pathname;
+  let restoringTabScroll=true;
+  let savedTabScroll=null;
+  try{const raw=sessionStorage.getItem(tabScrollKey);if(raw!==null&&Number.isFinite(Number(raw)))savedTabScroll=Math.max(0,Number(raw))}catch{}
+  tablist.addEventListener("scroll",()=>{syncTabOverflow();if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}},{passive:true});
+  window.addEventListener("pagehide",()=>{if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}});
+  // Keep the selected view visible when viewport size or tab layout changes.
   window.addEventListener("resize",revealSelectedTab);
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
@@ -106,7 +114,7 @@
       tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active||!available;
     }
     if(focus)tabs[index].focus({preventScroll:true});
-    revealSelectedTab();
+    if(focus||!restoringTabScroll)revealSelectedTab();
     for(const listener of listeners)listener({...state});
     // Notify DEV enhancements even when they initialize before this router.
     window.dispatchEvent(new CustomEvent("fa:competition-route-change",{detail:{...state}}));
@@ -161,4 +169,20 @@
     apply(read(),{replace:true});
   });
   apply(read(),{replace:true});
+  const restoreTabScroll=()=>{
+    if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
+    syncTabOverflow();
+  };
+  const scheduleFrame=typeof window.requestAnimationFrame==="function"?window.requestAnimationFrame.bind(window):callback=>callback();
+  restoreTabScroll();
+  scheduleFrame(()=>{
+    restoreTabScroll();
+    scheduleFrame(()=>{
+      restoreTabScroll();
+      restoringTabScroll=false;
+      // Keep the route-selected tab visible after restoring the previous strip offset.
+      revealSelectedTab();
+      if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
+    });
+  });
 })();

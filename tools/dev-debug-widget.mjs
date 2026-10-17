@@ -358,11 +358,12 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   setOpen(panel.hidden);
  });
  document.addEventListener("keydown",event=>{
-  if(event.key==="Escape"&&!panel.hidden){
+  if(event.key==="Escape"&&!panel.hidden&&!document.querySelector("dialog.fa-dev-stats-dialog[open]")){
    event.preventDefault();event.stopPropagation();
    setOpen(false);button.classList.add("dismiss-focus");button.focus({preventScroll:true});
   }
  });
+ window.addEventListener("fa:stats-dialog-open",()=>{if(!panel.hidden)setOpen(false)});
  window.addEventListener("resize",()=>move(x,y));
  return root;
 }
