@@ -199,15 +199,10 @@
  panel.addEventListener("click",event=>{
   const button=event.target.closest('[data-history-record-scope]');if(!button||!panel.contains(button))return;
   const scroller=panel.closest?.(".fa-shell-content-scroll"),top=scroller?.scrollTop,left=scroller?.scrollLeft;
-  // Keep the scroll range while old cards disappear and a shorter group replaces them.
-  for(const grid of panel.querySelectorAll('.app-competition-stat-grid')){
-   const height=grid.getBoundingClientRect().height;if(height>0)grid.style.minHeight=height+"px";
-  }
+  // Use the selected scope's natural grid height: Player records must directly
+  // follow Team records instead of inheriting the taller scope's empty space.
   panel.dataset.historyRecordScope=button.dataset.historyRecordScope;sync();
   if(scroller){scroller.scrollTop=top;scroller.scrollLeft=left;}
- });
- window.addEventListener?.("resize",()=>{
-  for(const grid of panel.querySelectorAll('.app-competition-stat-grid'))grid.style.minHeight="";
  });
  window.faSyncHistoryRecords=sync;sync();
 })();

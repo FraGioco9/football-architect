@@ -27,9 +27,11 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.fa-dev-stats-card{box-sizing:border-box;min-height:128px;justify-content:flex-start}
+.fa-dev-stats-card:has(.app-competition-stat-value){min-height:160px}
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
+.fa-dev-stats-leader-card{box-sizing:border-box;min-width:0;min-height:128px;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
 .fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
 .fa-dev-stats-top{list-style:none;margin:0;padding:0}
 .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(128,145,145,.2)}
