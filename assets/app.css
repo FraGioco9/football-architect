@@ -521,10 +521,10 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 /* Same title/content grid used by Stats: both Team and Player empty states
    begin at the same vertical offset, regardless of title wrapping. */
 .app-history-record-group .app-competition-stat-grid{align-items:stretch}
-.app-history-record-group .app-competition-stat-card{box-sizing:border-box;display:grid;grid-template-rows:30px auto;align-content:start;gap:4px;min-height:128px}
+.app-history-record-group .app-competition-stat-card{box-sizing:border-box;display:grid;grid-template-rows:30px auto;align-content:start;gap:4px;min-height:128px;padding:10px 12px}
 .app-history-record-group .app-competition-stat-card:has(.app-competition-stat-value){min-height:160px}
 .app-history-record-group .app-competition-stat-label{min-width:0;max-height:30px;overflow:hidden;font-size:.78rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}
-.app-history-record-group .app-competition-stat-card>.app-competition-empty{margin:0;align-self:start;justify-self:start;max-width:100%;font-size:.78rem;line-height:1.3;text-align:left;opacity:.65;overflow-wrap:anywhere}
+.app-history-record-group .app-competition-stat-card>.app-competition-empty{margin:0;align-self:start;justify-self:start;max-width:100%;font-size:.78rem;line-height:1.3;text-align:left;color:var(--muted);opacity:1;overflow-wrap:anywhere}
 .app-history-dev-section>h3:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .app-history-dev-season{font-size:12px;font-weight:700}
 .app-history-dev-archive{list-style:none;margin:0;padding:0}
