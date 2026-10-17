@@ -226,15 +226,15 @@
     totalAppearances:["appearances",false],totalCleanSheets:["cleanSheets",false]
   };
   const translations={
-    en:{many:"Multiple clubs",seasons:"Multiple seasons",holders:"record holders",
+    en:{many:"Multiple clubs",seasons:"Multiple seasons",holder:"record holder",holders:"record holders",
       close:"Close",details:"View record details",season:"Season",unknown:"Club unavailable"},
-    de:{many:"Mehrere Vereine",seasons:"Mehrere Saisons",holders:"Rekordhalter",
+    de:{many:"Mehrere Vereine",seasons:"Mehrere Saisons",holder:"Rekordhalter",holders:"Rekordhalter",
       close:"Schließen",details:"Rekorddetails anzeigen",season:"Saison",unknown:"Verein unbekannt"},
-    es:{many:"Varios clubes",seasons:"Varias temporadas",holders:"récord compartido",
+    es:{many:"Varios clubes",seasons:"Varias temporadas",holder:"titular del récord",holders:"titulares del récord",
       close:"Cerrar",details:"Ver detalles del récord",season:"Temporada",unknown:"Club no disponible"},
-    fr:{many:"Plusieurs clubs",seasons:"Plusieurs saisons",holders:"détenteurs du record",
+    fr:{many:"Plusieurs clubs",seasons:"Plusieurs saisons",holder:"détenteur du record",holders:"détenteurs du record",
       close:"Fermer",details:"Voir les détails du record",season:"Saison",unknown:"Club indisponible"},
-    it:{many:"Più club",seasons:"Più stagioni",holders:"detentori del record",
+    it:{many:"Più club",seasons:"Più stagioni",holder:"detentore del record",holders:"detentori del record",
       close:"Chiudi",details:"Mostra i dettagli del record",season:"Stagione",unknown:"Club non disponibile"}
   };
   const locale=()=>translations[document.documentElement.lang]||translations.en;
@@ -337,7 +337,7 @@
       if(record.holders.length>1){
         const plus=element("button","app-history-player-detail","+"+(record.holders.length-1));
         plus.type="button";plus.dataset.historyDetail=metric;
-        plus.setAttribute("aria-label",locale().details+": "+record.holders.length+" "+locale().holders);
+        plus.setAttribute("aria-label",locale().details+": "+record.holders.length+" "+(record.holders.length===1?locale().holder:locale().holders));
         line.append(plus);
       }
       footer.append(line);
