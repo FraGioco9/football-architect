@@ -61,23 +61,23 @@ const LANG = {
   en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
     letters: {W:"W",D:"D",L:"L"},
-    recent: "latest match", season:"Season", finalStandings:"Final standings", historySelectSeason:"View final standings" },
+    recent: "latest match", season:"Season" },
   de: { round: "Spieltag", dateUnknown: "Datum offen",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
     letters: {W:"S",D:"U",L:"N"},
-    recent: "letztes Spiel", season:"Saison", finalStandings:"Abschlusstabelle", historySelectSeason:"Abschlusstabelle ansehen" },
+    recent: "letztes Spiel", season:"Saison" },
   es: { round: "Jornada", dateUnknown: "Fecha pendiente",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
     letters: {W:"V",D:"E",L:"D"},
-    recent: "último partido", season:"Temporada", finalStandings:"Clasificación final", historySelectSeason:"Ver clasificación final" },
+    recent: "último partido", season:"Temporada" },
   fr: { round: "Journée", dateUnknown: "Date à définir",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
     letters: {W:"V",D:"N",L:"D"},
-    recent: "dernier match", season:"Saison", finalStandings:"Classement final", historySelectSeason:"Voir le classement final" },
+    recent: "dernier match", season:"Saison" },
   it: { round: "Giornata", dateUnknown: "Data da definire",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
     letters: {W:"V",D:"N",L:"P"},
-    recent: "ultima partita", season:"Stagione", finalStandings:"Classifica finale", historySelectSeason:"Vedi classifica finale" }
+    recent: "ultima partita", season:"Stagione" }
 };
 const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
@@ -88,13 +88,11 @@ function isPreviewEnabled(){return previewState==="ON";}
 
 let historyRenderVersion=0;
 let historyManifest=null;
-let historyFocus=null;
-let historyLastDetail=false;
 function clearHistoryPreview(){
- historyRenderVersion++;historyFocus=null;historyLastDetail=false;
+ historyRenderVersion++;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
  panel.querySelector(".app-history-dev")?.remove();
- const empty=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyLoading"], [data-app-i18n="historyUnavailable"]');
+ const empty=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyUnavailable"]');
  if(empty){empty.dataset.appI18n="competitionHistoryEmpty";empty.hidden=false;}
  window.faAppRenderLanguage?.();
 }
@@ -136,6 +134,9 @@ function historySeasonLabel(season){
  const label=historyNode("span","app-history-dev-season");
  label.append(historyLabel("historySeasonLabel"),document.createTextNode(" "+season));return label;
 }
+function openHistorySeason(season){
+ window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
+}
 async function renderHistoryPreview(){
  const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.();
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
@@ -143,8 +144,8 @@ async function renderHistoryPreview(){
  if(route?.view!=="history")return;
  const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
   window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
- const status=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyLoading"], [data-app-i18n="historyUnavailable"]');
- if(!panel.querySelector(".app-history-dev")&&status){status.hidden=false;status.dataset.appI18n="historyLoading";status.setAttribute("role","status");window.faAppRenderLanguage?.();}
+ const status=panel.querySelector('[data-app-i18n="competitionHistoryEmpty"], [data-app-i18n="historyUnavailable"]');
+ if(status)status.hidden=true;
  try{
   if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
@@ -156,18 +157,11 @@ async function renderHistoryPreview(){
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
   const seasons=availablePreviewSeasons().map(season=>({season,rows:createPreviewStandings(division,30,season).rows})).sort((a,b)=>a.season-b.season);
   const chosen=seasons.find(item=>item.season===Number(route.season));if(!chosen)return;
-  const latest=seasons.at(-1),root=historyNode("div","app-history-dev");
-  root.append(historyLabel("historyPreviewNotice","p"));root.firstChild.className="app-history-dev-banner";
+  const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
    const h=historyLabel(key,"h3");box.append(h);root.append(box);return box;
   };
-  const hall=section("historyHallOfChampions","app-history-hall");
-  const hero=historyNode("div","app-history-dev-champion");
-  const champion=historyNode("div","app-history-dev-champion-club");champion.append(historyLabel("historyChampionLabel"),historyIdentity(latest.rows[0].club));
-  hero.append(champion,historySeasonLabel(latest.season));hall.append(hero);
-  const podium=historyNode("ol","app-history-dev-podium");podium.start=2;
-  latest.rows.slice(1,3).forEach((row,index)=>{const li=historyNode("li");li.append(historyNode("span","app-history-dev-rank",index+2),historyIdentity(row.club));podium.append(li)});hall.append(podium);
   const archive=section("historySeasonArchive","app-history-archive"),list=historyNode("ol","app-history-dev-archive");
   const archiveHeader=historyNode("div","app-history-dev-archive-head");archiveHeader.setAttribute("aria-hidden","true");
   for(const key of ["historySeasonLabel","historyChampionLabel","historyRunnerUp","historyThirdPlace"])archiveHeader.append(historyLabel(key));
@@ -182,36 +176,9 @@ async function renderHistoryPreview(){
     const label=historyLabel(["historyChampionLabel","historyRunnerUp","historyThirdPlace"][index]);label.className="app-history-dev-podium-label";
     rank.append(label,historyIdentity(row.club));button.append(rank);
    });
-   button.addEventListener("click",()=>{historyFocus="detail";window.faCompetitionRoute?.set?.({season:String(item.season),view:"history",historyDetail:true})});
+   button.addEventListener("click",()=>openHistorySeason(item.season));
    li.append(button);list.append(li);
   }
-  const final=section("historyFinalStandings","app-history-final");
-  const heading=final.querySelector("h3");heading.tabIndex=-1;heading.append(document.createTextNode(" — "),historySeasonLabel(chosen.season));
-  // Translate only the label span, preserving the selected-season context.
-  const title=historyLabel("historyFinalStandings");heading.removeAttribute("data-app-i18n");heading.prepend(title);
-  const back=historyLabel("historyBackToArchive","button");back.type="button";back.className="app-history-dev-back language-trigger";
-  back.addEventListener("click",()=>{historyFocus="archive";window.faCompetitionRoute?.set?.({historyDetail:false})});final.append(back);
-  const headers=["standingsPosition","standingsClub","standingsPlayed","standingsWon","standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference","standingsPoints"];
-  const table=historyNode("table","app-world-standing-table app-history-dev-table"),caption=historyNode("caption","sr-only");
-  caption.append(historyLabel("historyFinalStandings"),document.createTextNode(" — "),historySeasonLabel(chosen.season));table.append(caption);
-  const thead=historyNode("thead"),tr=historyNode("tr");
-  headers.forEach(key=>{const th=historyLabel(key,"th");th.scope="col";tr.append(th)});thead.append(tr);table.append(thead);
-  const tbody=historyNode("tbody"),compact=historyNode("ol","app-world-mobile-list app-history-dev-compact");
-  chosen.rows.forEach((item,index)=>{
-   const values=[index+1,item.club.primaryName,item.played,item.won,item.drawn,item.lost,item.gf,item.ga,item.gd>0?"+"+item.gd:item.gd,item.pts];
-   const row=historyNode("tr");row.dataset.historyClub=item.club.countryId+"-"+item.club.clubId;
-   values.forEach((value,column)=>{const cell=historyNode(column===1?"th":"td","",column===1?undefined:value);if(column===1){cell.scope="row";cell.append(historyIdentity(item.club))}row.append(cell)});tbody.append(row);
-   const li=historyNode("li","app-world-mobile-item"),details=historyNode("details","app-world-mobile-details"),summary=historyNode("summary","app-world-mobile-summary");
-   summary.append(historyNode("span","app-world-mobile-position",index+1),historyNode("span","app-world-mobile-name",item.club.primaryName));
-   const points=historyNode("span","app-world-mobile-points",item.pts),pointsLabel=historyLabel("standingsPoints");pointsLabel.className="sr-only";points.append(pointsLabel);summary.append(points);
-   const detailLabel=historyLabel("standingsMobileDetails");detailLabel.className="sr-only";summary.append(detailLabel);
-   const stats=historyNode("dl","app-world-mobile-stats");
-   values.forEach((value,column)=>{if(column<2)return;const pair=historyNode("div","app-world-mobile-stat");pair.append(historyLabel(headers[column],"dt"),historyNode("dd","",value));stats.append(pair)});
-   const statistics=historyNode("div","app-world-mobile-panel");statistics.append(stats);
-   details.append(summary,statistics);li.append(details);compact.append(li);
-  });table.append(tbody);
-  const standings=historyNode("div","app-world-standings app-history-dev-standings"),full=historyNode("div","app-world-standing-scroll"),mobile=historyNode("div","app-world-compact");
-  full.append(table);mobile.append(compact);standings.append(full,mobile);final.append(standings);
   const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");records.append(grid);
   const values=historyRecords(seasons);
   for(const [key,metric] of [["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"]]){
@@ -220,12 +187,9 @@ async function renderHistoryPreview(){
    card.append(label,historyNode("strong","app-competition-stat-value",values[metric].value));
    for(const club of values[metric].clubs)card.append(historyIdentity(club));grid.append(card);
   }
-  const detail=route.historyDetail===true;
-  hall.hidden=detail;archive.hidden=detail;records.hidden=detail;final.hidden=!detail;
   if(!current())return;
   panel.querySelector(".app-history-dev")?.remove();if(status)status.hidden=true;panel.append(root);window.faAppRenderLanguage?.();
-  if(historyFocus==="detail"&&detail){historyFocus=null;heading.focus();final.scrollIntoView({block:"start"});}
-  else if(historyFocus==="archive"&&!detail){historyFocus=null;archive.querySelector('[data-history-season="'+chosen.season+'"]')?.focus();archive.scrollIntoView({block:"start"});}
+
  }catch(error){
   if(!current())return;
   console.error("DEV History preview unavailable:",error);panel.querySelector(".app-history-dev")?.remove();
@@ -235,10 +199,7 @@ async function renderHistoryPreview(){
 function syncHistoryPreview(){
  const route=window.faCompetitionRoute?.get?.();
  if(!isPreviewEnabled()){clearHistoryPreview();return;}
- if(route?.view==="history"){
-  if(historyLastDetail&&!route.historyDetail)historyFocus="archive";
-  historyLastDetail=route.historyDetail===true;void renderHistoryPreview();
- }else{historyRenderVersion++;historyLastDetail=false;historyFocus=null;}
+ if(route?.view==="history")void renderHistoryPreview();else historyRenderVersion++;
 }
 
 let transition=Promise.resolve();

@@ -99,26 +99,13 @@ test('COMPETITION-TABS-SCROLL: edge hints follow scrolling and selection stays v
  assert.equal(s.tablist.dataset.canScrollLeft,'false');assert.equal(s.tablist.dataset.canScrollRight,'false');
 });
 
-test('HISTORY-URL: selected final table survives refresh and Back/Forward, return restores overview',()=>{
+test('HISTORY-URL: season links use Standings and preserve browser navigation',()=>{
  const s=setup('/competitions/it-1?season=1&view=history');
- assert.equal(s.window.faCompetitionRoute.get().historyDetail,undefined);
- s.window.faCompetitionRoute.set({historyDetail:true});
- assert.equal(s.window.location.search,'?season=1&view=history&history=final');
+ s.window.faCompetitionRoute.set({season:'1',view:'standings'},{focus:true});
+ assert.equal(s.window.location.search,'?season=1&view=standings');
+ assert.equal(s.tabs[0].focused,true);
  const refreshed=setup(s.window.location.href);
- assert.equal(refreshed.window.faCompetitionRoute.get().historyDetail,true);
- s.window.faCompetitionRoute.set({historyDetail:false});
- assert.equal(s.window.location.search,'?season=1&view=history');
- s.back();assert.equal(s.window.faCompetitionRoute.get().historyDetail,true);
- s.back();assert.equal(s.window.faCompetitionRoute.get().historyDetail,undefined);
- s.forward();assert.equal(s.window.faCompetitionRoute.get().historyDetail,true);
- s.tabs[2].events.click();assert.equal(s.window.location.search,'?season=1&view=stats');
- assert.equal(s.window.faCompetitionRoute.get().historyDetail,undefined);
- s.tabs[3].events.click();assert.equal(s.window.faCompetitionRoute.get().historyDetail,undefined);
-});
-test('HISTORY-URL: detail parameter is scoped to History and does not affect other competition views',()=>{
- for(const view of views.filter(v=>v!=='history')){
-  const s=setup('/competitions/it-1?season=1&view='+view+'&history=final');
-  assert.equal(s.window.faCompetitionRoute.get().historyDetail,undefined);
-  assert.ok(!s.window.location.search.includes('history='));
- }
+ assert.equal(refreshed.window.faCompetitionRoute.get().view,'standings');
+ s.back();assert.equal(s.window.faCompetitionRoute.get().view,'history');
+ s.forward();assert.equal(s.window.faCompetitionRoute.get().view,'standings');
 });

@@ -75,9 +75,20 @@ test('History discards a pending render after debug is disabled and restores the
  };
  const api=runInNewContext(client.slice(start,end)+';({renderHistoryPreview,clearHistoryPreview})',context);
  const pending=api.renderHistoryPreview();
- assert.equal(status.dataset.appI18n,'historyLoading');
+ assert.equal(status.hidden,true,'History stays silent while data is loading');
+ assert.equal(status.dataset.appI18n,'competitionHistoryEmpty');
  enabled=false;api.clearHistoryPreview();
- assert.equal(status.dataset.appI18n,'competitionHistoryEmpty');assert.equal(status.hidden,false);assert.ok(renders>=2);
+ assert.equal(status.dataset.appI18n,'competitionHistoryEmpty');assert.equal(status.hidden,false);assert.ok(renders>=1);
  resolveFetch({ok:true,json:async()=>manifest});await pending;
  assert.equal(generated,0,'Disabled preview must not construct or commit a stale result');
+});
+
+test('Selecting a History season opens the shared Standings view with that exact season',()=>{
+ const start=client.indexOf('function openHistorySeason('),end=client.indexOf('\nasync function renderHistoryPreview',start);
+ assert.ok(start>=0&&end>start,'History season navigation exists');
+ for(const season of [1,2,3,4]){
+  const calls=[];const window={faCompetitionRoute:{set:(patch,options)=>calls.push([plain(patch),plain(options)])}};
+  runInNewContext(client.slice(start,end)+';openHistorySeason(season)',{window,season});
+  assert.deepEqual(calls,[[{season:String(season),view:'standings'},{focus:true}]]);
+ }
 });
