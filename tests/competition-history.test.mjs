@@ -107,6 +107,14 @@ test('History Team and Player empty states use the same Stats-style title/conten
   assert.doesNotMatch(css,/\.app-history-player-card[^{]*\{[^}]*justify-content:space-between/);
   assert.doesNotMatch(css,/\.app-history-player-card \.app-competition-empty\{[^}]*text-align:center/);
 });
+test('Shared Stats and History card labels are bold without changing layout sizing',()=>{
+  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+  const stats=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
+  assert.match(css,/\.app-history-record-group \.app-competition-stat-label\{[^}]*max-height:30px/);
+  assert.match(stats,/\.fa-dev-stats-leader-title\{[^}]*font-weight:700/);
+  assert.match(stats,/\.fa-dev-stats-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
+});
 test('Stats Overview and Players have identical fixed 88px cards; only Teams can expand',()=>{
   const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
   assert.match(source,/\.fa-dev-stats-card\{[^}]*height:88px;min-height:88px;max-height:88px/);
