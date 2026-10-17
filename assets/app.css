@@ -536,11 +536,11 @@ html[data-theme="light"] .app-history-dev-season-button:hover,html[data-theme="l
 .app-history-dev-record-entry{display:grid;gap:4px;min-width:0}
 .app-history-dev-record-entry .app-history-dev-season{color:var(--muted);font-weight:400}
 .app-history-record-controls{display:flex;justify-content:center;gap:8px;margin:12px 0 16px}
+.app-history-dev-records,.app-history-empty .app-competition-stat-grid{align-content:start}
 .app-history-record-controls button{display:flex;align-items:center;justify-content:center;flex:0 1 160px;min-width:0;width:160px;padding:11px 8px;border:1px solid rgba(128,145,145,.25);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:.85rem;text-align:center;cursor:pointer}
 .app-history-record-controls button[aria-pressed="true"]{background:#176d61;color:#fff;font-weight:700}
 .app-history-record-controls button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .app-history-record-controls button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-history-record-period{margin:0 0 12px;color:var(--muted);font-size:.85rem}
 [data-history-scope][hidden]{display:none!important}
 @media(max-width:620px){
  .app-history-dev-archive-head{display:none}

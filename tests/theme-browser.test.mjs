@@ -554,6 +554,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.emptyLabels,false);
       }
       const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
+      const scrollCheck=await run("(()=>{const s=document.querySelector('.fa-shell-content-scroll');s.scrollTop=Math.min(180,s.scrollHeight-s.clientHeight);const top=s.scrollTop;const results=[];for(const scope of ['all-time','season','all-time','season']){document.querySelector('.app-history-dev [data-history-record-scope=\"'+scope+'\"]').click();results.push(s.scrollTop)}return {top,results,period:!!document.querySelector('.app-history-record-period')}})()");
+      assert.deepEqual(scrollCheck.results,[scrollCheck.top,scrollCheck.top,scrollCheck.top,scrollCheck.top],'History scope retains shell scroll at '+width+' '+theme);
+      assert.equal(scrollCheck.period,false,'History omits the overall Seasons 1–4 label');
       await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
       assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with three seasonal cards without invented values');

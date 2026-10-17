@@ -193,9 +193,7 @@ async function renderHistoryPreview(){
   }
   const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
-  const period=historyNode("p","app-history-record-period");period.dataset.historyScope="all-time";
-  period.hidden=panel.dataset.historyRecordScope!=="all-time";
-  period.append(historyLabel("historySeasonsLabel"),document.createTextNode(" "+seasons[0].season+"–"+seasons.at(-1).season));records.append(period,grid);
+  records.append(grid);
   const values=historyRecords(seasons);
   for(const [key,metric] of [["historyBestAttack","attack"],["historyBestDefence","defence"],["historyMostSeasonWins","wins"],["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyMostTotalWins","totalWins"],["historyMostTotalGoals","totalGoals"]]){
    const card=historyNode("article","app-competition-stat-card app-history-dev-record");card.dataset.historyRecord=metric;
