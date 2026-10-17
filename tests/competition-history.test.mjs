@@ -98,13 +98,18 @@ test('History scope does not retain the previous grid height and preserves avail
     assert.equal(grid.style.minHeight,undefined,'No retained minimum height');
   }
 });
-test('Stats overview cards match History minimum heights while leaderboards grow naturally',()=>{
+test('Stats overview and leader cards stay compact with aligned unavailable messages',()=>{
   const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
-  assert.match(source,/\.fa-dev-stats-card\{[^}]*min-height:128px/);
-  assert.match(source,/\.fa-dev-stats-card:has\(\.app-competition-stat-value\)\{min-height:160px\}/);
-  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*min-height:128px/);
+  assert.match(source,/\.fa-dev-stats-card\{[^}]*grid-template-rows:34px auto/);
+  assert.match(source,/\.fa-dev-stats-card\{[^}]*min-height:96px/);
+  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*min-height:104px/);
+  assert.match(source,/\.fa-dev-stats-leader-title\{[^}]*min-height:2\.6em/);
+  assert.match(source,/\.fa-dev-stats-top \.fa-dev-stats-player-empty\{[^}]*padding:0!important/);
+  assert.doesNotMatch(source,/\.fa-dev-stats-card:has\(\.app-competition-stat-value\)\{min-height:160px\}/);
   assert.doesNotMatch(source,/\.fa-dev-stats-leader-card\{[^}]*max-height:/);
+  assert.match(source,/hasMatches\?create\("strong",value,"app-competition-stat-value"\):create\("span","No statistics available yet\."/);
 });
+
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[
   {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},

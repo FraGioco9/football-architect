@@ -27,12 +27,17 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-.fa-dev-stats-card{box-sizing:border-box;min-height:128px;justify-content:flex-start}
-.fa-dev-stats-card:has(.app-competition-stat-value){min-height:160px}
+/* Compact Stats tiles: reserve a common title row for aligned values and empty messages. */
+.fa-dev-stats-card{box-sizing:border-box;display:grid;grid-template-rows:34px auto;align-content:start;row-gap:4px;min-height:96px;padding:12px}
+.fa-dev-stats-card .app-competition-stat-label{line-height:1.35}
+.fa-dev-stats-card .app-competition-stat-value,.fa-dev-stats-card .fa-dev-stats-empty{align-self:start;margin:0}
+.fa-dev-stats-card .fa-dev-stats-empty{line-height:1.45}
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.fa-dev-stats-leader-card{box-sizing:border-box;min-width:0;min-height:128px;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
-.fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
+/* Reserve two heading lines so empty/error states start at the same vertical offset. */
+.fa-dev-stats-leader-card{box-sizing:border-box;display:flex;flex-direction:column;min-width:0;min-height:104px;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:12px 14px;background:transparent}
+.fa-dev-stats-leader-title{min-height:2.6em;margin:0 0 6px;font-size:.95rem;font-weight:700;line-height:1.3}
+.fa-dev-stats-top .fa-dev-stats-player-empty{box-sizing:border-box;min-height:24px;margin:0;padding:0!important;font-size:.82rem;line-height:1.45}
 .fa-dev-stats-top{list-style:none;margin:0;padding:0}
 .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
