@@ -131,7 +131,7 @@ test('Stats Teams rows align rank, crest, wrapping name and numeric value withou
  assert.match(source,/identity\.append\(crest,create\("span",team\.clubName,"fa-dev-stats-team-name"\)\)/);
  assert.match(source,/\.fa-dev-stats-top \.app-world-club-identity\{[^}]*align-items:center;min-width:0/);
  assert.match(source,/\.fa-dev-stats-top \.app-world-club-crest-placeholder\{flex-shrink:0\}/);
- assert.match(source,/\.fa-dev-stats-team-card/);
+ assert.match(source,/app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
  assert.doesNotMatch(source,/\.fa-dev-stats-top \.app-world-club-identity>span:last-child\{overflow:hidden/);
  assert.doesNotMatch(source,/\.fa-dev-stats-top\{[^}]*overflow-y:auto/);
 });
