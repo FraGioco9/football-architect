@@ -13,6 +13,20 @@ function records(seasons){
 }
 const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
 const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('Every History route offers exactly three seasonal and four all-time player records without invented data',()=>{
+ const routes=['_shared',...manifest.divisions.map(d=>d.id.toLowerCase())];
+ for(const route of routes){
+  const html=readFileSync(new URL('../app/competitions/'+route+'/index.html',import.meta.url),'utf8');
+  const section=html.match(/<section[^>]*data-history-player-records[^>]*>([\s\S]*?)<\/section>/)?.[1];
+  assert.ok(section,route+' has player records');
+  const cards=[...section.matchAll(/<article([^>]*)>([\s\S]*?)<\/article>/g)];
+  assert.equal(cards.length,7,route);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,3);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,4);
+  assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,7);
+  assert.ok(cards.every(c=>c[2].includes('data-app-i18n="historyPlayerNoData"')&&!/<strong|data-club-crest/.test(c[2])));
+ }
+});
 test('History goal difference displays positive and negative signs without signing other records',()=>{
  const start=client.indexOf('function historyRecordValue('),end=client.indexOf('\nfunction historyNode',start);
  assert.ok(start>=0&&end>start);

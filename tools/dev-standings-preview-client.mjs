@@ -199,13 +199,14 @@ async function renderHistoryPreview(){
   }
   const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
-  records.append(grid);
+  const teams=historyNode("section","app-history-record-group");teams.dataset.historyTeamRecords="";
+  teams.append(historyLabel("historyTeamRecords","h4"),grid);records.append(teams);
   const values=historyRecords(seasons);
   for(const [key,metric] of [["historyBestAttack","attack"],["historyBestDefence","defence"],["historyMostSeasonWins","wins"],["historyMostSeasonPoints","points"],["historyBestGoalDifference","goalDifference"],["historyLargestTitleMargin","margin"],["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyMostTotalWins","totalWins"],["historyMostTotalGoals","totalGoals"],["historyMostTotalPoints","totalPoints"]]){
    const card=historyNode("article","app-competition-stat-card app-history-dev-record");card.dataset.historyRecord=metric;
    card.dataset.historyScope=values[metric].entries?"season":"all-time";
    card.hidden=card.dataset.historyScope!==(panel.dataset.historyRecordScope||"season");
-   const label=historyLabel(key,"h4");label.className="app-competition-stat-label";
+   const label=historyLabel(key,"h5");label.className="app-competition-stat-label";
    card.append(label,historyNode("strong","app-competition-stat-value",historyRecordValue(metric,values[metric].value)));
    if(values[metric].entries){
     for(const {club,season} of values[metric].entries){
@@ -215,6 +216,7 @@ async function renderHistoryPreview(){
    }else for(const club of values[metric].clubs)card.append(historyIdentity(club));
    grid.append(card);
   }
+  records.append(panel.querySelector('[data-history-player-records]').cloneNode(true));
   if(!current())return;
   panel.querySelector(".app-history-dev")?.remove();if(status)status.hidden=true;panel.append(root);window.faSyncHistoryRecords?.();window.faAppRenderLanguage?.();
 

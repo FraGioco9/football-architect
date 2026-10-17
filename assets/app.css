@@ -516,6 +516,8 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 .app-history-dev [hidden]{display:none!important}
 .app-history-dev-section{display:grid;gap:12px;min-width:0;scroll-margin-top:90px}
 .app-history-dev-section>h3{margin:0;font-size:.95rem;font-weight:700}
+.app-history-record-group{display:grid;gap:12px;min-width:0}
+.app-history-record-group>h4{margin:0;font-size:.9rem;font-weight:650}
 .app-history-dev-section>h3:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .app-history-dev-season{font-size:12px;font-weight:700}
 .app-history-dev-archive{list-style:none;margin:0;padding:0}

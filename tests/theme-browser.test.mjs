@@ -530,7 +530,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const marginCard=await run("(()=>{const c=document.querySelector('[data-history-record=margin]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
       assert.deepEqual(marginCard,{value:marginValue,entries:margins.filter(item=>item.value===marginValue).map(({season,club})=>({season,club}))});
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['attack','defence','wins','points','goalDifference','margin']);
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),3);
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
+      assert.equal(await run("!!document.querySelector('.app-history-dev [data-history-player-records] strong,.app-history-dev [data-history-player-records] [data-club-crest]')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await run("document.querySelector('[data-history-season=\"3\"]').click()");
@@ -566,13 +569,15 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(scrollCheck.period,false,'History omits the overall Seasons 1–4 label');
       await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
-      assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])').length===6&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with six seasonal cards without invented values');
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length===6&&document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with six team and three player seasonal cards without invented values');
       await run("document.querySelector('[data-history-empty] [data-history-record-scope=\"all-time\"]').click()");
-      assert.equal(await run("document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])').length"),6);
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length"),6);
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length"),4);
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await run(toggle+".checked=true;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
       await wait("document.querySelectorAll('[data-history-season]').length===4");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'Debug restoration preserves All-time scope');
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await snap('HISTORY '+width+' '+theme,width,900);
     }
