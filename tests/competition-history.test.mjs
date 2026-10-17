@@ -13,6 +13,17 @@ function records(seasons){
 }
 const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
 const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
+ const seasons=[
+  {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},
+  {season:1,rows:[{club:club(1),gf:90,ga:10},{club:club(2),gf:90,ga:0}]}
+ ];
+ const result=records(seasons);
+ assert.deepEqual(result.attack,{value:90,entries:[{club:club(1),season:1},{club:club(2),season:1},{club:club(1),season:2}]});
+ assert.deepEqual(result.defence,{value:0,entries:[{club:club(2),season:1},{club:club(1),season:2}]});
+ assert.deepEqual(records([]).attack,{value:null,entries:[]});
+ assert.deepEqual(records([table(1,[1,2,3])]).defence,{value:null,entries:[]});
+});
 test('History records count titles, podium ties and consecutive seasons by club identity',()=>{
  const result=records([table(1,[1,2,3,4]),table(2,[1,3,2,4]),table(3,[2,1,4,3]),table(4,[2,4,3,1])]);
  assert.deepEqual(result.titles,{value:2,clubs:[club(1),club(2)]});
@@ -32,6 +43,11 @@ test('History totals reconcile with all 16 deterministic four-season final table
  for(const division of manifest.divisions){
   const seasons=[1,2,3,4].map(season=>({season,rows:createPreviewStandings(division,30,season).rows}));
   const actual=records(seasons);
+  for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min]]){
+   const value=extreme(...seasons.flatMap(s=>s.rows.map(row=>row[field])));
+   assert.equal(actual[metric].value,value,division.id+' '+metric);
+   assert.deepEqual(actual[metric].entries,seasons.flatMap(s=>s.rows.filter(row=>row[field]===value).map(row=>({club:row.club,season:s.season}))));
+  }
   const titles=new Map(),podiums=new Map();
   for(const {rows} of seasons){
    assert.equal(rows.length,16);assert.ok(rows.every(r=>r.played===30));

@@ -116,7 +116,14 @@ function historyRecords(seasons){
   const value=Math.max(0,...[...clubs.values()].map(entry=>entry[key]));
   return {value,clubs:[...clubs.values()].filter(entry=>entry[key]===value).map(entry=>entry.club)};
  };
- return {titles:record("titles"),podiums:record("podiums"),streak:record("streak")};
+ const seasonalRecord=(field,extreme)=>{
+  const entries=[...seasons].sort((a,b)=>a.season-b.season).flatMap(({season,rows})=>
+   rows.filter(row=>Number.isFinite(row[field])).map(row=>({club:row.club,season,value:row[field]})));
+  if(!entries.length)return {value:null,entries:[]};
+  const value=extreme(...entries.map(entry=>entry.value));
+  return {value,entries:entries.filter(entry=>entry.value===value).map(({club,season})=>({club,season}))};
+ };
+ return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min)};
 }
 function historyNode(tag,className="",text){
  const element=document.createElement(tag);if(className)element.className=className;
@@ -183,11 +190,18 @@ async function renderHistoryPreview(){
   }
   const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");records.append(grid);
   const values=historyRecords(seasons);
-  for(const [key,metric] of [["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"]]){
+  for(const [key,metric] of [["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyBestAttack","attack"],["historyBestDefence","defence"]]){
    const card=historyNode("article","app-competition-stat-card app-history-dev-record");card.dataset.historyRecord=metric;
    const label=historyLabel(key,"h4");label.className="app-competition-stat-label";
    card.append(label,historyNode("strong","app-competition-stat-value",values[metric].value));
-   for(const club of values[metric].clubs)card.append(historyIdentity(club));grid.append(card);
+   if(values[metric].entries){
+    const unit=historyLabel(metric==="attack"?"historyGoalsScored":"historyGoalsConceded");unit.className="app-competition-stat-label";card.append(unit);
+    for(const {club,season} of values[metric].entries){
+     const entry=historyNode("div","app-history-dev-record-entry");entry.dataset.historyRecordSeason=String(season);
+     entry.append(historyIdentity(club),historySeasonLabel(season));card.append(entry);
+    }
+   }else for(const club of values[metric].clubs)card.append(historyIdentity(club));
+   grid.append(card);
   }
   if(!current())return;
   panel.querySelector(".app-history-dev")?.remove();if(status)status.hidden=true;panel.append(root);window.faAppRenderLanguage?.();

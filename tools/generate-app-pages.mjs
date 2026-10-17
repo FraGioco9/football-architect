@@ -128,7 +128,7 @@ const historyEmptyContent = ()=>`
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
                 <div class="app-competition-stat-grid">
-${[["historyMostTitles","Most league titles"],["historyMostPodiums","Most podium finishes"],["historyLongestTitleStreak","Most consecutive league titles"]].map(([key,label])=>`                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>`).join("\n")}
+${[["historyMostTitles","Most league titles"],["historyMostPodiums","Most podium finishes"],["historyLongestTitleStreak","Most consecutive league titles"],["historyBestAttack","Best attack in a season"],["historyBestDefence","Best defence in a season"]].map(([key,label])=>`                  <article class="app-competition-stat-card"><h4 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h4><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>`).join("\n")}
                 </div>
               </section>
             </div>

@@ -533,6 +533,8 @@ html[data-theme="light"] .app-history-dev-season-button:hover,html[data-theme="l
 .app-history-dev button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .app-history-dev button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .app-history-dev-record .app-world-club-name{font-size:.85rem;font-weight:650}
+.app-history-dev-record-entry{display:grid;gap:4px;min-width:0}
+.app-history-dev-record-entry .app-history-dev-season{color:var(--muted);font-weight:400}
 @media(max-width:620px){
  .app-history-dev-archive-head{display:none}
  .app-history-dev-season-button{grid-template-columns:1fr;gap:8px;padding:12px}
