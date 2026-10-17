@@ -65,7 +65,7 @@ test('History scope switch updates all matching controls and cards without chang
  const controls=['season','all-time','season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},attrs:{},setAttribute(k,v){this.attrs[k]=v}}));
  const cards=['season','all-time','season','all-time'].map(scope=>({dataset:{historyScope:scope},hidden:false}));
  const events={};const panel={dataset:{},querySelectorAll:s=>s==='[data-history-record-scope]'?controls:s==='[data-history-scope]'?cards:[],addEventListener:(key,fn)=>events[key]=fn,contains:()=>true};
- const window={};runInNewContext(source.slice(start),{document:{getElementById:()=>panel},window});
+ const window={};runInNewContext(source.slice(start,source.indexOf('/* HISTORY-UI-11',start)),{document:{getElementById:()=>panel},window});
  assert.equal(panel.dataset.historyRecordScope,'season');
  assert.deepEqual(cards.map(c=>c.hidden),[false,true,false,true]);
  events.click({target:{closest:()=>controls[1]}});
@@ -76,19 +76,34 @@ test('History scope switch updates all matching controls and cards without chang
  window.faSyncHistoryRecords();assert.equal(added.hidden,true,'A refreshed preview retains the chosen scope');
  events.click({target:{closest:()=>controls[0]}});assert.equal(added.hidden,false);
 });
-test('Scope changes retain shell scroll even when hiding the previous cards temporarily collapses the grid',()=>{
- const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
- const scroller={scrollTop:250,scrollLeft:0};
- const grid={style:{},getBoundingClientRect:()=>({height:400})};
- const controls=['season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},setAttribute(){}}));
- let armed=false;
- const cards=['season','all-time'].map(scope=>({dataset:{historyScope:scope},get hidden(){return this.value},set hidden(value){this.value=value;if(armed&&value&&!grid.style.minHeight)scroller.scrollTop=0}}));
- const events={};const panel={dataset:{},closest:()=>scroller,querySelectorAll:s=>s==='[data-history-record-scope]'?controls:s==='[data-history-scope]'?cards:[grid],addEventListener:(key,fn)=>events[key]=fn,contains:()=>true};
- runInNewContext(source.slice(source.indexOf('// History record scope')),{document:{getElementById:()=>panel},window:{}});
- armed=true;events.click({target:{closest:()=>controls[1]}});
- assert.equal(scroller.scrollTop,250);
- assert.equal(grid.style.minHeight,'400px');
- events.click({target:{closest:()=>controls[0]}});assert.equal(scroller.scrollTop,250);
+test('History scope does not retain the previous grid height and preserves available scroll',()=>{
+  const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+  const start=source.indexOf('// History record scope');
+  const scroller={scrollTop:250,scrollLeft:3};
+  const grid={style:{},getBoundingClientRect:()=>({height:400})};
+  const controls=['season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},setAttribute(){}}));
+  let armed=false;
+  const cards=['season','all-time'].map(scope=>({dataset:{historyScope:scope},
+    get hidden(){return this.value},set hidden(value){this.value=value;if(armed&&value)scroller.scrollTop=0}}));
+  const events={};const panel={dataset:{},closest:()=>scroller,querySelectorAll:s=>
+    s==='[data-history-record-scope]'?controls:s==='[data-history-scope]'?cards:[grid],
+    addEventListener:(key,fn)=>events[key]=fn,contains:()=>true};
+  runInNewContext(source.slice(start,source.indexOf('/* HISTORY-UI-11',start)),
+    {document:{getElementById:()=>panel},window:{}});
+  armed=true;
+  for(const index of [1,0,1,0]){
+    events.click({target:{closest:()=>controls[index]}});
+    assert.equal(scroller.scrollTop,250);
+    assert.equal(scroller.scrollLeft,3);
+    assert.equal(grid.style.minHeight,undefined,'No retained minimum height');
+  }
+});
+test('Stats overview cards match History minimum heights while leaderboards grow naturally',()=>{
+  const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+  assert.match(source,/\.fa-dev-stats-card\{[^}]*min-height:128px/);
+  assert.match(source,/\.fa-dev-stats-card:has\(\.app-competition-stat-value\)\{min-height:160px\}/);
+  assert.match(source,/\.fa-dev-stats-leader-card\{[^}]*min-height:128px/);
+  assert.doesNotMatch(source,/\.fa-dev-stats-leader-card\{[^}]*max-height:/);
 });
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[
