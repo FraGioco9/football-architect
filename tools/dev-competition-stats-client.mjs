@@ -30,13 +30,17 @@ if (panel && divisionId) {
 /* Shared card CSS lives in assets/app.css. DEV rules remain for leaderboard details. */
 .fa-dev-stats-section{margin:0 0 14px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.fa-dev-stats-top{list-style:none;margin:0;padding:0}
-.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(128,145,145,.2)}
+/* Team leaderboard: rank | crest and wrapping club name | tabular value.
+   Only Teams rows grow with their content; keep the modal on the same grid. */
+.fa-dev-stats-top{list-style:none;min-width:0;margin:0;padding:0}
+.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(3.5ch,auto);align-items:center;column-gap:8px;min-width:0;min-height:38px;padding:5px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
-.fa-dev-stats-top li>strong{justify-self:end;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
-.fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
-.fa-dev-stats-top .app-world-club-identity{min-width:0}
-.fa-dev-stats-top .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
+.fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
+.fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
+.fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
+.fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
+@media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
 .fa-dev-stats-expand:hover{opacity:1;text-decoration:underline}
 .fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
@@ -144,7 +148,7 @@ if (panel && divisionId) {
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
         crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
         crest.setAttribute("aria-hidden","true");
-        identity.append(crest,create("span",team.clubName));
+        identity.append(crest,create("span",team.clubName,"fa-dev-stats-team-name"));
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         return li;
       };

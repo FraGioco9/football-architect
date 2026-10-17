@@ -123,6 +123,18 @@ test('Stats Overview and Players stay at 88px; Teams can grow',()=>{
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
 });
+test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
+ const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ assert.match(source,/\.fa-dev-stats-top li\{[^}]*grid-template-columns:24px minmax\(0,1fr\) minmax\(3\.5ch,auto\)/);
+ assert.match(source,/\.fa-dev-stats-top li>strong\{[^}]*justify-self:end;[^}]*text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums/);
+ assert.match(source,/\.fa-dev-stats-top \.fa-dev-stats-team-name\{[^}]*white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere/);
+ assert.match(source,/identity\.append\(crest,create\("span",team\.clubName,"fa-dev-stats-team-name"\)\)/);
+ assert.match(source,/\.fa-dev-stats-top \.app-world-club-identity\{[^}]*align-items:center;min-width:0/);
+ assert.match(source,/\.fa-dev-stats-top \.app-world-club-crest-placeholder\{flex-shrink:0\}/);
+ assert.match(source,/\.fa-dev-stats-team-card/);
+ assert.doesNotMatch(source,/\.fa-dev-stats-top \.app-world-club-identity>span:last-child\{overflow:hidden/);
+ assert.doesNotMatch(source,/\.fa-dev-stats-top\{[^}]*overflow-y:auto/);
+});
 test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
  const seasons=[
   {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},
