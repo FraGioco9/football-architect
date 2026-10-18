@@ -489,6 +489,128 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"DEV OFF hides all navigation and shows the empty state");
       console.log("FIXTURES_MOBILE_PASS|"+width+"|"+theme+"|touch menus, arrows, season changes, current round, refresh, empty state, zero completed games, five-language layout");
     }
+    // History stays silent while loading and links to the shared Standings view.
+    const historyManifest=JSON.parse(await readFile(join(root,'app/competitions/_shared/manifest.json'),'utf8'));
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
+    for(const division of historyManifest.divisions){
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
+      await wait("document.querySelectorAll('[data-history-season]').length===4");
+      assert.equal(await run("!!document.querySelector('#app-history-hall,#app-history-final,.app-history-dev-banner,#competition-panel-history>h2')"),false);
+      assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>b.dataset.historySeason)"),['4','3','2','1']);
+      const podiums=[4,3,2,1].map(season=>createPreviewStandings(division,30,season).rows.slice(0,3).map(row=>row.club.countryId+'-'+row.club.clubId));
+      assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>[...b.querySelectorAll('[data-club-crest]')].map(c=>c.dataset.clubCrest))"),podiums);
+      const records={titles:new Map(),podiums:new Map(),streak:new Map(),totalWins:new Map(),totalGoals:new Map(),totalPoints:new Map()};let previous=null,streak=0;
+      for(const season of [1,2,3,4]){
+        const rows=createPreviewStandings(division,30,season).rows,id=club=>club.countryId+'-'+club.clubId,winner=id(rows[0].club);
+        records.titles.set(winner,(records.titles.get(winner)||0)+1);
+        for(const row of rows){
+          records.totalWins.set(id(row.club),(records.totalWins.get(id(row.club))||0)+row.won);
+          records.totalGoals.set(id(row.club),(records.totalGoals.get(id(row.club))||0)+row.gf);
+          records.totalPoints.set(id(row.club),(records.totalPoints.get(id(row.club))||0)+row.pts);
+        }
+        for(const row of rows.slice(0,3)){const clubId=id(row.club);records.podiums.set(clubId,(records.podiums.get(clubId)||0)+1);}
+        streak=winner===previous?streak+1:1;previous=winner;records.streak.set(winner,Math.max(records.streak.get(winner)||0,streak));
+      }
+      for(const [metric,counts] of Object.entries(records)){
+        const maximum=Math.max(...counts.values());
+        const card=await run("(()=>{const c=document.querySelector('[data-history-record=\""+metric+"\"]');return {value:Number(c.querySelector('strong').textContent),clubs:[...c.querySelectorAll('[data-club-crest]')].map(n=>n.dataset.clubCrest).sort()}})()");
+        assert.equal(card.value,maximum,division.id+' '+metric);
+        assert.deepEqual(card.clubs,[...counts].filter(([,count])=>count===maximum).map(([id])=>id).sort());
+      }
+      for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min],['wins','won',Math.max],['points','pts',Math.max],['goalDifference','gd',Math.max]]){
+        const entries=[1,2,3,4].flatMap(season=>createPreviewStandings(division,30,season).rows.map(row=>({season,club:row.club.countryId+'-'+row.club.clubId,value:row[field]})));
+        const value=extreme(...entries.map(entry=>entry.value));
+        const card=await run("(()=>{const c=document.querySelector('[data-history-record=\""+metric+"\"]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
+        assert.deepEqual(card,{value,entries:entries.filter(entry=>entry.value===value).map(({season,club})=>({season,club}))},division.id+' '+metric);
+        if(metric==='goalDifference')assert.equal(await run("document.querySelector('[data-history-record=goalDifference] strong').textContent"),value>0?'+'+value:String(value));
+      }
+      assert.equal(await run("!!document.querySelector('.app-history-dev [data-app-i18n=historyGoalsScored],.app-history-dev [data-app-i18n=historyGoalsConceded]')"),false);
+      const margins=[1,2,3,4].map(season=>{const rows=createPreviewStandings(division,30,season).rows;return {season,club:rows[0].club.countryId+'-'+rows[0].club.clubId,value:rows[0].pts-rows[1].pts}});
+      const marginValue=Math.max(...margins.map(item=>item.value));
+      const marginCard=await run("(()=>{const c=document.querySelector('[data-history-record=margin]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
+      assert.deepEqual(marginCard,{value:marginValue,entries:margins.filter(item=>item.value===marginValue).map(({season,club})=>({season,club}))});
+      assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['attack','defence','wins','points','goalDifference','margin']);
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),3);
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
+      assert.equal(await run("!!document.querySelector('.app-history-dev [data-history-player-records] strong,.app-history-dev [data-history-player-records] [data-club-crest]')"),false);
+      assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
+      await run("document.querySelector('[data-history-season=\"3\"]').click()");
+      const standings=createPreviewStandings(division,7,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
+      const standingsState="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])";
+      await wait("window.faCompetitionRoute.get().view==='standings'&&window.faCompetitionRoute.get().season==='3'&&JSON.stringify("+standingsState+")==="+JSON.stringify(JSON.stringify(standings)));
+      assert.equal(await run("document.activeElement.id"),'competition-tab-standings');
+      assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),'7');
+      await run("history.back()");
+      await wait("window.faCompetitionRoute.get().view==='history'&&window.faCompetitionRoute.get().season==='4'&&!document.getElementById('competition-panel-history').hidden");
+    }
+    const historyFrameObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__faPrematureHistory=[];window.__faWatchHistory=true;const sampleHistory=()=>{const empty=document.querySelector('[data-history-empty]');if(empty&&!empty.hidden&&empty.getClientRects().length&&getComputedStyle(empty).visibility==='visible'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on')window.__faPrematureHistory.push(1);if(window.__faWatchHistory)requestAnimationFrame(sampleHistory)};requestAnimationFrame(sampleHistory);`});
+    devManifestDelay=300;
+    try{
+      await cmd('Page.reload',{ignoreCache:true});
+      await wait("document.querySelectorAll('[data-history-season]').length===4&&!document.documentElement.dataset.faDevStandingsPending&&!document.documentElement.dataset.faDebugPending");
+      await run('window.__faWatchHistory=false');
+      assert.deepEqual(await run('window.__faPrematureHistory'),[],'History records never flash in the shorter empty layout during refresh');
+    }finally{devManifestDelay=0;await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:historyFrameObserver.identifier});}
+    for(const width of [1440,621,620,390,320])for(const theme of ['dark','light']){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
+      await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
+      await wait("document.querySelectorAll('[data-history-season]').length===4");
+      for(const lang of ['en','de','es','fr','it']){
+        await run("document.documentElement.lang="+JSON.stringify(lang));
+        const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
+        assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.emptyLabels,false);
+        const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
+        assert.ok(cards.every(c=>c.min===c.expected&&c.height>=c.expected-.5&&!c.overflow&&c.max==='none'),width+' '+theme+' '+lang+' History cards keep minimum heights and grow with content');
+      }
+      const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
+      const scrollCheck=await run("(()=>{const s=document.querySelector('.fa-shell-content-scroll');s.scrollTop=Math.min(180,s.scrollHeight-s.clientHeight);const top=s.scrollTop;const results=[];for(const scope of ['all-time','season','all-time','season']){document.querySelector('.app-history-dev [data-history-record-scope=\"'+scope+'\"]').click();results.push(s.scrollTop)}return {top,results,period:!!document.querySelector('.app-history-record-period')}})()");
+      assert.ok(scrollCheck.results.every(value=>value>=0&&value<=scrollCheck.top),'History scroll remains in range at '+width+' '+theme);
+      const spacing=await run("(()=>{const root=document.querySelector('.app-history-dev'),team=root.querySelector('[data-history-team-records]'),players=root.querySelector('[data-history-player-records]');return {gap:Math.round(players.getBoundingClientRect().top-team.getBoundingClientRect().bottom),ordered:!!(team.compareDocumentPosition(players)&Node.DOCUMENT_POSITION_FOLLOWING),sticky:[...root.querySelectorAll('.app-competition-stat-grid')].some(grid=>grid.style.minHeight!=='')}})()");
+      assert.ok(spacing.ordered&&spacing.gap>=8&&spacing.gap<=28&&!spacing.sticky,'Player records sit below Team records without a spacer at '+width+' '+theme);
+      assert.equal(scrollCheck.period,false,'History omits the overall Seasons 1–4 label');
+      await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
+      await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length===6&&document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with six team and three player seasonal cards without invented values');
+      assert.equal(await run("[...document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])')].every(c=>getComputedStyle(c).minHeight==='128px'&&c.getBoundingClientRect().height>=127.5&&c.scrollHeight<=c.clientHeight+1)"),true,'All empty History cards use the 128px minimum');
+      const emptyAlignment=await run("(()=>{const root=document.querySelector('[data-history-empty]'),team=root.querySelector('[data-history-team-records] .app-competition-stat-card:not([hidden])'),player=root.querySelector('[data-history-player-record]:not([hidden])'),offset=card=>Math.round(card.querySelector('.app-competition-empty').getBoundingClientRect().top-card.getBoundingClientRect().top);return {team:offset(team),player:offset(player),teamGrid:getComputedStyle(team).display,playerGrid:getComputedStyle(player).display}})()");
+      assert.ok(emptyAlignment.team===emptyAlignment.player&&emptyAlignment.team===(width<=650?71:57)&&emptyAlignment.teamGrid==='grid'&&emptyAlignment.playerGrid==='grid','History Team and Player empty messages share the exact top offset at '+width+' '+theme);
+      await run("document.querySelector('[data-history-empty] [data-history-record-scope=\"all-time\"]').click()");
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length"),6);
+      assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length"),4);
+      assert.equal(await run("(()=>{const root=document.querySelector('[data-history-empty]'),team=root.querySelector('[data-history-team-records] .app-competition-stat-card:not([hidden])'),player=root.querySelector('[data-history-player-record]:not([hidden])'),offset=c=>Math.round(c.querySelector('.app-competition-empty').getBoundingClientRect().top-c.getBoundingClientRect().top);return offset(team)===offset(player)&&offset(team)===(innerWidth<=650?71:57)})()"),true,'All-time empty Team and Player messages align at '+width+' '+theme);
+      assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
+      await run(toggle+".checked=true;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
+      await wait("document.querySelectorAll('[data-history-season]').length===4");
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'Debug restoration preserves All-time scope');
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
+      await snap('HISTORY '+width+' '+theme,width,900);
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=stats'});
+      await wait("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card').length===3");
+      await run("sessionStorage.removeItem('football-architect:standings-dev-preview');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
+      const statsGeometry=await run("(()=>{const dimensions=elements=>elements.map(e=>({height:e.getBoundingClientRect().height,scroll:e.scrollHeight,client:e.clientHeight})),offset=e=>{const m=e.querySelector('.fa-dev-stats-empty');return m?Math.round(m.getBoundingClientRect().top-e.getBoundingClientRect().top):null},overview=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card')],overviewDim=dimensions(overview),baseline=offset(overview[0]),overviewAligned=overview.every(c=>c.isConnected&&offset(c)===baseline);document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[2].click();const players=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card')],playerDim=dimensions(players),aligned=baseline===45&&overviewAligned&&players.every(c=>c.isConnected&&offset(c)===baseline);document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click();return {overview:overviewDim,players:playerDim,teams:document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card').length,aligned}})()");
+      assert.ok(statsGeometry.overview.length===3&&statsGeometry.players.length===4&&statsGeometry.teams===7&&statsGeometry.aligned&&[...statsGeometry.overview,...statsGeometry.players].every(c=>Math.abs(c.height-88)<=1&&c.scroll<=c.client+1),'Stats Overview/Players fixed 88px and aligned empty content at '+width+' '+theme+' '+JSON.stringify(statsGeometry));
+      await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');window.dispatchEvent(new Event('fa:fictional-standings-change'));document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[0].click()");
+      assert.equal(await run("[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card')].every(c=>Math.abs(c.getBoundingClientRect().height-88)<=1&&!!c.querySelector('.app-competition-stat-value'))"),true,'Populated Stats Overview keeps 88px at '+width+' '+theme);
+      await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
+      const teamsGeometry=await run("(()=>{const cards=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card')],rows=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card .fa-dev-stats-top>li')];const valid=rows.every(row=>{const [rank,identity,value]=row.children;if(!rank||!identity||!value)return false;const crest=identity.querySelector('.app-world-club-crest-placeholder'),name=identity.querySelector('.fa-dev-stats-team-name');if(!crest||!name)return false;const a=rank.getBoundingClientRect(),b=identity.getBoundingClientRect(),c=value.getBoundingClientRect(),d=crest.getBoundingClientRect();const style=getComputedStyle(name);return a.right<=b.left+1&&b.right<=c.left+1&&Math.abs((d.top+d.bottom)/2-(c.top+c.bottom)/2)<4&&style.whiteSpace==='normal'&&style.textOverflow!=='ellipsis'&&row.scrollWidth<=row.clientWidth+1});const first=rows[0],name=first?.querySelector('.fa-dev-stats-team-name'),before=first?.getBoundingClientRect().height||0;let after=before;if(name){const original=name.textContent;name.textContent='A Very Long Fictional Football Club Name Repeated Across Multiple Words And Regional Identities Several Times For A Full Wrap Test';after=first.getBoundingClientRect().height;name.textContent=original;}return {cards:cards.length,rows:rows.length,valid,grows:after>before,overflow:cards.some(c=>c.scrollWidth>c.clientWidth+1),nested:cards.some(c=>getComputedStyle(c).overflowY==='auto')}})()");
+      assert.ok(teamsGeometry.cards===7&&teamsGeometry.rows>=28&&teamsGeometry.valid&&teamsGeometry.grows&&!teamsGeometry.overflow&&!teamsGeometry.nested,'Stats Teams aligned and wrapping at '+width+' '+theme);
+      for(const lang of ['en','de','es','fr','it']){
+        await run("document.documentElement.lang="+JSON.stringify(lang));
+        const labelCheck=await run("(()=>{const root=document.getElementById('fa-dev-stats'),select=[...root.querySelectorAll('.fa-dev-stats-nav button')],cards=[...root.querySelectorAll('.fa-dev-stats-team-card')],label=cards[0].querySelector('[data-app-i18n]');return {lang:document.documentElement.lang,labels:select.map(n=>n.textContent),heading:label.textContent,keys:cards.every(c=>c.querySelector('[data-app-i18n]')?.textContent.trim()),nonEnglish:document.documentElement.lang==='en'||select[0].textContent!=='Overview'}})()");
+        assert.ok(labelCheck.nonEnglish&&labelCheck.keys&&labelCheck.labels.every(Boolean),'Stats localized labels at '+width+' '+theme+' '+lang);
+      }
+      const modalTrigger=await run("document.querySelector('#fa-dev-stats .fa-dev-stats-team-card .fa-dev-stats-expand')?.click();!!document.querySelector('dialog.fa-dev-stats-dialog[open]')");
+      if(modalTrigger){
+        const dialogI18n=await run("(()=>{const d=document.querySelector('dialog.fa-dev-stats-dialog[open]');return {heading:d.querySelector('[data-app-i18n]')?.textContent,close:d.querySelector('[data-app-aria]')?.getAttribute('aria-label'),labelled:d.getAttribute('aria-labelledby')===d.querySelector('h3')?.id}})()");
+        assert.ok(dialogI18n.heading&&dialogI18n.close&&dialogI18n.labelled,'Stats modal translated accessibility');
+        await run("document.querySelector('dialog.fa-dev-stats-dialog[open]')?.close()");
+      }
+    }
+    console.log('HISTORY_BROWSER_PASS|16 divisions; archive and records; 5 viewport widths; Dark/Light; 5 locales; season links to Standings; debug OFF/ON');
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}
