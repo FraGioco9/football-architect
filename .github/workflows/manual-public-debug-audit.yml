@@ -1,0 +1,61 @@
+name: Manual public Debug offline audit
+
+# Manual only. No hosting credentials or external side effects.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact approved 40-character main commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  public-debug-offline-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate dispatch source and exact main SHA
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 1
+          [[ "${GITHUB_ACTOR,,}" == "fragioco9" ]] || exit 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          [[ "$GITHUB_SHA" == "$EXPECTED_SHA" ]] || exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Assert checked-out SHA and scanner availability
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]] || exit 1
+          test -f tools/audit-public-debug-artifact.mjs
+          node --check tools/audit-public-debug-artifact.mjs
+      - name: Run offline inventory and exposure scanner
+        env:
+          G10_EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          node tools/audit-public-debug-artifact.mjs > "$RUNNER_TEMP/g10-public-02-report.json"
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const report=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/g10-public-02-report.json","utf8"));
+            if(report.sourceSha!==process.env.G10_EXPECTED_SHA||
+              report.fullArtifactGenerated!==true||report.artifactIntegrityChecked!==true||
+              !Array.isArray(report.records)||!Array.isArray(report.findings))process.exit(1);
+            console.log(JSON.stringify({sourceSha:report.sourceSha,
+              debugFileCount:report.debugFileCount,publicFileCount:report.publicFileCount,
+              findings:report.findings.length,decision:report.decision}));
+          '
+      # Intentionally do not upload the complete file report without privacy review.
+      # Failure or a clean heuristic scan never establishes G10 PASS.
