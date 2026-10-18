@@ -8,7 +8,8 @@ function setup(path='/competitions/it-1/'){
  const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
- const tabs=views.map(view=>{const tab=item();tab.id='competition-tab-'+view;tab.getAttribute=()=> 'competition-panel-'+view;fields.set('competition-panel-'+view,item());return tab});
+ // Empty navigation panels still expose DOM queries used by History initialization.
+ const tabs=views.map(view=>{const tab=item();tab.id='competition-tab-'+view;tab.getAttribute=()=> 'competition-panel-'+view;const panel=item();panel.querySelectorAll=()=>[];fields.set('competition-panel-'+view,panel);return tab});
  fields.set('app-competition-season',item());fields.set('app-competition-season-unavailable',item());
  const option=item();option.id='app-competition-season-option-1';option.dataset.menuValue='1';
  const menu=item();menu.querySelector=()=>option;menu.append=()=>{};menu.querySelectorAll=()=>[option];fields.set('app-competition-season-menu',menu);
