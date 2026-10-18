@@ -15,7 +15,9 @@ function sandbox() {
   ["dev-debug-settings.mjs","export const enabled = false;\n"],
   ["dev-standings-preview-client.mjs","export const client = true;\n"],
   ["dev-standings-preview-data.mjs","export const data = [];\n"],
-  ["dev-debug-widget.mjs","export const widget = true;\n"]
+  ["dev-debug-widget.mjs","export const widget = true;\n"],
+  ["dev-competition-stats-client.mjs","export const statsClient = true;\n"],
+  ["dev-competition-stats-data.mjs","export const statsData = true;\n"]
  ])writeFileSync(join(debugRoot,"tools",name),content);
  return {root,debugRoot,protectedPath:join(root,"protected"),publicPath:join(root,"public")};
 }
@@ -27,7 +29,9 @@ test("DEBUG-INFRA-01: contracts are explicit; protected files are never public",
  assert.equal(assertArtifactContract("public"),"public");
  assert.equal(assertArtifactContract("protected_debug"),"protected_debug");
  for(const path of ["__fa_dev__/debug-settings.mjs","__fa_dev__/standings-client.mjs",
-  "__fa_dev__/standings-data.mjs","__fa_dev__/debug-widget.mjs","__fa_dev__/artifact-manifest.json"])
+  "__fa_dev__/standings-data.mjs","__fa_dev__/dev-standings-preview-data.mjs",
+  "__fa_dev__/stats-client.mjs","__fa_dev__/stats-data.mjs",
+  "__fa_dev__/debug-widget.mjs","__fa_dev__/artifact-manifest.json"])
   assert.equal(isAllowlistedPublicPath(path),false);
 });
 
@@ -49,6 +53,7 @@ test("DEBUG-INFRA-02: protected contract is a separately verified, nonpublic art
   assert.match(protectedHtml,/faDebugPending/);
   assert.equal(protectedHtml.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
   assert.match(protectedHtml,/__fa_dev__\/debug-settings\.mjs/);
+  assert.match(protectedHtml,/__fa_dev__\/stats-client\.mjs/);
   const landing=readFileSync(join(protectedPath,"index.html"));
   assert.ok(landing.equals(readFileSync(join(repositoryRoot,"index.html"))));
   assert.throws(()=>assertPublicArtifact(protectedPath),/Not allowlisted/);
@@ -115,11 +120,13 @@ test("DEBUG-INFRA-05: GitHub can stage Public, but protected publishing stays di
 test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
  const {root,debugRoot,protectedPath}=sandbox();
  try{
-  for(const name of ["dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs","dev-debug-widget.mjs"])
+  for(const name of ["dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs",
+   "dev-debug-widget.mjs","dev-competition-stats-client.mjs","dev-competition-stats-data.mjs"])
    writeFileSync(join(debugRoot,"tools",name),readFileSync(join(repositoryRoot,"tools",name)));
   stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
   const directory=join(protectedPath,"__fa_dev__");
-  for(const name of ["debug-settings.mjs","standings-client.mjs","standings-data.mjs","debug-widget.mjs"]){
+  for(const name of ["debug-settings.mjs","standings-client.mjs","standings-data.mjs",
+   "dev-standings-preview-data.mjs","debug-widget.mjs","stats-client.mjs","stats-data.mjs"]){
    const source=readFileSync(join(directory,name),"utf8");
    for(const match of source.matchAll(/(?:import|export)\\s+(?:[^"'\\n]*?\\s+from\\s+)?["'](\\.[^"']+)["']/g))
     assert.equal(existsSync(join(directory,match[1])),true,name+" imports missing "+match[1]);
