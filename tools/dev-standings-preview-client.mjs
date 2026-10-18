@@ -12,15 +12,20 @@ function readMatchdays(){
 }
 let matchdays=readMatchdays();
 let routeSeasonOverride=null;
+function availableSeasons(){
+ const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
+  .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
+ return seasons.length?seasons:[1];
+}
 function selectedSeason(){
- const available=(document.documentElement.dataset.faDevSeasons||"1,2").split(",").map(Number).filter(Number.isSafeInteger);
+ const available=availableSeasons();
  // Initial deep links are canonical until the app router emits an explicit route change.
- if([1,2].includes(routeSeasonOverride))return routeSeasonOverride;
+ if(available.includes(routeSeasonOverride))return routeSeasonOverride;
  const requested=Number(new URL(window.location.href).searchParams.get("season"));
- if([1,2].includes(requested))return requested;
+ if(available.includes(requested))return requested;
  const routed=Number(window.faCompetitionRoute?.get?.().season);
- if([1,2].includes(routed))return routed;
- return available.includes(1)||available.includes(2)?Math.max(...available.filter(season=>[1,2].includes(season))):1;
+ if(available.includes(routed))return routed;
+ return Math.max(...available);
 }
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
@@ -153,7 +158,7 @@ if(validPath){
   let seasonRequest=0;
   function syncSeason(){
    const routed=Number(window.faCompetitionRoute?.get?.().season);
-   if([1,2].includes(routed))routeSeasonOverride=routed;
+   if(availableSeasons().includes(routed))routeSeasonOverride=routed;
    const next=selectedSeason();
    if(next===renderedSeason)return;
    // Route changes can arrive while initial DEV hydration is still pending.
