@@ -2,9 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
+import {runInNewContext} from "node:vm";
 import {tmpdir} from "node:os";
 import {repositoryRoot,stagePublicArtifact,assertPublicArtifact,isAllowlistedPublicPath} from "../tools/publication-guard.mjs";
-import {ARTIFACT_CONTRACTS,assertArtifactContract,planProtectedDebugFiles,
+import {ARTIFACT_CONTRACTS,DEBUG_SEASONS,assertArtifactContract,planProtectedDebugFiles,
  assertProtectedDebugArtifact,stageProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
 
 function sandbox() {
@@ -148,4 +149,72 @@ test('DEBUG-FIRST-PAINT: stored DEV state is gated synchronously and failure can
  const document={documentElement:{dataset:{}}};
  runInNewContext(script,{document,window:{},location:{pathname:'/app/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(){throw Error('must not wait')}});
  assert.equal(document.documentElement.dataset.faDebugPending,undefined);
+});
+
+test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons without changing public bytes",()=>{
+ const {root,debugRoot,protectedPath,publicPath}=sandbox();
+ try{
+  assert.deepEqual(DEBUG_SEASONS,[1,2,3,4]);
+  const staged=stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
+  assert.deepEqual(assertProtectedDebugArtifact(protectedPath,{sourceRoot:repositoryRoot,debugRoot}),staged);
+  stagePublicArtifact(repositoryRoot,publicPath);
+  assertPublicArtifact(publicPath);
+  const directory=join("app","competitions");
+  const index=readFileSync(join(protectedPath,directory,"index.html"),"utf8");
+  assert.equal((index.match(/data-dev-latest-season="4"/g)||[]).length,16);
+  assert.equal((index.match(/\?season=4&amp;view=standings/g)||[]).length,16);
+  const originalIndex=readFileSync(join(publicPath,directory,"index.html"),"utf8");
+  assert.doesNotMatch(originalIndex,/data-dev-latest-season|__fa_dev__/);
+  assert.equal((originalIndex.match(/\?season=1&amp;view=standings/g)||[]).length,16);
+  for(const division of ["it","eng","es","de","fr","pt","nl","br"])
+   for(const tier of [1,2]){
+    const path=join(directory,division+"-"+tier,"index.html");
+    const html=readFileSync(join(protectedPath,path),"utf8");
+    const original=readFileSync(join(publicPath,path),"utf8");
+    const season='document.documentElement.dataset.faDevSeasons="1,2,3,4"';
+    assert.ok(html.includes(season),path+" must bootstrap DEV seasons");
+    assert.ok(html.indexOf(season)<html.indexOf('src="/__fa_dev__/debug-settings.mjs"'),
+      path+" must bootstrap seasons before Debug modules");
+    assert.ok(!original.includes("faDevSeasons")&&!original.includes("/__fa_dev__/"),
+      path+" public HTML must remain clean");
+   }
+  for(const path of ["app/index.html","app/dashboard/index.html","app/settings/index.html"]){
+   assert.ok(!readFileSync(join(protectedPath,path),"utf8").includes("faDevSeasons"),
+    path+" must not enable competition seasons");
+  }
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1–4",()=>{
+ function sourceFunction(source,name){
+  const from=source.indexOf("function "+name+"()");
+  assert.ok(from>=0,name+" must exist");
+  const start=source.indexOf("{",from);let depth=0;
+  for(let i=start;i<source.length;i++){
+   if(source[i]==="{")depth++;
+   if(source[i]==="}"&&--depth===0&&source[i]==="}")return source.slice(from,i+1);
+  }
+  throw Error("Incomplete resolver "+name);
+ }
+ const standings=readFileSync(join(repositoryRoot,"tools","dev-standings-preview-client.mjs"),"utf8");
+ const stats=readFileSync(join(repositoryRoot,"tools","dev-competition-stats-client.mjs"),"utf8");
+ const standingFunctions=sourceFunction(standings,"availableSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
+ const statsFunction=sourceFunction(stats,"selectedSeason");
+ const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
+  const url=new URL("https://example.test/competitions/it-1?season="+season);
+  return runInNewContext("let routeSeasonOverride="+JSON.stringify(override)+";\n"+script+"\nselectedSeason()",{
+   URL,URLSearchParams,document:{documentElement:{dataset:{faDevSeasons:data}}},
+   window:{location:{href:url.href},faCompetitionRoute:{get:()=>({season:routed})}},
+   location:{href:url.href,search:url.search}
+  });
+ };
+ for(const season of [1,2,3,4]){
+  assert.equal(resolve(standingFunctions,season,1),season);
+  assert.equal(resolve(statsFunction,season,1),season);
+  assert.equal(resolve(standingFunctions,season,season,season),season);
+ }
+ assert.equal(resolve(standingFunctions,99,4),4);
+ assert.equal(resolve(statsFunction,99,4),4);
+ assert.equal(resolve(standingFunctions,99,99,null,""),1);
+ assert.equal(resolve(statsFunction,99,99,null,""),1);
 });

@@ -8,6 +8,8 @@ import {tmpdir} from "node:os";
 import {join,extname} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {stageProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
+import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
+import {aggregatePreviewStats} from "../tools/dev-competition-stats-data.mjs";
 import {repositoryRoot,publicRequestFile} from "../tools/publication-guard.mjs";
 
 const mime={".html":"text/html",".mjs":"text/javascript",".js":"text/javascript",
@@ -72,9 +74,14 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   assert.ok(tab?.webSocketDebuggerUrl);
   socket=new WebSocket(tab.webSocketDebuggerUrl);
   await new Promise((ok,fail)=>{socket.addEventListener("open",ok,{once:true});socket.addEventListener("error",fail,{once:true})});
-  const pending=new Map(),requests=[],sockets=[],streams=[];let seq=0;
+  const pending=new Map(),requests=[],sockets=[],streams=[],errors=[];let seq=0;
   socket.addEventListener("message",event=>{
    const m=JSON.parse(event.data);
+   // Keep errors in the Node process: page globals are discarded on navigation.
+   if(m.method==="Runtime.exceptionThrown")
+    errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
+   if(m.method==="Runtime.consoleAPICalled"&&m.params.type==="error")
+    errors.push(m.params.args.map(arg=>arg.value??arg.description??arg.type).join(" "));
    if(m.method==="Network.requestWillBeSent"&&m.params?.request)
     requests.push({method:m.params.request.method,url:m.params.request.url});
    if(m.method==="Network.webSocketCreated"||m.method==="Network.webTransportCreated")
@@ -106,11 +113,18 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await cmd("Page.enable");
   await cmd("Network.enable");
   await cmd("Runtime.enable");
-  await cmd("Page.addScriptToEvaluateOnNewDocument",{source:
-   "window.__g10Errors=[];window.addEventListener('error',e=>window.__g10Errors.push(String(e.message||'script error')));"+
-   "window.addEventListener('unhandledrejection',e=>window.__g10Errors.push('unhandled rejection'));"});
-  // Remain on one supported season: seasons 2–4 require a separate runtime fix.
-  await cmd("Page.navigate",{url:origin+"/app/competitions/it-1/index.html?season=1&view=standings"});
+  const divisions=JSON.parse(readFileSync(join(artifact,"app/competitions/_shared/manifest.json"),"utf8")).divisions;
+  const standingsSnapshot="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,row.cells[9]?.textContent])";
+  const verifySeason=async(season,matchdays=10)=>{
+   const division=divisions.find(item=>item.id==="IT-1");
+   const expected=createPreviewStandings(division,matchdays,season).rows.map(row=>[row.club.countryId+"-"+row.club.clubId,String(row.pts)]);
+   await until("JSON.stringify("+standingsSnapshot+")==="+JSON.stringify(JSON.stringify(expected)));
+   await run("document.getElementById('competition-tab-stats').click()");
+   const overview=aggregatePreviewStats(division,matchdays,season).overview;
+   const expectedStats=[String(overview.matchesPlayed),String(overview.totalGoals),overview.goalsPerMatch.toFixed(2)];
+   await until("JSON.stringify([...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid strong')].map(node=>node.textContent))==="+JSON.stringify(JSON.stringify(expectedStats)));
+  };
+  await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
   await until("document.readyState==='complete'&&!!document.querySelector('.fa-dev-widget-button')&&document.querySelectorAll('#app-standings-body tr').length===16");
   await run("document.querySelector('.fa-dev-widget-button').click()");
   await until("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
@@ -136,8 +150,41 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[0].click()");
   await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='80'");
 
+  // Exercise slider, both number steppers and page reset, including rejected input.
+  await run("document.querySelector('[data-dev-control=matchdays]').value='12';document.querySelector('[data-dev-control=matchdays]').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-dev-control=matchdays]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='12' && !document.querySelector('[data-dev-control=matchdays]').disabled");
+  for(const [step,value] of [[1,13],[-1,12]]){
+   await run("document.querySelector('.fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
+   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+value+"' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
+  }
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='31';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"12");
+  assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),"12");
+  await run("document.querySelector('[data-dev-control=reset-page]').click()");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')===null && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
+  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"15");
+  await run("document.querySelector('[data-dev-control=fictional-standings]').click()");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && !document.querySelector('[data-dev-control=fictional-standings]').disabled");
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='10';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='10' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
+
+  // Real deep links and season-picker transitions must use the correct fictional data.
+  for(const season of [1,2,3,4]){
+   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season="+season+"&view=standings"});
+   await until("document.readyState==='complete' && !!document.querySelector('.fa-dev-widget-button')");
+   await verifySeason(season);
+  }
+  await run("document.getElementById('app-competition-season').click()");
+  await run("document.querySelector('#app-competition-season-menu [data-menu-value=\"2\"]').click()");
+  await until("new URL(location.href).searchParams.get('season')==='2'");
+  await verifySeason(2);
+  await run("document.getElementById('app-competition-season').click()");
+  await run("document.querySelector('#app-competition-season-menu [data-menu-value=\"4\"]').click()");
+  await until("new URL(location.href).searchParams.get('season')==='4'");
+  await verifySeason(4);
+
   // A direct navigation/refresh must preserve the fictional state on the same origin.
-  await cmd("Page.navigate",{url:origin+"/app/competitions/it-1/index.html?season=1&view=fixtures&matchday=5"});
+  await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=fixtures&matchday=5"});
   await until("document.readyState==='complete' && sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8");
   assert.equal(await run("document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length"),16);
 
@@ -147,16 +194,16 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    await until("window.innerWidth==="+width+" && !!document.querySelector('.fa-dev-widget-button')");
    await run("document.querySelector('.fa-dev-widget-button').click()");
    await until("!document.querySelector('.fa-dev-widget-panel').hidden");
-   const bounds=await run("({width:document.querySelector('.fa-dev-widget-panel').getBoundingClientRect().width,viewport:window.innerWidth,mobile:matchMedia('(max-width:600px)').matches})");
+   const bounds=await run("({left:document.querySelector('.fa-dev-widget-panel').getBoundingClientRect().left,right:document.querySelector('.fa-dev-widget-panel').getBoundingClientRect().right,width:document.querySelector('.fa-dev-widget-panel').getBoundingClientRect().width,viewport:window.innerWidth,mobile:matchMedia('(max-width:600px)').matches})");
    assert.equal(bounds.mobile,true,"Mobile breakpoint at "+width);
-   assert.ok(bounds.width>0&&bounds.width<=bounds.viewport+1,"Debug panel fits "+width+"px");
+   assert.ok(bounds.width>0&&bounds.left>=-1&&bounds.right<=bounds.viewport+1,"Debug panel fits "+width+"px");
    await run("document.querySelector('.fa-dev-widget-close').click()");
    await until("document.querySelector('.fa-dev-widget-panel').hidden");
   }
   await cmd("Emulation.clearDeviceMetricsOverride");
 
   // The DEV state should also survive changing to another public division.
-  await cmd("Page.navigate",{url:origin+"/app/competitions/nl-1/index.html?season=1&view=standings"});
+  await cmd("Page.navigate",{url:origin+"/competitions/nl-1?season=4&view=standings"});
   await until("document.readyState==='complete' && sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80");
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);
   await run("document.querySelector('[data-dev-control=\"reset-global\"]').click()");
@@ -164,9 +211,9 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.getElementById('competition-tab-fixtures').click()");
   await until("document.getElementById('app-fixtures-toolbar').hidden && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===0");
 
-  const status=await run("({errors:window.__g10Errors||[],scriptCount:performance.getEntriesByType('resource').filter(x=>x.name.includes('/__fa_dev__/')).length})");
+  const status=await run("({scriptCount:performance.getEntriesByType('resource').filter(x=>x.name.includes('/__fa_dev__/')).length})");
   assert.ok(status.scriptCount>=5,"Debug module assets should load on the second division");
-  assert.deepEqual(status.errors,[],"Browser runtime errors");
+  assert.deepEqual(errors,[],"Browser errors across every document and navigation");
   assert.deepEqual(refused,[],"No missing/unapproved artifact requests");
   assert.deepEqual(sockets,[],"No WebSocket or WebTransport connections");
   assert.deepEqual(streams,[],"No EventSource messages");
