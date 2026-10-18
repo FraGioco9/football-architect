@@ -8,12 +8,15 @@ export const ARTIFACT_CONTRACTS=Object.freeze(["public","protected_debug"]);
 const MANIFEST="__fa_dev__/artifact-manifest.json";
 // Injected only into DEV responses/artifacts, before the body can paint.
 export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings,html[data-fa-debug-pending=\"true\"] #competition-panel-fixtures{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/(?:app\\/)?competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)&&sessionStorage.getItem(\"football-architect:standings-dev-preview\")===\"on\"){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
-const INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>';
+const INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" src="/__fa_dev__/stats-client.mjs"></script>';
 const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],
  ["__fa_dev__/standings-client.mjs","tools/dev-standings-preview-client.mjs"],
  ["__fa_dev__/debug-widget.mjs","tools/dev-debug-widget.mjs"],
- ["__fa_dev__/standings-data.mjs","tools/dev-standings-preview-data.mjs"]
+ ["__fa_dev__/standings-data.mjs","tools/dev-standings-preview-data.mjs"],
+ ["__fa_dev__/dev-standings-preview-data.mjs","tools/dev-standings-preview-data.mjs"],
+ ["__fa_dev__/stats-client.mjs","tools/dev-competition-stats-client.mjs"],
+ ["__fa_dev__/stats-data.mjs","tools/dev-competition-stats-data.mjs"]
 ]);
 
 export function assertArtifactContract(contract) {
