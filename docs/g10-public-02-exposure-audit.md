@@ -1,5 +1,50 @@
 # G10-PUBLIC-02 — Public Debug source exposure audit
 
+**Current disposition (2026-10-18): PASS for the reviewed static-content and Debug capability exposure scope. PUBLIC DEBUG PUBLICATION REMAINS BLOCKED / NOT AUTHORIZED.**
+
+This section supersedes the earlier partial-review/HOLD conclusions below for the source and artifact scope identified here. Preserve those earlier records as historical evidence. This is an exposure review conclusion, not a deployment authorization, provider configuration certification, penetration test or guarantee against every possible vulnerability.
+
+## Final content and browser evidence
+
+- Reviewed PR #201 HEAD: `bc2e2855813f8aec557eaeb0cdea650eff1b22a9`.
+- PR #201 squash-merged as main `c1609071cef9f1d5884717b971bdae564f1ef21d`; both commits have tree `474e35f2e7bc211e84793cf2cc462b8add72a186`. The audited source therefore matches that merged snapshot.
+- Fresh source extraction, offline public/Debug staging, exact byte/manifest checks and full content-class inspection completed on the reviewed HEAD. The heuristic scanner reported zero findings; the conclusion also incorporates the data, links, asset structures, script behavior and browser evidence described below.
+- Exact-head Chrome acceptance and site contracts: [PR run #39157575557](https://github.com/FraGioco9/football-architect/actions/runs/39157575557), **167/167 PASS**, zero failures/skips.
+- Post-merge source assertion and site contracts: [main run #39158710813](https://github.com/FraGioco9/football-architect/actions/runs/39158710813), **167/167 PASS**, zero failures/skips.
+- Debug artifact: **347 files / 5,147,704 bytes**; public-only artifact: **339 files**. Exactly seven Debug module destinations plus the hash manifest are added. The 22 inherited app HTML files intentionally gain Debug/fictional-season markup; other inherited public files remain byte-identical.
+- Debug manifest SHA-256: `a42dcefbaed4306ee5ab79410d2168d8f58162bcb70568b933e8ee1e28985446`.
+- Inventory SHA-256: `aff15850040097b72f23643b472e177e35c6075fbbe3489543c7f202cdd9876f`, calculated over sorted, newline-terminated `path sha256` lines for every staged file.
+
+| Content / capability | Reviewed evidence | Result |
+| --- | --- | --- |
+| Four JSON files | Competition manifest, division catalogue, Debug path/hash manifest and explicit Vercel routes; all parsed and inspected for unexpected data/reference classes | PASS |
+| Competition data | 16 provisional divisions; all exposed field values for 256 clubs match the canonical catalogue projection; `approved: false`; no account, wallet, email or real-user record identified | PASS |
+| 24 HTML files and three CSS files | Local route/resource references and inline initialization scripts reviewed; no forms, iframe/object/embed elements, event-handler attributes, external resource targets, remote CSS URLs/imports or HTML comments identified | PASS |
+| 300 SVG files | Parsed every file; checked element types, event attributes, href/src and CSS references; no script, foreignObject, embedded image, external resource or XML entity declaration identified | PASS |
+| PNG and ICO payloads | PNG contains IHDR/IDAT/IEND only; all three embedded ICO PNG payloads inspected without text/EXIF chunks or trailing payload | PASS for exposure; ICO container defect below |
+| Seven JS and seven module destinations | Fixed local script-loading list, relative module closure, deterministic fictional generators, constant SVG icon strings and DOM text display paths inspected | PASS for reviewed behavior |
+| Network and storage effects | Four explicit fetch call sites read static same-origin JSON with default GET; no privileged header or server-mutation operation identified; Debug controls change sessionStorage/UI state, with theme/language in localStorage | PASS for reviewed behavior |
+| Chrome behavior | Canonical deep links for Seasons 1–4, season-picker transitions, standings, Fixtures, Stats, slider/number/steppers, rejected input, page/global reset, persistence, cross-navigation exceptions and observed same-origin GET-only requests | PASS on exact HEAD |
+| Mobile scope | Debug panel horizontal bounds at 390/320px; separate theme render matrix at 1440/390/320, Dark/Light | PASS for these assertions; not full accessibility or real-device acceptance |
+
+The SVG descriptions reviewed consist of flag titles and a Nepal construction description; SVG text elements belong to flag artwork. No credential, private user record, administrative endpoint, source map or environment file was identified in the staged output. Module scripts and fictional data are intentionally public under [PUBLIC-01](g10-public-01-requirements.md); their visibility must never be treated as confidentiality.
+
+The scanner remains heuristic. Chrome request observation covers the exercised flow, not every possible browser state, navigation or exploit. Static source and content inspection supplies evidence for the unexercised event paths; this is not exhaustive AST/dataflow analysis or security penetration testing. See [runtime review](g10-public-02-runtime-review.md) for capability details.
+
+## Incidental findings and release boundary
+
+- **Favicon correctness:** inherited `favicon.ico` stores three image-directory size/offset fields in big-endian form rather than ICO little-endian form; Pillow cannot identify the container. Its 16/32/48px embedded PNGs have normal chunks and no metadata payload. Identical in public and Debug; no change made. This asset correctness defect is not an exposure blocker.
+- **Flag documentation drift:** README still cites lipis/flag-icons and a retained MIT license file, whereas current `assets/flags/SOURCE.md` documents the replacement with Hampus Borgos imagery and PR #152 records replacement/removal of the superseded license. Reconcile separately; this audit does not independently certify upstream licensing. Neither source document is shipped in the artifact.
+
+**PUBLIC-02 exposure review: PASS for the pinned snapshot. PUBLIC-03: OPEN / separate workflow-change authorization required. PUBLIC-04: OPEN / separate Preview deployment and hosted acceptance required.**
+
+Maintain the unconditional `protected_debug` workflow refusal. No Vercel SSO/settings, Git integration, DNS, alias, permissions, workflow implementation, deployment, production or database change is authorized by this reconciliation. Anonymous accessibility and the consequences of any future provider configuration change remain unverified until PUBLIC-04. Before an eventual release, compare the exact approved artifact again; do not transfer this conclusion to changed bytes without review.
+
+## Historical partial-review record
+
+The following material is retained verbatim as the evidence available at its earlier baselines. Its HOLD/current/outstanding statements do not override the current scoped disposition above.
+
+
 **Status: PARTIAL SOURCE REVIEW — HOLD / NOT AUTHORIZED FOR PUBLICATION.**
 
 Source baseline: `FraGioco9/football-architect` main `6eac99bf3223baf38023fd86866750335d4f524c`. Product decision in G10-PUBLIC-01: public Preview, including all intended Debug tools, without individually authenticated collaborators.
