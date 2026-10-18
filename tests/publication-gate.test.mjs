@@ -1,3 +1,4 @@
+import {spawnSync} from "node:child_process";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
@@ -71,9 +72,9 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
     /\.merge_commit_sha == \$sha/,/PR_HEAD_SHA|pr_head_sha/,
     /landing-checks\.yml\/runs\?head_sha=/,/node --test tests\/\*\.test\.mjs/,
     /stagePublicArtifact/,/assertPublicArtifact/,/artifact_contract:/,
-     /stage-protected-debug:/,/Protected Debug publication remains disabled/,
+     /stage-preview:/,/expected_debug_manifest_sha256:/,
      /actions\/upload-artifact@v4/,
-    /needs: stage-public/,/actions\/download-artifact@v4/,
+    /needs: stage-preview/,/actions\/download-artifact@v4/,
     /secrets\.VERCEL_TOKEN/,/--target=preview/,/VERCEL_PROJECT_ID/,
     /readyState == "READY"/,/vercel alias set/,
     /STABLE_PREVIEW_ALIAS: football-architect-preview\.vercel\.app/,
@@ -87,4 +88,54 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
     "Workflow must use audited public artifact: "+file);
   }
  }
+});
+
+
+test("PUBLIC-03: publication job verifies downloaded bytes before credential exposure",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
+ const publisher=workflow.split("  publish-preview:")[1];
+ assert.ok(publisher);
+ assert.doesNotMatch(publisher,/actions\/checkout|import .*tools\/|node --test/);
+ const verify=publisher.indexOf("PUBLIC03_VERIFY_ARTIFACT_BEGIN");
+ const token=publisher.indexOf("secrets.VERCEL_TOKEN");
+ assert.ok(verify>=0&&token>verify);
+ assert.match(publisher,/EXPECTED_INVENTORY_SHA256: \$\{\{ needs.stage-preview.outputs.inventory_sha256 \}\}/);
+ assert.match(publisher,/npm install --global vercel@64\.5\.0/);
+ assert.doesNotMatch(workflow,/--token\b|vercel@latest/);
+ assert.match(workflow,/GITHUB_EVENT_NAME.*workflow_dispatch/);
+ assert.match(workflow,/default: public/);
+ assert.match(workflow,/bash "\$RUNNER_TEMP\/preview-source-gate.sh"/);
+});
+
+
+test("PUBLIC-03: publisher accepts only the fixed static routing configuration",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
+ const predicate=workflow.match(/jq -e '([^{\n]*\. == \{[^\n]+)' preview-bundle\/site\/vercel.json/)?.[1];
+ assert.ok(predicate,"Exact static routing predicate must exist");
+ const config=JSON.parse(readFileSync(join(repositoryRoot,"vercel.json"),"utf8"));
+ const run=value=>spawnSync("jq",["-e",predicate],{input:JSON.stringify(value),encoding:"utf8"}).status;
+ assert.equal(run(config),0);
+ for(const extra of [{public:true},{builds:[{use:"@vercel/node",src:"index.js"}]},{target:"production"},{functions:{"api.js":{}}},{rewrites:[]}])
+  assert.notEqual(run({...config,...extra}),0,JSON.stringify(extra));
+});
+
+test("PUBLIC-03: provider checks reject Production, wrong project and alias identity",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
+ const stageGate=workflow.match(/# PUBLIC03_SOURCE_GATE_BEGIN\n([\s\S]*?)\n\s*# PUBLIC03_SOURCE_GATE_END/)[1].replace(/^          /gm,"");
+ const publisherGate=workflow.match(/<<'SOURCE_GATE'\n([\s\S]*?)\n\s*SOURCE_GATE/)[1].replace(/^          /gm,"");
+ assert.equal(stageGate,publisherGate,"Both jobs must enforce the same source and latest-CI policy");
+ const target=workflow.match(/jq -e --arg id "\$VERCEL_PROJECT_ID" '([\s\S]*?)' <<< "\$info"/)[1];
+ const alias=workflow.match(/'(\.projectId == \$id and \.alias == \$alias and \.deploymentId == \$deployment)'/)[1];
+ const accepts=(predicate,value)=>spawnSync("jq",["-e","--arg","id","project","--arg","alias","preview.vercel.app","--arg","deployment","deployment",predicate],{input:JSON.stringify(value),encoding:"utf8"}).status===0;
+ for(const contract of ["public","protected_debug"]){
+  const ready={projectId:"project",target:"preview",readyState:"READY",meta:{artifact_contract:contract}};
+  assert.equal(accepts(target,ready),true);
+  assert.equal(accepts(target,{...ready,target:"production"}),false);
+  assert.equal(accepts(target,{...ready,projectId:"other"}),false);
+  assert.equal(accepts(target,{...ready,readyState:"ERROR"}),false);
+ }
+ const correct={projectId:"project",alias:"preview.vercel.app",deploymentId:"deployment"};
+ assert.equal(accepts(alias,correct),true);
+ for(const wrong of [{projectId:"other"},{alias:"other.vercel.app"},{deploymentId:"old"}])
+  assert.equal(accepts(alias,{...correct,...wrong}),false);
 });

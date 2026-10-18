@@ -13,7 +13,15 @@ The earlier HOLD below records an incomplete review at its historical baseline. 
 - The test retains exceptions and console errors in the Node process across document navigation, observes requests through CDP, checks same-origin GET-only traffic and rejects the socket/stream activity it observes. Chrome shutdown is awaited before temporary profile cleanup, resolving the observed ENOTEMPTY race without removing acceptance assertions.
 - [Exact-head PR CI #39157575557](https://github.com/FraGioco9/football-architect/actions/runs/39157575557) and [post-merge main CI #39158710813](https://github.com/FraGioco9/football-architect/actions/runs/39158710813): **167/167 PASS**, zero failures/skips, including the Debug browser flow and theme matrix.
 
-These results cover the tested routes, controls and viewport assertions. They do not establish full accessibility, all browser states, actual iPhone behavior, exhaustive request-dataflow safety or anonymous Vercel access. Those hosted acceptance obligations remain in PUBLIC-04; provider changes and Preview publication require separate authorization. Preserve the `protected_debug` fail-closed refusal.
+These results cover the tested routes, controls and viewport assertions. They do not establish full accessibility, all browser states, actual iPhone behavior, exhaustive request-dataflow safety or anonymous Vercel access. Those hosted acceptance obligations remain in PUBLIC-04; provider changes and Preview publication require separate authorization. The separately authorized PUBLIC-03 Draft PR replaces the unconditional `protected_debug` refusal only in its implementation branch with exact-source/CI, approved-manifest and post-download inventory/hash gates. Main and live hosting remain unchanged until separately authorized actions.
+
+## PUBLIC-03 implementation scope
+
+The candidate changes only `.github/workflows/manual-vercel-preview.yml`, its four affected test files and the two PUBLIC-02 documents. Runtime modules, builders, fictional datasets, catalogues and assets are unchanged, so the scoped content review above is not extended to new runtime behavior. The default `public` artifact remains 339 files; Debug remains 347 files with the same approved internal manifest hash recorded in the canonical exposure audit.
+
+Publication stays manual and owner-only, for an exact SHA with green automatic CI, on the current project and Preview target. The publisher has no checkout or downloaded-code execution: it independently validates downloaded paths and hashes, including the approved Debug manifest, before the token-bearing step. CLI `64.5.0` uses the token environment variable instead of CLI arguments. Offline positive/negative tests do not establish hosted or anonymous access.
+
+PUBLIC-03 remains pending review/merge. PUBLIC-04 remains OPEN: no workflow dispatch, deployment, alias/provider/SSO change or hosted acceptance is authorized by this implementation. Historical refusal/HOLD statements below describe their earlier baseline.
 
 ## Historical source-review record
 

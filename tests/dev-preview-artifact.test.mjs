@@ -1,4 +1,7 @@
+import * as fs from "node:fs";
 import test from "node:test";
+import {spawnSync} from "node:child_process";
+import {createHash} from "node:crypto";
 import assert from "node:assert/strict";
 import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
@@ -106,13 +109,15 @@ test("DEBUG-INFRA-04: missing DEV entry, bad roots, and overwrite are rejected",
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
-test("DEBUG-INFRA-05: GitHub can stage Public, but protected publishing stays disabled",()=>{
+test("DEBUG-INFRA-05: both contracts use isolated staging and approved transfer inventory",()=>{
  const workflow=readFileSync(join(repositoryRoot,".github","workflows","manual-vercel-preview.yml"),"utf8");
  assert.match(workflow,/artifact_contract:/);
- assert.match(workflow,/stage-protected-debug:/);
- assert.match(workflow,/Protected Debug publication remains disabled/);
+ assert.match(workflow,/stage-preview:/);
+ assert.match(workflow,/expected_debug_manifest_sha256:/);
+ assert.match(workflow,/stageProtectedDebugArtifact/);
+ assert.match(workflow,/assertProtectedDebugArtifact/);
  assert.match(workflow,/exit 1/);
- assert.match(workflow,/approved-preview-public/);
+ assert.match(workflow,/approved-preview-bundle/);
  assert.match(workflow,/--target=preview/);
  assert.doesNotMatch(workflow,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
 });
@@ -217,4 +222,34 @@ test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1â€
  assert.equal(resolve(statsFunction,99,4),4);
  assert.equal(resolve(standingFunctions,99,99,null,""),1);
  assert.equal(resolve(statsFunction,99,99,null,""),1);
+});
+
+
+test("PUBLIC-03: execute the actual staging script for both approval contracts",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
+ const code=workflow.match(/# PUBLIC03_STAGE_BEGIN\n([\s\S]*?)\n\s*# PUBLIC03_STAGE_END/)?.[1]?.replace(/^          /gm,"");
+ assert.ok(code);
+ const root=mkdtempSync(join(tmpdir(),"fa-workflow-stage-"));
+ try{
+  const source=join(root,"source");mkdirSync(source);
+  // Copy a source fixture; the staging script must import real builders and verify their output.
+  for(const path of ["assets","app","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
+   fs.cpSync(join(repositoryRoot,path),join(source,path),{recursive:true});
+  const debug=join(root,"expected-debug");stageProtectedDebugArtifact(repositoryRoot,debug);
+  const approved=createHash("sha256").update(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"))).digest("hex");
+  const output=join(root,"outputs");
+  function run(contract,hash=""){
+   rmSync(join(source,"preview-bundle"),{recursive:true,force:true});
+   return spawnSync("bash",["-c",code],{cwd:source,encoding:"utf8",env:{...process.env,ARTIFACT_CONTRACT:contract,EXPECTED_SHA:"a".repeat(40),EXPECTED_DEBUG_MANIFEST_SHA256:hash,GITHUB_OUTPUT:output}});
+  }
+  for(const [contract,hash,count] of [["public","",339],["protected_debug",approved,347]]){
+   const result=run(contract,hash);assert.equal(result.status,0,result.stderr);
+   const bytes=readFileSync(join(source,"preview-bundle/publication-manifest.json"));
+   const manifest=JSON.parse(bytes);assert.equal(manifest.contract,contract);assert.equal(manifest.files.length,count);
+   assert.ok(readFileSync(output,"utf8").includes("inventory_sha256="+createHash("sha256").update(bytes).digest("hex")));
+   if(contract==="public")assert.equal(fs.existsSync(join(source,"preview-bundle/site/__fa_dev__")),false);
+  }
+  for(const [contract,hash] of [["protected_debug",""],["protected_debug","b".repeat(64)],["public",approved],["production",""],["unknown",""]])
+   assert.notEqual(run(contract,hash).status,0,contract+" must reject invalid approval");
+ }finally{rmSync(root,{recursive:true,force:true});}
 });
