@@ -1,10 +1,14 @@
+import * as fs from "node:fs";
 import test from "node:test";
+import {spawnSync} from "node:child_process";
+import {createHash} from "node:crypto";
 import assert from "node:assert/strict";
 import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
+import {runInNewContext} from "node:vm";
 import {tmpdir} from "node:os";
 import {repositoryRoot,stagePublicArtifact,assertPublicArtifact,isAllowlistedPublicPath} from "../tools/publication-guard.mjs";
-import {ARTIFACT_CONTRACTS,assertArtifactContract,planProtectedDebugFiles,
+import {ARTIFACT_CONTRACTS,DEBUG_SEASONS,assertArtifactContract,planProtectedDebugFiles,
  assertProtectedDebugArtifact,stageProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
 
 function sandbox() {
@@ -15,7 +19,9 @@ function sandbox() {
   ["dev-debug-settings.mjs","export const enabled = false;\n"],
   ["dev-standings-preview-client.mjs","export const client = true;\n"],
   ["dev-standings-preview-data.mjs","export const data = [];\n"],
-  ["dev-debug-widget.mjs","export const widget = true;\n"]
+  ["dev-debug-widget.mjs","export const widget = true;\n"],
+  ["dev-competition-stats-client.mjs","export const statsClient = true;\n"],
+  ["dev-competition-stats-data.mjs","export const statsData = true;\n"]
  ])writeFileSync(join(debugRoot,"tools",name),content);
  return {root,debugRoot,protectedPath:join(root,"protected"),publicPath:join(root,"public")};
 }
@@ -27,7 +33,9 @@ test("DEBUG-INFRA-01: contracts are explicit; protected files are never public",
  assert.equal(assertArtifactContract("public"),"public");
  assert.equal(assertArtifactContract("protected_debug"),"protected_debug");
  for(const path of ["__fa_dev__/debug-settings.mjs","__fa_dev__/standings-client.mjs",
-  "__fa_dev__/standings-data.mjs","__fa_dev__/debug-widget.mjs","__fa_dev__/artifact-manifest.json"])
+  "__fa_dev__/standings-data.mjs","__fa_dev__/dev-standings-preview-data.mjs",
+  "__fa_dev__/stats-client.mjs","__fa_dev__/stats-data.mjs",
+  "__fa_dev__/debug-widget.mjs","__fa_dev__/artifact-manifest.json"])
   assert.equal(isAllowlistedPublicPath(path),false);
 });
 
@@ -49,6 +57,7 @@ test("DEBUG-INFRA-02: protected contract is a separately verified, nonpublic art
   assert.match(protectedHtml,/faDebugPending/);
   assert.equal(protectedHtml.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
   assert.match(protectedHtml,/__fa_dev__\/debug-settings\.mjs/);
+  assert.match(protectedHtml,/__fa_dev__\/stats-client\.mjs/);
   const landing=readFileSync(join(protectedPath,"index.html"));
   assert.ok(landing.equals(readFileSync(join(repositoryRoot,"index.html"))));
   assert.throws(()=>assertPublicArtifact(protectedPath),/Not allowlisted/);
@@ -100,13 +109,15 @@ test("DEBUG-INFRA-04: missing DEV entry, bad roots, and overwrite are rejected",
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
-test("DEBUG-INFRA-05: GitHub can stage Public, but protected publishing stays disabled",()=>{
+test("DEBUG-INFRA-05: both contracts use isolated staging and approved transfer inventory",()=>{
  const workflow=readFileSync(join(repositoryRoot,".github","workflows","manual-vercel-preview.yml"),"utf8");
  assert.match(workflow,/artifact_contract:/);
- assert.match(workflow,/stage-protected-debug:/);
- assert.match(workflow,/Protected Debug publication remains disabled/);
+ assert.match(workflow,/stage-preview:/);
+ assert.match(workflow,/expected_debug_manifest_sha256:/);
+ assert.match(workflow,/stageProtectedDebugArtifact/);
+ assert.match(workflow,/assertProtectedDebugArtifact/);
  assert.match(workflow,/exit 1/);
- assert.match(workflow,/approved-preview-public/);
+ assert.match(workflow,/approved-preview-bundle/);
  assert.match(workflow,/--target=preview/);
  assert.doesNotMatch(workflow,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
 });
@@ -115,11 +126,13 @@ test("DEBUG-INFRA-05: GitHub can stage Public, but protected publishing stays di
 test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
  const {root,debugRoot,protectedPath}=sandbox();
  try{
-  for(const name of ["dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs","dev-debug-widget.mjs"])
+  for(const name of ["dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs",
+   "dev-debug-widget.mjs","dev-competition-stats-client.mjs","dev-competition-stats-data.mjs"])
    writeFileSync(join(debugRoot,"tools",name),readFileSync(join(repositoryRoot,"tools",name)));
   stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
   const directory=join(protectedPath,"__fa_dev__");
-  for(const name of ["debug-settings.mjs","standings-client.mjs","standings-data.mjs","debug-widget.mjs"]){
+  for(const name of ["debug-settings.mjs","standings-client.mjs","standings-data.mjs",
+   "dev-standings-preview-data.mjs","debug-widget.mjs","stats-client.mjs","stats-data.mjs"]){
    const source=readFileSync(join(directory,name),"utf8");
    for(const match of source.matchAll(/(?:import|export)\\s+(?:[^"'\\n]*?\\s+from\\s+)?["'](\\.[^"']+)["']/g))
     assert.equal(existsSync(join(directory,match[1])),true,name+" imports missing "+match[1]);
@@ -141,4 +154,102 @@ test('DEBUG-FIRST-PAINT: stored DEV state is gated synchronously and failure can
  const document={documentElement:{dataset:{}}};
  runInNewContext(script,{document,window:{},location:{pathname:'/app/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(){throw Error('must not wait')}});
  assert.equal(document.documentElement.dataset.faDebugPending,undefined);
+});
+
+test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons without changing public bytes",()=>{
+ const {root,debugRoot,protectedPath,publicPath}=sandbox();
+ try{
+  assert.deepEqual(DEBUG_SEASONS,[1,2,3,4]);
+  const staged=stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
+  assert.deepEqual(assertProtectedDebugArtifact(protectedPath,{sourceRoot:repositoryRoot,debugRoot}),staged);
+  stagePublicArtifact(repositoryRoot,publicPath);
+  assertPublicArtifact(publicPath);
+  const directory=join("app","competitions");
+  const index=readFileSync(join(protectedPath,directory,"index.html"),"utf8");
+  assert.equal((index.match(/data-dev-latest-season="4"/g)||[]).length,16);
+  assert.equal((index.match(/\?season=4&amp;view=standings/g)||[]).length,16);
+  const originalIndex=readFileSync(join(publicPath,directory,"index.html"),"utf8");
+  assert.doesNotMatch(originalIndex,/data-dev-latest-season|__fa_dev__/);
+  assert.equal((originalIndex.match(/\?season=1&amp;view=standings/g)||[]).length,16);
+  for(const division of ["it","eng","es","de","fr","pt","nl","br"])
+   for(const tier of [1,2]){
+    const path=join(directory,division+"-"+tier,"index.html");
+    const html=readFileSync(join(protectedPath,path),"utf8");
+    const original=readFileSync(join(publicPath,path),"utf8");
+    const season='document.documentElement.dataset.faDevSeasons="1,2,3,4"';
+    assert.ok(html.includes(season),path+" must bootstrap DEV seasons");
+    assert.ok(html.indexOf(season)<html.indexOf('src="/__fa_dev__/debug-settings.mjs"'),
+      path+" must bootstrap seasons before Debug modules");
+    assert.ok(!original.includes("faDevSeasons")&&!original.includes("/__fa_dev__/"),
+      path+" public HTML must remain clean");
+   }
+  for(const path of ["app/index.html","app/dashboard/index.html","app/settings/index.html"]){
+   assert.ok(!readFileSync(join(protectedPath,path),"utf8").includes("faDevSeasons"),
+    path+" must not enable competition seasons");
+  }
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1–4",()=>{
+ function sourceFunction(source,name){
+  const from=source.indexOf("function "+name+"()");
+  assert.ok(from>=0,name+" must exist");
+  const start=source.indexOf("{",from);let depth=0;
+  for(let i=start;i<source.length;i++){
+   if(source[i]==="{")depth++;
+   if(source[i]==="}"&&--depth===0&&source[i]==="}")return source.slice(from,i+1);
+  }
+  throw Error("Incomplete resolver "+name);
+ }
+ const standings=readFileSync(join(repositoryRoot,"tools","dev-standings-preview-client.mjs"),"utf8");
+ const stats=readFileSync(join(repositoryRoot,"tools","dev-competition-stats-client.mjs"),"utf8");
+ const standingFunctions=sourceFunction(standings,"availableSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
+ const statsFunction=sourceFunction(stats,"selectedSeason");
+ const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
+  const url=new URL("https://example.test/competitions/it-1?season="+season);
+  return runInNewContext("let routeSeasonOverride="+JSON.stringify(override)+";\n"+script+"\nselectedSeason()",{
+   URL,URLSearchParams,document:{documentElement:{dataset:{faDevSeasons:data}}},
+   window:{location:{href:url.href},faCompetitionRoute:{get:()=>({season:routed})}},
+   location:{href:url.href,search:url.search}
+  });
+ };
+ for(const season of [1,2,3,4]){
+  assert.equal(resolve(standingFunctions,season,1),season);
+  assert.equal(resolve(statsFunction,season,1),season);
+  assert.equal(resolve(standingFunctions,season,season,season),season);
+ }
+ assert.equal(resolve(standingFunctions,99,4),4);
+ assert.equal(resolve(statsFunction,99,4),4);
+ assert.equal(resolve(standingFunctions,99,99,null,""),1);
+ assert.equal(resolve(statsFunction,99,99,null,""),1);
+});
+
+
+test("PUBLIC-03: execute the actual staging script for both approval contracts",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
+ const code=workflow.match(/# PUBLIC03_STAGE_BEGIN\n([\s\S]*?)\n\s*# PUBLIC03_STAGE_END/)?.[1]?.replace(/^          /gm,"");
+ assert.ok(code);
+ const root=mkdtempSync(join(tmpdir(),"fa-workflow-stage-"));
+ try{
+  const source=join(root,"source");mkdirSync(source);
+  // Copy a source fixture; the staging script must import real builders and verify their output.
+  for(const path of ["assets","app","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
+   fs.cpSync(join(repositoryRoot,path),join(source,path),{recursive:true});
+  const debug=join(root,"expected-debug");stageProtectedDebugArtifact(repositoryRoot,debug);
+  const approved=createHash("sha256").update(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"))).digest("hex");
+  const output=join(root,"outputs");
+  function run(contract,hash=""){
+   rmSync(join(source,"preview-bundle"),{recursive:true,force:true});
+   return spawnSync("bash",["-c",code],{cwd:source,encoding:"utf8",env:{...process.env,ARTIFACT_CONTRACT:contract,EXPECTED_SHA:"a".repeat(40),EXPECTED_DEBUG_MANIFEST_SHA256:hash,GITHUB_OUTPUT:output}});
+  }
+  for(const [contract,hash,count] of [["public","",339],["protected_debug",approved,347]]){
+   const result=run(contract,hash);assert.equal(result.status,0,result.stderr);
+   const bytes=readFileSync(join(source,"preview-bundle/publication-manifest.json"));
+   const manifest=JSON.parse(bytes);assert.equal(manifest.contract,contract);assert.equal(manifest.files.length,count);
+   assert.ok(readFileSync(output,"utf8").includes("inventory_sha256="+createHash("sha256").update(bytes).digest("hex")));
+   if(contract==="public")assert.equal(fs.existsSync(join(source,"preview-bundle/site/__fa_dev__")),false);
+  }
+  for(const [contract,hash] of [["protected_debug",""],["protected_debug","b".repeat(64)],["public",approved],["production",""],["unknown",""]])
+   assert.notEqual(run(contract,hash).status,0,contract+" must reject invalid approval");
+ }finally{rmSync(root,{recursive:true,force:true});}
 });

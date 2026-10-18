@@ -21,13 +21,18 @@ on:
         required: true
         type: string
       artifact_contract:
-        description: Explicit artifact contract (protected DEV publication is disabled)
+        description: Explicit artifact contract; Debug requires an approved manifest hash
         required: true
         default: public
         type: choice
         options:
           - public
           - protected_debug
+
+      expected_debug_manifest_sha256:
+        description: Required for protected_debug; exact owner-approved manifest SHA-256
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -39,32 +44,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate-contract:
-    name: Reject unknown artifact contracts
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail closed for unknown contract
-        env:
-          ARTIFACT_CONTRACT: ${{ inputs.artifact_contract }}
-        run: |
-          set -euo pipefail
-          [[ "$ARTIFACT_CONTRACT" == "public" || "$ARTIFACT_CONTRACT" == "protected_debug" ]] || exit 1
-  stage-protected-debug:
-    name: Protected Debug publication guard (disabled)
-    needs: validate-contract
-    if: ${{ inputs.artifact_contract == 'protected_debug' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Block protected Debug until independent G10 deployment authorization
-        run: |
-          echo 'Protected Debug publication remains disabled until G10 is PASS and separately authorized'
-          exit 1
-  stage-public:
-    needs: validate-contract
-    if: ${{ inputs.artifact_contract == 'public' }}
-    name: Exact-head CI and public artifact
+  stage-preview:
+    name: Exact-head CI and selected immutable artifact
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      inventory_sha256: ${{ steps.stage.outputs.inventory_sha256 }}
     steps:
       - name: Verify owner, PR HEAD and prior exact-head Site checks
         env:
@@ -73,34 +58,46 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
+          # PUBLIC03_SOURCE_GATE_BEGIN
           set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]] || { echo 'Manual dispatch only'; exit 1; }
+          [[ "$GITHUB_REPOSITORY" == FraGioco9/football-architect ]] || exit 1
           [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'Dispatch only from main'; exit 1; }
           [[ "${GITHUB_ACTOR,,}" == fragioco9 ]] || { echo 'Owner-only dispatch'; exit 1; }
+          [[ "${GITHUB_TRIGGERING_ACTOR,,}" == fragioco9 ]] || { echo 'Owner-only rerun'; exit 1; }
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
+          [[ "$main_sha" == "$GITHUB_SHA" ]] || { echo 'Workflow main moved since dispatch'; exit 1; }
+          require_ci() {
+            local sha="$1" event="$2" runs
+            runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/landing-checks.yml/runs?head_sha=$sha&event=$event&per_page=100")"
+            # Inspect the latest matching run, never hide failed/pending runs with status=success.
+            jq -e --arg sha "$sha" --arg event "$event" '
+              [.workflow_runs[] | select(.head_sha == $sha and .event == $event
+                and ($event != "push" or .head_branch == "main"))]
+              | sort_by(.run_number, .id) | last
+              | .status == "completed" and .conclusion == "success"
+            ' <<< "$runs" >/dev/null || { echo 'Latest exact-head Site checks are not green'; exit 1; }
+          }
           if [[ "$SOURCE" == "main" ]]; then
             [[ "$EXPECTED_SHA" == "$GITHUB_SHA" ]] || { echo 'For source=main, expected_sha must equal the workflow-dispatch main SHA'; exit 1; }
-            runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/landing-checks.yml/runs?head_sha=$EXPECTED_SHA&status=success&per_page=100")"
-            jq -e --arg sha "$EXPECTED_SHA" '
-              [.workflow_runs[] | select(.head_sha == $sha and .status == "completed" and .conclusion == "success")] | length > 0
-            ' <<< "$runs" >/dev/null || { echo 'No successful exact-SHA Site checks for main'; exit 1; }
           elif [[ "$SOURCE" == "merged_pr" ]]; then
-            [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo 'A valid PR number is required for source=merged_pr'; exit 1; }
+            [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || exit 1
             pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
             jq -e --arg sha "$EXPECTED_SHA" --arg repo "$GITHUB_REPOSITORY" '
               .state == "closed" and .merged_at != null and .base.ref == "main"
               and .head.repo.full_name == $repo and .merge_commit_sha == $sha
-            ' <<< "$pr_json" >/dev/null || { echo 'PR must be merged and expected_sha must equal its merge commit'; exit 1; }
+            ' <<< "$pr_json" >/dev/null || { echo 'PR must be merged at the exact approved SHA'; exit 1; }
             pr_head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
-            runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/landing-checks.yml/runs?head_sha=$pr_head_sha&event=pull_request&status=success&per_page=100")"
-            jq -e --arg sha "$pr_head_sha" '
-              [.workflow_runs[] | select(.head_sha == $sha and .event == "pull_request"
-                and .status == "completed" and .conclusion == "success")] | length > 0
-            ' <<< "$runs" >/dev/null || { echo 'No successful exact-head PR CI'; exit 1; }
+            [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+            require_ci "$pr_head_sha" pull_request
           else
             echo 'Unsupported source'; exit 1
           fi
+          require_ci "$EXPECTED_SHA" push
           comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$EXPECTED_SHA...main")"
           jq -e '.status == "identical" or .status == "ahead"' <<< "$comparison" >/dev/null || { echo 'Approved commit is not contained in main'; exit 1; }
+          # PUBLIC03_SOURCE_GATE_END
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.expected_sha }}
@@ -115,28 +112,52 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           node --test tests/*.test.mjs
-      - name: Stage and verify exact public allowlist
+      - name: Stage and verify selected contract
+        id: stage
+        env:
+          ARTIFACT_CONTRACT: ${{ inputs.artifact_contract }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          EXPECTED_DEBUG_MANIFEST_SHA256: ${{ inputs.expected_debug_manifest_sha256 }}
         run: |
           set -euo pipefail
-          node --input-type=module -e '
-            import {stagePublicArtifact,assertPublicArtifact} from "./tools/publication-guard.mjs";
-            const files=stagePublicArtifact(process.cwd(),"preview-public");
-            assertPublicArtifact("preview-public");
-            console.log("Verified public asset count:",files.length);
-          '
-          for path in .github .git tools tests package.json; do
-            test ! -e "preview-public/$path"
-          done
+          # PUBLIC03_STAGE_BEGIN
+          node --input-type=module <<'NODE'
+          import {stagePublicArtifact,assertPublicArtifact} from "./tools/publication-guard.mjs";
+          import {stageProtectedDebugArtifact,assertProtectedDebugArtifact} from "./tools/dev-preview-artifact.mjs";
+          import {createHash} from "node:crypto";
+          import {readFileSync,writeFileSync,appendFileSync} from "node:fs";
+          const {ARTIFACT_CONTRACT:contract,EXPECTED_SHA:sourceSha,EXPECTED_DEBUG_MANIFEST_SHA256:approved}=process.env;
+          const hash=bytes=>createHash("sha256").update(bytes).digest("hex");
+          const root="preview-bundle/site";
+          let paths;
+          if(contract==="public"){
+            if(approved)throw Error("Debug hash is invalid for public contract");
+            stagePublicArtifact(process.cwd(),root);
+            paths=assertPublicArtifact(root);
+          }else if(contract==="protected_debug"){
+            if(!/^[0-9a-f]{64}$/.test(approved||""))throw Error("Approved Debug manifest hash required");
+            stageProtectedDebugArtifact(process.cwd(),root);
+            paths=assertProtectedDebugArtifact(root);
+            if(hash(readFileSync(root+"/__fa_dev__/artifact-manifest.json"))!==approved)
+              throw Error("Debug manifest differs from owner approval");
+          }else throw Error("Unknown artifact contract");
+          const inventory=Buffer.from(JSON.stringify({schemaVersion:1,contract,sourceSha,
+            files:paths.map(path=>({path,sha256:hash(readFileSync(root+"/"+path))}))})+"\n");
+          writeFileSync("preview-bundle/publication-manifest.json",inventory);
+          appendFileSync(process.env.GITHUB_OUTPUT,"inventory_sha256="+hash(inventory)+"\n");
+          console.log("Verified contract:",contract,"files:",paths.length,"inventory:",hash(inventory));
+          NODE
+          # PUBLIC03_STAGE_END
       - uses: actions/upload-artifact@v4
         with:
-          name: approved-preview-public
-          path: preview-public/
+          name: approved-preview-bundle
+          path: preview-bundle/
           if-no-files-found: error
           retention-days: 1
 
   publish-preview:
     name: Preview-only Vercel CLI deployment
-    needs: stage-public
+    needs: stage-preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # The job bearing VERCEL_TOKEN never checks out or executes PR code.
@@ -147,8 +168,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: approved-preview-public
-          path: preview-public
+          name: approved-preview-bundle
+          path: preview-bundle
       - name: Confirm selected source and allowed artifact (no Vercel credentials)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -157,31 +178,129 @@ jobs:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
+          # A trusted workflow script, never downloaded repository code.
+          cat > "$RUNNER_TEMP/preview-source-gate.sh" <<'SOURCE_GATE'
+          set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]] || { echo 'Manual dispatch only'; exit 1; }
+          [[ "$GITHUB_REPOSITORY" == FraGioco9/football-architect ]] || exit 1
+          [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'Dispatch only from main'; exit 1; }
+          [[ "${GITHUB_ACTOR,,}" == fragioco9 ]] || { echo 'Owner-only dispatch'; exit 1; }
+          [[ "${GITHUB_TRIGGERING_ACTOR,,}" == fragioco9 ]] || { echo 'Owner-only rerun'; exit 1; }
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
+          [[ "$main_sha" == "$GITHUB_SHA" ]] || { echo 'Workflow main moved since dispatch'; exit 1; }
+          require_ci() {
+            local sha="$1" event="$2" runs
+            runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/landing-checks.yml/runs?head_sha=$sha&event=$event&per_page=100")"
+            # Inspect the latest matching run, never hide failed/pending runs with status=success.
+            jq -e --arg sha "$sha" --arg event "$event" '
+              [.workflow_runs[] | select(.head_sha == $sha and .event == $event
+                and ($event != "push" or .head_branch == "main"))]
+              | sort_by(.run_number, .id) | last
+              | .status == "completed" and .conclusion == "success"
+            ' <<< "$runs" >/dev/null || { echo 'Latest exact-head Site checks are not green'; exit 1; }
+          }
           if [[ "$SOURCE" == "main" ]]; then
-            main_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')" || { echo 'Unable to resolve current main SHA from GitHub API'; exit 1; }
-            echo "Approved SHA: $EXPECTED_SHA"
-            echo "Current main SHA: $main_sha"
-            [[ "$main_sha" == "$EXPECTED_SHA" ]] || { echo 'main moved since approval; rerun with the current main SHA'; exit 1; }
+            [[ "$EXPECTED_SHA" == "$GITHUB_SHA" ]] || { echo 'For source=main, expected_sha must equal the workflow-dispatch main SHA'; exit 1; }
           elif [[ "$SOURCE" == "merged_pr" ]]; then
+            [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || exit 1
             pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
             jq -e --arg sha "$EXPECTED_SHA" --arg repo "$GITHUB_REPOSITORY" '
               .state == "closed" and .merged_at != null and .base.ref == "main"
               and .head.repo.full_name == $repo and .merge_commit_sha == $sha
-            ' <<< "$pr_json" >/dev/null || { echo 'PR merge commit changed or PR is not merged'; exit 1; }
+            ' <<< "$pr_json" >/dev/null || { echo 'PR must be merged at the exact approved SHA'; exit 1; }
+            pr_head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
+            [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+            require_ci "$pr_head_sha" pull_request
           else
             echo 'Unsupported source'; exit 1
           fi
+          require_ci "$EXPECTED_SHA" push
           comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$EXPECTED_SHA...main")"
           jq -e '.status == "identical" or .status == "ahead"' <<< "$comparison" >/dev/null || { echo 'Approved commit is not contained in main'; exit 1; }
-          test -f preview-public/index.html
-          test -f preview-public/assets/competition-page.js
+          SOURCE_GATE
+          bash "$RUNNER_TEMP/preview-source-gate.sh"
+          test -f preview-bundle/site/index.html
+          test -f preview-bundle/site/assets/competition-page.js
           # Verify the only permitted Vercel config before any credentials are available.
-          jq -e '. == {"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"},{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/app/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/app/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]}' preview-public/vercel.json >/dev/null
+          jq -e '. == {"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"},{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/app/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/app/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]}' preview-bundle/site/vercel.json >/dev/null
           for path in .github .git tools tests package.json; do
-            test ! -e "preview-public/$path"
+            test ! -e "preview-bundle/site/$path"
           done
+      - name: Independently verify downloaded inventory and all file hashes
+        env:
+          ARTIFACT_ROOT: preview-bundle/site
+          INVENTORY_PATH: preview-bundle/publication-manifest.json
+          EXPECTED_INVENTORY_SHA256: ${{ needs.stage-preview.outputs.inventory_sha256 }}
+          ARTIFACT_CONTRACT: ${{ inputs.artifact_contract }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          EXPECTED_DEBUG_MANIFEST_SHA256: ${{ inputs.expected_debug_manifest_sha256 }}
+        run: |
+          node --input-type=module <<'NODE'
+          // PUBLIC03_VERIFY_ARTIFACT_BEGIN
+          import {createHash} from "node:crypto";
+          import {lstatSync,readdirSync,readFileSync} from "node:fs";
+          import {join} from "node:path";
+          const {ARTIFACT_ROOT:root,INVENTORY_PATH:inventoryPath,EXPECTED_INVENTORY_SHA256:approvedInventory,
+            ARTIFACT_CONTRACT:contract,EXPECTED_SHA:sourceSha,EXPECTED_DEBUG_MANIFEST_SHA256:approvedDebug}=process.env;
+          function demand(ok,message){if(!ok)throw Error(message);}
+          const hash=bytes=>createHash("sha256").update(bytes).digest("hex");
+          const digest=value=>typeof value==="string"&&/^[0-9a-f]{64}$/.test(value);
+          const safe=path=>typeof path==="string"&&path.length>0&&path.split("/").every(s=>s&&s!=="."&&s!==".."&&!s.startsWith(".")&&!/[\\\x00-\x1f\x7f:]/.test(s));
+          demand(["public","protected_debug"].includes(contract),"Unknown contract");
+          demand(/^[0-9a-f]{40}$/.test(sourceSha||""),"Invalid source SHA");
+          demand(digest(approvedInventory),"Invalid inventory approval");
+          demand(lstatSync(root).isDirectory()&&!lstatSync(root).isSymbolicLink(),"Unsafe artifact root");
+          demand(lstatSync(inventoryPath).isFile()&&!lstatSync(inventoryPath).isSymbolicLink(),"Unsafe inventory");
+          const bytes=readFileSync(inventoryPath);
+          demand(hash(bytes)===approvedInventory,"Inventory hash mismatch");
+          const inventory=JSON.parse(bytes);
+          demand(inventory.schemaVersion===1&&inventory.contract===contract&&inventory.sourceSha===sourceSha,"Inventory identity mismatch");
+          const actual=[];
+          function walk(dir,prefix=""){
+            for(const name of readdirSync(dir).sort()){
+              const path=prefix+name,stat=lstatSync(join(dir,name));
+              demand(safe(path)&&!stat.isSymbolicLink(),"Unsafe path or symlink: "+path);
+              demand(!/^(?:tools|tests|docs|templates|node_modules)(?:\/|$)/.test(path)&&!/(?:^|\/)package(?:-lock)?\.json$/.test(path),"Repository payload forbidden");
+              if(stat.isDirectory())walk(join(dir,name),path+"/");
+              else {demand(stat.isFile(),"Nonregular artifact entry");actual.push(path);}
+            }
+          }
+          walk(root);actual.sort();
+          function verifyFiles(files,paths){
+            demand(Array.isArray(files)&&files.length===paths.length,"Inventory size mismatch");
+            files.forEach((file,i)=>{
+              demand(safe(file.path)&&file.path===paths[i]&&digest(file.sha256),"Inventory paths mismatch or duplicate");
+              demand(hash(readFileSync(join(root,file.path)))===file.sha256,"File hash mismatch: "+file.path);
+            });
+          }
+          verifyFiles(inventory.files,actual);
+          for(const required of ["index.html","assets/competition-page.js","vercel.json"])
+            demand(actual.includes(required),"Required asset missing");
+          if(contract==="public"){
+            demand(!approvedDebug,"Debug approval invalid for public");
+            for(const path of actual){
+              demand(!path.startsWith("__fa_dev__/"),"Debug path in public artifact");
+              if(/\.(?:html|js|mjs|css|json)$/.test(path))
+                demand(!/__fa_dev__|__faFixtureHooks|\bit1Demo\b|tests\/fixtures\/it-1-demo/.test(readFileSync(join(root,path),"utf8")),"Debug reference in public artifact");
+            }
+          }else{
+            demand(digest(approvedDebug),"Approved Debug manifest hash required");
+            const manifestPath="__fa_dev__/artifact-manifest.json";
+            demand(actual.includes(manifestPath),"Debug manifest missing");
+            const manifestBytes=readFileSync(join(root,manifestPath));
+            demand(hash(manifestBytes)===approvedDebug,"Debug manifest approval mismatch");
+            const manifest=JSON.parse(manifestBytes);
+            demand(manifest.schemaVersion===1&&manifest.contract==="protected_debug","Invalid Debug manifest identity");
+            verifyFiles(manifest.files,actual.filter(path=>path!==manifestPath));
+            const modules=["debug-settings","standings-client","debug-widget","standings-data","dev-standings-preview-data","stats-client","stats-data"].map(name=>"__fa_dev__/"+name+".mjs");
+            demand(JSON.stringify(actual.filter(path=>path.startsWith("__fa_dev__/")))===JSON.stringify([...modules,manifestPath].sort()),"Unexpected Debug modules");
+          }
+          console.log("Post-download inventory and hashes verified:",contract,actual.length,approvedInventory);
+          // PUBLIC03_VERIFY_ARTIFACT_END
+          NODE
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@64.5.0
       - name: Deploy to Preview, verify provider target, then update stable alias
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -189,13 +308,16 @@ jobs:
           SOURCE: ${{ inputs.source }}
           PR_NUMBER: ${{ inputs.pr_number }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ARTIFACT_CONTRACT: ${{ inputs.artifact_contract }}
+          EXPECTED_DEBUG_MANIFEST_SHA256: ${{ inputs.expected_debug_manifest_sha256 }}
         run: |
           set -euo pipefail
           test -n "$VERCEL_TOKEN" || { echo 'Missing VERCEL_TOKEN Actions secret'; exit 1; }
-          mkdir -p preview-public/.vercel
-          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > preview-public/.vercel/project.json
+          bash "$RUNNER_TEMP/preview-source-gate.sh"
+          mkdir -p preview-bundle/site/.vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > preview-bundle/site/.vercel/project.json
           # Production is forbidden: never add production flags or promotion.
-          deploy_args=(vercel deploy ./preview-public --yes --target=preview --archive=tgz --scope fra-gioco9 --token "$VERCEL_TOKEN" --meta "source=$SOURCE" --meta "source_sha=$EXPECTED_SHA")
+          deploy_args=(vercel deploy ./preview-bundle/site --yes --target=preview --archive=tgz --scope fra-gioco9 --meta "source=$SOURCE" --meta "source_sha=$EXPECTED_SHA")
           if [[ "$SOURCE" == "merged_pr" ]]; then
             [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid PR number for merged_pr source'; exit 1; }
             deploy_args+=(--meta "pr=$PR_NUMBER")
@@ -219,6 +341,7 @@ jobs:
           else
             echo 'Unsupported source; alias unchanged'; exit 1
           fi
+          bash "$RUNNER_TEMP/preview-source-gate.sh"
           # A new .vercel.app name can only be claimed by assigning it to a READY Preview.
           # Never reassign an existing alias from another project or unknown provider response.
           alias_response="$(mktemp)"
@@ -238,7 +361,7 @@ jobs:
               exit 1
               ;;
           esac
-          vercel alias set "$deployment_url" "$STABLE_PREVIEW_ALIAS" --scope fra-gioco9 --token "$VERCEL_TOKEN"
+          vercel alias set "$deployment_url" "$STABLE_PREVIEW_ALIAS" --scope fra-gioco9
           alias_info="$(curl --fail --silent --show-error --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$STABLE_PREVIEW_ALIAS?teamId=$VERCEL_ORG_ID")"
           deployment_id="$(jq -r '.id' <<< "$info")"
           jq -e --arg id "$VERCEL_PROJECT_ID" --arg alias "$STABLE_PREVIEW_ALIAS" --arg deployment "$deployment_id" \
@@ -250,6 +373,8 @@ jobs:
           else
             echo "- Source: main ($EXPECTED_SHA)"
           fi
+            echo "- Artifact contract: $ARTIFACT_CONTRACT"
+            echo "- Approved Debug manifest: $EXPECTED_DEBUG_MANIFEST_SHA256"
             echo "- Target: Preview (verified by Vercel API)"
             echo "- Stable protected URL: https://$STABLE_PREVIEW_ALIAS"
             echo "- Immutable deployment URL: $deployment_url"

@@ -13,17 +13,19 @@ function readMatchdays(){
 let matchdays=readMatchdays();
 let routeSeasonOverride=null;
 function availablePreviewSeasons(){
- return (document.documentElement.dataset.faDevSeasons||"1").split(",").map(Number)
-  .filter(season=>Number.isSafeInteger(season)&&season>=1&&season<=4);
+ const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
+  .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
+ return seasons.length?seasons:[1];
 }
 function selectedSeason(){
  const available=availablePreviewSeasons();
- // Preserve explicit URL season until the router has applied its state.
+ // Initial deep links are canonical until the app router emits an explicit route change.
  if(available.includes(routeSeasonOverride))return routeSeasonOverride;
  const requested=Number(new URL(window.location.href).searchParams.get("season"));
  if(available.includes(requested))return requested;
  const routed=Number(window.faCompetitionRoute?.get?.().season);
- return available.includes(routed)?routed:Math.max(1,...available);
+ if(available.includes(routed))return routed;
+ return Math.max(...available);
 }
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
@@ -61,23 +63,23 @@ const LANG = {
   en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
     letters: {W:"W",D:"D",L:"L"},
-    recent: "latest match", season:"Season" },
+    recent: "latest match" },
   de: { round: "Spieltag", dateUnknown: "Datum offen",
     home: "Heim", away: "Auswärts", W: "Sieg", D: "Remis", L: "Niederlage",
     letters: {W:"S",D:"U",L:"N"},
-    recent: "letztes Spiel", season:"Saison" },
+    recent: "letztes Spiel" },
   es: { round: "Jornada", dateUnknown: "Fecha pendiente",
     home: "Local", away: "Visitante", W: "Victoria", D: "Empate", L: "Derrota",
     letters: {W:"V",D:"E",L:"D"},
-    recent: "último partido", season:"Temporada" },
+    recent: "último partido" },
   fr: { round: "Journée", dateUnknown: "Date à définir",
     home: "Domicile", away: "Extérieur", W: "Victoire", D: "Nul", L: "Défaite",
     letters: {W:"V",D:"N",L:"D"},
-    recent: "dernier match", season:"Saison" },
+    recent: "dernier match" },
   it: { round: "Giornata", dateUnknown: "Data da definire",
     home: "Casa", away: "Trasferta", W: "Vittoria", D: "Pareggio", L: "Sconfitta",
     letters: {W:"V",D:"N",L:"P"},
-    recent: "ultima partita", season:"Stagione" }
+    recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
@@ -85,7 +87,6 @@ let previewState="OFF";
 let widgetRoot;
 function savedPreviewEnabled(){try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}}
 function isPreviewEnabled(){return previewState==="ON";}
-
 let historyRenderVersion=0;
 let historyManifest=null;
 function clearHistoryPreview(){

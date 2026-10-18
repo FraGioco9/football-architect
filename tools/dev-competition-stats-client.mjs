@@ -34,20 +34,22 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button[aria-pressed=true]{background:#176d61;color:#fff;font-weight:700}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-/* Shared card CSS lives in assets/app.css. DEV rules remain for leaderboard details. */
-.fa-dev-stats-section{margin:0 0 14px}
-.fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-/* Team leaderboard: rank | crest and wrapping club name | tabular value.
-   Only Teams rows grow with their content; keep the modal on the same grid. */
+.fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
+.fa-dev-stats-card span{font-size:.85rem;opacity:.75}
+.fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.fa-dev-stats-section{margin:0 0 20px}
+.fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
+.fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
 .fa-dev-stats-top{list-style:none;min-width:0;margin:0;padding:0}
 .fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(3.5ch,auto);align-items:center;column-gap:8px;min-width:0;min-height:38px;padding:5px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
+.fa-dev-stats-empty{font-size:.85rem;opacity:.65}
+.fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 .fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
 .fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
-.fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
-.fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
-@media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
 .fa-dev-stats-expand:hover{opacity:1;text-decoration:underline}
 .fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
@@ -66,8 +68,13 @@ if (panel && divisionId) {
 .fa-dev-stats-dialog-close{border:0;background:transparent;color:inherit;font:inherit;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;padding:0}
 .fa-dev-stats-dialog-close:focus,.fa-dev-stats-dialog-close:focus-visible{outline:none;box-shadow:none;background:transparent}
 @media(max-width:760px){.fa-dev-stats-leader-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
 @media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
-`;
+@media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
+
+.fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
+.fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
+@media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}`;
   document.head.append(style);
   const root = create("div");
   root.id = "fa-dev-stats";
@@ -76,9 +83,13 @@ if (panel && divisionId) {
   let view = "overview";
   const number = value => Number.isInteger(value) ? String(value) : value.toFixed(2);
   function selectedSeason() {
-    const value = Number(new URLSearchParams(location.search).get("season"));
-    const available=(document.documentElement.dataset.faDevSeasons||"1").split(",").map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
-    return available.includes(value)?value:Math.max(1,...available);
+    const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
+      .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
+    const available=seasons.length?seasons:[1];
+    const requested=Number(new URLSearchParams(location.search).get("season"));
+    if(available.includes(requested))return requested;
+    const routed=Number(window.faCompetitionRoute?.get?.().season);
+    return available.includes(routed)?routed:Math.max(...available);
   }
   function selectedMatchdays() {
     try {
