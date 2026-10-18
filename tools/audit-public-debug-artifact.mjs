@@ -16,7 +16,8 @@ const checks=[
  ["private_key", /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/g],
  ["bearer", /\bBearer\s+[A-Za-z0-9._~+\/-]{12,}/ig],
  ["write_method", /(?:\bmethod\s*:\s*["\'`](?:POST|PUT|PATCH|DELETE)["\'`]|\.open\s*\(\s*["\'`](?:POST|PUT|PATCH|DELETE)["\'`])/ig],
- // Ordinary fetch() is a network read unless an explicit unsafe method is specified.\n ["write_api", /\b(?:sendBeacon|XMLHttpRequest|WebSocket)\s*\(/g],
+ // Ordinary fetch() is a network read unless an explicit unsafe method is specified.
+ ["write_api", /\b(?:sendBeacon|XMLHttpRequest|WebSocket)\s*\(/g],
  ["sensitive_reference", /(?:process\.env\b|import\.meta\.env\b|\bAuthorization\s*:|\/api\/(?:admin|internal|private)\b)/ig],
  ["dynamic_execution", /\b(?:eval|new\s+Function)\s*\(/g]
 ];
