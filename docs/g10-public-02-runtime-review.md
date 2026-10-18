@@ -1,5 +1,25 @@
 # G10-PUBLIC-02 — Browser runtime source review
 
+**Current disposition (2026-10-18): PASS for reviewed static capability exposure and the exercised browser flow. Publication remains blocked.**
+
+The earlier HOLD below records an incomplete review at its historical baseline. The later complete content review and merged PR #201 supersede that source-exposure limitation for `bc2e2855813f8aec557eaeb0cdea650eff1b22a9` and its identical-tree main squash `c1609071cef9f1d5884717b971bdae564f1ef21d`. See the [canonical exposure audit](g10-public-02-exposure-audit.md) for inventory, hashes, content findings and exact scope.
+
+## Completed runtime reconciliation
+
+- Reviewed six distinct Debug module sources staged at seven destinations, plus all seven inherited JavaScript files. The two staged standings-data names contain the same deterministic source. The local DEV server itself is not a published browser module.
+- Four explicit fetch sites read static JSON with default GET: standings and Stats read the competition manifest, the shared competition page reads its manifest, and app search reads the division catalogue. Fixed local script loading was reviewed. No privileged Authorization header or server-mutation capability was identified.
+- Fictional enablement, matchdays, reset, widget position and section expansion operate on browser sessionStorage and UI events. Theme/language use localStorage; tab scrolling uses sessionStorage. Local reset is not a hosted/database write.
+- PR #201 browser acceptance exercises canonical URLs, Seasons 1–4 deep links and season-picker transitions, rendered standings/Stats against deterministic data, Fixtures, Stats subviews, numeric/slider/stepper controls, invalid input, page/global reset and same-origin persistence.
+- The test retains exceptions and console errors in the Node process across document navigation, observes requests through CDP, checks same-origin GET-only traffic and rejects the socket/stream activity it observes. Chrome shutdown is awaited before temporary profile cleanup, resolving the observed ENOTEMPTY race without removing acceptance assertions.
+- [Exact-head PR CI #39157575557](https://github.com/FraGioco9/football-architect/actions/runs/39157575557) and [post-merge main CI #39158710813](https://github.com/FraGioco9/football-architect/actions/runs/39158710813): **167/167 PASS**, zero failures/skips, including the Debug browser flow and theme matrix.
+
+These results cover the tested routes, controls and viewport assertions. They do not establish full accessibility, all browser states, actual iPhone behavior, exhaustive request-dataflow safety or anonymous Vercel access. Those hosted acceptance obligations remain in PUBLIC-04; provider changes and Preview publication require separate authorization. Preserve the `protected_debug` fail-closed refusal.
+
+## Historical source-review record
+
+The following source inspection and HOLD decision are retained verbatim for their earlier baseline; they do not override the scoped current conclusion above.
+
+
 Source baseline: `81ac6e92b543a86af61573013c433f4067dc2b9c`.
 
 ## Confirmed evidence
