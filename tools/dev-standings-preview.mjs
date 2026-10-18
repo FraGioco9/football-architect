@@ -5,7 +5,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
-import { DEBUG_FIRST_PAINT } from "./dev-preview-artifact.mjs";
+import { DEBUG_FIRST_PAINT, DEBUG_SEASONS } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,7 +33,7 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/(?:app\/)?competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
-const DEV_SEASONS = [1, 2, 3, 4]; // Isolated fictional DEV previews only; never official season data.
+const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const latestDevSeason = String(Math.max(...DEV_SEASONS));
 const INJECT = [
   `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,

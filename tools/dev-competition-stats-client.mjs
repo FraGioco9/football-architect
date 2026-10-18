@@ -74,8 +74,13 @@ if (panel && divisionId) {
   let view = "overview";
   const number = value => Number.isInteger(value) ? String(value) : value.toFixed(2);
   function selectedSeason() {
-    const value = Number(new URLSearchParams(location.search).get("season"));
-    return value === 1 || value === 2 ? value : 2;
+    const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
+      .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
+    const available=seasons.length?seasons:[1];
+    const requested=Number(new URLSearchParams(location.search).get("season"));
+    if(available.includes(requested))return requested;
+    const routed=Number(window.faCompetitionRoute?.get?.().season);
+    return available.includes(routed)?routed:Math.max(...available);
   }
   function selectedMatchdays() {
     try {
