@@ -49,7 +49,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    res.writeHead(404);res.end();
   }
  });
- let proc,socket;
+ let proc,socket,chromeClosed;
  try{
   await new Promise((ok,fail)=>{server.once("error",fail);server.listen(0,"127.0.0.1",ok)});
   const origin="http://127.0.0.1:"+server.address().port;
@@ -57,6 +57,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    "--no-proxy-server","--disable-background-networking","--disable-extensions","--disable-sync",
    "--no-first-run","--no-default-browser-check","--remote-debugging-port=0",
    "--user-data-dir="+join(temp,"chrome"),"about:blank"],{stdio:["ignore","ignore","pipe"]});
+  chromeClosed=new Promise(resolve=>proc.once("close",resolve));
   let stderr="";proc.stderr.on("data",x=>stderr+=x.toString());
   let endpoint;
   for(let i=0;i<150&&!endpoint;i++){
@@ -228,8 +229,12 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   }
  }finally{
   try{socket?.close()}catch{}
-  if(proc){proc.kill();await delay(150)}
+  if(proc){
+   // Await process/pipe closure instead of racing profile writes with a fixed delay.
+   const forceKill=setTimeout(()=>proc.kill("SIGKILL"),5000);
+   try{proc.kill();await chromeClosed}finally{clearTimeout(forceKill)}
+  }
   if(server.listening)await stopServer(server);
-  rmSync(temp,{recursive:true,force:true});
+  rmSync(temp,{recursive:true,force:true,maxRetries:5,retryDelay:100});
  }
 });
