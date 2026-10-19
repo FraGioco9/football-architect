@@ -546,7 +546,6 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       document.querySelector(".app-world-standing-scroll")].filter(Boolean);
     const scrollState=scrollHosts.map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
     const focused=document.activeElement;
-    if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
     // Only an active season has a "current matchday" shortcut. The router owns
