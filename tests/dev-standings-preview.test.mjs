@@ -681,7 +681,7 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
  assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-client.mjs"),false);assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-data.mjs"),false);
 });
 
-test("DEV-SAFARI-FIRST-PAINT: a season switch guards old standings until the latest render commits",async()=>{
+test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and rejects stale commits",async()=>{
  assert.ok(serverSource.includes('html[data-fa-dev-season-transition="true"] #competition-panel-standings'),
   "The DEV server must install its visibility rule before the route changes");
  const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
@@ -706,17 +706,16 @@ test("DEV-SAFARI-FIRST-PAINT: a season switch guards old standings until the lat
   for(const listener of events['fa:competition-route-change']||[])listener();
  };
  navigate(2);
- assert.equal(dataset.faDevSeasonTransition,'true',
-  'Old data is masked synchronously in the same task as the navigation');
+ assert.equal(dataset.faDevSeasonTransition,undefined,'Incremental transition keeps standings visible');
  await flush();assert.equal(pending.length,1);
- assert.equal(dataset.faDevSeasonTransition,'true','Still hidden while the data fetch is pending');
+ assert.equal(dataset.faDevSeasonTransition,undefined,'Incremental transition keeps standings visible');
 
  navigate(3);
- assert.equal(dataset.faDevSeasonTransition,'true');
+ assert.equal(dataset.faDevSeasonTransition,undefined);
  pending[0](()=>cleanups.push('stale'));
  await flush();
  assert.deepEqual(cleanups,['stale'],'Stale season cannot commit to the current route');
- assert.equal(dataset.faDevSeasonTransition,'true','Stale request cannot release the new guard');
+ assert.equal(dataset.faDevSeasonTransition,undefined,'Incremental transition keeps standings visible');
  assert.equal(pending.length,2);
  pending[1](()=>cleanups.push('current'));
  await flush();
