@@ -484,6 +484,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
  .app-fixture-status,.app-fixture-stadium{font-size:10px}
  .app-fixture-stadium{width:auto;max-width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;white-space:normal;height:2.8em;overflow:hidden}
 }
+@media(max-width:420px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 100px}}
 
 /* Prevent a different view/season flashing before URL state is bound. */
 html[data-competition-view="standings"] .app-competition-panel:not(#competition-panel-standings){display:none}
