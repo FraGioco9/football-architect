@@ -174,6 +174,7 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
  assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:var\(--fa-record-heading\) auto/);
+ assert.match(css,/\.app-competition-stat-label\{[^}]*font-size:\.875rem;font-weight:700/);
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
  assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
  assert.match(css,/\.app-competition-stat-card\{--fa-record-heading:42px;[^}]*padding:10px 12px/);
