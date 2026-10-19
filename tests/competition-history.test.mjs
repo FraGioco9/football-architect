@@ -55,6 +55,60 @@ test('A partial first season shows the completed-seasons empty state inside Seas
  assert.equal(table.children.length,2,'Completed seasons restore the archive header and list');
  assert.equal(table.children[1].className,'app-history-dev-archive');
 });
+test('Season archive only navigates to Standings and never claims a selected History season',()=>{
+ const source=client.slice(client.indexOf('  for(const item of [...seasons].reverse()){'),client.indexOf('  const records=section("historyHistoricalRecords"',client.indexOf('  for(const item of [...seasons].reverse()){')));
+ assert.ok(source.includes('button.dataset.historySeason=String(item.season)'));
+ assert.ok(source.includes('button.addEventListener("click",()=>openHistorySeason(item.season))'));
+ assert.doesNotMatch(source,/aria-pressed|chosen/,'Archive rows are navigation buttons, not toggle selections');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.doesNotMatch(css,/app-history-dev-season-button\[aria-pressed=/);
+});
+test('Shared record holders expose all ties with an accessible reversible +N expander',()=>{
+ const start=client.indexOf('function historyExpandableHolders(');
+ const end=client.indexOf('\nasync function renderHistoryPreview()',start);
+ assert.ok(start>=0&&end>start);
+ function node(tag,className='',textContent=''){
+  return {tag,className,textContent,children:[],dataset:{},attributes:{},hidden:false,events:{},
+   append(...items){this.children.push(...items)},
+   addEventListener(kind,fn){this.events[kind]=fn},
+   setAttribute(key,value){this.attributes[key]=value},
+   getAttribute(key){return this.attributes[key]??null}};
+ }
+ const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{
+  historyNode:node,historyLabel:key=>{const item=node('span');item.dataset.appI18n=key;return item;}
+ });
+ for(const count of [0,1,2]){
+  const card=node('article'),holders=node('div');
+  for(let i=0;i<count;i++)holders.append(node('div'));
+  fn(card,holders,'attack');
+  assert.equal(card.children.length,0,'No expansion control for '+count+' tied entries');
+  assert.equal(holders.children.filter(entry=>entry.hidden).length,0);
+ }
+ const card=node('article'),holders=node('div');
+ for(let i=0;i<5;i++)holders.append(node('div'));
+ fn(card,holders,'points');
+ assert.equal(holders.children.length,5,'All tied results remain in DOM');
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
+ assert.ok(holders.children.slice(2).every(row=>Object.hasOwn(row.dataset,'historyTieExtra')));
+ assert.equal(card.children.length,1);
+ const toggle=card.children[0];
+ assert.equal(toggle.dataset.historyRecordExpand,'points');
+ assert.equal(toggle.getAttribute('aria-expanded'),'false');
+ assert.equal(toggle.getAttribute('aria-controls'),holders.id);
+ assert.equal(toggle.children[0].textContent,'+3');
+ assert.equal(toggle.children[1].dataset.appI18n,'historyShowAll');
+ assert.equal(toggle.children[2].dataset.appI18n,'historyShowLess');
+ assert.equal(toggle.children[2].hidden,true);
+ toggle.events.click();
+ assert.equal(toggle.getAttribute('aria-expanded'),'true');
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,false,false,false]);
+ assert.equal(toggle.children[0].hidden,true);
+ assert.equal(toggle.children[1].hidden,true);
+ assert.equal(toggle.children[2].hidden,false);
+ toggle.events.click();
+ assert.equal(toggle.getAttribute('aria-expanded'),'false');
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
+});
 test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
  assert.equal(typeof previewData.previewSeasonMatchdays,'function');
  const stored=new Map([['football-architect:standings-dev-season','2'],['football-architect:standings-dev-matchdays','13']]);
@@ -226,6 +280,8 @@ test('History improved layout preserves archive navigation, confirmed records an
   const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
   assert.ok(start>=0&&end>start);
   assert.doesNotMatch(app.slice(start,end),/historyProvisional:/);
+  for(const key of ['historyShowAll','historyShowLess'])
+   assert.equal((app.slice(start,end).match(new RegExp('\\\\b'+key+':','g'))||[]).length,1,lang+' '+key);
  }
 });
 test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
