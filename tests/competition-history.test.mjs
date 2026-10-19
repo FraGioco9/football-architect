@@ -216,7 +216,7 @@ test('History improved layout preserves archive navigation, confirmed records an
  assert.match(css,/\.app-history-dev-archive-champion\{opacity:1;font-weight:750\}/);
  assert.match(css,/@media\(max-width:360px\)/);
  for(const lang of ['en','de','es','fr','it']){
-  const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\\n    }',start);
+  const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
   assert.ok(start>=0&&end>start);
   assert.match(app.slice(start,end),/historyProvisional:/);
  }
