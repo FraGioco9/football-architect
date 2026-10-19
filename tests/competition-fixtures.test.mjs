@@ -207,3 +207,13 @@ test('FIXTURES-POSTSEASON: invalid extra fixtures fail before mutating the leagu
   assert.throws(()=>view.prepare(schedule(d,30),{postseason:invalid}));assert.equal(fields.get('app-fixtures-list').children,before);
  }
 });
+
+// Regression: Debug progress must not detach mounted crest hosts on incremental updates.
+test("DEBUG-CREST-01 preserves mounted standings and Fixtures crest hosts",()=>{
+ const dev=readFileSync(new URL("../tools/dev-standings-preview-client.mjs",import.meta.url),"utf8");
+ const fixtures=readFileSync(new URL("../assets/competition-fixtures.js",import.meta.url),"utf8");
+ assert.match(dev,/if\(restorePrevious\?\.refresh[\s\S]*?return restorePrevious;[\s\S]*?if\(restorePrevious\)restorePrevious\(\);/);
+ assert.match(fixtures,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
+ assert.match(fixtures,/return previous;/);
+ assert.doesNotMatch(fixtures,/fields\.list\.replaceChildren\(\.\.\.matches\)/);
+});
