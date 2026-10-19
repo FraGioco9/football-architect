@@ -212,7 +212,7 @@
   // When no verified records exist for the selected scope, replace an entire
   // empty grid with a single localized status. This also covers public History.
   for(const group of panel.querySelectorAll('[data-history-team-records]')){
-   const grid=group.querySelector('.app-competition-stat-grid');if(!grid)continue;
+   const grid=group.querySelector?.('.app-competition-stat-grid');if(!grid)continue;
    const records=[...grid.querySelectorAll('.app-competition-stat-card[data-history-scope]')];
    const hasRecords=records.some(card=>card.dataset.historyScope===scope&&
     card.querySelector('.app-competition-stat-value'));
