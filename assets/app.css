@@ -271,6 +271,10 @@ html{scroll-padding-top:72px}
 .app-world-club-identity{display:flex;align-items:center;gap:8px;min-width:0}
 .app-world-club-crest-placeholder{display:grid;place-items:center;position:relative;flex:0 0 26px;width:26px;height:28px;border:1px dashed #567970;border-radius:7px;background:rgba(100,203,169,.05);color:#83a79b}
 .app-world-club-crest-placeholder::before{content:"";display:block;width:13px;height:16px;background:currentColor;clip-path:polygon(50% 0%,90% 13%,87% 70%,50% 98%,13% 70%,10% 13%);opacity:.6}
+.app-world-club-crest-placeholder img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
+.app-world-club-crest-placeholder.app-world-club-crest-loaded,html[data-theme="light"] .app-world-club-crest-placeholder.app-world-club-crest-loaded{border-color:transparent;background:transparent}
+.app-world-club-crest-loaded::before{display:none}
+.app-world-club-crest-loaded img{opacity:1}
 .app-world-club-name{min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;font-weight:650;line-height:1.35}
 .app-world-stat-unknown{color:var(--muted)}
 @media(max-width:1024px){.app-world-countries{grid-template-columns:1fr}}
@@ -289,7 +293,8 @@ html{scroll-padding-top:72px}
 .app-world-mobile-summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:8px}
 .app-world-mobile-details[open]>.app-world-mobile-summary,.app-world-mobile-summary:hover{background:rgba(100,203,169,.065)}
 .app-world-mobile-position{grid-area:position;padding-left:4px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
-.app-world-mobile-name{grid-area:name;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.35;font-weight:700}
+.app-world-mobile-name{grid-area:name;display:flex;align-items:center;gap:6px;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.35;font-weight:700}
+.app-world-mobile-name>span:last-child{min-width:0}
 .app-world-mobile-points{grid-area:points;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border-radius:7px;background:#26473e;color:#effff4;font-size:16px;font-weight:850;font-variant-numeric:tabular-nums}
 .app-world-mobile-form{grid-area:form;display:flex;align-items:center;gap:3px;min-width:0}
 .app-world-mobile-form .app-world-form-dot{width:16px;height:16px;cursor:default}

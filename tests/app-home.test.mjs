@@ -141,7 +141,8 @@ test("HOME-01 keeps five localized language options only in Settings and does no
     assert.match(markup,/id="app-data-heading"/);
     assert.match(markup,/id="app-about-heading"/);
   }
-  assert.doesNotMatch(js,/indexedDB|fetch\(|localStorage\.setItem|simulateMatch/);
+  // Read-only artwork fetching is allowed; career state and simulation remain absent.
+  assert.doesNotMatch(js,/indexedDB|localStorage\.setItem|simulateMatch/);
   assert.doesNotMatch(pages.settings,/data-action="(?:import|export|delete-career)"/);
 });
 

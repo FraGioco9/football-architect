@@ -12,7 +12,7 @@ const required=[
  "app/calendar/index.html","app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
- "data/divisions.json"
+ "data/divisions.json","assets/clubs/manifest.json"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"app/competitions/"+country+"-"+tier+"/index.html"));
@@ -29,6 +29,9 @@ const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","ap
 const competitionRouting={"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"},{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/app/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/app/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]};
 
 export function isAllowlistedPublicPath(path) {
+ if(path==="assets/clubs/manifest.json")return true;
+ if(path.startsWith("assets/clubs/"))
+  return /^assets\/clubs\/(?:BR|DE|ENG|ES|FR|IT|NL|PT)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(path);
  if(path.startsWith("assets/divisions/"))return validateDivisionAssets().paths.has(path);
  if(rootFiles.has(path)||divisions.includes(path))return true;
  if(path.startsWith("assets/brand/"))

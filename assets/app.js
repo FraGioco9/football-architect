@@ -676,3 +676,50 @@
   });
   renderView();
 })();
+
+// Club crests share the same placeholder contract in static and dynamic views.
+(() => {
+  "use strict";
+  const source = document.currentScript?.src;
+  if (!source) return;
+  const assets = new URL("./", source);
+  const selector = "[data-club-crest]";
+  const validKey = /^(?:BR|DE|ENG|ES|FR|IT|NL|PT)-(?:[1-9]|[1-3][0-9]|40)$/;
+  const processed = new WeakSet();
+  let available;
+  function hydrate(root) {
+    if (!available) return;
+    const nodes = root.matches?.(selector) ? [root] : [];
+    nodes.push(...(root.querySelectorAll?.(selector) || []));
+    for (const node of nodes) {
+      if (processed.has(node)) continue;
+      processed.add(node);
+      const key = node.dataset.clubCrest;
+      if (!available.has(key)) continue;
+      const [country, id] = key.split("-");
+      const image = document.createElement("img");
+      image.alt = ""; // The adjacent club name already identifies the club.
+      image.decoding = "async";
+      image.addEventListener("load", () => node.classList.add("app-world-club-crest-loaded"), {once:true});
+      image.addEventListener("error", () => {
+        node.classList.remove("app-world-club-crest-loaded");
+        image.remove();
+      }, {once:true});
+      image.src = new URL("clubs/" + country + "/" + id + "/crest.svg", assets).href;
+      node.append(image);
+    }
+  }
+  // Install before fetching so rows arriving during the request are included.
+  new MutationObserver(records => {
+    for (const record of records) for (const node of record.addedNodes) hydrate(node);
+  }).observe(document.body, {childList:true, subtree:true});
+  fetch(new URL("clubs/manifest.json", assets)).then(response => {
+    if (!response.ok) throw Error("Club crest index unavailable");
+    return response.json();
+  }).then(keys => {
+    if (!Array.isArray(keys) || keys.some(key => typeof key !== "string" || !validKey.test(key)) ||
+        new Set(keys).size !== keys.length) throw Error("Invalid club crest index");
+    available = new Set(keys);
+    hydrate(document);
+  }).catch(() => { /* Retain the existing placeholders when the index is unavailable. */ });
+})();

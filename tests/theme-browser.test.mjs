@@ -489,6 +489,42 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"DEV OFF hides all navigation and shows the empty state");
       console.log("FIXTURES_MOBILE_PASS|"+width+"|"+theme+"|touch menus, arrows, season changes, current round, refresh, empty state, zero completed games, five-language layout");
     }
+    // Real SVG decoding, responsive geometry, dynamic rows and network failures.
+    for(const width of [1440,390,320]) for(const theme of ["dark","light"]) {
+      await cmd("Emulation.setDeviceMetricsOverride",{width,height:900,deviceScaleFactor:1,mobile:false});
+      for(const country of ["br","de","pt"]) {
+        await visit("/competitions/"+country+"-1");
+        await run("document.documentElement.dataset.theme="+JSON.stringify(theme));
+        const key=country.toUpperCase()+"-1";
+        const slot=(width<=620?"#app-standings-compact ":"#app-standings-full ")+`[data-club-crest="${key}"]`;
+        await wait("document.querySelector("+JSON.stringify(slot)+")?.classList.contains('app-world-club-crest-loaded')");
+        const result=await run(`(()=>{const node=document.querySelector(${JSON.stringify(slot)}),image=node.querySelector('img'),style=getComputedStyle(node),r=node.getBoundingClientRect(),i=image.getBoundingClientRect();return {decoded:image.complete&&image.naturalWidth>0,fit:i.width>0&&i.height>0&&i.width<=r.width&&i.height<=r.height,contain:getComputedStyle(image).objectFit,background:style.backgroundColor,placeholder:getComputedStyle(node,'::before').display,decorative:image.alt===''&&node.getAttribute('aria-hidden')==='true',unknown:[...document.querySelectorAll('[data-club-crest]')].filter(n=>n.dataset.clubCrest!=='${key}').every(n=>!n.querySelector('img')),requests:[...new Set(performance.getEntriesByType('resource').filter(e=>/assets\\/clubs\\/.*crest\\.svg/.test(e.name)).map(e=>e.name))]}})()`);
+        assert.equal(result.decoded,true);assert.equal(result.fit,true);assert.equal(result.contain,"contain");
+        assert.equal(result.background,"rgba(0, 0, 0, 0)");assert.equal(result.placeholder,"none");
+        assert.equal(result.decorative,true);assert.equal(result.unknown,true);assert.equal(result.requests.length,1);
+      }
+      await snap("CLUB-CRESTS "+width+" "+theme,width,900);
+    }
+    await run(`(()=>{const node=document.createElement('span');node.className='app-world-club-crest-placeholder';node.dataset.clubCrest='PT-1';node.id='crest-dynamic-probe';document.querySelector('.app-main').append(node)})()`);
+    await wait("document.getElementById('crest-dynamic-probe').classList.contains('app-world-club-crest-loaded')");
+    assert.equal(await run("document.getElementById('crest-dynamic-probe').querySelectorAll('img').length"),1);
+    await cmd("Network.enable");
+    let failedCrestRequests=0;
+    const trackFailure=event=>{if(JSON.parse(event.data).method==="Network.loadingFailed")failedCrestRequests++};
+    socket.addEventListener("message",trackFailure);
+    for(const blocked of ["*/assets/clubs/PT/1/crest.svg","*/assets/clubs/manifest.json"]) {
+      failedCrestRequests=0;
+      await cmd("Network.setBlockedURLs",{urls:[blocked]});
+      await cmd("Network.clearBrowserCache");
+      await visit("/competitions/pt-1");
+      for(let i=0;i<100&&!failedCrestRequests;i++)await delay(50);
+      assert.ok(failedCrestRequests>0,"blocked crest/index request must actually fail");
+      await wait("!document.querySelector('[data-club-crest=\"PT-1\"] img')");
+      assert.equal(await run("getComputedStyle(document.querySelector('[data-club-crest=\"PT-1\"]'),'::before').display"),"block");
+    }
+    await cmd("Network.setBlockedURLs",{urls:[]});
+    socket.removeEventListener("message",trackFailure);
+    checks.push("club crests: 3 decoded SVGs, 3 widths, 2 themes, dynamic rows and image/index failure fallback");
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
     try{socket?.close();}catch{}

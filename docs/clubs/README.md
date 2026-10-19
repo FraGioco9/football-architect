@@ -1,5 +1,11 @@
 # Club identity catalogue
 
+## Website crests
+
+Club artwork uses `assets/clubs/<countryId>/<clubId>/crest.svg`, keyed by permanent club identity rather than division. Run `node tools/generate-app-pages.mjs` after adding artwork to refresh `assets/clubs/manifest.json`; `--check` detects a stale index. Only canonical crest SVG paths and the generated index are eligible public assets.
+
+The shared app runtime decorates existing club placeholders in standings, fixtures and statistics, including rows replaced by the local Debug preview. Available SVGs retain their aspect ratio and transparency. Unknown clubs, failed image loads and an unavailable or invalid index retain the existing placeholder. Club names remain adjacent accessible text; crest images are decorative. No scores, allocations or club identity data are changed.
+
 The sole approved club registry is [the canonical CSV](../../data/clubs-registry.csv), mirrored by [the flat JSON array](../../data/clubs.json). Both contain 320 clubs across eight countries, 40 clubs per country, ordered by country code and national club ID.
 
 ## Fields

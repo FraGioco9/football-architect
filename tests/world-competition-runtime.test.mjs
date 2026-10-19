@@ -145,6 +145,11 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.equal(rows.length,16,division.id);
    const mobileRows=r.fields.get("app-standings-compact-list").children;
    assert.equal(mobileRows.length,16,"mobile rows match canonical table");
+   for(const row of mobileRows){
+    const identity=row.children[0].children[0].children[1];
+    assert.equal(identity.children[0]?.dataset.clubCrest,row.dataset.worldClub,"visible mobile identity has its canonical crest slot");
+    assert.equal(identity.children[0]?.attrs["aria-hidden"],"true");
+   }
    assert.deepEqual(mobileRows.map(x=>x.dataset.worldClub),
      rows.map(x=>x.dataset.worldClub));
    assert.ok(!r.body.innerHTML.includes('id="app-standings-layout-switch"'));

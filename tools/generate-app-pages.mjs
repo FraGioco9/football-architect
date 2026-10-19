@@ -1,5 +1,5 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
-import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
 import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-assets.mjs";
 
@@ -283,4 +283,8 @@ for(const page of outputPages){
  writeOutput(page.path,normalizeRouteLinks(html,page.path));
 }
 writeOutput("app/competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
+// Artwork belongs to a canonical club ID, independently of its division allocation.
+const clubCrests=clubData.filter(c=>existsSync(new URL(`../assets/clubs/${c.countryId}/${c.clubId}/crest.svg`,import.meta.url)))
+ .map(c=>c.countryId+"-"+c.clubId).sort();
+writeOutput("assets/clubs/manifest.json",JSON.stringify(clubCrests,null,2)+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest");
