@@ -123,6 +123,32 @@
     const matchRows=[...document.querySelectorAll("[data-postseason-row]")];
     const resolutions=[...document.querySelectorAll("[data-postseason-resolution]")];
     const winner=document.getElementById("app-postseason-winner");
+    // Align playout connector and winner to the actual boundary between team rows.
+    // Text notes below the teams must not affect either position.
+    if(division.tier===1){
+      const left=bracket.querySelector(".app-knockout-left");
+      const result=bracket.querySelector(".app-knockout-result");
+      const teamRows=left?.querySelectorAll(".app-knockout-team-row");
+      if(left&&result&&teamRows?.length===2){
+        const align=()=>{
+          const first=teamRows[0].getBoundingClientRect();
+          const second=teamRows[1].getBoundingClientRect();
+          const origin=left.getBoundingClientRect();
+          const axis=(first.bottom+second.top)/2-origin.top;
+          left.style.setProperty("--playout-axis",axis+"px");
+          const resultOrigin=result.getBoundingClientRect();
+          const box=result.querySelector(".app-postseason-group");
+          if(box&&window.matchMedia("(min-width:1001px)").matches){
+            result.style.marginTop=(origin.top+axis-resultOrigin.top+result.offsetTop-box.offsetHeight/2)+"px";
+          }else result.style.removeProperty("margin-top");
+        };
+        const observer=new ResizeObserver(align);
+        observer.observe(left.querySelector(".app-postseason-group")||left);
+        observer.observe(result.querySelector(".app-postseason-group")||result);
+        window.addEventListener("resize",align);
+        requestAnimationFrame(align);
+      }
+    }
     const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
     const closeTips=bindPostseasonTips();
     let current={rows:null,results:null};
