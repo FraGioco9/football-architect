@@ -203,7 +203,7 @@ test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1â€
  }
  const standings=readFileSync(join(repositoryRoot,"tools","dev-standings-preview-client.mjs"),"utf8");
  const stats=readFileSync(join(repositoryRoot,"tools","dev-competition-stats-client.mjs"),"utf8");
- const standingFunctions=sourceFunction(standings,"availableSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
+ const standingFunctions=sourceFunction(standings,"availablePreviewSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
  const statsFunction=sourceFunction(stats,"selectedSeason");
  const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
   const url=new URL("https://example.test/competitions/it-1?season="+season);

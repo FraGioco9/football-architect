@@ -145,7 +145,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
   await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card').length===7");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[2].click()");
-  await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-player-empty').length===4");
+  await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card .fa-dev-stats-empty').length===4");
   await run("document.querySelector('[data-dev-control=\"matchdays-number\"]').value='10';document.querySelector('[data-dev-control=\"matchdays-number\"]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='10' && !document.querySelector('[data-dev-control=\"matchdays-number\"]').disabled");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[0].click()");
