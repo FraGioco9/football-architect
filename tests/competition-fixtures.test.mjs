@@ -170,7 +170,7 @@ const postseasonSchedule=(d,day)=>{
  if(result.final)games.push({round:33,kickoff:null,...result.final});
  return games;
 };
-test('FIXTURES-POSTSEASON: qualification adds one named round after 30 with known legs and finalists only',()=>{
+test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qualification',()=>{
  for(const d of divisions){
   const {view,fields,route}=setup(d),key=d.tier===1?'playout':'playoffs';
   view.prepare(schedule(d,29),{postseason:postseasonSchedule(d,29)})();
