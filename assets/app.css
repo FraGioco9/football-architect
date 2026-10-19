@@ -767,6 +767,8 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .app-knockout-tooltip[hidden]{display:none!important}
 .app-knockout-team-row[data-postseason-winner="true"] .app-postseason-team{font-weight:800}
 .app-knockout-team-row[data-postseason-winner="true"]{background:color-mix(in srgb,var(--surface) 94%,var(--standing-outcome-color) 6%)}
+/* Slightly extend the winner-row highlight horizontally without changing row geometry. */
+.app-postseason-grid .app-knockout-team-row[data-postseason-winner="true"]{margin-inline:-6px;padding-inline:6px;border-radius:5px}
 .app-knockout-resolution{margin:8px 0 0;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
 .app-knockout-resolution strong{margin-inline-start:5px;color:var(--text)}
 .app-knockout-winner-name{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;line-height:1.4;min-height:40px}
