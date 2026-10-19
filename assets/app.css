@@ -741,3 +741,16 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .app-knockout-right .app-postseason-group h3{text-align:end}
 @media(max-width:360px){.app-postseason-grid{--knockout-score-size:22px}}
 
+
+/* Score-column help and staged post-season outcomes. */
+.app-knockout-column{position:relative;min-width:0}
+.app-knockout-help{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:28px;padding:0;border:0;border-bottom:1px dotted var(--muted);background:transparent;color:inherit;font:inherit;cursor:help}
+.app-knockout-help:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.app-knockout-tooltip{position:fixed;z-index:10000;top:0;left:0;bottom:auto;transform:none;width:max-content;max-width:calc(100vw - 24px);padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--text);box-shadow:0 4px 15px #0004;font-size:12px;font-weight:500;line-height:1.4;white-space:normal;text-align:center}
+.app-knockout-tooltip[hidden]{display:none!important}
+.app-knockout-team-row[data-postseason-winner="true"] .app-postseason-team{font-weight:800}
+.app-knockout-team-row[data-postseason-winner="true"]{background:color-mix(in srgb,var(--surface) 94%,var(--standing-outcome-color) 6%)}
+.app-knockout-resolution{margin:8px 0 0;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+.app-knockout-resolution strong{margin-inline-start:5px;color:var(--text)}
+.app-knockout-winner-name{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;line-height:1.4}
+.app-knockout-winner-name .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px}

@@ -8,7 +8,7 @@ import {tmpdir} from "node:os";
 import {join,extname} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {stageProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
-import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
+import {createPreviewStandings,createPreviewPostseason} from "../tools/dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "../tools/dev-competition-stats-data.mjs";
 import {repositoryRoot,publicRequestFile} from "../tools/publication-guard.mjs";
 
@@ -191,9 +191,31 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    await run("document.querySelector('[data-dev-control-row=matchdays] .fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
    await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+value+"' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   }
-  await run("document.querySelector('[data-dev-control=matchdays-number]').value='31';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='34';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"12");
   assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),"12");
+  // Post-season progress affects the bracket, while league Stats stop at day 30.
+  for(const divisionId of ['IT-1','IT-2']){
+   await cmd("Page.navigate",{url:origin+"/competitions/"+divisionId.toLowerCase()+"?season=1&view=postseason"});
+   await until("document.readyState==='complete' && !!window.faPostseason && !!document.querySelector('[data-dev-control=matchdays-number]')");
+   assert.equal(await run("document.querySelector('[data-dev-control=matchdays]').max"),'33');
+   const division=divisions.find(d=>d.id===divisionId);
+   for(const day of [30,31,32,33,31,29]){
+    await run("document.querySelector('[data-dev-control=matchdays-number]').value='"+day+"';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+    await until("!document.querySelector('[data-dev-control=matchdays-number]').disabled && sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+day+"'");
+    const results=createPreviewPostseason(division,day,1);
+    const expectedScores=results.ties.reduce((n,t)=>n+t.legs.filter(Boolean).length*2+(t.aggregate?2:0),0)+(day===33&&division.tier===2?2:0);
+    await until("[...document.querySelectorAll('[data-postseason-score]')].filter(n=>n.textContent!=='—').length==="+expectedScores);
+    assert.equal(await run("document.querySelector('#app-postseason-winner [data-club-crest]')?.dataset.clubCrest||null"),results.winnerId?division.countryId+'-'+results.winnerId:null);
+    await run("document.getElementById('competition-tab-stats').click()");
+    await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='"+(Math.min(day,30)*8)+"'");
+    await run("document.getElementById('competition-tab-postseason').click()");
+   }
+   await run("document.querySelector('[data-postseason-help]').focus()");
+   assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),false);
+   await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+   assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),true);
+  }
   await run("document.querySelector('[data-dev-control=reset-page]').click()");
   await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");

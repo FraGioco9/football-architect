@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
 import { runInNewContext } from "node:vm";
-const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel}));
+const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33}));
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -44,11 +44,11 @@ test("DEV competition cards open the Debug season on load, changes and reset",()
 });
 test("DEBUG-DEFAULTS: fresh, invalid and blocked storage start at Matchday 0",()=>{
  const source=client.slice(client.indexOf('function readMatchdays()'),client.indexOf('let matchdays='));
- for(const raw of [null,'bad','-1','31','0','4','30']){
+ for(const raw of [null,'bad','-1','34','0','4','30','31','32','33']){
   const value=runWithModel(source+';readMatchdays()',{
    ROUNDS_KEY:'rounds',sessionStorage:{getItem:()=>raw}
   });
-  assert.equal(value,['4','30'].includes(raw)?Number(raw):0);
+  assert.equal(value,['4','30','31','32','33'].includes(raw)?Number(raw):0);
  }
  assert.equal(runWithModel(source+';readMatchdays()',{
   ROUNDS_KEY:'rounds',sessionStorage:{getItem(){throw Error('blocked')}}
@@ -523,7 +523,7 @@ test("DEV modular registry and adaptive panel contracts",()=>{
 
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1'));
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1'));
  assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
@@ -556,7 +556,7 @@ test("DEV-LAN: LAN access is opt-in and limited to private IPv4 clients and host
  assert.ok(serverSource.includes('"LAN opt-in"'));
 });
 
-test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and persistence with slider",()=>{
+test("DEV-MATCHDAYS-TEXT: number input shares 0–33 validation, visibility and persistence with slider",()=>{
  assert.ok(widget.includes('"number"'));
  assert.ok(widget.includes('input.type="number"'));
  assert.ok(widget.includes('input.inputMode="numeric"'));
@@ -566,7 +566,7 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
  assert.ok(client.includes("matchdays=0;"));
  assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(client.includes('return setDebugProgress(ROUNDS_KEY,value)'));
- for(const invalid of [-1,31,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=30,false);
+ for(const invalid of [-1,34,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=33,false);
 });
 
 test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output position",()=>{
@@ -574,7 +574,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1'));
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
  assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));

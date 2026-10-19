@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { competitionModel, createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
+import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -8,7 +8,7 @@ const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
 function readMatchdays(){
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
-  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=competitionModel.schedule.rounds?value:0;
+  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=DEBUG_MAX_MATCHDAY?value:0;
  }catch{return 0}
 }
 let matchdays=readMatchdays();
@@ -81,7 +81,7 @@ async function setSeason(value){
  return setDebugProgress(SEASON_KEY,value);
 }
 async function setMatchdays(value){
- if(!Number.isInteger(value)||value<0||value>competitionModel.schedule.rounds)return false;
+ if(!Number.isInteger(value)||value<0||value>DEBUG_MAX_MATCHDAY)return false;
  if(value===matchdays)return true;
  return setDebugProgress(ROUNDS_KEY,value);
 }
@@ -377,7 +377,7 @@ if(validPath||indexPath){
   registerDebugControls("general",[{
    type:"range",id:"season",label:"Season",min:1,max:4,step:1,scope:"general",
    value:()=>debugSeason,onChange:setSeason
-  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1,scope:"general",
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1,scope:"general",
    value:()=>matchdays,onChange:setMatchdays
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
@@ -549,7 +549,8 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound}):null;
     const restorePostseason=window.faPostseason?.snapshot();
-    const commitPostseason=window.faPostseason?.prepare(rows);
+    const postResults=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
+    const commitPostseason=window.faPostseason?.prepare(rows,postResults);
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
