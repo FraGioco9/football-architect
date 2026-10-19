@@ -76,8 +76,8 @@
   window.faStandingsOutcomes = Object.freeze({decorate:decorateStanding});
 
   function createPostseason(division) {
-    const status = document.getElementById("app-postseason-status");
-    if (!status) return;
+    const bracket = document.getElementById("app-postseason-bracket");
+    if (!bracket) return;
     const slots = [...document.querySelectorAll("[data-postseason-position]")];
     const clubs = new Map(division.clubs.map(club => [club.clubId,club]));
     let current = null;
@@ -90,9 +90,7 @@
     function render(rows) {
       current = rows;
       const qualified = rows !== null && rows.every(row => row.played === model.schedule.rounds);
-      status.dataset.appI18n = qualified ? "postseasonQualified" : "postseasonPending";
-      status.textContent = qualified ? "Participants confirmed. Match results are not available yet." :
-        "Participants will be confirmed after the regular season.";
+      bracket.dataset.postseasonQualified = String(qualified);
       for (const slot of slots) {
         const position = Number(slot.dataset.postseasonPosition);
         if (qualified) {

@@ -21,7 +21,7 @@ const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
  "app-standings-compact","app-standings-compact-list","app-standings-full",
- "app-search-dialog","division-detail-name","app-postseason-status"];
+ "app-search-dialog","division-detail-name","app-postseason-bracket"];
 
 function node(tag){
  const children=[],attrs={};
@@ -418,9 +418,9 @@ test("POSTSEASON: final participants appear only after 30 rounds and reset acros
  for(const division of manifest.divisions){
   const r=await simulate({division});
   assert.ok(r.window.faPostseason,division.id+' API');
-  const status=r.fields.get('app-postseason-status');
-  assert.equal(status.dataset.appI18n,'postseasonPending');
-  const positions=division.tier===1?[14,13,13,14]:[6,3,3,6,5,4,4,5];
+  const bracket=r.fields.get('app-postseason-bracket');
+  assert.equal(bracket.dataset.postseasonQualified,'false');
+  const positions=division.tier===1?[13,14]:[3,6,4,5];
   assert.deepEqual(r.postseasonSlots.map(slot=>Number(slot.dataset.postseasonPosition)),positions);
   const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
   assert.ok(html.indexOf('id="competition-tab-standings"')<html.indexOf('id="competition-tab-postseason"'));
@@ -430,6 +430,8 @@ test("POSTSEASON: final participants appear only after 30 rounds and reset acros
   for(const key of new Set([...panel.matchAll(/data-app-i18n="([A-Za-z0-9]+)"/g)].map(m=>m[1])))
    assert.equal((read('assets/app.js').match(new RegExp('^      '+key+':','gm'))||[]).length,5,key);
   assert.doesNotMatch(panel,/>[0-9]+[–—-][0-9]+</,'no invented score');
+  assert.doesNotMatch(panel,/Participants|postseasonPending|postseasonQualified/);
+  if(division.tier===2)for(const round of ['app-knockout-left','app-knockout-right','app-knockout-final'])assert.ok(panel.includes(round));
   const before=createPreviewStandings(division,29,1).rows;
   r.window.faPostseason.prepare(before)();
   assert.ok(r.postseasonSlots.every(slot=>!slot.children.some(c=>c.dataset.clubCrest)));
@@ -437,7 +439,7 @@ test("POSTSEASON: final participants appear only after 30 rounds and reset acros
   for(const season of [1,2]){
    const final=createPreviewStandings(division,30,season).rows;
    r.window.faPostseason.prepare(final)();
-   assert.equal(status.dataset.appI18n,'postseasonQualified');
+   assert.equal(bracket.dataset.postseasonQualified,'true');
    for(const slot of r.postseasonSlots){
     const club=final[Number(slot.dataset.postseasonPosition)-1].club;
     assert.equal(slot.children[0].dataset.clubCrest,club.countryId+'-'+club.clubId);
@@ -446,7 +448,7 @@ test("POSTSEASON: final participants appear only after 30 rounds and reset acros
    const invalid=final.map(row=>({...row}));invalid[1].club=invalid[0].club;
    assert.throws(()=>r.window.faPostseason.prepare(invalid),/Invalid postseason/);
   }
-  reset();assert.equal(status.dataset.appI18n,'postseasonPending');
+  reset();assert.equal(bracket.dataset.postseasonQualified,'false');
   assert.ok(r.postseasonSlots.every(slot=>!slot.children.some(c=>c.dataset.clubCrest)));
  }
 });
