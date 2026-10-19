@@ -590,6 +590,70 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await wait("window.faCompetitionRoute.get().view==='history'&&window.faCompetitionRoute.get().season==='4'&&!document.getElementById('competition-panel-history').hidden");
     }
     assert.ok(expansionChecks>0,'At least one real competition verifies the browser tie expander');
+    // Archive -> Standings must never expose the previous season in the first
+    // visible frame. Exercise both renderers at desktop/mobile breakpoints.
+    const itDivision=historyManifest.divisions.find(item=>item.id==='IT-1');
+    const currentSeason3=createPreviewStandings(itDivision,30,3).rows.map(row=>[
+      row.club.countryId+'-'+row.club.clubId,row.pts]);
+    const oldSeason4=createPreviewStandings(itDivision,30,4).rows.map(row=>[
+      row.club.countryId+'-'+row.club.clubId,row.pts]);
+    assert.notDeepEqual(currentSeason3,oldSeason4,'The two tested seasons must differ');
+    for(const [width,height] of [[1440,900],[621,900],[620,800],[390,844],[320,700]]){
+      const mobile=width<=620;
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height,deviceScaleFactor:1,mobile,screenWidth:width,screenHeight:height});
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=4&view=history'});
+      await wait("document.querySelectorAll('[data-history-season]').length===4&&"+
+        "window.faCompetitionRoute.get().view==='history'&&"+
+        "document.documentElement.dataset.faDevStandingsPending===undefined");
+      const observer="(()=>{"+
+        "const expected="+JSON.stringify(JSON.stringify(currentSeason3))+";"+
+        "const mobile="+String(mobile)+";"+
+        "window.__faSeasonFrame={hidden:0,shown:0,unguarded:0,stale:[],wrongLayout:0,active:true};"+
+        "const probe=()=>{const record=window.__faSeasonFrame;if(!record.active)return;"+
+        "const route=window.faCompetitionRoute?.get?.(),panel=document.getElementById('competition-panel-standings');"+
+        "if(route?.view==='standings'&&route.season==='3'&&panel){"+
+        "const target=document.querySelector(mobile?'#app-standings-compact':'#app-standings-full');"+
+        "const isVisible=!panel.hidden&&getComputedStyle(panel).visibility==='visible'&&"+
+        "getComputedStyle(panel).display!=='none'&&target&&!target.hidden&&"+
+        "getComputedStyle(target).display!=='none';"+
+        "if(document.documentElement.dataset.faDevSeasonTransition==='true'&&"+
+        "getComputedStyle(panel).visibility!=='hidden')record.unguarded++;"+
+        "if(!isVisible)record.hidden++;else {record.shown++;"+
+        "const rows=[...document.querySelectorAll(mobile?"+
+        "'#app-standings-compact-list .app-world-mobile-item':'#app-standings-body tr')];"+
+        "const actual=JSON.stringify(rows.map(row=>[row.dataset.worldClub,mobile?"+
+        "Number(row.querySelector('.app-world-mobile-points')?.firstChild?.textContent):"+
+        "Number(row.children[9]?.textContent)]));"+
+        "if(actual!==expected)record.stale.push(actual);"+
+        "if(window.innerWidth!=="+width+")record.wrongLayout++;"+
+        "}}requestAnimationFrame(probe)};requestAnimationFrame(probe)})()";
+      await run(observer);
+      devManifestDelay=350;
+      try{
+        await run("document.querySelector('[data-history-season=\"3\"]').click()");
+        await wait("window.faCompetitionRoute.get().view==='standings'&&"+
+          "window.faCompetitionRoute.get().season==='3'&&"+
+          "document.documentElement.dataset.faDevSeasonTransition===undefined");
+        await delay(75); // capture frames immediately after the protected reveal
+        const frames=await run("(()=>{window.__faSeasonFrame.active=false;return window.__faSeasonFrame})()");
+        assert.ok(frames.hidden>0,width+' History transition was guarded across animation frames');
+        assert.ok(frames.shown>0,width+' latest-season Standings became visible');
+        assert.equal(frames.unguarded,0,width+' guard must hide Standings on every frame');
+        assert.equal(frames.wrongLayout,0,width+' expected viewport is retained');
+        assert.deepEqual(frames.stale,[],width+' never reveals old '+(mobile?'mobile':'desktop')+' standings');
+        const expectedRows=await run("(()=>{const mobile="+String(mobile)+";"+
+          "return [...document.querySelectorAll(mobile?"+
+          "'#app-standings-compact-list .app-world-mobile-item':'#app-standings-body tr')].map(row=>"+
+          "[row.dataset.worldClub,mobile?Number(row.querySelector('.app-world-mobile-points')?.firstChild?.textContent):"+
+          "Number(row.children[9]?.textContent)])})()");
+        assert.deepEqual(expectedRows,currentSeason3,width+' '+(mobile?'mobile':'desktop')+' DOM matches Season 3');
+        console.log('HISTORY_FIRST_PAINT_PASS|'+width+'|'+(mobile?'mobile':'desktop')+'|delayed archive to standings');
+      }finally{
+        devManifestDelay=0;
+        await run("if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
+      }
+    }
     const historyFrameObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__faPrematureHistory=[];window.__faWatchHistory=true;const sampleHistory=()=>{const empty=document.querySelector('[data-history-empty]');if(empty&&!empty.hidden&&empty.getClientRects().length&&getComputedStyle(empty).visibility==='visible'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on')window.__faPrematureHistory.push(1);if(window.__faWatchHistory)requestAnimationFrame(sampleHistory)};requestAnimationFrame(sampleHistory);`});
     devManifestDelay=300;
     try{
