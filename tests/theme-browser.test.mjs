@@ -651,6 +651,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await cmd('Page.navigate',{url:devOrigin+'/'});
     await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
+    const crestFrameObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__crestLeaks=[];function crestFrame(){if(document.documentElement?.dataset.faDevStandingsPending==='true'){for(const i of document.querySelectorAll('.app-club-crest-image')){if(i.getClientRects().length&&getComputedStyle(i).visibility==='visible')window.__crestLeaks.push(i.parentElement.dataset.clubCrest)}}requestAnimationFrame(crestFrame)}requestAnimationFrame(crestFrame);`});
+    devManifestDelay=250;
     for(const width of [1440,390]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       for(const country of ['DE','BR','PT','IT']){
@@ -659,6 +661,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait('window.__crestBeforeReload!==true');}
           await wait("document.readyState==='complete'&&location.pathname==='/competitions/"+country.toLowerCase()+"-1'");
           await wait("document.documentElement.dataset.faDevStandingsPending!=='true'&&document.querySelector('.app-world-standing-table tbody tr td')?.textContent==='1'&&!!window.faClubCrests&&[...document.querySelectorAll('#competition-panel-standings [data-club-crest]')].filter(h=>Object.hasOwn(window.faClubCrests,h.dataset.clubCrest)).every(h=>h.dataset.clubCrestLoaded==='true')");
+          assert.deepEqual(await run('window.__crestLeaks'),[],'No crest paints while DEV standings are hidden for refresh');
           const association=await run(`(()=>{const clubs=new Map(window.faCompetitionDivision.clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName]));return [...document.querySelectorAll('#competition-panel-standings [data-world-club]')].map(row=>{const h=row.querySelector('[data-club-crest]'),img=h?.querySelector('img'),name=row.querySelector('.app-world-club-name,.app-world-mobile-club-name')?.textContent,b=h.getBoundingClientRect(),i=img?.getBoundingClientRect(),visible=row.getClientRects().length>0;return {id:row.dataset.worldClub,host:h.dataset.clubCrest,name,expected:clubs.get(row.dataset.worldClub),src:img?.getAttribute('src')||null,expectedSrc:window.faClubCrests[row.dataset.worldClub]?'/'+window.faClubCrests[row.dataset.worldClub]:null,inside:!visible||!i||(i.top>=b.top-1&&i.bottom<=b.bottom+1&&i.left>=b.left-1&&i.right<=b.right+1)}})})()`);
           assert.equal(association.length,32,'Both standings projections have all club identities');
           assert.ok(association.every(r=>r.id===r.host&&r.name===r.expected&&r.src===r.expectedSrc&&r.inside),'Crest association after refresh: '+JSON.stringify({country,width,refresh,association}));
@@ -666,6 +669,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         }
       }
     }
+    devManifestDelay=0;
+    await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:crestFrameObserver.identifier});
     console.log('CLUB_CREST_REFRESH_PASS|DE BR PT IT; desktop/mobile; canonical names, IDs, asset paths and image bounds after warm refresh');
     // PT-1 has a real supplied crest and appears in this deterministic archive.
     await cmd('Page.navigate',{url:devOrigin+'/'});
