@@ -97,3 +97,15 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
   }
   return { divisionId: division.id, season, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs };
 }
+
+// The selected season/day is a progress boundary, never a catalogue of future results.
+export function createPreviewHistory(division, season, matchdays) {
+  const current=createPreviewStandings(division,matchdays,season);
+  const completed=[];
+  for(let previous=1;previous<season;previous++)
+    completed.push(createPreviewStandings(division,30,previous));
+  const played=[...completed];
+  if(matchdays>0)played.push(current);
+  if(matchdays===30)completed.push(current);
+  return {completed,played};
+}

@@ -3,16 +3,45 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
+import * as previewData from '../tools/dev-standings-preview-data.mjs';
 const client=readFileSync(new URL('../tools/dev-standings-preview-client.mjs',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../app/competitions/_shared/manifest.json',import.meta.url),'utf8'));
 const plain=value=>JSON.parse(JSON.stringify(value));
-function records(seasons){
+function records(seasons,played=seasons){
  const start=client.indexOf('function historyRecords('),end=client.indexOf('\nfunction historyNode',start);
  assert.ok(start>=0&&end>start,'History record calculator exists');
- return plain(runInNewContext(client.slice(start,end)+';historyRecords(seasons)',{seasons}));
+ return plain(runInNewContext(client.slice(start,end)+';historyRecords(seasons,played)',{seasons,played}));
 }
 const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
 const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('History progress excludes every unplayed match and completes only prior seasons',()=>{
+ assert.equal(typeof previewData.createPreviewHistory,'function');
+ for(const division of manifest.divisions){
+  for(const [season,days,completed,count] of [[1,0,[],0],[1,15,[],120],[2,13,[1],344],[2,0,[1],240],[2,30,[1,2],480],[4,30,[1,2,3,4],960]]){
+   const model=previewData.createPreviewHistory(division,season,days);
+   assert.deepEqual(model.completed.map(s=>s.season),completed);
+   assert.equal(model.played.reduce((n,s)=>n+s.fixtures.length,0),count);
+   assert.ok(model.played.every(s=>s.season<=season&&s.rows.every(r=>r.played===(s.season<season?30:days))));
+  }
+ }
+});
+test('History totals include the current partial season without awarding its title or seasonal records',()=>{
+ const completed=[{season:1,rows:[{club:club(1),won:20,gf:70,pts:65},{club:club(2),won:18,gf:60,pts:60}]}];
+ const partial={season:2,rows:[{club:club(2),won:10,gf:99,pts:33},{club:club(1),won:5,gf:20,pts:18}]};
+ const actual=records(completed,[...completed,partial]);
+ assert.deepEqual(actual.titles,{value:1,clubs:[club(1)]});
+ assert.deepEqual(actual.attack,{value:70,entries:[{club:club(1),season:1}]});
+ assert.deepEqual(actual.totalWins,{value:28,clubs:[club(2)]});
+ assert.deepEqual(actual.totalGoals,{value:159,clubs:[club(2)]});
+ assert.deepEqual(actual.totalPoints,{value:93,clubs:[club(2)]});
+});
+test('Season 1 Matchday 0 has no historical statistics, holders or champions',()=>{
+ const actual=records([]);
+ for(const metric of Object.values(actual)){
+  assert.equal(metric.value,null);
+  assert.deepEqual(metric.clubs??metric.entries,[]);
+ }
+});
 test('Every History route offers exactly three seasonal and four all-time player records without invented data',()=>{
  const routes=['_shared',...manifest.divisions.map(d=>d.id.toLowerCase())];
  for(const route of routes){
@@ -266,7 +295,7 @@ test('History discards a pending render after debug is disabled and restores the
  const context={
   window:{faCompetitionRoute:{get:()=>({view:'history',season:'4'})},faAppRenderLanguage(){renders++}},
   document:{getElementById:()=>panel,createElement(){generated++;throw Error('Stale render constructed DOM')}},
-  isPreviewEnabled:()=>enabled,fetch:()=>new Promise(resolve=>{resolveFetch=resolve}),console
+  matchdays:15,isPreviewEnabled:()=>enabled,fetch:()=>new Promise(resolve=>{resolveFetch=resolve}),console
  };
  const api=runInNewContext(client.slice(start,end)+';({renderHistoryPreview,clearHistoryPreview})',context);
  const pending=api.renderHistoryPreview();

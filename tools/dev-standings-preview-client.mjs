@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { createPreviewStandings } from "./dev-standings-preview-data.mjs";
+import { createPreviewStandings, createPreviewHistory } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -50,6 +50,7 @@ async function setMatchdays(value){
  const slider=document.querySelector('[data-dev-control="matchdays"]');
  const number=document.querySelector('[data-dev-control="matchdays-number"]');
  for(const input of [slider,number].filter(Boolean)){input.value=String(matchdays);input.dataset.previous=String(matchdays)}
+ await syncHistoryPreview();
  return true;
 }
 async function resetPreview(){
@@ -101,16 +102,13 @@ function clearHistoryPreview(){
  window.faAppRenderLanguage?.();
 }
 // Records are derived from complete final tables, keyed by canonical club identity.
-function historyRecords(seasons){
+function historyRecords(seasons,played=seasons){
  const clubs=new Map();let previous=null,previousSeason=null,run=0;
  for(const {season,rows} of [...seasons].sort((a,b)=>a.season-b.season)){
-  rows.forEach(({club,won,gf,pts},index)=>{
+  rows.forEach(({club},index)=>{
    const id=club.countryId+"-"+club.clubId;
    if(!clubs.has(id))clubs.set(id,{club,titles:0,podiums:0,streak:0,totalWins:0,totalGoals:0,totalPoints:0});
    const entry=clubs.get(id);if(index===0)entry.titles++;if(index<3)entry.podiums++;
-   if(Number.isFinite(won))entry.totalWins+=won;
-   if(Number.isFinite(gf))entry.totalGoals+=gf;
-   if(Number.isFinite(pts))entry.totalPoints+=pts;
   });
   const winner=rows[0]?.club;if(!winner)continue;
   const id=winner.countryId+"-"+winner.clubId;
@@ -118,7 +116,16 @@ function historyRecords(seasons){
   clubs.get(id).streak=Math.max(clubs.get(id).streak,run);
   previous=id;previousSeason=season;
  }
+ for(const {rows} of played)for(const {club,won,gf,pts} of rows){
+  const id=club.countryId+"-"+club.clubId;
+  if(!clubs.has(id))clubs.set(id,{club,titles:0,podiums:0,streak:0,totalWins:0,totalGoals:0,totalPoints:0});
+  const entry=clubs.get(id);
+  if(Number.isFinite(won))entry.totalWins+=won;
+  if(Number.isFinite(gf))entry.totalGoals+=gf;
+  if(Number.isFinite(pts))entry.totalPoints+=pts;
+ }
  const record=key=>{
+  if(!clubs.size||(!seasons.length&&["titles","podiums","streak"].includes(key)))return {value:null,clubs:[]};
   const value=Math.max(0,...[...clubs.values()].map(entry=>entry[key]));
   return {value,clubs:[...clubs.values()].filter(entry=>entry[key]===value).map(entry=>entry.club)};
  };
@@ -157,12 +164,12 @@ function openHistorySeason(season){
  window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
 }
 async function renderHistoryPreview(){
- const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.();
+ const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
  if(!isPreviewEnabled()){clearHistoryPreview();return}
  if(route?.view!=="history")return;
  const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
-  window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
+  matchdays===progressDay&&window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
@@ -175,8 +182,9 @@ async function renderHistoryPreview(){
   }).catch(error=>{historyManifest=null;throw error});
   const manifest=await historyManifest;if(!current())return;
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
-  const seasons=availablePreviewSeasons().map(season=>({season,rows:createPreviewStandings(division,30,season).rows})).sort((a,b)=>a.season-b.season);
-  const chosen=seasons.find(item=>item.season===Number(route.season));if(!chosen){if(status)status.hidden=false;return;}
+  const {completed:seasons,played}=createPreviewHistory(division,selectedSeason(),progressDay);
+  if(!played.length){clearHistoryPreview();return;}
+  const chosen=seasons.at(-1);
   const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
@@ -186,9 +194,10 @@ async function renderHistoryPreview(){
   const archiveHeader=historyNode("div","app-history-dev-archive-head");archiveHeader.setAttribute("aria-hidden","true");
   for(const key of ["historySeasonLabel","historyChampionLabel","historyRunnerUp","historyThirdPlace"])archiveHeader.append(historyLabel(key));
   const archiveTable=historyNode("div","app-world-standings");archiveTable.append(archiveHeader,list);archive.append(archiveTable);
+  if(!seasons.length){const empty=historyLabel("historyNoData");empty.className="app-competition-empty";archive.append(empty)}
   for(const item of [...seasons].reverse()){
    const li=historyNode("li"),button=historyNode("button","app-history-dev-season-button");button.type="button";
-   button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen.season));
+   button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen?.season));
    const action=historyLabel("historySelectSeason");action.className="sr-only";
    button.append(historySeasonLabel(item.season),action);
    item.rows.slice(0,3).forEach((row,index)=>{
@@ -203,13 +212,16 @@ async function renderHistoryPreview(){
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
   const teams=historyNode("section","app-history-record-group");teams.dataset.historyTeamRecords="";
   teams.append(historyLabel("historyTeamRecords","h4"),grid);records.append(teams);
-  const values=historyRecords(seasons);
+  const values=historyRecords(seasons,played);
   for(const [key,metric] of [["historyBestAttack","attack"],["historyBestDefence","defence"],["historyMostSeasonWins","wins"],["historyMostSeasonPoints","points"],["historyBestGoalDifference","goalDifference"],["historyLargestTitleMargin","margin"],["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyMostTotalWins","totalWins"],["historyMostTotalGoals","totalGoals"],["historyMostTotalPoints","totalPoints"]]){
    const card=historyNode("article","app-competition-stat-card app-history-dev-record");card.dataset.historyRecord=metric;
    card.dataset.historyScope=values[metric].entries?"season":"all-time";
    card.hidden=card.dataset.historyScope!==(panel.dataset.historyRecordScope||"season");
    const label=historyLabel(key,"h5");label.className="app-competition-stat-label";
-   card.append(label,historyNode("strong","app-competition-stat-value",historyRecordValue(metric,values[metric].value)));
+   card.append(label);
+   if(values[metric].value===null){
+    const empty=historyLabel("historyNoData");empty.className="app-competition-empty";card.append(empty);
+   }else card.append(historyNode("strong","app-competition-stat-value",historyRecordValue(metric,values[metric].value)));
    if(values[metric].entries){
     for(const {club,season} of values[metric].entries){
      const entry=historyNode("div","app-history-dev-record-entry");entry.dataset.historyRecordSeason=String(season);

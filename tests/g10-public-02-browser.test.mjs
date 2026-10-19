@@ -133,6 +133,31 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   assert.equal(await run("(()=>{const season=document.querySelector('[data-dev-control=season]'),days=document.querySelector('[data-dev-control=matchdays]');return season.type==='range'&&season.min==='1'&&season.max==='4'&&season.step==='1'&&season.getBoundingClientRect().width===days.getBoundingClientRect().width&&document.querySelector('[data-dev-control=season-number]').value==='1'&&document.querySelectorAll('.fa-dev-number-arrow').length===4})()"),true,'Season shares the Matchdays slider and number-stepper layout');
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");
   assert.equal(await run("!!document.querySelector('[data-dev-control=fictional-standings]')"),false);
+  // Progress examples must reconcile current-season Stats and cumulative History.
+  for(const [season,days] of [[1,0],[1,15],[2,13],[2,0],[2,30],[1,0]]){
+   await run("document.querySelector('[data-dev-control=season]').value='"+season+"';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+   await until("window.faCompetitionRoute.get().season==='"+season+"'");
+   await run("document.querySelector('[data-dev-control=matchdays-number]').value='"+days+"';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+   await until("!document.querySelector('[data-dev-control=matchdays-number]').disabled");
+   await run("document.getElementById('competition-tab-stats').click()");
+   if(days)await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='"+(days*8)+"'");
+   else await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid .fa-dev-stats-empty').length===3");
+   await run("document.getElementById('competition-tab-history').click()");
+   const completed=season-1+(days===30?1:0);
+   if(season===1&&days===0){
+    await until("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
+    assert.equal(await run("document.querySelectorAll('#competition-panel-history strong').length"),0);
+   }else{
+    await until("!!document.querySelector('.app-history-dev')&&document.querySelectorAll('[data-history-season]').length==="+completed);
+    const models=Array.from({length:season},(_,index)=>createPreviewStandings(divisions.find(d=>d.id==='IT-1'),index+1<season?30:days,index+1));
+    const totals=new Map();
+    for(const model of models)for(const row of model.rows)totals.set(row.club.clubId,(totals.get(row.club.clubId)||0)+row.won);
+    assert.equal(await run("Number(document.querySelector('[data-history-record=totalWins] strong').textContent)"),Math.max(...totals.values()),'History includes exactly the matches played through '+season+'/'+days);
+    assert.equal(await run("!!document.querySelector('[data-history-record=titles] strong')"),completed>0);
+    assert.equal(await run("!!document.querySelector('[data-history-record=attack] strong')"),completed>0);
+   }
+  }
+  await run("document.getElementById('competition-tab-standings').click()");
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='15';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80 && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);

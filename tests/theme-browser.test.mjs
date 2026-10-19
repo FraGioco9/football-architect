@@ -493,7 +493,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     }
     // History stays silent while loading and links to the shared Standings view.
     const historyManifest=JSON.parse(await readFile(join(root,'app/competitions/_shared/manifest.json'),'utf8'));
-    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
     for(const division of historyManifest.divisions){
       await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
       await wait("document.querySelectorAll('[data-history-season]').length===4");
@@ -539,11 +539,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await run("document.querySelector('[data-history-season=\"3\"]').click()");
-      const standings=createPreviewStandings(division,7,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
+      const standings=createPreviewStandings(division,30,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
       const standingsState="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])";
       await wait("window.faCompetitionRoute.get().view==='standings'&&window.faCompetitionRoute.get().season==='3'&&JSON.stringify("+standingsState+")==="+JSON.stringify(JSON.stringify(standings)));
       assert.equal(await run("document.activeElement.id"),'competition-tab-standings');
-      assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),'7');
+      assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),'30');
       await run("history.back()");
       await wait("window.faCompetitionRoute.get().view==='history'&&window.faCompetitionRoute.get().season==='4'&&!document.getElementById('competition-panel-history').hidden");
     }
@@ -559,7 +559,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
-      await wait("document.querySelectorAll('[data-history-season]').length===4");
+      await wait("document.querySelectorAll('[data-history-season]').length===3");
       for(const lang of ['en','de','es','fr','it']){
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
@@ -584,7 +584,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("(()=>{const root=document.querySelector('[data-history-empty]'),team=root.querySelector('[data-history-team-records] .app-competition-stat-card:not([hidden])'),player=root.querySelector('[data-history-player-record]:not([hidden])'),offset=c=>Math.round(c.querySelector('.app-competition-empty').getBoundingClientRect().top-c.getBoundingClientRect().top);return offset(team)===offset(player)&&offset(team)===(innerWidth<=650?71:57)})()"),true,'All-time empty Team and Player messages align at '+width+' '+theme);
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
-      await wait("document.querySelectorAll('[data-history-season]').length===4");
+      await wait("document.querySelectorAll('[data-history-season]').length===3");
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
