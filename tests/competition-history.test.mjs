@@ -195,7 +195,9 @@ test('Stats and History align label slots while their filled cards grow',()=>{
  assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:var\(--fa-record-heading\) auto;[^}]*height:auto;min-height:108px;max-height:none/);
  assert.match(dev,/\.fa-dev-stats-card\.app-competition-stat-card--compact\{[^}]*grid-template-rows:var\(--fa-record-heading\)/);
  assert.match(dev,/\.fa-dev-stats-leader-card\{[^}]*padding:10px 12px/);
- assert.match(dev,/\.fa-dev-stats-leader-title\{margin:0;font-size:\.78rem;line-height:1\.2/);
+ assert.doesNotMatch(dev,/\.fa-dev-stats-leader-title\{/);
+ assert.doesNotMatch(dev,/\.fa-dev-stats-card span\.app-competition-stat-label\{/);
+ assert.match(css,/\.app-competition-stat-card>\.app-competition-stat-label\{align-self:start;justify-self:stretch\}/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
@@ -208,8 +210,12 @@ test('History improved layout preserves archive navigation, confirmed records an
  assert.match(client,/button\.addEventListener\("click",\(\)=>openHistorySeason\(item\.season\)\)/);
  assert.match(client,/if\(result\.value===null\)continue/);
  assert.match(client,/const holders=historyNode\("div","app-history-record-holders"\)/);
- assert.match(client,/historyProvisional/);
- assert.match(client,/progressDay>0&&progressDay<30/);
+ assert.doesNotMatch(client,/historyProvisional|app-history-provisional/);
+ assert.doesNotMatch(css,/app-history-provisional/);
+ assert.match(page,/empty\.className='app-competition-status app-history-record-empty-state'/);
+ assert.match(page,/empty=element\('p','app-competition-status app-history-record-empty-state'/);
+ assert.match(css,/\.app-history-record-group>\.app-history-record-empty-state\{[^}]*margin:0;padding:14px 2px;[^}]*font-size:\.85rem/);
+ assert.doesNotMatch(css,/\.app-history-player-empty-state|\.app-history-team-empty-state/);
  assert.match(page,/data-history-team-empty/);
  assert.match(page,/data-history-player-empty/);
  assert.match(page,/grid\.hidden=!filled;empty\.hidden=filled/);
@@ -218,7 +224,7 @@ test('History improved layout preserves archive navigation, confirmed records an
  for(const lang of ['en','de','es','fr','it']){
   const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
   assert.ok(start>=0&&end>start);
-  assert.match(app.slice(start,end),/historyProvisional:/);
+  assert.doesNotMatch(app.slice(start,end),/historyProvisional:/);
  }
 });
 test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
