@@ -33,4 +33,4 @@ jobs:
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
       - name: Site contracts
-        run: node --test tests/*.test.mjs
+        run: node --test --test-concurrency=1 tests/*.test.mjs
