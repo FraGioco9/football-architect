@@ -439,13 +439,22 @@ test('History discards a pending render after debug is disabled and restores the
  assert.equal(generated,0,'Disabled preview must not construct or commit a stale result');
 });
 
-test('Selecting a History season opens the shared Standings view with that exact season',()=>{
+test('Selecting a History season guards Safari first paint before revealing Standings',()=>{
  const start=client.indexOf('function openHistorySeason('),end=client.indexOf('\nasync function renderHistoryPreview',start);
  assert.ok(start>=0&&end>start,'History season navigation exists');
  for(const season of [1,2,3,4]){
-  const calls=[];const window={faCompetitionRoute:{set:(patch,options)=>calls.push([plain(patch),plain(options)])}};
-  runInNewContext(client.slice(start,end)+';openHistorySeason(season)',{window,season});
+  const calls=[],document={documentElement:{dataset:{}}};
+  const window={faCompetitionRoute:{
+   get:()=>({season:'4',view:'history'}),
+   set:(patch,options)=>{
+    if(season!==4)assert.equal(document.documentElement.dataset.faDevSeasonTransition,'true',
+      'The guard must exist before the router makes old Standings visible');
+    calls.push([plain(patch),plain(options)]);
+   }
+  }};
+  runInNewContext(client.slice(start,end)+';openHistorySeason(season)',{window,document,season});
   assert.deepEqual(calls,[[{season:String(season),view:'standings'},{focus:true}]]);
+  assert.equal(document.documentElement.dataset.faDevSeasonTransition,season===4?undefined:'true');
  }
 });
 

@@ -528,6 +528,27 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 .app-history-record-group .app-competition-stat-grid{align-items:stretch}
 .app-history-record-group .app-competition-stat-card{min-height:128px}
 .app-history-record-group .app-competition-stat-card:has(.app-competition-stat-value){min-height:160px}
+/* History record boxes use the full content column on narrow phones. Keep this
+   local to History: competition tabs, archive rows and Stats retain their layout. */
+@media(max-width:520px){
+ #competition-panel-history .app-competition-stat-grid{grid-template-columns:minmax(0,1fr)}
+ #competition-panel-history .app-competition-stat-card{max-width:100%;min-width:0}
+ #competition-panel-history .app-history-dev-record-entry .app-world-club-name{overflow-wrap:anywhere}
+ /* Safari: guard the actual record-box region, not the global page or tabs.
+    Prevent nested min-content sizing and touch-driven horizontal panning while
+    allowing every club name, score and record to grow vertically. */
+ #competition-panel-history #app-history-records{
+  min-width:0;max-width:100%;overflow-x:clip;touch-action:pan-y
+ }
+ #competition-panel-history .app-history-record-group,
+ #competition-panel-history .app-history-record-group .app-competition-stat-grid,
+ #competition-panel-history .app-history-record-group .app-competition-stat-card,
+ #competition-panel-history .app-history-record-holders,
+ #competition-panel-history .app-history-dev-record-entry{min-width:0;max-width:100%}
+ #competition-panel-history .app-history-dev-record-entry .app-world-club-identity{
+  max-width:100%;min-width:0
+ }
+}
 .app-history-dev-section>h3:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .app-history-dev-season{font-size:12px;font-weight:700}
 .app-history-dev-archive{list-style:none;margin:0;padding:0}
