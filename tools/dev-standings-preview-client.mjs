@@ -404,7 +404,7 @@ if(validPath||indexPath){
     delete document.documentElement.dataset.faDevSeasonTransition;
     return seasonRefresh;
    }
-   document.documentElement.dataset.faDevSeasonTransition="true";
+   // Keep standings visible while detached DEV rows are prepared for a synchronous swap.
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
