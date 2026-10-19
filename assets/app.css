@@ -731,7 +731,7 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-postseason-playout{--playout-axis:154px}
 .app-postseason-playout .app-knockout-left::after{top:var(--playout-axis);transform:none}
 .app-postseason-playout .app-knockout-result{align-self:start;align-items:flex-start;transform:none;margin-top:calc(var(--playout-axis) - 56px)}
-html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[data-fa-debug-pending="true"] #competition-panel-postseason,html[data-fa-dev-season-transition="true"] #competition-panel-postseason{visibility:hidden}
+html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[data-fa-debug-pending="true"] #competition-panel-postseason{visibility:hidden}
 @media(max-width:1000px){
  .app-postseason-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"left" "right" "final" "winner";max-width:640px;gap:24px}
  .app-postseason-playout{grid-template-areas:"left" "winner"}
