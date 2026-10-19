@@ -717,7 +717,7 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-knockout-left::after,.app-knockout-right::before,.app-knockout-final::after{content:"";position:absolute;pointer-events:none;opacity:.65}
 .app-knockout-left::after{inset-inline-start:100%;top:50%;width:var(--knockout-gap);border-top:1px solid var(--muted)}
 .app-knockout-right::before{inset-inline-end:100%;top:50%;width:var(--knockout-gap);border-top:1px solid var(--muted)}
-.app-knockout-final::after{top:50%;inset-inline-start:50%;height:calc(50% + 32px);border-inline-start:1px solid var(--muted)}
+.app-knockout-final::after{top:50%;inset-inline-start:50%;height:50%;border-inline-start:1px solid var(--muted)}
 .app-knockout-result{position:relative;align-self:stretch;display:flex;align-items:center}
 .app-knockout-result>.app-postseason-group{position:relative}
 .app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{content:"";position:absolute;inset-inline-start:50%;top:-32px;height:calc(50% + 32px);border-inline-start:1px solid var(--muted);opacity:.65;pointer-events:none}
