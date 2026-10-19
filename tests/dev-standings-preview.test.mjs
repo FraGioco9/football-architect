@@ -28,6 +28,18 @@ const widgetName = "/__fa_dev__/debug-widget.mjs";
 const dataName = "/__fa_dev__/standings-data.mjs";
 const allIds = manifest.divisions.map(d => d.id);
 
+test("DEV competition cards open the Debug season on load, changes and reset",()=>{
+ const start=client.indexOf('function syncCompetitionLinks()');
+ assert.ok(start>=0,'DEV card link synchronization must exist');
+ const source=client.slice(start,client.indexOf('function syncDebugControls()',start));
+ const cards=['/competitions/it-1?season=1&view=standings','http://app.localhost:2000/competitions/nl-2?season=1&view=standings'].map(href=>({attrs:{href},getAttribute(key){return this.attrs[key]},setAttribute(key,value){this.attrs[key]=value}}));
+ const context={debugSeason:3,URL,location:{href:'http://app.localhost:2000/competitions'},document:{querySelectorAll:()=>cards}};
+ runInNewContext(source+';syncCompetitionLinks()',context);
+ for(const season of [3,2,4,1]){
+  context.debugSeason=season;runInNewContext('syncCompetitionLinks()',context);
+  for(const card of cards){const url=new URL(card.attrs.href);assert.equal(url.searchParams.get('season'),String(season));assert.equal(url.searchParams.get('view'),'standings');assert.equal(card.attrs['data-dev-latest-season'],String(season));assert.equal(url.hostname,'app.localhost');}
+ }
+});
 test("DEBUG-DEFAULTS: fresh, invalid and blocked storage start at Matchday 0",()=>{
  const source=client.slice(client.indexOf('function readMatchdays()'),client.indexOf('let matchdays='));
  for(const raw of [null,'bad','-1','31','0','4','30']){
@@ -71,7 +83,7 @@ test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset previe
  const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
  const events={};let season=1,finishBoot;
  const context={
-  validPath:['/competitions/it-1','it-1'],indexPath:false,debugSeason:1,renderKey:()=>String(season),
+  validPath:['/competitions/it-1','it-1'],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>String(season),
   window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
   document:{documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
   selectedSeason:()=>season,availablePreviewSeasons:()=>[1,2,3,4],setSeason(){},
@@ -448,7 +460,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
     runInNewContext(initializer, {
-      validPath: ["/app/competitions/it-1/", "it-1"],indexPath:false,debugSeason:1,renderKey:()=>"1:1:0",
+      validPath: ["/app/competitions/it-1/", "it-1"],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
       window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
       syncHistoryPreview: () => {},

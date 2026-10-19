@@ -32,7 +32,16 @@ function selectedSeason(){
  if(available.includes(routed))return routed;
  return available[0];
 }
+function syncCompetitionLinks(){
+ for(const link of document.querySelectorAll('a.app-division-card')){
+  const url=new URL(link.getAttribute('href'),location.href);
+  url.searchParams.set('season',String(debugSeason));
+  link.setAttribute('data-dev-latest-season',String(debugSeason));
+  link.setAttribute('href',url.href);
+ }
+}
 function syncDebugControls(){
+ syncCompetitionLinks();
  for(const [id,value] of [["season",debugSeason],["matchdays",matchdays]])
   for(const input of document.querySelectorAll(`[data-dev-control="${id}"],[data-dev-control="${id}-number"]`)){
    input.value=String(value);input.dataset.previous=String(value);
@@ -319,6 +328,7 @@ function setPreviewEnabled(enabled) {
 }
 
 if(validPath||indexPath){
+ syncCompetitionLinks();
  (validPath?waitForRows():Promise.resolve()).then(() => {
   registerDebugControls("standings",[{type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
   registerDebugControls("general",[{

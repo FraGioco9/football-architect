@@ -252,6 +252,11 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='13';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("!document.querySelector('[data-dev-control=matchdays-number]').disabled");
   assert.equal(await run("location.pathname"),'/competitions');
+  assert.equal(await run("[...document.querySelectorAll('a.app-division-card')].length===16 && [...document.querySelectorAll('a.app-division-card')].every(a=>new URL(a.href).searchParams.get('season')==='2')"),true,'All competition cards follow Debug progress');
+  await run("document.querySelector('a.app-division-card').click()");
+  await until("!!document.querySelector('[data-dev-control=season]') && window.faCompetitionRoute?.get().season==='2'");
+  await verifySeason(2,13);
+
   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
   await until("!!document.querySelector('[data-dev-control=season]')");
   for(const [season,days] of [[1,30],[2,13],[1,30]]){
