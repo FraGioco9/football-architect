@@ -139,7 +139,8 @@
           const resultOrigin=result.getBoundingClientRect();
           const box=result.querySelector(".app-postseason-group");
           if(box&&window.matchMedia("(min-width:1001px)").matches){
-            result.style.marginTop=(origin.top+axis-resultOrigin.top+result.offsetTop-box.offsetHeight/2)+"px";
+            const currentMargin=parseFloat(window.getComputedStyle(result).marginTop)||0;
+            result.style.marginTop=(currentMargin+origin.top+axis-resultOrigin.top-box.offsetHeight/2)+"px";
           }else result.style.removeProperty("margin-top");
         };
         const observer=new ResizeObserver(align);
