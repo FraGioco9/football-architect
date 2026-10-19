@@ -40,25 +40,38 @@ test("DEBUG-DEFAULTS: fresh, invalid and blocked storage start at Matchday 0",()
   ROUNDS_KEY:'rounds',sessionStorage:{getItem(){throw Error('blocked')}}
  }),0);
 });
+test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",async()=>{
+ const from=client.includes('async function setDebugProgress(')?client.indexOf('async function setDebugProgress('):client.indexOf('async function setSeason(');
+ const source=client.slice(from,client.indexOf('async function resetPreview('));
+ const stored=new Map([['days','7'],['season','2']]);
+ const context={debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',
+  sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
+  refreshProgress:async()=>false,syncDebugControls(){},window:{dispatchEvent(){}},CustomEvent:class{},console};
+ const change=runInNewContext(source+';setMatchdays',context);
+ assert.equal(await change(8),false);
+ assert.equal(context.matchdays,7);
+ assert.equal(context.debugSeason,2);
+ assert.equal(stored.get('days'),'7');
+});
 
-test("DEBUG-SEASON-CONTROL: four seasons share the route; invalid values leave it unchanged",async()=>{
- const source=client.slice(client.indexOf('async function setSeason('),client.indexOf('async function setMatchdays('));
+test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed route; invalid values are rejected",async()=>{
+ const source=client.slice(client.indexOf('async function setDebugProgress('),client.indexOf('async function resetPreview('));
  assert.ok(source,'Season control must update the shared competition route');
- const changes=[];
- const setSeason=runInNewContext(source+';setSeason',{
-  availablePreviewSeasons:()=>[1,2,3,4],
-  window:{faCompetitionRoute:{set:next=>changes.push(next)}}
- });
+ const changes=[],stored=new Map();
+ const context={debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
+  refreshProgress:async()=>true,window:{faCompetitionRoute:{set:next=>changes.push(next)}}};
+ const setSeason=runInNewContext(source+';setSeason',context);
  for(const season of [1,2,3,4])assert.equal(await setSeason(season),true);
  for(const season of [0,5,1.5,NaN])assert.equal(await setSeason(season),false);
- assert.deepEqual(changes.map(next=>next.season),['1','2','3','4']);
+ assert.deepEqual(changes,[]);
+ assert.equal(context.debugSeason,4);assert.equal(stored.get('season'),'4');
 });
 
 test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset preview",async()=>{
- const initializer=client.slice(client.indexOf('if(validPath){'),client.indexOf('\nfunction strings()'));
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
  const events={};let season=1,finishBoot;
  const context={
-  validPath:['/competitions/it-1','it-1'],
+  validPath:['/competitions/it-1','it-1'],indexPath:false,debugSeason:1,renderKey:()=>String(season),
   window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
   document:{documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
   selectedSeason:()=>season,availablePreviewSeasons:()=>[1,2,3,4],setSeason(){},
@@ -264,6 +277,7 @@ test("DEV-ROUTES: canonical slashless pages, assets and season links load direct
       }
     }
     const index=await get("/competitions");
+    assert.ok(index.body.includes('data-fa-dev-preview'),"Competitions index loads Debug controls");
     assert.equal((index.body.match(/\?season=1&amp;view=standings/g)||[]).length,16);
     assert.ok(!index.body.includes("?season=4"));
     for(const id of allIds){
@@ -332,7 +346,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
 test("DEV-L10N + interactions: 5 languages, 80 results and widget", () => {
   for(const lang of ["en","de","es","fr","it"])
     assert.match(client, new RegExp("\\b"+lang+": \\{ round:"));
-  assert.ok(client.includes("entries.length !== 16*Math.min(5,matchdays)"));
+  assert.ok(client.includes("entries.length !== 16*Math.min(5,playedDays)"));
   assert.ok(client.includes('new MutationObserver(translate)'));
   for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
     assert.ok(client.includes('"'+event+'"'),event);
@@ -421,20 +435,20 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
 test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
-  const start = client.indexOf("if(validPath){");
+  const start = client.indexOf("if(validPath||indexPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");
   const initializer = client.slice(start, end);
-  assert.ok(initializer.includes("waitForRows().then("));
+  assert.ok(initializer.includes("(validPath?waitForRows():Promise.resolve()).then("));
   assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
-    initializer.indexOf("waitForRows().then(") < initializer.indexOf("createDebugWidget({controls:[{"));
+    initializer.indexOf("(validPath?waitForRows():Promise.resolve()).then(") < initializer.indexOf("createDebugWidget({controls:[{"));
   for (const enabled of [false, true]) {
     let hydrate, signalMounted;
     const hydration = new Promise(resolve => { hydrate = resolve; });
     const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
     runInNewContext(initializer, {
-      validPath: ["/app/competitions/it-1/", "it-1"],
+      validPath: ["/app/competitions/it-1/", "it-1"],indexPath:false,debugSeason:1,renderKey:()=>"1:1:0",
       window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
       syncHistoryPreview: () => {},
@@ -496,18 +510,18 @@ test("DEV modular registry and adaptive panel contracts",()=>{
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
  assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
- assert.ok(client.includes('visible:()=>previewState==="ON"'));
+ assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
   const model=createPreviewStandings(manifest.divisions[0],days);
   assert.equal(model.fixtures.length,days*8,"fixture count for "+days);
   for(const row of model.rows){assert.equal(row.played,days);assert.equal(row.won+row.drawn+row.lost,days);assert.equal(row.recent.length,Math.min(5,days))}
  }
- assert.ok(client.includes('value:()=>matchdays,visible:()=>previewState==="ON"'));
+ assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(client.includes("widgetRoot?.syncVisibility()"));
  assert.ok(client.includes("matchdays=0;"));
  assert.ok(widget.includes("root.syncVisibility=()=>"));
- assert.ok(client.includes('activePreview=()=>{try{replacement()}finally{previous()}}'));
+ assert.ok(client.includes('activePreview=replacement;'));
  const mobileRuntime=read("assets/competition-page.js").toString();
  assert.ok(mobileRuntime.includes("row.recent.length !== Math.min(5,row.played)"),
   "mobile standings must accept exactly the available recent results for 1–4 matchdays");
@@ -534,10 +548,10 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
  assert.ok(widget.includes('input.inputMode="numeric"'));
  assert.ok(widget.includes('!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
- assert.ok(client.includes("for(const input of [slider,number].filter(Boolean))"));
+ assert.ok(client.includes("function syncDebugControls()"));
  assert.ok(client.includes("matchdays=0;"));
- assert.ok(client.includes('visible:()=>previewState==="ON",onChange:setMatchdays'));
- assert.ok(client.includes('sessionStorage.setItem(ROUNDS_KEY,String(value))'));
+ assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
+ assert.ok(client.includes('return setDebugProgress(ROUNDS_KEY,value)'));
  for(const invalid of [-1,31,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=30,false);
 });
 
@@ -548,7 +562,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
  assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
- assert.ok(client.includes('const number=document.querySelector(\'[data-dev-control="matchdays-number"]\')'));
+ assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));
  assert.ok(widget.includes("@keyframes fa-dev-panel-in"));
  assert.ok(widget.includes("prefers-reduced-motion:reduce"));

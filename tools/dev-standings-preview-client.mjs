@@ -1,9 +1,10 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { createPreviewStandings, createPreviewHistory } from "./dev-standings-preview-data.mjs";
+import { createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
+const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
 function readMatchdays(){
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
@@ -11,6 +12,10 @@ function readMatchdays(){
  }catch{return 0}
 }
 let matchdays=readMatchdays();
+let debugSeason=(()=>{try{return readPreviewProgress(sessionStorage).season}catch{return 1}})();
+let refreshSeason=async()=>true;
+let progressRevision=0;
+const renderKey=()=>[selectedSeason(),debugSeason,matchdays].join(":");
 let routeSeasonOverride=null;
 function availablePreviewSeasons(){
  const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
@@ -27,39 +32,53 @@ function selectedSeason(){
  if(available.includes(routed))return routed;
  return available[0];
 }
-async function setSeason(value){
- if(!availablePreviewSeasons().includes(value)||!window.faCompetitionRoute?.set)return false;
- window.faCompetitionRoute.set({season:String(value)});
+function syncDebugControls(){
+ for(const [id,value] of [["season",debugSeason],["matchdays",matchdays]])
+  for(const input of document.querySelectorAll(`[data-dev-control="${id}"],[data-dev-control="${id}-number"]`)){
+   input.value=String(value);input.dataset.previous=String(value);
+  }
+}
+async function refreshProgress(){
+ if(validPath){
+  if(!await setPreviewEnabled(true))return false;
+  if(await refreshSeason()===false)return false;
+  await syncHistoryPreview();
+ }
+ syncDebugControls();
+ window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:{season:debugSeason,matchdays}}));
  return true;
+}
+async function setDebugProgress(key,value){
+ const previous={season:debugSeason,matchdays};let saved;
+ try{saved=sessionStorage.getItem(key);sessionStorage.setItem(key,String(value))}catch{return false}
+ const revision=++progressRevision;
+ if(key===SEASON_KEY)debugSeason=value;else matchdays=value;
+ let ok=false;
+ try{ok=await refreshProgress()}catch(error){console.error("DEV progress refresh failed:",error)}
+ if(revision!==progressRevision)return true;
+ if(ok)return true;
+ debugSeason=previous.season;matchdays=previous.matchdays;
+ try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved)}catch{}
+ syncDebugControls();
+ window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:previous}));
+ return false;
+}
+async function setSeason(value){
+ if(!Number.isInteger(value)||value<1||value>4)return false;
+ if(value===debugSeason)return true;
+ return setDebugProgress(SEASON_KEY,value);
 }
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
- const old=matchdays;if(value===old)return true;
- if(previewState==="ERROR")return false;
- try{sessionStorage.setItem(ROUNDS_KEY,String(value))}catch{return false}
- matchdays=value;
- if(previewState==="ON"){
-  const previous=activePreview;
-  const replacement=await boot(validPath[1].toUpperCase());
-  if(typeof replacement!=="function"){
-   matchdays=old;try{sessionStorage.setItem(ROUNDS_KEY,String(old))}catch{}
-   return false;
-  }
-  activePreview=()=>{try{replacement()}finally{previous()}};
- }
- const slider=document.querySelector('[data-dev-control="matchdays"]');
- const number=document.querySelector('[data-dev-control="matchdays-number"]');
- for(const input of [slider,number].filter(Boolean)){input.value=String(matchdays);input.dataset.previous=String(matchdays)}
- await syncHistoryPreview();
- return true;
+ if(value===matchdays)return true;
+ return setDebugProgress(ROUNDS_KEY,value);
 }
 async function resetPreview(){
- if(previewState!=="OFF" && !await setPreviewEnabled(false))return false;
- try{sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
- matchdays=0;
- await setSeason(1);
- for(const control of document.querySelectorAll('[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]')){control.value="0";control.dataset.previous="0"}
- return setPreviewEnabled(true);
+ if(validPath&&previewState!=="OFF" && !await setPreviewEnabled(false))return false;
+ try{sessionStorage.removeItem(SEASON_KEY);sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
+ progressRevision++;debugSeason=1;matchdays=0;
+ await refreshSeason();
+ return refreshProgress();
 }
 const DETAIL = /^\/(?:app\/)?competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
 const LANG = {
@@ -85,6 +104,7 @@ const LANG = {
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
+const indexPath=/^\/(?:app\/)?competitions(?:\/(?:index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
 let widgetRoot;
@@ -164,12 +184,12 @@ function openHistorySeason(season){
  window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
 }
 async function renderHistoryPreview(){
- const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays;
+ const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays,progressSeason=debugSeason;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
  if(!isPreviewEnabled()){clearHistoryPreview();return}
  if(route?.view!=="history")return;
  const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
-  matchdays===progressDay&&window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
+  debugSeason===progressSeason&&matchdays===progressDay&&window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
@@ -182,7 +202,7 @@ async function renderHistoryPreview(){
   }).catch(error=>{historyManifest=null;throw error});
   const manifest=await historyManifest;if(!current())return;
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
-  const {completed:seasons,played}=createPreviewHistory(division,selectedSeason(),progressDay);
+  const {completed:seasons,played}=createPreviewHistory(division,progressSeason,progressDay);
   if(!played.length){clearHistoryPreview();return;}
   const chosen=seasons.at(-1);
   const root=historyNode("div","app-history-dev");
@@ -262,6 +282,7 @@ function setPreviewEnabled(enabled) {
   }
   if(enabled===(previewState==="ON"))return true;
   if(enabled){
+   if(activePreview){activePreview();activePreview=null;}
    const cleanup=await boot(validPath[1].toUpperCase());
    if(typeof cleanup!=="function")return false;
    activePreview=cleanup;
@@ -294,55 +315,58 @@ function setPreviewEnabled(enabled) {
  return transition;
 }
 
-if(validPath){
- waitForRows().then(() => {
-  registerDebugControls("standings",[{
-   type:"range",id:"season",label:"Season",min:1,max:4,step:1,
-   value:selectedSeason,onChange:setSeason
-  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
-    value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
-    {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
-  registerDebugControls("general",[{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
+if(validPath||indexPath){
+ (validPath?waitForRows():Promise.resolve()).then(() => {
+  registerDebugControls("standings",[{type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
+  registerDebugControls("general",[{
+   type:"range",id:"season",label:"Season",min:1,max:4,step:1,scope:"general",
+   value:()=>debugSeason,onChange:setSeason
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,scope:"general",
+   value:()=>matchdays,onChange:setMatchdays
+  },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    return widgetRoot?.resetWidgetState()===true;
   }}]);
-  widgetRoot=createDebugWidget({page:"standings"});
+  widgetRoot=createDebugWidget({page:validPath?"standings":"competitions"});
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  setPreviewEnabled(true).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
-  let renderedSeason=selectedSeason();
-  let seasonRefresh=Promise.resolve();
+  if(validPath)setPreviewEnabled(true).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  else reveal();
+  let renderedSeason=renderKey();
+  let seasonRefresh=Promise.resolve(true);
   let seasonRequest=0;
   function syncSeason(){
    const routed=Number(window.faCompetitionRoute?.get?.().season);
    if(availablePreviewSeasons().includes(routed))routeSeasonOverride=routed;
-   const next=selectedSeason();
-   for(const control of document.querySelectorAll('[data-dev-control="season"],[data-dev-control="season-number"]')){control.value=String(next);control.dataset.previous=String(next)}
-   if(next===renderedSeason)return;
+   const next=renderKey();
+   if(next===renderedSeason)return seasonRefresh;
    const request=++seasonRequest;
    // Reset changes the route while preview rendering is suspended.
    // Track that selection so returning to the previous season still refreshes.
-   if(previewState!=="ON"){renderedSeason=next;return;}
+   if(previewState!=="ON"){renderedSeason=next;return seasonRefresh;}
    renderedSeason=next;
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
     const previous=activePreview;
-    const replacement=await boot(validPath[1].toUpperCase(),previous,()=>request===seasonRequest&&selectedSeason()===next);
+    const replacement=await boot(validPath[1].toUpperCase(),previous,()=>request===seasonRequest&&renderKey()===next);
     if(typeof replacement!=="function"){
      if(request===seasonRequest)previewState="OFF";
-     return;
+     return false;
     }
     // A newer route may have been selected while this season was hydrating.
     // Discard stale work and let the newest queued request render instead.
-    if(request!==seasonRequest||selectedSeason()!==next){
+    if(request!==seasonRequest||renderKey()!==next){
      try{replacement()}catch(error){console.error("Stale DEV season cleanup failed:",error)}
      return;
     }
     activePreview=replacement;
-   }).catch(error=>console.error("DEV season preview refresh failed:",error));
+    return true;
+   }).catch(error=>{console.error("DEV season preview refresh failed:",error);return false});
+   return seasonRefresh;
   }
+  if(validPath)refreshSeason=syncSeason;
   // The competition router notifies subscribers after updating its URL state.
   // Avoid delayed document click polling (which can briefly display stale scores).
   // A DEV module can initialize before the public router. Listen to its
@@ -425,8 +449,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // Resolve the season only after the manifest is loaded, then capture it for both
     // standings and fixtures. Read router state first only when it agrees with the
     // current URL; URL remains canonical for direct navigation and browser refresh.
-    const season=selectedSeason();
-    const { rows, clubs } = createPreviewStandings(division,matchdays,season);
+    const season=selectedSeason(),progress={season:debugSeason,matchdays};
+    const playedDays=previewSeasonMatchdays(season,progress);
+    const { rows, clubs } = createPreviewStandings(division,playedDays,season);
     // Prepare the complete DEV calendar from the same deterministic season seed.
     // Future rounds have no result; standings and fixtures share completed scores.
     const complete=createPreviewStandings(division,30,season);
@@ -434,21 +459,21 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       round:game.round,
       homeId:game.homeId,
       awayId:game.awayId,
-      homeGoals:game.round<=matchdays?game.homeGoals:null,
-      awayGoals:game.round<=matchdays?game.awayGoals:null,
+      homeGoals:game.round<=playedDays?game.homeGoals:null,
+      awayGoals:game.round<=playedDays?game.awayGoals:null,
       kickoff:null
     }));
     // Complete all asynchronous preparation before touching the visible table.
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
-    if(!isCurrent()||selectedSeason()!==season)return;
+    if(!isCurrent()||selectedSeason()!==season||debugSeason!==progress.season||matchdays!==progress.matchdays)return;
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
     // This value powers the "current matchday" shortcut, not the selected
     // round. The router already owns the selected round from the URL/state;
     // reusing ?matchday=1 here incorrectly turns the shortcut into round 1.
-    const defaultRound=Math.min(30,matchdays+1);
+    const defaultRound=Math.min(30,playedDays+1);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:defaultRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
@@ -496,7 +521,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       tr.append(formCell);
       fragment.append(tr);
     });
-    if (entries.length !== 16*Math.min(5,matchdays) || fragment.childNodes.length !== 16) {
+    if (entries.length !== 16*Math.min(5,playedDays) || fragment.childNodes.length !== 16) {
       throw Error("Incomplete DEV standings rendering");
     }
     // Prepare mobile from the validated fixture model before changing the table.

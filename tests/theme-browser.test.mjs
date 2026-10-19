@@ -338,7 +338,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     // Exercise the real DEV runtime across season changes, without a refresh.
     const division=JSON.parse(await readFile(join(root,"app/competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
     const signature="JSON.stringify([...document.querySelectorAll('[data-fixture-match]')].map(n=>[n.dataset.fixtureMatch,n.querySelector('.app-fixture-score').textContent]))";
-    const expected=(season,round,days=7)=>JSON.stringify(createPreviewStandings(division,30,season).fixtures
+    let currentDebugSeason=2;
+    const expected=(season,round,days=season<currentDebugSeason?30:season===currentDebugSeason?7:0)=>JSON.stringify(createPreviewStandings(division,30,season).fixtures
       .filter(g=>g.round===round).sort((a,b)=>a.homeId-b.homeId||a.awayId-b.awayId)
       .map(g=>[g.round+":"+g.homeId+":"+g.awayId,g.round<=days?g.homeGoals+" – "+g.awayGoals:"—"]));
     const expectSeason=async(season,round)=>{
@@ -351,6 +352,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await cmd("Page.navigate",{url:devOrigin+"/"});
     await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
+    await run("sessionStorage.setItem('football-architect:standings-dev-season','2')");
     await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=fixtures&matchday=1"});
     await expectSeason(1,1);
     for(const season of [2,1,2]){await chooseSeason(season);await expectSeason(season,1);}
@@ -401,10 +403,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(box.open,true,id+" opened by touch");
       assert.ok(box.left>=0&&box.right<=box.width&&box.top>=0&&box.bottom<=box.height,id+" remains inside mobile viewport");
     };
+    currentDebugSeason=1;
     for(const [width,height] of [[390,844],[320,700]])for(const theme of ["dark","light"]){
       await cmd("Emulation.setDeviceMetricsOverride",{width,height,deviceScaleFactor:1,mobile:true,screenWidth:width,screenHeight:height});
       await cmd("Emulation.setTouchEmulationEnabled",{enabled:true,maxTouchPoints:1});
-      await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+");sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
+      await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+");sessionStorage.setItem('football-architect:standings-dev-season','1');sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','7')");
       await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=standings"});
       await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
       assert.equal(await run("document.documentElement.dataset.theme"),theme);
@@ -493,7 +496,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     }
     // History stays silent while loading and links to the shared Standings view.
     const historyManifest=JSON.parse(await readFile(join(root,'app/competitions/_shared/manifest.json'),'utf8'));
-    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
     for(const division of historyManifest.divisions){
       await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
       await wait("document.querySelectorAll('[data-history-season]').length===4");
@@ -559,7 +562,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
-      await wait("document.querySelectorAll('[data-history-season]').length===3");
+      await wait("document.querySelectorAll('[data-history-season]').length===4");
       for(const lang of ['en','de','es','fr','it']){
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
@@ -584,7 +587,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("(()=>{const root=document.querySelector('[data-history-empty]'),team=root.querySelector('[data-history-team-records] .app-competition-stat-card:not([hidden])'),player=root.querySelector('[data-history-player-record]:not([hidden])'),offset=c=>Math.round(c.querySelector('.app-competition-empty').getBoundingClientRect().top-c.getBoundingClientRect().top);return offset(team)===offset(player)&&offset(team)===(innerWidth<=650?71:57)})()"),true,'All-time empty Team and Player messages align at '+width+' '+theme);
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
-      await wait("document.querySelectorAll('[data-history-season]').length===3");
+      await wait("document.querySelectorAll('[data-history-season]').length===4");
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);

@@ -118,7 +118,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
-        if (DETAIL.test(raw)) {
+        if (DETAIL.test(raw) || file === "app/competitions/index.html") {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.

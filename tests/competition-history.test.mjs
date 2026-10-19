@@ -25,6 +25,19 @@ test('History progress excludes every unplayed match and completes only prior se
   }
  }
 });
+test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
+ assert.equal(typeof previewData.previewSeasonMatchdays,'function');
+ const stored=new Map([['football-architect:standings-dev-season','2'],['football-architect:standings-dev-matchdays','13']]);
+ const storage={getItem:key=>stored.get(key)??null};
+ const before=[...stored];
+ for(const [viewed,days] of [[1,30],[2,13],[3,0],[4,0]]){
+  const progress=previewData.readPreviewProgress(storage);
+  assert.deepEqual(progress,{season:2,matchdays:13});
+  assert.equal(previewData.previewSeasonMatchdays(viewed,progress),days);
+ }
+ assert.deepEqual([...stored],before,'Browsing never rewrites Debug settings');
+ assert.deepEqual(previewData.readPreviewProgress({getItem(){throw Error('blocked')}}),{season:1,matchdays:0});
+});
 test('History totals include the current partial season without awarding its title or seasonal records',()=>{
  const completed=[{season:1,rows:[{club:club(1),won:20,gf:70,pts:65},{club:club(2),won:18,gf:60,pts:60}]}];
  const partial={season:2,rows:[{club:club(2),won:10,gf:99,pts:33},{club:club(1),won:5,gf:20,pts:18}]};
@@ -295,7 +308,7 @@ test('History discards a pending render after debug is disabled and restores the
  const context={
   window:{faCompetitionRoute:{get:()=>({view:'history',season:'4'})},faAppRenderLanguage(){renders++}},
   document:{getElementById:()=>panel,createElement(){generated++;throw Error('Stale render constructed DOM')}},
-  matchdays:15,isPreviewEnabled:()=>enabled,fetch:()=>new Promise(resolve=>{resolveFetch=resolve}),console
+  debugSeason:4,matchdays:15,isPreviewEnabled:()=>enabled,fetch:()=>new Promise(resolve=>{resolveFetch=resolve}),console
  };
  const api=runInNewContext(client.slice(start,end)+';({renderHistoryPreview,clearHistoryPreview})',context);
  const pending=api.renderHistoryPreview();
@@ -318,7 +331,7 @@ test('Selecting a History season opens the shared Standings view with that exact
 });
 
 test('Restoring debug waits for History before completing the first-paint release',async()=>{
- const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nif(validPath){',start);
+ const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nif(validPath||indexPath){',start);
  let finishHistory,settled=false;
  const historyReady=new Promise(resolve=>{finishHistory=resolve});
  const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],

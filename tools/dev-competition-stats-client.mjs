@@ -1,3 +1,4 @@
+import {readPreviewProgress,previewSeasonMatchdays} from "./dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 // The shared competition shell is hydrated asynchronously by competition-page.js.
@@ -12,7 +13,6 @@ const panel = await new Promise(resolve => {
   observer.observe(document.documentElement,{childList:true,subtree:true});
 });
 const divisionId = document.querySelector('meta[name="fa-division"]')?.content;
-const matchdayKey = "football-architect:standings-dev-matchdays";
 const create = (tag, text, className) => {
   const el = document.createElement(tag);
   if (text !== undefined) el.textContent = String(text);
@@ -94,12 +94,9 @@ if (panel && divisionId) {
     return available.includes(routed)?routed:available[0];
   }
   function selectedMatchdays() {
-    try {
-      const raw = sessionStorage.getItem(matchdayKey);
-      if (raw === null) return 0;
-      const value = Number(raw);
-      return Number.isInteger(value) && value >= 0 && value <= 30 ? value : 0;
-    } catch { return 0; }
+    let progress;
+    try{progress=readPreviewProgress(sessionStorage)}catch{progress={season:1,matchdays:0}}
+    return previewSeasonMatchdays(selectedSeason(),progress);
   }
   function render() {
     if (!manifest) return;
@@ -291,6 +288,7 @@ if (panel && divisionId) {
     render();
   });
   window.addEventListener("popstate",render);
+  window.addEventListener("fa:dev-progress-change",render);
   window.addEventListener("fa:fictional-standings-change",render);
   const standings = document.getElementById("app-standings-body");
   if (standings) new MutationObserver(()=>{if(manifest)render();}).observe(standings,{childList:true});
