@@ -91,15 +91,15 @@ if (panel && divisionId) {
     const requested=Number(new URLSearchParams(location.search).get("season"));
     if(available.includes(requested))return requested;
     const routed=Number(window.faCompetitionRoute?.get?.().season);
-    return available.includes(routed)?routed:Math.max(...available);
+    return available.includes(routed)?routed:available[0];
   }
   function selectedMatchdays() {
     try {
       const raw = sessionStorage.getItem(matchdayKey);
-      if (raw === null) return 15;
+      if (raw === null) return 0;
       const value = Number(raw);
-      return Number.isInteger(value) && value >= 0 && value <= 30 ? value : 15;
-    } catch { return 15; }
+      return Number.isInteger(value) && value >= 0 && value <= 30 ? value : 0;
+    } catch { return 0; }
   }
   function render() {
     if (!manifest) return;

@@ -54,7 +54,7 @@ Keep terminal 1 open. The launcher prints the canonical URLs:
 - Competitions: `http://app.localhost:2000/competitions`
 - Local DEV History preview: `http://app.localhost:2000/competitions/it-1?season=4&view=history`
 
-The History preview uses fictional standings only while the local DEV preview setting is enabled; it is not canonical historical data. Stop the server with **Ctrl+C**. Do not bind this launcher to `0.0.0.0`; it is intended for this PC only.
+Debug opens at Season 1 / Matchday 0. Use Season (1–4) and Matchdays (0–30) in Debug Settings; Reset restores Season 1 / Matchday 0. DEV History uses fictional standings; it is not canonical historical data. Stop the server with **Ctrl+C**. Do not bind this launcher to `0.0.0.0`; it is intended for this PC only.
 
 **Static checks (terminal 2, same repository root; server not required):**
 

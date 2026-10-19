@@ -384,11 +384,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     assert.deepEqual(await run("window.__faEmptyFrames"),[],"no empty Fixtures frame while DEV season 2 is restoring");
     await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:observer.identifier});
     devManifestDelay=0;devFixturesDelay=0;devLegacyGuard=false;
-    // Public season 1 still exposes its honest empty state once DEV is OFF.
+    // The public server still exposes its honest empty state.
     await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
-    await cmd("Page.navigate",{url:devOrigin+"/app/competitions/it-1?season=1&view=fixtures&matchday=1"});
+    await cmd("Page.navigate",{url:origin+"/app/competitions/it-1?season=1&view=fixtures&matchday=1"});
     await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
-    assert.equal(await run("(()=>{const e=document.getElementById('app-fixtures-empty');return !e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()"),true,"DEV OFF reveals the legitimate empty state");
+    assert.equal(await run("(()=>{const e=document.getElementById('app-fixtures-empty');return !e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()"),true,"Public Fixtures reveals the legitimate empty state");
     // Mobile Fixtures QA uses CDP touch input rather than programmatic .click().
     const tap=async selector=>{
       const point=await run("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");if(!e)throw Error('Missing touch target');e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
@@ -484,9 +484,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await wait(signature+"==="+JSON.stringify(expected(1,30,0)));
       assert.equal(await run("!document.getElementById('app-fixtures-toolbar').hidden"),true,"zero completed games still has a schedule");
       await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
-      await cmd("Page.reload",{ignoreCache:true});
-      await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
-      assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"DEV OFF hides all navigation and shows the empty state");
+      await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=fixtures"});
+      await wait("!!window.faFixtures");
+      assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"Public Fixtures hides navigation and shows the empty state");
+      await cmd("Page.navigate",{url:devOrigin+"/"});
+      await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
       console.log("FIXTURES_MOBILE_PASS|"+width+"|"+theme+"|touch menus, arrows, season changes, current round, refresh, empty state, zero completed games, five-language layout");
     }
     // History stays silent while loading and links to the shared Standings view.
@@ -565,13 +567,12 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
         assert.ok(cards.every(c=>c.min===c.expected&&c.height>=c.expected-.5&&!c.overflow&&c.max==='none'),width+' '+theme+' '+lang+' History cards keep minimum heights and grow with content');
       }
-      const toggle="document.querySelector('[data-dev-control=\"fictional-standings\"]')";
       const scrollCheck=await run("(()=>{const s=document.querySelector('.fa-shell-content-scroll');s.scrollTop=Math.min(180,s.scrollHeight-s.clientHeight);const top=s.scrollTop;const results=[];for(const scope of ['all-time','season','all-time','season']){document.querySelector('.app-history-dev [data-history-record-scope=\"'+scope+'\"]').click();results.push(s.scrollTop)}return {top,results,period:!!document.querySelector('.app-history-record-period')}})()");
       assert.ok(scrollCheck.results.every(value=>value>=0&&value<=scrollCheck.top),'History scroll remains in range at '+width+' '+theme);
       const spacing=await run("(()=>{const root=document.querySelector('.app-history-dev'),team=root.querySelector('[data-history-team-records]'),players=root.querySelector('[data-history-player-records]');return {gap:Math.round(players.getBoundingClientRect().top-team.getBoundingClientRect().bottom),ordered:!!(team.compareDocumentPosition(players)&Node.DOCUMENT_POSITION_FOLLOWING),sticky:[...root.querySelectorAll('.app-competition-stat-grid')].some(grid=>grid.style.minHeight!=='')}})()");
       assert.ok(spacing.ordered&&spacing.gap>=8&&spacing.gap<=28&&!spacing.sticky,'Player records sit below Team records without a spacer at '+width+' '+theme);
       assert.equal(scrollCheck.period,false,'History omits the overall Seasons 1–4 label');
-      await run(toggle+".checked=false;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
+      await cmd('Page.navigate',{url:origin+'/competitions/it-1?season=1&view=history'});
       await wait("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
       assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-team-records] .app-competition-stat-card:not([hidden])').length===6&&document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length===3&&!document.querySelector('[data-history-empty] strong,[data-history-empty] [data-club-crest]')"),true,'Empty History starts with six team and three player seasonal cards without invented values');
       assert.equal(await run("[...document.querySelectorAll('[data-history-empty] .app-competition-stat-card:not([hidden])')].every(c=>getComputedStyle(c).minHeight==='128px'&&c.getBoundingClientRect().height>=127.5&&c.scrollHeight<=c.clientHeight+1)"),true,'All empty History cards use the 128px minimum');
@@ -582,9 +583,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.querySelectorAll('[data-history-empty] [data-history-player-record]:not([hidden])').length"),4);
       assert.equal(await run("(()=>{const root=document.querySelector('[data-history-empty]'),team=root.querySelector('[data-history-team-records] .app-competition-stat-card:not([hidden])'),player=root.querySelector('[data-history-player-record]:not([hidden])'),offset=c=>Math.round(c.querySelector('.app-competition-empty').getBoundingClientRect().top-c.getBoundingClientRect().top);return offset(team)===offset(player)&&offset(team)===(innerWidth<=650?71:57)})()"),true,'All-time empty Team and Player messages align at '+width+' '+theme);
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
-      await run(toggle+".checked=true;"+toggle+".dispatchEvent(new Event('change',{bubbles:true}))");
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
       await wait("document.querySelectorAll('[data-history-season]').length===4");
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'Debug restoration preserves All-time scope');
+      await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await snap('HISTORY '+width+' '+theme,width,900);

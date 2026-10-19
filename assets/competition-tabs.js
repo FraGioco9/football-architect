@@ -84,7 +84,8 @@
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
   const availableSeasons=[...new Set(["1",...devSeasons])];
-  const latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
+  const latestSeason=availableSeasons.includes(document.documentElement.dataset.faDevDefaultSeason)
+    ?document.documentElement.dataset.faDevDefaultSeason:availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
   function read(){
     const params=new URL(window.location.href).searchParams;

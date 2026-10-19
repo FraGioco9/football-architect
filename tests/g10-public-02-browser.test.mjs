@@ -109,7 +109,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
     if(await run(expression))return;
     await delay(100);
    }
-   throw Error("Browser state timeout");
+   throw Error("Browser state timeout: "+expression);
   };
   await cmd("Page.enable");
   await cmd("Network.enable");
@@ -128,14 +128,19 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
   await until("document.readyState==='complete'&&!!document.querySelector('.fa-dev-widget-button')&&document.querySelectorAll('#app-standings-body tr').length===16");
   await run("document.querySelector('.fa-dev-widget-button').click()");
-  await until("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
-  await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
+  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
+  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");
+  assert.equal(await run("!!document.querySelector('[data-dev-control=fictional-standings]')"),false);
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='15';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80 && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);
 
   // Verify the injected standings also supply a functioning fixtures calendar.
   await run("document.getElementById('competition-tab-fixtures').click()");
   await until("new URL(location.href).searchParams.get('view')==='fixtures' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && !document.getElementById('app-fixtures-toolbar').hidden");
+  await run("document.getElementById('app-fixtures-current').click()");
+  await until("new URL(location.href).searchParams.get('matchday')==='16'");
   await run("document.getElementById('app-fixtures-previous').click()");
   await until("new URL(location.href).searchParams.get('matchday')==='15' && document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length===16");
 
@@ -162,10 +167,9 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"12");
   assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),"12");
   await run("document.querySelector('[data-dev-control=reset-page]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')===null && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
-  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"15");
-  await run("document.querySelector('[data-dev-control=fictional-standings]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && !document.querySelector('[data-dev-control=fictional-standings]').disabled");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
+  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");
+  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='10';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='10' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
 
@@ -173,6 +177,10 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   for(const season of [1,2,3,4]){
    await cmd("Page.navigate",{url:origin+"/competitions/it-1?season="+season+"&view=standings"});
    await until("document.readyState==='complete' && !!document.querySelector('.fa-dev-widget-button')");
+   await verifySeason(season);
+  }
+  for(const season of [1,2,3,4]){
+   await run("document.querySelector('[data-dev-control=season]').value='"+season+"';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
    await verifySeason(season);
   }
   await run("document.getElementById('app-competition-season').click()");
@@ -208,9 +216,9 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await until("document.readyState==='complete' && sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80");
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);
   await run("document.querySelector('[data-dev-control=\"reset-global\"]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')===null && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && new URL(location.href).searchParams.get('season')==='1'");
   await run("document.getElementById('competition-tab-fixtures').click()");
-  await until("document.getElementById('app-fixtures-toolbar').hidden && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===0");
+  await until("!document.getElementById('app-fixtures-toolbar').hidden && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length===0");
 
   const status=await run("({scriptCount:performance.getEntriesByType('resource').filter(x=>x.name.includes('/__fa_dev__/')).length})");
   assert.ok(status.scriptCount>=5,"Debug module assets should load on the second division");

@@ -6,9 +6,9 @@ import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 const FLAG = "football-architect:standings-dev-preview";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
 function readMatchdays(){
- try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 15;
-  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=30?value:15;
- }catch{return 15}
+ try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
+  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=30?value:0;
+ }catch{return 0}
 }
 let matchdays=readMatchdays();
 let routeSeasonOverride=null;
@@ -25,7 +25,12 @@ function selectedSeason(){
  if(available.includes(requested))return requested;
  const routed=Number(window.faCompetitionRoute?.get?.().season);
  if(available.includes(routed))return routed;
- return Math.max(...available);
+ return available[0];
+}
+async function setSeason(value){
+ if(!availablePreviewSeasons().includes(value)||!window.faCompetitionRoute?.set)return false;
+ window.faCompetitionRoute.set({season:String(value)});
+ return true;
 }
 async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>30)return false;
@@ -50,13 +55,10 @@ async function setMatchdays(value){
 async function resetPreview(){
  if(previewState!=="OFF" && !await setPreviewEnabled(false))return false;
  try{sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
- matchdays=15;
- const input=document.querySelector('[data-dev-control="fictional-standings"]');
- const matchdayRow=document.querySelector('[data-dev-control-row="matchdays"]');
- if(input)input.checked=false;
- for(const control of document.querySelectorAll('[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]')){control.value="15";control.dataset.previous="15"}
- if(matchdayRow)matchdayRow.hidden=true
- return true;
+ matchdays=0;
+ await setSeason(1);
+ for(const control of document.querySelectorAll('[data-dev-control="matchdays"],[data-dev-control="matchdays-number"]')){control.value="0";control.dataset.previous="0"}
+ return setPreviewEnabled(true);
 }
 const DETAIL = /^\/(?:app\/)?competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
 const LANG = {
@@ -85,7 +87,6 @@ const validPath = location.pathname.match(DETAIL);
 let activePreview=null;
 let previewState="OFF";
 let widgetRoot;
-function savedPreviewEnabled(){try{return sessionStorage.getItem(FLAG)==="on"}catch{return false}}
 function isPreviewEnabled(){return previewState==="ON";}
 let historyRenderVersion=0;
 let historyManifest=null;
@@ -284,8 +285,8 @@ function setPreviewEnabled(enabled) {
 if(validPath){
  waitForRows().then(() => {
   registerDebugControls("standings",[{
-   type:"switch",id:"fictional-standings",label:"Fictional standings",
-   checked:isPreviewEnabled,onChange:setPreviewEnabled
+   type:"select",id:"season",label:"Season",
+   options:availablePreviewSeasons(),value:selectedSeason,onChange:setSeason
   },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
     value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
     {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
@@ -297,12 +298,7 @@ if(validPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(savedPreviewEnabled()){
-   setPreviewEnabled(true).then(ok=>{
-    const toggle=document.querySelector('[data-dev-control="fictional-standings"]');
-    if(toggle)toggle.checked=ok;
-   }).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
-  }else reveal();
+  setPreviewEnabled(true).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   let renderedSeason=selectedSeason();
   let seasonRefresh=Promise.resolve();
   let seasonRequest=0;
@@ -310,12 +306,14 @@ if(validPath){
    const routed=Number(window.faCompetitionRoute?.get?.().season);
    if(availablePreviewSeasons().includes(routed))routeSeasonOverride=routed;
    const next=selectedSeason();
+   const control=document.querySelector('[data-dev-control="season"]');
+   if(control){control.value=String(next);control.dataset.previous=String(next)}
    if(next===renderedSeason)return;
-   // Route changes can arrive while initial DEV hydration is still pending.
-   // Do not mark the new season rendered until the preview is active.
-   if(previewState!=="ON")return;
-   renderedSeason=next;
    const request=++seasonRequest;
+   // Reset changes the route while preview rendering is suspended.
+   // Track that selection so returning to the previous season still refreshes.
+   if(previewState!=="ON"){renderedSeason=next;return;}
+   renderedSeason=next;
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
