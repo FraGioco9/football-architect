@@ -621,12 +621,14 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
  .app-history-record-controls button{padding:10px 6px}
 }
 
-/* Keep the neutral placeholder until its passive SVG image has loaded. */
+/* Known crests reserve a blank loading slot; absent/failed crests use the placeholder. */
 .app-world-mobile-name{display:flex;align-items:center;gap:7px}
 .app-world-mobile-name>.app-world-club-crest-placeholder{flex-shrink:0}
 .app-world-mobile-club-name{min-width:0;overflow-wrap:anywhere}
 .app-club-crest-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;visibility:hidden}
+html .app-world-club-crest-placeholder[data-club-crest-pending="true"],
 html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-color:transparent;background:transparent}
+.app-world-club-crest-placeholder[data-club-crest-pending="true"]::before,
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
 /* Respect hidden standings while DEV prepares the reordered rows on refresh. */
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]>.app-club-crest-image{visibility:inherit}

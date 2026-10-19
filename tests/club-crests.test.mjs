@@ -44,15 +44,17 @@ function setup(){
   change(node,id){node.dataset.clubCrest=id;observe([{type:'attributes',target:node}])}};
 }
 
-test('real crests replace placeholders only after load; missing or failed images keep the fallback',()=>{
+test('known crests reserve a blank slot while loading; missing or failed images keep the fallback',()=>{
  const s=setup();
  assert.deepEqual([...s.requests].sort(),Object.values(expected).map(path=>'/'+path).sort());
  assert.equal(s.hosts[3].children.length,0,'Missing crest causes no guessed asset request');
  const [de,br,pt]=s.hosts;
- assert.equal(de.dataset.clubCrestLoaded,undefined,'Placeholder remains during load');
+ assert.equal(de.dataset.clubCrestLoaded,undefined);
+ assert.equal(de.dataset.clubCrestPending,'true','Known crest starts in a blank loading state');
+ assert.equal(s.hosts[3].dataset.clubCrestPending,undefined,'Absent crests retain their placeholder');
  assert.equal(de.children[0].alt,'');
- de.children[0].events.load();assert.equal(de.dataset.clubCrestLoaded,'true');
- br.children[0].events.error();assert.equal(br.dataset.clubCrestLoaded,undefined);assert.equal(br.children.length,0);
+ de.children[0].events.load();assert.equal(de.dataset.clubCrestLoaded,'true');assert.equal(de.dataset.clubCrestPending,undefined);
+ br.children[0].events.error();assert.equal(br.dataset.clubCrestLoaded,undefined);assert.equal(br.dataset.clubCrestPending,undefined);assert.equal(br.children.length,0);
  s.repeat(br);assert.equal(s.requests.length,3,'Broken image must not trigger an observer retry loop');
  pt.children[0].events.load();assert.equal(pt.dataset.clubCrestLoaded,'true');
 });
@@ -76,6 +78,6 @@ test('reusing an identity host replaces its image and ignores stale load events'
  previous.events.load();assert.equal(node.dataset.clubCrestLoaded,undefined);
  node.children[0].events.load();assert.equal(node.dataset.clubCrestLoaded,'true');
  s.change(node,'IT-1');
- assert.equal(node.children.length,0);assert.equal(node.dataset.clubCrestLoaded,undefined);
+ assert.equal(node.children.length,0);assert.equal(node.dataset.clubCrestLoaded,undefined);assert.equal(node.dataset.clubCrestPending,undefined);
  assert.equal(s.requests.length,4,'Unknown identities retain the placeholder without probing a URL');
 });

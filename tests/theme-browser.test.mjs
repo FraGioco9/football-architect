@@ -14,12 +14,14 @@ import {createPreviewServer} from "../tools/dev-standings-preview.mjs";
 import {setTimeout as delay} from "node:timers/promises";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"};
+let clubCrestDelay=0;
 const server=createServer(async(req,res)=>{
   try{
     const route=new URL(req.url,"http://localhost").pathname;
     let file=resolve(root,publicRequestFile(decodeURIComponent(route)));
     if(file!==root&&!file.startsWith(root+sep))throw Error("outside root");
     if(!extname(file))file=join(file,"index.html");
+    if(route.startsWith("/assets/clubs/")&&clubCrestDelay)await delay(clubCrestDelay);
     res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});
     res.end(await readFile(file));
   }catch{res.writeHead(404);res.end("Not found");}
@@ -647,6 +649,23 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.ok(state.hosts===2&&state.visible===1&&state.images&&state.fallback,'Club crest desktop/mobile load and placeholder: '+country+' '+width+' '+JSON.stringify(state));
       }
     }
+    // Slow SVG responses make any transient fallback visible across real frames.
+    const loadingObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__crestLoadingFrames=0;window.__crestPlaceholderFlashes=[];function loadingFrame(){for(const h of document.querySelectorAll('[data-club-crest="DE-1"]')){if(!h.getClientRects().length||getComputedStyle(h).visibility==='hidden')continue;if(h.dataset.clubCrestLoaded!=='true')window.__crestLoadingFrames++;if(getComputedStyle(h,'::before').display!=='none'||getComputedStyle(h).borderTopColor!=='rgba(0, 0, 0, 0)')window.__crestPlaceholderFlashes.push(h.dataset.clubCrest)}requestAnimationFrame(loadingFrame)}requestAnimationFrame(loadingFrame);`});
+    clubCrestDelay=600;
+    for(const width of [1440,390])for(const theme of ['dark','light']){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+      await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
+      await visit('/competitions/de-1',"[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
+      for(const refresh of [false,true]){
+        if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
+        assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');
+        assert.deepEqual(await run('window.__crestPlaceholderFlashes'),[],'No placeholder flash for an available crest: '+JSON.stringify({width,theme,refresh}));
+        assert.equal(await run("getComputedStyle(document.querySelector('[data-club-crest=\"DE-2\"]'),'::before').display==='none'"),false,'Missing crest keeps its placeholder');
+      }
+    }
+    clubCrestDelay=0;
+    await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:loadingObserver.identifier});
+    console.log('CLUB_CREST_LOADING_PASS|slow SVG; first paint and warm refresh; desktop/mobile; Dark/Light; no transient placeholder');
     // Refresh must preserve the club/crest association after DEV changes the ranking.
     await cmd('Page.navigate',{url:devOrigin+'/'});
     await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
