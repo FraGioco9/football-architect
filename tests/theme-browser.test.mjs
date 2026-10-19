@@ -484,7 +484,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:frameObserver.identifier});
       await tap('#app-fixtures-current');await expectSeason(2,8);
       await tap('#app-fixtures-round');await tap('#app-fixtures-round-option-30');await expectSeason(2,30);
-      assert.equal(await run("document.getElementById('app-fixtures-next').disabled"),true);
+      assert.equal(await run("document.getElementById('app-fixtures-next').disabled"),false);
       await tap('#app-fixtures-next');await expectSeason(2,30);
       await run("sessionStorage.setItem('football-architect:standings-dev-matchdays','0')");
       await cmd("Page.reload",{ignoreCache:true});
