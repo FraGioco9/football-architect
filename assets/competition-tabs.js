@@ -140,7 +140,7 @@
     defaultMatchday(round){
       if(!pendingDefaultMatchday||state.view!=="fixtures"||!(availableSeasons.includes(state.season)))return;
       pendingDefaultMatchday=false;
-      if(model.validRound(round))apply({...state,matchday:round},{replace:true});
+      if(validFixtureRound(round))apply({...state,matchday:round},{replace:true});
     },
     subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn)}};
   tabs.forEach((tab,index)=>{
