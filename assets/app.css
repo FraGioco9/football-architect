@@ -537,7 +537,7 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
  /* Safari: guard the actual record-box region, not the global page or tabs.
     Prevent nested min-content sizing and touch-driven horizontal panning while
     allowing every club name, score and record to grow vertically. */
- #competition-panel-history .app-history-records{
+ #competition-panel-history #app-history-records{
   min-width:0;max-width:100%;overflow-x:clip;touch-action:pan-y
  }
  #competition-panel-history .app-history-record-group,
