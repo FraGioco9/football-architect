@@ -25,6 +25,36 @@ test('History progress excludes every unplayed match and completes only prior se
   }
  }
 });
+test('Fixtures has a current matchday only for an in-progress season',()=>{
+ const cases=[
+  [1,0,1,1],[1,15,1,16],[1,29,1,30],[1,30,1,null],
+  [2,0,1,null],[2,13,1,null],[2,13,2,14],[2,30,2,null],
+  [3,0,1,null],[3,0,2,null],[3,0,3,1],[3,0,4,null]
+ ];
+ for(const [progressSeason,matchdays,viewed,expected] of cases){
+  assert.equal(previewData.previewCurrentMatchday(viewed,{season:progressSeason,matchdays}),expected,
+   `progress S${progressSeason}/M${matchdays}, viewed S${viewed}`);
+ }
+});
+test('A partial first season shows the completed-seasons empty state inside Season archive',()=>{
+ const start=client.indexOf('  const archive=section("historySeasonArchive"'),end=client.indexOf('  for(const item of [...seasons].reverse()){',start);
+ assert.ok(start>=0&&end>start,'Archive layout is isolated for regression testing');
+ function create(tag,className=''){
+  return {tag,className,children:[],dataset:{},append(...nodes){this.children.push(...nodes)},setAttribute(){}};
+ }
+ const build=runInNewContext('(seasons)=>{'+client.slice(start,end)+';return archive}',{
+  historyNode:create,historyLabel:key=>({...create('span'),dataset:{appI18n:key}}),
+  section:(key,id)=>create('section',id)
+ });
+ const empty=build([]),emptyTable=empty.children[0];
+ assert.equal(emptyTable.className,'app-world-standings');
+ assert.equal(emptyTable.children.length,1,'No podium header is shown before the first title');
+ assert.equal(emptyTable.children[0].dataset.appI18n,'competitionHistoryEmpty');
+ assert.equal(emptyTable.children[0].className,'app-competition-empty-row');
+ const completed=build([{season:1}]),table=completed.children[0];
+ assert.equal(table.children.length,2,'Completed seasons restore the archive header and list');
+ assert.equal(table.children[1].className,'app-history-dev-archive');
+});
 test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
  assert.equal(typeof previewData.previewSeasonMatchdays,'function');
  const stored=new Map([['football-architect:standings-dev-season','2'],['football-architect:standings-dev-matchdays','13']]);
