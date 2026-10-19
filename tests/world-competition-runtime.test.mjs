@@ -513,6 +513,7 @@ test('POSTSEASON-TIPS: score help opens on hover, keyboard focus and tap and dis
  await new Promise(resolve=>setTimeout(resolve,180));assert.equal(tip.hidden,false,'Tooltip stays hoverable');
  tip.emit('pointerleave');await new Promise(resolve=>setTimeout(resolve,180));assert.equal(tip.hidden,true);
  button.focus();assert.equal(tip.hidden,false);
+ r.window.emit('scroll');assert.equal(tip.hidden,false,'Scrolling a focused trigger into view keeps its help open');
  r.document.emit('keydown',{key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(tip.hidden,true);
  assert.equal(r.document.activeElement,button,'Escape preserves keyboard focus');
  button.emit('pointerdown');button.emit('click');assert.equal(tip.hidden,false);

@@ -90,7 +90,7 @@
       function open() {
         clearTimeout(leaveTimer);
         if(active?.button!==button)close();
-        tip.hidden=false;active={button,tip};
+        tip.hidden=false;active={button,tip,open};
         const box=button.getBoundingClientRect(),width=tip.offsetWidth||120,height=tip.offsetHeight||34;
         const viewportWidth=window.innerWidth||390,viewportHeight=window.innerHeight||700;
         tip.style.left=Math.max(12,Math.min(box.left+box.width/2-width/2,viewportWidth-width-12))+"px";
@@ -110,7 +110,7 @@
     document.addEventListener("keydown",event=>{if(event.key==="Escape"&&active){close();event.preventDefault();event.stopPropagation()}});
     document.addEventListener("pointerdown",event=>{if(active&&event.target!==active.button&&!active.button.contains?.(event.target)&&!active.tip.contains(event.target))close(true)});
     window.addEventListener("resize",()=>close());
-    window.addEventListener("scroll",()=>close(),{capture:true,passive:true});
+    window.addEventListener("scroll",()=>{if(active&&document.activeElement===active.button)active.open();else close()},{capture:true,passive:true});
     return close;
   }
 
