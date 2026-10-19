@@ -530,7 +530,7 @@ test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV
  assert.ok(css.includes("@media(prefers-reduced-motion:reduce)"));
  assert.ok(client.includes('const FLAG = "football-architect:standings-dev-preview"'));
  assert.ok(client.includes("function isPreviewEnabled()"));
- assert.ok(read(".github/workflows/landing-checks.yml").toString().includes("node --test tests/*.test.mjs"));
+ assert.ok(read(".github/workflows/landing-checks.yml").toString().includes("node --test --test-concurrency=1 tests/*.test.mjs"));
 });
 
 
