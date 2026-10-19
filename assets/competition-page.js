@@ -177,7 +177,17 @@
       const node=document.createElement("span");node.dataset.appI18n=key;node.textContent=text;return node;
     }
     function clubContent(slot,club,key,label) {
-      if(club){const name=document.createElement("span");name.textContent=club.primaryName;slot.replaceChildren(createCrestHost(club.countryId+"-"+club.clubId),name)}
+      if(club){
+        const id=club.countryId+"-"+club.clubId;
+        const existing=slot.querySelector("[data-club-crest]");
+        if(existing?.dataset.clubCrest===id){
+          const name=existing.nextElementSibling;
+          if(name&&name.textContent!==club.primaryName)name.textContent=club.primaryName;
+          return;
+        }
+        const name=document.createElement("span");name.textContent=club.primaryName;
+        slot.replaceChildren(createCrestHost(id),name);
+      }
       else slot.replaceChildren(word(key,label));
     }
     function render(rows,results) {
