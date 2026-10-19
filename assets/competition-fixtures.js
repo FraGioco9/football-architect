@@ -205,7 +205,8 @@
       const next=validate(fixtures);
       const post=validatePostseason(games);
       if(!next&&post.length)throw Error('Post-season requires a league schedule');
-      if(current!==null&&(!model.validRound(current)))throw Error("Invalid current matchday");
+      if(current!==null&&!model.validRound(current)&&current!==stage)throw Error("Invalid current matchday");
+       if(current===stage&&!post.length)throw Error("Post-season current matchday requires fixtures");
       return ()=>{
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
         navigation.defaultMatchday(currentMatchday??1);
