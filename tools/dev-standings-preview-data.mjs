@@ -119,6 +119,13 @@ export function readPreviewProgress(storage) {
   return {season:read("football-architect:standings-dev-season",1,4,1),
     matchdays:read("football-architect:standings-dev-matchdays",0,30,0)};
 }
+// A completed or not-yet-reached season has no upcoming matchday shortcut.
+// Matchday 30 is the final played round, not an imaginary Matchday 31.
+export function previewCurrentMatchday(season,progress) {
+  const played=previewSeasonMatchdays(season,progress);
+  return season>progress.season || played===30 ? null : played+1;
+}
+
 export function previewSeasonMatchdays(season,progress) {
   if(!Number.isInteger(season)||season<1||season>4||
     !Number.isInteger(progress?.season)||progress.season<1||progress.season>4||
