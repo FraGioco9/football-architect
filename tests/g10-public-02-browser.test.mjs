@@ -225,7 +225,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
     assert.equal(await run("!document.querySelector('[data-fixture-round-choice="+stage+"]').hidden"),true);
     if(day>=30){
      await run("document.getElementById('app-fixtures-round').click();document.querySelector('[data-fixture-round-choice="+stage+"]').click()");
-     const count=division.tier===1?2:day<32?4:5;
+     const count=division.tier===1?2:5;
      await until("new URL(location.href).searchParams.get('matchday')==='"+stage+"' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length==="+count);
      const played=day<31?0:division.tier===1?Math.min(day-30,2):day===31?2:day===32?4:5;
      assert.equal(await run("document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length"),played*2);
