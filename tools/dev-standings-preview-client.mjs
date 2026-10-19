@@ -195,6 +195,25 @@ function historySeasonLabel(season){
 function openHistorySeason(season){
  window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
 }
+function historyExpandableHolders(card,holders,metric){
+ const extra=[...holders.children].slice(2);
+ if(!extra.length)return;
+ holders.id="app-history-record-holders-"+metric;
+ for(const entry of extra){entry.hidden=true;entry.dataset.historyTieExtra="";}
+ const expand=historyNode("button","app-history-record-expand");
+ expand.type="button";expand.dataset.historyRecordExpand=metric;
+ expand.setAttribute("aria-controls",holders.id);expand.setAttribute("aria-expanded","false");
+ const count=historyNode("span","app-history-record-more-count","+"+extra.length);
+ const show=historyLabel("historyShowAll"),less=historyLabel("historyShowLess");
+ less.hidden=true;expand.append(count,show,less);
+ expand.addEventListener("click",()=>{
+  const opened=expand.getAttribute("aria-expanded")!=="true";
+  for(const entry of extra)entry.hidden=!opened;
+  count.hidden=opened;show.hidden=opened;less.hidden=!opened;
+  expand.setAttribute("aria-expanded",String(opened));
+ });
+ card.append(expand);
+}
 async function renderHistoryPreview(){
  const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays,progressSeason=debugSeason;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
@@ -216,7 +235,6 @@ async function renderHistoryPreview(){
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
   const {completed:seasons,played}=createPreviewHistory(division,progressSeason,progressDay);
   if(!played.length){clearHistoryPreview();return;}
-  const chosen=seasons.at(-1);
   const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
@@ -234,7 +252,8 @@ async function renderHistoryPreview(){
   archive.append(archiveTable);
   for(const item of [...seasons].reverse()){
    const li=historyNode("li"),button=historyNode("button","app-history-dev-season-button");button.type="button";
-   button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen?.season));
+   // Archive rows navigate to Standings; they are not toggle selections in History.
+   button.dataset.historySeason=String(item.season);
    const action=historyLabel("historySelectSeason");action.className="sr-only";
    button.append(historySeasonLabel(item.season),action);
    item.rows.slice(0,3).forEach((row,index)=>{
@@ -273,6 +292,7 @@ async function renderHistoryPreview(){
     entry.append(historyIdentity(club));holders.append(entry);
    }
    card.append(holders);
+   historyExpandableHolders(card,holders,metric);
    grid.append(card);
   }
   for(const scope of ["season","all-time"])if(shown[scope]===0){
