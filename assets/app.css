@@ -327,6 +327,28 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 .app-competition-facts{display:flex;flex-wrap:wrap;gap:22px;margin:18px 0 0}
 .app-competition-facts dt{color:var(--muted);font-size:11px}
 .app-competition-facts dd{margin:5px 0 0;font-weight:700;font-size:14px}
+/* RULES-04: shared responsive regulations, separate from competition navigation. */
+.app-rules-content{display:grid;gap:20px;max-width:1000px;min-width:0}
+.app-rules-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+.app-rules-metric{min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel,transparent)}
+.app-rules-metric dt{color:var(--muted);font-size:12px;line-height:1.4}
+.app-rules-metric dd{margin:6px 0 0;font-size:22px;font-weight:750;line-height:1.2;color:var(--text)}
+.app-rules-section{min-width:0;border-top:1px solid var(--line);padding-top:18px}
+.app-rules-content>.app-rules-section:first-child{border-top:0;padding-top:0}
+.app-rules-section>.app-rules-metrics{margin-top:16px}
+.app-rules-section h3{font-size:16px;line-height:1.4;margin:0 0 10px;font-weight:750;color:var(--text)}
+.app-rules-section p{color:var(--text);font-size:14px;line-height:1.7;margin:0;overflow-wrap:anywhere}
+.app-rules-points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0}
+.app-rules-points .app-rules-metric dd{font-size:20px}
+.app-rules-outcomes{display:grid;gap:7px;margin:0}
+.app-rules-outcome{display:grid;grid-template-columns:minmax(58px,90px) minmax(0,1fr);align-items:center;gap:12px;border:1px solid var(--line);border-inline-start:3px solid var(--line);border-radius:7px;padding:10px 12px;min-width:0}
+.app-rules-outcome .app-rules-range{font-weight:750;white-space:nowrap}
+.app-rules-outcome span{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.app-rules-outcome[data-outcome="champion"],.app-rules-outcome[data-outcome="promoted"]{border-inline-start-color:#31966b}
+.app-rules-outcome[data-outcome="playout"],.app-rules-outcome[data-outcome="playoff"]{border-inline-start-color:#d09a41}
+.app-rules-outcome[data-outcome="relegated"]{border-inline-start-color:#c75c61}
+.app-rules-outcomes + p{margin-top:10px}
+@media(max-width:520px){.app-rules-content{gap:16px}.app-rules-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.app-rules-metric{padding:11px}.app-rules-metric dd{font-size:20px}.app-rules-section{padding-top:14px}.app-rules-outcome{gap:8px;padding:9px}}
 /* Scale the competition tabs as one group, regardless of translated label length. */
 @media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:max(92px,calc((100% - 8px)/2.5))}.app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)}}
 
