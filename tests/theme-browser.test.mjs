@@ -552,10 +552,38 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.ok(tiedExpansion.collapsed&&tiedExpansion.opened&&tiedExpansion.restored,division.id+' tied records expand/collapse accessibly '+JSON.stringify(tiedExpansion));
       }
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
-      await run("document.querySelector('[data-history-season=\"3\"]').click()");
       const standings=createPreviewStandings(division,30,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
       const standingsState="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])";
-      await wait("window.faCompetitionRoute.get().view==='standings'&&window.faCompetitionRoute.get().season==='3'&&JSON.stringify("+standingsState+")==="+JSON.stringify(JSON.stringify(standings)));
+      // The archive link changes the URL synchronously while DEV results hydrate.
+      // Observe actual painted frames, not just the final DOM, under a slow fetch.
+      if(division.id==='IT-1'){
+        devManifestDelay=350;
+        const frameCheck="(()=>{const expected="+JSON.stringify(JSON.stringify(standings))+
+          ";window.__faStaleStandingsFrames=[];window.__faWatchStandingsFrames=true;"+
+          "const sample=()=>{if(!window.__faWatchStandingsFrames)return;"+
+          "const state=window.faCompetitionRoute?.get?.(),panel=document.getElementById('competition-panel-standings');"+
+          "if(state?.view==='standings'&&state.season==='3'&&panel&&!panel.hidden&&"+
+          "getComputedStyle(panel).visibility==='visible'){const actual=JSON.stringify("+standingsState+");"+
+          "if(actual!==expected)window.__faStaleStandingsFrames.push(actual)}"+
+          "requestAnimationFrame(sample)};requestAnimationFrame(sample)})()";
+        await run(frameCheck);
+      }
+      try{
+        await run("document.querySelector('[data-history-season=\"3\"]').click()");
+        await wait("window.faCompetitionRoute.get().view==='standings'&&window.faCompetitionRoute.get().season==='3'&&JSON.stringify("+standingsState+")==="+JSON.stringify(JSON.stringify(standings)));
+        if(division.id==='IT-1'){
+          await wait("document.documentElement.dataset.faDevSeasonTransition===undefined");
+          await new Promise(resolve=>setTimeout(resolve,50));
+          await run("window.__faWatchStandingsFrames=false");
+          assert.deepEqual(await run("window.__faStaleStandingsFrames"),[],
+            'History archive must not reveal one stale Standings frame while changing seasons');
+        }
+      }finally{
+        if(division.id==='IT-1'){
+          devManifestDelay=0;
+          await run("window.__faWatchStandingsFrames=false");
+        }
+      }
       assert.equal(await run("document.activeElement.id"),'competition-tab-standings');
       assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),'30');
       await run("history.back()");
