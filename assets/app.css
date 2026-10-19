@@ -504,7 +504,7 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 /* Single card primitive for Stats/History; variants own only their required height. */
 .app-competition-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .app-competition-stat-card{--fa-record-heading:42px;box-sizing:border-box;display:grid;grid-template-rows:var(--fa-record-heading) auto;align-content:start;gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
-.app-competition-stat-label{min-width:0;position:static;margin:0;padding:0;border:0;font-family:inherit;font-size:.78rem;font-weight:700;line-height:1.2;letter-spacing:normal;text-transform:none;color:var(--muted);overflow-wrap:anywhere;hyphens:auto}
+.app-competition-stat-label{min-width:0;position:static;margin:0;padding:0;border:0;font-family:inherit;font-size:.875rem;font-weight:700;line-height:1.2;letter-spacing:normal;text-transform:none;color:var(--muted);overflow-wrap:anywhere;hyphens:auto}
 .app-competition-stat-card>.app-competition-stat-label{align-self:start;justify-self:stretch}
 .app-competition-stat-value{display:block;align-self:start;margin:0;font-size:clamp(1.25rem,2.5vw,1.8rem);line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .app-competition-stat-card>.app-competition-empty,.app-competition-stat-card>.fa-dev-stats-empty{align-self:start;justify-self:stretch;max-width:100%;margin:0!important;padding:0!important;color:var(--muted);font-size:.78rem;line-height:1.3;text-align:left;opacity:1;overflow-wrap:anywhere}
