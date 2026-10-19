@@ -114,6 +114,9 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await cmd("Page.enable");
   await cmd("Network.enable");
   await cmd("Runtime.enable");
+  // Headless CDP can update activeElement without dispatching focus while the
+  // document's window is inactive. Keyboard assertions need an active document.
+  await cmd("Emulation.setFocusEmulationEnabled",{enabled:true});
   const divisions=JSON.parse(readFileSync(join(artifact,"app/competitions/_shared/manifest.json"),"utf8")).divisions;
   const standingsSnapshot="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,row.cells[9]?.textContent])";
   const verifySeason=async(season,matchdays=10)=>{
@@ -211,8 +214,10 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
     await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='"+(Math.min(day,30)*8)+"'");
     await run("document.getElementById('competition-tab-postseason').click()");
    }
-   await run("document.getElementById('competition-tab-postseason').focus({preventScroll:true});document.querySelector('[data-postseason-help]').focus()");
-   assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),false,divisionId+' header help opens when keyboard focus enters');
+   assert.equal(await run('document.hasFocus()'),true,'Keyboard audit has an active document');
+   const focusState=await run("(()=>{const b=document.querySelector('[data-postseason-help]');document.getElementById('competition-tab-postseason').focus({preventScroll:true});b.focus();return {focused:document.activeElement===b,hidden:document.getElementById(b.getAttribute('aria-describedby')).hidden}})()");
+   assert.equal(focusState.hidden,false,divisionId+' header help opens when keyboard focus enters: '+JSON.stringify(focusState));
+   assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),false,divisionId+' focused help remains visible');
    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
    assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),true);
   }
