@@ -546,10 +546,16 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // Only an active season has a "current matchday" shortcut. The router owns
     // the selected round from URL/state, including completed-season archives.
     const currentRound=previewCurrentMatchday(season,progress);
-    const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound}):null;
-    const restorePostseason=window.faPostseason?.snapshot();
     const postResults=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
+    const postFixtures=[];
+    for(const tie of postResults.ties)for(const leg of [0,1])postFixtures.push({
+      round:31+leg,homeId:tie.clubIds[leg===0?1:0],awayId:tie.clubIds[leg===0?0:1],
+      homeGoals:null,awayGoals:null,kickoff:null,afterExtraTime:false,penalties:null,...tie.legs[leg]
+    });
+    if(postResults.final)postFixtures.push({round:33,kickoff:null,...postResults.final});
+    const commitFixtures=typeof fixturesApi?.prepare==="function"
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures}):null;
+    const restorePostseason=window.faPostseason?.snapshot();
     const commitPostseason=window.faPostseason?.prepare(rows,postResults);
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>

@@ -93,13 +93,14 @@
     availableSeasons=availableSeasons.filter(id=>Number(id)<=initialLimit);
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
+  const validFixtureRound=value=>model.validRound(value)||value==="playoffs"||value==="playout";
   function read(){
     const params=new URL(window.location.href).searchParams;
     const id=params.get("season"),round=params.get("matchday");
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason;
     return {season:devSeasons.length&&!availableSeasons.includes(requested)?latestSeason:requested,
       view:views.includes(params.get("view"))?params.get("view"):"standings",
-      matchday:/^[1-9]\d*$/.test(round||"")&&model.validRound(Number(round))?Number(round):1};
+      matchday:round==="playoffs"||round==="playout"?round:/^[1-9]\d*$/.test(round||"")&&model.validRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
@@ -132,7 +133,7 @@
     if(Object.hasOwn(patch,"matchday"))pendingDefaultMatchday=false;
     const next={...state,...patch};
     if(!views.includes(next.view)||!/^[1-9]\d{0,8}$/.test(next.season)||
-      !model.validRound(next.matchday))return;
+      !validFixtureRound(next.matchday))return;
     apply(next,options);
   }
   window.faCompetitionRoute={get:()=>({...state}),set,

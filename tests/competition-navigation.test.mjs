@@ -149,3 +149,14 @@ test('POSTSEASON-URL: direct load, keyboard selection and browser history restor
  s.back();assert.equal(s.window.faCompetitionRoute.get().view,'standings');
  s.forward();assert.equal(s.window.faCompetitionRoute.get().view,'postseason');
 });
+
+test('FIXTURES-POSTSEASON-URL: named rounds preserve deep links, tabs and browser history without extending league rounds',()=>{
+ for(const stage of ['playoffs','playout']){
+  const s=setup('/competitions/it-2?season=1&view=fixtures&matchday='+stage);
+  assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
+  s.tabs[0].events.click();assert.equal(s.window.location.search,'?season=1&view=standings');
+  s.tabs[2].events.click();assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
+  s.window.faCompetitionRoute.set({matchday:30});s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
+  assert.equal(competitionModel.validRound(31),false);
+ }
+});
