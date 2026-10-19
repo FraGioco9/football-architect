@@ -213,6 +213,8 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    }
    const helpState=await run("(()=>{const b=document.querySelector('[data-postseason-help]'),t=document.getElementById(b.getAttribute('aria-describedby'));window.__helpEvents=[];for(const name of ['focus','blur','pointerenter','pointerleave'])b.addEventListener(name,()=>window.__helpEvents.push(name));b.focus();return {focused:document.activeElement===b,hidden:t.hidden,view:window.faCompetitionRoute.get().view,panelHidden:document.getElementById('competition-panel-postseason').hidden,display:getComputedStyle(b).display,rect:b.getBoundingClientRect().toJSON(),events:window.__helpEvents}})()");
    assert.equal(helpState.hidden,false,divisionId+' focus state '+JSON.stringify(helpState));
+   const settledHelp=await run("(()=>{const b=document.querySelector('[data-postseason-help]');return {focused:document.activeElement===b,hidden:document.getElementById(b.getAttribute('aria-describedby')).hidden,events:window.__helpEvents}})()");
+   assert.equal(settledHelp.hidden,false,divisionId+' settled focus state '+JSON.stringify(settledHelp));
    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
    assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),true);
   }
