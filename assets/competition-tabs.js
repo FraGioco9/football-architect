@@ -209,6 +209,21 @@
   panel.dataset.historyRecordScope=scope;
   for(const button of panel.querySelectorAll('[data-history-record-scope]'))button.setAttribute("aria-pressed",String(button.dataset.historyRecordScope===scope));
   for(const element of panel.querySelectorAll('[data-history-scope]'))element.hidden=element.dataset.historyScope!==scope;
+  // When no verified records exist for the selected scope, replace an entire
+  // empty grid with a single localized status. This also covers public History.
+  for(const group of panel.querySelectorAll('[data-history-team-records]')){
+   const grid=group.querySelector('.app-competition-stat-grid');if(!grid)continue;
+   const records=[...grid.querySelectorAll('.app-competition-stat-card[data-history-scope]')];
+   const hasRecords=records.some(card=>card.dataset.historyScope===scope&&
+    card.querySelector('.app-competition-stat-value'));
+   let empty=group.querySelector('[data-history-team-empty]');
+   if(!empty){
+    empty=document.createElement('p');empty.className='app-competition-status app-history-team-empty-state';
+    empty.dataset.appI18n='historyNoData';empty.dataset.historyTeamEmpty='';
+    group.append(empty);
+   }
+   grid.hidden=!hasRecords;empty.hidden=hasRecords;
+  }
  };
  panel.addEventListener("click",event=>{
   const button=event.target.closest('[data-history-record-scope]');if(!button||!panel.contains(button))return;
@@ -360,6 +375,22 @@
         }else footer.append(element("span","app-history-player-context",context));
       }
       card.append(footer);
+    }
+    // In the absence of approved player data, one message replaces seven
+    // identical empty cards. Preserve the cards for later canonical hydration.
+    for(const group of panel.querySelectorAll('[data-history-player-records]')){
+      const grid=group.querySelector('.app-competition-stat-grid');
+      if(!grid)continue;
+      const filled=[...group.querySelectorAll('[data-history-player-record]')]
+        .some(card=>card.dataset.historyFilled==='true');
+      let empty=group.querySelector('[data-history-player-empty]');
+      if(!empty){
+        empty=element('p','app-history-player-empty-state','No historical player data available yet.');
+        empty.dataset.appI18n='historyPlayerNoData';
+        empty.dataset.historyPlayerEmpty='';
+        group.append(empty);
+      }
+      grid.hidden=!filled;empty.hidden=filled;
     }
     window.faAppRenderLanguage?.();
   }
