@@ -783,7 +783,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     languageObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
-    for (const entry of [...entries,...mobileEntries]) {
+    function bindFormEntry(entry){
       const btn = entry.button;
       listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
@@ -805,6 +805,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
         pressedWhenOpen = false;
       });
     }
+    for(const entry of [...entries,...mobileEntries])bindFormEntry(entry);
     listen(document,"pointerdown", e => {
       if (active && !tooltip.contains(e.target) && e.target !== active.button) close();
     });
@@ -823,8 +824,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
         const id=row.club.countryId+"-"+row.club.clubId;
         const tr=desktop.get(id),li=compact.get(id);
         return !tr||!li||
-          tr.querySelectorAll(".app-world-form-control").length!==row.recent.length||
-          li.querySelectorAll(".app-world-mobile-form .app-world-form-dot").length!==row.recent.length;
+          !tr.querySelector(".app-world-form-strip")||!li.querySelector(".app-world-mobile-form");
       }))return false;
       close();
       // Validate the new fixture/postseason data before changing visible standings.
@@ -838,7 +838,22 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
         const numbers=[row.played,row.won,row.drawn,row.lost,row.gf,row.ga,
           row.gd>0?"+"+row.gd:row.gd,row.pts];
         numbers.forEach((number,i)=>{tr.cells[i+2].textContent=String(number)});
-        const buttons=[...tr.querySelectorAll(".app-world-form-control")];
+        const strip=tr.querySelector(".app-world-form-strip");
+        const buttons=[...strip.querySelectorAll(".app-world-form-control")];
+        while(buttons.length>row.recent.length){
+          const button=buttons.pop();
+          const index=entries.findIndex(entry=>entry.button===button);
+          if(index>=0)entries.splice(index,1);
+          button.remove();
+        }
+        while(buttons.length<row.recent.length){
+          const button=node("button","app-world-form-dot app-world-form-control");
+          button.type="button";button.setAttribute("aria-haspopup","true");
+          const glyph=node("span","app-world-form-glyph");
+          button.append(glyph);strip.append(button);buttons.push(button);
+          const entry={button,glyph,game:null,ownId:row.club.clubId,latest:false};
+          entries.push(entry);bindFormEntry(entry);
+        }
         buttons.forEach((button,i)=>{
           const game=row.recent[i];
           button.className="app-world-form-dot app-world-form-control app-world-form-"+
@@ -851,13 +866,21 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
         tbody.appendChild(tr);
       }
       nextMobile(true);
-      for(const entry of mobileEntries){
-        const row=nextRows.find(r=>r.club.clubId===entry.ownId);
-        const li=compact.get(row.club.countryId+"-"+row.club.clubId);
+      const previousMobile=new Map(mobileEntries.map(entry=>[entry.button,entry]));
+      mobileEntries.length=0;
+      for(const row of nextRows){
+        const id=row.club.countryId+"-"+row.club.clubId;
+        const li=compact.get(id);
         const marks=[...li.querySelectorAll(".app-world-mobile-form .app-world-form-dot")];
-        const index=marks.indexOf(entry.button);
-        if(index<0)throw Error("Mobile form mark identity changed");
-        entry.game=row.recent[index];entry.latest=index===0;
+        marks.forEach((mark,index)=>{
+          let entry=previousMobile.get(mark);
+          if(!entry){
+            entry={button:mark,glyph:mark,game:row.recent[index],ownId:row.club.clubId,latest:index===0,mobile:true};
+            bindFormEntry(entry);
+          }
+          entry.game=row.recent[index];entry.latest=index===0;
+          mobileEntries.push(entry);
+        });
       }
       translate();
       return true;
