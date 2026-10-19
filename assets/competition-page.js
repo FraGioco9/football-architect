@@ -150,6 +150,25 @@
         requestAnimationFrame(align);
       }
     }
+    // Playoff lines are anchored to the midpoint between team rows, not card height.
+    // Do not move either semifinal, final, or winner box.
+    if(division.tier===2){
+      const semifinals=bracket.querySelectorAll(".app-knockout-left,.app-knockout-right");
+      for(const semifinal of semifinals){
+        const teamRows=semifinal.querySelectorAll(".app-knockout-team-row");
+        if(teamRows.length!==2)continue;
+        const alignLine=()=>{
+          const first=teamRows[0].getBoundingClientRect();
+          const second=teamRows[1].getBoundingClientRect();
+          const origin=semifinal.getBoundingClientRect();
+          semifinal.style.setProperty("--playoff-connector-axis",((first.bottom+second.top)/2-origin.top)+"px");
+        };
+        const observer=new ResizeObserver(alignLine);
+        observer.observe(semifinal.querySelector(".app-postseason-group")||semifinal);
+        window.addEventListener("resize",alignLine);
+        requestAnimationFrame(alignLine);
+      }
+    }
     const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
     const closeTips=bindPostseasonTips();
     let current={rows:null,results:null};
