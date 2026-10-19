@@ -2,9 +2,19 @@
 import model from "../assets/competition-model.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo}){
-const detailAppend = function detailAppend(){
+const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
+ const bands=neutral?[]:d.tier===1
+  ?[["1","champion","rulesTier1Champion","National champion"],["13–14","playout","rulesTier1Playout","Relegation play-out"],["15–16","relegated","rulesTier1Relegated","Direct relegation"]]
+  :[["1–2","promoted","rulesTier2Promoted","Direct promotion"],["3–6","playoff","rulesTier2Playoffs","Promotion play-offs"]];
+ const legend=bands.length?`
+          <div class="app-standings-legend">
+            <p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p>
+            <ul aria-labelledby="standings-outcome-legend-title">
+${bands.map(([range,outcome,key,label])=>`              <li data-standing-outcome="${outcome}"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-${outcome}"><strong>${range}</strong> · <span data-app-i18n="${key}">${label}</span></span></li>`).join("\n")}
+            </ul>
+          </div>`:"";
  return `
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
@@ -20,7 +30,7 @@ ${cols}
                 </tbody>
               </table>
             </div>
-          </div>`;
+          </div>${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const fixturesContent = ()=>`
@@ -132,7 +142,7 @@ const detailContent = function detailContent(d,neutral=false){
  '            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span>'+menuChevron+'</button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="/app/competitions" data-app-i18n="allDivisions">All competitions</a>\n'+
  '          </header>\n'+
- '          <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>\n'+competitionTabs(d,detailAppend(),neutral);
+ '          <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>\n'+competitionTabs(d,detailAppend(d,neutral),neutral);
 };
 return detailContent;
 }

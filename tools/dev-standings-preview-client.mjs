@@ -560,6 +560,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     rows.forEach((r, position) => {
       const tr = node("tr");
       tr.dataset.worldClub = r.club.countryId + "-" + r.club.clubId;
+      window.faStandingsOutcomes?.decorate(tr, position + 1);
       const value = (text, cls = "app-world-stat-value") => {
         const td = node("td", cls, String(text));
         tr.appendChild(td);

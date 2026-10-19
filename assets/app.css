@@ -344,9 +344,7 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 .app-rules-outcome{display:grid;grid-template-columns:minmax(58px,90px) minmax(0,1fr);align-items:center;gap:12px;border:1px solid var(--line);border-inline-start:3px solid var(--line);border-radius:7px;padding:10px 12px;min-width:0}
 .app-rules-outcome .app-rules-range{font-weight:750;white-space:nowrap}
 .app-rules-outcome span{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
-.app-rules-outcome[data-outcome="champion"],.app-rules-outcome[data-outcome="promoted"]{border-inline-start-color:#31966b}
-.app-rules-outcome[data-outcome="playout"],.app-rules-outcome[data-outcome="playoff"]{border-inline-start-color:#d09a41}
-.app-rules-outcome[data-outcome="relegated"]{border-inline-start-color:#c75c61}
+.app-rules-outcome:not([data-outcome="stay"]){border-inline-start-color:var(--standing-outcome-color);background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
 .app-rules-outcomes + p{margin-top:10px}
 @media(max-width:520px){.app-rules-content{gap:16px}.app-rules-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.app-rules-metric{padding:11px}.app-rules-metric dd{font-size:20px}.app-rules-section{padding-top:14px}.app-rules-outcome{gap:8px;padding:9px}}
 /* Scale the competition tabs as one group, regardless of translated label length. */
@@ -675,3 +673,20 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
 /* Respect hidden standings while DEV prepares the reordered rows on refresh. */
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]>.app-club-crest-image{visibility:inherit}
+
+/* Standings bands mirror the Rules palette and retain the existing points column. */
+[data-standing-outcome="champion"],.app-rules-outcome[data-outcome="champion"]{--standing-outcome-color:#D4AF37}
+[data-standing-outcome="promoted"],.app-rules-outcome[data-outcome="promoted"]{--standing-outcome-color:#31966B}
+[data-standing-outcome="playoff"],.app-rules-outcome[data-outcome="playoff"]{--standing-outcome-color:#4A8FD8}
+[data-standing-outcome="playout"],.app-rules-outcome[data-outcome="playout"]{--standing-outcome-color:#D98A32}
+[data-standing-outcome="relegated"],.app-rules-outcome[data-outcome="relegated"]{--standing-outcome-color:#C75C61}
+html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>*:not(:nth-child(10)){background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
+html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:first-child{box-shadow:inset 3px 0 var(--standing-outcome-color)}
+.app-world-mobile-item[data-standing-outcome]{box-shadow:inset 3px 0 var(--standing-outcome-color);background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
+.app-standings-legend{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:12px;line-height:1.5}
+.app-standings-legend p{margin:0 0 8px;font-weight:750}
+.app-standings-legend ul{display:flex;flex-wrap:wrap;gap:8px 20px;list-style:none;margin:0;padding:0}
+.app-standings-legend li{display:flex;align-items:center;gap:8px;min-width:0}
+.app-standings-legend li>span:last-child{overflow-wrap:anywhere}
+.app-standings-legend-swatch{flex:none;width:12px;height:12px;border-radius:3px;background:var(--standing-outcome-color)}
+@media(max-width:620px){.app-standings-legend ul{display:grid;gap:8px}.app-standings-legend{padding:10px}}
