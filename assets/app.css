@@ -538,8 +538,8 @@ html[data-theme="light"] .app-history-dev-archive-head{background:#E8F1EB;color:
 .app-history-dev-season-button{width:100%;min-height:46px;box-sizing:border-box;border:0;border-radius:0;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .app-history-dev-archive li:last-child .app-history-dev-season-button{border-radius:0 0 12px 12px}
 .app-history-dev-archive li:nth-child(even){background:rgba(100,203,169,.025)}
-.app-history-dev-season-button:hover,.app-history-dev-season-button[aria-pressed="true"]{background:rgba(100,203,169,.075)}
-html[data-theme="light"] .app-history-dev-season-button:hover,html[data-theme="light"] .app-history-dev-season-button[aria-pressed="true"]{background:#E7F4EB}
+.app-history-dev-season-button:hover{background:rgba(100,203,169,.075)}
+html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB}
 .app-history-dev-archive-club{display:flex;align-items:center;gap:6px;min-width:0;opacity:.82}
 .app-history-dev-archive-champion{opacity:1;font-weight:750}
 .app-history-dev-archive-champion .app-world-club-name{font-weight:750}
@@ -551,6 +551,9 @@ html[data-theme="light"] .app-history-dev-season-button:hover,html[data-theme="l
 .app-history-dev button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .app-history-dev-record .app-world-club-name{font-size:.85rem;font-weight:650}
 .app-history-record-holders{display:grid;align-content:start;gap:8px;min-width:0}
+.app-history-record-expand{display:inline-flex;align-items:center;justify-self:start;gap:6px;min-height:28px;min-width:0;padding:2px 0;border:0;background:transparent;color:var(--muted);font:inherit;font-size:.78rem;text-align:left;cursor:pointer}
+.app-history-record-expand:hover{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+.app-history-record-more-count{font-weight:750;font-variant-numeric:tabular-nums}
 .app-history-dev-record-entry{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;min-width:0}
 .app-history-records-empty{grid-column:1/-1;padding:12px 2px}
 .app-history-dev-record-entry .app-history-dev-season{color:var(--muted);font-weight:400}
