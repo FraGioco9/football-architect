@@ -179,7 +179,7 @@
     function clubContent(slot,club,key,label) {
       if(club){
         const id=club.countryId+"-"+club.clubId;
-        const existing=slot.querySelector("[data-club-crest]");
+        const existing=slot.querySelector?.("[data-club-crest]");
         if(existing?.dataset.clubCrest===id){
           const name=existing.nextElementSibling;
           if(name&&name.textContent!==club.primaryName)name.textContent=club.primaryName;
