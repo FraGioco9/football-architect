@@ -57,7 +57,8 @@ test('FIXTURES-02: eight games per round, stable navigation and real score/null 
   assert.ok(!contents(list).includes(' – '),'future fixtures do not reveal generated future scores');
   fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'17');
   route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,false);
-  fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'30');
+  fields.get('app-fixtures-next').emit('click');assert.equal(route.get().matchday,d.tier===1?'playout':'playoffs');
+   route.set({matchday:30});
   const restore=view.snapshot();view.prepare(null)();assert.equal(list.children.length,0);restore();
   assert.equal(list.children.length,8);assert.equal(round.value,'30');
  }
