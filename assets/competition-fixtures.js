@@ -34,7 +34,7 @@
   postChoice.id='app-fixtures-round-option-'+stage;postChoice.dataset.menuValue=stage;
   postChoice.dataset.fixtureRoundChoice=stage;postChoice.setAttribute('role','option');
   postChoice.append(word(stageKey,division.tier===1?'Playout':'Playoffs'));
-  postChoice.hidden=true;picker.append(postChoice);
+  postChoice.hidden=false;picker.append(postChoice);
   function validatePostseason(games){
     if(!Array.isArray(games))throw Error('Invalid post-season fixtures');
     if(!games.length)return [];
@@ -109,6 +109,7 @@
   }
   function identity(id,home){
     const club=clubs.get(id),item=element("span","app-fixture-club"+(home?" app-fixture-home":""));
+    if(!club){item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),element("span","app-world-club-crest-placeholder"),element("span","app-fixture-name","TBD"));return item;}
     const crest=element("span","app-world-club-crest-placeholder");
     crest.dataset.clubCrest=club.countryId+"-"+id;crest.setAttribute("aria-hidden","true");
     item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),crest,
@@ -141,13 +142,13 @@
       element("span","app-fixture-goals",String(game.awayGoals)));
     else score.append(element("span","app-fixture-pending","—"));
     result.append(status,score,
-      element("span","app-fixture-stadium",clubs.get(game.homeId).stadiumName));
+      element("span","app-fixture-stadium",clubs.get(game.homeId)?.stadiumName||"—"));
     item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;
   }
   function render(){
     const available=rounds!==null&&availableSeasons.has(navigation.get().season);
-    const hasPostseason=available&&postseason.length>0;
+    const hasPostseason=available;
     if(menuHasPostseason!==hasPostseason){
       menuHasPostseason=hasPostseason;postChoice.hidden=!hasPostseason;
       roundMenu.update(hasPostseason?[...choices,postChoice]:choices);
@@ -170,21 +171,24 @@
     const matches=[];
     if(available){
       if(isPostseason)for(const round of [31,32,33]){
-        const games=postseason.filter(g=>g.round===round);if(!games.length)continue;
+        const games=postseason.filter(g=>g.round===round);
+        if(round===33&&division.tier===1)continue;
+        const count=round===33?1:division.tier===1?1:2;
+        const display=games.length?games:Array.from({length:count},()=>({round,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null}));
         const heading=element('li','app-fixture-stage');
         const title=element('h3');title.append(word(round===31?'postseasonFirstLeg':round===32?'postseasonSecondLeg':'postseasonFinal',round===31?'First leg':round===32?'Second leg':'Final'));
-        heading.append(title);matches.push(heading,...games.map(matchRow));
+        heading.append(title);matches.push(heading,...display.map(matchRow));
       }
       else matches.push(...rounds.get(selected).map(matchRow));
     }
     fields.list.replaceChildren(...matches);
     fields.summary.replaceChildren(...(isPostseason?[word(stageKey,division.tier===1?'Playout':'Playoffs')]:[word("fixturesMatchday","Matchday"),element("strong","",String(selected))]),
-      ...(isPostseason?[element('strong','',String(postseason.length)),word('fixturesMatches','matches')]:[word("fixturesMatchCount","8 matches")]));
+      ...(isPostseason?[element('strong','',String(postseason.length|| (division.tier===1?2:5))),word('fixturesMatches','matches')]:[word("fixturesMatchCount","8 matches")]));
     window.faAppRenderLanguage?.();
   }
   function select(value){
     const round=value===stage?stage:Number(value);
-    if(rounds&&(model.validRound(round)||round===stage&&postseason.length)){
+    if(rounds&&(model.validRound(round)||round===stage)){
       navigation.set({matchday:round});
     }
   }
@@ -206,7 +210,7 @@
       const post=validatePostseason(games);
       if(!next&&post.length)throw Error('Post-season requires a league schedule');
       if(current!==null&&!model.validRound(current)&&current!==stage)throw Error("Invalid current matchday");
-       if(current===stage&&!post.length)throw Error("Post-season current matchday requires fixtures");
+       // The stage is selectable before participating clubs are known.
       return ()=>{
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
         navigation.defaultMatchday(currentMatchday??1);
