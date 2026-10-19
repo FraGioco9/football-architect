@@ -67,6 +67,37 @@ ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],
               </section>
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;
+function renderRules(d,neutral,attrs,key,label){
+ const metric=(code,name,value,id="")=>`                <div class="app-rules-metric"><dt data-app-i18n="${code}">${name}</dt><dd${id?` id="${id}"`:""}>${value}</dd></div>`;
+ const paragraph=(code,fallback)=>`              <p data-app-i18n="${code}">${fallback}</p>`;
+ const section=(id,titleKey,title,body)=>`            <section class="app-rules-section" aria-labelledby="${id}">\n              <h3 id="${id}" data-app-i18n="${titleKey}">${title}</h3>\n${body}\n            </section>`;
+ const position=(range,code,fallback,kind)=>`                <div class="app-rules-outcome" data-outcome="${kind}"><strong class="app-rules-range">${range}</strong><span data-app-i18n="${code}">${fallback}</span></div>`;
+ const outcomes=neutral
+ ?paragraph("rulesNeutralOutcomes","Select a division to view its promotion and relegation rules.")
+ :d.tier===1
+ ?`              <div class="app-rules-outcomes">\n${[
+  position("1","rulesTier1Champion","National champion","champion"),
+  position("2–12","rulesTier1Safe","Remain in First Division","stay"),
+  position("13–14","rulesTier1Playout","Relegation play-out","playout"),
+  position("15–16","rulesTier1Relegated","Direct relegation","relegated")
+ ].join("\n")}\n              </div>`
+ :`              <div class="app-rules-outcomes">\n${[
+  position("1–2","rulesTier2Promoted","Direct promotion","promoted"),
+  position("3–6","rulesTier2Playoffs","Promotion play-offs","playoff"),
+  position("7–16","rulesTier2Safe","Remain in Second Division","stay")
+ ].join("\n")}\n              </div>\n${paragraph("rulesNoThirdTier","The Second Division is the lowest active national tier. Clubs do not drop to a Third Division.")}`;
+ const playSection=neutral?"":d.tier===1
+ ?section("rules-playout","rulesPlayoutTitle","Relegation play-out",paragraph("rulesPlayoutBody","The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. The tie takes place regardless of points difference. Away goals carry no extra weight. If aggregate scores are level after the second leg, extra time and then penalties decide the winner."))
+ :section("rules-playoffs","rulesPlayoffsTitle","Promotion play-offs",paragraph("rulesPlayoffsBody","The semi-finals are 3rd vs 6th and 4th vs 5th, each played over two legs with the higher-ranked club at home in the return leg. The winners meet in a single-match final hosted by the finalist with the better regular-season ranking. The final winner earns promotion. No points-gap threshold applies. Away goals carry no extra weight. Tied aggregate semi-finals or a tied final go to extra time and then penalties if necessary."));
+ return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <div class="app-rules-content">\n              <dl class="app-rules-metrics">\n${[
+ metric("rulesClubs","Clubs",neutral?"—":"16","app-competition-capacity"),
+ metric("rulesRounds","Matchdays",neutral?"—":"30"),
+ metric("rulesLegs","Legs",neutral?"—":"2"),
+ metric("rulesMatches","Matches",neutral?"—":"240")
+ ].join("\n")}\n              </dl>\n              <p class="app-rules-tier"><span data-app-i18n="rulesTier">Tier</span> <strong id="app-competition-level">${neutral?"—":d.tier}</strong></p>\n${section("rules-format","rulesFormatTitle","Competition format",paragraph("rulesFormatBody","Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches."))}\n${section("rules-points","rulesPointsTitle","Points system",`              <dl class="app-rules-points">\n${[
+ metric("rulesWin","Win","3"),metric("rulesDraw","Draw","1"),metric("rulesLoss","Loss","0")
+ ].join("\n")}\n              </dl>`)}\n${section("rules-ranking","rulesRankingTitle","League ranking",paragraph("rulesRankingBody","Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw."))}\n${section("rules-outcomes","rulesOutcomesTitle","Sporting outcomes",outcomes)}${playSection?"\n"+playSection:""}\n${section("rules-season","rulesSeasonTitle","Season structure",paragraph("rulesSeasonBody","All divisions follow a globally synchronized sequence of league matchdays. Sporting outcomes are finalized after the regular season and any required play-offs or play-out have concluded. League points reset to zero each new season, while completed results remain part of competition history."))}\n            </div>\n          </section>`;
+}
 const competitionTabs = function competitionTabs(d,standings,neutral) {
  const views=model.views;
  const nav=views.map(({id,key,label},i)=>
@@ -83,7 +114,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent()}\n          </section>`;
-  if(id==="rules")return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="competitionRulesEmpty">Promotion, relegation and tie-break rules are not yet defined.</p>\n            <dl class="app-competition-facts"><div><dt data-app-i18n="capacityLabel">Planned club places</dt><dd id="app-competition-capacity">${neutral?"—":model.profile.capacity}</dd></div><div><dt data-app-i18n="tierLabel">Tier</dt><dd id="app-competition-level">${neutral?"—":d.tier}</dd></div></dl>\n          </section>`;
+  if(id==="rules")return renderRules(d,neutral,attrs,key,label);
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
  return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${panels}\n          <script src="../../../assets/competition-tabs.js" defer></script>\n          <script src="../../../assets/competition-history.js" defer></script>`;
