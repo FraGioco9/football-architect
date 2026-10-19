@@ -215,5 +215,5 @@ test("DEBUG-CREST-01 preserves mounted standings and Fixtures crest hosts",()=>{
  assert.match(dev,/if\(restorePrevious\?\.refresh[\s\S]*?return restorePrevious;/);
  assert.match(fixtures,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
  assert.match(fixtures,/return previous;/);
- assert.doesNotMatch(fixtures,/fields\.list\.replaceChildren\(\.\.\.matches\)/);
+ assert.match(fixtures,/const next=matches\.map\(item=>\{/);\n assert.match(fixtures,/if\(typeof fields\.list\.insertBefore==="function"\)/);
 });
