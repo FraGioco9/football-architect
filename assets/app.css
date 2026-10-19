@@ -717,6 +717,8 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-knockout-left::after,.app-knockout-right::before,.app-knockout-final::after{content:"";position:absolute;pointer-events:none;opacity:.65}
 .app-knockout-left::after{inset-inline-start:100%;top:50%;width:var(--knockout-gap);border-top:1px solid var(--muted);transform:translateY(-50%)}
 .app-knockout-right::before{inset-inline-end:100%;top:50%;width:var(--knockout-gap);border-top:1px solid var(--muted);transform:translateY(-50%)}
+/* Playoff semifinal connectors follow the team-row divider; cards keep their positions. */
+.app-postseason-grid:not(.app-postseason-playout) .app-knockout-left::after,.app-postseason-grid:not(.app-postseason-playout) .app-knockout-right::before{top:var(--playoff-connector-axis,50%);transform:none}
 .app-knockout-final::after{top:50%;inset-inline-start:50%;height:calc(50% + 32px);border-inline-start:1px solid var(--muted)}
 .app-knockout-result{position:relative;align-self:start;display:flex;align-items:flex-start}
 .app-knockout-result>.app-postseason-group{position:relative}
