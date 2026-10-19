@@ -126,8 +126,8 @@
     // Align playout connector and winner to the actual boundary between team rows.
     // Text notes below the teams must not affect either position.
     if(division.tier===1){
-      const left=bracket.querySelector(".app-knockout-left");
-      const result=bracket.querySelector(".app-knockout-result");
+      const left=bracket.querySelector?.(".app-knockout-left");
+      const result=bracket.querySelector?.(".app-knockout-result");
       const teamRows=left?.querySelectorAll(".app-knockout-team-row");
       if(left&&result&&teamRows?.length===2){
         const align=()=>{
@@ -153,7 +153,7 @@
     // Playoff lines are anchored to the midpoint between team rows, not card height.
     // Do not move either semifinal, final, or winner box.
     if(division.tier===2){
-      const semifinals=bracket.querySelectorAll(".app-knockout-left,.app-knockout-right");
+      const semifinals=bracket.querySelectorAll?.(".app-knockout-left,.app-knockout-right")||[];
       for(const semifinal of semifinals){
         const teamRows=semifinal.querySelectorAll(".app-knockout-team-row");
         if(teamRows.length!==2)continue;
