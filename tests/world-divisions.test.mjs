@@ -196,8 +196,8 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('document.createElement("tr")'));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
- assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
- assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
+ assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
+ assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
  assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
@@ -267,11 +267,11 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
- assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
- assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
+ assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
+ assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
- assert.ok(read("assets/competition-page.js").includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
+ assert.ok(read("assets/competition-page.js").includes('createCrestHost(tr.dataset.worldClub)'));
  assert.ok(!page.includes("app-world-club-crest-placeholder"));
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
