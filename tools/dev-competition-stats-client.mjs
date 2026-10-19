@@ -275,7 +275,7 @@ if (panel && divisionId) {
   fetch("/competitions/_shared/manifest.json",{cache:"no-store"})
     .then(response=>{if(!response.ok)throw Error("Manifest unavailable");return response.json();})
     .then(data=>{
-      if(data?.schemaVersion!==1||data.approved!==false||!Array.isArray(data.divisions)||data.divisions.length!==16)
+      if(!window.faCompetitionModel.validManifest(data))
         throw Error("Invalid DEV manifest");
       manifest=data;render();
     })

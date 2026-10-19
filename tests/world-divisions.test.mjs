@@ -1,3 +1,4 @@
+import model from "../assets/competition-model.js";
 import { publicRequestFile } from "../tools/publication-guard.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -16,7 +17,7 @@ const routes=divisions.map(d=>({division:d,file:"app/competitions/"+d.id.toLower
 const cols=["standingsPosition","standingsClub","standingsPlayed","standingsWon",
  "standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference",
  "standingsPoints","standingsForm"];
-const views=["standings","fixtures","stats","history","rules","awards"];
+const views=model.views.map(view=>view.id);
 
 test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",()=>{
  assert.equal(countries.length,8);
@@ -190,17 +191,17 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('if (event.key === "Escape" && active)'));
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("for (let i = form.length - 1; i >= 0; i--)"));
- assert.ok(renderer.includes("data.approved !== false"));
- assert.ok(renderer.includes("clubs.size === 256"));
+ assert.ok(read("assets/competition-model.js").includes("data.approved!==false"));
+ assert.ok(read("assets/competition-model.js").includes("clubs.size===participantCount"));
  assert.ok(renderer.includes('document.createElement("tr")'));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"]'));
+ assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-history.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
- assert.ok(code.includes("tabs.length!==6"));
+ assert.ok(code.includes("tabs.length!==views.length"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
@@ -214,7 +215,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
 
 test("COMPETITIONS-06 keyboard and click controls preserve six-tab routing",()=>{
  const code=read("assets/competition-tabs.js");
- assert.ok(code.includes('const views=["standings","fixtures","stats","history","rules","awards"]'));
+ assert.ok(code.includes('const views=model.views.map(view=>view.id)'));
  assert.ok(code.includes('tabs.forEach((tab,index)=>'));
  assert.ok(code.includes('tab.addEventListener("click",()=>set({view:views[index]}))'));
  assert.ok(code.includes('tab.addEventListener("keydown",event=>'));
@@ -229,8 +230,8 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  const runtime=read("assets/competition-page.js");
  assert.doesNotThrow(()=>new Script(runtime,{filename:"competition-page.js"}));
  assert.ok(runtime.includes('routeId.toLowerCase()'));
- assert.ok(runtime.includes("data.approved !== false"));
- assert.ok(runtime.includes("clubs.size === 256"));
+ assert.ok(runtime.includes("model.validManifest(manifest)"));
+ assert.ok(read("assets/competition-model.js").includes("clubs.size===participantCount"));
  assert.ok(runtime.includes("start().catch(fail)"));
 });
 
@@ -270,7 +271,7 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
- assert.ok(generator.includes('class="app-world-club-crest-placeholder" data-club-crest='));
+ assert.ok(read("assets/competition-page.js").includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
  assert.ok(!page.includes("app-world-club-crest-placeholder"));
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){

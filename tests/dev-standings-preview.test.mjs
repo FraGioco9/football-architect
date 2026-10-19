@@ -1,3 +1,4 @@
+import competitionModel from "../assets/competition-model.js";
 // DEV-GATE-01..06 and deterministic multi-division regression coverage.
 // Run via Node's built-in test runner; no npm install or manual workflow needed.
 import test from "node:test";
@@ -9,6 +10,7 @@ import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
 import { runInNewContext } from "node:vm";
+const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel}));
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -34,21 +36,21 @@ test("DEV competition cards open the Debug season on load, changes and reset",()
  const source=client.slice(start,client.indexOf('function syncDebugControls()',start));
  const cards=['/competitions/it-1?season=1&view=standings','http://app.localhost:2000/competitions/nl-2?season=1&view=standings'].map(href=>({attrs:{href},getAttribute(key){return this.attrs[key]},setAttribute(key,value){this.attrs[key]=value}}));
  const context={debugSeason:3,URL,location:{href:'http://app.localhost:2000/competitions'},document:{querySelectorAll:()=>cards}};
- runInNewContext(source+';syncCompetitionLinks()',context);
+ runWithModel(source+';syncCompetitionLinks()',context);
  for(const season of [3,2,4,1]){
-  context.debugSeason=season;runInNewContext('syncCompetitionLinks()',context);
+  context.debugSeason=season;runWithModel('syncCompetitionLinks()',context);
   for(const card of cards){const url=new URL(card.attrs.href);assert.equal(url.searchParams.get('season'),String(season));assert.equal(url.searchParams.get('view'),'standings');assert.equal(card.attrs['data-dev-latest-season'],String(season));assert.equal(url.hostname,'app.localhost');}
  }
 });
 test("DEBUG-DEFAULTS: fresh, invalid and blocked storage start at Matchday 0",()=>{
  const source=client.slice(client.indexOf('function readMatchdays()'),client.indexOf('let matchdays='));
  for(const raw of [null,'bad','-1','31','0','4','30']){
-  const value=runInNewContext(source+';readMatchdays()',{
+  const value=runWithModel(source+';readMatchdays()',{
    ROUNDS_KEY:'rounds',sessionStorage:{getItem:()=>raw}
   });
   assert.equal(value,['4','30'].includes(raw)?Number(raw):0);
  }
- assert.equal(runInNewContext(source+';readMatchdays()',{
+ assert.equal(runWithModel(source+';readMatchdays()',{
   ROUNDS_KEY:'rounds',sessionStorage:{getItem(){throw Error('blocked')}}
  }),0);
 });
@@ -59,7 +61,7 @@ test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",asy
  const context={debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',
   sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
   refreshProgress:async()=>false,syncDebugControls(){},window:{dispatchEvent(){}},CustomEvent:class{},console};
- const change=runInNewContext(source+';setMatchdays',context);
+ const change=runWithModel(source+';setMatchdays',context);
  assert.equal(await change(8),false);
  assert.equal(context.matchdays,7);
  assert.equal(context.debugSeason,2);
@@ -72,7 +74,7 @@ test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed ro
  const changes=[],stored=new Map();
  const context={debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
   refreshProgress:async()=>true,window:{faCompetitionRoute:{set:next=>changes.push(next)}}};
- const setSeason=runInNewContext(source+';setSeason',context);
+ const setSeason=runWithModel(source+';setSeason',context);
  for(const season of [1,2,3,4])assert.equal(await setSeason(season),true);
  for(const season of [0,5,1.5,NaN])assert.equal(await setSeason(season),false);
  assert.deepEqual(changes,[]);
@@ -92,7 +94,7 @@ test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset previe
   matchdays:0,previewState:'ON',activePreview(){},transition:Promise.resolve(),
   boot:()=>new Promise(resolve=>{finishBoot=resolve}),console
  };
- runInNewContext(initializer,context);
+ runWithModel(initializer,context);
  await new Promise(resolve=>setImmediate(resolve));
  season=4;events['fa:competition-route-change'].forEach(fn=>fn());
  await new Promise(resolve=>setImmediate(resolve));
@@ -246,9 +248,9 @@ test("DEV-GATE-06: malformed and incomplete models are rejected without partial 
     {...division, clubs:division.clubs.map(x=>({...x, primaryName:""}))}]) {
     assert.throws(()=>createPreviewStandings(bad));
   }
-  assert.ok(client.includes("fragment.childNodes.length !== 16"));
+  assert.ok(client.includes("fragment.childNodes.length !== competitionModel.profile.capacity"));
   assert.ok(client.includes("tbody.replaceChildren(fragment)"));
-  assert.ok(client.includes('manifest.approved !== false'));
+  assert.ok(client.includes("competitionModel.validManifest(manifest)"));
 });
 
 async function withServer(callback) {
@@ -358,7 +360,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
 test("DEV-L10N + interactions: 5 languages, 80 results and widget", () => {
   for(const lang of ["en","de","es","fr","it"])
     assert.match(client, new RegExp("\\b"+lang+": \\{ round:"));
-  assert.ok(client.includes("entries.length !== 16*Math.min(5,playedDays)"));
+  assert.ok(client.includes("entries.length !== competitionModel.profile.capacity*Math.min(5,playedDays)"));
   assert.ok(client.includes('new MutationObserver(translate)'));
   for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
     assert.ok(client.includes('"'+event+'"'),event);
@@ -459,7 +461,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const hydration = new Promise(resolve => { hydrate = resolve; });
     const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
-    runInNewContext(initializer, {
+    runWithModel(initializer, {
       validPath: ["/app/competitions/it-1/", "it-1"],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
       window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
@@ -521,7 +523,7 @@ test("DEV modular registry and adaptive panel contracts",()=>{
 
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1'));
  assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
@@ -572,7 +574,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
+ assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
  assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));
@@ -646,7 +648,7 @@ test("DEV-FIXTURES-READY: restored preview waits for Fixtures runtime as well as
  const window={};
  const context={window,document:{documentElement:{},getElementById:()=>body,querySelector:()=>({})},
   MutationObserver:class{constructor(fn){notify=fn}observe(){}disconnect(){}},setTimeout,clearTimeout};
- const wait=runInNewContext(client.slice(start,end)+'\nwaitForRows',context);
+ const wait=runWithModel(client.slice(start,end)+'\nwaitForRows',context);
  const pending=wait().then(value=>{settled=true;return value});
  await new Promise(resolve=>setImmediate(resolve));
  const early=settled;
@@ -660,7 +662,7 @@ test("DEV-FIXTURES-READY: restored preview waits for Fixtures runtime as well as
 test('STANDINGS-TOOLTIP-DATE: supplied kickoff is localized and missing dates stay unknown',()=>{
  const start=client.indexOf('function formatMatchDate('),end=client.indexOf('\nfunction node(',start);
  assert.ok(start>=0&&end>start,'tooltip date formatter exists');
- const format=runInNewContext(client.slice(start,end)+';formatMatchDate');
+ const format=runWithModel(client.slice(start,end)+';formatMatchDate');
  assert.equal(format({},'en'),null);
  assert.equal(format({kickoff:null},'it'),null);
  assert.equal(format({kickoff:'invalid'},'en'),null);
@@ -673,7 +675,7 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
  const client=read("tools/dev-standings-preview-client.mjs").toString(),html=read("app/competitions/_shared/index.html").toString(),css=read("assets/app.css").toString();
  assert.match(client,/function renderHistoryPreview\(\)/);
  assert.match(client,/if\(!isPreviewEnabled\(\)\)\{clearHistoryPreview\(\);return\}/);
- assert.match(client,/createPreviewStandings\(division,30,season\)/);
+ assert.match(client,/createPreviewStandings\(division,competitionModel.schedule.rounds,season\)/);
  for(const key of ["historySeasonArchive","historyHistoricalRecords","historyMostTitles","historyMostPodiums","historyLongestTitleStreak"])assert.ok(client.includes(key),key);
  assert.match(client,/clearHistoryPreview\(\)/);assert.match(html,/<section id="competition-panel-history"/);assert.match(css,/\.app-competition-stat-grid/);
  assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-client.mjs"),false);assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-data.mjs"),false);

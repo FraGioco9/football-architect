@@ -1,12 +1,15 @@
 /* Competition fixtures: display supplied schedules only; never generate sporting data. */
 (() => {
   "use strict";
+  const model=window.faCompetitionModel;
+  const {capacity}=model.profile;
+  const {rounds:roundCount,matches:matchCount,matchesPerRound}=model.schedule;
   const division=window.faCompetitionDivision;
   const fields=Object.fromEntries(["toolbar","current","round","previous","next","list","empty","summary"]
     .map(key=>[key,document.getElementById("app-fixtures-"+key)]));
   if(!division||Object.values(fields).some(field=>!field))return;
   const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
-  if(clubs.size!==16)return;
+  if(clubs.size!==capacity)return;
   const navigation=window.faCompetitionRoute;
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(value=>/^[1-9]\d*$/.test(value));
   const availableSeasons=new Set(["1",...devSeasons]);
@@ -14,7 +17,7 @@
   const number=document.getElementById("app-fixtures-round-number");
   if(!navigation||!picker||!number)return;
   const choices=[...picker.querySelectorAll("[data-fixture-round-choice]")];
-  if(choices.length!==30)return;
+  if(choices.length!==roundCount)return;
   let currentMatchday=null,rounds=null,selected=navigation.get().matchday;
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
     document.querySelector(".app-fixtures-select"));
@@ -36,8 +39,8 @@
   }
   function validate(fixtures){
     if(fixtures===null)return null;
-    if(!Array.isArray(fixtures)||fixtures.length!==240)throw Error("Incomplete competition schedule");
-    const byRound=new Map(Array.from({length:30},(_,i)=>[i+1,[]])),pairs=new Set();
+    if(!Array.isArray(fixtures)||fixtures.length!==matchCount)throw Error("Incomplete competition schedule");
+    const byRound=new Map(Array.from({length:roundCount},(_,i)=>[i+1,[]])),pairs=new Set();
     for(const game of fixtures){
       if(!game||!Number.isInteger(game.round)||!byRound.has(game.round)||
          !clubs.has(game.homeId)||!clubs.has(game.awayId)||game.homeId===game.awayId)
@@ -54,7 +57,7 @@
         homeGoals:game.homeGoals,awayGoals:game.awayGoals,kickoff:game.kickoff});
     }
     for(const matches of byRound.values()){
-      if(matches.length!==8||new Set(matches.flatMap(game=>[game.homeId,game.awayId])).size!==16)
+      if(matches.length!==matchesPerRound||new Set(matches.flatMap(game=>[game.homeId,game.awayId])).size!==capacity)
         throw Error("Incomplete competition round");
       matches.sort((a,b)=>a.homeId-b.homeId||a.awayId-b.awayId);
     }
@@ -101,7 +104,7 @@
     roundMenu.sync(String(selected));
     if(!available)roundMenu.close();
     fields.previous.disabled=!available||selected===1;
-    fields.next.disabled=!available||selected===30;
+    fields.next.disabled=!available||selected===roundCount;
     fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=available?rounds.get(selected).map(matchRow):[];
     fields.list.replaceChildren(...matches);
@@ -111,7 +114,7 @@
   }
   function select(value){
     const round=Number(value);
-    if(rounds&&Number.isInteger(round)&&round>=1&&round<=30){
+    if(rounds&&model.validRound(round)){
       navigation.set({matchday:round});
     }
   }
@@ -130,7 +133,7 @@
   window.faFixtures={
     prepare(fixtures,{currentMatchday:current=null}={}){
       const next=validate(fixtures);
-      if(current!==null&&(!Number.isInteger(current)||current<1||current>30))throw Error("Invalid current matchday");
+      if(current!==null&&(!model.validRound(current)))throw Error("Invalid current matchday");
       return ()=>{
         rounds=next;currentMatchday=next?current:null;
         navigation.defaultMatchday(currentMatchday??1);

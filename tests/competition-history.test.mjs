@@ -186,7 +186,7 @@ test('Seasonal wins and all-time wins and goals keep distinct winners and tied i
  assert.deepEqual(result.totalGoals,{value:160,clubs:[club(2),club(3)]});
 });
 test('History scope switch updates all matching controls and cards without changing the route',()=>{
- const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const start=source.indexOf('// History record scope');assert.ok(start>=0);
  const controls=['season','all-time','season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},attrs:{},setAttribute(k,v){this.attrs[k]=v}}));
  const cards=['season','all-time','season','all-time'].map(scope=>({dataset:{historyScope:scope},hidden:false}));
@@ -203,7 +203,7 @@ test('History scope switch updates all matching controls and cards without chang
  events.click({target:{closest:()=>controls[0]}});assert.equal(added.hidden,false);
 });
 test('History scope does not retain the previous grid height and preserves available scroll',()=>{
-  const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
   const start=source.indexOf('// History record scope');
   const scroller={scrollTop:250,scrollLeft:3};
   const grid={style:{},getBoundingClientRect:()=>({height:400})};
@@ -259,7 +259,7 @@ test('Stats and History align label slots while their filled cards grow',()=>{
 });
 test('History improved layout preserves archive navigation, confirmed records and single empty statuses',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
- const page=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+ const page=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
  assert.match(client,/app-history-dev-archive-champion/);
  assert.match(client,/button\.addEventListener\("click",\(\)=>openHistorySeason\(item\.season\)\)/);

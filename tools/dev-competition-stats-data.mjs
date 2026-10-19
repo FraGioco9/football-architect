@@ -1,6 +1,6 @@
 // DEV-only statistics derived from the same fictional match results as standings.
 // Not publication-allowlisted. Never substitute for canonical match/player events.
-import {createPreviewStandings} from "./dev-standings-preview-data.mjs";
+import {createPreviewStandings,PREVIEW_RULES,comparePreviewRows} from "./dev-standings-preview-data.mjs";
 
 export function aggregatePreviewStats(division, matchdays=15, season=1) {
   const preview=createPreviewStandings(division,matchdays,season);
@@ -38,12 +38,12 @@ export function aggregatePreviewStats(division, matchdays=15, season=1) {
   }
   const teams=[...byId.values()].map(row=>{
     row.unbeatenStreak=unbeaten.get(row.clubId);
-    row.gd=row.gf-row.ga;row.points=3*row.w+row.d;
+    row.gd=row.gf-row.ga;row.points=PREVIEW_RULES.win*row.w+PREVIEW_RULES.draw*row.d+PREVIEW_RULES.loss*row.l;
     row.ppg=row.mp?row.points/row.mp:0;
     row.homeWinPct=row.homePlayed?100*row.homeWins/row.homePlayed:0;
     row.awayWinPct=row.awayPlayed?100*row.awayWins/row.awayPlayed:0;
     return row;
-  }).sort((a,b)=>b.points-a.points||b.gd-a.gd||b.gf-a.gf||a.clubId-b.clubId);
+  }).sort((a,b)=>comparePreviewRows({pts:a.points,gd:a.gd,gf:a.gf,club:a},{pts:b.points,gd:b.gd,gf:b.gf,club:b}));
   const count=matches.length;
   const mostFrequentScoreline=[...scores].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]||null;
   if(teams.reduce((n,t)=>n+t.gf,0)!==totalGoals||
