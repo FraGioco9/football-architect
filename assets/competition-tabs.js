@@ -218,7 +218,7 @@
     card.querySelector('.app-competition-stat-value'));
    let empty=group.querySelector('[data-history-team-empty]');
    if(!empty){
-    empty=document.createElement('p');empty.className='app-competition-status app-history-team-empty-state';
+    empty=document.createElement('p');empty.className='app-competition-status app-history-record-empty-state';
     empty.dataset.appI18n='historyNoData';empty.dataset.historyTeamEmpty='';
     group.append(empty);
    }
@@ -385,7 +385,7 @@
         .some(card=>card.dataset.historyFilled==='true');
       let empty=group.querySelector('[data-history-player-empty]');
       if(!empty){
-        empty=element('p','app-history-player-empty-state','No historical player data available yet.');
+        empty=element('p','app-competition-status app-history-record-empty-state','No historical player data available yet.');
         empty.dataset.appI18n='historyPlayerNoData';
         empty.dataset.historyPlayerEmpty='';
         group.append(empty);
