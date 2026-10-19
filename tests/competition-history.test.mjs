@@ -281,7 +281,7 @@ test('History improved layout preserves archive navigation, confirmed records an
   assert.ok(start>=0&&end>start);
   assert.doesNotMatch(app.slice(start,end),/historyProvisional:/);
   for(const key of ['historyShowAll','historyShowLess'])
-   assert.equal((app.slice(start,end).match(new RegExp('\\\\b'+key+':','g'))||[]).length,1,lang+' '+key);
+   assert.equal((app.slice(start,end).match(new RegExp('\\b'+key+':','g'))||[]).length,1,lang+' '+key);
  }
 });
 test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
