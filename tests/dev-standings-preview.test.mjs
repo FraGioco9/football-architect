@@ -60,7 +60,7 @@ test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset previe
  const context={
   validPath:['/competitions/it-1','it-1'],
   window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
-  document:{documentElement:{dataset:{}},querySelector:()=>null},
+  document:{documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
   selectedSeason:()=>season,availablePreviewSeasons:()=>[1,2,3,4],setSeason(){},
   waitForRows:()=>Promise.resolve(),registerDebugControls(){},createDebugWidget:()=>({}),
   setPreviewEnabled:()=>Promise.resolve(true),syncHistoryPreview(){},resetPreview(){},setMatchdays(){},
@@ -440,7 +440,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       syncHistoryPreview: () => {},
       availablePreviewSeasons: () => [1,2,3,4],
       setSeason: () => Promise.resolve(true),
-      document: {documentElement:{dataset:{}},querySelector:()=>null},
+      document: {documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
       waitForRows: () => hydration,
       createDebugWidget: () => { operations.push("widget"); signalMounted(); return {syncVisibility(){}}; },
       registerDebugControls: () => {},
@@ -533,7 +533,7 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
  assert.ok(widget.includes('input.type="number"'));
  assert.ok(widget.includes('input.inputMode="numeric"'));
  assert.ok(widget.includes('!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)'));
- assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
+ assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
  assert.ok(client.includes("for(const input of [slider,number].filter(Boolean))"));
  assert.ok(client.includes("matchdays=0;"));
  assert.ok(client.includes('visible:()=>previewState==="ON",onChange:setMatchdays'));
@@ -545,7 +545,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('row.append(input,numberWrap)'));
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
- assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
+ assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
  assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
  assert.ok(client.includes('const number=document.querySelector(\'[data-dev-control="matchdays-number"]\')'));

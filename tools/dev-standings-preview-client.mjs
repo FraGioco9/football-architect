@@ -285,8 +285,8 @@ function setPreviewEnabled(enabled) {
 if(validPath){
  waitForRows().then(() => {
   registerDebugControls("standings",[{
-   type:"select",id:"season",label:"Season",
-   options:availablePreviewSeasons(),value:selectedSeason,onChange:setSeason
+   type:"range",id:"season",label:"Season",min:1,max:4,step:1,
+   value:selectedSeason,onChange:setSeason
   },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,
     value:()=>matchdays,visible:()=>previewState==="ON",onChange:setMatchdays},
     {type:"button",id:"reset-page",label:"Reset current page",onChange:resetPreview}]);
@@ -306,8 +306,7 @@ if(validPath){
    const routed=Number(window.faCompetitionRoute?.get?.().season);
    if(availablePreviewSeasons().includes(routed))routeSeasonOverride=routed;
    const next=selectedSeason();
-   const control=document.querySelector('[data-dev-control="season"]');
-   if(control){control.value=String(next);control.dataset.previous=String(next)}
+   for(const control of document.querySelectorAll('[data-dev-control="season"],[data-dev-control="season-number"]')){control.value=String(next);control.dataset.previous=String(next)}
    if(next===renderedSeason)return;
    const request=++seasonRequest;
    // Reset changes the route while preview rendering is suspended.

@@ -130,6 +130,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelector('.fa-dev-widget-button').click()");
   await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
+  assert.equal(await run("(()=>{const season=document.querySelector('[data-dev-control=season]'),days=document.querySelector('[data-dev-control=matchdays]');return season.type==='range'&&season.min==='1'&&season.max==='4'&&season.step==='1'&&season.getBoundingClientRect().width===days.getBoundingClientRect().width&&document.querySelector('[data-dev-control=season-number]').value==='1'&&document.querySelectorAll('.fa-dev-number-arrow').length===4})()"),true,'Season shares the Matchdays slider and number-stepper layout');
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");
   assert.equal(await run("!!document.querySelector('[data-dev-control=fictional-standings]')"),false);
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='15';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
@@ -160,7 +161,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelector('[data-dev-control=matchdays]').value='12';document.querySelector('[data-dev-control=matchdays]').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-dev-control=matchdays]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='12' && !document.querySelector('[data-dev-control=matchdays]').disabled");
   for(const [step,value] of [[1,13],[-1,12]]){
-   await run("document.querySelector('.fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
+   await run("document.querySelector('[data-dev-control-row=matchdays] .fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
    await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+value+"' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   }
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='31';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
@@ -180,7 +181,8 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    await verifySeason(season);
   }
   for(const season of [1,2,3,4]){
-   await run("document.querySelector('[data-dev-control=season]').value='"+season+"';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+   const control=season%2?'season-number':'season';
+   await run("document.querySelector('[data-dev-control="+control+"]').value='"+season+"';document.querySelector('[data-dev-control="+control+"]').dispatchEvent(new Event('change',{bubbles:true}))");
    await verifySeason(season);
   }
   await run("document.getElementById('app-competition-season').click()");

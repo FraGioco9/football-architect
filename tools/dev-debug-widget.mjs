@@ -141,14 +141,14 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;
    row.append(element("span","",control.label));
    const input=element("input");input.type="range";input.min=String(control.min??0);input.max=String(control.max??100);input.step=String(control.step??1);
-   input.value=String(typeof control.value==="function"?control.value():control.value??input.min);input.dataset.devControl=control.id;input.dataset.previous=input.value;
+   input.value=String(typeof control.value==="function"?control.value():control.value??input.min);input.dataset.devControl=control.id;input.dataset.previous=input.value;input.setAttribute("aria-label",control.label);
    const numberWrap=element("div","fa-dev-number-wrap");
    const number=element("input");number.type="number";number.min=input.min;number.max=input.max;number.step=input.step;
-   number.inputMode="numeric";number.value=input.value;number.dataset.devControl="matchdays-number";number.dataset.previous=number.value;
-   number.id="fa-dev-matchdays-number";number.setAttribute("aria-label",control.label+" value");
+   number.inputMode="numeric";number.value=input.value;number.dataset.devControl=control.id+"-number";number.dataset.previous=number.value;
+   number.id="fa-dev-"+control.id+"-number";number.setAttribute("aria-label",control.label+" value");
    numberWrap.append(number);
    const spin=element("span","fa-dev-number-spin");
-   for(const [direction,label] of [[1,"Increase matchdays"],[-1,"Decrease matchdays"]]){
+   for(const [direction,label] of [[1,"Increase "+control.label.toLowerCase()],[-1,"Decrease "+control.label.toLowerCase()]]){
     const arrow=element("button","fa-dev-number-arrow");arrow.type="button";arrow.dataset.step=String(direction);arrow.setAttribute("aria-label",label);
     arrow.innerHTML=direction===1?'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 6 4-4 4 4"/></svg>':'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 2 4 4 4-4"/></svg>';
     arrow.addEventListener("pointerdown",event=>{event.preventDefault();event.stopPropagation()});
