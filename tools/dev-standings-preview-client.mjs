@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays } from "./dev-standings-preview-data.mjs";
+import { createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -225,8 +225,13 @@ async function renderHistoryPreview(){
   const archive=section("historySeasonArchive","app-history-archive"),list=historyNode("ol","app-history-dev-archive");
   const archiveHeader=historyNode("div","app-history-dev-archive-head");archiveHeader.setAttribute("aria-hidden","true");
   for(const key of ["historySeasonLabel","historyChampionLabel","historyRunnerUp","historyThirdPlace"])archiveHeader.append(historyLabel(key));
-  const archiveTable=historyNode("div","app-world-standings");archiveTable.append(archiveHeader,list);archive.append(archiveTable);
-  if(!seasons.length){const empty=historyLabel("historyNoData");empty.className="app-competition-empty";archive.append(empty)}
+  const archiveTable=historyNode("div","app-world-standings");
+  if(seasons.length)archiveTable.append(archiveHeader,list);
+  else{
+   const empty=historyLabel("competitionHistoryEmpty","p");
+   empty.className="app-competition-empty-row";archiveTable.append(empty);
+  }
+  archive.append(archiveTable);
   for(const item of [...seasons].reverse()){
    const li=historyNode("li"),button=historyNode("button","app-history-dev-season-button");button.type="button";
    button.dataset.historySeason=String(item.season);button.setAttribute("aria-pressed",String(item.season===chosen?.season));
@@ -483,12 +488,11 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
-    // This value powers the "current matchday" shortcut, not the selected
-    // round. The router already owns the selected round from the URL/state;
-    // reusing ?matchday=1 here incorrectly turns the shortcut into round 1.
-    const defaultRound=Math.min(30,playedDays+1);
+    // Only an active season has a "current matchday" shortcut. The router owns
+    // the selected round from URL/state, including completed-season archives.
+    const currentRound=previewCurrentMatchday(season,progress);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:defaultRound}):null;
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== 16 || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
