@@ -28,6 +28,81 @@ const widgetName = "/__fa_dev__/debug-widget.mjs";
 const dataName = "/__fa_dev__/standings-data.mjs";
 const allIds = manifest.divisions.map(d => d.id);
 
+test("DEV competition cards open the Debug season on load, changes and reset",()=>{
+ const start=client.indexOf('function syncCompetitionLinks()');
+ assert.ok(start>=0,'DEV card link synchronization must exist');
+ const source=client.slice(start,client.indexOf('function syncDebugControls()',start));
+ const cards=['/competitions/it-1?season=1&view=standings','http://app.localhost:2000/competitions/nl-2?season=1&view=standings'].map(href=>({attrs:{href},getAttribute(key){return this.attrs[key]},setAttribute(key,value){this.attrs[key]=value}}));
+ const context={debugSeason:3,URL,location:{href:'http://app.localhost:2000/competitions'},document:{querySelectorAll:()=>cards}};
+ runInNewContext(source+';syncCompetitionLinks()',context);
+ for(const season of [3,2,4,1]){
+  context.debugSeason=season;runInNewContext('syncCompetitionLinks()',context);
+  for(const card of cards){const url=new URL(card.attrs.href);assert.equal(url.searchParams.get('season'),String(season));assert.equal(url.searchParams.get('view'),'standings');assert.equal(card.attrs['data-dev-latest-season'],String(season));assert.equal(url.hostname,'app.localhost');}
+ }
+});
+test("DEBUG-DEFAULTS: fresh, invalid and blocked storage start at Matchday 0",()=>{
+ const source=client.slice(client.indexOf('function readMatchdays()'),client.indexOf('let matchdays='));
+ for(const raw of [null,'bad','-1','31','0','4','30']){
+  const value=runInNewContext(source+';readMatchdays()',{
+   ROUNDS_KEY:'rounds',sessionStorage:{getItem:()=>raw}
+  });
+  assert.equal(value,['4','30'].includes(raw)?Number(raw):0);
+ }
+ assert.equal(runInNewContext(source+';readMatchdays()',{
+  ROUNDS_KEY:'rounds',sessionStorage:{getItem(){throw Error('blocked')}}
+ }),0);
+});
+test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",async()=>{
+ const from=client.includes('async function setDebugProgress(')?client.indexOf('async function setDebugProgress('):client.indexOf('async function setSeason(');
+ const source=client.slice(from,client.indexOf('async function resetPreview('));
+ const stored=new Map([['days','7'],['season','2']]);
+ const context={debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',
+  sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
+  refreshProgress:async()=>false,syncDebugControls(){},window:{dispatchEvent(){}},CustomEvent:class{},console};
+ const change=runInNewContext(source+';setMatchdays',context);
+ assert.equal(await change(8),false);
+ assert.equal(context.matchdays,7);
+ assert.equal(context.debugSeason,2);
+ assert.equal(stored.get('days'),'7');
+});
+
+test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed route; invalid values are rejected",async()=>{
+ const source=client.slice(client.indexOf('async function setDebugProgress('),client.indexOf('async function resetPreview('));
+ assert.ok(source,'Season control must update the shared competition route');
+ const changes=[],stored=new Map();
+ const context={debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
+  refreshProgress:async()=>true,window:{faCompetitionRoute:{set:next=>changes.push(next)}}};
+ const setSeason=runInNewContext(source+';setSeason',context);
+ for(const season of [1,2,3,4])assert.equal(await setSeason(season),true);
+ for(const season of [0,5,1.5,NaN])assert.equal(await setSeason(season),false);
+ assert.deepEqual(changes,[]);
+ assert.equal(context.debugSeason,4);assert.equal(stored.get('season'),'4');
+});
+
+test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset preview",async()=>{
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
+ const events={};let season=1,finishBoot;
+ const context={
+  validPath:['/competitions/it-1','it-1'],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>String(season),
+  window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
+  document:{documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
+  selectedSeason:()=>season,availablePreviewSeasons:()=>[1,2,3,4],setSeason(){},
+  waitForRows:()=>Promise.resolve(),registerDebugControls(){},createDebugWidget:()=>({}),
+  setPreviewEnabled:()=>Promise.resolve(true),syncHistoryPreview(){},resetPreview(){},setMatchdays(){},
+  matchdays:0,previewState:'ON',activePreview(){},transition:Promise.resolve(),
+  boot:()=>new Promise(resolve=>{finishBoot=resolve}),console
+ };
+ runInNewContext(initializer,context);
+ await new Promise(resolve=>setImmediate(resolve));
+ season=4;events['fa:competition-route-change'].forEach(fn=>fn());
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(typeof finishBoot,'function');
+ context.previewState='OFF';season=1;events['fa:competition-route-change'].forEach(fn=>fn());
+ context.previewState='ON';finishBoot(undefined);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(context.previewState,'ON');
+});
+
 test("DEV-LEAGUES: deterministic complete 16x16 standings and 1,920 DEV fixture objects", () => {
   assert.equal(manifest.approved, false);
   assert.equal(allIds.length, 16);
@@ -214,9 +289,9 @@ test("DEV-ROUTES: canonical slashless pages, assets and season links load direct
       }
     }
     const index=await get("/competitions");
-    assert.equal((index.body.match(/data-dev-latest-season="4"/g)||[]).length,16);
-    assert.equal((index.body.match(/\?season=4&amp;view=standings/g)||[]).length,16);
-    assert.ok(!index.body.includes("?season=1"));
+    assert.ok(index.body.includes('data-fa-dev-preview'),"Competitions index loads Debug controls");
+    assert.equal((index.body.match(/\?season=1&amp;view=standings/g)||[]).length,16);
+    assert.ok(!index.body.includes("?season=4"));
     for(const id of allIds){
       const path="/competitions/"+id.toLowerCase();
       for(const season of [2,3,4]){
@@ -283,7 +358,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
 test("DEV-L10N + interactions: 5 languages, 80 results and widget", () => {
   for(const lang of ["en","de","es","fr","it"])
     assert.match(client, new RegExp("\\b"+lang+": \\{ round:"));
-  assert.ok(client.includes("entries.length !== 16*Math.min(5,matchdays)"));
+  assert.ok(client.includes("entries.length !== 16*Math.min(5,playedDays)"));
   assert.ok(client.includes('new MutationObserver(translate)'));
   for(const event of ["pointerenter","pointerleave","pointerdown","focus","blur","click","keydown","resize"])
     assert.ok(client.includes('"'+event+'"'),event);
@@ -351,7 +426,8 @@ test("UX-01A integration: approved division logos and theme rebind survive mobil
 test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
  assert.ok(widget.includes("export function createDebugWidget("));
  assert.ok(client.includes('import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";'));
- assert.ok(client.includes('id:"fictional-standings",label:"Fictional standings"'));
+ assert.ok(client.includes('id:"season",label:"Season"'));
+ assert.ok(!client.includes('id:"fictional-standings"'));
  assert.ok(client.includes('caption.dataset.appI18n="standingsFilledCaption"'));
  assert.ok(client.includes("window.faAppRenderLanguage?.()"));
  assert.ok(!client.includes("standingsPreview"));
@@ -371,30 +447,32 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
 test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
-  const start = client.indexOf("if(validPath){");
+  const start = client.indexOf("if(validPath||indexPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");
   const initializer = client.slice(start, end);
-  assert.ok(initializer.includes("waitForRows().then("));
+  assert.ok(initializer.includes("(validPath?waitForRows():Promise.resolve()).then("));
   assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
-    initializer.indexOf("waitForRows().then(") < initializer.indexOf("createDebugWidget({controls:[{"));
+    initializer.indexOf("(validPath?waitForRows():Promise.resolve()).then(") < initializer.indexOf("createDebugWidget({controls:[{"));
   for (const enabled of [false, true]) {
     let hydrate, signalMounted;
     const hydration = new Promise(resolve => { hydrate = resolve; });
     const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
     runInNewContext(initializer, {
-      validPath: ["/app/competitions/it-1/", "it-1"],
+      validPath: ["/app/competitions/it-1/", "it-1"],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
       window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
-      savedPreviewEnabled: () => enabled,
-      document: {documentElement:{dataset:{}},querySelector:()=>null},
+      syncHistoryPreview: () => {},
+      availablePreviewSeasons: () => [1,2,3,4],
+      setSeason: () => Promise.resolve(true),
+      document: {documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
       waitForRows: () => hydration,
       createDebugWidget: () => { operations.push("widget"); signalMounted(); return {syncVisibility(){}}; },
       registerDebugControls: () => {},
       isPreviewEnabled: () => enabled,
       setPreviewEnabled: () => { operations.push("toggle"); return Promise.resolve(true); },
-      matchdays: 15,
+      matchdays: 0,
       setMatchdays: () => Promise.resolve(true),
       resetPreview: () => Promise.resolve(true),
       Array,
@@ -404,8 +482,8 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     assert.deepEqual(operations, [], "widget must not mount before hydration");
     hydrate();
     await widgetMounted;
-    if (enabled) await new Promise(resolve => setImmediate(resolve));
-    assert.deepEqual(operations, enabled ? ["widget", "toggle"] : ["widget"]);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(operations, ["widget", "toggle"]);
   }
 });
 
@@ -444,18 +522,18 @@ test("DEV modular registry and adaptive panel contracts",()=>{
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
  assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
- assert.ok(client.includes('visible:()=>previewState==="ON"'));
+ assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
   const model=createPreviewStandings(manifest.divisions[0],days);
   assert.equal(model.fixtures.length,days*8,"fixture count for "+days);
   for(const row of model.rows){assert.equal(row.played,days);assert.equal(row.won+row.drawn+row.lost,days);assert.equal(row.recent.length,Math.min(5,days))}
  }
- assert.ok(client.includes('value:()=>matchdays,visible:()=>previewState==="ON"'));
+ assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
  assert.ok(client.includes("widgetRoot?.syncVisibility()"));
- assert.ok(client.includes("const matchdayRow=document.querySelector"));
+ assert.ok(client.includes("matchdays=0;"));
  assert.ok(widget.includes("root.syncVisibility=()=>"));
- assert.ok(client.includes('activePreview=()=>{try{replacement()}finally{previous()}}'));
+ assert.ok(client.includes('activePreview=replacement;'));
  const mobileRuntime=read("assets/competition-page.js").toString();
  assert.ok(mobileRuntime.includes("row.recent.length !== Math.min(5,row.played)"),
   "mobile standings must accept exactly the available recent results for 1–4 matchdays");
@@ -481,11 +559,11 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–30 validation, visibility and 
  assert.ok(widget.includes('input.type="number"'));
  assert.ok(widget.includes('input.inputMode="numeric"'));
  assert.ok(widget.includes('!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)'));
- assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
- assert.ok(client.includes("for(const input of [slider,number].filter(Boolean))"));
- assert.ok(client.includes("const matchdayRow=document.querySelector"));
- assert.ok(client.includes('visible:()=>previewState==="ON",onChange:setMatchdays'));
- assert.ok(client.includes('sessionStorage.setItem(ROUNDS_KEY,String(value))'));
+ assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
+ assert.ok(client.includes("function syncDebugControls()"));
+ assert.ok(client.includes("matchdays=0;"));
+ assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
+ assert.ok(client.includes('return setDebugProgress(ROUNDS_KEY,value)'));
  for(const invalid of [-1,31,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=30,false);
 });
 
@@ -493,10 +571,10 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('row.append(input,numberWrap)'));
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
- assert.ok(widget.includes('number.dataset.devControl="matchdays-number"'));
+ assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
  assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
- assert.ok(client.includes('const number=document.querySelector(\'[data-dev-control="matchdays-number"]\')'));
+ assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));
  assert.ok(widget.includes("@keyframes fa-dev-panel-in"));
  assert.ok(widget.includes("prefers-reduced-motion:reduce"));
@@ -588,4 +666,15 @@ test('STANDINGS-TOOLTIP-DATE: supplied kickoff is localized and missing dates st
  assert.equal(format({kickoff:'invalid'},'en'),null);
  const kickoff='2026-10-20T12:30:00Z';
  for(const lang of ['en','it','de','es','fr'])assert.equal(format({kickoff},lang),new Intl.DateTimeFormat(lang,{dateStyle:'medium',timeStyle:'short'}).format(new Date(kickoff)));
+});
+
+
+test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives its sections from deterministic seasons",()=>{
+ const client=read("tools/dev-standings-preview-client.mjs").toString(),html=read("app/competitions/_shared/index.html").toString(),css=read("assets/app.css").toString();
+ assert.match(client,/function renderHistoryPreview\(\)/);
+ assert.match(client,/if\(!isPreviewEnabled\(\)\)\{clearHistoryPreview\(\);return\}/);
+ assert.match(client,/createPreviewStandings\(division,30,season\)/);
+ for(const key of ["historySeasonArchive","historyHistoricalRecords","historyMostTitles","historyMostPodiums","historyLongestTitleStreak"])assert.ok(client.includes(key),key);
+ assert.match(client,/clearHistoryPreview\(\)/);assert.match(html,/<section id="competition-panel-history"/);assert.match(css,/\.app-competition-stat-grid/);
+ assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-client.mjs"),false);assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-data.mjs"),false);
 });

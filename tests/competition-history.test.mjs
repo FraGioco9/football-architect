@@ -1,0 +1,464 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
+import * as previewData from '../tools/dev-standings-preview-data.mjs';
+const client=readFileSync(new URL('../tools/dev-standings-preview-client.mjs',import.meta.url),'utf8');
+const manifest=JSON.parse(readFileSync(new URL('../app/competitions/_shared/manifest.json',import.meta.url),'utf8'));
+const plain=value=>JSON.parse(JSON.stringify(value));
+function records(seasons,played=seasons){
+ const start=client.indexOf('function historyRecords('),end=client.indexOf('\nfunction historyNode',start);
+ assert.ok(start>=0&&end>start,'History record calculator exists');
+ return plain(runInNewContext(client.slice(start,end)+';historyRecords(seasons,played)',{seasons,played}));
+}
+const club=id=>({countryId:'IT',clubId:id,primaryName:'Club '+id});
+const table=(season,ids)=>({season,rows:ids.map(id=>({club:club(id)}))});
+test('History progress excludes every unplayed match and completes only prior seasons',()=>{
+ assert.equal(typeof previewData.createPreviewHistory,'function');
+ for(const division of manifest.divisions){
+  for(const [season,days,completed,count] of [[1,0,[],0],[1,15,[],120],[2,13,[1],344],[2,0,[1],240],[2,30,[1,2],480],[4,30,[1,2,3,4],960]]){
+   const model=previewData.createPreviewHistory(division,season,days);
+   assert.deepEqual(model.completed.map(s=>s.season),completed);
+   assert.equal(model.played.reduce((n,s)=>n+s.fixtures.length,0),count);
+   assert.ok(model.played.every(s=>s.season<=season&&s.rows.every(r=>r.played===(s.season<season?30:days))));
+  }
+ }
+});
+test('Fixtures has a current matchday only for an in-progress season',()=>{
+ const cases=[
+  [1,0,1,1],[1,15,1,16],[1,29,1,30],[1,30,1,null],
+  [2,0,1,null],[2,13,1,null],[2,13,2,14],[2,30,2,null],
+  [3,0,1,null],[3,0,2,null],[3,0,3,1],[3,0,4,null]
+ ];
+ for(const [progressSeason,matchdays,viewed,expected] of cases){
+  assert.equal(previewData.previewCurrentMatchday(viewed,{season:progressSeason,matchdays}),expected,
+   `progress S${progressSeason}/M${matchdays}, viewed S${viewed}`);
+ }
+});
+test('A partial first season shows the completed-seasons empty state inside Season archive',()=>{
+ const start=client.indexOf('  const archive=section("historySeasonArchive"'),end=client.indexOf('  for(const item of [...seasons].reverse()){',start);
+ assert.ok(start>=0&&end>start,'Archive layout is isolated for regression testing');
+ function create(tag,className=''){
+  return {tag,className,children:[],dataset:{},append(...nodes){this.children.push(...nodes)},setAttribute(){}};
+ }
+ const build=runInNewContext('(seasons)=>{'+client.slice(start,end)+';return archive}',{
+  historyNode:create,historyLabel:key=>({...create('span'),dataset:{appI18n:key}}),
+  section:(key,id)=>create('section',id)
+ });
+ const empty=build([]),emptyTable=empty.children[0];
+ assert.equal(emptyTable.className,'app-world-standings');
+ assert.equal(emptyTable.children.length,1,'No podium header is shown before the first title');
+ assert.equal(emptyTable.children[0].dataset.appI18n,'competitionHistoryEmpty');
+ assert.equal(emptyTable.children[0].className,'app-competition-empty-row');
+ const completed=build([{season:1}]),table=completed.children[0];
+ assert.equal(table.children.length,2,'Completed seasons restore the archive header and list');
+ assert.equal(table.children[1].className,'app-history-dev-archive');
+});
+test('Season archive only navigates to Standings and never claims a selected History season',()=>{
+ const source=client.slice(client.indexOf('  for(const item of [...seasons].reverse()){'),client.indexOf('  const records=section("historyHistoricalRecords"',client.indexOf('  for(const item of [...seasons].reverse()){')));
+ assert.ok(source.includes('button.dataset.historySeason=String(item.season)'));
+ assert.ok(source.includes('button.addEventListener("click",()=>openHistorySeason(item.season))'));
+ assert.doesNotMatch(source,/aria-pressed|chosen/,'Archive rows are navigation buttons, not toggle selections');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.doesNotMatch(css,/app-history-dev-season-button\[aria-pressed=/);
+});
+test('Shared record holders expose all ties with an accessible reversible +N expander',()=>{
+ const start=client.indexOf('function historyExpandableHolders(');
+ const end=client.indexOf('\nasync function renderHistoryPreview()',start);
+ assert.ok(start>=0&&end>start);
+ function node(tag,className='',textContent=''){
+  return {tag,className,textContent,children:[],dataset:{},attributes:{},hidden:false,events:{},
+   append(...items){this.children.push(...items)},
+   addEventListener(kind,fn){this.events[kind]=fn},
+   setAttribute(key,value){this.attributes[key]=value},
+   getAttribute(key){return this.attributes[key]??null}};
+ }
+ const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{
+  historyNode:node,historyLabel:key=>{const item=node('span');item.dataset.appI18n=key;return item;}
+ });
+ for(const count of [0,1,2]){
+  const card=node('article'),holders=node('div');
+  for(let i=0;i<count;i++)holders.append(node('div'));
+  fn(card,holders,'attack');
+  assert.equal(card.children.length,0,'No expansion control for '+count+' tied entries');
+  assert.equal(holders.children.filter(entry=>entry.hidden).length,0);
+ }
+ const card=node('article'),holders=node('div');
+ for(let i=0;i<5;i++)holders.append(node('div'));
+ fn(card,holders,'points');
+ assert.equal(holders.children.length,5,'All tied results remain in DOM');
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
+ assert.ok(holders.children.slice(2).every(row=>Object.hasOwn(row.dataset,'historyTieExtra')));
+ assert.equal(card.children.length,1);
+ const toggle=card.children[0];
+ assert.equal(toggle.dataset.historyRecordExpand,'points');
+ assert.equal(toggle.getAttribute('aria-expanded'),'false');
+ assert.equal(toggle.getAttribute('aria-controls'),holders.id);
+ assert.equal(toggle.children[0].textContent,'+3');
+ assert.equal(toggle.children[1].dataset.appI18n,'historyShowAll');
+ assert.equal(toggle.children[2].dataset.appI18n,'historyShowLess');
+ assert.equal(toggle.children[2].hidden,true);
+ toggle.events.click();
+ assert.equal(toggle.getAttribute('aria-expanded'),'true');
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,false,false,false]);
+ assert.equal(toggle.children[0].hidden,true);
+ assert.equal(toggle.children[1].hidden,true);
+ assert.equal(toggle.children[2].hidden,false);
+ toggle.events.click();
+ assert.equal(toggle.getAttribute('aria-expanded'),'false');
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
+});
+test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
+ assert.equal(typeof previewData.previewSeasonMatchdays,'function');
+ const stored=new Map([['football-architect:standings-dev-season','2'],['football-architect:standings-dev-matchdays','13']]);
+ const storage={getItem:key=>stored.get(key)??null};
+ const before=[...stored];
+ for(const [viewed,days] of [[1,30],[2,13],[3,0],[4,0]]){
+  const progress=previewData.readPreviewProgress(storage);
+  assert.deepEqual(progress,{season:2,matchdays:13});
+  assert.equal(previewData.previewSeasonMatchdays(viewed,progress),days);
+ }
+ assert.deepEqual([...stored],before,'Browsing never rewrites Debug settings');
+ assert.deepEqual(previewData.readPreviewProgress({getItem(){throw Error('blocked')}}),{season:1,matchdays:0});
+});
+test('History totals include the current partial season without awarding its title or seasonal records',()=>{
+ const completed=[{season:1,rows:[{club:club(1),won:20,gf:70,pts:65},{club:club(2),won:18,gf:60,pts:60}]}];
+ const partial={season:2,rows:[{club:club(2),won:10,gf:99,pts:33},{club:club(1),won:5,gf:20,pts:18}]};
+ const actual=records(completed,[...completed,partial]);
+ assert.deepEqual(actual.titles,{value:1,clubs:[club(1)]});
+ assert.deepEqual(actual.attack,{value:70,entries:[{club:club(1),season:1}]});
+ assert.deepEqual(actual.totalWins,{value:28,clubs:[club(2)]});
+ assert.deepEqual(actual.totalGoals,{value:159,clubs:[club(2)]});
+ assert.deepEqual(actual.totalPoints,{value:93,clubs:[club(2)]});
+});
+test('Season 1 Matchday 0 has no historical statistics, holders or champions',()=>{
+ const actual=records([]);
+ for(const metric of Object.values(actual)){
+  assert.equal(metric.value,null);
+  assert.deepEqual(metric.clubs??metric.entries,[]);
+ }
+});
+test('Every History route offers exactly three seasonal and four all-time player records without invented data',()=>{
+ const routes=['_shared',...manifest.divisions.map(d=>d.id.toLowerCase())];
+ for(const route of routes){
+  const html=readFileSync(new URL('../app/competitions/'+route+'/index.html',import.meta.url),'utf8');
+  const section=html.match(/<section[^>]*data-history-player-records[^>]*>([\s\S]*?)<\/section>/)?.[1];
+  assert.ok(section,route+' has player records');
+  const cards=[...section.matchAll(/<article([^>]*)>([\s\S]*?)<\/article>/g)];
+  assert.equal(cards.length,7,route);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,3);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,4);
+  assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,7);
+  assert.ok(cards.every(c=>c[2].includes('data-app-i18n="historyPlayerNoData"')&&!/<strong|data-club-crest/.test(c[2])));
+ }
+});
+test('History goal difference displays positive and negative signs without signing other records',()=>{
+ const start=client.indexOf('function historyRecordValue('),end=client.indexOf('\nfunction historyNode',start);
+ assert.ok(start>=0&&end>start);
+ const format=runInNewContext(client.slice(start,end)+';historyRecordValue');
+ assert.equal(format('goalDifference',12),'+12');
+ assert.equal(format('goalDifference',-12),'−12');
+ assert.equal(format('goalDifference',0),'0');
+ assert.equal(format('points',12),'12');
+});
+test('Points, goal difference and champion margin records preserve seasonal ties and cumulative points',()=>{
+ const seasons=[
+  {season:2,rows:[{club:club(2),pts:80,gd:40},{club:club(1),pts:70,gd:30},{club:club(3),pts:20,gd:-20}]},
+  {season:1,rows:[{club:club(1),pts:80,gd:40},{club:club(2),pts:70,gd:35},{club:club(3),pts:10,gd:-30}]}
+ ];
+ const result=records(seasons),tied=[{club:club(1),season:1},{club:club(2),season:2}];
+ assert.deepEqual(result.points,{value:80,entries:tied});
+ assert.deepEqual(result.goalDifference,{value:40,entries:tied});
+ assert.deepEqual(result.margin,{value:10,entries:tied});
+ assert.deepEqual(result.totalPoints,{value:150,clubs:[club(1),club(2)]});
+ assert.deepEqual(records([{season:1,rows:[{club:club(1),pts:50,gd:-2},{club:club(2),pts:50,gd:-3}]}]).margin,{value:0,entries:[{club:club(1),season:1}]});
+ assert.equal(records([{season:1,rows:[{club:club(1),gd:-2},{club:club(2),gd:-3}]}]).goalDifference.value,-2);
+ assert.deepEqual(records([table(1,[1])]).margin,{value:null,entries:[]});
+});
+test('Seasonal wins and all-time wins and goals keep distinct winners and tied identities',()=>{
+ const result=records([
+  {season:1,rows:[{club:club(1),won:25,gf:90},{club:club(2),won:20,gf:80},{club:club(3),won:20,gf:80}]},
+  {season:2,rows:[{club:club(1),won:10,gf:10},{club:club(2),won:20,gf:80},{club:club(3),won:20,gf:80}]}
+ ]);
+ assert.deepEqual(result.wins,{value:25,entries:[{club:club(1),season:1}]});
+ assert.deepEqual(result.totalWins,{value:40,clubs:[club(2),club(3)]});
+ assert.deepEqual(result.totalGoals,{value:160,clubs:[club(2),club(3)]});
+});
+test('History scope switch updates all matching controls and cards without changing the route',()=>{
+ const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+ const start=source.indexOf('// History record scope');assert.ok(start>=0);
+ const controls=['season','all-time','season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},attrs:{},setAttribute(k,v){this.attrs[k]=v}}));
+ const cards=['season','all-time','season','all-time'].map(scope=>({dataset:{historyScope:scope},hidden:false}));
+ const events={};const panel={dataset:{},querySelectorAll:s=>s==='[data-history-record-scope]'?controls:s==='[data-history-scope]'?cards:[],addEventListener:(key,fn)=>events[key]=fn,contains:()=>true};
+ const window={};runInNewContext(source.slice(start,source.indexOf('/* HISTORY-UI-11',start)),{document:{getElementById:()=>panel},window});
+ assert.equal(panel.dataset.historyRecordScope,'season');
+ assert.deepEqual(cards.map(c=>c.hidden),[false,true,false,true]);
+ events.click({target:{closest:()=>controls[1]}});
+ assert.equal(panel.dataset.historyRecordScope,'all-time');
+ assert.deepEqual(controls.map(c=>c.attrs['aria-pressed']),['false','true','false','true']);
+ assert.deepEqual(cards.map(c=>c.hidden),[true,false,true,false]);
+ const added={dataset:{historyScope:'season'},hidden:false};cards.push(added);
+ window.faSyncHistoryRecords();assert.equal(added.hidden,true,'A refreshed preview retains the chosen scope');
+ events.click({target:{closest:()=>controls[0]}});assert.equal(added.hidden,false);
+});
+test('History scope does not retain the previous grid height and preserves available scroll',()=>{
+  const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+  const start=source.indexOf('// History record scope');
+  const scroller={scrollTop:250,scrollLeft:3};
+  const grid={style:{},getBoundingClientRect:()=>({height:400})};
+  const controls=['season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},setAttribute(){}}));
+  let armed=false;
+  const cards=['season','all-time'].map(scope=>({dataset:{historyScope:scope},
+    get hidden(){return this.value},set hidden(value){this.value=value;if(armed&&value)scroller.scrollTop=0}}));
+  const events={};const panel={dataset:{},closest:()=>scroller,querySelectorAll:s=>
+    s==='[data-history-record-scope]'?controls:s==='[data-history-scope]'?cards:[grid],
+    addEventListener:(key,fn)=>events[key]=fn,contains:()=>true};
+  runInNewContext(source.slice(start,source.indexOf('/* HISTORY-UI-11',start)),
+    {document:{getElementById:()=>panel},window:{}});
+  armed=true;
+  for(const index of [1,0,1,0]){
+    events.click({target:{closest:()=>controls[index]}});
+    assert.equal(scroller.scrollTop,250);
+    assert.equal(scroller.scrollLeft,3);
+    assert.equal(grid.style.minHeight,undefined,'No retained minimum height');
+  }
+});
+test('Stats and History use a shared card with uniform bold labels and empty messages',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) auto/);
+ assert.match(css,/\.app-competition-stat-label\{[^}]*font-size:\.875rem;font-weight:700/);
+ assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
+ assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
+ assert.match(css,/\.app-competition-stat-card\{--fa-record-heading:42px;[^}]*padding:10px 12px/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{min-height:128px/);
+ assert.doesNotMatch(css,/\.app-history-record-group \.app-competition-stat-card\{--fa-record-heading:/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card:has\(\.app-competition-stat-value\)\{min-height:160px/);
+ assert.match(css,/@media\(max-width:650px\)\{[\s\S]*--fa-record-heading:56px/);
+ assert.match(css,/\.app-history-player-card\[data-history-filled="true"\]\{[^}]*min-height:160px/);
+ assert.doesNotMatch(css,/\.app-history-player-card\{[^}]*overflow:hidden/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
+ assert.match(dev,/app-competition-stat-label fa-dev-stats-leader-title/);
+ assert.doesNotMatch(dev,/\.fa-dev-stats-leader-card\{[^}]*height:/);
+});
+test('Stats and History align label slots while their filled cards grow',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ assert.match(css,/\.app-competition-stat-card--compact\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) minmax\(0,1fr\);height:auto;min-height:108px;max-height:none/);
+ assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) auto;[^}]*height:auto;min-height:108px;max-height:none/);
+ assert.match(dev,/\.fa-dev-stats-card\.app-competition-stat-card--compact\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\)/);
+ assert.match(dev,/\.fa-dev-stats-leader-card\{[^}]*padding:10px 12px/);
+ assert.doesNotMatch(dev,/\.fa-dev-stats-leader-title\{/);
+ assert.doesNotMatch(dev,/\.fa-dev-stats-card span\.app-competition-stat-label\{/);
+ assert.match(css,/\.app-competition-stat-card>\.app-competition-stat-label\{align-self:start;justify-self:stretch\}/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
+ assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
+});
+test('History improved layout preserves archive navigation, confirmed records and single empty statuses',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const page=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ assert.match(client,/app-history-dev-archive-champion/);
+ assert.match(client,/button\.addEventListener\("click",\(\)=>openHistorySeason\(item\.season\)\)/);
+ assert.match(client,/if\(result\.value===null\)continue/);
+ assert.match(client,/const holders=historyNode\("div","app-history-record-holders"\)/);
+ assert.doesNotMatch(client,/historyProvisional|app-history-provisional/);
+ assert.doesNotMatch(css,/app-history-provisional/);
+ assert.match(page,/empty\.className='app-competition-status app-history-record-empty-state'/);
+ assert.match(page,/empty=element\('p','app-competition-status app-history-record-empty-state'/);
+ assert.match(css,/\.app-history-record-group>\.app-history-record-empty-state\{[^}]*margin:0;padding:14px 2px;[^}]*font-size:\.85rem/);
+ assert.doesNotMatch(css,/\.app-history-player-empty-state|\.app-history-team-empty-state/);
+ assert.match(page,/data-history-team-empty/);
+ assert.match(page,/data-history-player-empty/);
+ assert.match(page,/grid\.hidden=!filled;empty\.hidden=filled/);
+ assert.match(css,/\.app-history-dev-archive-champion\{opacity:1;font-weight:750\}/);
+ assert.match(css,/@media\(max-width:360px\)/);
+ for(const lang of ['en','de','es','fr','it']){
+  const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
+  assert.ok(start>=0&&end>start);
+  assert.doesNotMatch(app.slice(start,end),/historyProvisional:/);
+  for(const key of ['historyShowAll','historyShowLess'])
+   assert.equal((app.slice(start,end).match(new RegExp('\\b'+key+':','g'))||[]).length,1,lang+' '+key);
+ }
+});
+test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
+ const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ assert.match(source,/\.fa-dev-stats-top li\{[^}]*grid-template-columns:24px minmax\(0,1fr\) minmax\(3\.5ch,auto\)/);
+ assert.match(source,/\.fa-dev-stats-top li>strong\{[^}]*justify-self:end;[^}]*text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums/);
+ assert.match(source,/\.fa-dev-stats-top \.fa-dev-stats-team-name\{[^}]*white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere/);
+ assert.match(source,/identity\.append\(crest,create\("span",team\.clubName,"fa-dev-stats-team-name"\)\)/);
+ assert.match(source,/\.fa-dev-stats-top \.app-world-club-identity\{[^}]*align-items:center;min-width:0/);
+ assert.match(source,/\.fa-dev-stats-top \.app-world-club-crest-placeholder\{flex-shrink:0\}/);
+ assert.match(source,/app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
+ assert.doesNotMatch(source,/\.fa-dev-stats-top \.app-world-club-identity>span:last-child\{overflow:hidden/);
+ assert.doesNotMatch(source,/\.fa-dev-stats-top\{[^}]*overflow-y:auto/);
+});
+test('DEV Stats labels and messages use the five-language app dictionary',()=>{
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ const names=['en','de','es','fr','it'];
+ const keys=['statsDevOverview','statsDevTeams','statsDevPlayers','statsDevGoals',
+ 'statsDevAssists','statsDevAverageRating','statsDevCleanSheets','statsDevMatchesPlayed',
+ 'statsDevTotalGoals','statsDevGoalsPerMatch','statsDevGoalsScored','statsDevFewestConceded',
+ 'statsDevWins','statsDevPointsPerMatch','statsDevGoalDifference','statsDevUnbeatenStreak',
+ 'statsDevNoData','statsDevNoPlayerData','statsDevShowAll','statsDevClose','statsDevUnavailable'];
+ for(const lang of names){
+  const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\n    }',start);
+  assert.ok(start>=0&&end>start,'Language block '+lang);
+  const segment=app.slice(start,end);
+  for(const key of keys)assert.equal((segment.match(new RegExp('\\b'+key+':','g'))||[]).length,1,lang+' '+key);
+ }
+ assert.match(dev,/const localized = \(tag, key, english, className\) =>/);
+ assert.match(dev,/el\.dataset\.appI18n = key/);
+ assert.match(dev,/window\.faAppRenderLanguage\?\.\(\)/);
+ assert.match(dev,/close\.dataset\.appAria="statsDevClose"/);
+ assert.match(dev,/dialog\.setAttribute\("aria-labelledby",title\.id\)/);
+ assert.doesNotMatch(dev,/aria-label",label\+" leaderboard"/);
+});
+test('Stats DEV switches language through the shared live translation renderer',()=>{
+ const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ const begin=source.indexOf('  const copies = {'),end=source.indexOf('  const worldCountryNames',begin);
+ const rendererStart=source.indexOf('  function language() {'),rendererEnd=source.indexOf('  function renderView() {',rendererStart);
+ assert.ok(begin>=0&&end>begin&&rendererStart>0&&rendererEnd>rendererStart);
+ const code=source.slice(begin,end)+
+   '\n const worldCountryNames={};'+
+   '\n const words=()=>document.querySelectorAll("[data-app-i18n]");'+
+   '\n const accessible=()=>document.querySelectorAll("[data-app-aria]");'+
+   source.slice(rendererStart,rendererEnd)+'\n;({renderLanguage,copies})';
+ const labels=['statsDevOverview','statsDevTeams','statsDevPlayers','statsDevGoals','statsDevNoData','statsDevShowAll']
+   .map(key=>({dataset:{appI18n:key},textContent:'English fallback'}));
+ const close={dataset:{appAria:'statsDevClose'},setAttribute(key,value){this[key]=value}};
+ const document={documentElement:{lang:'en'},title:'',
+   querySelectorAll(selector){return selector==='[data-app-i18n]'?labels:selector==='[data-app-aria]'?[close]:[]},
+   getElementById(){return null}};
+ const api=runInNewContext(code,{document,window:{location:{pathname:'/competitions/it-1'}}});
+ for(const lang of ['en','de','es','fr','it']){
+   document.documentElement.lang=lang;
+   api.renderLanguage();
+   assert.equal(document.title,api.copies[lang].navCompetitions+' — Football Architect');
+   for(const node of labels)assert.equal(node.textContent,api.copies[lang][node.dataset.appI18n]);
+   assert.equal(close['aria-label'],api.copies[lang].statsDevClose);
+ }
+ assert.notEqual(api.copies.de.statsDevOverview,api.copies.en.statsDevOverview);
+ assert.notEqual(api.copies.it.statsDevTeams,api.copies.en.statsDevTeams);
+});
+test('Seasonal attack and defence records retain every tied club and season, including zero conceded',()=>{
+ const seasons=[
+  {season:2,rows:[{club:club(1),gf:90,ga:0},{club:club(2),gf:70,ga:20}]},
+  {season:1,rows:[{club:club(1),gf:90,ga:10},{club:club(2),gf:90,ga:0}]}
+ ];
+ const result=records(seasons);
+ assert.deepEqual(result.attack,{value:90,entries:[{club:club(1),season:1},{club:club(2),season:1},{club:club(1),season:2}]});
+ assert.deepEqual(result.defence,{value:0,entries:[{club:club(2),season:1},{club:club(1),season:2}]});
+ assert.deepEqual(records([]).attack,{value:null,entries:[]});
+ assert.deepEqual(records([table(1,[1,2,3])]).defence,{value:null,entries:[]});
+});
+test('History records count titles, podium ties and consecutive seasons by club identity',()=>{
+ const result=records([table(1,[1,2,3,4]),table(2,[1,3,2,4]),table(3,[2,1,4,3]),table(4,[2,4,3,1])]);
+ assert.deepEqual(result.titles,{value:2,clubs:[club(1),club(2)]});
+ assert.deepEqual(result.podiums,{value:4,clubs:[club(2)]});
+ assert.deepEqual(records([table(1,[1,2,3]),table(2,[3,1,2])]).podiums,{value:2,clubs:[club(1),club(2),club(3)]});
+ assert.deepEqual(result.streak,{value:2,clubs:[club(1),club(2)]});
+});
+test('History record streaks break across missing seasons and club names do not merge identities',()=>{
+ const seasons=[table(1,[1,2,3]),table(3,[1,2,3])];
+ seasons.forEach(s=>s.rows.forEach(r=>r.club.primaryName='Same name'));
+ const result=records(seasons);
+ assert.equal(result.streak.value,1);
+ assert.equal(result.titles.clubs.length,1);
+ assert.equal(result.podiums.clubs.length,3);
+});
+test('History totals reconcile with all 16 deterministic four-season final tables',()=>{
+ for(const division of manifest.divisions){
+  const seasons=[1,2,3,4].map(season=>({season,rows:createPreviewStandings(division,30,season).rows}));
+  const actual=records(seasons);
+  for(const [metric,field,extreme] of [['attack','gf',Math.max],['defence','ga',Math.min],['wins','won',Math.max],['points','pts',Math.max],['goalDifference','gd',Math.max]]){
+   const value=extreme(...seasons.flatMap(s=>s.rows.map(row=>row[field])));
+   assert.equal(actual[metric].value,value,division.id+' '+metric);
+   assert.deepEqual(actual[metric].entries,seasons.flatMap(s=>s.rows.filter(row=>row[field]===value).map(row=>({club:row.club,season:s.season}))));
+  }
+  const margin=Math.max(...seasons.map(s=>s.rows[0].pts-s.rows[1].pts));
+  assert.deepEqual(actual.margin,{value:margin,entries:seasons.filter(s=>s.rows[0].pts-s.rows[1].pts===margin).map(s=>({club:s.rows[0].club,season:s.season}))});
+  for(const [metric,field] of [['totalWins','won'],['totalGoals','gf'],['totalPoints','pts']]){
+   const totals=new Map();for(const {rows} of seasons)for(const row of rows)totals.set(row.club.clubId,(totals.get(row.club.clubId)||0)+row[field]);
+   const value=Math.max(...totals.values());assert.equal(actual[metric].value,value);
+   assert.deepEqual(actual[metric].clubs.map(c=>c.clubId),[...totals].filter(([,n])=>n===value).map(([id])=>id));
+  }
+  const titles=new Map(),podiums=new Map();
+  for(const {rows} of seasons){
+   assert.equal(rows.length,16);assert.ok(rows.every(r=>r.played===30));
+   titles.set(rows[0].club.clubId,(titles.get(rows[0].club.clubId)||0)+1);
+   for(const row of rows.slice(0,3))podiums.set(row.club.clubId,(podiums.get(row.club.clubId)||0)+1);
+  }
+  for(const [key,counts] of [['titles',titles],['podiums',podiums]]){
+   const max=Math.max(...counts.values());assert.equal(actual[key].value,max,division.id);
+   assert.deepEqual(actual[key].clubs.map(c=>c.clubId).sort((a,b)=>a-b),[...counts].filter(([,n])=>n===max).map(([id])=>id).sort((a,b)=>a-b));
+  }
+ }
+});
+test('DEV selected season preserves deep links and router selections for seasons 1 through 4',()=>{
+ const start=client.indexOf('function availablePreviewSeasons('),end=client.indexOf('\nasync function setMatchdays',start);
+ assert.ok(start>=0,'Shared season availability reader exists');
+ for(const season of [1,2,3,4]){
+  const context={document:{documentElement:{dataset:{faDevSeasons:'1,2,3,4'}}},window:{location:{href:'http://app.localhost:2000/competitions/it-1?season='+season},faCompetitionRoute:{get:()=>({season:'1'})}},URL,routeSeasonOverride:null};
+  assert.equal(runInNewContext(client.slice(start,end)+';selectedSeason()',context),season);
+  context.routeSeasonOverride=season;context.window.location.href='http://app.localhost:2000/competitions/it-1?season=1';
+  assert.equal(runInNewContext(client.slice(start,end)+';selectedSeason()',context),season);
+ }
+});
+test('DEV Stats reads seasons 3 and 4 consistently with History and Standings',()=>{
+ const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ const start=source.indexOf('  function selectedSeason()'),end=source.indexOf('  function selectedMatchdays()',start);
+ for(const season of [1,2,3,4]){
+  assert.equal(runInNewContext(source.slice(start,end)+';selectedSeason()',{
+   document:{documentElement:{dataset:{faDevSeasons:'1,2,3,4'}}},URLSearchParams,location:{search:'?season='+season}
+  }),season);
+ }
+});
+test('History discards a pending render after debug is disabled and restores the localized empty state',async()=>{
+ const start=client.indexOf('let historyRenderVersion=0;'),end=client.indexOf('\nlet transition=',start);
+ let resolveFetch,enabled=true,renders=0,generated=0;
+ const status={dataset:{appI18n:'competitionHistoryEmpty'},hidden:false,setAttribute(){}};
+ const error={hidden:true};
+ const panel={querySelector(selector){return selector==='[data-history-empty]'?status:selector==='[data-history-error]'?error:null}};
+ const context={
+  window:{faCompetitionRoute:{get:()=>({view:'history',season:'4'})},faAppRenderLanguage(){renders++}},
+  document:{getElementById:()=>panel,createElement(){generated++;throw Error('Stale render constructed DOM')}},
+  debugSeason:4,matchdays:15,isPreviewEnabled:()=>enabled,fetch:()=>new Promise(resolve=>{resolveFetch=resolve}),console
+ };
+ const api=runInNewContext(client.slice(start,end)+';({renderHistoryPreview,clearHistoryPreview})',context);
+ const pending=api.renderHistoryPreview();
+ assert.equal(status.hidden,true,'History stays silent while data is loading');
+ assert.equal(status.dataset.appI18n,'competitionHistoryEmpty');
+ enabled=false;api.clearHistoryPreview();
+ assert.equal(status.dataset.appI18n,'competitionHistoryEmpty');assert.equal(status.hidden,false);assert.ok(renders>=1);
+ resolveFetch({ok:true,json:async()=>manifest});await pending;
+ assert.equal(generated,0,'Disabled preview must not construct or commit a stale result');
+});
+
+test('Selecting a History season opens the shared Standings view with that exact season',()=>{
+ const start=client.indexOf('function openHistorySeason('),end=client.indexOf('\nasync function renderHistoryPreview',start);
+ assert.ok(start>=0&&end>start,'History season navigation exists');
+ for(const season of [1,2,3,4]){
+  const calls=[];const window={faCompetitionRoute:{set:(patch,options)=>calls.push([plain(patch),plain(options)])}};
+  runInNewContext(client.slice(start,end)+';openHistorySeason(season)',{window,season});
+  assert.deepEqual(calls,[[{season:String(season),view:'standings'},{focus:true}]]);
+ }
+});
+
+test('Restoring debug waits for History before completing the first-paint release',async()=>{
+ const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nif(validPath||indexPath){',start);
+ let finishHistory,settled=false;
+ const historyReady=new Promise(resolve=>{finishHistory=resolve});
+ const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],
+  boot:async()=>()=>{},widgetRoot:{syncVisibility(){}},syncHistoryPreview:()=>historyReady,
+  FLAG:'preview',sessionStorage:{setItem(){}},window:{dispatchEvent(){}},CustomEvent:class{},console};
+ const toggle=runInNewContext(client.slice(start,end)+';setPreviewEnabled',context);
+ const pending=toggle(true).then(value=>{settled=true;return value});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(settled,false,'The preview must not reveal the shorter empty History before its populated layout is ready');
+ finishHistory();assert.equal(await pending,true);
+});

@@ -140,7 +140,7 @@ test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
-test('DEBUG-FIRST-PAINT: stored DEV state is gated synchronously and failure cannot leave data hidden',async()=>{
+test('DEBUG-FIRST-PAINT: DEV defaults are gated synchronously and failure cannot leave data hidden',async()=>{
  const {DEBUG_FIRST_PAINT}=await import('../tools/dev-preview-artifact.mjs');
  assert.equal(typeof DEBUG_FIRST_PAINT,'string');
  const {runInNewContext}=await import('node:vm');
@@ -148,12 +148,13 @@ test('DEBUG-FIRST-PAINT: stored DEV state is gated synchronously and failure can
  for(const value of ['on',null]){
   const document={documentElement:{dataset:{}}};const window={};let timeout;
   runInNewContext(script,{document,window,location:{pathname:'/competitions/eng-1'},sessionStorage:{getItem:()=>value},setTimeout:fn=>{timeout=fn;return 1},clearTimeout(){}});
-  assert.equal(document.documentElement.dataset.faDebugPending,value==='on'?'true':undefined);
-  if(value==='on'){timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)}
+  assert.equal(document.documentElement.dataset.faDebugPending,'true');
+  timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)
  }
- const document={documentElement:{dataset:{}}};
- runInNewContext(script,{document,window:{},location:{pathname:'/app/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(){throw Error('must not wait')}});
- assert.equal(document.documentElement.dataset.faDebugPending,undefined);
+ const document={documentElement:{dataset:{}}};let release;
+ runInNewContext(script,{document,window:{},location:{pathname:'/app/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(fn){release=fn}});
+ assert.equal(document.documentElement.dataset.faDebugPending,'true');
+ release();assert.equal(document.documentElement.dataset.faDebugPending,undefined);
 });
 
 test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons without changing public bytes",()=>{
@@ -166,8 +167,8 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
   assertPublicArtifact(publicPath);
   const directory=join("app","competitions");
   const index=readFileSync(join(protectedPath,directory,"index.html"),"utf8");
-  assert.equal((index.match(/data-dev-latest-season="4"/g)||[]).length,16);
-  assert.equal((index.match(/\?season=4&amp;view=standings/g)||[]).length,16);
+  assert.doesNotMatch(index,/data-dev-latest-season/);
+  assert.equal((index.match(/\?season=1&amp;view=standings/g)||[]).length,16);
   const originalIndex=readFileSync(join(publicPath,directory,"index.html"),"utf8");
   assert.doesNotMatch(originalIndex,/data-dev-latest-season|__fa_dev__/);
   assert.equal((originalIndex.match(/\?season=1&amp;view=standings/g)||[]).length,16);
@@ -203,7 +204,7 @@ test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1â€
  }
  const standings=readFileSync(join(repositoryRoot,"tools","dev-standings-preview-client.mjs"),"utf8");
  const stats=readFileSync(join(repositoryRoot,"tools","dev-competition-stats-client.mjs"),"utf8");
- const standingFunctions=sourceFunction(standings,"availableSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
+ const standingFunctions=sourceFunction(standings,"availablePreviewSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
  const statsFunction=sourceFunction(stats,"selectedSeason");
  const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
   const url=new URL("https://example.test/competitions/it-1?season="+season);

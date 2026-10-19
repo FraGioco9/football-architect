@@ -1,3 +1,4 @@
+import {readPreviewProgress,previewSeasonMatchdays} from "./dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 // The shared competition shell is hydrated asynchronously by competition-page.js.
@@ -12,13 +13,19 @@ const panel = await new Promise(resolve => {
   observer.observe(document.documentElement,{childList:true,subtree:true});
 });
 const divisionId = document.querySelector('meta[name="fa-division"]')?.content;
-const matchdayKey = "football-architect:standings-dev-matchdays";
 const create = (tag, text, className) => {
   const el = document.createElement(tag);
   if (text !== undefined) el.textContent = String(text);
   if (className) el.className = className;
   return el;
 };
+// DEV content participates in the app's existing data-app-i18n system.
+const localized = (tag, key, english, className) => {
+  const el = create(tag, english, className);
+  el.dataset.appI18n = key;
+  return el;
+};
+const syncLanguage = () => window.faAppRenderLanguage?.();
 if (panel && divisionId) {
   const style = create("style");
   style.textContent = `
@@ -28,22 +35,20 @@ if (panel && divisionId) {
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.fa-dev-stats-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
-.fa-dev-stats-card span{font-size:.85rem;opacity:.75}
+.fa-dev-stats-card.app-competition-stat-card--compact{display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) minmax(0,1fr);gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
 .fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:16px;background:transparent}
-.fa-dev-stats-leader-title{margin:0 0 12px;font-size:.95rem;font-weight:700}
-.fa-dev-stats-top{list-style:none;margin:0;padding:0}
-.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(38px,auto);align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(128,145,145,.2)}
+.fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:10px 12px;background:transparent}
+.fa-dev-stats-leader-card.app-competition-stat-card--compact{padding:10px 12px;grid-template-rows:minmax(var(--fa-record-heading),max-content) minmax(0,1fr)}
+.fa-dev-stats-top{list-style:none;min-width:0;margin:0;padding:0}
+.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(3.5ch,auto);align-items:center;column-gap:8px;min-width:0;min-height:38px;padding:5px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
-.fa-dev-stats-top li>strong{justify-self:end;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
-.fa-dev-stats-rank{font-size:.85rem;opacity:.6;font-variant-numeric:tabular-nums}
-.fa-dev-stats-top .app-world-club-identity{min-width:0}
-.fa-dev-stats-top .app-world-club-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
+.fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
 .fa-dev-stats-expand:hover{opacity:1;text-decoration:underline}
 .fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
@@ -65,7 +70,10 @@ if (panel && divisionId) {
 @media(max-width:650px){.fa-dev-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dev-stats-card{padding:12px}}
 @media(max-width:420px){.fa-dev-stats-nav button{width:auto;flex:1;padding:10px 5px}}
 @media(max-width:360px){.fa-dev-stats-grid{grid-template-columns:1fr}}
-`;
+
+.fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
+.fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
+@media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}`;
   document.head.append(style);
   const root = create("div");
   root.id = "fa-dev-stats";
@@ -80,15 +88,12 @@ if (panel && divisionId) {
     const requested=Number(new URLSearchParams(location.search).get("season"));
     if(available.includes(requested))return requested;
     const routed=Number(window.faCompetitionRoute?.get?.().season);
-    return available.includes(routed)?routed:Math.max(...available);
+    return available.includes(routed)?routed:available[0];
   }
   function selectedMatchdays() {
-    try {
-      const raw = sessionStorage.getItem(matchdayKey);
-      if (raw === null) return 15;
-      const value = Number(raw);
-      return Number.isInteger(value) && value >= 0 && value <= 30 ? value : 15;
-    } catch { return 15; }
+    let progress;
+    try{progress=readPreviewProgress(sessionStorage)}catch{progress={season:1,matchdays:0}}
+    return previewSeasonMatchdays(selectedSeason(),progress);
   }
   function render() {
     if (!manifest) return;
@@ -98,13 +103,14 @@ if (panel && divisionId) {
     try { stats = aggregatePreviewStats(division, selectedMatchdays(), selectedSeason()); }
     catch (error) {
       console.error(error);
-      root.replaceChildren(create("p","DEV statistics unavailable"));
+      root.replaceChildren(localized("p","statsDevUnavailable","DEV statistics unavailable"));
+      syncLanguage();
       return;
     }
     root.replaceChildren();
     const nav = create("div", undefined, "fa-dev-stats-nav");
-    for (const [id,label] of [["overview","Overview"],["teams","Teams"],["players","Players"]]) {
-      const button = create("button",label,"language-trigger");
+    for (const [id,key,label] of [["overview","statsDevOverview","Overview"],["teams","statsDevTeams","Teams"],["players","statsDevPlayers","Players"]]) {
+      const button = localized("button",key,label,"language-trigger");
       button.type = "button";
       button.setAttribute("aria-pressed",String(view === id));
       button.addEventListener("click",()=>{const keyboardFocus=button.matches(":focus-visible");view=id;render();if(keyboardFocus){const selected=nav.querySelector('button[aria-pressed="true"]');selected?.focus();}});
@@ -117,37 +123,40 @@ if (panel && divisionId) {
     if (view === "players") {
       const section=create("section",undefined,"fa-dev-stats-section");
       const grid=create("div",undefined,"fa-dev-stats-leader-grid");
-      const categories=["Goals","Assists","Average rating","Clean sheets"];
-      for(const label of categories){
-        const card=create("section",undefined,"fa-dev-stats-leader-card");
-        card.append(create("h4",label,"fa-dev-stats-leader-title"));
-        const list=create("ol",undefined,"fa-dev-stats-top");
-        const empty=create("li",hasMatches?"No player statistics available yet.":"No statistics available yet.","fa-dev-stats-player-empty");
-        list.append(empty);
-        card.append(list);
+      const categories=[["statsDevGoals","Goals"],["statsDevAssists","Assists"],["statsDevAverageRating","Average rating"],["statsDevCleanSheets","Clean sheets"]];
+      for(const [key,label] of categories){
+        const card=create("section",undefined,"app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card");
+        card.append(localized("h4",key,label,"app-competition-stat-label fa-dev-stats-leader-title"));
+        // No player-level records exist in this preview, so use a shared
+        // empty-state element instead of an oversized padded list row.
+        card.append(localized("p",hasMatches?"statsDevNoPlayerData":"statsDevNoData",
+          hasMatches?"No player statistics yet.":"No statistics yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       section.append(grid);root.append(section);
+      syncLanguage();
       return;
     }
     const ranked = (key, ascending=false) => [...stats.teams].filter(t=>t.mp>0).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.clubName.localeCompare(b.clubName));
     if (view === "overview") {
       const o = stats.overview;
-      const grid=create("div",undefined,"fa-dev-stats-grid");
-      for(const [label,value] of [["Matches played",o.matchesPlayed],["Total goals",o.totalGoals],["Goals per match",number(o.goalsPerMatch)]]){
-        const card=create("div",undefined,"fa-dev-stats-card");
-        card.append(create("span",label),hasMatches?create("strong",value):create("span","No statistics available yet.","fa-dev-stats-empty"));
+      const grid=create("div",undefined,"app-competition-stat-grid fa-dev-stats-grid");
+      for(const [key,label,value] of [["statsDevMatchesPlayed","Matches played",o.matchesPlayed],["statsDevTotalGoals","Total goals",o.totalGoals],["statsDevGoalsPerMatch","Goals per match",number(o.goalsPerMatch)]]){
+        const card=create("div",undefined,"app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card");
+        card.append(localized("span",key,label,"app-competition-stat-label"),
+          hasMatches?create("strong",value,"app-competition-stat-value"):localized("p","statsDevNoData","No statistics yet.","fa-dev-stats-empty"));
         grid.append(card);
       }
       root.append(grid);
+      syncLanguage();
       return;
     }
     const leaders=create("section",undefined,"fa-dev-stats-section");
     const leaderGrid=create("div",undefined,"fa-dev-stats-leader-grid");
-    const categories=[["gf","Goals scored",false],["ga","Fewest conceded",true],["w","Wins",false],["cs","Clean sheets",false],["ppg","Points per match",false],["gd","Goal difference",false],["unbeatenStreak","Unbeaten streak",false]];
-    for(const [key,label,ascending] of categories){
-      const card=create("section",undefined,"fa-dev-stats-leader-card");
-      card.append(create("h4",label,"fa-dev-stats-leader-title"));
+    const categories=[["gf","statsDevGoalsScored","Goals scored",false],["ga","statsDevFewestConceded","Fewest conceded",true],["w","statsDevWins","Wins",false],["cs","statsDevCleanSheets","Clean sheets",false],["ppg","statsDevPointsPerMatch","Points per match",false],["gd","statsDevGoalDifference","Goal difference",false],["unbeatenStreak","statsDevUnbeatenStreak","Unbeaten streak",false]];
+    for(const [key,labelKey,label,ascending] of categories){
+      const card=create("section",undefined,"app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card");
+      card.append(localized("h4",labelKey,label,"app-competition-stat-label fa-dev-stats-leader-title"));
       const top=create("ol",undefined,"fa-dev-stats-top");
       const teams=ranked(key,ascending);
       const buildRow=(team,index)=>{
@@ -158,23 +167,28 @@ if (panel && divisionId) {
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
         crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
         crest.setAttribute("aria-hidden","true");
-        identity.append(crest,create("span",team.clubName));
+        identity.append(crest,create("span",team.clubName,"fa-dev-stats-team-name"));
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         return li;
       };
-      if(hasMatches)teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
-      else top.append(create("li","No statistics available yet.","fa-dev-stats-player-empty"));
-      card.append(top);
+      if(hasMatches){
+        teams.slice(0,5).forEach((team,index)=>top.append(buildRow(team,index)));
+        card.append(top);
+      }else{
+        card.append(localized("p","statsDevNoData","No statistics yet.","fa-dev-stats-empty"));
+      }
       if(hasMatches&&teams.length>5){
-        const expand=create("button","Show all","fa-dev-stats-expand");
+        const expand=localized("button","statsDevShowAll","Show all","fa-dev-stats-expand");
         expand.type="button";
         expand.addEventListener("click",()=>{
           const dialog=create("dialog",undefined,"fa-dev-stats-dialog");
           const header=create("div",undefined,"fa-dev-stats-dialog-header");
-          const title=create("h3",label);
-          dialog.setAttribute("aria-label",label+" leaderboard");
+          const title=localized("h3",labelKey,label);
+          title.id="fa-dev-stats-dialog-title";
+          dialog.setAttribute("aria-labelledby",title.id);
           const close=create("button","×","fa-dev-stats-dialog-close");
-          close.type="button";close.setAttribute("aria-label","Close");
+          close.type="button";close.dataset.appAria="statsDevClose";
+          close.setAttribute("aria-label","Close");
           let closing=false;
           let pointerDismiss=false;
           let fallbackClose;
@@ -247,6 +261,7 @@ if (panel && divisionId) {
           window.dispatchEvent(new Event("fa:stats-dialog-open"));
           document.body.append(dialog);
           dialog.showModal();
+          syncLanguage();
           close.focus();
         });
         card.append(expand);
@@ -254,6 +269,7 @@ if (panel && divisionId) {
       leaderGrid.append(card);
     }
     leaders.append(leaderGrid);root.append(leaders);
+    syncLanguage();
 
   }
   fetch("/competitions/_shared/manifest.json",{cache:"no-store"})
@@ -263,12 +279,13 @@ if (panel && divisionId) {
         throw Error("Invalid DEV manifest");
       manifest=data;render();
     })
-    .catch(error=>{console.error(error);root.replaceChildren(create("p","DEV statistics unavailable"));});
+    .catch(error=>{console.error(error);root.replaceChildren(localized("p","statsDevUnavailable","DEV statistics unavailable"));syncLanguage();});
   window.addEventListener("fa:competition-route-change",()=>{
     document.querySelector("dialog.fa-dev-stats-dialog[open]")?.close();
     render();
   });
   window.addEventListener("popstate",render);
+  window.addEventListener("fa:dev-progress-change",render);
   window.addEventListener("fa:fictional-standings-change",render);
   const standings = document.getElementById("app-standings-body");
   if (standings) new MutationObserver(()=>{if(manifest)render();}).observe(standings,{childList:true});

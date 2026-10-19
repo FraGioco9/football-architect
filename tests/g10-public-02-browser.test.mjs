@@ -109,7 +109,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
     if(await run(expression))return;
     await delay(100);
    }
-   throw Error("Browser state timeout");
+   throw Error("Browser state timeout: "+expression);
   };
   await cmd("Page.enable");
   await cmd("Network.enable");
@@ -123,19 +123,52 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    await run("document.getElementById('competition-tab-stats').click()");
    const overview=aggregatePreviewStats(division,matchdays,season).overview;
    const expectedStats=[String(overview.matchesPlayed),String(overview.totalGoals),overview.goalsPerMatch.toFixed(2)];
-   await until("JSON.stringify([...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid strong')].map(node=>node.textContent))==="+JSON.stringify(JSON.stringify(expectedStats)));
+   if(matchdays)await until("JSON.stringify([...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid strong')].map(node=>node.textContent))==="+JSON.stringify(JSON.stringify(expectedStats)));
+   else await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid .fa-dev-stats-empty').length===3");
   };
   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
   await until("document.readyState==='complete'&&!!document.querySelector('.fa-dev-widget-button')&&document.querySelectorAll('#app-standings-body tr').length===16");
   await run("document.querySelector('.fa-dev-widget-button').click()");
-  await until("!!document.querySelector('[data-dev-control=\"fictional-standings\"]')");
-  await run("document.querySelector('[data-dev-control=\"fictional-standings\"]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
+  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
+  assert.equal(await run("(()=>{const season=document.querySelector('[data-dev-control=season]'),days=document.querySelector('[data-dev-control=matchdays]');return season.type==='range'&&season.min==='1'&&season.max==='4'&&season.step==='1'&&season.getBoundingClientRect().width===days.getBoundingClientRect().width&&document.querySelector('[data-dev-control=season-number]').value==='1'&&document.querySelectorAll('.fa-dev-number-arrow').length===4})()"),true,'Season shares the Matchdays slider and number-stepper layout');
+  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");
+  assert.equal(await run("!!document.querySelector('[data-dev-control=fictional-standings]')"),false);
+  // Progress examples must reconcile current-season Stats and cumulative History.
+  for(const [season,days] of [[1,0],[1,15],[2,13],[2,0],[2,30],[1,0]]){
+   await run("document.querySelector('[data-dev-control=season]').value='"+season+"';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+   await until("!document.querySelector('[data-dev-control=season]').disabled");
+   await run("window.faCompetitionRoute.set({season:'"+season+"'})");
+   await run("document.querySelector('[data-dev-control=matchdays-number]').value='"+days+"';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+   await until("!document.querySelector('[data-dev-control=matchdays-number]').disabled");
+   await run("document.getElementById('competition-tab-stats').click()");
+   if(days)await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='"+(days*8)+"'");
+   else await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid .fa-dev-stats-empty').length===3");
+   await run("document.getElementById('competition-tab-history').click()");
+   const completed=season-1+(days===30?1:0);
+   if(season===1&&days===0){
+    await until("!document.querySelector('.app-history-dev')&&!document.querySelector('[data-history-empty]').hidden");
+    assert.equal(await run("document.querySelectorAll('#competition-panel-history strong').length"),0);
+   }else{
+    await until("!!document.querySelector('.app-history-dev')&&document.querySelectorAll('[data-history-season]').length==="+completed);
+    const models=Array.from({length:season},(_,index)=>createPreviewStandings(divisions.find(d=>d.id==='IT-1'),index+1<season?30:days,index+1));
+    const totals=new Map();
+    for(const model of models)for(const row of model.rows)totals.set(row.club.clubId,(totals.get(row.club.clubId)||0)+row.won);
+    assert.equal(await run("Number(document.querySelector('[data-history-record=totalWins] strong').textContent)"),Math.max(...totals.values()),'History includes exactly the matches played through '+season+'/'+days);
+    assert.equal(await run("!!document.querySelector('[data-history-record=titles] strong')"),completed>0);
+    assert.equal(await run("!!document.querySelector('[data-history-record=attack] strong')"),completed>0);
+   }
+  }
+  await run("document.getElementById('competition-tab-standings').click()");
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='15';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80 && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);
 
   // Verify the injected standings also supply a functioning fixtures calendar.
   await run("document.getElementById('competition-tab-fixtures').click()");
   await until("new URL(location.href).searchParams.get('view')==='fixtures' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && !document.getElementById('app-fixtures-toolbar').hidden");
+  await run("document.getElementById('app-fixtures-current').click()");
+  await until("new URL(location.href).searchParams.get('matchday')==='16'");
   await run("document.getElementById('app-fixtures-previous').click()");
   await until("new URL(location.href).searchParams.get('matchday')==='15' && document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length===16");
 
@@ -145,7 +178,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
   await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card').length===7");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[2].click()");
-  await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-player-empty').length===4");
+  await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card .fa-dev-stats-empty').length===4");
   await run("document.querySelector('[data-dev-control=\"matchdays-number\"]').value='10';document.querySelector('[data-dev-control=\"matchdays-number\"]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='10' && !document.querySelector('[data-dev-control=\"matchdays-number\"]').disabled");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[0].click()");
@@ -155,34 +188,41 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await run("document.querySelector('[data-dev-control=matchdays]').value='12';document.querySelector('[data-dev-control=matchdays]').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-dev-control=matchdays]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='12' && !document.querySelector('[data-dev-control=matchdays]').disabled");
   for(const [step,value] of [[1,13],[-1,12]]){
-   await run("document.querySelector('.fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
+   await run("document.querySelector('[data-dev-control-row=matchdays] .fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
    await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+value+"' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   }
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='31';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"12");
   assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),"12");
   await run("document.querySelector('[data-dev-control=reset-page]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')===null && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
-  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"15");
-  await run("document.querySelector('[data-dev-control=fictional-standings]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && !document.querySelector('[data-dev-control=fictional-standings]').disabled");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
+  assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");
+  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
   await run("document.querySelector('[data-dev-control=matchdays-number]').value='10';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='10' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
 
-  // Real deep links and season-picker transitions must use the correct fictional data.
+  await run("document.querySelector('[data-dev-control=season]').value='4';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=season]').disabled");
+  // Browsing completed seasons must not change the independent Debug boundary.
   for(const season of [1,2,3,4]){
    await cmd("Page.navigate",{url:origin+"/competitions/it-1?season="+season+"&view=standings"});
    await until("document.readyState==='complete' && !!document.querySelector('.fa-dev-widget-button')");
-   await verifySeason(season);
+   await verifySeason(season,season<4?30:10);
+  }
+  for(const season of [1,2,3,4]){
+   const control=season%2?'season-number':'season';
+   await run("document.querySelector('[data-dev-control="+control+"]').value='"+season+"';document.querySelector('[data-dev-control="+control+"]').dispatchEvent(new Event('change',{bubbles:true}))");
+   await verifySeason(1,season===1?10:30);
+   assert.equal(await run("window.faCompetitionRoute.get().season"),'1','Raising Debug preserves a valid viewed season');
   }
   await run("document.getElementById('app-competition-season').click()");
   await run("document.querySelector('#app-competition-season-menu [data-menu-value=\"2\"]').click()");
   await until("new URL(location.href).searchParams.get('season')==='2'");
-  await verifySeason(2);
+  await verifySeason(2,30);
   await run("document.getElementById('app-competition-season').click()");
   await run("document.querySelector('#app-competition-season-menu [data-menu-value=\"4\"]').click()");
   await until("new URL(location.href).searchParams.get('season')==='4'");
-  await verifySeason(4);
+  await verifySeason(4,10);
 
   // A direct navigation/refresh must preserve the fictional state on the same origin.
   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=fixtures&matchday=5"});
@@ -203,14 +243,51 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   }
   await cmd("Emulation.clearDeviceMetricsOverride");
 
+  // The competitions index exposes the same persistent progress controls.
+  await cmd("Page.navigate",{url:origin+"/competitions"});
+  await until("!!document.querySelector('[data-dev-control=season]')");
+  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),'4');
+  await run("document.querySelector('[data-dev-control=season]').value='2';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=season]').disabled");
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='13';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=matchdays-number]').disabled");
+  assert.equal(await run("location.pathname"),'/competitions');
+  assert.equal(await run("[...document.querySelectorAll('a.app-division-card')].length===16 && [...document.querySelectorAll('a.app-division-card')].every(a=>new URL(a.href).searchParams.get('season')==='2')"),true,'All competition cards follow Debug progress');
+  await run("document.querySelector('a.app-division-card').click()");
+  await until("!!document.querySelector('[data-dev-control=season]') && window.faCompetitionRoute?.get().season==='2'");
+  await verifySeason(2,13);
+
+  await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
+  await until("!!document.querySelector('[data-dev-control=season]')");
+  for(const [season,days] of [[1,30],[2,13],[1,30]]){
+   await run("document.getElementById('app-competition-season').click();document.querySelector('#app-competition-season-menu [data-menu-value=\""+season+"\"]').click()");
+   await verifySeason(season,days);
+   assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),'2');
+   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),'13');
+  }
+  await run("document.querySelector('[data-dev-control=season]').value='4';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=season]').disabled");
+  await run("window.faCompetitionRoute.set({season:'3',view:'stats'})");
+  await run("document.querySelector('[data-dev-control=season]').value='3';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=season]').disabled");
+  assert.deepEqual(await run("[...document.querySelectorAll('#app-competition-season-menu [data-menu-value]')].map(n=>n.dataset.menuValue)"),['3','2','1']);
+  await run("document.querySelector('[data-dev-control=season]').value='2';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=season]').disabled && window.faCompetitionRoute.get().season==='2'");
+  assert.equal(await run("window.faCompetitionRoute.get().view"),'stats');
+  assert.deepEqual(await run("[...document.querySelectorAll('#app-competition-season-menu [data-menu-value]')].map(n=>n.dataset.menuValue)"),['2','1']);
+  await cmd("Page.reload",{ignoreCache:true});
+  await until("!!document.querySelector('[data-dev-control=season]') && window.faCompetitionRoute.get().season==='2'");
+  assert.deepEqual(await run("[...document.querySelectorAll('#app-competition-season-menu [data-menu-value]')].map(n=>n.dataset.menuValue)"),['2','1']);
+  await run("document.querySelector('[data-dev-control=season]').value='4';document.querySelector('[data-dev-control=season]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await until("!document.querySelector('[data-dev-control=season]').disabled");
   // The DEV state should also survive changing to another public division.
   await cmd("Page.navigate",{url:origin+"/competitions/nl-1?season=4&view=standings"});
   await until("document.readyState==='complete' && sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && document.querySelectorAll('#app-standings-body .app-world-form-dot').length===80");
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);
   await run("document.querySelector('[data-dev-control=\"reset-global\"]').click()");
-  await until("sessionStorage.getItem('football-architect:standings-dev-preview')===null && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null");
+  await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && document.querySelector('[data-dev-control=season]').value==='1' && new URL(location.href).searchParams.get('season')==='1'");
   await run("document.getElementById('competition-tab-fixtures').click()");
-  await until("document.getElementById('app-fixtures-toolbar').hidden && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===0");
+  await until("!document.getElementById('app-fixtures-toolbar').hidden && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length===0");
 
   const status=await run("({scriptCount:performance.getEntriesByType('resource').filter(x=>x.name.includes('/__fa_dev__/')).length})");
   assert.ok(status.scriptCount>=5,"Debug module assets should load on the second division");

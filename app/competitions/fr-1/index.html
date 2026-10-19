@@ -296,8 +296,49 @@
             <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
           </section>
           <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabHistory">History</h2>
-            <p class="app-competition-status" data-app-i18n="competitionHistoryEmpty">No completed seasons or past winners are available.</p>
+            <div class="app-history-empty" data-history-empty>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
+                <div class="app-world-standings"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+              </section>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
+                <div class="app-history-record-controls" data-history-record-controls role="group" data-app-aria="historyRecordScope" aria-label="Record scope">
+                  <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season records</button>
+                  <button type="button" data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time records</button>
+                </div>
+                <section class="app-history-record-group" data-history-team-records>
+                  <h4 data-app-i18n="historyTeamRecords">Team records</h4>
+                <div class="app-competition-stat-grid">
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyBestAttack">Best attack in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyBestDefence">Best defence in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyMostSeasonWins">Most wins in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyMostSeasonPoints">Most points in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyBestGoalDifference">Best goal difference in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyLargestTitleMargin">Largest title-winning points margin</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTitles">Most league titles</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostPodiums">Most podium finishes</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyLongestTitleStreak">Most consecutive league titles</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTotalWins">Most wins overall</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTotalGoals">Most goals scored overall</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTotalPoints">Most points overall</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                </div>
+                </section>
+                <section class="app-history-record-group" data-history-player-records>
+                  <h4 data-app-i18n="historyPlayerRecords">Player records</h4>
+                  <div class="app-competition-stat-grid">
+                    <article class="app-competition-stat-card" data-history-player-record="seasonGoals" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerSeasonGoals">Most goals in a season</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="seasonAssists" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerSeasonAssists">Most assists in a season</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="seasonCleanSheets" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerSeasonCleanSheets">Most clean sheets in a season</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalGoals" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalGoals">Most goals overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalAssists" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalAssists">Most assists overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalAppearances" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalAppearances">Most appearances overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalCleanSheets" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalCleanSheets">Most clean sheets overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                  </div>
+                </section>
+              </section>
+            </div>
+            <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>
           </section>
           <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
             <h2 data-app-i18n="competitionTabRules">Rules</h2>

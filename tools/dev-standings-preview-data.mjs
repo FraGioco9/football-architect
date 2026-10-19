@@ -97,3 +97,39 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
   }
   return { divisionId: division.id, season, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs };
 }
+
+// The selected season/day is a progress boundary, never a catalogue of future results.
+export function createPreviewHistory(division, season, matchdays) {
+  const current=createPreviewStandings(division,matchdays,season);
+  const completed=[];
+  for(let previous=1;previous<season;previous++)
+    completed.push(createPreviewStandings(division,30,previous));
+  const played=[...completed];
+  if(matchdays>0)played.push(current);
+  if(matchdays===30)completed.push(current);
+  return {completed,played};
+}
+
+export function readPreviewProgress(storage) {
+  const read=(key,min,max,fallback)=>{
+    try{const raw=storage.getItem(key),value=raw===null?NaN:Number(raw);
+      return Number.isInteger(value)&&value>=min&&value<=max?value:fallback;
+    }catch{return fallback}
+  };
+  return {season:read("football-architect:standings-dev-season",1,4,1),
+    matchdays:read("football-architect:standings-dev-matchdays",0,30,0)};
+}
+// A completed or not-yet-reached season has no upcoming matchday shortcut.
+// Matchday 30 is the final played round, not an imaginary Matchday 31.
+export function previewCurrentMatchday(season,progress) {
+  const played=previewSeasonMatchdays(season,progress);
+  return season>progress.season || played===30 ? null : played+1;
+}
+
+export function previewSeasonMatchdays(season,progress) {
+  if(!Number.isInteger(season)||season<1||season>4||
+    !Number.isInteger(progress?.season)||progress.season<1||progress.season>4||
+    !Number.isInteger(progress.matchdays)||progress.matchdays<0||progress.matchdays>30)
+    throw Error("Invalid DEV progress");
+  return season<progress.season?30:season===progress.season?progress.matchdays:0;
+}
