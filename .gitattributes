@@ -4,3 +4,7 @@ app/competitions/_shared/manifest.json text eol=lf
 templates/app-page.html text eol=lf
 # Preserve the approved CSV fingerprint in Windows checkouts.
 data/clubs-registry.csv text eol=lf
+# Inline flag markup must be deterministic across Windows and Unix checkouts.
+assets/flags/*.svg text eol=lf
+# Approved SVG integrity is computed over original bytes; never convert them.
+assets/divisions/**/*.svg -text
