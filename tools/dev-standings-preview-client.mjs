@@ -238,7 +238,7 @@ async function renderHistoryPreview(){
    const action=historyLabel("historySelectSeason");action.className="sr-only";
    button.append(historySeasonLabel(item.season),action);
    item.rows.slice(0,3).forEach((row,index)=>{
-    const rank=historyNode("span","app-history-dev-archive-club");
+    const rank=historyNode("span","app-history-dev-archive-club"+(index===0?" app-history-dev-archive-champion":""));
     const label=historyLabel(["historyChampionLabel","historyRunnerUp","historyThirdPlace"][index]);label.className="app-history-dev-podium-label";
     rank.append(label,historyIdentity(row.club));button.append(rank);
    });
@@ -250,22 +250,42 @@ async function renderHistoryPreview(){
   const teams=historyNode("section","app-history-record-group");teams.dataset.historyTeamRecords="";
   teams.append(historyLabel("historyTeamRecords","h4"),grid);records.append(teams);
   const values=historyRecords(seasons,played);
+  const shown={season:0,"all-time":0};
   for(const [key,metric] of [["historyBestAttack","attack"],["historyBestDefence","defence"],["historyMostSeasonWins","wins"],["historyMostSeasonPoints","points"],["historyBestGoalDifference","goalDifference"],["historyLargestTitleMargin","margin"],["historyMostTitles","titles"],["historyMostPodiums","podiums"],["historyLongestTitleStreak","streak"],["historyMostTotalWins","totalWins"],["historyMostTotalGoals","totalGoals"],["historyMostTotalPoints","totalPoints"]]){
-   const card=historyNode("article","app-competition-stat-card app-history-dev-record");card.dataset.historyRecord=metric;
-   card.dataset.historyScope=values[metric].entries?"season":"all-time";
-   card.hidden=card.dataset.historyScope!==(panel.dataset.historyRecordScope||"season");
+   const result=values[metric];
+   // Omit empty metric tiles; one empty message per scope is more meaningful.
+   if(result.value===null)continue;
+   const scope=result.entries?"season":"all-time";
+   shown[scope]++;
+   const card=historyNode("article","app-competition-stat-card app-history-dev-record");
+   card.dataset.historyRecord=metric;card.dataset.historyScope=scope;
+   card.hidden=scope!==(panel.dataset.historyRecordScope||"season");
    const label=historyLabel(key,"h5");label.className="app-competition-stat-label";
-   card.append(label);
-   if(values[metric].value===null){
-    const empty=historyLabel("historyNoData");empty.className="app-competition-empty";card.append(empty);
-   }else card.append(historyNode("strong","app-competition-stat-value",historyRecordValue(metric,values[metric].value)));
-   if(values[metric].entries){
-    for(const {club,season} of values[metric].entries){
+   card.append(label,historyNode("strong","app-competition-stat-value",historyRecordValue(metric,result.value)));
+   const holders=historyNode("div","app-history-record-holders");
+   if(result.entries){
+    for(const {club,season} of result.entries){
      const entry=historyNode("div","app-history-dev-record-entry");entry.dataset.historyRecordSeason=String(season);
-     entry.append(historyIdentity(club),historySeasonLabel(season));card.append(entry);
+     entry.append(historyIdentity(club),historySeasonLabel(season));holders.append(entry);
     }
-   }else for(const club of values[metric].clubs)card.append(historyIdentity(club));
+   }else for(const club of result.clubs){
+    const entry=historyNode("div","app-history-dev-record-entry");
+    entry.append(historyIdentity(club));holders.append(entry);
+   }
+   card.append(holders);
+   // Totals include already played matches in the unfinished current season.
+   if(scope==="all-time"&&progressDay>0&&progressDay<30&&
+      ["totalWins","totalGoals","totalPoints"].includes(metric)){
+    const provisional=historyLabel("historyProvisional");
+    provisional.className="app-history-provisional";card.append(provisional);
+   }
    grid.append(card);
+  }
+  for(const scope of ["season","all-time"])if(shown[scope]===0){
+   const empty=historyLabel("historyNoData","p");
+   empty.className="app-competition-status app-history-records-empty";
+   empty.dataset.historyScope=scope;empty.hidden=scope!==(panel.dataset.historyRecordScope||"season");
+   grid.append(empty);
   }
   records.append(panel.querySelector('[data-history-player-records]').cloneNode(true));
   if(!current())return;
