@@ -143,11 +143,11 @@
             result.style.marginTop=(currentMargin+origin.top+axis-resultOrigin.top-box.offsetHeight/2)+"px";
           }else result.style.removeProperty("margin-top");
         };
-        const observer=new ResizeObserver(align);
-        observer.observe(left.querySelector(".app-postseason-group")||left);
-        observer.observe(result.querySelector(".app-postseason-group")||result);
+        const observer=typeof ResizeObserver==="function"?new ResizeObserver(align):null;
+        observer?.observe(left.querySelector(".app-postseason-group")||left);
+        observer?.observe(result.querySelector(".app-postseason-group")||result);
         window.addEventListener("resize",align);
-        requestAnimationFrame(align);
+        if(typeof requestAnimationFrame==="function")requestAnimationFrame(align);
       }
     }
     // Playoff lines are anchored to the midpoint between team rows, not card height.
@@ -163,10 +163,10 @@
           const origin=semifinal.getBoundingClientRect();
           semifinal.style.setProperty("--playoff-connector-axis",((first.bottom+second.top)/2-origin.top)+"px");
         };
-        const observer=new ResizeObserver(alignLine);
-        observer.observe(semifinal.querySelector(".app-postseason-group")||semifinal);
+        const observer=typeof ResizeObserver==="function"?new ResizeObserver(alignLine):null;
+        observer?.observe(semifinal.querySelector(".app-postseason-group")||semifinal);
         window.addEventListener("resize",alignLine);
-        requestAnimationFrame(alignLine);
+        if(typeof requestAnimationFrame==="function")requestAnimationFrame(alignLine);
       }
     }
     const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
