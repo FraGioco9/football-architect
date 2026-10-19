@@ -130,7 +130,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/landing.js","/assets/app.js",
-    "/assets/app-search.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js"
+    "/assets/app-search.js","/assets/club-crests.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
    assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");

@@ -401,7 +401,8 @@
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
-    for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
+    window.faClubCrests=manifest.clubCrests;
+    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
       await loadScript(script);
   }
   start().catch(fail);

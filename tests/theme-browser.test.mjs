@@ -123,7 +123,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(png.readUInt32BE(20),h,label+" height");
       assert.ok(png.length>1200,label+" nonempty screenshot");
       // CI renders selected public-only screenshots for human review through job logs.
-      if(["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
+      if(label.startsWith("CLUB-CRESTS ")||["desktop dark settings","desktop light settings","iPhone dark settings","iPhone light standings","mobile light settings",
           "mobile dark search","mobile light tooltip fixture"].includes(label)||label.startsWith("UX-01A ")||label.startsWith("FIXTURES-MOBILE ")||label.startsWith("STANDINGS-MOBILE ")||label.startsWith("TABS-MOBILE ")||label.startsWith("FIXTURES-DESKTOP ")){
         const preview=await cmd("Page.captureScreenshot",{format:"jpeg",quality:35,captureBeyondViewport:false});
         const chunks=preview.data.match(/.{1,4096}/g)||[];
@@ -631,6 +631,34 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.querySelector('dialog.fa-dev-stats-dialog[open]')?.close()");
       }
     }
+    // Real uploaded club SVGs must load in both standings presentations.
+    for(const width of [1440,390]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+      for(const country of ['DE','BR','PT']){
+        await visit('/competitions/'+country.toLowerCase()+'-1','!!window.faFixtures');
+        const selector='[data-club-crest="'+country+'-1"]';
+        await wait(JSON.stringify(selector)+"&&[...document.querySelectorAll("+JSON.stringify(selector)+")].every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)");
+        const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
+        assert.ok(state.hosts===2&&state.visible===1&&state.images&&state.fallback,'Club crest desktop/mobile load and placeholder: '+country+' '+width);
+        await snap('CLUB-CRESTS '+country+' '+width,width,900);
+      }
+    }
+    // PT-1 has a real supplied crest and appears in this deterministic archive.
+    await cmd('Page.navigate',{url:devOrigin+'/'});
+    await wait('document.readyState===\'complete\'&&location.origin==='+JSON.stringify(devOrigin));
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
+    await cmd('Page.navigate',{url:devOrigin+'/competitions/pt-1?season=4&view=fixtures&matchday=1'});
+    await wait("!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
+    await run("window.faCompetitionRoute.set({view:'stats'})");
+    await wait("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3");
+    await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click();document.querySelector('#fa-dev-stats .fa-dev-stats-expand').click()");
+    await wait("!!document.querySelector('dialog[open] [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
+    await run("document.querySelector('dialog[open]').close();window.faCompetitionRoute.set({view:'history'})");
+    await wait("!!document.querySelector('#competition-panel-history [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
+    // A failed image returns to the fallback and does not leave a broken-image icon.
+    await run("const host=document.querySelector('#competition-panel-history [data-club-crest=\"PT-1\"]');host.querySelector('img').src='/assets/clubs/PT/999/crest.svg'");
+    await wait("(()=>{const n=document.querySelector('#competition-panel-history [data-club-crest=\"PT-1\"]');return !n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true'})()");
+    console.log('CLUB_CRESTS_BROWSER_PASS|BR-1 DE-1 PT-1; desktop/mobile; fixtures; Stats dialog; History; missing/error fallback');
     console.log('HISTORY_BROWSER_PASS|16 divisions; archive and records; 5 viewport widths; Dark/Light; 5 locales; season links to Standings; debug OFF/ON');
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{

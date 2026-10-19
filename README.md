@@ -183,6 +183,19 @@ Allocations are strictly **provisional**, read from [the unapproved 256-particip
 
 The shared generator produces 21 checked-in app pages. Run `node tools/generate-app-pages.mjs --check` to verify byte-identical HTML.
 
+### Club crest display
+
+Club crests are discovered from `assets/clubs/<countryId>/<clubId>/crest.svg`
+using canonical identities from `data/clubs.json`. Run
+`node tools/generate-app-pages.mjs` after adding or removing an SVG: the shared
+competition manifest records available files without probing absent assets.
+`assets/club-crests.js` enhances every `data-club-crest` host, including mobile
+standings, fixtures, Stats, History and dynamically opened detail dialogs.
+The neutral placeholder remains visible until an image loads, and remains on
+missing or failed images. Club images load through passive `<img>` elements;
+source SVGs and their colors are preserved. Public and protected artifacts
+include exactly the catalogued SVG paths. A stale catalogue fails staging.
+
 ### Canonical app routes (PR #161)
 
 App navigation uses `/dashboard`, `/calendar`, `/settings`, `/competitions` and `/competitions/<division-id>` without an `/app` prefix or trailing slash. Physical generated files remain under `app/`; this is a source directory, not a URL prefix. Use `node tools/dev-app-preview.mjs` for canonical local routing: site pages use `http://localhost:2000`, while app and competition pages use `http://app.localhost:2000`. The server also accepts old `/app/...` requests. A plain Python static server does not implement these canonical aliases.

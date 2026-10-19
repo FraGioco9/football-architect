@@ -1,0 +1,81 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import model from '../assets/competition-model.js';
+import {isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
+const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const manifest=()=>JSON.parse(read('app/competitions/_shared/manifest.json'));
+const expected={'BR-1':'assets/clubs/BR/1/crest.svg','DE-1':'assets/clubs/DE/1/crest.svg','PT-1':'assets/clubs/PT/1/crest.svg'};
+
+test('uploaded club crests are catalogued and explicitly included in public artifacts',()=>{
+ for(const [id,path] of Object.entries(expected)){
+  assert.equal(manifest().clubCrests[id],path);
+  assert.equal(isAllowlistedPublicPath(path),true,path);
+ }
+ for(const path of ['assets/clubs/ZZ/1/crest.svg','assets/clubs/DE/41/crest.svg','assets/clubs/DE/1/source.zip'])
+  assert.equal(isAllowlistedPublicPath(path),false,path);
+});
+
+test('competition validation rejects arbitrary crest URLs and mismatched club paths',()=>{
+ assert.equal(model.validManifest(manifest()),true);
+ for(const catalog of [{'DE-1':'https://example.test/logo.svg'},{'DE-1':'assets/clubs/PT/1/crest.svg'},
+  {'IT-41':'assets/clubs/IT/41/crest.svg'},{'XX-1':'assets/clubs/XX/1/crest.svg'},null,[]]){
+  assert.equal(model.validManifest({...manifest(),clubCrests:catalog}),false);
+ }
+});
+
+function host(id){
+ return {dataset:{clubCrest:id},children:[],matches:()=>true,querySelectorAll(selector){return selector==='.app-club-crest-image'?this.children.filter(node=>node.className==='app-club-crest-image'):[]},
+  append(node){this.children.push(node);node.parent=this},contains(node){return this.children.includes(node)}};
+}
+function setup(){
+ const source=new URL('../assets/club-crests.js',import.meta.url);
+ assert.ok(existsSync(source),'Shared club crest renderer must exist');
+ const hosts=[host('DE-1'),host('BR-1'),host('PT-1'),host('IT-1')],requests=[];let observe;
+ const document={body:{},querySelectorAll:()=>hosts,createElement(){
+  const image={events:{},addEventListener(name,fn){this.events[name]=fn},remove(){this.parent.children=this.parent.children.filter(node=>node!==this)},
+   set src(value){this.url=value;requests.push(value)},get src(){return this.url}};return image;
+ }};
+ runInNewContext(read('assets/club-crests.js'),{document,window:{faClubCrests:expected},
+  MutationObserver:class{constructor(fn){observe=fn}observe(){}}});
+ return {hosts,requests,insert(node){hosts.push(node);observe([{type:'childList',addedNodes:[node]}])},
+  repeat(node){observe([{type:'childList',addedNodes:[node]}])},
+  change(node,id){node.dataset.clubCrest=id;observe([{type:'attributes',target:node}])}};
+}
+
+test('real crests replace placeholders only after load; missing or failed images keep the fallback',()=>{
+ const s=setup();
+ assert.deepEqual([...s.requests].sort(),Object.values(expected).map(path=>'/'+path).sort());
+ assert.equal(s.hosts[3].children.length,0,'Missing crest causes no guessed asset request');
+ const [de,br,pt]=s.hosts;
+ assert.equal(de.dataset.clubCrestLoaded,undefined,'Placeholder remains during load');
+ assert.equal(de.children[0].alt,'');
+ de.children[0].events.load();assert.equal(de.dataset.clubCrestLoaded,'true');
+ br.children[0].events.error();assert.equal(br.dataset.clubCrestLoaded,undefined);assert.equal(br.children.length,0);
+ s.repeat(br);assert.equal(s.requests.length,3,'Broken image must not trigger an observer retry loop');
+ pt.children[0].events.load();assert.equal(pt.dataset.clubCrestLoaded,'true');
+});
+
+test('crests also render in dynamically inserted fixtures, Stats and History content',()=>{
+ const s=setup();
+ for(const view of ['fixtures','stats','history']){
+  const node=host('DE-1');s.insert(node);
+  assert.equal(node.children.length,1,view);
+  assert.equal(node.children[0].src,'/assets/clubs/DE/1/crest.svg');
+  node.children[0].events.load();assert.equal(node.dataset.clubCrestLoaded,'true',view);
+  s.repeat(node);assert.equal(node.children.length,1,'Repeated observation keeps one image');
+ }
+});
+
+test('reusing an identity host replaces its image and ignores stale load events',()=>{
+ const s=setup(),node=s.hosts[0],previous=node.children[0];
+ s.change(node,'BR-1');
+ assert.equal(node.children.length,1);
+ assert.equal(node.children[0].src,'/assets/clubs/BR/1/crest.svg');
+ previous.events.load();assert.equal(node.dataset.clubCrestLoaded,undefined);
+ node.children[0].events.load();assert.equal(node.dataset.clubCrestLoaded,'true');
+ s.change(node,'IT-1');
+ assert.equal(node.children.length,0);assert.equal(node.dataset.clubCrestLoaded,undefined);
+ assert.equal(s.requests.length,4,'Unknown identities retain the placeholder without probing a URL');
+});

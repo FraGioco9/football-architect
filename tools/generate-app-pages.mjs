@@ -2,6 +2,7 @@
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import model from "../assets/competition-model.js";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
+import {clubCrestAssets} from "./club-crest-assets.mjs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
 import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-assets.mjs";
 
@@ -105,7 +106,7 @@ const competitionRoute = d=>{
  return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="../../../assets/competition-model.js" defer></script>\n  <script src="../../../assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
- schemaVersion:1,approved:provisionalAssignments.approved,profile:model.profile,
+ schemaVersion:1,approved:provisionalAssignments.approved,profile:model.profile,clubCrests:clubCrestAssets().catalog,
  divisions:[...divisionData].sort((a,b)=>model.countries.indexOf(a.countryId)-model.countries.indexOf(b.countryId)||a.tier-b.tier).map(d=>{
   const country=countryById[d.countryId],members=provisionalClubs.get(d.id);
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
