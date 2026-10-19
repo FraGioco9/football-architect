@@ -290,8 +290,8 @@ test("STANDINGS-RESPONSIVE-02 keeps roomy rows, larger crests and narrow sticky 
   assert.ok(css.includes(".app-world-standing-table{min-width:696px}"));
   assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:50px;min-width:50px;max-width:50px}"));
   assert.ok(css.includes(".app-world-standing-table{min-width:686px}"));
-  assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:60px"));
- assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:56px}"));
+  assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:68px"));
+ assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:64px}"));
  assert.ok(!css.includes(".app-world-stat-positive"));
  assert.ok(!css.includes(".app-world-stat-negative"));
  assert.ok(!read("assets/competition-page.js").includes("app-world-stat-positive"));
@@ -302,8 +302,8 @@ test("STANDINGS-RESPONSIVE-02 keeps roomy rows, larger crests and narrow sticky 
  assert.ok(css.includes("tr>*:first-child{width:30px;min-width:30px;max-width:30px}"));
  assert.ok(css.includes("tr>*:nth-child(2){left:30px;min-width:126px}"));
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:686px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}"));
- assert.ok(css.includes("flex:0 0 40px;width:40px;height:40px"));
- assert.ok(css.includes("flex-basis:36px;width:36px;height:36px"));
+ assert.ok(css.includes("flex:0 0 48px;width:48px;height:48px"));
+ assert.ok(css.includes("flex-basis:40px;width:40px;height:40px"));
  assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 

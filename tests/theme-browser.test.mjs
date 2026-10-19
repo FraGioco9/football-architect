@@ -204,13 +204,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.cells,11,"UX-01B canonical columns "+width);
             assert.equal(desktop.minWidth,wide?"852px":"766px","UX-01B minimum width "+width);
             assert.ok(parseFloat(desktop.headHeight)>=40,"UX-01B heading height "+width);
-            assert.ok(parseFloat(desktop.cellHeight)>= 60,"UX-01B row height "+width);
+            assert.ok(parseFloat(desktop.cellHeight)>= 68,"UX-01B row height "+width);
             assert.equal(desktop.pos,wide?"44px":"38px","UX-01B position width "+width);
             assert.equal(desktop.clubLeft,wide?"44px":"38px","UX-01B sticky offset "+width);
             assert.equal(desktop.sticky,"sticky","UX-01B club sticky "+width);
             if(wide)assert.equal(desktop.clubMin,"210px","UX-01B club minimum "+width);
             assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"700");
-            assert.equal(desktop.crestWidth,"40px");assert.equal(desktop.crestHeight,"40px");
+            assert.equal(desktop.crestWidth,"48px");assert.equal(desktop.crestHeight,"48px");
             assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
             assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");
             assert.equal(desktop.formAlign,"center");assert.equal(desktop.pointsText,"—");
@@ -640,9 +640,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await wait(JSON.stringify(selector)+"&&[...document.querySelectorAll("+JSON.stringify(selector)+")].every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)");
         const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
         const geometry=await run("(()=>{const h=[...document.querySelectorAll("+JSON.stringify(selector)+")].find(n=>n.getClientRects().length),b=h.getBoundingClientRect(),r=h.closest('tr,summary').getBoundingClientRect();return {width:b.width,height:b.height,row:r.height,overflow:document.documentElement.scrollWidth>innerWidth}})()");
-        assert.equal(geometry.width,width<620?36:40,'Crest slot width');
-        assert.equal(geometry.height,width<620?36:40,'Crest slot height');
-        assert.ok(geometry.row>=(width<620?56:60)&&!geometry.overflow,'Roomy standings without page overflow: '+JSON.stringify(geometry));
+        assert.equal(geometry.width,width<620?40:48,'Crest slot width');
+        assert.equal(geometry.height,width<620?40:48,'Crest slot height');
+        assert.ok(geometry.row>=(width<620?64:68)&&!geometry.overflow,'Roomy standings without page overflow: '+JSON.stringify(geometry));
         await snap('CLUB-CRESTS '+country+' '+width,width,900);
         assert.ok(state.hosts===2&&state.visible===1&&state.images&&state.fallback,'Club crest desktop/mobile load and placeholder: '+country+' '+width+' '+JSON.stringify(state));
       }
@@ -656,7 +656,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       for(const country of ['DE','BR','PT','IT']){
         await cmd('Page.navigate',{url:devOrigin+'/competitions/'+country.toLowerCase()+'-1?season=4&view=standings'});
         for(const refresh of [false,true]){
-          if(refresh)await cmd('Page.reload',{ignoreCache:false});
+          if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait('window.__crestBeforeReload!==true');}
+          await wait("document.readyState==='complete'&&location.pathname==='/competitions/"+country.toLowerCase()+"-1'");
           await wait("document.documentElement.dataset.faDevStandingsPending!=='true'&&document.querySelector('.app-world-standing-table tbody tr td')?.textContent==='1'&&!!window.faClubCrests&&[...document.querySelectorAll('#competition-panel-standings [data-club-crest]')].filter(h=>Object.hasOwn(window.faClubCrests,h.dataset.clubCrest)).every(h=>h.dataset.clubCrestLoaded==='true')");
           const association=await run(`(()=>{const clubs=new Map(window.faCompetitionDivision.clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName]));return [...document.querySelectorAll('#competition-panel-standings [data-world-club]')].map(row=>{const h=row.querySelector('[data-club-crest]'),img=h?.querySelector('img'),name=row.querySelector('.app-world-club-name,.app-world-mobile-club-name')?.textContent,b=h.getBoundingClientRect(),i=img?.getBoundingClientRect(),visible=row.getClientRects().length>0;return {id:row.dataset.worldClub,host:h.dataset.clubCrest,name,expected:clubs.get(row.dataset.worldClub),src:img?.getAttribute('src')||null,expectedSrc:window.faClubCrests[row.dataset.worldClub]?'/'+window.faClubCrests[row.dataset.worldClub]:null,inside:!visible||!i||(i.top>=b.top-1&&i.bottom<=b.bottom+1&&i.left>=b.left-1&&i.right<=b.right+1)}})})()`);
           assert.equal(association.length,32,'Both standings projections have all club identities');
@@ -672,6 +673,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
     await cmd('Page.navigate',{url:devOrigin+'/competitions/pt-1?season=4&view=fixtures&matchday=1'});
     await wait("!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
+    for(const width of [1440,390,320]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+      const sizes=await run("[...document.querySelectorAll('#app-fixtures-list [data-club-crest]')].map(h=>({w:h.getBoundingClientRect().width,h:h.getBoundingClientRect().height}))");
+      assert.ok(sizes.length===16&&sizes.every(b=>b.w===(width<620?56:64)&&b.h===(width<620?56:64)),'Larger fixture crests: '+JSON.stringify({width,sizes}));
+      assert.equal(await run("document.documentElement.scrollWidth>innerWidth"),false,'No page overflow from large fixture crests');
+      await snap('CLUB-CRESTS FIXTURES '+width,width,900);
+    }
     await run("window.faCompetitionRoute.set({view:'stats'})");
     await wait("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3");
     await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
