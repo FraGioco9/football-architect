@@ -193,6 +193,9 @@ function historySeasonLabel(season){
  label.append(historyLabel("historySeasonLabel"),document.createTextNode(" "+season));return label;
 }
 function openHistorySeason(season){
+ // Set the first-paint guard before the router reveals Standings.
+ if(String(window.faCompetitionRoute?.get?.().season)!==String(season))
+  document.documentElement.dataset.faDevSeasonTransition="true";
  window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
 }
 function historyExpandableHolders(card,holders,metric){
@@ -359,6 +362,7 @@ function setPreviewEnabled(enabled) {
   previewState="OFF";
   widgetRoot?.syncVisibility();
   clearHistoryPreview();
+  delete document.documentElement.dataset.faDevSeasonTransition;
   try{sessionStorage.removeItem(FLAG)}catch{}
   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
   return true;
@@ -394,17 +398,25 @@ if(validPath||indexPath){
    const next=renderKey();
    if(next===renderedSeason)return seasonRefresh;
    const request=++seasonRequest;
-   // Reset changes the route while preview rendering is suspended.
-   // Track that selection so returning to the previous season still refreshes.
-   if(previewState!=="ON"){renderedSeason=next;return seasonRefresh;}
    renderedSeason=next;
+   // Prevent even one frame of previous-season data while DEV hydration is pending.
+   if(previewState!=="ON"){
+    delete document.documentElement.dataset.faDevSeasonTransition;
+    return seasonRefresh;
+   }
+   document.documentElement.dataset.faDevSeasonTransition="true";
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
     const previous=activePreview;
     const replacement=await boot(validPath[1].toUpperCase(),previous,()=>request===seasonRequest&&renderKey()===next);
     if(typeof replacement!=="function"){
-     if(request===seasonRequest)previewState="OFF";
+     if(request===seasonRequest){
+      previewState="OFF";
+      // On failure show canonical placeholders rather than stale DEV results.
+      try{activePreview?.()}catch(error){console.error("DEV season fallback restore failed:",error)}
+      activePreview=null;
+     }
      return false;
     }
     // A newer route may have been selected while this season was hydrating.
@@ -415,7 +427,18 @@ if(validPath||indexPath){
     }
     activePreview=replacement;
     return true;
-   }).catch(error=>{console.error("DEV season preview refresh failed:",error);return false});
+   }).catch(error=>{
+    console.error("DEV season preview refresh failed:",error);
+    if(request===seasonRequest){
+     previewState="OFF";
+     try{activePreview?.()}catch(restoreError){console.error("DEV season fallback restore failed:",restoreError)}
+     activePreview=null;
+    }
+    return false;
+   }).finally(()=>{
+    // A stale request must never release the newest season's paint guard.
+    if(request===seasonRequest)delete document.documentElement.dataset.faDevSeasonTransition;
+   });
    return seasonRefresh;
   }
   if(validPath)refreshSeason=syncSeason;
