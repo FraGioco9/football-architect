@@ -403,6 +403,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(box.open,true,id+" opened by touch");
       assert.ok(box.left>=0&&box.right<=box.width&&box.top>=0&&box.bottom<=box.height,id+" remains inside mobile viewport");
     };
+    await cmd("Page.navigate",{url:devOrigin+"/"});
+    await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
     currentDebugSeason=1;
     for(const [width,height] of [[390,844],[320,700]])for(const theme of ["dark","light"]){
       await cmd("Emulation.setDeviceMetricsOverride",{width,height,deviceScaleFactor:1,mobile:true,screenWidth:width,screenHeight:height});
