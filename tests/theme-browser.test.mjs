@@ -499,11 +499,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     // History stays silent while loading and links to the shared Standings view.
     const historyManifest=JSON.parse(await readFile(join(root,'app/competitions/_shared/manifest.json'),'utf8'));
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
+    let expansionChecks=0;
     for(const division of historyManifest.divisions){
       await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
       await wait("document.querySelectorAll('[data-history-season]').length===4");
       assert.equal(await run("!!document.querySelector('#app-history-hall,#app-history-final,.app-history-dev-banner,#competition-panel-history>h2')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>b.dataset.historySeason)"),['4','3','2','1']);
+      assert.equal(await run("[...document.querySelectorAll('[data-history-season]')].every(b=>!b.hasAttribute('aria-pressed'))"),true,division.id+' archive has no misleading toggle selection');
       const podiums=[4,3,2,1].map(season=>createPreviewStandings(division,30,season).rows.slice(0,3).map(row=>row.club.countryId+'-'+row.club.clubId));
       assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>[...b.querySelectorAll('[data-club-crest]')].map(c=>c.dataset.clubCrest))"),podiums);
       const records={titles:new Map(),podiums:new Map(),streak:new Map(),totalWins:new Map(),totalGoals:new Map(),totalPoints:new Map()};let previous=null,streak=0;
@@ -542,6 +544,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
       assert.equal(await run("!!document.querySelector('.app-history-dev [data-history-player-records] strong,.app-history-dev [data-history-player-records] [data-club-crest]')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
+      const tiedExpansion=await run("(()=>{const card=[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].find(c=>c.querySelector('[data-history-record-expand]'));if(!card)return null;const button=card.querySelector('[data-history-record-expand]'),list=document.getElementById(button.getAttribute('aria-controls')),rows=[...list.children],extra=rows.slice(2);const collapsed=rows.length>2&&rows.slice(0,2).every(row=>!row.hidden)&&extra.every(row=>row.hidden)&&button.getAttribute('aria-expanded')==='false'&&button.textContent.includes('+'+extra.length);button.click();const opened=extra.every(row=>!row.hidden)&&button.getAttribute('aria-expanded')==='true'&&!button.querySelector('[data-app-i18n=historyShowLess]').hidden;button.click();const restored=extra.every(row=>row.hidden)&&button.getAttribute('aria-expanded')==='false'&&!button.querySelector('[data-app-i18n=historyShowAll]').hidden;return {collapsed,opened,restored,entries:rows.length}})()");
+      if(tiedExpansion){
+        expansionChecks++;
+        assert.ok(tiedExpansion.collapsed&&tiedExpansion.opened&&tiedExpansion.restored,division.id+' tied records expand/collapse accessibly '+JSON.stringify(tiedExpansion));
+      }
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await run("document.querySelector('[data-history-season=\"3\"]').click()");
       const standings=createPreviewStandings(division,30,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
@@ -552,6 +559,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await run("history.back()");
       await wait("window.faCompetitionRoute.get().view==='history'&&window.faCompetitionRoute.get().season==='4'&&!document.getElementById('competition-panel-history').hidden");
     }
+    assert.ok(expansionChecks>0,'At least one real competition verifies the browser tie expander');
     const historyFrameObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__faPrematureHistory=[];window.__faWatchHistory=true;const sampleHistory=()=>{const empty=document.querySelector('[data-history-empty]');if(empty&&!empty.hidden&&empty.getClientRects().length&&getComputedStyle(empty).visibility==='visible'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on')window.__faPrematureHistory.push(1);if(window.__faWatchHistory)requestAnimationFrame(sampleHistory)};requestAnimationFrame(sampleHistory);`});
     devManifestDelay=300;
     try{
