@@ -222,7 +222,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
     }
     await run("document.getElementById('competition-tab-fixtures').click()");
     const stage=division.tier===1?'playout':'playoffs';
-    assert.equal(await run("!document.querySelector('[data-fixture-round-choice="+stage+"]').hidden"),day>=30);
+    assert.equal(await run("!document.querySelector('[data-fixture-round-choice="+stage+"]').hidden"),true);
     if(day>=30){
      await run("document.getElementById('app-fixtures-round').click();document.querySelector('[data-fixture-round-choice="+stage+"]').click()");
      const count=division.tier===1?2:day<32?4:5;
