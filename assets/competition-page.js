@@ -387,8 +387,33 @@
         return li;
       });
       if (identities.size !== model.profile.capacity) throw Error("Invalid mobile standings size");
-      return () => {
-        list.replaceChildren(...items);
+      return (incremental=false) => {
+        if(incremental && list.children.length===items.length){
+          // Reuse club cards, expanded details and crest hosts across DEV progress changes.
+          const existing=new Map([...list.children].map(item=>[item.dataset.worldClub,item]));
+          const sync=(target,source)=>{
+            if(target.nodeType!==source.nodeType||target.nodeName!==source.nodeName){
+              target.replaceWith(source);return source;
+            }
+            if(target.nodeType===Node.TEXT_NODE){if(target.nodeValue!==source.nodeValue)target.nodeValue=source.nodeValue;return target}
+            if(target.nodeType!==Node.ELEMENT_NODE)return target;
+            for(const attr of [...target.attributes])if(!source.hasAttribute(attr.name)&&attr.name!=="open")target.removeAttribute(attr.name);
+            for(const attr of [...source.attributes])if(target.getAttribute(attr.name)!==attr.value)target.setAttribute(attr.name,attr.value);
+            const oldChildren=[...target.childNodes],newChildren=[...source.childNodes];
+            for(let i=0;i<newChildren.length;i++){
+              if(i>=oldChildren.length)target.append(newChildren[i]);
+              else sync(oldChildren[i],newChildren[i]);
+            }
+            while(target.childNodes.length>newChildren.length)target.lastChild.remove();
+            return target;
+          };
+          for(const item of items){
+            const current=existing.get(item.dataset.worldClub);
+            if(!current)throw Error("Missing mobile standings identity");
+            sync(current,item);
+            list.appendChild(current);
+          }
+        }else list.replaceChildren(...items);
         updateVisibility();
         window.faAppRenderLanguage?.();
       };
