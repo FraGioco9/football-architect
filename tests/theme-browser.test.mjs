@@ -204,13 +204,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.cells,11,"UX-01B canonical columns "+width);
             assert.equal(desktop.minWidth,wide?"852px":"766px","UX-01B minimum width "+width);
             assert.ok(parseFloat(desktop.headHeight)>=40,"UX-01B heading height "+width);
-            assert.ok(parseFloat(desktop.cellHeight)>= (wide?46:44),"UX-01B row height "+width);
+            assert.ok(parseFloat(desktop.cellHeight)>= 60,"UX-01B row height "+width);
             assert.equal(desktop.pos,wide?"44px":"38px","UX-01B position width "+width);
             assert.equal(desktop.clubLeft,wide?"44px":"38px","UX-01B sticky offset "+width);
             assert.equal(desktop.sticky,"sticky","UX-01B club sticky "+width);
             if(wide)assert.equal(desktop.clubMin,"210px","UX-01B club minimum "+width);
             assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"700");
-            assert.equal(desktop.crestWidth,"28px");assert.equal(desktop.crestHeight,"30px");
+            assert.equal(desktop.crestWidth,"40px");assert.equal(desktop.crestHeight,"40px");
             assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
             assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");
             assert.equal(desktop.formAlign,"center");assert.equal(desktop.pointsText,"—");
