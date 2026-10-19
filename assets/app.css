@@ -677,7 +677,7 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 /* Standings bands mirror the Rules palette and retain the existing points column. */
 [data-standing-outcome="champion"],.app-rules-outcome[data-outcome="champion"]{--standing-outcome-color:#D4AF37}
 [data-standing-outcome="promoted"],.app-rules-outcome[data-outcome="promoted"]{--standing-outcome-color:#31966B}
-[data-standing-outcome="playoff"],.app-rules-outcome[data-outcome="playoff"]{--standing-outcome-color:#23704F}
+[data-standing-outcome="playoff"],.app-rules-outcome[data-outcome="playoff"]{--standing-outcome-color:#4A8FD8}
 [data-standing-outcome="playout"],.app-rules-outcome[data-outcome="playout"]{--standing-outcome-color:#D98A32}
 [data-standing-outcome="relegated"],.app-rules-outcome[data-outcome="relegated"]{--standing-outcome-color:#C75C61}
 html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>*:not(:nth-child(10)){background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
