@@ -680,3 +680,55 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
  assert.match(client,/clearHistoryPreview\(\)/);assert.match(html,/<section id="competition-panel-history"/);assert.match(css,/\.app-competition-stat-grid/);
  assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-client.mjs"),false);assert.equal(isAllowlistedPublicPath("tools/dev-standings-preview-data.mjs"),false);
 });
+
+test("DEV-SAFARI-FIRST-PAINT: a season switch guards old standings until the latest render commits",async()=>{
+ assert.ok(serverSource.includes('html[data-fa-dev-season-transition="true"] #competition-panel-standings'),
+  "The DEV server must install its visibility rule before the route changes");
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
+ const events={},dataset={},pending=[],cleanups=[];
+ let season=4;
+ const context={
+  validPath:['/competitions/it-1','it-1'],indexPath:false,syncCompetitionLinks(){},
+  debugSeason:4,matchdays:30,renderKey:()=>String(season),
+  window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
+  document:{documentElement:{dataset},querySelector:()=>null,querySelectorAll:()=>[]},
+  availablePreviewSeasons:()=>[1,2,3,4],setSeason(){},waitForRows:()=>Promise.resolve(),
+  registerDebugControls(){},createDebugWidget:()=>({}),setPreviewEnabled:()=>Promise.resolve(true),
+  syncHistoryPreview(){},resetPreview(){},setMatchdays(){},previewState:'ON',
+  activePreview:()=>cleanups.push('initial'),transition:Promise.resolve(),
+  boot:()=>new Promise(resolve=>pending.push(resolve)),console
+ };
+ runWithModel(initializer,context);
+ const flush=()=>new Promise(resolve=>setImmediate(resolve));
+ await flush();
+ const navigate=next=>{
+  season=next;
+  for(const listener of events['fa:competition-route-change']||[])listener();
+ };
+ navigate(2);
+ assert.equal(dataset.faDevSeasonTransition,'true',
+  'Old data is masked synchronously in the same task as the navigation');
+ await flush();assert.equal(pending.length,1);
+ assert.equal(dataset.faDevSeasonTransition,'true','Still hidden while the data fetch is pending');
+
+ navigate(3);
+ assert.equal(dataset.faDevSeasonTransition,'true');
+ pending[0](()=>cleanups.push('stale'));
+ await flush();
+ assert.deepEqual(cleanups,['stale'],'Stale season cannot commit to the current route');
+ assert.equal(dataset.faDevSeasonTransition,'true','Stale request cannot release the new guard');
+ assert.equal(pending.length,2);
+ pending[1](()=>cleanups.push('current'));
+ await flush();
+ assert.equal(dataset.faDevSeasonTransition,undefined,'Only the latest completed render releases the guard');
+ assert.equal(context.previewState,'ON');
+
+ navigate(1);
+ assert.equal(dataset.faDevSeasonTransition,'true');
+ await flush();assert.equal(pending.length,3);
+ pending[2](undefined);
+ await flush();
+ assert.equal(context.previewState,'OFF','Failed hydration disables the DEV preview');
+ assert.deepEqual(cleanups,['stale','current'],'Failed hydration restores canonical rows');
+ assert.equal(dataset.faDevSeasonTransition,undefined,'Failure also releases the visibility guard');
+});

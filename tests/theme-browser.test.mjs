@@ -552,16 +552,112 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.ok(tiedExpansion.collapsed&&tiedExpansion.opened&&tiedExpansion.restored,division.id+' tied records expand/collapse accessibly '+JSON.stringify(tiedExpansion));
       }
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
-      await run("document.querySelector('[data-history-season=\"3\"]').click()");
       const standings=createPreviewStandings(division,30,3).rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]);
       const standingsState="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])";
-      await wait("window.faCompetitionRoute.get().view==='standings'&&window.faCompetitionRoute.get().season==='3'&&JSON.stringify("+standingsState+")==="+JSON.stringify(JSON.stringify(standings)));
+      // The archive link changes the URL synchronously while DEV results hydrate.
+      // Observe actual painted frames, not just the final DOM, under a slow fetch.
+      if(division.id==='IT-1'){
+        devManifestDelay=350;
+        const frameCheck="(()=>{const expected="+JSON.stringify(JSON.stringify(standings))+
+          ";window.__faStaleStandingsFrames=[];window.__faWatchStandingsFrames=true;"+
+          "const sample=()=>{if(!window.__faWatchStandingsFrames)return;"+
+          "const state=window.faCompetitionRoute?.get?.(),panel=document.getElementById('competition-panel-standings');"+
+          "if(state?.view==='standings'&&state.season==='3'&&panel&&!panel.hidden&&"+
+          "getComputedStyle(panel).visibility==='visible'){const actual=JSON.stringify("+standingsState+");"+
+          "if(actual!==expected)window.__faStaleStandingsFrames.push(actual)}"+
+          "requestAnimationFrame(sample)};requestAnimationFrame(sample)})()";
+        await run(frameCheck);
+      }
+      try{
+        await run("document.querySelector('[data-history-season=\"3\"]').click()");
+        await wait("window.faCompetitionRoute.get().view==='standings'&&window.faCompetitionRoute.get().season==='3'&&JSON.stringify("+standingsState+")==="+JSON.stringify(JSON.stringify(standings)));
+        if(division.id==='IT-1'){
+          await wait("document.documentElement.dataset.faDevSeasonTransition===undefined");
+          await new Promise(resolve=>setTimeout(resolve,50));
+          await run("window.__faWatchStandingsFrames=false");
+          assert.deepEqual(await run("window.__faStaleStandingsFrames"),[],
+            'History archive must not reveal one stale Standings frame while changing seasons');
+        }
+      }finally{
+        if(division.id==='IT-1'){
+          devManifestDelay=0;
+          await run("window.__faWatchStandingsFrames=false");
+        }
+      }
       assert.equal(await run("document.activeElement.id"),'competition-tab-standings');
       assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),'30');
       await run("history.back()");
       await wait("window.faCompetitionRoute.get().view==='history'&&window.faCompetitionRoute.get().season==='4'&&!document.getElementById('competition-panel-history').hidden");
     }
     assert.ok(expansionChecks>0,'At least one real competition verifies the browser tie expander');
+    // Archive -> Standings must never expose the previous season in the first
+    // visible frame. Exercise both renderers at desktop/mobile breakpoints.
+    const itDivision=historyManifest.divisions.find(item=>item.id==='IT-1');
+    const currentSeason3=createPreviewStandings(itDivision,30,3).rows.map(row=>[
+      row.club.countryId+'-'+row.club.clubId,row.pts]);
+    const oldSeason4=createPreviewStandings(itDivision,30,4).rows.map(row=>[
+      row.club.countryId+'-'+row.club.clubId,row.pts]);
+    assert.notDeepEqual(currentSeason3,oldSeason4,'The two tested seasons must differ');
+    for(const [width,height] of [[1440,900],[621,900],[620,800],[390,844],[320,700]]){
+      const mobile=width<=620;
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height,deviceScaleFactor:1,mobile,screenWidth:width,screenHeight:height});
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=4&view=history'});
+      await wait("document.querySelectorAll('[data-history-season]').length===4&&"+
+        "window.faCompetitionRoute.get().view==='history'&&"+
+        "document.documentElement.dataset.faDevStandingsPending===undefined");
+      const observer="(()=>{"+
+        "const expected="+JSON.stringify(JSON.stringify(currentSeason3))+";"+
+        "const mobile="+String(mobile)+";"+
+        "window.__faSeasonFrame={hidden:0,shown:0,unguarded:0,stale:[],wrongLayout:0,active:true};"+
+        "const probe=()=>{const record=window.__faSeasonFrame;if(!record.active)return;"+
+        "const route=window.faCompetitionRoute?.get?.(),panel=document.getElementById('competition-panel-standings');"+
+        "if(route?.view==='standings'&&route.season==='3'&&panel){"+
+        "const target=document.querySelector(mobile?'#app-standings-compact':'#app-standings-full');"+
+        "const isVisible=!panel.hidden&&getComputedStyle(panel).visibility==='visible'&&"+
+        "getComputedStyle(panel).display!=='none'&&target&&!target.hidden&&"+
+        "getComputedStyle(target).display!=='none';"+
+        "if(document.documentElement.dataset.faDevSeasonTransition==='true'&&"+
+        "getComputedStyle(panel).visibility!=='hidden')record.unguarded++;"+
+        "if(!isVisible)record.hidden++;else {record.shown++;"+
+        "const rows=[...document.querySelectorAll(mobile?"+
+        "'#app-standings-compact-list .app-world-mobile-item':'#app-standings-body tr')];"+
+        "const actual=JSON.stringify(rows.map(row=>[row.dataset.worldClub,mobile?"+
+        "Number(row.querySelector('.app-world-mobile-points')?.firstChild?.textContent):"+
+        "Number(row.children[9]?.textContent)]));"+
+        "if(actual!==expected)record.stale.push(actual);"+
+        "if(window.innerWidth!=="+width+")record.wrongLayout++;"+
+        "}}requestAnimationFrame(probe)};requestAnimationFrame(probe)})()";
+      await run(observer);
+      devManifestDelay=350;
+      try{
+        await run("document.querySelector('[data-history-season=\"3\"]').click()");
+        await wait("window.faCompetitionRoute.get().view==='standings'&&"+
+          "window.faCompetitionRoute.get().season==='3'&&"+
+          "document.documentElement.dataset.faDevSeasonTransition===undefined");
+        await delay(75); // capture frames immediately after the protected reveal
+        const frames=await run("(()=>{window.__faSeasonFrame.active=false;return window.__faSeasonFrame})()");
+        assert.ok(frames.hidden>0,width+' History transition was guarded across animation frames');
+        assert.ok(frames.shown>0,width+' latest-season Standings became visible');
+        assert.equal(frames.unguarded,0,width+' guard must hide Standings on every frame');
+        assert.equal(frames.wrongLayout,0,width+' expected viewport is retained');
+        assert.deepEqual(frames.stale,[],width+' never reveals old '+(mobile?'mobile':'desktop')+' standings');
+        const expectedRows=await run("(()=>{const mobile="+String(mobile)+";"+
+          "return [...document.querySelectorAll(mobile?"+
+          "'#app-standings-compact-list .app-world-mobile-item':'#app-standings-body tr')].map(row=>"+
+          "[row.dataset.worldClub,mobile?Number(row.querySelector('.app-world-mobile-points')?.firstChild?.textContent):"+
+          "Number(row.children[9]?.textContent)])})()");
+        assert.deepEqual(expectedRows,currentSeason3,width+' '+(mobile?'mobile':'desktop')+' DOM matches Season 3');
+        console.log('HISTORY_FIRST_PAINT_PASS|'+width+'|'+(mobile?'mobile':'desktop')+'|delayed archive to standings');
+      }finally{
+        devManifestDelay=0;
+        await run("if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
+      }
+    }
+    // A prior archive-click matrix ends on Standings; reload must start from
+    // an explicit History URL so we test History hydration rather than its last route.
+    await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=4&view=history'});
+    await wait("window.faCompetitionRoute?.get?.().view==='history'&&document.querySelectorAll('[data-history-season]').length===4");
     const historyFrameObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__faPrematureHistory=[];window.__faWatchHistory=true;const sampleHistory=()=>{const empty=document.querySelector('[data-history-empty]');if(empty&&!empty.hidden&&empty.getClientRects().length&&getComputedStyle(empty).visibility==='visible'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on')window.__faPrematureHistory.push(1);if(window.__faWatchHistory)requestAnimationFrame(sampleHistory)};requestAnimationFrame(sampleHistory);`});
     devManifestDelay=300;
     try{
@@ -570,7 +666,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await run('window.__faWatchHistory=false');
       assert.deepEqual(await run('window.__faPrematureHistory'),[],'History records never flash in the shorter empty layout during refresh');
     }finally{devManifestDelay=0;await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:historyFrameObserver.identifier});}
-    for(const width of [1440,621,620,390,320])for(const theme of ['dark','light']){
+    for(const width of [1440,621,620,520,430,390,320])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
@@ -579,6 +675,42 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
         assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.emptyLabels,false);
+        // Only the History RECORD BOX grids must be non-scrolling. Do not change
+        // the intentionally scrollable six-view competition tab navigation.
+        const boxGeometry=await run("(()=>{const root=document.querySelector('.app-history-dev'),"+
+          "grids=[...root.querySelectorAll('.app-competition-stat-grid')].filter(g=>g.getClientRects().length&&getComputedStyle(g).display!=='none');"+
+          "return grids.map(g=>{const r=g.getBoundingClientRect(),cards=[...g.querySelectorAll('.app-competition-stat-card')].filter(c=>c.getClientRects().length);"+
+          "return {cols:getComputedStyle(g).gridTemplateColumns.trim().split(/\\s+/).length,"+
+          "overflow:g.scrollWidth>g.clientWidth+1,"+
+          "fit:cards.every(c=>{const b=c.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&c.scrollWidth<=c.clientWidth+1})}})})()");
+        const expectedColumns=width<=520?1:width<=650?2:3;
+        assert.ok(boxGeometry.length>0&&boxGeometry.every(g=>g.cols===expectedColumns&&!g.overflow&&g.fit),
+          'History record boxes fit without inner horizontal scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(boxGeometry));
+        // The shell owns vertical scrolling. Unlike document.scrollWidth, it
+        // exposes an unintended horizontal scrollport even when HTML stays fixed.
+        // Safari's touch-panning must be disabled only in the History records zone.
+        const recordScroll=await run("(()=>{const panel=document.getElementById('competition-panel-history'),"+
+          "records=panel.querySelector('#app-history-records'),shell=document.querySelector('.fa-shell-content-scroll');"+
+          "const css=getComputedStyle(records),grid=records.querySelector('.app-competition-stat-grid');"+
+          "const original=records.scrollLeft;records.scrollLeft=48;const shifted=records.scrollLeft;records.scrollLeft=original;"+
+          "const outer=panel.getBoundingClientRect(),inner=records.getBoundingClientRect();"+
+          "return {shellOverflow:shell.scrollWidth>shell.clientWidth+1,"+
+          "panelOverflow:panel.scrollWidth>panel.clientWidth+1,"+
+          "recordsOverflow:records.scrollWidth>records.clientWidth+1,"+
+          "scrollShifted:Math.abs(shifted-original)>1,"+
+          "overflowX:css.overflowX,touchAction:css.touchAction,"+
+          "inBounds:inner.left>=outer.left-1&&inner.right<=outer.right+1,"+
+          "gridOverflow:grid.scrollWidth>grid.clientWidth+1}})()");
+        if(width<=520){
+          assert.equal(recordScroll.scrollShifted,false,
+            'History records cannot horizontally scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(recordScroll));
+          assert.equal(recordScroll.overflowX,'clip',
+            'History records clip only overflow at '+width+' '+theme+' '+lang);
+          assert.equal(recordScroll.touchAction,'pan-y',
+            'History records accept vertical-only panning at '+width+' '+theme+' '+lang);
+        }
+        assert.ok(recordScroll.inBounds&&!recordScroll.gridOverflow&&!recordScroll.panelOverflow,
+          'History box area stays within its panel at '+width+' '+theme+' '+lang+' '+JSON.stringify(recordScroll));
         const labelFit=await run("(()=>{const cards=[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0);return cards.every(c=>{const l=c.querySelector('.app-competition-stat-label'),next=l?.nextElementSibling;if(!l||!next)return true;const label=l.getBoundingClientRect(),content=next.getBoundingClientRect();return l.scrollHeight<=l.clientHeight+1&&label.bottom<=content.top+1})})()");
         assert.equal(labelFit,true,width+' '+theme+' '+lang+' History labels fit inside their slots');
         const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0).map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
