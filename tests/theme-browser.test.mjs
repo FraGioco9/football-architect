@@ -662,7 +662,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await run('window.__faWatchHistory=false');
       assert.deepEqual(await run('window.__faPrematureHistory'),[],'History records never flash in the shorter empty layout during refresh');
     }finally{devManifestDelay=0;await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:historyFrameObserver.identifier});}
-    for(const width of [1440,621,620,390,320])for(const theme of ['dark','light']){
+    for(const width of [1440,621,620,520,430,390,320])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=3&view=history'});
@@ -671,6 +671,17 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
         assert.equal(layout.fit,true,width+' '+theme+' '+lang+' History fit');assert.equal(layout.nested,false);assert.equal(layout.emptyLabels,false);
+        // Only the History RECORD BOX grids must be non-scrolling. Do not change
+        // the intentionally scrollable six-view competition tab navigation.
+        const boxGeometry=await run("(()=>{const root=document.querySelector('.app-history-dev'),"+
+          "grids=[...root.querySelectorAll('.app-competition-stat-grid')].filter(g=>g.getClientRects().length&&getComputedStyle(g).display!=='none');"+
+          "return grids.map(g=>{const r=g.getBoundingClientRect(),cards=[...g.querySelectorAll('.app-competition-stat-card')].filter(c=>c.getClientRects().length);"+
+          "return {cols:getComputedStyle(g).gridTemplateColumns.trim().split(/\\s+/).length,"+
+          "overflow:g.scrollWidth>g.clientWidth+1,"+
+          "fit:cards.every(c=>{const b=c.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&c.scrollWidth<=c.clientWidth+1})}})})()");
+        const expectedColumns=width<=520?1:width<=650?2:3;
+        assert.ok(boxGeometry.length>0&&boxGeometry.every(g=>g.cols===expectedColumns&&!g.overflow&&g.fit),
+          'History record boxes fit without inner horizontal scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(boxGeometry));
         const labelFit=await run("(()=>{const cards=[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0);return cards.every(c=>{const l=c.querySelector('.app-competition-stat-label'),next=l?.nextElementSibling;if(!l||!next)return true;const label=l.getBoundingClientRect(),content=next.getBoundingClientRect();return l.scrollHeight<=l.clientHeight+1&&label.bottom<=content.top+1})})()");
         assert.equal(labelFit,true,width+' '+theme+' '+lang+' History labels fit inside their slots');
         const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0).map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
