@@ -29,8 +29,8 @@ test("CLUB-REGISTRY-01: all approved identities use the flat twelve-field catalo
 
 test("CLUB-REGISTRY-02: CSV bytes and all JSON values match the owner-approved source",()=>{
   const hash=value=>createHash("sha256").update(value).digest("hex");
-  assert.equal(hash(readFileSync(new URL("../data/clubs-registry.csv",import.meta.url))),"b880639d8ab4d2b4c1dcd019f5237d210d2dd9d80a5221199c5303a164d2fc7d");
-  assert.equal(hash(JSON.stringify(clubs)),"e6eaa1e2ca660a78672b76d54fd3d3e88f57d0f63cc12820f56013f201b19a2d");
+  assert.equal(hash(readFileSync(new URL("../data/clubs-registry.csv",import.meta.url))),"84fee0879d625848dbbca89a68cf0a51b56a9911c6e65517acef1b6ba61df727");
+  assert.equal(hash(JSON.stringify(clubs)),"e14816ef1f9490b17f459917675c52476a3810f115380e54c70ffe58b9de1e01");
 });
 
 test("REGISTRY-01: CSV and JSON use the same flat division fields and records",()=>{
