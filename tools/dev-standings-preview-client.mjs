@@ -553,7 +553,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // the selected round from URL/state, including completed-season archives.
     const regularRound=previewCurrentMatchday(season,progress);
      // Once the post-season starts, the current-round shortcut targets its named fixture stage.
-     const currentRound=progress.matchdays>=31
+     const currentRound=progress.matchdays>=30
        ?(division.tier===1?'playout':'playoffs'):regularRound;
     const postResults=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
     const postFixtures=[];
