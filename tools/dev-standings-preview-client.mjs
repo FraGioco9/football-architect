@@ -540,6 +540,12 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
     if(!isCurrent()||selectedSeason()!==season||debugSeason!==progress.season||matchdays!==progress.matchdays)return;
+    // Keep the active page, scroll position and focus stable during DEV data swaps.
+    // Only the standings/fixtures/postseason data is rehydrated; never navigate or reload.
+    const scrollHosts=[document.scrollingElement,document.querySelector(".fa-shell-content-scroll"),
+      document.querySelector(".app-world-standing-scroll")].filter(Boolean);
+    const scrollState=scrollHosts.map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
+    const focused=document.activeElement;
     if(restorePrevious)restorePrevious();
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
@@ -751,6 +757,8 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     tbody.replaceChildren(fragment);
     commitMobile();
     if(commitPostseason)commitPostseason();
+    for(const {el,top,left} of scrollState){el.scrollTop=top;el.scrollLeft=left;}
+    if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});
     // Preserve the canonical compact-form marks exactly as rendered. Bind taps
     // directly to those marks and cancel the enclosing <summary> activation.
     const mobileItems=[...mobileList.querySelectorAll(".app-world-mobile-item")];
