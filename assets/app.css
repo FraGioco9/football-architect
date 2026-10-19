@@ -711,6 +711,9 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-knockout-home{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.4;overflow-wrap:anywhere}
 .app-knockout-score{display:block;text-align:center;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums}
 .app-knockout-team-row>.app-knockout-score:last-child{color:var(--text);border-radius:5px;padding:7px 0;background:color-mix(in srgb,var(--surface) 90%,var(--standing-outcome-color) 10%)}
+/* Resolution notes occupy a reserved slot, so extra time/penalties cannot shift bracket geometry. */
+.app-knockout-round .app-postseason-group [data-postseason-resolution]{min-height:18px;box-sizing:border-box}
+.app-knockout-round .app-postseason-group [data-postseason-resolution][hidden]{display:block!important;visibility:hidden}
 .app-knockout-single{grid-template-columns:minmax(0,1fr) 28px}
 .app-postseason-winner{text-align:center;padding:16px;min-height:112px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box}
 .app-knockout-winner-name{display:block;margin:14px 0 4px;color:var(--text);font-size:22px;overflow-wrap:anywhere}
