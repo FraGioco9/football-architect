@@ -34,17 +34,20 @@
       }else if(key==="Escape"&&!menu.hidden){event.preventDefault();close(true)}
       else if(key==="Tab")close();
     });
-    options.forEach((option,index)=>{
-      option.addEventListener("click",()=>{active=index;select()});
-      option.addEventListener("pointermove",()=>{if(!menu.hidden){active=index;highlight()}});
-    });
+    const bound=new WeakSet();
+    function bindOptions(){options.forEach(option=>{
+      if(bound.has(option))return;bound.add(option);
+      option.addEventListener("click",()=>{const index=options.indexOf(option);if(index>=0){active=index;select()}});
+      option.addEventListener("pointermove",()=>{const index=options.indexOf(option);if(!menu.hidden&&index>=0){active=index;highlight()}});
+    })}
+    bindOptions();
     document.addEventListener("pointerdown",event=>{
       if(control.contains(event.target))return;
       if(!menu.hidden)close();
       if(document.activeElement===trigger)trigger.blur();
     },true);
     document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!menu.hidden)close(true)});
-    return {close,sync(value){trigger.value=value;options.forEach(option=>option.setAttribute("aria-selected",String(option.dataset.menuValue===value)))}};
+    return {close,update(next){close();options=next;active=0;bindOptions()},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute("aria-selected",String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");
   if(!tablist)return;
@@ -83,19 +86,23 @@
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
-  const availableSeasons=[...new Set(["1",...devSeasons])];
-  const latestSeason=availableSeasons.includes(document.documentElement.dataset.faDevDefaultSeason)
-    ?document.documentElement.dataset.faDevDefaultSeason:availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
+  let availableSeasons=[...new Set(["1",...devSeasons])];
+  const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
+  if(devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=1)
+    availableSeasons=availableSeasons.filter(id=>Number(id)<=initialLimit);
+  let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
   function read(){
     const params=new URL(window.location.href).searchParams;
     const id=params.get("season"),round=params.get("matchday");
-    return {season:/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason,
+    const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason;
+    return {season:devSeasons.length&&!availableSeasons.includes(requested)?latestSeason:requested,
       view:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:/^(?:[1-9]|[12]\d|30)$/.test(round||"")?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
+    if(devSeasons.length&&!availableSeasons.includes(state.season))state.season=latestSeason;
     const url=new URL(window.location.href);
     url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     url.search="";url.hash="";
@@ -146,25 +153,31 @@
       event.preventDefault();set({view:views[next]},{focus:true});
     });
   });
-  // The checked-in competition markup has the season 1 option only.
-  // Add available DEV seasons without duplicating the menu in all generated pages.
-  for(const value of availableSeasons.filter(value=>!seasonMenu.querySelector(`[data-menu-value="${value}"]`))){
-    const option=document.createElement("div");
-    option.id="app-competition-season-option-"+value;
-    option.className="language-option";
-    option.setAttribute("role","option");
-    option.dataset.menuValue=value;
-    option.setAttribute("aria-selected","false");
-    option.textContent=value;
-    seasonMenu.append(option);
+  // Rebuild the available options when DEV progress changes, retaining one binding.
+  function seasonOptions(){
+    for(const option of seasonMenu.querySelectorAll("[data-menu-value]"))
+      if(!availableSeasons.includes(option.dataset.menuValue))option.remove();
+    for(const value of availableSeasons.filter(value=>!seasonMenu.querySelector(`[data-menu-value="${value}"]`))){
+      const option=document.createElement("div");
+      option.id="app-competition-season-option-"+value;option.className="language-option";
+      option.setAttribute("role","option");option.dataset.menuValue=value;
+      option.setAttribute("aria-selected","false");option.textContent=value;seasonMenu.append(option);
+    }
+    const options=[...seasonMenu.querySelectorAll("[data-menu-value]")]
+      .sort((a,b)=>Number(b.dataset.menuValue)-Number(a.dataset.menuValue));
+    options.forEach(option=>seasonMenu.append(option));return options;
   }
-  // Show the newest available season first, including DEV-only seasons.
-  [...seasonMenu.querySelectorAll("[data-menu-value]")]
-    .sort((a,b)=>Number(b.dataset.menuValue)-Number(a.dataset.menuValue))
-    .forEach(option=>seasonMenu.append(option));
-  const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,
-    [...seasonMenu.querySelectorAll("[data-menu-value]")],value=>set({season:value}),
+  const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
+  window.faCompetitionRoute.setSeasonLimit=limit=>{
+    if(!devSeasons.includes(String(limit)))return false;
+    const next=[...new Set(["1",...devSeasons])].filter(id=>Number(id)<=limit);
+    if(next.length===availableSeasons.length&&next.every(id=>availableSeasons.includes(id)))return true;
+    availableSeasons=next;latestSeason=next.reduce((a,b)=>Number(a)>Number(b)?a:b);
+    seasonPicker.update(seasonOptions());
+    apply({...state,season:availableSeasons.includes(state.season)?state.season:latestSeason},{replace:true});
+    return true;
+  };
   window.addEventListener("popstate",()=>{
     pendingDefaultMatchday=false;
     apply(read(),{replace:true});

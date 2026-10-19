@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','fixtures','stats','history','rules','awards'];
-function setup(path='/competitions/it-1/'){
+function setup(path='/competitions/it-1/',devSeason=null){
  const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
@@ -12,14 +12,20 @@ function setup(path='/competitions/it-1/'){
  const tabs=views.map(view=>{const tab=item();tab.id='competition-tab-'+view;tab.getAttribute=()=> 'competition-panel-'+view;const panel=item();panel.querySelectorAll=()=>[];fields.set('competition-panel-'+view,panel);return tab});
  fields.set('app-competition-season',item());fields.set('app-competition-season-unavailable',item());
  const option=item();option.id='app-competition-season-option-1';option.dataset.menuValue='1';
- const menu=item();menu.querySelector=()=>option;menu.append=()=>{};menu.querySelectorAll=()=>[option];fields.set('app-competition-season-menu',menu);
+ const menu=item();menu.options=[option];
+ menu.querySelector=selector=>menu.options.find(node=>node.dataset.menuValue===selector.match(/="([^"]+)"/)?.[1]);
+ menu.append=node=>{menu.options=menu.options.filter(item=>item!==node);menu.options.push(node)};
+ menu.querySelectorAll=()=>menu.options;
+ option.remove=()=>{menu.options=menu.options.filter(node=>node!==option)};
+ fields.set('app-competition-season-menu',menu);
  fields.set('app-competition-season-value',item());fields.set('app-competition-season-control',{contains:()=>false});
  fields.set('app-competition-season-option-1',option);
  const tablist=item();tablist.clientWidth=240;tablist.scrollWidth=620;let scroll=0;
  Object.defineProperty(tablist,'scrollLeft',{get:()=>scroll,set:value=>scroll=Math.max(0,Math.min(380,value))});
  tablist.querySelectorAll=()=>tabs;tablist.getBoundingClientRect=()=>({left:0,right:240});
  tabs.forEach((tab,i)=>tab.getBoundingClientRect=()=>({left:i*104-scroll,right:i*104+100-scroll}));
- const document={addEventListener(){},documentElement:{dataset:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist};
+ const document={addEventListener(){},documentElement:{dataset:devSeason?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
+ createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
  const window={get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
@@ -27,6 +33,28 @@ function setup(path='/competitions/it-1/'){
  runInNewContext(source,{document,window,URL,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,tablist,events,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
+test('DEV season menu ends at current progress and moves an invalid viewed season to the latest available',()=>{
+ const s=setup('/competitions/it-1?season=3&view=fixtures&matchday=13',3);
+ const menu=s.fields.get('app-competition-season-menu');
+ assert.deepEqual(menu.options.map(node=>node.dataset.menuValue),['3','2','1']);
+ s.window.faCompetitionRoute.setSeasonLimit(2);
+ assert.deepEqual(menu.options.map(node=>node.dataset.menuValue),['2','1']);
+ assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:'2',view:'fixtures',matchday:13});
+ s.window.faCompetitionRoute.set({season:'1'});
+ s.window.faCompetitionRoute.setSeasonLimit(3);
+ assert.equal(s.window.faCompetitionRoute.get().season,'1','Raising Debug keeps a valid viewed season');
+ assert.deepEqual(menu.options.map(node=>node.dataset.menuValue),['3','2','1']);
+ menu.querySelector('[data-menu-value="3"]').events.click();
+ assert.equal(s.window.faCompetitionRoute.get().season,'3','Newly added options remain interactive');
+ s.window.faCompetitionRoute.setSeasonLimit(1);
+ assert.equal(s.window.faCompetitionRoute.get().season,'1');
+ s.back();assert.equal(s.window.faCompetitionRoute.get().season,'1','Back navigation cannot reveal a future season');
+});
+test('DEV future deep links normalize to the latest current season',()=>{
+ const s=setup('/competitions/it-1?season=4&view=stats',2);
+ assert.equal(s.window.faCompetitionRoute.get().season,'2');
+ assert.equal(s.fields.get('competition-panel-stats').hidden,false);
+});
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{
  const s=setup('/competitions/it-1/?season=1&view=fixtures&matchday=12');
  assert.equal(s.window.location.pathname,'/competitions/it-1');

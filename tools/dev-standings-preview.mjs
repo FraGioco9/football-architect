@@ -5,7 +5,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
-import { DEBUG_FIRST_PAINT, DEBUG_SEASONS } from "./dev-preview-artifact.mjs";
+import { DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -36,7 +36,8 @@ const DETAIL = /^\/(?:app\/)?competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
-  `<script>document.documentElement.dataset.faDevStandingsPending="true";document.documentElement.dataset.faDevDefaultSeason="1";document.documentElement.dataset.faDevSeasons="${DEV_SEASONS.join(",")}"</script>`,
+  DEBUG_SEASON_BOOTSTRAP,
+  '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
   '<style>html:not([data-fa-tabs-restored="true"]) .app-competition-tabs{visibility:hidden}</style>',
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',

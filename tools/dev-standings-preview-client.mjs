@@ -39,6 +39,7 @@ function syncDebugControls(){
   }
 }
 async function refreshProgress(){
+ window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(validPath){
   if(!await setPreviewEnabled(true))return false;
   if(await refreshSeason()===false)return false;
@@ -49,7 +50,7 @@ async function refreshProgress(){
  return true;
 }
 async function setDebugProgress(key,value){
- const previous={season:debugSeason,matchdays};let saved;
+ const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved;
  try{saved=sessionStorage.getItem(key);sessionStorage.setItem(key,String(value))}catch{return false}
  const revision=++progressRevision;
  if(key===SEASON_KEY)debugSeason=value;else matchdays=value;
@@ -59,6 +60,8 @@ async function setDebugProgress(key,value){
  if(ok)return true;
  debugSeason=previous.season;matchdays=previous.matchdays;
  try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved)}catch{}
+ window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
+ if(previousView)window.faCompetitionRoute?.set?.({season:previousView},{replace:true});
  syncDebugControls();
  window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:previous}));
  return false;
