@@ -566,6 +566,10 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures}):null;
     const restorePostseason=window.faPostseason?.snapshot();
     const commitPostseason=window.faPostseason?.prepare(rows,postResults);
+    // Fast path: reuse the mounted standings DOM, tooltip handlers and club crests.
+    // The original preview cleanup remains active for eventual DEV disable/reset.
+    if(restorePrevious?.refresh && restorePrevious.refresh(rows,commitFixtures,commitPostseason,
+      window.faStandingsMobile?.prepare(rows)))return restorePrevious;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
@@ -811,6 +815,53 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     listen(window,"scroll", place, { passive: true });
     listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
     listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
+    restore.refresh=(nextRows,nextFixtures,nextPostseason,nextMobile)=>{
+      if(restored||!committed)return false;
+      const desktop=new Map([...tbody.rows].map(tr=>[tr.dataset.worldClub,tr]));
+      const compact=new Map([...mobileList.children].map(li=>[li.dataset.worldClub,li]));
+      if(nextRows.some(row=>{
+        const id=row.club.countryId+"-"+row.club.clubId;
+        const tr=desktop.get(id),li=compact.get(id);
+        return !tr||!li||
+          tr.querySelectorAll(".app-world-form-control").length!==row.recent.length||
+          li.querySelectorAll(".app-world-mobile-form .app-world-form-dot").length!==row.recent.length;
+      }))return false;
+      close();
+      // Validate the new fixture/postseason data before changing visible standings.
+      if(nextFixtures)nextFixtures();
+      if(nextPostseason)nextPostseason();
+      for(let index=0;index<nextRows.length;index++){
+        const row=nextRows[index],id=row.club.countryId+"-"+row.club.clubId;
+        const tr=desktop.get(id);
+        window.faStandingsOutcomes?.decorate(tr,index+1);
+        tr.cells[0].textContent=String(index+1);
+        const numbers=[row.played,row.won,row.drawn,row.lost,row.gf,row.ga,
+          row.gd>0?"+"+row.gd:row.gd,row.pts];
+        numbers.forEach((number,i)=>{tr.cells[i+2].textContent=String(number)});
+        const buttons=[...tr.querySelectorAll(".app-world-form-control")];
+        buttons.forEach((button,i)=>{
+          const game=row.recent[i];
+          button.className="app-world-form-dot app-world-form-control app-world-form-"+
+            game.result.toLowerCase()+(i===0?" app-world-form-last":"");
+          const entry=entries.find(item=>item.button===button);
+          if(!entry)throw Error("Missing desktop form entry");
+          entry.game=game;entry.latest=i===0;
+          entry.glyph.textContent=game.result;
+        });
+        tbody.appendChild(tr);
+      }
+      nextMobile(true);
+      for(const entry of mobileEntries){
+        const row=nextRows.find(r=>r.club.clubId===entry.ownId);
+        const li=compact.get(row.club.countryId+"-"+row.club.clubId);
+        const marks=[...li.querySelectorAll(".app-world-mobile-form .app-world-form-dot")];
+        const index=marks.indexOf(entry.button);
+        if(index<0)throw Error("Mobile form mark identity changed");
+        entry.game=row.recent[index];entry.latest=index===0;
+      }
+      translate();
+      return true;
+    };
     return restore;
     } catch(error){restore();throw error}
   } catch (error) {
