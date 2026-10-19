@@ -173,7 +173,7 @@ test('History scope does not retain the previous grid height and preserves avail
 test('Stats and History use a shared card with uniform bold labels and empty messages',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
- assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:var\(--fa-record-heading\) auto/);
+ assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) auto/);
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-size:\.875rem;font-weight:700/);
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
  assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
@@ -192,9 +192,9 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
 test('Stats and History align label slots while their filled cards grow',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
- assert.match(css,/\.app-competition-stat-card--compact\{[^}]*grid-template-rows:var\(--fa-record-heading\) minmax\(0,1fr\);height:auto;min-height:108px;max-height:none/);
- assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:var\(--fa-record-heading\) auto;[^}]*height:auto;min-height:108px;max-height:none/);
- assert.match(dev,/\.fa-dev-stats-card\.app-competition-stat-card--compact\{[^}]*grid-template-rows:var\(--fa-record-heading\)/);
+ assert.match(css,/\.app-competition-stat-card--compact\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) minmax\(0,1fr\);height:auto;min-height:108px;max-height:none/);
+ assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) auto;[^}]*height:auto;min-height:108px;max-height:none/);
+ assert.match(dev,/\.fa-dev-stats-card\.app-competition-stat-card--compact\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\)/);
  assert.match(dev,/\.fa-dev-stats-leader-card\{[^}]*padding:10px 12px/);
  assert.doesNotMatch(dev,/\.fa-dev-stats-leader-title\{/);
  assert.doesNotMatch(dev,/\.fa-dev-stats-card span\.app-competition-stat-label\{/);
