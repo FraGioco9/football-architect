@@ -53,6 +53,28 @@
     return crest;
   }
 
+  // Presentation only: indicate the Rules bands without changing league ranking.
+  function standingOutcome(position) {
+    if (!Number.isInteger(position) || position < 1 || position > 16) return "";
+    if (routeId.endsWith("-1")) {
+      if (position === 1) return "champion";
+      if (position >= 15) return "relegated";
+      if (position >= 13) return "playout";
+    } else if (routeId.endsWith("-2")) {
+      if (position <= 2) return "promoted";
+      if (position <= 6) return "playoff";
+    }
+    return "";
+  }
+  function decorateStanding(row, position) {
+    const outcome = standingOutcome(position);
+    if (outcome) {
+      row.dataset.standingOutcome = outcome;
+      row.setAttribute("aria-describedby", "standings-outcome-" + outcome);
+    }
+  }
+  window.faStandingsOutcomes = Object.freeze({decorate:decorateStanding});
+
   // Both presentations receive the same validated row model, never parsed table text.
   function createMobileStandings() {
     const list = document.getElementById("app-standings-compact-list");
@@ -102,6 +124,7 @@
         identities.add(id);
         const li = element("li","app-world-mobile-item");
         li.dataset.worldClub = id;
+        decorateStanding(li, row.position ?? (row.played == null ? null : index + 1));
         const details = element("details","app-world-mobile-details");
         const summary = element("summary","app-world-mobile-summary");
         const pos = element("span","app-world-mobile-position",
@@ -166,6 +189,7 @@
   function createStandingsRow(club, sample = null, position = null) {
     const tr = document.createElement("tr");
     tr.dataset.worldClub = club.countryId + "-" + club.clubId;
+    decorateStanding(tr, sample ? position : null);
     const unknown = () => {
       const td = document.createElement("td");
       td.className = "app-world-stat-unknown";

@@ -39,7 +39,7 @@ function node(tag){
  return n;
 }
 
-async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false}){
+async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false}){
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
  shell??=read("app/competitions/"+selected.toLowerCase()+"/index.html");
@@ -101,7 +101,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  const window={faCompetitionModel:competitionModel,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(demo?demoSource:source,{document,window,URL,fetch:fakeFetch});
+ runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
@@ -379,5 +379,33 @@ test("SHARED-QA-01: invalid, approved or unavailable data fails closed",async()=
   assert.equal(r.body.children.length,1);
   assert.equal(r.body.children[0].attrs.role,"alert");
   assert.equal(r.body.children[0].children[0].href,"../");
+ }
+});
+
+
+test("STANDINGS-OUTCOMES: all divisions share rank bands across desktop and mobile, unknown ranks stay neutral",async()=>{
+ for(const division of manifest.divisions){
+  const r=await simulate({division,testHooks:true});
+  const expected=division.tier===1
+   ?['champion',...Array(11).fill(''),...Array(2).fill('playout'),...Array(2).fill('relegated')]
+   :[...Array(2).fill('promoted'),...Array(4).fill('playoff'),...Array(10).fill('')];
+  const desktop=r.fields.get('app-standings-body').children;
+  const mobile=r.fields.get('app-standings-compact-list').children;
+  assert.ok(desktop.every(row=>!row.dataset.standingOutcome),division.id+' unknown desktop');
+  assert.ok(mobile.every(row=>!row.dataset.standingOutcome),division.id+' unknown mobile');
+  const ranked=division.clubs.map((club,index)=>({club,position:index+1,played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,recent:[]}));
+  r.window.faStandingsMobile.prepare(ranked)();
+  for(let i=0;i<16;i++){
+   const row=r.window.__faFixtureHooks.createStandingsRow(division.clubs[i],it1Demo[0],i+1);
+   assert.equal(row.dataset.standingOutcome||'',expected[i],division.id+' desktop '+(i+1));
+   const item=r.fields.get('app-standings-compact-list').children[i];
+   assert.equal(item.dataset.standingOutcome||'',expected[i],division.id+' mobile '+(i+1));
+   if(expected[i]){
+    assert.equal(row.attrs['aria-describedby'],'standings-outcome-'+expected[i]);
+    assert.equal(item.attrs['aria-describedby'],'standings-outcome-'+expected[i]);
+   }
+  }
+  const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
+  for(const outcome of new Set(expected.filter(Boolean)))assert.ok(html.includes('id="standings-outcome-'+outcome+'"'),division.id+' legend '+outcome);
  }
 });
