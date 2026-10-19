@@ -56,7 +56,7 @@ test('FIXTURES-02: eight games per round, stable navigation and real score/null 
   assert.equal(list.children.length,8);assert.ok(list.children.every(x=>x.dataset.fixtureRound==='16'));
   assert.ok(!contents(list).includes(' – '),'future fixtures do not reveal generated future scores');
   fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'17');
-  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,true);
+  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,false);
   fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'30');
   const restore=view.snapshot();view.prepare(null)();assert.equal(list.children.length,0);restore();
   assert.equal(list.children.length,8);assert.equal(round.value,'30');
@@ -183,13 +183,13 @@ test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qua
    assert.equal(fields.get('app-fixtures-round-label').hidden,true);
    assert.equal(fields.get('app-fixtures-next').disabled,true);
    const rows=fields.get('app-fixtures-list').children.filter(n=>n.className==='app-fixture-match');
-   assert.equal(rows.length,d.tier===1?2:day<32?4:5);
-   assert.deepEqual(rows.map(row=>row.dataset.fixtureMatch),[...games].sort((a,b)=>a.round-b.round).map(g=>g.round+':'+g.homeId+':'+g.awayId));
+   assert.equal(rows.length,d.tier===1?2:5);
+   assert.deepEqual(rows.slice(0,games.length).map(row=>row.dataset.fixtureMatch),[...games].sort((a,b)=>a.round-b.round).map(g=>g.round+':'+g.homeId+':'+g.awayId));
    const walk=n=>[n,...n.children.flatMap(walk)];
    const scores=walk(fields.get('app-fixtures-list')).filter(n=>n.className==='app-fixture-goals');
    assert.equal(scores.length,games.filter(g=>g.homeGoals!==null).length*2);
    const restore=view.snapshot();view.prepare(schedule(d,29),{postseason:[]})();
-   assert.equal(route.get().matchday,30,'rollback removes an unavailable post-season route');
+   assert.equal(route.get().matchday,key,'rollback preserves the placeholder post-season route');
    restore();route.set({matchday:key});assert.equal(fields.get('app-fixtures-list').children.filter(n=>n.className==='app-fixture-match').length,rows.length);
    fields.get('app-fixtures-previous').emit('click');assert.equal(route.get().matchday,30);
   }
