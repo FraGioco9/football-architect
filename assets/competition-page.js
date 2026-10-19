@@ -75,6 +75,60 @@
   }
   window.faStandingsOutcomes = Object.freeze({decorate:decorateStanding});
 
+  function createPostseason(division) {
+    const status = document.getElementById("app-postseason-status");
+    if (!status) return;
+    const slots = [...document.querySelectorAll("[data-postseason-position]")];
+    const clubs = new Map(division.clubs.map(club => [club.clubId,club]));
+    let current = null;
+    function word(key,text) {
+      const span = document.createElement("span");
+      span.dataset.appI18n = key;
+      span.textContent = text;
+      return span;
+    }
+    function render(rows) {
+      current = rows;
+      const qualified = rows !== null && rows.every(row => row.played === model.schedule.rounds);
+      status.dataset.appI18n = qualified ? "postseasonQualified" : "postseasonPending";
+      status.textContent = qualified ? "Participants confirmed. Match results are not available yet." :
+        "Participants will be confirmed after the regular season.";
+      for (const slot of slots) {
+        const position = Number(slot.dataset.postseasonPosition);
+        if (qualified) {
+          const club = rows[position - 1].club;
+          const name = document.createElement("span");
+          name.textContent = club.primaryName;
+          slot.replaceChildren(createCrestHost(club.countryId + "-" + club.clubId),name);
+        } else {
+          const rank = document.createElement("strong");
+          rank.textContent = String(position);
+          slot.replaceChildren(word("postseasonPosition","League position"),rank);
+        }
+      }
+      window.faAppRenderLanguage?.();
+    }
+    window.faPostseason = Object.freeze({
+      prepare(rows) {
+        if (rows === null) return () => render(null);
+        if (!Array.isArray(rows) || rows.length !== model.profile.capacity)
+          throw Error("Invalid postseason standings");
+        const seen = new Set();
+        const next = rows.map(row => {
+          const club = clubs.get(row?.club?.clubId);
+          if (!club || row.club.countryId !== division.countryId || seen.has(club.clubId) ||
+              !Number.isInteger(row.played) || row.played < 0 || row.played > model.schedule.rounds)
+            throw Error("Invalid postseason participant");
+          seen.add(club.clubId);
+          return {club,played:row.played};
+        });
+        return () => render(next);
+      },
+      snapshot() { const previous = current; return () => render(previous); }
+    });
+    render(null);
+  }
+
   // Both presentations receive the same validated row model, never parsed table text.
   function createMobileStandings() {
     const list = document.getElementById("app-standings-compact-list");
@@ -435,6 +489,7 @@
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
+    createPostseason(division);
     for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
       await loadScript(script);
   }

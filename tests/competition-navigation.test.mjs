@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
-const views=['standings','fixtures','stats','history','rules','awards'];
+const views=['standings','postseason','fixtures','stats','history','rules','awards'];
 function setup(path='/competitions/it-1/',devSeason=null){
  const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
@@ -63,7 +63,7 @@ test('COMPETITION-URL: canonical deep links restore every view, round and browse
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.window.faCompetitionRoute.set({matchday:13});
  assert.equal(s.window.location.search,'?season=1&view=fixtures&matchday=13');
- s.tabs[2].events.click();assert.equal(s.window.location.search,'?season=1&view=stats');
+ s.tabs[3].events.click();assert.equal(s.window.location.search,'?season=1&view=stats');
  s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,13);assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.forward();assert.equal(s.window.faCompetitionRoute.get().matchday,13);
@@ -83,9 +83,9 @@ test('COMPETITION-URL: invalid parameters normalize, unavailable seasons never s
 test('COMPETITION-URL: keyboard navigation retains one active tab and does not duplicate history entries',()=>{
  const s=setup();let prevented=false;
  s.tabs[0].events.keydown({key:'ArrowLeft',preventDefault(){prevented=true}});
- assert.equal(prevented,true);assert.equal(s.tabs[5].focused,true);assert.equal(s.window.faCompetitionRoute.get().view,'awards');
- const count=s.count();s.tabs[5].events.click();assert.equal(s.count(),count);
- s.tabs[5].events.keydown({key:'Home',preventDefault(){}});assert.equal(s.fields.get('competition-panel-standings').hidden,false);
+ assert.equal(prevented,true);assert.equal(s.tabs[6].focused,true);assert.equal(s.window.faCompetitionRoute.get().view,'awards');
+ const count=s.count();s.tabs[6].events.click();assert.equal(s.count(),count);
+ s.tabs[6].events.keydown({key:'Home',preventDefault(){}});assert.equal(s.fields.get('competition-panel-standings').hidden,false);
 });
 
 test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views',()=>{
@@ -104,10 +104,10 @@ test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes ret
  s.tabs[0].events.click();
  assert.equal(s.window.location.search,'?season=1&view=standings');
  const refreshed=setup(s.window.location.href);
- refreshed.tabs[1].events.click();
+ refreshed.tabs[2].events.click();
  assert.equal(refreshed.window.faCompetitionRoute.get().matchday,1);
  assert.equal(refreshed.window.location.search,'?season=1&view=fixtures&matchday=1');
- s.tabs[1].events.click();
+ s.tabs[2].events.click();
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.back();s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
 });
@@ -138,4 +138,14 @@ test('HISTORY-URL: season links use Standings and preserve browser navigation',(
  assert.equal(refreshed.window.faCompetitionRoute.get().view,'standings');
  s.back();assert.equal(s.window.faCompetitionRoute.get().view,'history');
  s.forward();assert.equal(s.window.faCompetitionRoute.get().view,'standings');
+});
+
+
+test('POSTSEASON-URL: direct load, keyboard selection and browser history restore the new tab',()=>{
+ const s=setup('/competitions/it-2?season=1&view=postseason');
+ assert.equal(s.fields.get('competition-panel-postseason').hidden,false);
+ s.tabs[0].events.click();s.tabs[0].events.keydown({key:'ArrowRight',preventDefault(){}});
+ assert.equal(s.window.faCompetitionRoute.get().view,'postseason');
+ s.back();assert.equal(s.window.faCompetitionRoute.get().view,'standings');
+ s.forward();assert.equal(s.window.faCompetitionRoute.get().view,'postseason');
 });

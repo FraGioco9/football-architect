@@ -548,6 +548,8 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const currentRound=previewCurrentMatchday(season,progress);
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound}):null;
+    const restorePostseason=window.faPostseason?.snapshot();
+    const commitPostseason=window.faPostseason?.prepare(rows);
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
@@ -719,6 +721,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       attempt(()=>tooltip.remove());
       if(committed){
        if(restoreFixtures)attempt(restoreFixtures);
+       if(restorePostseason)attempt(restorePostseason);
        attempt(()=>tbody.replaceChildren(...canonicalRows));
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
        attempt(()=>{
@@ -737,6 +740,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     if(commitFixtures)commitFixtures();
     tbody.replaceChildren(fragment);
     commitMobile();
+    if(commitPostseason)commitPostseason();
     // Preserve the canonical compact-form marks exactly as rendered. Bind taps
     // directly to those marks and cancel the enclosing <summary> activation.
     const mobileItems=[...mobileList.querySelectorAll(".app-world-mobile-item")];

@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
+import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
 import {it1Demo} from "./fixtures/it-1-demo.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
@@ -20,7 +21,7 @@ const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
  "app-standings-compact","app-standings-compact-list","app-standings-full",
- "app-search-dialog","division-detail-name"];
+ "app-search-dialog","division-detail-name","app-postseason-status"];
 
 function node(tag){
  const children=[],attrs={};
@@ -43,6 +44,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
  shell??=read("app/competitions/"+selected.toLowerCase()+"/index.html");
+ const postseasonSlots=[...shell.matchAll(/data-postseason-position="(\d+)"/g)].map(match=>{const item=node("span");item.dataset.postseasonPosition=match[1];return item});
  const path="/competitions/"+selected.toLowerCase()+ending;
  const initial=node("main");
  fields.set("main-content",initial);
@@ -86,6 +88,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    if(selector===".app-world-standings")return standingsMarkup?standings:null;
    return null;
   },
+  querySelectorAll(selector){return selector==="[data-postseason-position]"?postseasonSlots:[]},
   getElementById(id){return fields.get(id)??null},
   createElement(tag){return node(tag)}
  };
@@ -118,7 +121,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   caption.dataset.appI18n="standingsFilledCaption";
   caption.textContent="League standings and recent form.";
  }
- return {document,fields,loaded,requested,body,window};
+ return {document,fields,loaded,requested,body,window,postseasonSlots};
 }
 
 test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async()=>{
@@ -407,5 +410,43 @@ test("STANDINGS-OUTCOMES: all divisions share rank bands across desktop and mobi
   }
   const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
   for(const outcome of new Set(expected.filter(Boolean)))assert.ok(html.includes('id="standings-outcome-'+outcome+'"'),division.id+' legend '+outcome);
+ }
+});
+
+
+test("POSTSEASON: final participants appear only after 30 rounds and reset across seasons",async()=>{
+ for(const division of manifest.divisions){
+  const r=await simulate({division});
+  assert.ok(r.window.faPostseason,division.id+' API');
+  const status=r.fields.get('app-postseason-status');
+  assert.equal(status.dataset.appI18n,'postseasonPending');
+  const positions=division.tier===1?[14,13,13,14]:[6,3,3,6,5,4,4,5];
+  assert.deepEqual(r.postseasonSlots.map(slot=>Number(slot.dataset.postseasonPosition)),positions);
+  const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
+  assert.ok(html.indexOf('id="competition-tab-standings"')<html.indexOf('id="competition-tab-postseason"'));
+  assert.ok(html.indexOf('id="competition-tab-postseason"')<html.indexOf('id="competition-tab-fixtures"'));
+  assert.ok(html.includes('data-app-i18n="'+(division.tier===1?'competitionTabPlayout':'competitionTabPlayoffs')+'"'));
+  const panel=html.split('id="competition-panel-postseason"')[1].split('id="competition-panel-fixtures"')[0];
+  for(const key of new Set([...panel.matchAll(/data-app-i18n="([A-Za-z0-9]+)"/g)].map(m=>m[1])))
+   assert.equal((read('assets/app.js').match(new RegExp('^      '+key+':','gm'))||[]).length,5,key);
+  assert.doesNotMatch(panel,/>[0-9]+[–—-][0-9]+</,'no invented score');
+  const before=createPreviewStandings(division,29,1).rows;
+  r.window.faPostseason.prepare(before)();
+  assert.ok(r.postseasonSlots.every(slot=>!slot.children.some(c=>c.dataset.clubCrest)));
+  const reset=r.window.faPostseason.snapshot();
+  for(const season of [1,2]){
+   const final=createPreviewStandings(division,30,season).rows;
+   r.window.faPostseason.prepare(final)();
+   assert.equal(status.dataset.appI18n,'postseasonQualified');
+   for(const slot of r.postseasonSlots){
+    const club=final[Number(slot.dataset.postseasonPosition)-1].club;
+    assert.equal(slot.children[0].dataset.clubCrest,club.countryId+'-'+club.clubId);
+    assert.equal(slot.children[1].textContent,club.primaryName);
+   }
+   const invalid=final.map(row=>({...row}));invalid[1].club=invalid[0].club;
+   assert.throws(()=>r.window.faPostseason.prepare(invalid),/Invalid postseason/);
+  }
+  reset();assert.equal(status.dataset.appI18n,'postseasonPending');
+  assert.ok(r.postseasonSlots.every(slot=>!slot.children.some(c=>c.dataset.clubCrest)));
  }
 });
