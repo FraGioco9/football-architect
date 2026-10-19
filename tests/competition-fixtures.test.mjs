@@ -175,7 +175,7 @@ test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qua
  for(const d of divisions){
   const {view,fields,route}=setup(d),key=d.tier===1?'playout':'playoffs';
   view.prepare(schedule(d,29),{postseason:postseasonSchedule(d,29)})();
-  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,true);
+  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,false);
   for(const day of [30,31,32,33]){
    const games=postseasonSchedule(d,day);
    view.prepare(schedule(d,30),{postseason:games})();route.set({matchday:30});
