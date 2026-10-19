@@ -503,14 +503,14 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 
 /* Single card primitive for Stats/History; variants own only their required height. */
 .app-competition-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.app-competition-stat-card{--fa-record-heading:42px;box-sizing:border-box;display:grid;grid-template-rows:var(--fa-record-heading) auto;align-content:start;gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
+.app-competition-stat-card{--fa-record-heading:42px;box-sizing:border-box;display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) auto;align-content:start;gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
 .app-competition-stat-label{min-width:0;position:static;margin:0;padding:0;border:0;font-family:inherit;font-size:.875rem;font-weight:700;line-height:1.2;letter-spacing:normal;text-transform:none;color:var(--muted);overflow-wrap:anywhere;hyphens:auto}
 .app-competition-stat-card>.app-competition-stat-label{align-self:start;justify-self:stretch}
 .app-competition-stat-value{display:block;align-self:start;margin:0;font-size:clamp(1.25rem,2.5vw,1.8rem);line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .app-competition-stat-card>.app-competition-empty,.app-competition-stat-card>.fa-dev-stats-empty{align-self:start;justify-self:stretch;max-width:100%;margin:0!important;padding:0!important;color:var(--muted);font-size:.78rem;line-height:1.3;text-align:left;opacity:1;overflow-wrap:anywhere}
-.app-competition-stat-card--compact{grid-template-rows:var(--fa-record-heading) minmax(0,1fr);height:auto;min-height:108px;max-height:none;overflow:visible}
+.app-competition-stat-card--compact{grid-template-rows:minmax(var(--fa-record-heading),max-content) minmax(0,1fr);height:auto;min-height:108px;max-height:none;overflow:visible}
 .app-competition-stat-card--compact>.app-competition-stat-label{overflow-wrap:anywhere}
-.app-competition-stat-card--fluid{grid-template-rows:var(--fa-record-heading) auto;height:auto;min-height:108px;max-height:none;overflow:visible}
+.app-competition-stat-card--fluid{grid-template-rows:minmax(var(--fa-record-heading),max-content) auto;height:auto;min-height:108px;max-height:none;overflow:visible}
 .app-competition-empty{font-size:.85rem;opacity:.65}
 .app-competition-empty-row{display:block!important;margin:0;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 @media(max-width:650px){.app-competition-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.app-competition-stat-card{--fa-record-heading:56px}}
@@ -580,7 +580,7 @@ html[data-theme="light"] .app-history-dev-season-button:hover,html[data-theme="l
 
 /* Populated records retain a 160px minimum, and grow for verified metadata. */
 .app-history-player-card{min-height:128px!important}
-.app-history-player-card[data-history-filled="true"]{grid-template-rows:var(--fa-record-heading) auto minmax(0,1fr);min-height:160px!important}
+.app-history-player-card[data-history-filled="true"]{grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr);min-height:160px!important}
 .app-history-player-card[data-history-filled="true"] .app-history-player-footer{align-self:end}
 .app-history-player-footer{align-self:end}
 .app-history-player-footer{display:grid;gap:4px;min-width:0}
