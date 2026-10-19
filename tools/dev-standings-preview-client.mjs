@@ -545,7 +545,10 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       ?fixturesApi.snapshot():null;
     // Only an active season has a "current matchday" shortcut. The router owns
     // the selected round from URL/state, including completed-season archives.
-    const currentRound=previewCurrentMatchday(season,progress);
+    const regularRound=previewCurrentMatchday(season,progress);
+     // Once the post-season starts, the current-round shortcut targets its named fixture stage.
+     const currentRound=matchdays>=31&&regularRound!==null
+       ?(division.tier===1?'playout':'playoffs'):regularRound;
     const postResults=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
     const postFixtures=[];
     for(const tie of postResults.ties)for(const leg of [0,1])postFixtures.push({
