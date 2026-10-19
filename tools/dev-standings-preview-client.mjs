@@ -273,12 +273,6 @@ async function renderHistoryPreview(){
     entry.append(historyIdentity(club));holders.append(entry);
    }
    card.append(holders);
-   // Totals include already played matches in the unfinished current season.
-   if(scope==="all-time"&&progressDay>0&&progressDay<30&&
-      ["totalWins","totalGoals","totalPoints"].includes(metric)){
-    const provisional=historyLabel("historyProvisional");
-    provisional.className="app-history-provisional";card.append(provisional);
-   }
    grid.append(card);
   }
   for(const scope of ["season","all-time"])if(shown[scope]===0){
