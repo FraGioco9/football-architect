@@ -654,6 +654,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
       }
     }
+    // A prior archive-click matrix ends on Standings; reload must start from
+    // an explicit History URL so we test History hydration rather than its last route.
+    await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1?season=4&view=history'});
+    await wait("window.faCompetitionRoute?.get?.().view==='history'&&document.querySelectorAll('[data-history-season]').length===4");
     const historyFrameObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__faPrematureHistory=[];window.__faWatchHistory=true;const sampleHistory=()=>{const empty=document.querySelector('[data-history-empty]');if(empty&&!empty.hidden&&empty.getClientRects().length&&getComputedStyle(empty).visibility==='visible'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on')window.__faPrematureHistory.push(1);if(window.__faWatchHistory)requestAnimationFrame(sampleHistory)};requestAnimationFrame(sampleHistory);`});
     devManifestDelay=300;
     try{
@@ -682,6 +686,31 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const expectedColumns=width<=520?1:width<=650?2:3;
         assert.ok(boxGeometry.length>0&&boxGeometry.every(g=>g.cols===expectedColumns&&!g.overflow&&g.fit),
           'History record boxes fit without inner horizontal scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(boxGeometry));
+        // The shell owns vertical scrolling. Unlike document.scrollWidth, it
+        // exposes an unintended horizontal scrollport even when HTML stays fixed.
+        // Safari's touch-panning must be disabled only in the History records zone.
+        const recordScroll=await run("(()=>{const panel=document.getElementById('competition-panel-history'),"+
+          "records=panel.querySelector('#app-history-records'),shell=document.querySelector('.fa-shell-content-scroll');"+
+          "const css=getComputedStyle(records),grid=records.querySelector('.app-competition-stat-grid');"+
+          "const original=records.scrollLeft;records.scrollLeft=48;const shifted=records.scrollLeft;records.scrollLeft=original;"+
+          "const outer=panel.getBoundingClientRect(),inner=records.getBoundingClientRect();"+
+          "return {shellOverflow:shell.scrollWidth>shell.clientWidth+1,"+
+          "panelOverflow:panel.scrollWidth>panel.clientWidth+1,"+
+          "recordsOverflow:records.scrollWidth>records.clientWidth+1,"+
+          "scrollShifted:Math.abs(shifted-original)>1,"+
+          "overflowX:css.overflowX,touchAction:css.touchAction,"+
+          "inBounds:inner.left>=outer.left-1&&inner.right<=outer.right+1,"+
+          "gridOverflow:grid.scrollWidth>grid.clientWidth+1}})()");
+        if(width<=520){
+          assert.equal(recordScroll.scrollShifted,false,
+            'History records cannot horizontally scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(recordScroll));
+          assert.equal(recordScroll.overflowX,'clip',
+            'History records clip only overflow at '+width+' '+theme+' '+lang);
+          assert.equal(recordScroll.touchAction,'pan-y',
+            'History records accept vertical-only panning at '+width+' '+theme+' '+lang);
+        }
+        assert.ok(recordScroll.inBounds&&!recordScroll.gridOverflow&&!recordScroll.panelOverflow,
+          'History box area stays within its panel at '+width+' '+theme+' '+lang+' '+JSON.stringify(recordScroll));
         const labelFit=await run("(()=>{const cards=[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0);return cards.every(c=>{const l=c.querySelector('.app-competition-stat-label'),next=l?.nextElementSibling;if(!l||!next)return true;const label=l.getBoundingClientRect(),content=next.getBoundingClientRect();return l.scrollHeight<=l.clientHeight+1&&label.bottom<=content.top+1})})()");
         assert.equal(labelFit,true,width+' '+theme+' '+lang+' History labels fit inside their slots');
         const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0).map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
