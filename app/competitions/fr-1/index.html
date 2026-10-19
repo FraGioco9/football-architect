@@ -342,18 +342,16 @@
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>
           </section>
           <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabRules">Rules</h2>
             <div class="app-rules-content">
+            <section class="app-rules-section" aria-labelledby="rules-format">
+              <h3 id="rules-format" data-app-i18n="rulesFormatTitle">Competition format</h3>
+              <p data-app-i18n="rulesFormatBody">Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.</p>
               <dl class="app-rules-metrics">
                 <div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">16</dd></div>
                 <div class="app-rules-metric"><dt data-app-i18n="rulesRounds">Matchdays</dt><dd>30</dd></div>
                 <div class="app-rules-metric"><dt data-app-i18n="rulesLegs">Legs</dt><dd>2</dd></div>
                 <div class="app-rules-metric"><dt data-app-i18n="rulesMatches">Matches</dt><dd>240</dd></div>
               </dl>
-              <p class="app-rules-tier"><span data-app-i18n="rulesTier">Tier</span> <strong id="app-competition-level">1</strong></p>
-            <section class="app-rules-section" aria-labelledby="rules-format">
-              <h3 id="rules-format" data-app-i18n="rulesFormatTitle">Competition format</h3>
-              <p data-app-i18n="rulesFormatBody">Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.</p>
             </section>
             <section class="app-rules-section" aria-labelledby="rules-points">
               <h3 id="rules-points" data-app-i18n="rulesPointsTitle">Points system</h3>
@@ -378,12 +376,9 @@
             </section>
             <section class="app-rules-section" aria-labelledby="rules-playout">
               <h3 id="rules-playout" data-app-i18n="rulesPlayoutTitle">Relegation play-out</h3>
-              <p data-app-i18n="rulesPlayoutBody">The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. The tie takes place regardless of points difference. Away goals carry no extra weight. If aggregate scores are level after the second leg, extra time and then penalties decide the winner.</p>
+              <p data-app-i18n="rulesPlayoutBody">The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. If aggregate scores are level after the second leg, extra time and then penalties decide the winner.</p>
             </section>
-            <section class="app-rules-section" aria-labelledby="rules-season">
-              <h3 id="rules-season" data-app-i18n="rulesSeasonTitle">Season structure</h3>
-              <p data-app-i18n="rulesSeasonBody">All divisions follow a globally synchronized sequence of league matchdays. Sporting outcomes are finalized after the regular season and any required play-offs or play-out have concluded. League points reset to zero each new season, while completed results remain part of competition history.</p>
-            </section>
+              <strong id="app-competition-level" hidden>1</strong>
             </div>
           </section>
           <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
