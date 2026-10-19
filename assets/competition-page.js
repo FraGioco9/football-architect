@@ -97,7 +97,11 @@
         const pos = element("span","app-world-mobile-position",
           row.position == null ? (row.played == null ? "—" : String(index + 1)) :
             String(row.position));
-        const name = element("span","app-world-mobile-name",club.primaryName || club.abbr);
+        const name = element("span","app-world-mobile-name");
+        const crest = element("span","app-world-club-crest-placeholder");
+        crest.dataset.clubCrest = id;
+        crest.setAttribute("aria-hidden", "true");
+        name.append(crest,element("span","app-world-mobile-club-name",club.primaryName || club.abbr));
         const points = element("span","app-world-mobile-points",
           row.pts == null ? "—" : String(row.pts));
         const form = element("span","app-world-mobile-form");

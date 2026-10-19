@@ -639,8 +639,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const selector='[data-club-crest="'+country+'-1"]';
         await wait(JSON.stringify(selector)+"&&[...document.querySelectorAll("+JSON.stringify(selector)+")].every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)");
         const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
-        assert.ok(state.hosts===2&&state.visible===1&&state.images&&state.fallback,'Club crest desktop/mobile load and placeholder: '+country+' '+width);
         await snap('CLUB-CRESTS '+country+' '+width,width,900);
+        assert.ok(state.hosts===2&&state.visible===1&&state.images&&state.fallback,'Club crest desktop/mobile load and placeholder: '+country+' '+width+' '+JSON.stringify(state));
       }
     }
     // PT-1 has a real supplied crest and appears in this deterministic archive.
@@ -651,7 +651,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await wait("!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
     await run("window.faCompetitionRoute.set({view:'stats'})");
     await wait("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3");
-    await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click();document.querySelector('#fa-dev-stats .fa-dev-stats-expand').click()");
+    await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
+    await wait("!!document.querySelector('#fa-dev-stats .fa-dev-stats-expand')");
+    await run("document.querySelector('#fa-dev-stats .fa-dev-stats-expand').click()");
     await wait("!!document.querySelector('dialog[open] [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
     await run("document.querySelector('dialog[open]').close();window.faCompetitionRoute.set({view:'history'})");
     await wait("!!document.querySelector('#competition-panel-history [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");

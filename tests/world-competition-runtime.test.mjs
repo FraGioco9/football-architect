@@ -160,6 +160,11 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    r.window.emit("resize");
    assert.equal(mobileRows[0].children[0].tagName,"details");
    assert.equal(mobileRows[0].children[0].children[0].tagName,"summary");
+   for(let i=0;i<mobileRows.length;i++){
+    const identity=mobileRows[i].children[0].children[0].children[1];
+    assert.equal(identity.children[0]?.dataset.clubCrest,division.countryId+'-'+division.clubs[i].clubId,'Mobile identity exposes its crest host');
+    assert.equal(identity.children[1]?.textContent,division.clubs[i].primaryName,'Mobile club name remains beside its crest');
+   }
    const detailsPanel=mobileRows[0].children[0].children[1];
    assert.equal(detailsPanel.children.length,1,"mobile expansion includes stats only");
    assert.equal(detailsPanel.children[0].className,"app-world-mobile-stats");

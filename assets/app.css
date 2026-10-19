@@ -622,6 +622,9 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 }
 
 /* Keep the neutral placeholder until its passive SVG image has loaded. */
+.app-world-mobile-name{display:flex;align-items:center;gap:7px}
+.app-world-mobile-name>.app-world-club-crest-placeholder{flex-shrink:0}
+.app-world-mobile-club-name{min-width:0;overflow-wrap:anywhere}
 .app-club-crest-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;visibility:hidden}
 html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-color:transparent;background:transparent}
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
