@@ -11,7 +11,7 @@ const required=[
  "vercel.json","index.html","guide/index.html","app/index.html","app/dashboard/index.html",
  "app/calendar/index.html","app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
- "assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
+ "assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
  "data/divisions.json"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
@@ -22,7 +22,7 @@ const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","app.css",
- "app-search.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js",
+ "app-search.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js",
 ]);
 
 // Only explicit app URL aliases are allowed; no hosting, auth or build overrides.

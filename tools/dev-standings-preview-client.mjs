@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
+import { competitionModel, createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -8,7 +8,7 @@ const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
 function readMatchdays(){
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
-  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=30?value:0;
+  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=competitionModel.schedule.rounds?value:0;
  }catch{return 0}
 }
 let matchdays=readMatchdays();
@@ -81,7 +81,7 @@ async function setSeason(value){
  return setDebugProgress(SEASON_KEY,value);
 }
 async function setMatchdays(value){
- if(!Number.isInteger(value)||value<0||value>30)return false;
+ if(!Number.isInteger(value)||value<0||value>competitionModel.schedule.rounds)return false;
  if(value===matchdays)return true;
  return setDebugProgress(ROUNDS_KEY,value);
 }
@@ -228,7 +228,7 @@ async function renderHistoryPreview(){
   if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
    const manifest=await response.json();
-   if(manifest.schemaVersion!==1||manifest.approved!==false||!Array.isArray(manifest.divisions)||manifest.divisions.length!==16||manifest.divisions.reduce((n,d)=>n+(d.clubs?.length||0),0)!==256)throw Error("Invalid DEV History manifest");
+   if(!competitionModel.validManifest(manifest))throw Error("Invalid DEV History manifest");
    return manifest;
   }).catch(error=>{historyManifest=null;throw error});
   const manifest=await historyManifest;if(!current())return;
@@ -373,7 +373,7 @@ if(validPath||indexPath){
   registerDebugControls("general",[{
    type:"range",id:"season",label:"Season",min:1,max:4,step:1,scope:"general",
    value:()=>debugSeason,onChange:setSeason
-  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:30,step:1,scope:"general",
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1,scope:"general",
    value:()=>matchdays,onChange:setMatchdays
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
@@ -464,7 +464,7 @@ function waitForRows() {
     let done = false;
     const table = () => {
       const tbody = document.getElementById("app-standings-body");
-      if (tbody?.rows.length === 16 && document.querySelector(".app-world-standing-table") &&
+      if (tbody?.rows.length === competitionModel.profile.capacity && document.querySelector(".app-world-standing-table") &&
           typeof window.faCompetitionRoute?.get === "function" &&
           typeof window.faFixtures?.prepare === "function") {
         finish(null, tbody);
@@ -491,9 +491,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       { cache: "no-store", credentials: "same-origin" });
     if (!response.ok) throw Error("DEV manifest unavailable");
     const manifest = await response.json();
-    if (manifest.schemaVersion !== 1 || manifest.approved !== false ||
-        !Array.isArray(manifest.divisions) || manifest.divisions.length !== 16 ||
-        manifest.divisions.reduce((n, d) => n + d.clubs?.length, 0) !== 256) {
+    if (!competitionModel.validManifest(manifest)) {
       throw Error("Invalid DEV manifest");
     }
     const division = manifest.divisions.find(d => d.id === routeId);
@@ -506,7 +504,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const { rows, clubs } = createPreviewStandings(division,playedDays,season);
     // Prepare the complete DEV calendar from the same deterministic season seed.
     // Future rounds have no result; standings and fixtures share completed scores.
-    const complete=createPreviewStandings(division,30,season);
+    const complete=createPreviewStandings(division,competitionModel.schedule.rounds,season);
     const fixtureData=complete.fixtures.map(game=>({
       round:game.round,
       homeId:game.homeId,
@@ -528,7 +526,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const commitFixtures=typeof fixturesApi?.prepare==="function"
       ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound}):null;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
-    if (originalIds.size !== 16 || rows.some(r =>
+    if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
       throw Error("DEV standings identities mismatch");
     }
@@ -572,7 +570,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       tr.append(formCell);
       fragment.append(tr);
     });
-    if (entries.length !== 16*Math.min(5,playedDays) || fragment.childNodes.length !== 16) {
+    if (entries.length !== competitionModel.profile.capacity*Math.min(5,playedDays) || fragment.childNodes.length !== competitionModel.profile.capacity) {
       throw Error("Incomplete DEV standings rendering");
     }
     // Prepare mobile from the validated fixture model before changing the table.

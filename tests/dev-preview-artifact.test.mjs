@@ -7,7 +7,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync,unlin
 import {join} from "node:path";
 import {runInNewContext} from "node:vm";
 import {tmpdir} from "node:os";
-import {repositoryRoot,stagePublicArtifact,assertPublicArtifact,isAllowlistedPublicPath} from "../tools/publication-guard.mjs";
+import {repositoryRoot,planPublicFiles,stagePublicArtifact,assertPublicArtifact,isAllowlistedPublicPath} from "../tools/publication-guard.mjs";
 import {ARTIFACT_CONTRACTS,DEBUG_SEASONS,assertArtifactContract,planProtectedDebugFiles,
  assertProtectedDebugArtifact,stageProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
 
@@ -243,7 +243,7 @@ test("PUBLIC-03: execute the actual staging script for both approval contracts",
    rmSync(join(source,"preview-bundle"),{recursive:true,force:true});
    return spawnSync("bash",["-c",code],{cwd:source,encoding:"utf8",env:{...process.env,ARTIFACT_CONTRACT:contract,EXPECTED_SHA:"a".repeat(40),EXPECTED_DEBUG_MANIFEST_SHA256:hash,GITHUB_OUTPUT:output}});
   }
-  for(const [contract,hash,count] of [["public","",339],["protected_debug",approved,347]]){
+  for(const [contract,hash,count] of [["public","",planPublicFiles().length],["protected_debug",approved,planProtectedDebugFiles().length]]){
    const result=run(contract,hash);assert.equal(result.status,0,result.stderr);
    const bytes=readFileSync(join(source,"preview-bundle/publication-manifest.json"));
    const manifest=JSON.parse(bytes);assert.equal(manifest.contract,contract);assert.equal(manifest.files.length,count);

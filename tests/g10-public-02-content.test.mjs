@@ -1,3 +1,4 @@
+import competitionModel from "../assets/competition-model.js";
 // G10-PUBLIC-02: the staged bytes, not the repository root, define potential disclosure.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -67,7 +68,9 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
    }
   }
   const publicManifest=JSON.parse(readFileSync(join(debugDir,"app/competitions/_shared/manifest.json"),"utf8"));
-  fields(publicManifest,["schemaVersion","approved","divisions"]);
+  fields(publicManifest,["schemaVersion","approved","profile","divisions"]);
+  assert.deepEqual(publicManifest.profile,competitionModel.profile);
+  assert.equal(competitionModel.validManifest(publicManifest),true);
   assert.equal(publicManifest.approved,false);
   assert.equal(publicManifest.divisions.length,16);
   const divFields=["id","name","countryId","countryName","flagAsset","tier","capacity","clubs"];

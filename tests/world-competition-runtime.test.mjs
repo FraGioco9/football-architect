@@ -1,3 +1,4 @@
+import competitionModel from "../assets/competition-model.js";
 // LOCAL-SHARED-PAGE-QA-01: exercise the real static renderer with isolated DOM stubs.
 // This is deterministic runtime-contract QA, NOT a substitute for visual browser QA.
 import test from "node:test";
@@ -97,7 +98,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- const window={location,innerWidth:390,innerHeight:600,events:{},
+ const window={faCompetitionModel:competitionModel,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
  runInNewContext(demo?demoSource:source,{document,window,URL,fetch:fakeFetch});
@@ -129,7 +130,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/landing.js","/assets/app.js",
-    "/assets/app-search.js","/assets/competition-tabs.js","/assets/competition-fixtures.js"
+    "/assets/app-search.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
    assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");
@@ -361,8 +362,10 @@ test("SHARED-QA-01: invalid, approved or unavailable data fails closed",async()=
  const approved=structuredClone(manifest);approved.approved=true;
  const repeated=structuredClone(manifest);repeated.divisions[1].clubs[0]=repeated.divisions[0].clubs[0];
  const short=structuredClone(manifest);short.divisions[0].clubs.pop();
+ const badProfile=structuredClone(manifest);badProfile.profile.format.phases.push({id:"final",type:"knockout"});
+ const badRules=structuredClone(manifest);badRules.profile.rules.promotion=3;
  const badName=structuredClone(manifest);badName.divisions[0].clubs[0].primaryName=42;
- for(const options of [{data:approved},{data:repeated},{data:short},{data:badName},{fetchFailure:true},
+ for(const options of [{data:badProfile},{data:badRules},{data:approved},{data:repeated},{data:short},{data:badName},{fetchFailure:true},
   {shell:"<html><body class=\"app-body\"></body></html>"}]){
   const r=await simulate({division:manifest.divisions[0],...options});
   assert.equal(r.loaded.length,0,"no scripts should execute after a validation error");

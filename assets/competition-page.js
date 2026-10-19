@@ -19,33 +19,7 @@
     main.appendChild(back);
     document.body.appendChild(main);
   }
-  function validManifest(data) {
-    if (data?.schemaVersion !== 1 || data.approved !== false ||
-        !Array.isArray(data.divisions) || data.divisions.length !== 16) return false;
-    const ids = new Set(), clubs = new Set();
-    for (const d of data.divisions) {
-      if (!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(d.id) || ids.has(d.id) ||
-          !d.id.startsWith(d.countryId + "-") || typeof d.name !== "string" || !d.name ||
-          typeof d.countryName !== "string" || !d.countryName ||
-          !/^assets\/flags\/[a-z0-9-]+\.svg$/.test(d.flagAsset) ||
-          ![1,2].includes(d.tier) || d.capacity !== 16 ||
-          !Array.isArray(d.clubs) || d.clubs.length !== d.capacity) return false;
-      ids.add(d.id);
-      let previous = d.tier === 1 ? 0 : 16;
-      for (const club of d.clubs) {
-        const key = club.countryId + ":" + club.clubId;
-        if (club.countryId !== d.countryId || !Number.isInteger(club.clubId) ||
-            club.clubId !== previous + 1 || clubs.has(key) ||
-            typeof club.fullName !== "string" || !club.fullName ||
-            typeof club.abbr !== "string" || !club.abbr ||
-            typeof club.stadiumName !== "string" || !club.stadiumName.trim() ||
-            !(club.primaryName === null || (typeof club.primaryName === "string" && !!club.primaryName.trim()))) return false;
-        clubs.add(key);
-        previous = club.clubId;
-      }
-    }
-    return ids.size === 16 && clubs.size === 256;
-  }
+  const model=window.faCompetitionModel;
   const formLabels = {
     W:["standingsDemoFormWin","Win","standingsDemoWinLetter"],
     D:["standingsDemoFormDraw","Draw","standingsDemoDrawLetter"],
@@ -104,7 +78,7 @@
     if (breakpoint?.addEventListener) breakpoint.addEventListener("change", updateVisibility);
     window.addEventListener("resize", updateVisibility);
     function prepare(rows) {
-      if (!Array.isArray(rows) || rows.length !== 16)
+      if (!Array.isArray(rows) || rows.length !== model.profile.capacity)
         throw Error("Incomplete mobile standings model");
       const identities = new Set();
       const clubs = new Map(rows.map(row => [row.club?.clubId,row.club]));
@@ -166,7 +140,7 @@
         li.appendChild(details);
         return li;
       });
-      if (identities.size !== 16) throw Error("Invalid mobile standings size");
+      if (identities.size !== model.profile.capacity) throw Error("Invalid mobile standings size");
       return () => {
         list.replaceChildren(...items);
         updateVisibility();
@@ -389,7 +363,7 @@
     const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
     if(!dataResponse.ok)throw Error("Competition data unavailable");
     const manifest=await dataResponse.json();
-    if(!validManifest(manifest))throw Error("Invalid or approved competition manifest");
+    if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
     const division=manifest.divisions.find(d=>d.id===routeId);
     if(!division)throw Error("Unknown division");
     const required=["app-divisions","app-competition-badge","app-competition-flag",
@@ -427,7 +401,7 @@
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
-    for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-fixtures.js"])
+    for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
       await loadScript(script);
   }
   start().catch(fail);
