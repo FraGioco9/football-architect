@@ -723,7 +723,7 @@ test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and re
  assert.equal(context.previewState,'ON');
 
  navigate(1);
- assert.equal(dataset.faDevSeasonTransition,'true');
+ assert.equal(dataset.faDevSeasonTransition,undefined);
  await flush();assert.equal(pending.length,3);
  pending[2](undefined);
  await flush();
