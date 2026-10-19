@@ -736,7 +736,8 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .app-knockout-right .app-knockout-score-head>:nth-child(2),.app-knockout-right .app-knockout-team-row>:nth-child(2){grid-area:first}
 .app-knockout-right .app-knockout-score-head>:nth-child(3),.app-knockout-right .app-knockout-team-row>:nth-child(3){grid-area:second}
 .app-knockout-right .app-knockout-score-head>:nth-child(4),.app-knockout-right .app-knockout-team-row>:nth-child(4){grid-area:total}
-.app-knockout-right .app-postseason-team{flex-direction:row-reverse;text-align:end}
+.app-knockout-right .app-postseason-team{justify-content:flex-end;text-align:end}
+[data-postseason-qualified="true"] .app-knockout-right .app-postseason-team{flex-direction:row-reverse;justify-content:flex-start}
 .app-knockout-right .app-postseason-group h3{text-align:end}
 @media(max-width:360px){.app-postseason-grid{--knockout-score-size:22px}}
 
