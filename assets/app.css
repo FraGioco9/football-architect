@@ -628,4 +628,5 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-club-crest-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;visibility:hidden}
 html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-color:transparent;background:transparent}
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
-.app-world-club-crest-placeholder[data-club-crest-loaded="true"]>.app-club-crest-image{visibility:visible}
+/* Respect hidden standings while DEV prepares the reordered rows on refresh. */
+.app-world-club-crest-placeholder[data-club-crest-loaded="true"]>.app-club-crest-image{visibility:inherit}
