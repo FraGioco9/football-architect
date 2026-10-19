@@ -176,7 +176,9 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
  assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:var\(--fa-record-heading\) auto/);
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
  assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
- assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{--fa-record-heading:42px;min-height:128px/);
+ assert.match(css,/\.app-competition-stat-card\{--fa-record-heading:42px;[^}]*padding:10px 12px/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{min-height:128px/);
+ assert.doesNotMatch(css,/\.app-history-record-group \.app-competition-stat-card\{--fa-record-heading:/);
  assert.match(css,/\.app-history-record-group \.app-competition-stat-card:has\(\.app-competition-stat-value\)\{min-height:160px/);
  assert.match(css,/@media\(max-width:650px\)\{[\s\S]*--fa-record-heading:56px/);
  assert.match(css,/\.app-history-player-card\[data-history-filled="true"\]\{[^}]*min-height:160px/);
@@ -186,14 +188,38 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
  assert.match(dev,/app-competition-stat-label fa-dev-stats-leader-title/);
  assert.doesNotMatch(dev,/\.fa-dev-stats-leader-card\{[^}]*height:/);
 });
-test('Stats Overview and Players stay at 88px; Teams can grow',()=>{
+test('Stats and History align label slots while their filled cards grow',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
- assert.match(css,/\.app-competition-stat-card--compact\{[^}]*height:88px;min-height:88px;max-height:88px/);
- assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:minmax\(30px,auto\) auto;[^}]*height:auto;min-height:88px;max-height:none/);
+ assert.match(css,/\.app-competition-stat-card--compact\{[^}]*grid-template-rows:var\(--fa-record-heading\) minmax\(0,1fr\);height:auto;min-height:108px;max-height:none/);
+ assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:var\(--fa-record-heading\) auto;[^}]*height:auto;min-height:108px;max-height:none/);
+ assert.match(dev,/\.fa-dev-stats-card\.app-competition-stat-card--compact\{[^}]*grid-template-rows:var\(--fa-record-heading\)/);
+ assert.match(dev,/\.fa-dev-stats-leader-card\{[^}]*padding:10px 12px/);
+ assert.match(dev,/\.fa-dev-stats-leader-title\{margin:0;font-size:\.78rem;line-height:1\.2/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
  assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
+});
+test('History improved layout preserves archive navigation, confirmed records and single empty statuses',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const page=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ assert.match(client,/app-history-dev-archive-champion/);
+ assert.match(client,/button\.addEventListener\("click",\(\)=>openHistorySeason\(item\.season\)\)/);
+ assert.match(client,/if\(result\.value===null\)continue/);
+ assert.match(client,/const holders=historyNode\("div","app-history-record-holders"\)/);
+ assert.match(client,/historyProvisional/);
+ assert.match(client,/progressDay>0&&progressDay<30/);
+ assert.match(page,/data-history-team-empty/);
+ assert.match(page,/data-history-player-empty/);
+ assert.match(page,/grid\.hidden=!filled;empty\.hidden=filled/);
+ assert.match(css,/\.app-history-dev-archive-champion\{opacity:1;font-weight:750\}/);
+ assert.match(css,/@media\(max-width:360px\)/);
+ for(const lang of ['en','de','es','fr','it']){
+  const start=app.indexOf('    '+lang+': {'),end=app.indexOf('\\n    }',start);
+  assert.ok(start>=0&&end>start);
+  assert.match(app.slice(start,end),/historyProvisional:/);
+ }
 });
 test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
  const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
