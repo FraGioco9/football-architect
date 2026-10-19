@@ -130,7 +130,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/landing.js","/assets/app.js",
-    "/assets/app-search.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js"
+    "/assets/app-search.js","/assets/club-crests.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
    assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");
@@ -160,6 +160,12 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    r.window.emit("resize");
    assert.equal(mobileRows[0].children[0].tagName,"details");
    assert.equal(mobileRows[0].children[0].children[0].tagName,"summary");
+   for(let i=0;i<mobileRows.length;i++){
+    const identity=mobileRows[i].children[0].children[0].children[1];
+    assert.equal(identity.children[0]?.dataset.clubCrest,division.countryId+'-'+division.clubs[i].clubId,'Mobile identity exposes its crest host');
+    assert.equal(identity.children[1]?.textContent,division.clubs[i].primaryName,'Mobile club name remains beside its crest');
+    assert.equal(identity.children[0].dataset.clubCrestPending,Object.hasOwn(manifest.clubCrests,division.countryId+'-'+division.clubs[i].clubId)?'true':undefined,'Initial mobile loading state exists before image renderer');
+   }
    const detailsPanel=mobileRows[0].children[0].children[1];
    assert.equal(detailsPanel.children.length,1,"mobile expansion includes stats only");
    assert.equal(detailsPanel.children[0].className,"app-world-mobile-stats");
@@ -179,6 +185,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     const crest=identity.children[0],name=identity.children[1];
     assert.equal(crest.className,"app-world-club-crest-placeholder");
     assert.equal(crest.dataset.clubCrest,club.countryId+"-"+club.clubId);
+    assert.equal(crest.dataset.clubCrestPending,Object.hasOwn(manifest.clubCrests,row.dataset.worldClub)?'true':undefined,'Initial desktop loading state exists before image renderer');
     assert.equal(crest.attrs["aria-hidden"],"true");
     assert.equal(name.className,"app-world-club-name");
     assert.equal(name.textContent,club.primaryName);

@@ -68,7 +68,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
    }
   }
   const publicManifest=JSON.parse(readFileSync(join(debugDir,"app/competitions/_shared/manifest.json"),"utf8"));
-  fields(publicManifest,["schemaVersion","approved","profile","divisions"]);
+  fields(publicManifest,["schemaVersion","approved","profile","clubCrests","divisions"]);
   assert.deepEqual(publicManifest.profile,competitionModel.profile);
   assert.equal(competitionModel.validManifest(publicManifest),true);
   assert.equal(publicManifest.approved,false);

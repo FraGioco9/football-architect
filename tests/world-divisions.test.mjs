@@ -196,10 +196,10 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('document.createElement("tr")'));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
- assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
- assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
+ assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
+ assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-history.js","competition-fixtures.js"]'));
+ assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
  assert.ok(code.includes("tabs.length!==views.length"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
@@ -267,11 +267,11 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
- assert.ok(renderer.includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
- assert.ok(renderer.includes('crest.setAttribute("aria-hidden", "true")'));
+ assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
+ assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
- assert.ok(read("assets/competition-page.js").includes('crest.dataset.clubCrest = tr.dataset.worldClub'));
+ assert.ok(read("assets/competition-page.js").includes('createCrestHost(tr.dataset.worldClub)'));
  assert.ok(!page.includes("app-world-club-crest-placeholder"));
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
@@ -281,7 +281,7 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  }
 });
 
-test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky columns",()=>{
+test("STANDINGS-RESPONSIVE-02 keeps roomy rows, larger crests and narrow sticky columns",()=>{
  const css=read("assets/app.css");
  assert.ok(css.includes(".app-world-standing-table{width:100%;min-width:766px;table-layout:fixed;"));
  assert.ok(css.includes(".app-world-standings{width:100%;max-width:100%;"));
@@ -290,8 +290,8 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
   assert.ok(css.includes(".app-world-standing-table{min-width:696px}"));
   assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:50px;min-width:50px;max-width:50px}"));
   assert.ok(css.includes(".app-world-standing-table{min-width:686px}"));
-  assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:40px"));
- assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:38px}"));
+  assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:68px"));
+ assert.ok(css.includes(".app-world-standing-table tbody tr>*{height:64px}"));
  assert.ok(!css.includes(".app-world-stat-positive"));
  assert.ok(!css.includes(".app-world-stat-negative"));
  assert.ok(!read("assets/competition-page.js").includes("app-world-stat-positive"));
@@ -302,8 +302,8 @@ test("STANDINGS-RESPONSIVE-02 keeps compact rows, crests and narrow sticky colum
  assert.ok(css.includes("tr>*:first-child{width:30px;min-width:30px;max-width:30px}"));
  assert.ok(css.includes("tr>*:nth-child(2){left:30px;min-width:126px}"));
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table{min-width:686px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}"));
- assert.ok(css.includes("flex:0 0 26px;width:26px;height:28px"));
- assert.ok(css.includes("flex-basis:24px;width:24px;height:26px"));
+ assert.ok(css.includes("flex:0 0 48px;width:48px;height:48px"));
+ assert.ok(css.includes("flex-basis:40px;width:40px;height:40px"));
  assert.equal(manifest.divisions.flatMap(d=>d.clubs).length,256);
 });
 

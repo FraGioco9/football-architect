@@ -46,6 +46,12 @@
   function validManifest(data){
     if(data?.schemaVersion!==1||data.approved!==false||!same(data.profile,profile)||
       !Array.isArray(data.divisions)||data.divisions.length!==divisionCount)return false;
+    if(!data.clubCrests||typeof data.clubCrests!=="object"||Array.isArray(data.clubCrests))return false;
+    for(const [id,path] of Object.entries(data.clubCrests)){
+      const match=id.match(/^([A-Z]{2,3})-([1-9]\d*)$/);
+      if(!match||!countries.includes(match[1])||Number(match[2])>40||
+        path!==`assets/clubs/${match[1]}/${match[2]}/crest.svg`)return false;
+    }
     const ids=new Set(),clubs=new Set();
     for(const d of data.divisions){
       if(!d||!countries.includes(d.countryId)||!tiers.includes(d.tier)||

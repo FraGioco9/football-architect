@@ -43,6 +43,16 @@
       .replace(close,'</table>\n            </div>'+compact+'\n          </div>');
   }
 
+  function createCrestHost(id) {
+    const crest=document.createElement("span");
+    crest.className="app-world-club-crest-placeholder";
+    crest.dataset.clubCrest=id;
+    crest.setAttribute("aria-hidden","true");
+    // Reserve a blank slot before initial rows paint or the image renderer loads.
+    if(Object.hasOwn(window.faClubCrests||{},id))crest.dataset.clubCrestPending="true";
+    return crest;
+  }
+
   // Both presentations receive the same validated row model, never parsed table text.
   function createMobileStandings() {
     const list = document.getElementById("app-standings-compact-list");
@@ -97,7 +107,9 @@
         const pos = element("span","app-world-mobile-position",
           row.position == null ? (row.played == null ? "—" : String(index + 1)) :
             String(row.position));
-        const name = element("span","app-world-mobile-name",club.primaryName || club.abbr);
+        const name = element("span","app-world-mobile-name");
+        const crest = createCrestHost(id);
+        name.append(crest,element("span","app-world-mobile-club-name",club.primaryName || club.abbr));
         const points = element("span","app-world-mobile-points",
           row.pts == null ? "—" : String(row.pts));
         const form = element("span","app-world-mobile-form");
@@ -172,10 +184,7 @@
     th.className = "app-world-standing-club";
     const identity = document.createElement("span");
     identity.className = "app-world-club-identity";
-    const crest = document.createElement("span");
-    crest.className = "app-world-club-crest-placeholder";
-    crest.dataset.clubCrest = tr.dataset.worldClub;
-    crest.setAttribute("aria-hidden", "true");
+    const crest = createCrestHost(tr.dataset.worldClub);
     const name = document.createElement("span");
     name.className = "app-world-club-name";
     name.textContent = club.primaryName || club.abbr;
@@ -389,6 +398,7 @@
     tier.textContent = division.tier === 1 ? "First division" : "Second division";
     document.getElementById("app-competition-capacity").textContent = String(division.capacity);
     document.getElementById("app-competition-level").textContent = String(division.tier);
+    window.faClubCrests=manifest.clubCrests;
     const tbody = document.getElementById("app-standings-body");
     const mobile = createMobileStandings();
     const provisional = division.clubs.map(club => ({
@@ -401,7 +411,7 @@
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
-    for (const script of ["landing.js","app.js","app-search.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
+    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
       await loadScript(script);
   }
   start().catch(fail);

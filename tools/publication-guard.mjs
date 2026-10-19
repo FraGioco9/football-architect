@@ -5,13 +5,14 @@ import {readdirSync,lstatSync,readFileSync,existsSync,mkdirSync,copyFileSync} fr
 import {join,resolve,dirname} from "node:path";
 import {fileURLToPath} from "node:url";
 import {validateDivisionAssets} from "./validate-division-assets.mjs";
+import {clubCrestAssets} from "./club-crest-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
 const required=[
  "vercel.json","index.html","guide/index.html","app/index.html","app/dashboard/index.html",
  "app/calendar/index.html","app/settings/index.html","app/competitions/index.html",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
- "assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
+ "assets/club-crests.js","assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
  "data/divisions.json"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
@@ -22,13 +23,14 @@ const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","app.css",
- "app-search.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js",
+ "app-search.js","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js",
 ]);
 
 // Only explicit app URL aliases are allowed; no hosting, auth or build overrides.
 const competitionRouting={"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"},{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/app/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/app/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]};
 
-export function isAllowlistedPublicPath(path) {
+export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
+ if(path.startsWith("assets/clubs/"))return clubCrestAssets(sourceRoot).paths.has(path);
  if(path.startsWith("assets/divisions/"))return validateDivisionAssets().paths.has(path);
  if(rootFiles.has(path)||divisions.includes(path))return true;
  if(path.startsWith("assets/brand/"))
@@ -54,7 +56,11 @@ export function listFiles(root,relative="") {
 export function planPublicFiles(sourceRoot=repositoryRoot) {
  const routing=JSON.parse(readFileSync(join(sourceRoot,"vercel.json"),"utf8"));
  if(!isDeepStrictEqual(routing,competitionRouting))throw Error("Unexpected competition routing configuration");
- const files=listFiles(sourceRoot).filter(isAllowlistedPublicPath);
+ const crests=clubCrestAssets(sourceRoot);
+ const manifest=JSON.parse(readFileSync(join(sourceRoot,"app/competitions/_shared/manifest.json"),"utf8"));
+ if(!isDeepStrictEqual(manifest.clubCrests,crests.catalog))throw Error("Club crest manifest differs from source assets; regenerate app pages");
+ const files=listFiles(sourceRoot).filter(path=>isAllowlistedPublicPath(path,sourceRoot));
+ for(const path of crests.paths)if(!files.includes(path))throw Error("Required club crest missing: "+path);
  for(const path of [...required,...divisions])
   if(!files.includes(path))throw Error("Required public asset missing: "+path);
  const images=validateDivisionAssets(sourceRoot);
@@ -69,7 +75,7 @@ export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot}={}) 
  const actual=listFiles(publicRoot);
  const expected=planPublicFiles(sourceRoot);
  for(const path of actual)
-  if(!isAllowlistedPublicPath(path))throw Error("Not allowlisted for publication: "+path);
+  if(!isAllowlistedPublicPath(path,sourceRoot))throw Error("Not allowlisted for publication: "+path);
  if(actual.length!==expected.length||actual.some((path,i)=>path!==expected[i]))
   throw Error("Public artifact does not match exact approved manifest");
  for(const path of expected){
