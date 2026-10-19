@@ -722,7 +722,9 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-knockout-result>.app-postseason-group{position:relative}
 .app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}
 .app-postseason-playout{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-areas:"left winner";max-width:880px}
-.app-postseason-playout .app-knockout-result{align-self:stretch;align-items:center}
+/* In playout, align the connector and winner to the gap between the two team rows. */
+.app-postseason-playout .app-knockout-left::after{top:calc(50% + 12px)}
+.app-postseason-playout .app-knockout-result{align-self:stretch;align-items:center;transform:translateY(12px)}
 html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[data-fa-debug-pending="true"] #competition-panel-postseason,html[data-fa-dev-season-transition="true"] #competition-panel-postseason{visibility:hidden}
 @media(max-width:1000px){
  .app-postseason-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"left" "right" "final" "winner";max-width:640px;gap:24px}
@@ -733,6 +735,7 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
  .app-postseason-grid:not(.app-postseason-playout) .app-knockout-right::after{display:none}
  .app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}
  .app-knockout-result{display:block}
+ .app-postseason-playout .app-knockout-result{transform:none}
 }
 @media(max-width:360px){.app-postseason-group{padding:12px}.app-knockout-score-head,.app-knockout-team-row{grid-template-columns:minmax(0,1fr) repeat(3,22px);gap:4px}.app-knockout-single{grid-template-columns:minmax(0,1fr) 26px}.app-postseason-team .app-world-club-crest-placeholder{flex-basis:34px;width:34px;height:34px}.app-postseason-team{gap:6px;font-size:12px}}
 
