@@ -925,7 +925,7 @@
       competitionRulesEmpty:"Promozioni, retrocessioni e criteri di spareggio non sono ancora definiti.",
       rulesClubs:"Club",
       rulesRounds:"Giornate",
-      rulesLegs:"Gironi",
+      rulesLegs:"Andata e ritorno",
       rulesMatches:"Partite",
       rulesTier:"Livello",
       rulesFormatTitle:"Formula del campionato",
