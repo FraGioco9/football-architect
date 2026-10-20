@@ -72,8 +72,8 @@ test("AWARDS-02-UI-QA-05: only four emblems redesigned; nine originals retained"
  for(const id of ["manager","player","young","xi"])assert.ok(get(id).length>=2,id);
 });
 
-test("AWARDS-02-UI-QA-06: team icon has symmetric eleven with matching baselines",()=>{
+test("AWARDS-02-UI-QA-06: approved Classic eleven uses the exact geometric preview",()=>{
  const match=awards.match(/ xi:(\[[^\n]+\])/);
  assert.ok(match);
- assert.deepEqual(JSON.parse(match[1]),["M5 11l5-4v19","M18 11l5-4v19","M6 26h8","M19 26h8"]);
+ assert.deepEqual(JSON.parse(match[1]),["M6.8 12.8l5.2-3.6v13.6","M9.6 22.8h5.6","M17.6 12.8l5.2-3.6v13.6","M20.4 22.8h5.6"]);
 });
