@@ -132,8 +132,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
  const emptyKeys={fixtures:"competitionFixturesEmpty",stats:"competitionStatsEmpty"};
  const messages={
   fixtures:"No scheduled matches or results are available.",
-  stats:"Competition statistics are not available before matches are played.",
-  awards:"No season awards are available."
+  stats:"Competition statistics are not available before matches are played."
  };
  const panels=views.map(({id,key,label},i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
@@ -142,6 +141,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent()}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);
+  if(id==="awards")return `          <section ${attrs}>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
  return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${panels}\n          <script src="../../../assets/competition-tabs.js" defer></script>\n          <script src="../../../assets/competition-history.js" defer></script>`;
