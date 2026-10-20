@@ -20,7 +20,7 @@ import { isAllowlistedPublicPath, planPublicFiles, stagePublicArtifact,
 const ROOT = new URL("../", import.meta.url);
 const ROOT_PATH = fileURLToPath(ROOT);
 const read = path => readFileSync(new URL(path, ROOT));
-const manifest = JSON.parse(read("app/competitions/_shared/manifest.json"));
+const manifest = JSON.parse(read("competitions/_shared/manifest.json"));
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const client = read("tools/dev-standings-preview-client.mjs").toString();
 const widget = read("tools/dev-debug-widget.mjs").toString();
@@ -197,7 +197,7 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
   for (const path of preview) assert.equal(isAllowlistedPublicPath(path), false, path);
   const publicFiles = planPublicFiles();
   for (const path of preview) assert.ok(!publicFiles.includes(path));
-  assert.ok(publicFiles.includes("app/competitions/it-1/index.html"));
+  assert.ok(publicFiles.includes("competitions/it-1/index.html"));
   assert.ok(publicFiles.includes("assets/theme.js"),"theme bootstrap must be published");
   const folder = mkdtempSync(join(tmpdir(), "fa-standings-dev-"));
   try {
@@ -212,7 +212,7 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
 
 test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchanged", async () => {
   const files = ["assets/competition-page.js", "assets/app.css", "assets/theme.js",
-    "app/competitions/it-1/index.html","app/competitions/_shared/manifest.json",
+    "competitions/it-1/index.html","competitions/_shared/manifest.json",
     "data/divisions.json","data/clubs.json","data/division-allocations.provisional.json"];
   const before = files.map(f => hash(read(f)));
   for (const division of manifest.divisions) createPreviewStandings(division);
@@ -226,7 +226,7 @@ test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchange
 
 test("DEV-GATE-03: ordinary public standings do not import or serve DEV fixtures", () => {
   for (const division of manifest.divisions) {
-    const html = read("app/competitions/" + division.id.toLowerCase() +
+    const html = read("competitions/" + division.id.toLowerCase() +
       "/index.html").toString();
     assert.ok(!html.includes("__fa_dev__"));
     assert.ok(!html.includes("standingsPreview"));
@@ -278,9 +278,9 @@ async function withServer(callback) {
 
 test("DEV-ROUTES: canonical slashless pages, assets and season links load directly", async()=>{
   await withServer(async get=>{
-    const pages=["/","/guide","/app","/app/dashboard","/app/calendar","/app/settings","/app/competitions",
-      ...allIds.map(id=>"/app/competitions/"+id.toLowerCase())];
-    for(const page of [...pages,...pages.filter(p=>p.startsWith("/app/")).map(p=>p.slice(4))]){
+    const pages=["/","/guide","/dashboard","/calendar","/settings","/competitions",
+      ...allIds.map(id=>"/competitions/"+id.toLowerCase())];
+    for(const page of pages){
       const response=await get(page);
       assert.equal(response.status,200,page);
       assert.match(response.headers["content-type"],/text\/html/,page);
@@ -303,7 +303,7 @@ test("DEV-ROUTES: canonical slashless pages, assets and season links load direct
       }
       assert.equal((await get(path,{method:"HEAD"})).body,"");
     }
-    for(const path of ["/unknown","/app/unknown","/app/competitions/unknown","/data/clubs","/tools/dev-standings-preview"])
+    for(const path of ["/unknown","/app/unknown","/competitions/unknown","/data/clubs","/tools/dev-standings-preview"])
       assert.equal((await get(path)).status,404,path);
   });
 });
@@ -312,25 +312,25 @@ test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal
   await withServer(async get => {
     for (const path of ["/%2e%2e/data/clubs.json","/../data/clubs.json",
       "/tests/fixtures/it-1-demo.mjs","/tools/dev-standings-preview-data.mjs",
-      "/.github/workflows/landing-checks.yml","//example.com/app/competitions/it-1/"]) {
+      "/.github/workflows/landing-checks.yml","//example.com/competitions/it-1/"]) {
       assert.notEqual((await get(path)).status, 200, path);
     }
-    assert.equal((await get("/app/competitions/it-1/",{host:"attacker.example:2000"})).status,403);
-    assert.equal((await get("/app/competitions/it-1/",{host:"localhost:2000"})).status,403);
+    assert.equal((await get("/competitions/it-1/",{host:"attacker.example:2000"})).status,403);
+    assert.equal((await get("/competitions/it-1/",{host:"localhost:2000"})).status,403);
     assert.equal((await get("/dashboard",{host:"app.localhost:2000"})).status,403);
-    assert.equal((await get("/app/competitions/it-1/",{method:"POST"})).status,405);
-    assert.equal((await get("/app/competitions/it-1/",{method:"HEAD"})).body,"");
+    assert.equal((await get("/competitions/it-1/",{method:"POST"})).status,405);
+    assert.equal((await get("/competitions/it-1/",{method:"HEAD"})).body,"");
   });
 });
 
 test("DEV-GATE-01/03: only DEV responses inject private scripts; static source stays clean", async () => {
   await withServer(async get => {
-    const page = await get("/app/competitions/it-1/");
+    const page = await get("/competitions/it-1/");
     assert.equal(page.status,200);
     assert.equal(page.headers["cache-control"],"no-store");
     assert.equal(page.body.split(clientName).length,2);
     assert.ok(page.body.includes("<script type=\"module\""));
-    const indexPage = await get("/app/competitions/eng-2/index.html");
+    const indexPage = await get("/competitions/eng-2/index.html");
     assert.equal(indexPage.status,200);
     assert.equal(indexPage.body.split(clientName).length,2);
     const regular = await get("/");
@@ -351,7 +351,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
       assert.ok(result.body.length > 300);
     }
     for (const division of manifest.divisions) {
-      assert.equal((await get("/app/competitions/" +
+      assert.equal((await get("/competitions/" +
         division.id.toLowerCase() + "/")).status,200);
     }
   });
@@ -371,7 +371,7 @@ test("DEV-L10N + interactions: 5 languages, 80 results and widget", () => {
 });
 
 test("UX-01A: mobile compact-only and desktop full table share one validated model", () => {
-  const html = read("app/competitions/_shared/index.html").toString();
+  const html = read("competitions/_shared/index.html").toString();
   const runtime = read("assets/competition-page.js").toString();
   const css = read("assets/app.css").toString();
   const localization = read("assets/app.js").toString();
@@ -404,14 +404,14 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   assert.ok(client.indexOf("tbody.replaceChildren(fragment)") < client.indexOf("commitMobile();"));
   assert.ok(css.includes("@media(max-width:360px)"));
   assert.ok(css.includes(".app-world-standings [hidden]"));
-  assert.ok(!read("app/competitions/_shared/manifest.json").toString().includes("standingsPreview"));
+  assert.ok(!read("competitions/_shared/manifest.json").toString().includes("standingsPreview"));
 });
 
 test("UX-01A integration: approved division logos and theme rebind survive mobile hydration", () => {
   const runtime = read("assets/competition-page.js").toString();
   const theme = read("assets/theme.js").toString();
   const css = read("assets/app.css").toString();
-  const manifest = JSON.parse(read("app/competitions/_shared/manifest.json").toString());
+  const manifest = JSON.parse(read("competitions/_shared/manifest.json").toString());
   assert.ok(runtime.includes("withMobileShell(standings.outerHTML)"));
   assert.ok(runtime.includes("window.faThemeRebind?.()"));
   assert.ok(!runtime.includes("visualAsset"));
@@ -462,7 +462,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
     runWithModel(initializer, {
-      validPath: ["/app/competitions/it-1/", "it-1"],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
+      validPath: ["/competitions/it-1/", "it-1"],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
       window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
       syncHistoryPreview: () => {},
@@ -672,7 +672,7 @@ test('STANDINGS-TOOLTIP-DATE: supplied kickoff is localized and missing dates st
 
 
 test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives its sections from deterministic seasons",()=>{
- const client=read("tools/dev-standings-preview-client.mjs").toString(),html=read("app/competitions/_shared/index.html").toString(),css=read("assets/app.css").toString();
+ const client=read("tools/dev-standings-preview-client.mjs").toString(),html=read("competitions/_shared/index.html").toString(),css=read("assets/app.css").toString();
  assert.match(client,/function renderHistoryPreview\(\)/);
  assert.match(client,/if\(!isPreviewEnabled\(\)\)\{clearHistoryPreview\(\);return\}/);
  assert.match(client,/createPreviewStandings\(division,competitionModel.schedule.rounds,season\)/);

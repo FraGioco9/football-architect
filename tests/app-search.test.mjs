@@ -4,7 +4,7 @@ import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 
 const read = file => readFileSync(new URL("../"+file,import.meta.url),"utf8");
-const pages = ["app/dashboard/index.html","app/calendar/index.html","app/settings/index.html"];
+const pages = ["dashboard/index.html","calendar/index.html","settings/index.html"];
 const html = Object.fromEntries(pages.map(path => [path,read(path)]));
 const script = read("assets/app-search.js");
 const css = read("assets/app.css");
@@ -50,11 +50,11 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
 test("SEARCH-01 search destinations are limited to real internal routes and heading anchors",()=>{
   const destinations=[...script.matchAll(/\["(page|section)","([^"]+)","([^"]+)","([^"]+)"\]/g)];
   assert.equal(destinations.length,10);
-  const known=new Set([...pages,"app/competitions/index.html"]);
+  const known=new Set([...pages,"competitions/index.html"]);
   for(const [,kind,id,description,url] of destinations){
     assert.match(url,/^\/(?:dashboard|calendar|settings|competitions)(?:\/[a-z0-9-]+)?(?:#[a-z-]+)?$/);
     const [pathname,fragment] = url.slice(1).split("#");
-    const file="app/"+pathname+"/index.html";
+    const file=pathname+"/index.html";
     assert.ok(known.has(file),url);
     const target=html[file] ?? read(file);
     assert.ok(target.includes('id="'+id+'"'),id);

@@ -222,7 +222,7 @@ test("HOME-ENTRY-01 removes unused toast logic and retains responsive layout", (
 });
 
 test("HOME-ENTRY-01 does not enable gameplay in the static Dashboard", () => {
-  const dashboard = readFileSync(new URL("../app/dashboard/index.html", import.meta.url), "utf8");
+  const dashboard = readFileSync(new URL("../dashboard/index.html", import.meta.url), "utf8");
   const app = readFileSync(new URL("../assets/app.js", import.meta.url), "utf8");
   assert.match(dashboard, /class="app-continue" type="button" disabled/);
   assert.match(app, /No active career/);

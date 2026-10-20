@@ -92,7 +92,7 @@ async function resetPreview(){
  await refreshSeason();
  return refreshProgress();
 }
-const DETAIL = /^\/(?:app\/)?competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
 const LANG = {
   en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
@@ -116,7 +116,7 @@ const LANG = {
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
-const indexPath=/^\/(?:app\/)?competitions(?:\/(?:index\.html)?)?$/.test(location.pathname);
+const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
 let widgetRoot;

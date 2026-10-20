@@ -79,10 +79,10 @@ test('ASSET-04: scoped inline source, contextual accessibility and reserved-spac
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('DIV-ASSET-07: every logo is inline at first paint with isolated original styles',()=>{
- const index=read('app/competitions/index.html');
+ const index=read('competitions/index.html');
  assert.equal((index.match(/shadowrootmode="open"/g)||[]).length,16);
  for(const d of canonical){
-  const page=read('app/competitions/'+d.id.toLowerCase()+'/index.html');
+  const page=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(page.includes('shadowrootmode="open"'),d.id);
   assert.ok(page.includes('data-division-variant="compact"'),d.id);
   const artwork=validateDivisionAssets().divisions.get(d.id);

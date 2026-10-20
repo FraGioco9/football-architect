@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
 const modelUrl=new URL('../assets/competition-model.js',import.meta.url);
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const manifest=()=>JSON.parse(read('app/competitions/_shared/manifest.json'));
+const manifest=()=>JSON.parse(read('competitions/_shared/manifest.json'));
 const getModel=()=>{
  assert.ok(existsSync(modelUrl),'Shared competition model must exist');
  return createRequire(import.meta.url)(modelUrl.pathname);
@@ -71,7 +71,7 @@ test('one view catalogue drives all generated detail documents and their first p
  const model=getModel();
  assert.deepEqual(model.views.map(v=>v.id),['standings','postseason','fixtures','stats','history','rules','awards']);
  for(const d of manifest().divisions){
-  const html=read('app/competitions/'+d.id.toLowerCase()+'/index.html');
+  const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.indexOf('/assets/competition-model.js')<html.indexOf('/assets/competition-page.js'));
   for(const view of model.views)assert.ok(html.includes('id="competition-panel-'+view.id+'"'));
   assert.equal((html.match(/data-fixture-round-choice=/g)||[]).length,model.schedule.rounds);

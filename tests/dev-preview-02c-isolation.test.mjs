@@ -21,7 +21,7 @@ test("DEV-PREVIEW-02C: public isolation, deterministic manifest and tamper rejec
   assert.ok(debugFiles.includes("__fa_dev__/debug-settings.mjs"));
   for(const path of publicFiles) {
    const a=readFileSync(join(pub,path)),b=readFileSync(join(debug,path));
-   if(!path.startsWith("app/")||!path.endsWith("/index.html"))assert.deepEqual(a,b,path);
+   if(!/^(?:dashboard|calendar|settings|competitions)\//.test(path)||!path.endsWith("/index.html"))assert.deepEqual(a,b,path);
   }
   const manifest=JSON.parse(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"),"utf8"));
   assert.equal(manifest.contract,"protected_debug");

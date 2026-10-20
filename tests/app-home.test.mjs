@@ -8,9 +8,9 @@ import {runInNewContext} from "node:vm";
 
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const paths = {
-  dashboard: "app/dashboard/index.html",
-  calendar: "app/calendar/index.html",
-  settings: "app/settings/index.html"
+  dashboard: "dashboard/index.html",
+  calendar: "calendar/index.html",
+  settings: "settings/index.html"
 };
 const pages = Object.fromEntries(Object.entries(paths).map(([name,path]) => [name,read(path)]));
 const css = read("assets/app.css");
@@ -41,7 +41,6 @@ test("HOME-01 uses canonical static pages rather than legacy hash routing", () =
     assert.match(markup,new RegExp('id="app-nav-'+page+'"[^>]*aria-current="page"'));
   }
   assert.doesNotMatch(js, /#calendar|#settings|hashchange|window\.location\.hash|location\.replace/);
-  assert.ok(js.includes(String.raw`replace(/^\/app(?=\/|$)/,"")`));
   for(const route of ["calendar","settings","dashboard"])
     assert.ok(js.includes('path === "/'+route+'"'),route);
 });
@@ -211,7 +210,7 @@ test("HOME-01 translates all three page titles across five supported languages",
     settings:{en:"Settings",de:"Einstellungen",es:"Ajustes",fr:"Paramètres",it:"Impostazioni"}
   };
   for (const [view,labels] of Object.entries(titles)) {
-    const app=simulateApp(view==="dashboard"?"/dashboard/":"/app/"+view+"/");
+    const app=simulateApp("/"+view+"/");
     for(const [lang,title] of Object.entries(labels)) {
       app.document.documentElement.lang=lang;
       app.changed();
@@ -223,27 +222,15 @@ test("HOME-01 translates all three page titles across five supported languages",
 });
 
 
-test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
-  const redirect=read("app/index.html");
-  const dashboard=read("app/dashboard/index.html");
-  assert.match(redirect,/window\.location\.replace\("\/dashboard" \+ window\.location\.search \+ window\.location\.hash\)/);
-  assert.match(redirect,/<noscript><meta http-equiv="refresh" content="0;url=\/dashboard"><\/noscript>/);
-  assert.match(redirect,/href="\/dashboard"/);
-  assert.doesNotMatch(redirect,/class="fa-career-shell"/);
-  assert.match(dashboard,/id="app-dashboard"/);
-  const script=redirect.match(/<script>([\s\S]*?)<\/script>/)?.[1];
-  assert.ok(script);
-  for(const [search,hash,expected] of [["","","/dashboard"],["?lang=it","#world-heading","/dashboard?lang=it#world-heading"]]){
-    const redirects=[];
-    runInNewContext(script,{window:{location:{search,hash,replace(path){redirects.push(path)}}}},{timeout:2000});
-    assert.deepEqual(redirects,[expected]);
-  }
+test("HOME-02 obsolete application entry point is absent",()=>{
+  assert.equal(existsSync(new URL("../app/index.html",import.meta.url)),false);
+  assert.match(read("dashboard/index.html"),/id="app-dashboard"/);
 });
 
 
 test("A11Y-NO-SKIP-01: skip link is absent without disturbing accessible landmarks",()=>{
- const competitionDir=new URL("../app/competitions/",import.meta.url);
- const generated=["app/competitions/index.html",...readdirSync(competitionDir,{withFileTypes:true}).filter(item=>item.isDirectory()).map(item=>"app/competitions/"+item.name+"/index.html")];
+ const competitionDir=new URL("../competitions/",import.meta.url);
+ const generated=["competitions/index.html",...readdirSync(competitionDir,{withFileTypes:true}).filter(item=>item.isDirectory()).map(item=>"competitions/"+item.name+"/index.html")];
  for(const path of generated)assert.doesNotMatch(read(path),/class="app-skip"|data-app-i18n="skip"|Skip to main content/,path);
  for(const markup of Object.values(pages)){
   assert.doesNotMatch(markup,/class="app-skip"|data-app-i18n="skip"|Skip to main content/);

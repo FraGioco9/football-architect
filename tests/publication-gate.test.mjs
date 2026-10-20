@@ -13,7 +13,7 @@ test("PUBLIC-01: only explicit public assets are eligible; demo fixture is exclu
   assert.ok(divisionAssets.every(p=>p.endsWith("/primary.svg")||p.endsWith("/compact.svg")));
   assert.ok(!files.includes("assets/division-logos.js"));
  assert.ok(files.includes("assets/theme.js"),"runtime theme bootstrap must be public");
- assert.equal(files.filter(p=>/^app\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(p)).length,16);
+ assert.equal(files.filter(p=>/^competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(p)).length,16);
  for(const path of ["__fa_dev__/debug-settings.mjs","__fa_dev__/artifact-manifest.json",
                     "tools/dev-debug-settings.mjs","tools/dev-preview-artifact.mjs",
                     "tests/fixtures/it-1-demo.mjs","tests/world-competition-runtime.test.mjs",

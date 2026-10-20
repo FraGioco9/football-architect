@@ -44,12 +44,12 @@ test("AWARDS-02-UI-QA-03: initial Awards panels never flash obsolete fallback",(
  assert.match(generator,/if\(id==="awards"\)return/);
  for(const country of ["br","de","eng","es","fr","it","nl","pt"]){
   for(const tier of [1,2]){
-   const markup=read("app/competitions/"+country+"-"+tier+"/index.html");
+   const markup=read("competitions/"+country+"-"+tier+"/index.html");
    assert.doesNotMatch(markup,/No season awards are available\./);
    assert.match(markup,/id="competition-panel-awards"/);
   }
  }
- assert.doesNotMatch(read("app/competitions/_shared/index.html"),/No season awards are available\./);
+ assert.doesNotMatch(read("competitions/_shared/index.html"),/No season awards are available\./);
 });
 
 test("AWARDS-02-UI-QA-04: no global pending notice or award-card hover animation",()=>{

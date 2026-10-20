@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as data from '../tools/dev-standings-preview-data.mjs';
-const divisions=JSON.parse(readFileSync(new URL('../app/competitions/_shared/manifest.json',import.meta.url))).divisions;
+const divisions=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url))).divisions;
 
 test('POSTSEASON-DATA: eight countries reveal each stage only on days 31, 32 and 33',()=>{
  assert.equal(typeof data.createPreviewPostseason,'function');

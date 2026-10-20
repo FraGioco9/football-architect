@@ -89,7 +89,7 @@ test('COMPETITION-URL: keyboard navigation retains one active tab and does not d
 });
 
 test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views',()=>{
- const html=readFileSync(new URL('../app/competitions/it-1/index.html',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../competitions/it-1/index.html',import.meta.url),'utf8');
  const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
  for(const season of ['1','2','12','999999999']){
   const document={addEventListener(){},documentElement:{dataset:{}}};

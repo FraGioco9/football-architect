@@ -9,7 +9,7 @@ export const DEBUG_SEASONS=Object.freeze([1,2,3,4]); // Fictional Preview only, 
 export const DEBUG_SEASON_BOOTSTRAP='<script>document.documentElement.dataset.faDevDefaultSeason="1";document.documentElement.dataset.faDevSeasons="'+DEBUG_SEASONS.join(",")+'";(()=>{let season=1;try{const value=Number(sessionStorage.getItem("football-architect:standings-dev-season"));if(Number.isInteger(value)&&value>=1&&value<=4)season=value}catch{}document.documentElement.dataset.faDevCurrentSeason=String(season)})()</script>';
 const MANIFEST="__fa_dev__/artifact-manifest.json";
 // Injected only into DEV responses/artifacts, before the body can paint.
-export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings,html[data-fa-debug-pending=\"true\"] #competition-panel-fixtures,html[data-fa-debug-pending=\"true\"] #competition-panel-history{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/(?:app\\/)?competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
+export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings,html[data-fa-debug-pending=\"true\"] #competition-panel-fixtures,html[data-fa-debug-pending=\"true\"] #competition-panel-history{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
 const INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" src="/__fa_dev__/stats-client.mjs"></script>';
 const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],
@@ -44,13 +44,13 @@ function safeDebugBytes(root,path) {
 }
 
 function debugHtml(bytes,path) {
- if(!path.startsWith("app/")||!path.endsWith("/index.html"))return bytes;
+ if(!/^(?:dashboard|calendar|settings|competitions)\//.test(path)||!path.endsWith("/index.html"))return bytes;
  let html=bytes.toString("utf8");
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);
- const detail=/^app\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(path);
+ const detail=/^competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(path);
  return Buffer.from(html.replace("</head>",
-  DEBUG_FIRST_PAINT+(detail||path==="app/competitions/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");
+  DEBUG_FIRST_PAINT+(detail||path==="competitions/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");
 }
 
 function expectedBytes(sourceRoot,debugRoot) {

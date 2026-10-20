@@ -32,7 +32,7 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/(?:app\/)?competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
@@ -121,7 +121,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
-        if (DETAIL.test(raw) || file === "app/competitions/index.html") {
+        if (DETAIL.test(raw) || file === "competitions/index.html") {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.

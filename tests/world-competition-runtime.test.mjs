@@ -15,7 +15,7 @@ const marker="  start().catch(fail);";
 assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
-const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
+const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
 const root="http://127.0.0.1:2000";
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
@@ -43,7 +43,7 @@ function node(tag){
 async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false}){
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
- shell??=read("app/competitions/"+selected.toLowerCase()+"/index.html");
+ shell??=read("competitions/"+selected.toLowerCase()+"/index.html");
  const postseasonSlots=[...shell.matchAll(/data-postseason-position="(\d+)"/g)].map(match=>{const item=node("span");item.dataset.postseasonPosition=match[1];return item});
  const postseasonNodes={};
  for(const kind of ['score','row','finalist','resolution','help']){
@@ -424,7 +424,7 @@ test("STANDINGS-OUTCOMES: all divisions share rank bands across desktop and mobi
     assert.equal(item.attrs['aria-describedby'],'standings-outcome-'+expected[i]);
    }
   }
-  const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
+  const html=read('competitions/'+division.id.toLowerCase()+'/index.html');
   for(const outcome of new Set(expected.filter(Boolean)))assert.ok(html.includes('id="standings-outcome-'+outcome+'"'),division.id+' legend '+outcome);
  }
 });
@@ -438,7 +438,7 @@ test("POSTSEASON: final participants appear only after 30 rounds and reset acros
   assert.equal(bracket.dataset.postseasonQualified,'false');
   const positions=division.tier===1?[13,14]:[3,6,4,5];
   assert.deepEqual(r.postseasonSlots.map(slot=>Number(slot.dataset.postseasonPosition)),positions);
-  const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
+  const html=read('competitions/'+division.id.toLowerCase()+'/index.html');
   assert.ok(html.indexOf('id="competition-tab-standings"')<html.indexOf('id="competition-tab-postseason"'));
   assert.ok(html.indexOf('id="competition-tab-postseason"')<html.indexOf('id="competition-tab-fixtures"'));
   assert.ok(html.includes('data-app-i18n="'+(division.tier===1?'competitionTabPlayout':'competitionTabPlayoffs')+'"'));

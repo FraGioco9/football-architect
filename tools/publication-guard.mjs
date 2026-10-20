@@ -9,25 +9,25 @@ import {clubCrestAssets} from "./club-crest-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
 const required=[
- "vercel.json","index.html","guide/index.html","app/index.html","app/dashboard/index.html",
- "app/calendar/index.html","app/settings/index.html","app/competitions/index.html",
- "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
+ "vercel.json","index.html","guide/index.html","dashboard/index.html",
+ "calendar/index.html","settings/index.html","competitions/index.html",
+ "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "assets/club-crests.js","assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
  "data/divisions.json"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
- .flatMap(country=>[1,2].map(tier=>"app/competitions/"+country+"-"+tier+"/index.html"));
+ .flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"));
 const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
- "app/index.html","app/dashboard/index.html","app/calendar/index.html",
- "app/settings/index.html","app/competitions/index.html",
- "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
+ "dashboard/index.html","calendar/index.html",
+ "settings/index.html","competitions/index.html",
+ "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","app.css",
  "app-search.js","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 
-// Only explicit app URL aliases are allowed; no hosting, auth or build overrides.
-const competitionRouting={"redirects":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/app/competitions/:division","permanent":true},{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/app/competitions/:division","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/app/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"},{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/app/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/app/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/app/competitions/:division/index.html"}]};
+// Only explicit canonical routes are allowed; no hosting, auth or build overrides.
+const competitionRouting={"redirects":[{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/competitions/:division/index.html"}]};
 
 export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
  if(path.startsWith("assets/clubs/"))return clubCrestAssets(sourceRoot).paths.has(path);
@@ -57,7 +57,7 @@ export function planPublicFiles(sourceRoot=repositoryRoot) {
  const routing=JSON.parse(readFileSync(join(sourceRoot,"vercel.json"),"utf8"));
  if(!isDeepStrictEqual(routing,competitionRouting))throw Error("Unexpected competition routing configuration");
  const crests=clubCrestAssets(sourceRoot);
- const manifest=JSON.parse(readFileSync(join(sourceRoot,"app/competitions/_shared/manifest.json"),"utf8"));
+ const manifest=JSON.parse(readFileSync(join(sourceRoot,"competitions/_shared/manifest.json"),"utf8"));
  if(!isDeepStrictEqual(manifest.clubCrests,crests.catalog))throw Error("Club crest manifest differs from source assets; regenerate app pages");
  const files=listFiles(sourceRoot).filter(path=>isAllowlistedPublicPath(path,sourceRoot));
  for(const path of crests.paths)if(!files.includes(path))throw Error("Required club crest missing: "+path);
@@ -102,10 +102,8 @@ export function stagePublicArtifact(sourceRoot,destination) {
  return files;
 }
 
-// Map canonical request paths to the existing allowlisted physical app files.
+// Canonical request paths resolve directly to allowlisted physical files.
 export function publicRequestFile(pathname) {
-  const canonical = /^\/(?:dashboard|calendar|settings|competitions)(?:\/|$)/.test(pathname)
-    ? "/app" + pathname : pathname;
-  return (canonical.endsWith("/") ? canonical + "index.html"
-    : /\.[a-z0-9]+$/i.test(canonical) ? canonical : canonical + "/index.html").slice(1);
+  return (pathname.endsWith("/") ? pathname + "index.html"
+    : /\.[a-z0-9]+$/i.test(pathname) ? pathname : pathname + "/index.html").slice(1);
 }

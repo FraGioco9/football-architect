@@ -1,6 +1,10 @@
 # Generated static app pages must retain canonical LF line endings on Windows.
-app/**/index.html text eol=lf
-app/competitions/_shared/manifest.json text eol=lf
+dashboard/index.html text eol=lf
+calendar/index.html text eol=lf
+settings/index.html text eol=lf
+competitions/**/index.html text eol=lf
+competitions/index.html text eol=lf
+competitions/_shared/manifest.json text eol=lf
 templates/app-page.html text eol=lf
 # Preserve the approved CSV fingerprint in Windows checkouts.
 data/clubs-registry.csv text eol=lf
