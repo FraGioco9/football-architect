@@ -72,8 +72,8 @@ test("AWARDS-02-UI-QA-05: only four emblems redesigned; nine originals retained"
  for(const id of ["manager","player","young","xi"])assert.ok(get(id).length>=2,id);
 });
 
-test("AWARDS-02-UI-QA-06: approved Classic eleven uses the exact geometric preview",()=>{
+test("AWARDS-02-UI-QA-06: team eleven uses matching unadorned numerals",()=>{
  const match=awards.match(/ xi:(\[[^\n]+\])/);
  assert.ok(match);
- assert.deepEqual(JSON.parse(match[1]),["M6.8 12.8l5.2-3.6v13.6","M9.6 22.8h5.6","M17.6 12.8l5.2-3.6v13.6","M20.4 22.8h5.6"]);
+ assert.deepEqual(JSON.parse(match[1]),["M7 13l5-4v16","M19 13l5-4v16"]);
 });
