@@ -1,7 +1,7 @@
 import { publicRequestFile } from "../tools/publication-guard.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync, existsSync} from "node:fs";
+import {readFileSync, existsSync, readdirSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import {execFileSync} from "node:child_process";
 import {runInNewContext} from "node:vm";
@@ -102,7 +102,7 @@ test("HOME-02 TOPBAR-B keeps the topbar above the shared inset scroll area", () 
     assert.match(markup,/<\/header>\s*<div class="fa-shell-content-scroll">\s*<main class="app-main"/);
     assert.match(markup,/<\/main>\s*<footer class="app-footer">[^]*?<\/footer>\s*<\/div>\s*<\/div>/);
     assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
-    assert.match(markup,/<a class="app-skip" href="#main-content"/);
+    assert.doesNotMatch(markup,/class="app-skip"/);
     assert.match(markup,/id="app-search-trigger"/);
   }
 });
@@ -241,28 +241,21 @@ test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
 });
 
 
-test("WCAG-FIX-01 provides a keyboard skip link to the main landmark on each app page",()=>{
-  for(const markup of Object.values(pages)){
-    assert.match(markup,/<body class="app-body">\s*<a class="app-skip" href="#main-content" data-app-i18n="skip">Skip to main content<\/a>/);
-    assert.ok(markup.indexOf('class="app-skip"') < markup.indexOf('class="fa-career-shell"'));
-    assert.equal((markup.match(/id="main-content"/g)||[]).length,1);
-    assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
-    assert.match(markup,/id="career-status-heading"/);
-    assert.match(markup,/id="world-heading"/);
-    assert.match(markup,/id="app-language-heading"/);
-    assert.match(markup,/id="app-search-heading" class="sr-only"/);
-    assert.match(markup,/id="app-search-scope" class="sr-only"/);
-  }
-  assert.match(css,/\.app-body \.app-skip\{[^}]*position:fixed;[^}]*opacity:0;transform:translateY\(/);
-  assert.match(css,/\.app-body \.app-skip:focus\{[^}]*opacity:1;transform:none;[^}]*outline:2px solid var\(--focus\)/);
-  const labels = {
-    en:"Skip to main content", de:"Zum Hauptinhalt springen",
-    es:"Saltar al contenido principal", fr:"Aller au contenu principal",
-    it:"Vai al contenuto principale"
-  };
-  for(const [lang,label] of Object.entries(labels)){
-    assert.match(js,new RegExp(lang+': \\{\\s*skip:"'+label+'"'));
-  }
+test("A11Y-NO-SKIP-01: skip link is absent without disturbing accessible landmarks",()=>{
+ const competitionDir=new URL("../app/competitions/",import.meta.url);
+ const generated=["app/competitions/index.html",...readdirSync(competitionDir,{withFileTypes:true}).filter(item=>item.isDirectory()).map(item=>"app/competitions/"+item.name+"/index.html")];
+ for(const path of generated)assert.doesNotMatch(read(path),/class="app-skip"|data-app-i18n="skip"|Skip to main content/,path);
+ for(const markup of Object.values(pages)){
+  assert.doesNotMatch(markup,/class="app-skip"|data-app-i18n="skip"|Skip to main content/);
+  assert.equal((markup.match(/id="main-content"/g)||[]).length,1);
+  assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
+  assert.match(markup,/id="career-status-heading"/);
+  assert.match(markup,/id="world-heading"/);
+  assert.match(markup,/id="app-language-heading"/);
+  assert.match(markup,/id="app-search-heading" class="sr-only"/);
+ }
+ assert.doesNotMatch(css,/\.app-skip/);
+ assert.doesNotMatch(js,/\bskip:"(?:Skip to main content|Zum Hauptinhalt springen|Saltar al contenido principal|Aller au contenu principal|Vai al contenuto principale)"/);
 });
 
 test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
