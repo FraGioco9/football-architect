@@ -129,7 +129,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
  const nav=views.map(({id,key,label},i)=>
   `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`
  ).join("\n");
- const emptyKeys={fixtures:"competitionFixturesEmpty",stats:"competitionStatsEmpty",awards:"competitionAwardsEmpty"};
+ const emptyKeys={fixtures:"competitionFixturesEmpty",stats:"competitionStatsEmpty"};
  const messages={
   fixtures:"No scheduled matches or results are available.",
   stats:"Competition statistics are not available before matches are played.",
