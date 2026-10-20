@@ -1,7 +1,7 @@
 import { publicRequestFile } from "../tools/publication-guard.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync, existsSync} from "node:fs";
+import {readFileSync, existsSync, readdirSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import {execFileSync} from "node:child_process";
 import {runInNewContext} from "node:vm";
@@ -242,6 +242,9 @@ test("HOME-02 redirects /app/ to Dashboard, preserving query and fragment",()=>{
 
 
 test("A11Y-NO-SKIP-01: skip link is absent without disturbing accessible landmarks",()=>{
+ const competitionDir=new URL("../app/competitions/",import.meta.url);
+ const generated=["app/competitions/index.html",...readdirSync(competitionDir,{withFileTypes:true}).filter(item=>item.isDirectory()).map(item=>"app/competitions/"+item.name+"/index.html")];
+ for(const path of generated)assert.doesNotMatch(read(path),/class="app-skip"|data-app-i18n="skip"|Skip to main content/,path);
  for(const markup of Object.values(pages)){
   assert.doesNotMatch(markup,/class="app-skip"|data-app-i18n="skip"|Skip to main content/);
   assert.equal((markup.match(/id="main-content"/g)||[]).length,1);
