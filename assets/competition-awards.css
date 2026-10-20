@@ -1,0 +1,28 @@
+/* AWARDS-02: static Awards Ceremony layout, scoped to the existing competition panel. */
+#competition-panel-awards .fa-awards{--award-gold:#d7bc78;--award-ink:#142728;--award-outline:#42615b;display:grid;gap:clamp(22px,3vw,36px);min-width:0}
+.fa-awards-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.fa-awards-head h2{margin:4px 0;font-size:clamp(26px,3vw,34px);line-height:1.15}
+.fa-awards-overline,.fa-awards-section-title{color:var(--award-gold);letter-spacing:.08em;text-transform:uppercase;font-weight:800}
+.fa-awards-overline{font-size:11px;margin:0}
+.fa-awards-subtitle{margin:0;color:var(--muted,#b0c1bb)}
+.fa-awards-status,.fa-awards-chip{border:1px solid #806f43;border-radius:999px;color:var(--award-gold);font-weight:800;letter-spacing:.06em;font-size:10px;padding:6px 10px;white-space:nowrap}
+.fa-awards-notice{margin:0;padding:14px 16px;border:1px solid var(--award-outline);border-radius:12px;background:var(--award-ink);color:#d4ded9;line-height:1.5}
+.fa-awards-section{min-width:0}
+.fa-awards-section-title{font-size:13px;margin:0 0 14px}
+.fa-awards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.fa-awards-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;border:1px solid var(--award-outline);background:var(--award-ink);color:#eff6f1;border-radius:14px;overflow-wrap:anywhere}
+.fa-awards-medallion{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:1px solid #837147;background:#2d362b;color:var(--award-gold);font-size:25px;line-height:1}
+.fa-awards-card-title{font-size:17px;line-height:1.3;color:#fff;margin:0}
+.fa-awards-card-pending{color:#b6c5be;font-size:13px;margin:0;line-height:1.45}
+.fa-awards-chip{margin-top:auto}
+.fa-awards-honours .fa-awards-card-champion{grid-column:1/-1;align-items:center;text-align:center;padding:32px;min-height:240px;border-color:#857347;background:linear-gradient(145deg,#182c2c,#283329)}
+.fa-awards-card-champion .fa-awards-medallion{width:66px;height:66px;font-size:40px}
+.fa-awards-card-champion .fa-awards-card-title{font-size:24px}
+.fa-awards-honours .fa-awards-card:not(.fa-awards-card-champion){grid-column:span 1}
+.fa-awards-honours .fa-awards-grid:has(> :nth-child(3)) .fa-awards-card:not(.fa-awards-card-champion){grid-column:span 1}
+.fa-awards-xi .fa-awards-card{grid-column:1/-1;align-items:center;text-align:center}
+.fa-awards-pitch{width:min(100%,380px);aspect-ratio:4/3;display:flex;flex-direction:column;justify-content:space-around;padding:12px;border:2px solid #8bb0a0;border-radius:8px;background:repeating-linear-gradient(0deg,#21513d 0%,#21513d 25%,#265b44 25%,#265b44 50%)}
+.fa-awards-pitch-line{display:flex;align-items:center;justify-content:space-around}
+.fa-awards-pitch-player{display:block;width:27px;height:27px;border:2px solid #c6dacc;border-radius:50%;background:#4b7362}
+@media(max-width:760px){.fa-awards-grid{grid-template-columns:1fr}.fa-awards-card{padding:18px}.fa-awards-honours .fa-awards-card:not(.fa-awards-card-champion){grid-column:1}.fa-awards-honours .fa-awards-card-champion{min-height:210px;padding:22px}.fa-awards-head{align-items:flex-start}.fa-awards-status{font-size:9px}}
+@media(prefers-reduced-motion:no-preference){.fa-awards-card{transition:border-color .18s ease}.fa-awards-card:hover{border-color:#a28d59}}
