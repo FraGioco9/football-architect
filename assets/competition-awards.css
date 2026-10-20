@@ -2,10 +2,10 @@
 #competition-panel-awards .fa-awards{--award-gold:#d7bc78;--award-ink:#142728;--award-outline:#42615b;display:grid;gap:clamp(22px,3vw,36px);min-width:0}
 .fa-awards-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .fa-awards-head h2{margin:4px 0;font-size:clamp(26px,3vw,34px);line-height:1.15}
-.fa-awards-overline,.fa-awards-section-title{color:var(--award-gold);letter-spacing:.08em;text-transform:uppercase;font-weight:800}
+.fa-awards-overline,.fa-awards-section-title{color:var(--award-gold);letter-spacing:.03em;font-weight:800}
 .fa-awards-overline{font-size:11px;margin:0}
 .fa-awards-subtitle{margin:0;color:var(--muted,#b0c1bb)}
-.fa-awards-status,.fa-awards-chip{border:1px solid #806f43;border-radius:999px;color:var(--award-gold);font-weight:800;letter-spacing:.06em;font-size:10px;padding:6px 10px;white-space:nowrap}
+.fa-awards-status,.fa-awards-chip{border:1px solid #806f43;border-radius:999px;color:var(--award-gold);font-weight:800;letter-spacing:.03em;font-size:10px;padding:6px 10px;white-space:nowrap}
 .fa-awards-notice{margin:0;padding:14px 16px;border:1px solid var(--award-outline);border-radius:12px;background:var(--award-ink);color:#d4ded9;line-height:1.5}
 .fa-awards-section{min-width:0}
 .fa-awards-section-title{font-size:13px;margin:0 0 14px}
@@ -25,7 +25,6 @@
 .fa-awards-pitch-line{display:flex;align-items:center;justify-content:space-around}
 .fa-awards-pitch-player{display:block;width:27px;height:27px;border:2px solid #c6dacc;border-radius:50%;background:#4b7362}
 @media(max-width:760px){.fa-awards-grid{grid-template-columns:1fr}.fa-awards-card{padding:18px}.fa-awards-honours .fa-awards-card:not(.fa-awards-card-champion){grid-column:1}.fa-awards-honours .fa-awards-card-champion{min-height:210px;padding:22px}.fa-awards-head{align-items:flex-start}.fa-awards-status{font-size:9px}}
-@media(prefers-reduced-motion:no-preference){.fa-awards-card{transition:border-color .18s ease}.fa-awards-card:hover{border-color:#a28d59}}
 
 /* AWARDS-02: accessible light variant, scoped to the Awards panel. */
 html[data-theme="light"] #competition-panel-awards .fa-awards{--award-gold:#79591D;--award-ink:#F5F8F4;--award-outline:#B8C9BD}

@@ -3,8 +3,6 @@
   "use strict";
   const copies = {
     en: {
-      awardsStatus:"AWARDS PENDING",
-      awardsNotice:"Winners and candidates will appear when verified competition data is available. No awards have been assigned.",
       awardsExcellence:"Individual Excellence",
       awardsPerformance:"Performance & Position Awards",
       awardsXi:"Team of the Season",
@@ -239,8 +237,6 @@
       aboutText:"Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.",
     },
     de: {
-      awardsStatus:"AUSZEICHNUNGEN AUSSTEHEND",
-      awardsNotice:"Gewinner und Kandidaten erscheinen, sobald geprüfte Wettbewerbsdaten vorliegen. Noch keine Auszeichnungen vergeben.",
       awardsExcellence:"Individuelle Leistungen",
       awardsPerformance:"Leistungs- und Positionspreise",
       awardsXi:"Team der Saison",
@@ -475,8 +471,6 @@
       aboutText:"Football Architect zeigt eine alternative Fußballwelt mit realen Ländern sowie fiktiven Vereinen und Ligen. Dies ist eine Vorschau der Oberfläche, kein spielbares Spiel.",
     },
     es: {
-      awardsStatus:"PREMIOS PENDIENTES",
-      awardsNotice:"Los ganadores y candidatos aparecerán cuando haya datos verificados de la competición. Aún no se han concedido premios.",
       awardsExcellence:"Excelencia individual",
       awardsPerformance:"Premios de rendimiento y posición",
       awardsXi:"Equipo de la temporada",
@@ -711,8 +705,6 @@
       aboutText:"Football Architect presenta un mundo futbolístico alternativo con países reales, clubes y divisiones ficticios. Esta página es una vista previa, no un juego funcional.",
     },
     fr: {
-      awardsStatus:"RÉCOMPENSES EN ATTENTE",
-      awardsNotice:"Les lauréats et candidats apparaîtront lorsque les données vérifiées de la compétition seront disponibles. Aucune récompense n'a été attribuée.",
       awardsExcellence:"Excellence individuelle",
       awardsPerformance:"Récompenses de performance et de poste",
       awardsXi:"Équipe de la saison",
@@ -947,8 +939,6 @@
       aboutText:"Football Architect présente un univers footballistique alternatif avec de vrais pays et des clubs et divisions fictifs. Cette page est un aperçu de l’interface, pas un jeu jouable.",
     },
     it: {
-      awardsStatus:"PREMI IN ATTESA",
-      awardsNotice:"Vincitori e candidati appariranno quando saranno disponibili dati verificati della competizione. Nessun premio è stato assegnato.",
       awardsExcellence:"Eccellenze individuali",
       awardsPerformance:"Premi per rendimento e ruolo",
       awardsXi:"Squadra della stagione",

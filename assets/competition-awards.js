@@ -26,16 +26,16 @@ const iconPaths={
  champion:["M5 18h22l3-14-10 7-4-9-4 9L2 4z","M7 23h18v4H7z"],
  promotion:["M16 3L7 13h6v16h6V13h6z"],
  playoff:["M16 2l4.4 9 9.9 1.4-7.2 7 1.7 9.9L16 24.7l-8.8 4.6 1.7-9.9-7.2-7 9.9-1.4z"],
- manager:["M7 6h18v4c0 5-3.5 8-9 8s-9-3-9-8z","M7 8H3v4c0 3 2 5 6 5M25 8h4v4c0 3-2 5-6 5","M16 18v6m-7 4h14m-11-4h8"],
- player:["M16 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8","M8 27v-5c0-4 3-7 8-7s8 3 8 7v5z","M3 12l3-3m20 0 3 3"],
- young:["M16 4l3.5 7.5 8.5 1-6.2 6 1.5 8.5-7.3-4-7.3 4 1.5-8.5-6.2-6 8.5-1z"],
- boot:["M7 3h10v10l5 5h6v7H4v-6l3-3z","M5 25h23"],
- assists:["M4 25l8-8 5 4 11-13","M20 8h8v8","M3 7h8v8H3z"],
- glove:["M9 28V12c0-3 4-3 4 0V5c0-3 4-3 4 0v7-5c0-3 4-3 4 0v7-3c0-3 4-3 4 0v10c0 5-4 8-9 8z"],
- defender:["M16 3l12 5v8c0 7-4.5 11-12 14C8.5 27 4 23 4 16V8z","M11 16l4 4 7-8"],
- midfielder:["M16 3L29 16 16 29 3 16z","M16 9v14M9 16h14"],
- forward:["M4 28L28 4l-4 13-7-7z","M4 19v9h9"],
- xi:["M6 5h20v22H6z","M16 5v22M6 16h20","M16 10a6 6 0 1 0 0 12 6 6 0 0 0 0-12"]
+ manager:["M9 5h14v8c0 5-3 8-7 8s-7-3-7-8z","M9 8H5v4c0 3 2 5 5 5M23 8h4v4c0 3-2 5-5 5","M16 21v5m-7 3h14m-11-3h8"],
+ player:["M16 3l4 8.5 9 1.3-6.5 6.3 1.5 9-8-4.2-8 4.2 1.5-9L3 12.8l9-1.3z","M16 10v8m-4-4h8"],
+ young:["M16 4l3 6.5 7 1-5.1 5 1.2 7.2L16 20.3l-6.1 3.4 1.2-7.2-5.1-5 7-1z","M16 25v4m-5-2h10"],
+ boot:["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],
+ assists:["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],
+ glove:["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],
+ defender:["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],
+ midfielder:["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],
+ forward:["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"],
+ xi:["M5 5h22v22H5z","M16 5v22M5 16h22","M16 10a6 6 0 1 0 0 12 6 6 0 0 0 0-12","M5 11h4v10H5m22-10h-4v10h4"]
 };
 const createIcon=id=>{
  const svg=document.createElementNS(svgNS,"svg");svg.setAttribute("viewBox","0 0 32 32");svg.setAttribute("focusable","false");svg.setAttribute("aria-hidden","true");svg.classList.add("fa-awards-symbol");
@@ -43,11 +43,7 @@ const createIcon=id=>{
  return svg;
 };
 const wrap=el("div","fa-awards");
-const header=el("header","fa-awards-head");
-const status=el("span","fa-awards-status","AWARDS PENDING","awardsStatus");
-header.append(status);wrap.append(header);
-const notice=el("p","fa-awards-notice","Winners and candidates will appear when verified competition data is available. No awards have been assigned.","awardsNotice");
-notice.setAttribute("role","status");wrap.append(notice);
+
 const sectionNames=[["honours",null,null],["excellence","Individual Excellence","awardsExcellence"],["performance","Performance & Position Awards","awardsPerformance"],["xi","Team of the Season","awardsXi"]];
 for(const [id,name,key] of sectionNames){
  const section=el("section","fa-awards-section fa-awards-"+id);section.setAttribute("aria-labelledby","fa-awards-title-"+id);
