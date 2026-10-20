@@ -92,7 +92,7 @@ test("AWARDS-02-UI-QA-07: manager frozen, player star filled and young U21 outli
 
 test("AWARDS-02-UI-QA-09: playoff bracket optically centered with symmetric 7x7 squares and circle, distinct from the frozen player star",()=>{
  const get=id=>{const line=awards.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
- assert.deepEqual(get("playoff"),["M4 5h7v7H4z","M4 20h7v7H4z","M11 8.5h5V16h5","M11 23.5h5V16","M24 16m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"]);
+ assert.deepEqual(get("playoff"),["M4.5 5h7v7H4.5z","M4.5 20h7v7H4.5z","M11.5 8.5h5V16h5","M11.5 23.5h5V16","M24.5 16m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"]);
  assert.notDeepEqual(get("playoff"),get("player"));
  assert.equal(get("player").length,1,"approved player star unchanged");
 });
