@@ -22,6 +22,8 @@
   const stageKey=division.tier===1?'competitionTabPlayout':'competitionTabPlayoffs';
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
   let menuHasPostseason=false;
+  // Preserve each club crest host (and its loaded image) when the matchday changes.
+  const crestHosts=new Map();
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
     document.querySelector(".app-fixtures-select"));
   const element=(tag,cls="",text="")=>{
@@ -194,6 +196,22 @@
       if(oldResult&&newResult)oldResult.replaceWith(newResult);
       return previous;
     });
+    // Move existing crest hosts into new match rows instead of creating new images.
+    // A club appears once per league round, but can appear in multiple postseason legs.
+    const usedCrests=new Set();
+    for(const item of next){
+      for(const placeholder of [...item.querySelectorAll("[data-club-crest]")]){
+        const id=placeholder.dataset.clubCrest;
+        let hosts=crestHosts.get(id);
+        if(!hosts){hosts=[];crestHosts.set(id,hosts)}
+        if(!hosts.includes(placeholder) && !usedCrests.has(placeholder)){
+          const cached=hosts.find(host=>!usedCrests.has(host));
+          if(cached){placeholder.replaceWith(cached);usedCrests.add(cached);continue}
+          hosts.push(placeholder);
+        }
+        usedCrests.add(placeholder);
+      }
+    }
     if(typeof fields.list.insertBefore==="function"){
       for(let i=0;i<next.length;i++)if(fields.list.children[i]!==next[i])fields.list.insertBefore(next[i],fields.list.children[i]||null);
       while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
