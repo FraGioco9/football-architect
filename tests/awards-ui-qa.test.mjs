@@ -86,7 +86,7 @@ test("AWARDS-02-UI-QA-05: playoff bracket replaces trophy; seven original emblem
  assert.ok(awards.includes('id==="midfielder"?"0 0 512 512"'));
  assert.ok(awards.includes('id==="forward"?"-5.2 3.2 64 64"'));
  assert.ok(css.includes(".fa-awards-card-midfielder .fa-awards-symbol{fill:currentColor;fill-rule:evenodd;stroke:none}"));
- assert.ok(awards.includes('id==="glove"?"0 0 512 512"'));
+ assert.ok(awards.includes('id==="glove"||id==="defender"?"0 0 512 512"'),"Glove and Defender retain approved 512 viewBox");
 });
 
 test("AWARDS-02-UI-QA-06: team eleven uses approved optical offset at unchanged size and weight",()=>{
@@ -103,7 +103,7 @@ test("AWARDS-02-UI-QA-07: manager frozen, player star filled and young U21 outli
  assert.deepEqual(get("player"),["M16 2.7 20.1 11l9.2 1.3-6.7 6.5 1.6 9.2L16 23.7 7.9 28l1.6-9.2-6.7-6.5L12 11Z"]);
  assert.deepEqual(get("young"),["M4 8v10c0 3.8 1.8 6 4.6 6s4.6-2.2 4.6-6V8","M16 12c0-2.7 1.5-4.3 3.9-4.3s3.9 1.6 3.9 4c0 2-1.2 3.5-3.3 5.6L16 24h8","M26 10l2-2v16"]);
  assert.match(css,/fa-awards-card-manager \.fa-awards-symbol,.fa-awards-card-player \.fa-awards-symbol\{fill:currentColor;stroke:none\}/);
- assert.match(css,/fa-awards-card-young \.fa-awards-symbol\{fill:none;stroke:currentColor;stroke-width:2\.5\}/);
+ assert.match(css,/fa-awards-card-young \.fa-awards-symbol\{fill:none;stroke:currentColor;stroke-width:2\.35\}/);
 });
 
 test("AWARDS-02-UI-QA-09: playoff bracket optically centered with symmetric 7x7 squares and circle, distinct from the frozen player star",()=>{
