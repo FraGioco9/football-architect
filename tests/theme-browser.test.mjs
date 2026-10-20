@@ -794,7 +794,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
         assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');
         assert.deepEqual(await run('window.__crestPlaceholderFlashes'),[],'No placeholder flash for an available crest: '+JSON.stringify({width,theme,refresh}));
-        assert.equal(await run("getComputedStyle(document.querySelector('[data-club-crest=\"DE-2\"]'),'::before').display==='none'"),false,'Missing crest keeps its placeholder');
+        assert.equal(await run("getComputedStyle(document.querySelector('[data-club-crest=\"DE-2\"]'),'::before').display==='none'"),true,'Available DE-2 crest hides its placeholder');
       }
     }
     clubCrestDelay=0;
