@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
+import {createPreviewStandings,createPreviewPostseason} from "../tools/dev-standings-preview-data.mjs";
 import {it1Demo} from "./fixtures/it-1-demo.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
@@ -20,7 +21,7 @@ const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
  "app-standings-compact","app-standings-compact-list","app-standings-full",
- "app-search-dialog","division-detail-name"];
+ "app-search-dialog","division-detail-name","app-postseason-bracket","app-postseason-winner"];
 
 function node(tag){
  const children=[],attrs={};
@@ -43,6 +44,12 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  const loaded=[],requested=[],fields=new Map();
  const selected=division?.id??"IT-1";
  shell??=read("app/competitions/"+selected.toLowerCase()+"/index.html");
+ const postseasonSlots=[...shell.matchAll(/data-postseason-position="(\d+)"/g)].map(match=>{const item=node("span");item.dataset.postseasonPosition=match[1];return item});
+ const postseasonNodes={};
+ for(const kind of ['score','row','finalist','resolution','help']){
+  const datasetKey='postseason'+kind[0].toUpperCase()+kind.slice(1);
+  postseasonNodes[kind]=[...shell.matchAll(new RegExp('data-postseason-'+kind+'="([^"<>]+)"','g'))].map(match=>{const item=node(kind==='help'?'button':'span');item.dataset[datasetKey]=match[1];return item});
+ }
  const path="/competitions/"+selected.toLowerCase()+ending;
  const initial=node("main");
  fields.set("main-content",initial);
@@ -62,6 +69,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  });
  // The real browser starts with the complete generated route, including its logo.
  body.innerHTML=shell;
+ for(const button of postseasonNodes.help){const tip=node('span');tip.hidden=true;tip.contains=target=>tip.children.includes(target);fields.set(button.dataset.postseasonHelp,tip);}
  body.className="app-body";
  for(const id of ids)if(!shell.includes('id="'+id+'"')&&!id.startsWith('app-standings-compact')&&id!=='app-standings-full')fields.delete(id);
  const standings=node("div");
@@ -86,9 +94,18 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    if(selector===".app-world-standings")return standingsMarkup?standings:null;
    return null;
   },
+  querySelectorAll(selector){
+   if(selector==="[data-postseason-position]")return postseasonSlots;
+   const kind=selector.match(/^\[data-postseason-(score|row|finalist|resolution|help)\]$/)?.[1];
+   return kind?postseasonNodes[kind]:[];
+  },
   getElementById(id){return fields.get(id)??null},
   createElement(tag){return node(tag)}
  };
+ for(const button of postseasonNodes.help){
+  button.focus=()=>{document.activeElement=button;button.emit('focus')};
+  button.blur=()=>{document.activeElement=null;button.emit('blur')};
+ }
  const location={href:root+path,pathname:path};
  const fakeFetch=async url=>{
   const u=new URL(url);
@@ -101,7 +118,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  const window={faCompetitionModel:competitionModel,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch});
+ runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
@@ -118,7 +135,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   caption.dataset.appI18n="standingsFilledCaption";
   caption.textContent="League standings and recent form.";
  }
- return {document,fields,loaded,requested,body,window};
+ return {document,fields,loaded,requested,body,window,postseasonSlots,postseasonNodes};
 }
 
 test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async()=>{
@@ -408,4 +425,97 @@ test("STANDINGS-OUTCOMES: all divisions share rank bands across desktop and mobi
   const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
   for(const outcome of new Set(expected.filter(Boolean)))assert.ok(html.includes('id="standings-outcome-'+outcome+'"'),division.id+' legend '+outcome);
  }
+});
+
+
+test("POSTSEASON: final participants appear only after 30 rounds and reset across seasons",async()=>{
+ for(const division of manifest.divisions){
+  const r=await simulate({division});
+  assert.ok(r.window.faPostseason,division.id+' API');
+  const bracket=r.fields.get('app-postseason-bracket');
+  assert.equal(bracket.dataset.postseasonQualified,'false');
+  const positions=division.tier===1?[13,14]:[3,6,4,5];
+  assert.deepEqual(r.postseasonSlots.map(slot=>Number(slot.dataset.postseasonPosition)),positions);
+  const html=read('app/competitions/'+division.id.toLowerCase()+'/index.html');
+  assert.ok(html.indexOf('id="competition-tab-standings"')<html.indexOf('id="competition-tab-postseason"'));
+  assert.ok(html.indexOf('id="competition-tab-postseason"')<html.indexOf('id="competition-tab-fixtures"'));
+  assert.ok(html.includes('data-app-i18n="'+(division.tier===1?'competitionTabPlayout':'competitionTabPlayoffs')+'"'));
+  const panel=html.split('id="competition-panel-postseason"')[1].split('id="competition-panel-fixtures"')[0];
+  for(const key of new Set([...panel.matchAll(/data-app-i18n="([A-Za-z0-9]+)"/g)].map(m=>m[1])))
+   assert.equal((read('assets/app.js').match(new RegExp('^      '+key+':','gm'))||[]).length,5,key);
+  assert.doesNotMatch(panel,/>[0-9]+[–—-][0-9]+</,'no invented score');
+  assert.doesNotMatch(panel,/Participants|postseasonPending|postseasonQualified/);
+  if(division.tier===2)for(const round of ['app-knockout-left','app-knockout-right','app-knockout-final'])assert.ok(panel.includes(round));
+  const before=createPreviewStandings(division,29,1).rows;
+  r.window.faPostseason.prepare(before)();
+  assert.ok(r.postseasonSlots.every(slot=>!slot.children.some(c=>c.dataset.clubCrest)));
+  const reset=r.window.faPostseason.snapshot();
+  for(const season of [1,2]){
+   const final=createPreviewStandings(division,30,season).rows;
+   r.window.faPostseason.prepare(final)();
+   assert.equal(bracket.dataset.postseasonQualified,'true');
+   for(const slot of r.postseasonSlots){
+    const club=final[Number(slot.dataset.postseasonPosition)-1].club;
+    assert.equal(slot.children[0].dataset.clubCrest,club.countryId+'-'+club.clubId);
+    assert.equal(slot.children[1].textContent,club.primaryName);
+   }
+   const invalid=final.map(row=>({...row}));invalid[1].club=invalid[0].club;
+   assert.throws(()=>r.window.faPostseason.prepare(invalid),/Invalid postseason/);
+  }
+  reset();assert.equal(bracket.dataset.postseasonQualified,'false');
+  assert.ok(r.postseasonSlots.every(slot=>!slot.children.some(c=>c.dataset.clubCrest)));
+ }
+});
+
+
+test('POSTSEASON-RESULTS: all divisions render staged scores, finalists and winner and clear future results on rollback',async()=>{
+ for(const division of manifest.divisions){
+  const r=await simulate({division}),api=r.window.faPostseason;
+  for(const day of [30,31,32,33,31,30]){
+   const rows=createPreviewStandings(division,Math.min(day,30),1).rows;
+   const results=createPreviewPostseason(division,day,1);
+   api.prepare(rows,results)();
+   const before=r.postseasonNodes.score.map(n=>n.textContent);
+   const invalid=JSON.parse(JSON.stringify(results));invalid.divisionId='INVALID';
+   assert.throws(()=>api.prepare(rows,invalid),/Invalid postseason/);
+   assert.deepEqual(r.postseasonNodes.score.map(n=>n.textContent),before,'Invalid results never partially update the bracket');
+   const restore=api.snapshot();api.prepare(null)();restore();
+   assert.deepEqual(r.postseasonNodes.score.map(n=>n.textContent),before,'Snapshot restores results with qualified clubs');
+   for(const score of r.postseasonNodes.score){
+    const [rawId,side,metric]=score.dataset.postseasonScore.split(':');
+    const id=rawId.replace(/^postseason-/,'');
+    let expected=null;
+    if(id==='final')expected=results.final?.[side==='home'?'homeGoals':'awayGoals'];
+    else{
+     const tie=results.ties.find(t=>t.id===id),clubId=rows[Number(side)-1].club.clubId;
+     if(metric==='aggregate')expected=tie.aggregate?.[tie.clubIds.indexOf(clubId)];
+     else{const game=tie.legs[metric==='first'?0:1];if(game)expected=game.homeId===clubId?game.homeGoals:game.awayGoals;}
+    }
+    assert.equal(score.textContent,expected==null?'—':String(expected),division.id+'/'+day+'/'+score.dataset.postseasonScore);
+   }
+   for(const slot of r.postseasonNodes.finalist){
+    if(results.final)assert.equal(slot.children[0].dataset.clubCrest,division.countryId+'-'+results.final[slot.dataset.postseasonFinalist+'Id']);
+    else assert.ok(slot.children.every(child=>!child.dataset.clubCrest));
+   }
+   const winner=r.fields.get('app-postseason-winner');
+   if(results.winnerId)assert.equal(winner.children[0].dataset.clubCrest,division.countryId+'-'+results.winnerId);
+   else assert.ok(winner.children.every(child=>!child.dataset.clubCrest));
+  }
+  api.prepare(null)();assert.ok(r.postseasonNodes.score.every(s=>s.textContent==='—'));
+ }
+});
+
+test('POSTSEASON-TIPS: score help opens on hover, keyboard focus and tap and dismisses with Escape/outside',async()=>{
+ const r=await simulate({division:manifest.divisions[0]});
+ const button=r.postseasonNodes.help[0],tip=r.fields.get(button.dataset.postseasonHelp);
+ button.emit('pointerenter',{pointerType:'mouse'});assert.equal(tip.hidden,false);
+ button.emit('pointerleave');tip.emit('pointerenter');
+ await new Promise(resolve=>setTimeout(resolve,180));assert.equal(tip.hidden,false,'Tooltip stays hoverable');
+ tip.emit('pointerleave');await new Promise(resolve=>setTimeout(resolve,180));assert.equal(tip.hidden,true);
+ button.focus();assert.equal(tip.hidden,false);
+ r.window.emit('scroll');assert.equal(tip.hidden,false,'Scrolling a focused trigger into view keeps its help open');
+ r.document.emit('keydown',{key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(tip.hidden,true);
+ assert.equal(r.document.activeElement,button,'Escape preserves keyboard focus');
+ button.emit('pointerdown');button.emit('click');assert.equal(tip.hidden,false);
+ r.document.emit('pointerdown',{target:{}});assert.equal(tip.hidden,true);
 });

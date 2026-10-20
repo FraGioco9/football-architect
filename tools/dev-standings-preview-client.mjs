@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { competitionModel, createPreviewStandings, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
+import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -8,7 +8,7 @@ const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
 function readMatchdays(){
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
-  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=competitionModel.schedule.rounds?value:0;
+  const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=DEBUG_MAX_MATCHDAY?value:0;
  }catch{return 0}
 }
 let matchdays=readMatchdays();
@@ -81,7 +81,7 @@ async function setSeason(value){
  return setDebugProgress(SEASON_KEY,value);
 }
 async function setMatchdays(value){
- if(!Number.isInteger(value)||value<0||value>competitionModel.schedule.rounds)return false;
+ if(!Number.isInteger(value)||value<0||value>DEBUG_MAX_MATCHDAY)return false;
  if(value===matchdays)return true;
  return setDebugProgress(ROUNDS_KEY,value);
 }
@@ -377,7 +377,7 @@ if(validPath||indexPath){
   registerDebugControls("general",[{
    type:"range",id:"season",label:"Season",min:1,max:4,step:1,scope:"general",
    value:()=>debugSeason,onChange:setSeason
-  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:competitionModel.schedule.rounds,step:1,scope:"general",
+  },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1,scope:"general",
    value:()=>matchdays,onChange:setMatchdays
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
@@ -404,7 +404,7 @@ if(validPath||indexPath){
     delete document.documentElement.dataset.faDevSeasonTransition;
     return seasonRefresh;
    }
-   document.documentElement.dataset.faDevSeasonTransition="true";
+   // Keep standings visible while detached DEV rows are prepared for a synchronous swap.
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
@@ -540,14 +540,35 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
     if(!isCurrent()||selectedSeason()!==season||debugSeason!==progress.season||matchdays!==progress.matchdays)return;
-    if(restorePrevious)restorePrevious();
+    // Keep the active page, scroll position and focus stable during DEV data swaps.
+    // Only the standings/fixtures/postseason data is rehydrated; never navigate or reload.
+    const scrollHosts=[document.scrollingElement,document.querySelector(".fa-shell-content-scroll"),
+      document.querySelector(".app-world-standing-scroll")].filter(Boolean);
+    const scrollState=scrollHosts.map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
+    const focused=document.activeElement;
     const restoreFixtures=typeof fixturesApi?.snapshot==="function"
       ?fixturesApi.snapshot():null;
     // Only an active season has a "current matchday" shortcut. The router owns
     // the selected round from URL/state, including completed-season archives.
-    const currentRound=previewCurrentMatchday(season,progress);
+    const regularRound=previewCurrentMatchday(season,progress);
+     // Once the post-season starts, the current-round shortcut targets its named fixture stage.
+     const currentRound=progress.matchdays>=30
+       ?(division.tier===1?'playout':'playoffs'):regularRound;
+    const postResults=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
+    const postFixtures=[];
+    for(const tie of postResults.ties)for(const leg of [0,1])postFixtures.push({
+      round:31+leg,homeId:tie.clubIds[leg===0?1:0],awayId:tie.clubIds[leg===0?0:1],
+      homeGoals:null,awayGoals:null,kickoff:null,afterExtraTime:false,penalties:null,...tie.legs[leg]
+    });
+    if(postResults.final)postFixtures.push({round:33,kickoff:null,...postResults.final});
     const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound}):null;
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures}):null;
+    const restorePostseason=window.faPostseason?.snapshot();
+    const commitPostseason=window.faPostseason?.prepare(rows,postResults);
+    // Fast path: reuse the mounted standings DOM, tooltip handlers and club crests.
+    // The original preview cleanup remains active for eventual DEV disable/reset.
+    if(restorePrevious?.refresh && restorePrevious.refresh(rows,commitFixtures,commitPostseason,
+      window.faStandingsMobile?.prepare(rows)))return restorePrevious;
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
@@ -719,6 +740,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       attempt(()=>tooltip.remove());
       if(committed){
        if(restoreFixtures)attempt(restoreFixtures);
+       if(restorePostseason)attempt(restorePostseason);
        attempt(()=>tbody.replaceChildren(...canonicalRows));
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
        attempt(()=>{
@@ -737,6 +759,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     if(commitFixtures)commitFixtures();
     tbody.replaceChildren(fragment);
     commitMobile();
+    if(commitPostseason)commitPostseason();
+    for(const {el,top,left} of scrollState){el.scrollTop=top;el.scrollLeft=left;}
+    if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});
     // Preserve the canonical compact-form marks exactly as rendered. Bind taps
     // directly to those marks and cancel the enclosing <summary> activation.
     const mobileItems=[...mobileList.querySelectorAll(".app-world-mobile-item")];
@@ -757,7 +782,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     languageObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ["lang"]
     });
-    for (const entry of [...entries,...mobileEntries]) {
+    function bindFormEntry(entry){
       const btn = entry.button;
       listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
@@ -779,6 +804,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
         pressedWhenOpen = false;
       });
     }
+    for(const entry of [...entries,...mobileEntries])bindFormEntry(entry);
     listen(document,"pointerdown", e => {
       if (active && !tooltip.contains(e.target) && e.target !== active.button) close();
     });
@@ -789,6 +815,75 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     listen(window,"scroll", place, { passive: true });
     listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
     listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
+    restore.refresh=(nextRows,nextFixtures,nextPostseason,nextMobile)=>{
+      if(restored||!committed)return false;
+      const desktop=new Map([...tbody.rows].map(tr=>[tr.dataset.worldClub,tr]));
+      const compact=new Map([...mobileList.children].map(li=>[li.dataset.worldClub,li]));
+      if(nextRows.some(row=>{
+        const id=row.club.countryId+"-"+row.club.clubId;
+        const tr=desktop.get(id),li=compact.get(id);
+        return !tr||!li||
+          !tr.querySelector(".app-world-form-strip")||!li.querySelector(".app-world-mobile-form");
+      }))return false;
+      close();
+      // Validate the new fixture/postseason data before changing visible standings.
+      if(nextFixtures)nextFixtures();
+      if(nextPostseason)nextPostseason();
+      for(let index=0;index<nextRows.length;index++){
+        const row=nextRows[index],id=row.club.countryId+"-"+row.club.clubId;
+        const tr=desktop.get(id);
+        window.faStandingsOutcomes?.decorate(tr,index+1);
+        tr.cells[0].textContent=String(index+1);
+        const numbers=[row.played,row.won,row.drawn,row.lost,row.gf,row.ga,
+          row.gd>0?"+"+row.gd:row.gd,row.pts];
+        numbers.forEach((number,i)=>{tr.cells[i+2].textContent=String(number)});
+        const strip=tr.querySelector(".app-world-form-strip");
+        const buttons=[...strip.querySelectorAll(".app-world-form-control")];
+        while(buttons.length>row.recent.length){
+          const button=buttons.pop();
+          const index=entries.findIndex(entry=>entry.button===button);
+          if(index>=0)entries.splice(index,1);
+          button.remove();
+        }
+        while(buttons.length<row.recent.length){
+          const button=node("button","app-world-form-dot app-world-form-control");
+          button.type="button";button.setAttribute("aria-haspopup","true");
+          const glyph=node("span","app-world-form-glyph");
+          button.append(glyph);strip.append(button);buttons.push(button);
+          const entry={button,glyph,game:null,ownId:row.club.clubId,latest:false};
+          entries.push(entry);bindFormEntry(entry);
+        }
+        buttons.forEach((button,i)=>{
+          const game=row.recent[i];
+          button.className="app-world-form-dot app-world-form-control app-world-form-"+
+            game.result.toLowerCase()+(i===0?" app-world-form-last":"");
+          const entry=entries.find(item=>item.button===button);
+          if(!entry)throw Error("Missing desktop form entry");
+          entry.game=game;entry.latest=i===0;
+          entry.glyph.textContent=game.result;
+        });
+        tbody.appendChild(tr);
+      }
+      nextMobile(true);
+      const previousMobile=new Map(mobileEntries.map(entry=>[entry.button,entry]));
+      mobileEntries.length=0;
+      for(const row of nextRows){
+        const id=row.club.countryId+"-"+row.club.clubId;
+        const li=compact.get(id);
+        const marks=[...li.querySelectorAll(".app-world-mobile-form .app-world-form-dot")];
+        marks.forEach((mark,index)=>{
+          let entry=previousMobile.get(mark);
+          if(!entry){
+            entry={button:mark,glyph:mark,game:row.recent[index],ownId:row.club.clubId,latest:index===0,mobile:true};
+            bindFormEntry(entry);
+          }
+          entry.game=row.recent[index];entry.latest=index===0;
+          mobileEntries.push(entry);
+        });
+      }
+      translate();
+      return true;
+    };
     return restore;
     } catch(error){restore();throw error}
   } catch (error) {

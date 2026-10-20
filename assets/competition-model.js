@@ -27,6 +27,7 @@
     pairings:profile.capacity*roundsPerLeg/2};
   const views=[
     {id:"standings",key:"competitionTabStandings",label:"Standings"},
+    {id:"postseason",key:"competitionTabPostseason",label:"Playoffs / Playout"},
     {id:"fixtures",key:"competitionTabFixtures",label:"Fixtures"},
     {id:"stats",key:"competitionTabStats",label:"Stats"},
     {id:"history",key:"competitionTabHistory",label:"History"},

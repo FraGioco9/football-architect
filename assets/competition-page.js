@@ -68,12 +68,239 @@
   }
   function decorateStanding(row, position) {
     const outcome = standingOutcome(position);
+    // Debug Settings can reorder the same mounted rows. Always clear the previous
+    // position band before applying the new one, or stale champion/gold highlights remain.
+    if (row.dataset.standingOutcome) delete row.dataset.standingOutcome;
+    if (row.getAttribute?.("aria-describedby")?.startsWith("standings-outcome-")) {
+      row.removeAttribute("aria-describedby");
+    }
     if (outcome) {
       row.dataset.standingOutcome = outcome;
       row.setAttribute("aria-describedby", "standings-outcome-" + outcome);
     }
   }
   window.faStandingsOutcomes = Object.freeze({decorate:decorateStanding});
+
+  function bindPostseasonTips() {
+    let active=null,wasOpen=false,leaveTimer;
+    function close(blur=false) {
+      clearTimeout(leaveTimer);
+      if(!active)return;
+      const previous=active;active=null;previous.tip.hidden=true;
+      if(blur&&document.activeElement===previous.button)previous.button.blur();
+    }
+    for(const button of document.querySelectorAll("[data-postseason-help]")) {
+      const tip=document.getElementById(button.dataset.postseasonHelp);
+      if(!tip)continue;
+      document.body.appendChild(tip);
+      function open() {
+        clearTimeout(leaveTimer);
+        if(active?.button!==button)close();
+        tip.hidden=false;active={button,tip,open};
+        const box=button.getBoundingClientRect(),width=tip.offsetWidth||120,height=tip.offsetHeight||34;
+        const viewportWidth=window.innerWidth||390,viewportHeight=window.innerHeight||700;
+        tip.style.left=Math.max(12,Math.min(box.left+box.width/2-width/2,viewportWidth-width-12))+"px";
+        const above=box.top-height-8;
+        tip.style.top=Math.max(8,Math.min(above>=8?above:box.bottom+8,viewportHeight-height-8))+"px";
+      }
+      button.addEventListener("pointerenter",event=>{if(event.pointerType==="mouse"||event.pointerType==="pen")open()});
+      const leave=()=>{if(document.activeElement!==button)leaveTimer=setTimeout(()=>close(),160)};
+      button.addEventListener("pointerleave",leave);
+      tip.addEventListener("pointerenter",open);
+      tip.addEventListener("pointerleave",leave);
+      button.addEventListener("focus",open);
+      button.addEventListener("blur",()=>{if(active?.button===button)close()});
+      button.addEventListener("pointerdown",()=>{wasOpen=active?.button===button});
+      button.addEventListener("click",()=>{if(wasOpen)close(true);else{button.focus();open()}wasOpen=false});
+    }
+    document.addEventListener("keydown",event=>{if(event.key==="Escape"&&active){close();event.preventDefault();event.stopPropagation()}});
+    document.addEventListener("pointerdown",event=>{if(active&&event.target!==active.button&&!active.button.contains?.(event.target)&&!active.tip.contains(event.target))close(true)});
+    window.addEventListener("resize",()=>close());
+    window.addEventListener("scroll",()=>{if(active&&document.activeElement===active.button)active.open();else close()},{capture:true,passive:true});
+    return close;
+  }
+
+  function createPostseason(division) {
+    const bracket=document.getElementById("app-postseason-bracket");
+    if(!bracket)return;
+    const slots=[...document.querySelectorAll("[data-postseason-position]")];
+    const scores=[...document.querySelectorAll("[data-postseason-score]")];
+    const finalists=[...document.querySelectorAll("[data-postseason-finalist]")];
+    const matchRows=[...document.querySelectorAll("[data-postseason-row]")];
+    const resolutions=[...document.querySelectorAll("[data-postseason-resolution]")];
+    const winner=document.getElementById("app-postseason-winner");
+    // Align playout connector and winner to the actual boundary between team rows.
+    // Text notes below the teams must not affect either position.
+    if(division.tier===1){
+      const left=bracket.querySelector?.(".app-knockout-left");
+      const result=bracket.querySelector?.(".app-knockout-result");
+      const teamRows=left?.querySelectorAll(".app-knockout-team-row");
+      if(left&&result&&teamRows?.length===2){
+        const align=()=>{
+          const first=teamRows[0].getBoundingClientRect();
+          const second=teamRows[1].getBoundingClientRect();
+          const origin=left.getBoundingClientRect();
+          const axis=(first.bottom+second.top)/2-origin.top;
+          left.style.setProperty("--playout-axis",axis+"px");
+          const resultOrigin=result.getBoundingClientRect();
+          const box=result.querySelector(".app-postseason-group");
+          if(box&&window.matchMedia("(min-width:1001px)").matches){
+            const currentMargin=parseFloat(window.getComputedStyle(result).marginTop)||0;
+            result.style.marginTop=(currentMargin+origin.top+axis-resultOrigin.top-box.offsetHeight/2)+"px";
+          }else result.style.removeProperty("margin-top");
+        };
+        const observer=typeof ResizeObserver==="function"?new ResizeObserver(align):null;
+        observer?.observe(left.querySelector(".app-postseason-group")||left);
+        observer?.observe(result.querySelector(".app-postseason-group")||result);
+        window.addEventListener("resize",align);
+        if(typeof requestAnimationFrame==="function")requestAnimationFrame(align);
+      }
+    }
+    // Playoff lines are anchored to the midpoint between team rows, not card height.
+    // Do not move either semifinal, final, or winner box.
+    if(division.tier===2){
+      const semifinals=bracket.querySelectorAll?.(".app-knockout-left,.app-knockout-right")||[];
+      for(const semifinal of semifinals){
+        const teamRows=semifinal.querySelectorAll(".app-knockout-team-row");
+        if(teamRows.length!==2)continue;
+        const alignLine=()=>{
+          const first=teamRows[0].getBoundingClientRect();
+          const second=teamRows[1].getBoundingClientRect();
+          const origin=semifinal.getBoundingClientRect();
+          semifinal.style.setProperty("--playoff-connector-axis",((first.bottom+second.top)/2-origin.top)+"px");
+        };
+        const observer=typeof ResizeObserver==="function"?new ResizeObserver(alignLine):null;
+        observer?.observe(semifinal.querySelector(".app-postseason-group")||semifinal);
+        window.addEventListener("resize",alignLine);
+        if(typeof requestAnimationFrame==="function")requestAnimationFrame(alignLine);
+      }
+    }
+    const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+    const closeTips=bindPostseasonTips();
+    let current={rows:null,results:null};
+    const tieId=id=>id.replace(/^postseason-/,"");
+    function word(key,text) {
+      const node=document.createElement("span");node.dataset.appI18n=key;node.textContent=text;return node;
+    }
+    function clubContent(slot,club,key,label) {
+      if(club){
+        const id=club.countryId+"-"+club.clubId;
+        const existing=slot.querySelector?.("[data-club-crest]");
+        if(existing?.dataset.clubCrest===id){
+          const name=existing.nextElementSibling;
+          if(name&&name.textContent!==club.primaryName)name.textContent=club.primaryName;
+          return;
+        }
+        const name=document.createElement("span");name.textContent=club.primaryName;
+        slot.replaceChildren(createCrestHost(id),name);
+      }
+      else slot.replaceChildren(word(key,label));
+    }
+    function render(rows,results) {
+      closeTips();current={rows,results};
+      const qualified=rows!==null&&rows.every(row=>row.played===model.schedule.rounds);
+      bracket.dataset.postseasonQualified=String(qualified);
+      const ties=new Map((results?.ties||[]).map(tie=>[tie.id,tie]));
+      for(const slot of slots) {
+        const position=Number(slot.dataset.postseasonPosition);
+        if(qualified)clubContent(slot,rows[position-1].club);
+        else {const rank=document.createElement("strong");rank.textContent=String(position);slot.replaceChildren(word("postseasonPosition","League position"),rank)}
+      }
+      for(const slot of finalists) {
+        const home=slot.dataset.postseasonFinalist==="home";
+        const club=results?.final?clubs.get(results.final[home?"homeId":"awayId"]):null;
+        clubContent(slot,club,home?"postseasonFinalHome":"postseasonFinalAway",home?"Better-ranked finalist":"Other finalist");
+      }
+      for(const score of scores) {
+        const [raw,side,metric]=score.dataset.postseasonScore.split(":"),id=tieId(raw);
+        let value=null;
+        if(id==="final")value=results?.final?.[side==="home"?"homeGoals":"awayGoals"];
+        else if(qualified) {
+          const tie=ties.get(id),clubId=rows[Number(side)-1].club.clubId;
+          if(metric==="aggregate")value=tie?.aggregate?.[tie.clubIds.indexOf(clubId)];
+          else {const game=tie?.legs[metric==="first"?0:1];if(game)value=game.homeId===clubId?game.homeGoals:game.awayGoals}
+        }
+        score.textContent=value==null?"—":String(value);
+      }
+      for(const row of matchRows) {
+        const [raw,side]=row.dataset.postseasonRow.split(":"),id=tieId(raw);
+        const clubId=id==="final"?results?.final?.[side+"Id"]:qualified?rows[Number(side)-1].club.clubId:null;
+        const winningId=id==="final"?results?.final?.winnerId:ties.get(id)?.winnerId;
+        row.dataset.postseasonWinner=String(Boolean(clubId&&clubId===winningId));
+      }
+      for(const note of resolutions) {
+        const id=tieId(note.dataset.postseasonResolution);
+        const game=id==="final"?results?.final:ties.get(id)?.legs[1];
+        note.replaceChildren();note.hidden=!game?.afterExtraTime;
+        if(game?.penalties){const score=document.createElement("strong");score.textContent=game.penalties.homeGoals+"–"+game.penalties.awayGoals;note.append(word("postseasonPenalties","Penalties"),score)}
+        else if(game?.afterExtraTime)note.append(word("postseasonExtraTime","After extra time"));
+      }
+      if(winner){
+        winner.replaceChildren();winner.textContent="—";
+        if(results?.winnerId)clubContent(winner,clubs.get(results.winnerId));
+      }
+      window.faAppRenderLanguage?.();
+    }
+    function validateResults(input,rows) {
+      if(input==null)return null;
+      const data=JSON.parse(JSON.stringify(input));
+      const invalid=()=>{throw Error("Invalid postseason results")};
+      const count=value=>Number.isInteger(value)&&value>=0&&value<=30;
+      if(!rows||data.divisionId!==division.id||!Number.isInteger(data.season)||data.season<1||data.season>4||
+         !Number.isInteger(data.matchday)||data.matchday<0||data.matchday>33||!Array.isArray(data.ties))invalid();
+      const qualified=rows.every(row=>row.played===model.schedule.rounds);
+      if(qualified!==(data.matchday>=30))invalid();
+      function game(g,home,away,played) {
+        if(!g||g.homeId!==home||g.awayId!==away||typeof g.afterExtraTime!=="boolean")invalid();
+        if(!played){if(g.homeGoals!==null||g.awayGoals!==null||g.penalties!==null||g.afterExtraTime)invalid();return}
+        if(!count(g.homeGoals)||!count(g.awayGoals))invalid();
+        if(g.penalties!==null){const p=g.penalties;if(!g.afterExtraTime||!p||p.homeId!==home||p.awayId!==away||!count(p.homeGoals)||!count(p.awayGoals)||p.homeGoals===p.awayGoals)invalid()}
+      }
+      function winning(ids,totals,g) {
+        if(totals[0]!==totals[1]){if(g.penalties)invalid();return totals[0]>totals[1]?ids[0]:ids[1]}
+        if(!g.penalties||!g.afterExtraTime)invalid();
+        return g.penalties.homeGoals>g.penalties.awayGoals?g.homeId:g.awayId;
+      }
+      const expected=qualified?(division.tier===1?[["playout",13,14]]:[["semi-one",3,6],["semi-two",4,5]]):[];
+      if(data.ties.length!==expected.length)invalid();
+      data.ties.forEach((tie,index)=>{
+        const [id,better,lower]=expected[index],ids=[rows[better-1].club.clubId,rows[lower-1].club.clubId];
+        if(tie.id!==id||JSON.stringify(tie.seedPositions)!==JSON.stringify([better,lower])||JSON.stringify(tie.clubIds)!==JSON.stringify(ids)||!Array.isArray(tie.legs)||tie.legs.length!==2)invalid();
+        for(let leg=0;leg<2;leg++){
+          const played=data.matchday>=31+leg,g=tie.legs[leg];
+          if(!played){if(g!==null)invalid()}
+          else {game(g,leg===0?ids[1]:ids[0],leg===0?ids[0]:ids[1],true);if(leg===0&&(g.afterExtraTime||g.penalties))invalid()}
+        }
+        const totals=data.matchday>=31?ids.map(id=>tie.legs.filter(Boolean).reduce((sum,g)=>sum+(g.homeId===id?g.homeGoals:g.awayGoals),0)):null;
+        if(JSON.stringify(tie.aggregate)!==JSON.stringify(totals))invalid();
+        const win=data.matchday>=32?winning(ids,totals,tie.legs[1]):null;
+        if(tie.winnerId!==win)invalid();
+      });
+      if(division.tier===2&&data.matchday>=32){
+        const ids=data.ties.map(t=>t.winnerId).sort((a,b)=>rows.findIndex(r=>r.club.clubId===a)-rows.findIndex(r=>r.club.clubId===b));
+        game(data.final,ids[0],ids[1],data.matchday>=33);
+        const win=data.matchday>=33?winning(ids,[data.final.homeGoals,data.final.awayGoals],data.final):null;
+        if(data.final.winnerId!==win||data.winnerId!==win)invalid();
+      }else if(data.final!==null||data.winnerId!==(division.tier===1?data.ties[0]?.winnerId??null:null))invalid();
+      return data;
+    }
+    window.faPostseason=Object.freeze({
+      prepare(rows,results=null) {
+        if(rows===null){if(results!==null)throw Error("Invalid postseason standings");return()=>render(null,null)}
+        if(!Array.isArray(rows)||rows.length!==model.profile.capacity)throw Error("Invalid postseason standings");
+        const seen=new Set();
+        const next=rows.map(row=>{
+          const club=clubs.get(row?.club?.clubId);
+          if(!club||row.club.countryId!==division.countryId||seen.has(club.clubId)||!Number.isInteger(row.played)||row.played<0||row.played>model.schedule.rounds)throw Error("Invalid postseason participant");
+          seen.add(club.clubId);return{club,played:row.played};
+        });
+        const prepared=validateResults(results,next);
+        return()=>render(next,prepared);
+      },
+      snapshot(){const previous=current;return()=>render(previous.rows,previous.results)}
+    });
+    render(null,null);
+  }
 
   // Both presentations receive the same validated row model, never parsed table text.
   function createMobileStandings() {
@@ -176,8 +403,33 @@
         return li;
       });
       if (identities.size !== model.profile.capacity) throw Error("Invalid mobile standings size");
-      return () => {
-        list.replaceChildren(...items);
+      return (incremental=false) => {
+        if(incremental && list.children.length===items.length){
+          // Reuse club cards, expanded details and crest hosts across DEV progress changes.
+          const existing=new Map([...list.children].map(item=>[item.dataset.worldClub,item]));
+          const sync=(target,source)=>{
+            if(target.nodeType!==source.nodeType||target.nodeName!==source.nodeName){
+              target.replaceWith(source);return source;
+            }
+            if(target.nodeType===Node.TEXT_NODE){if(target.nodeValue!==source.nodeValue)target.nodeValue=source.nodeValue;return target}
+            if(target.nodeType!==Node.ELEMENT_NODE)return target;
+            for(const attr of [...target.attributes])if(!source.hasAttribute(attr.name)&&attr.name!=="open")target.removeAttribute(attr.name);
+            for(const attr of [...source.attributes])if(target.getAttribute(attr.name)!==attr.value)target.setAttribute(attr.name,attr.value);
+            const oldChildren=[...target.childNodes],newChildren=[...source.childNodes];
+            for(let i=0;i<newChildren.length;i++){
+              if(i>=oldChildren.length)target.append(newChildren[i]);
+              else sync(oldChildren[i],newChildren[i]);
+            }
+            while(target.childNodes.length>newChildren.length)target.lastChild.remove();
+            return target;
+          };
+          for(const item of items){
+            const current=existing.get(item.dataset.worldClub);
+            if(!current)throw Error("Missing mobile standings identity");
+            sync(current,item);
+            list.appendChild(current);
+          }
+        }else list.replaceChildren(...items);
         updateVisibility();
         window.faAppRenderLanguage?.();
       };
@@ -435,6 +687,7 @@
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
+    createPostseason(division);
     for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
       await loadScript(script);
   }

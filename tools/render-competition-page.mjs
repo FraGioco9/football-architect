@@ -108,8 +108,24 @@ function renderRules(d,neutral,attrs,key,label){
  metric("rulesWin","Win","3"),metric("rulesDraw","Draw","1"),metric("rulesLoss","Loss","0")
  ].join("\n")}\n              </dl>`)}\n${section("rules-ranking","rulesRankingTitle","League ranking",paragraph("rulesRankingBody","Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw."))}\n${section("rules-outcomes","rulesOutcomesTitle","Sporting outcomes",outcomes)}${playSection?"\n"+playSection:""}\n              <strong id="app-competition-level" hidden>${neutral?"—":d.tier}</strong>\n            </div>\n          </section>`;
 }
+const postseasonContent = (d,neutral) => {
+ const word=(key,text)=>`<span data-app-i18n="${key}">${text}</span>`;
+ const seed=position=>`<span class="app-postseason-team" data-postseason-position="${position}">${word("postseasonPosition","League position")} <strong>${position}</strong></span>`;
+ const score=(key,label,id,side,metric)=>`<span class="app-knockout-score" role="cell"><span class="sr-only" data-app-i18n="${key}">${label}</span><strong data-postseason-score="${id}:${side}:${metric}">—</strong></span>`;
+ const head=(single,id)=>`<div class="app-knockout-score-head${single?" app-knockout-single":""}" role="row"><span role="columnheader" class="sr-only" data-app-i18n="standingsClub">Club</span>${(single?[["postseasonSingleMatch","Single match","—"]]:[["postseasonFirstLeg","First leg","1"],["postseasonSecondLeg","Second leg","2"],["postseasonAggregate","Aggregate","Σ"]]).map(([key,label,symbol],index)=>`<span role="columnheader" class="app-knockout-column"><button type="button" class="app-knockout-help" data-postseason-help="${id}-tip-${index}" aria-describedby="${id}-tip-${index}" data-app-aria="${key}"><span aria-hidden="true">${symbol}</span></button><span id="${id}-tip-${index}" role="tooltip" class="app-knockout-tooltip" data-app-i18n="${key}" hidden>${label}</span></span>`).join("")}</div>`;
+ const row=(team,homeKey,homeLabel,id,side,single=false)=>`<div class="app-knockout-team-row${single?" app-knockout-single":""}" role="row" data-postseason-row="${id}:${side}"><div class="app-knockout-identity" role="rowheader">${team}${homeKey?`<span class="app-knockout-home" data-app-i18n="${homeKey}">${homeLabel}</span>`:""}</div>${single?score("postseasonSingleMatch","Single match",id,side,"final"):score("postseasonFirstLeg","First leg",id,side,"first")+score("postseasonSecondLeg","Second leg",id,side,"second")+score("postseasonAggregate","Aggregate",id,side,"aggregate")}</div>`;
+ const tie=(id,key,label,better,lower)=>`<section class="app-postseason-group" aria-labelledby="${id}" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="${id}" data-app-i18n="${key}">${label}</h3><div role="table" aria-labelledby="${id}">${head(false,id)}${row(seed(better),"postseasonHomeReturn","Home in return leg",id,better)}${row(seed(lower),"postseasonHomeFirst","Home in first leg",id,lower)}</div><p class="app-knockout-resolution" data-postseason-resolution="${id}" hidden></p></section>`;
+ if(neutral)return `<p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>`;
+ const winner=`<div class="app-knockout-round app-knockout-result"><section class="app-postseason-group app-postseason-winner" aria-labelledby="postseason-winner" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="postseason-winner" data-app-i18n="postseasonWinner">Winner</h3><strong id="app-postseason-winner" class="app-knockout-winner-name">—</strong></section></div>`;
+ const final=`<div class="app-knockout-round app-knockout-final"><section class="app-postseason-group app-postseason-final" aria-labelledby="postseason-final" data-standing-outcome="playoff"><h3 id="postseason-final" data-app-i18n="postseasonFinal">Final</h3><div role="table" aria-labelledby="postseason-final">${head(true,"final")}${row(`<span class="app-postseason-team" data-postseason-finalist="home">${word("postseasonFinalHome","Better-ranked finalist")}</span>`,null,null,"final","home",true)}${row(`<span class="app-postseason-team" data-postseason-finalist="away">${word("postseasonFinalAway","Other finalist")}</span>`,null,null,"final","away",true)}</div><p class="app-knockout-resolution" data-postseason-resolution="final" hidden></p></section></div>`;
+ const bracket=d.tier===1
+  ?`<div class="app-knockout-round app-knockout-left">${tie("postseason-playout","rulesPlayoutTitle","Relegation play-out",13,14)}</div>${winner}`
+  :`<div class="app-knockout-round app-knockout-left">${tie("postseason-semi-one","postseasonSemiOne","Semi-final 1",3,6)}</div><div class="app-knockout-round app-knockout-right">${tie("postseason-semi-two","postseasonSemiTwo","Semi-final 2",4,5)}</div>${final}${winner}`;
+ return `<div id="app-postseason-bracket" class="app-postseason-grid${d.tier===1?" app-postseason-playout":""}">${bracket}</div>`;
+};
 const competitionTabs = function competitionTabs(d,standings,neutral) {
- const views=model.views;
+ const views=model.views.map(view=>view.id==="postseason"&&!neutral
+  ?{...view,key:d.tier===1?"competitionTabPlayout":"competitionTabPlayoffs",label:d.tier===1?"Playout":"Playoffs"}:view);
  const nav=views.map(({id,key,label},i)=>
   `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`
  ).join("\n");
@@ -122,6 +138,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
  const panels=views.map(({id,key,label},i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
+  if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
   if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent()}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);

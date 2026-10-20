@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
+import {createPreviewStandings,createPreviewPostseason} from '../tools/dev-standings-preview-data.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const divisions=JSON.parse(read('app/competitions/_shared/manifest.json')).divisions;
 
@@ -28,11 +28,11 @@ function node(tag='div'){
  return n;
 }
 function setup(d=divisions[0]){
- const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number'].map(id=>['app-fixtures-'+id,node()]));
+ const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
  const choices=Array.from({length:30},(_,i)=>({...node('button'),id:"app-fixtures-round-option-"+(i+1),dataset:{fixtureRoundChoice:String(i+1),menuValue:String(i+1)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
- const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch){if(patch.matchday!==undefined&&(!Number.isInteger(patch.matchday)||patch.matchday<1||patch.matchday>30))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
+ const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&patch.matchday!=='playoffs'&&patch.matchday!=='playout'&&(!Number.isInteger(patch.matchday)||patch.matchday<1||patch.matchday>30))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
  const window={faCompetitionModel:competitionModel,faCompetitionDivision:d,faCompetitionRoute:route,faAppRenderLanguage(){}};
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
@@ -56,8 +56,9 @@ test('FIXTURES-02: eight games per round, stable navigation and real score/null 
   assert.equal(list.children.length,8);assert.ok(list.children.every(x=>x.dataset.fixtureRound==='16'));
   assert.ok(!contents(list).includes(' – '),'future fixtures do not reveal generated future scores');
   fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'17');
-  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,true);
-  fields.get('app-fixtures-next').emit('click');assert.equal(round.value,'30');
+  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,false);
+  fields.get('app-fixtures-next').emit('click');assert.equal(route.get().matchday,d.tier===1?'playout':'playoffs');
+   route.set({matchday:30});
   const restore=view.snapshot();view.prepare(null)();assert.equal(list.children.length,0);restore();
   assert.equal(list.children.length,8);assert.equal(round.value,'30');
  }
@@ -160,4 +161,67 @@ test('FIXTURES-08: played scores have separate home, separator and away cells',(
   assert.deepEqual(score.children.map(n=>n.className),['app-fixture-goals','app-fixture-separator','app-fixture-goals']);
   assert.equal(contents(score),homeGoals+' – '+awayGoals);
  }
+});
+
+const postseasonSchedule=(d,day)=>{
+ const result=createPreviewPostseason(d,day),games=[];
+ for(const tie of result.ties)for(const [leg,round] of [[0,31],[1,32]])games.push({
+  round,homeId:tie.clubIds[leg===0?1:0],awayId:tie.clubIds[leg===0?0:1],kickoff:null,
+  homeGoals:null,awayGoals:null,afterExtraTime:false,penalties:null,...tie.legs[leg]});
+ if(result.final)games.push({round:33,kickoff:null,...result.final});
+ return games;
+};
+test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qualification',()=>{
+ for(const d of divisions){
+  const {view,fields,route}=setup(d),key=d.tier===1?'playout':'playoffs';
+  view.prepare(schedule(d,29),{postseason:postseasonSchedule(d,29)})();
+  route.set({matchday:30});assert.equal(fields.get('app-fixtures-next').disabled,false);
+  for(const day of [30,31,32,33]){
+   const games=postseasonSchedule(d,day);
+   view.prepare(schedule(d,30),{postseason:games})();route.set({matchday:30});
+   assert.equal(fields.get('app-fixtures-next').disabled,false,'qualified post-season follows day 30');
+   fields.get('app-fixtures-next').emit('click');assert.equal(route.get().matchday,key);
+   assert.equal(fields.get('app-fixtures-round-label').hidden,true);
+   assert.equal(fields.get('app-fixtures-next').disabled,true);
+   const rows=fields.get('app-fixtures-list').children.filter(n=>n.className==='app-fixture-match');
+   assert.equal(rows.length,d.tier===1?2:5);
+   assert.deepEqual(rows.slice(0,games.length).map(row=>row.dataset.fixtureMatch),[...games].sort((a,b)=>a.round-b.round).map(g=>g.round+':'+g.homeId+':'+g.awayId));
+   const walk=n=>[n,...n.children.flatMap(walk)];
+   const scores=walk(fields.get('app-fixtures-list')).filter(n=>n.className==='app-fixture-goals');
+   assert.equal(scores.length,games.filter(g=>g.homeGoals!==null).length*2);
+   const restore=view.snapshot();view.prepare(schedule(d,29),{postseason:[]})();
+   assert.equal(route.get().matchday,key,'rollback preserves the placeholder post-season route');
+   restore();route.set({matchday:key});assert.equal(fields.get('app-fixtures-list').children.filter(n=>n.className==='app-fixture-match').length,rows.length);
+   fields.get('app-fixtures-previous').emit('click');assert.equal(route.get().matchday,30);
+  }
+  view.prepare(null)();assert.equal(fields.get('app-fixtures-toolbar').hidden,true);
+ }
+});
+test('FIXTURES-POSTSEASON: invalid extra fixtures fail before mutating the league or playoff view',()=>{
+ const d=divisions.find(d=>d.tier===2),{view,fields,route}=setup(d),games=postseasonSchedule(d,33);
+ view.prepare(schedule(d,30),{postseason:games})();route.set({matchday:'playoffs'});
+ const before=fields.get('app-fixtures-list').children;
+ const wrongFinal=games.map(g=>g.round===33?{...g,homeId:games[0].homeId,awayId:games[0].awayId,afterExtraTime:false,penalties:null}:g);
+ const unplayedFirst=games.map(g=>g.round===31?{...g,homeGoals:null,awayGoals:null}:g);
+ for(const invalid of [games.slice(1),games.map((g,i)=>i?g:{...g,homeId:999}),games.map((g,i)=>i?g:{...g,round:34}),games.map((g,i)=>i?g:{...g,awayGoals:null}),games.map((g,i)=>i?g:{...g,awayId:g.homeId}),wrongFinal,unplayedFirst]){
+  assert.throws(()=>view.prepare(schedule(d,30),{postseason:invalid}));assert.equal(fields.get('app-fixtures-list').children,before);
+ }
+});
+
+// Regression: Debug progress must not detach mounted crest hosts on incremental updates.
+test("DEBUG-CREST-01 preserves mounted standings and Fixtures crest hosts",()=>{
+ const dev=readFileSync(new URL("../tools/dev-standings-preview-client.mjs",import.meta.url),"utf8");
+ const fixtures=readFileSync(new URL("../assets/competition-fixtures.js",import.meta.url),"utf8");
+ assert.match(dev,/if\(restorePrevious\?\.refresh[\s\S]*?return restorePrevious;/);
+ assert.match(fixtures,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
+ assert.match(fixtures,/return previous;/);
+ assert.match(fixtures,/const next=matches\.map\(item=>\{/);
+ assert.match(fixtures,/if\(typeof fields\.list\.insertBefore==="function"\)/);
+});
+
+test("STANDINGS-DEBUG-OUTCOME-01 clears stale winner and position bands",()=>{
+ const page=read("assets/competition-page.js");
+ assert.match(page,/if \(row\.dataset\.standingOutcome\) delete row\.dataset\.standingOutcome;/);
+ assert.match(page,/row\.getAttribute\?\.\("aria-describedby"\)\?\.startsWith\("standings-outcome-"\)/);
+ assert.match(page,/if \(outcome\) \{\s*row\.dataset\.standingOutcome = outcome;/);
 });

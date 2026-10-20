@@ -189,6 +189,7 @@
           <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>
           <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
             <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-postseason" aria-controls="competition-panel-postseason" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPostseason">Playoffs / Playout</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
@@ -223,6 +224,8 @@
             </div>
           </div>
           </div>
+          <section id="competition-panel-postseason" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-postseason" tabindex="0" hidden><p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>
+          </section>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
               <div class="app-fixtures-navigation">

@@ -8,7 +8,7 @@ import {tmpdir} from "node:os";
 import {join,extname} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {stageProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
-import {createPreviewStandings} from "../tools/dev-standings-preview-data.mjs";
+import {createPreviewStandings,createPreviewPostseason} from "../tools/dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "../tools/dev-competition-stats-data.mjs";
 import {repositoryRoot,publicRequestFile} from "../tools/publication-guard.mjs";
 
@@ -114,6 +114,9 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await cmd("Page.enable");
   await cmd("Network.enable");
   await cmd("Runtime.enable");
+  // Headless CDP can update activeElement without dispatching focus while the
+  // document's window is inactive. Keyboard assertions need an active document.
+  await cmd("Emulation.setFocusEmulationEnabled",{enabled:true});
   const divisions=JSON.parse(readFileSync(join(artifact,"app/competitions/_shared/manifest.json"),"utf8")).divisions;
   const standingsSnapshot="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,row.cells[9]?.textContent])";
   const verifySeason=async(season,matchdays=10)=>{
@@ -191,9 +194,70 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    await run("document.querySelector('[data-dev-control-row=matchdays] .fa-dev-number-arrow[data-step=\""+step+"\"]').click()");
    await until("sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+value+"' && !document.querySelector('[data-dev-control=matchdays-number]').disabled");
   }
-  await run("document.querySelector('[data-dev-control=matchdays-number]').value='31';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await run("document.querySelector('[data-dev-control=matchdays-number]').value='34';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"12");
   assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-matchdays')"),"12");
+  // Post-season progress affects the bracket, while league Stats stop at day 30.
+  for(const divisionId of ['IT-1','IT-2']){
+   await cmd("Page.navigate",{url:origin+"/competitions/"+divisionId.toLowerCase()+"?season=1&view=postseason"});
+   await until("document.readyState==='complete' && !!window.faPostseason && !!document.querySelector('[data-dev-control=matchdays-number]')");
+   assert.equal(await run("document.querySelector('[data-dev-control=matchdays]').max"),'33');
+   const division=divisions.find(d=>d.id===divisionId);
+   for(const day of [30,31,32,33,31,29]){
+    await run("document.querySelector('[data-dev-control=matchdays-number]').value='"+day+"';document.querySelector('[data-dev-control=matchdays-number]').dispatchEvent(new Event('change',{bubbles:true}))");
+    await until("!document.querySelector('[data-dev-control=matchdays-number]').disabled && sessionStorage.getItem('football-architect:standings-dev-matchdays')==='"+day+"'");
+    const results=createPreviewPostseason(division,day,1);
+    const expectedScores=results.ties.reduce((n,t)=>n+t.legs.filter(Boolean).length*2+(t.aggregate?2:0),0)+(day===33&&division.tier===2?2:0);
+    await until("[...document.querySelectorAll('[data-postseason-score]')].filter(n=>n.textContent!=='—').length==="+expectedScores);
+    assert.equal(await run("document.querySelector('#app-postseason-winner [data-club-crest]')?.dataset.clubCrest||null"),results.winnerId?division.countryId+'-'+results.winnerId:null);
+    if(day===30){
+     for(const width of [1440,390,320]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
+      const heights=await run("(()=>{const table=document.querySelector('#app-postseason-bracket [role=table]'),rows=[...table.querySelectorAll('[data-postseason-row]')];return rows.map(row=>row.getBoundingClientRect().height)})()");
+      assert.ok(Math.abs(heights[0]-heights[1])<1,divisionId+' equally sized rows at '+width);
+      const size=await run("(()=>{const row=document.querySelector('[data-postseason-row]'),host=row.querySelector('[data-club-crest]'),before=row.getBoundingClientRect().height,original=host.dataset.clubCrestLoaded;host.dataset.clubCrestLoaded='true';const loaded=row.getBoundingClientRect().height;if(original===undefined)delete host.dataset.clubCrestLoaded;else host.dataset.clubCrestLoaded=original;return {before,loaded}})()");
+      assert.equal(size.before,size.loaded,'Loaded crests and missing-logo fallback preserve row height');
+     }
+     await cmd('Emulation.clearDeviceMetricsOverride');
+    }
+    await run("document.getElementById('competition-tab-fixtures').click()");
+    const stage=division.tier===1?'playout':'playoffs';
+    assert.equal(await run("!document.querySelector('[data-fixture-round-choice="+stage+"]').hidden"),true);
+    if(day>=30){
+     await run("document.getElementById('app-fixtures-round').click();document.querySelector('[data-fixture-round-choice="+stage+"]').click()");
+     const count=division.tier===1?2:5;
+     await until("new URL(location.href).searchParams.get('matchday')==='"+stage+"' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length==="+count);
+     const played=day<31?0:division.tier===1?Math.min(day-30,2):day===31?2:day===32?4:5;
+     assert.equal(await run("document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length"),played*2);
+     if(results.final?.penalties)assert.equal(await run("[...document.querySelectorAll('#app-fixtures-list .app-fixture-match')].find(n=>n.dataset.fixtureRound==='33').querySelector('.app-fixture-status strong')?.textContent.trim()"),results.final.penalties.homeGoals+'–'+results.final.penalties.awayGoals,'Shootout score survives translation');
+     assert.equal(await run("document.getElementById('app-fixtures-round-label').hidden"),true);
+     if(day===33){
+      await cmd('Page.reload',{ignoreCache:true});
+      await until("!!window.faFixtures && !document.querySelector('[data-dev-control=matchdays-number]')?.disabled && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length==="+count);
+      assert.equal(await run("window.faCompetitionRoute.get().matchday"),stage,'Named round survives refresh');
+     }
+    }else {
+      assert.equal(await run("window.faCompetitionRoute.get().matchday"),stage,'Rollback retains postseason placeholders');
+      assert.equal(await run("document.querySelectorAll('#app-fixtures-list .app-fixture-match').length"),division.tier===1?2:(day<32?4:5));
+     }
+    await run("document.getElementById('competition-tab-stats').click()");
+    await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='"+(Math.min(day,30)*8)+"'");
+    await run("document.getElementById('competition-tab-postseason').click()");
+   }
+   assert.equal(await run('document.hasFocus()'),true,'Keyboard audit has an active document');
+   const focusState=await run("(()=>{const b=document.querySelector('[data-postseason-help]');document.getElementById('competition-tab-postseason').focus({preventScroll:true});b.focus();return {focused:document.activeElement===b,hidden:document.getElementById(b.getAttribute('aria-describedby')).hidden}})()");
+   assert.equal(focusState.focused,true,'Keyboard focus reaches score-column help');
+   assert.equal(focusState.hidden,false,divisionId+' header help opens when keyboard focus enters: '+JSON.stringify(focusState));
+   assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),false,divisionId+' focused help remains visible');
+   const tipStyle=await run("(()=>{const b=document.querySelector('[data-postseason-help]'),t=document.getElementById(b.getAttribute('aria-describedby'));return {border:getComputedStyle(b).borderBottomWidth,animation:getComputedStyle(t).animationName}})()");
+   assert.equal(tipStyle.border,'0px','Score headers have no underline');
+   assert.equal(tipStyle.animation,'knockout-tip-in','Score help animates on opening');
+   await cmd('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+   assert.equal(await run("getComputedStyle(document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby'))).animationName"),'none');
+   await cmd('Emulation.setEmulatedMedia',{features:[]});
+   await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+   assert.equal(await run("document.getElementById(document.querySelector('[data-postseason-help]').getAttribute('aria-describedby')).hidden"),true);
+  }
   await run("document.querySelector('[data-dev-control=reset-page]').click()");
   await until("sessionStorage.getItem('football-architect:standings-dev-preview')==='on' && sessionStorage.getItem('football-architect:standings-dev-matchdays')===null && !document.querySelector('[data-dev-control=reset-page]').disabled");
   assert.equal(await run("document.querySelector('[data-dev-control=matchdays-number]').value"),"0");

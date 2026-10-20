@@ -8,6 +8,7 @@ const {rounds,roundsPerLeg,matchesPerRound,matches,pairings:pairingCount}=compet
 export const PREVIEW_RULES=Object.freeze({win:3,draw:1,loss:0});
 export const comparePreviewRows=(a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.clubId-b.club.clubId;
 export const PREVIEW_SCHEMA_VERSION = 1;
+export const DEBUG_MAX_MATCHDAY = competitionModel.schedule.rounds + 3;
 const DIVISION_ID = /^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/;
 
 function assertDivision(division) {
@@ -106,13 +107,14 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
 
 // The selected season/day is a progress boundary, never a catalogue of future results.
 export function createPreviewHistory(division, season, matchdays) {
-  const current=createPreviewStandings(division,matchdays,season);
+  const leagueDays=previewSeasonMatchdays(season,{season,matchdays});
+  const current=createPreviewStandings(division,leagueDays,season);
   const completed=[];
   for(let previous=1;previous<season;previous++)
     completed.push(createPreviewStandings(division,rounds,previous));
   const played=[...completed];
   if(matchdays>0)played.push(current);
-  if(matchdays===rounds)completed.push(current);
+  if(leagueDays===rounds)completed.push(current);
   return {completed,played};
 }
 
@@ -123,19 +125,75 @@ export function readPreviewProgress(storage) {
     }catch{return fallback}
   };
   return {season:read("football-architect:standings-dev-season",1,4,1),
-    matchdays:read("football-architect:standings-dev-matchdays",0,rounds,0)};
+    matchdays:read("football-architect:standings-dev-matchdays",0,DEBUG_MAX_MATCHDAY,0)};
 }
 // A completed or not-yet-reached season has no upcoming matchday shortcut.
-// Matchday 30 is the final played round, not an imaginary Matchday 31.
+// The league calendar still ends at 30; days 31–33 belong only to post-season brackets.
 export function previewCurrentMatchday(season,progress) {
   const played=previewSeasonMatchdays(season,progress);
   return season>progress.season || played===rounds ? null : played+1;
 }
 
-export function previewSeasonMatchdays(season,progress) {
+export function previewSeasonProgress(season,progress) {
   if(!Number.isInteger(season)||season<1||season>4||
     !Number.isInteger(progress?.season)||progress.season<1||progress.season>4||
-    !Number.isInteger(progress.matchdays)||progress.matchdays<0||progress.matchdays>rounds)
+    !Number.isInteger(progress.matchdays)||progress.matchdays<0||progress.matchdays>DEBUG_MAX_MATCHDAY)
     throw Error("Invalid DEV progress");
-  return season<progress.season?rounds:season===progress.season?progress.matchdays:0;
+  return season<progress.season?DEBUG_MAX_MATCHDAY:season===progress.season?progress.matchdays:0;
+}
+
+
+// Keep league tables, fixture navigation and statistics bounded independently of Debug progress.
+export function previewSeasonMatchdays(season,progress) {
+  return Math.min(rounds,previewSeasonProgress(season,progress));
+}
+
+// Fictional post-season results are private, deterministic and revealed only at their played stage.
+export function createPreviewPostseason(division,matchday,season=1) {
+  assertDivision(division);
+  previewSeasonProgress(season,{season,matchdays:matchday});
+  const result={divisionId:division.id,season,matchday,ties:[],final:null,winnerId:null};
+  if(matchday<rounds)return result;
+  const rows=createPreviewStandings(division,rounds,season).rows;
+  const clubAt=position=>rows[position-1].club.clubId;
+  const random=id=>randomSource("FA-POSTSEASON-DEV-v1:"+division.id+":"+season+":"+id);
+  const game=(homeId,awayId,rng)=>({homeId,awayId,homeGoals:Math.floor(rng()*5),awayGoals:Math.floor(rng()*5),afterExtraTime:false,penalties:null});
+  function resolve(game,rng,homeBase=0,awayBase=0) {
+    if(homeBase+game.homeGoals!==awayBase+game.awayGoals)return;
+    game.afterExtraTime=true;
+    game.homeGoals+=Math.floor(rng()*2);game.awayGoals+=Math.floor(rng()*2);
+    if(homeBase+game.homeGoals===awayBase+game.awayGoals){
+      const homeWins=rng()<.5,winnerGoals=3+Math.floor(rng()*3);
+      game.penalties={homeId:game.homeId,awayId:game.awayId,
+        homeGoals:homeWins?winnerGoals:winnerGoals-1,awayGoals:homeWins?winnerGoals-1:winnerGoals};
+    }
+  }
+  function tie(id,betterPosition,lowerPosition) {
+    const better=clubAt(betterPosition),lower=clubAt(lowerPosition),rng=random(id);
+    const first=game(lower,better,rng),second=game(better,lower,rng);
+    resolve(second,rng,first.awayGoals,first.homeGoals);
+    const aggregate=[first.awayGoals+second.homeGoals,first.homeGoals+second.awayGoals];
+    const winner=aggregate[0]!==aggregate[1]?(aggregate[0]>aggregate[1]?better:lower):
+      second.penalties.homeGoals>second.penalties.awayGoals?better:lower;
+    return {id,seedPositions:[betterPosition,lowerPosition],clubIds:[better,lower],
+      legs:[matchday>=31?first:null,matchday>=32?second:null],
+      aggregate:matchday>=32?aggregate:matchday>=31?[first.awayGoals,first.homeGoals]:null,
+      winnerId:matchday>=32?winner:null};
+  }
+  if(division.tier===1){
+    result.ties=[tie("playout",13,14)];
+    result.winnerId=result.ties[0].winnerId;
+    return result;
+  }
+  result.ties=[tie("semi-one",3,6),tie("semi-two",4,5)];
+  if(matchday>=32){
+    const finalists=result.ties.map(t=>t.winnerId).sort((a,b)=>rows.findIndex(r=>r.club.clubId===a)-rows.findIndex(r=>r.club.clubId===b));
+    const rng=random("final"),final=game(finalists[0],finalists[1],rng);
+    resolve(final,rng);
+    const winner=final.homeGoals!==final.awayGoals?(final.homeGoals>final.awayGoals?final.homeId:final.awayId):
+      final.penalties.homeGoals>final.penalties.awayGoals?final.homeId:final.awayId;
+    result.final=matchday>=33?{...final,winnerId:winner}:{homeId:final.homeId,awayId:final.awayId,homeGoals:null,awayGoals:null,afterExtraTime:false,penalties:null,winnerId:null};
+    result.winnerId=result.final.winnerId;
+  }
+  return result;
 }

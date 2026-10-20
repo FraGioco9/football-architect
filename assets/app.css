@@ -304,7 +304,7 @@ html{scroll-padding-top:72px}
 @media(max-width:620px){.app-world-standing-scroll{display:none!important}.app-world-standings{overflow:hidden}.app-world-mobile-name{font-size:12px}}
 @media(max-width:360px){.app-world-mobile-summary{grid-template-columns:21px minmax(0,1fr) 36px;column-gap:4px;padding:8px 5px}.app-world-mobile-points{font-size:15px}.app-world-mobile-name{font-size:11.5px}}
 
-/* Six competition views share the same page and never fabricate data. */
+/* Competition views share the same page and never fabricate data. */
 .app-competition-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
 .app-competition-tabs::-webkit-scrollbar{height:5px}
 .app-competition-tabs::-webkit-scrollbar-track{background:transparent}
@@ -312,6 +312,7 @@ html{scroll-padding-top:72px}
 .app-competition-tab:hover{color:var(--text);background:rgba(100,203,169,.08)}
 html:not([data-competition-view]) .app-competition-tab.is-active,
 html[data-competition-view="standings"] #competition-tab-standings,
+html[data-competition-view="postseason"] #competition-tab-postseason,
 html[data-competition-view="fixtures"] #competition-tab-fixtures,
 html[data-competition-view="stats"] #competition-tab-stats,
 html[data-competition-view="history"] #competition-tab-history,
@@ -413,6 +414,7 @@ html[data-theme="light"] .app-world-club-crest-placeholder{border-color:#9BB9AA;
 html[data-theme="light"] .app-competition-tab:hover{background:#EAF4EE}
 html[data-theme="light"]:not([data-competition-view]) .app-competition-tab.is-active,
 html[data-theme="light"][data-competition-view="standings"] #competition-tab-standings,
+html[data-theme="light"][data-competition-view="postseason"] #competition-tab-postseason,
 html[data-theme="light"][data-competition-view="fixtures"] #competition-tab-fixtures,
 html[data-theme="light"][data-competition-view="stats"] #competition-tab-stats,
 html[data-theme="light"][data-competition-view="history"] #competition-tab-history,
@@ -489,7 +491,9 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-fixture-home{flex-direction:row-reverse;text-align:right}
 .app-fixture-name{min-width:0;overflow-wrap:anywhere}
 .app-fixture-score{display:grid;grid-template-columns:2ch 1ch 2ch;text-align:center;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.app-fixture-pending{grid-column:2}
+.app-fixture-pending{grid-column:2;justify-self:center;text-align:center}
+/* A single pending score occupies the centre track, regardless of surrounding placeholders. */
+.app-fixture-score:has(.app-fixture-pending){justify-content:center}
 .app-fixture-separator{white-space:normal}
 .app-fixture-result{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;text-align:center}
 .app-fixture-status,.app-fixture-stadium{color:var(--muted);font-size:11px;line-height:1.4;max-width:100%;overflow-wrap:anywhere}
@@ -508,6 +512,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 
 /* Prevent a different view/season flashing before URL state is bound. */
 html[data-competition-view="standings"] .app-competition-panel:not(#competition-panel-standings){display:none}
+html[data-competition-view="postseason"] .app-competition-panel:not(#competition-panel-postseason){display:none}
 html[data-competition-view="fixtures"] .app-competition-panel:not(#competition-panel-fixtures){display:none}
 html[data-competition-view="stats"] .app-competition-panel:not(#competition-panel-stats){display:none}
 html[data-competition-view="history"] .app-competition-panel:not(#competition-panel-history){display:none}
@@ -690,3 +695,89 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-standings-legend li>span:last-child{overflow-wrap:anywhere}
 .app-standings-legend-swatch{flex:none;width:12px;height:12px;border-radius:3px;background:var(--standing-outcome-color)}
 @media(max-width:620px){.app-standings-legend ul{display:grid;gap:8px}.app-standings-legend{padding:10px}}
+
+/* Symmetric knockout bracket: semi-finals at both ends, final in the centre. */
+.app-postseason-grid{--knockout-gap:24px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"left final right" ". winner .";gap:32px var(--knockout-gap);align-items:center;width:100%;max-width:none;margin-top:8px}
+.app-knockout-round{position:relative;display:flex;align-items:center;align-self:stretch;min-width:0}
+.app-knockout-left{grid-area:left}.app-knockout-right{grid-area:right}.app-knockout-final{grid-area:final}.app-knockout-result{grid-area:winner}
+.app-postseason-group{position:relative;z-index:1;min-width:0;width:100%;padding:16px;border:1px solid var(--line);border-top:3px solid var(--standing-outcome-color);border-radius:12px;background:var(--surface);box-sizing:border-box;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.app-postseason-group h3{margin:0 0 8px;color:var(--text);font-size:14px;line-height:1.4}
+.app-knockout-score-head,.app-knockout-team-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,26px);gap:6px;align-items:center}
+.app-knockout-score-head{min-height:24px;color:var(--muted);font-size:10px;text-align:center}
+.app-knockout-score-head>:nth-child(2){grid-column:2}
+.app-knockout-team-row{min-height:82px;padding:10px 0;border-top:1px solid var(--line)}
+.app-knockout-identity{min-width:0}
+.app-postseason-team{display:flex;align-items:center;gap:8px;min-width:0;min-height:40px;text-align:start;color:var(--text);font-size:13px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+.app-postseason-team>span:last-child{min-width:0;overflow-wrap:anywhere}
+.app-postseason-team .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px;box-sizing:border-box}
+.app-knockout-home{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+.app-knockout-score{display:block;text-align:center;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums}
+.app-knockout-team-row>.app-knockout-score:last-child{color:var(--text);border-radius:5px;padding:7px 0;background:color-mix(in srgb,var(--surface) 90%,var(--standing-outcome-color) 10%)}
+/* Resolution notes occupy a reserved slot, so extra time/penalties cannot shift bracket geometry. */
+.app-knockout-round .app-postseason-group [data-postseason-resolution]{min-height:18px;box-sizing:border-box}
+.app-knockout-round .app-postseason-group [data-postseason-resolution][hidden]{display:block!important;visibility:hidden}
+.app-knockout-single{grid-template-columns:minmax(0,1fr) 28px}
+.app-postseason-winner{text-align:center;padding:16px;min-height:112px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box}
+.app-knockout-winner-name{display:block;margin:14px 0 4px;color:var(--text);font-size:22px;overflow-wrap:anywhere}
+.app-knockout-left::after,.app-knockout-right::before,.app-knockout-final::after{content:"";position:absolute;pointer-events:none;opacity:.65}
+.app-knockout-left::after{inset-inline-start:100%;top:50%;width:var(--knockout-gap);border-top:1px solid var(--muted);transform:translateY(-50%)}
+.app-knockout-right::before{inset-inline-end:100%;top:50%;width:var(--knockout-gap);border-top:1px solid var(--muted);transform:translateY(-50%)}
+/* Playoff semifinal connectors follow the team-row divider; cards keep their positions. */
+.app-postseason-grid:not(.app-postseason-playout) .app-knockout-left::after,.app-postseason-grid:not(.app-postseason-playout) .app-knockout-right::before{top:var(--playoff-connector-axis,50%);transform:none}
+.app-knockout-final::after{top:50%;inset-inline-start:50%;height:calc(50% + 32px);border-inline-start:1px solid var(--muted)}
+.app-knockout-result{position:relative;align-self:start;display:flex;align-items:flex-start}
+.app-knockout-result>.app-postseason-group{position:relative}
+.app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}
+.app-postseason-playout{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-areas:"left winner";max-width:880px}
+/* Keep both playout elements on the same fixed team-divider axis. */
+.app-postseason-playout{--playout-axis:154px}
+.app-postseason-playout .app-knockout-left::after{top:var(--playout-axis);transform:none}
+.app-postseason-playout .app-knockout-result{align-self:start;align-items:flex-start;transform:none;margin-top:calc(var(--playout-axis) - 56px)}
+html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[data-fa-debug-pending="true"] #competition-panel-postseason{visibility:hidden}
+@media(max-width:1000px){
+ .app-postseason-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"left" "right" "final" "winner";max-width:640px;gap:24px}
+ .app-postseason-playout{grid-template-areas:"left" "winner"}
+ .app-postseason-group{padding:14px}.app-postseason-team{font-size:13px}
+ .app-knockout-left::after,.app-knockout-right::before{display:none}
+ .app-knockout-final::after,.app-postseason-playout .app-knockout-left::after{display:block;inset:auto;top:100%;inset-inline-start:50%;height:24px;width:0;border:0;border-inline-start:1px solid var(--muted)}
+ .app-postseason-grid:not(.app-postseason-playout) .app-knockout-right::after{display:none}
+ .app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}
+ .app-knockout-result{display:block}
+ .app-postseason-playout .app-knockout-result{margin-top:0;transform:none}
+}
+@media(max-width:360px){.app-postseason-group{padding:12px}.app-knockout-score-head,.app-knockout-team-row{grid-template-columns:minmax(0,1fr) repeat(3,22px);gap:4px}.app-knockout-single{grid-template-columns:minmax(0,1fr) 26px}.app-postseason-team .app-world-club-crest-placeholder{flex-basis:34px;width:34px;height:34px}.app-postseason-team{gap:6px;font-size:12px}}
+
+/* Mirror the right semi-final; matchup and score reading order stay unchanged. */
+.app-knockout-right .app-knockout-score-head,.app-knockout-right .app-knockout-team-row{grid-template-columns:repeat(3,var(--knockout-score-size,26px)) minmax(0,1fr);grid-template-areas:"total second first club"}
+.app-knockout-right .app-knockout-identity{grid-area:club;text-align:end}
+.app-knockout-right .app-knockout-score-head>:nth-child(2),.app-knockout-right .app-knockout-team-row>:nth-child(2){grid-area:first}
+.app-knockout-right .app-knockout-score-head>:nth-child(3),.app-knockout-right .app-knockout-team-row>:nth-child(3){grid-area:second}
+.app-knockout-right .app-knockout-score-head>:nth-child(4),.app-knockout-right .app-knockout-team-row>:nth-child(4){grid-area:total}
+.app-knockout-right .app-postseason-team{justify-content:flex-end;text-align:end}
+[data-postseason-qualified="true"] .app-knockout-right .app-postseason-team{flex-direction:row-reverse;justify-content:flex-start}
+.app-knockout-right .app-postseason-group h3{text-align:end}
+@media(max-width:360px){.app-postseason-grid{--knockout-score-size:22px}}
+
+
+/* Score-column help and staged post-season outcomes. */
+.app-knockout-column{position:relative;min-width:0}
+.app-knockout-help{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:28px;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:help}
+.app-knockout-help:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.app-knockout-tooltip{position:fixed;z-index:10000;top:0;left:0;bottom:auto;transform:none;width:max-content;max-width:calc(100vw - 24px);padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--text);box-shadow:0 4px 15px #0004;font-size:12px;font-weight:500;line-height:1.4;white-space:normal;text-align:center;animation:knockout-tip-in .16s ease-out}
+@keyframes knockout-tip-in{from{opacity:0;translate:0 3px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.app-knockout-tooltip{animation:none}}
+.app-knockout-tooltip[hidden]{display:none!important}
+.app-knockout-team-row[data-postseason-winner="true"] .app-postseason-team{font-weight:800}
+.app-knockout-team-row[data-postseason-winner="true"]{background:color-mix(in srgb,var(--surface) 94%,var(--standing-outcome-color) 6%)}
+/* Slightly extend the winner-row highlight horizontally without changing row geometry. */
+.app-postseason-grid .app-knockout-team-row[data-postseason-winner="true"]{margin-inline:-6px;padding-inline:6px;border-radius:5px}
+.app-knockout-resolution{margin:8px 0 0;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+.app-knockout-resolution strong{margin-inline-start:5px;color:var(--text)}
+.app-knockout-winner-name{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;line-height:1.4;min-height:40px}
+.app-knockout-winner-name .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px}
+
+.app-fixture-stage{list-style:none;margin:14px 0 2px}
+.app-fixture-stage h3{margin:0;font-size:14px;line-height:1.5;color:var(--muted)}
+.app-postseason-group [role="table"]{display:grid;grid-template-rows:auto 1fr 1fr}
+
+.app-fixtures-picker [hidden]{display:none}
