@@ -5,11 +5,11 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {createPreviewStandings,createPreviewPostseason} from '../tools/dev-standings-preview-data.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const divisions=JSON.parse(read('app/competitions/_shared/manifest.json')).divisions;
+const divisions=JSON.parse(read('competitions/_shared/manifest.json')).divisions;
 
 test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an honest empty state',()=>{
  for(const d of divisions){
-  const html=read('app/competitions/'+d.id.toLowerCase()+'/index.html');
+  const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.includes('id="app-fixtures-round"'),d.id);
   assert.ok(html.includes('aria-controls="app-fixtures-picker"'),d.id);
   assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,30,d.id);

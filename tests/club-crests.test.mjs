@@ -5,7 +5,7 @@ import {runInNewContext} from 'node:vm';
 import model from '../assets/competition-model.js';
 import {isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const manifest=()=>JSON.parse(read('app/competitions/_shared/manifest.json'));
+const manifest=()=>JSON.parse(read('competitions/_shared/manifest.json'));
 const expected={'BR-1':'assets/clubs/BR/1/crest.svg','DE-1':'assets/clubs/DE/1/crest.svg','PT-1':'assets/clubs/PT/1/crest.svg'};
 
 test('uploaded club crests are catalogued and explicitly included in public artifacts',()=>{

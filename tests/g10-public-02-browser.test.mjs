@@ -37,7 +37,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    if(!["GET","HEAD"].includes(req.method))throw Error("non-read method");
    const pathname=new URL(req.url,"http://127.0.0.1").pathname;
    if(pathname.includes("%")||pathname.includes("\\")||pathname.includes("\0"))throw Error("encoded path");
-   const route=pathname.startsWith("/competitions/_shared/")?"/app"+pathname:pathname;
+   const route=pathname;
    const file=publicRequestFile(route);
    if(!allow.has(file))throw Error("path not in artifact");
    const type=mime[extname(file)];
@@ -117,7 +117,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   // Headless CDP can update activeElement without dispatching focus while the
   // document's window is inactive. Keyboard assertions need an active document.
   await cmd("Emulation.setFocusEmulationEnabled",{enabled:true});
-  const divisions=JSON.parse(readFileSync(join(artifact,"app/competitions/_shared/manifest.json"),"utf8")).divisions;
+  const divisions=JSON.parse(readFileSync(join(artifact,"competitions/_shared/manifest.json"),"utf8")).divisions;
   const standingsSnapshot="[...document.querySelectorAll('#app-standings-body tr')].map(row=>[row.dataset.worldClub,row.cells[9]?.textContent])";
   const verifySeason=async(season,matchdays=10)=>{
    const division=divisions.find(item=>item.id==="IT-1");

@@ -11,9 +11,9 @@ const template = readFileSync(new URL("../templates/app-page.html", import.meta.
 const pages = {
   "dashboard": {
     "@@FA_LINE_008@@": "  <title>Dashboard — Football Architect</title>",
-    "@@FA_LINE_032@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-dashboard\" href=\"/app/dashboard\" data-app-view=\"dashboard\" aria-current=\"page\" aria-label=\"Dashboard\" data-app-aria=\"dashboard\">",
-    "@@FA_LINE_036@@": "            <a class=\"fa-shell-link\" id=\"app-nav-calendar\" href=\"/app/calendar\" data-app-view=\"calendar\" aria-label=\"Calendar\" data-app-aria=\"calendar\">",
-    "@@FA_LINE_044@@": "            <a class=\"fa-shell-link\" id=\"app-nav-settings\" href=\"/app/settings\" data-app-view=\"settings\" aria-label=\"Settings\" data-app-aria=\"settings\">",
+    "@@FA_LINE_032@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-dashboard\" href=\"/dashboard\" data-app-view=\"dashboard\" aria-current=\"page\" aria-label=\"Dashboard\" data-app-aria=\"dashboard\">",
+    "@@FA_LINE_036@@": "            <a class=\"fa-shell-link\" id=\"app-nav-calendar\" href=\"/calendar\" data-app-view=\"calendar\" aria-label=\"Calendar\" data-app-aria=\"calendar\">",
+    "@@FA_LINE_044@@": "            <a class=\"fa-shell-link\" id=\"app-nav-settings\" href=\"/settings\" data-app-view=\"settings\" aria-label=\"Settings\" data-app-aria=\"settings\">",
     "@@FA_LINE_077@@": "        <section id=\"app-dashboard\" class=\"app-view\" aria-labelledby=\"dashboard-title\">",
     "@@FA_LINE_099@@": "        <section id=\"app-calendar\" class=\"app-view\" aria-labelledby=\"calendar-title\" hidden>",
     "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"./\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
@@ -21,22 +21,22 @@ const pages = {
   },
   "calendar": {
     "@@FA_LINE_008@@": "  <title>Calendar — Football Architect</title>",
-    "@@FA_LINE_032@@": "            <a class=\"fa-shell-link\" id=\"app-nav-dashboard\" href=\"/app/dashboard\" data-app-view=\"dashboard\" aria-label=\"Dashboard\" data-app-aria=\"dashboard\">",
-    "@@FA_LINE_036@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-calendar\" href=\"/app/calendar\" data-app-view=\"calendar\" aria-current=\"page\" aria-label=\"Calendar\" data-app-aria=\"calendar\">",
-    "@@FA_LINE_044@@": "            <a class=\"fa-shell-link\" id=\"app-nav-settings\" href=\"/app/settings\" data-app-view=\"settings\" aria-label=\"Settings\" data-app-aria=\"settings\">",
+    "@@FA_LINE_032@@": "            <a class=\"fa-shell-link\" id=\"app-nav-dashboard\" href=\"/dashboard\" data-app-view=\"dashboard\" aria-label=\"Dashboard\" data-app-aria=\"dashboard\">",
+    "@@FA_LINE_036@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-calendar\" href=\"/calendar\" data-app-view=\"calendar\" aria-current=\"page\" aria-label=\"Calendar\" data-app-aria=\"calendar\">",
+    "@@FA_LINE_044@@": "            <a class=\"fa-shell-link\" id=\"app-nav-settings\" href=\"/settings\" data-app-view=\"settings\" aria-label=\"Settings\" data-app-aria=\"settings\">",
     "@@FA_LINE_077@@": "        <section id=\"app-dashboard\" class=\"app-view\" aria-labelledby=\"dashboard-title\" hidden>",
     "@@FA_LINE_099@@": "        <section id=\"app-calendar\" class=\"app-view\" aria-labelledby=\"calendar-title\">",
-    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"/app/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
+    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
     "@@FA_LINE_107@@": "        <section id=\"app-settings\" class=\"app-view app-settings-view\" aria-labelledby=\"settings-title\" hidden>"
   },
   "settings": {
     "@@FA_LINE_008@@": "  <title>Settings — Football Architect</title>",
-    "@@FA_LINE_032@@": "            <a class=\"fa-shell-link\" id=\"app-nav-dashboard\" href=\"/app/dashboard\" data-app-view=\"dashboard\" aria-label=\"Dashboard\" data-app-aria=\"dashboard\">",
-    "@@FA_LINE_036@@": "            <a class=\"fa-shell-link\" id=\"app-nav-calendar\" href=\"/app/calendar\" data-app-view=\"calendar\" aria-label=\"Calendar\" data-app-aria=\"calendar\">",
-    "@@FA_LINE_044@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-settings\" href=\"/app/settings\" data-app-view=\"settings\" aria-current=\"page\" aria-label=\"Settings\" data-app-aria=\"settings\">",
+    "@@FA_LINE_032@@": "            <a class=\"fa-shell-link\" id=\"app-nav-dashboard\" href=\"/dashboard\" data-app-view=\"dashboard\" aria-label=\"Dashboard\" data-app-aria=\"dashboard\">",
+    "@@FA_LINE_036@@": "            <a class=\"fa-shell-link\" id=\"app-nav-calendar\" href=\"/calendar\" data-app-view=\"calendar\" aria-label=\"Calendar\" data-app-aria=\"calendar\">",
+    "@@FA_LINE_044@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-settings\" href=\"/settings\" data-app-view=\"settings\" aria-current=\"page\" aria-label=\"Settings\" data-app-aria=\"settings\">",
     "@@FA_LINE_077@@": "        <section id=\"app-dashboard\" class=\"app-view\" aria-labelledby=\"dashboard-title\" hidden>",
     "@@FA_LINE_099@@": "        <section id=\"app-calendar\" class=\"app-view\" aria-labelledby=\"calendar-title\" hidden>",
-    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"/app/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
+    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
     "@@FA_LINE_107@@": "        <section id=\"app-settings\" class=\"app-view app-settings-view\" aria-labelledby=\"settings-title\">"
   }
 };
@@ -65,11 +65,11 @@ const inlineCountryFlag = (country, id = null) => {
  if(!svg.startsWith("<svg ") || !svg.endsWith("</svg>"))throw Error("Invalid inline flag "+code);
  return '<span class="app-world-flag-frame" aria-hidden="true">'+svg.replace("<svg ",'<svg class="app-world-flag" '+(id?'id="'+id+'" ':"")+'aria-hidden="true" focusable="false" width="24" height="16" ')+"</span>";
 };
-const indexContent = function indexContent(root){
+const indexContent = function indexContent(){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
  const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="/app/competitions/'+d.id.toLowerCase()+'?season=1&amp;view=standings">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="/competitions/'+d.id.toLowerCase()+'?season=1&amp;view=standings">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
@@ -79,31 +79,29 @@ const indexContent = function indexContent(root){
 };
 const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,
  renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});
-const worldPageReplacements = (depth, division = null, neutral = false) => {
-  const upToApp = "../".repeat(depth - 1);
-  const root = "../".repeat(depth);
+const worldPageReplacements = (division = null, neutral = false) => {
   const title = division ? (neutral?"Competition":division.name) : "Competitions";
   return {
     "@@FA_LINE_008@@": "  <title>" + encode(title) + " — Football Architect</title>",
-    "@@FA_LINE_032@@": '            <a class="fa-shell-link" id="app-nav-dashboard" href="/app/dashboard" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">',
-    "@@FA_LINE_036@@": '            <a class="fa-shell-link" id="app-nav-calendar" href="/app/calendar" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">',
-    "@@FA_LINE_044@@": '            <a class="fa-shell-link" id="app-nav-settings" href="/app/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">',
+    "@@FA_LINE_032@@": '            <a class="fa-shell-link" id="app-nav-dashboard" href="/dashboard" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">',
+    "@@FA_LINE_036@@": '            <a class="fa-shell-link" id="app-nav-calendar" href="/calendar" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">',
+    "@@FA_LINE_044@@": '            <a class="fa-shell-link" id="app-nav-settings" href="/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">',
     "@@FA_LINE_077@@": '        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title" hidden>',
     "@@FA_LINE_099@@": '        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>',
-    "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="/app/dashboard" data-app-i18n="backDashboard">Back to Dashboard</a>',
+    "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="/dashboard" data-app-i18n="backDashboard">Back to Dashboard</a>',
     "@@FA_LINE_107@@": '        <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>',
-    "@@FA_WORLD_LINK@@": worldNav("/app/competitions", true),
-    "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,neutral) : indexContent(root), true,division)
+    "@@FA_WORLD_LINK@@": worldNav("/competitions", true),
+    "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,neutral) : indexContent(), true,division)
   };
 };
 // Full generated routes keep the approved Compact SVG in the initial response.
 const competitionRoute = d=>{
- let html=template.replaceAll("../../","../../../");
- for(const [token,value] of Object.entries(worldPageReplacements(3,d)))html=html.replace(token,value);
+ let html=template;
+ for(const [token,value] of Object.entries(worldPageReplacements(d)))html=html.replace(token,value);
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
- html=html.replace(/\s*<script src="\.\.\/\.\.\/\.\.\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
+ html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
  const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=p.get(\"view\"),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\\d{0,8}$/.test(s||\"\")&&s!==\"1\")})();";
- return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="../../../assets/competition-model.js" defer></script>\n  <script src="../../../assets/competition-page.js" defer></script>\n</head>');
+ return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
  schemaVersion:1,approved:provisionalAssignments.approved,profile:model.profile,clubCrests:clubCrestAssets().catalog,
@@ -118,16 +116,16 @@ const competitionManifest = {
 if(!model.validManifest(competitionManifest))throw Error("Invalid shared competition manifest");
 const outputPages = [
  ...Object.entries(pages).map(([name,replacements])=>({
-  name,path:"app/"+name+"/index.html",depth:2,
+  name,path:name+"/index.html",
   replacements:{...replacements,
-   "@@FA_WORLD_LINK@@":worldNav("../competitions/",false),
+   "@@FA_WORLD_LINK@@":worldNav("/competitions",false),
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
- {name:"competitions",path:"app/competitions/index.html",depth:2,replacements:worldPageReplacements(2)},
- {name:"competition-shared",path:"app/competitions/_shared/index.html",depth:3,
-  replacements:worldPageReplacements(3,divisionData.find(d=>d.id==="IT-1"),true)},
+ {name:"competitions",path:"competitions/index.html",replacements:worldPageReplacements()},
+ {name:"competition-shared",path:"competitions/_shared/index.html",
+  replacements:worldPageReplacements(divisionData.find(d=>d.id==="IT-1"),true)},
  ...divisionData.map(division=>({
-  name:division.id,path:"app/competitions/"+division.id.toLowerCase()+"/index.html",
+  name:division.id,path:"competitions/"+division.id.toLowerCase()+"/index.html",
   directContent:competitionRoute(division)
  }))
 ];
@@ -140,7 +138,7 @@ const normalizeRouteLinks=(html,path)=>{
  const base="https://fa.invalid"+directory;
  return html.replace(/(<(?:a|link|script|img)\b[^>]*\b(?:href|src)=)(["'])([^"']+)\2/g,(all,prefix,q,href)=>{
   if(href.startsWith("//")||/^[a-z][a-z0-9+.-]*:/i.test(href)||href.startsWith("#"))return all;
-  const url=new URL(href,base);let pathname=url.pathname.replace(/^\/app(?=\/|$)/,"")||"/";
+  const url=new URL(href,base);let pathname=url.pathname;
   if(pathname!=="/"&&!/\.[a-z0-9]+$/i.test(pathname))pathname=pathname.replace(/\/+$/,"");
   return prefix+q+pathname+url.search+url.hash+q;
  });
@@ -161,15 +159,15 @@ const writeOutput=(path,content)=>{
 for(const page of outputPages){
  let html=page.directContent;
  if(!html){
-  html=page.depth===2?template:template.replaceAll("../../","../".repeat(page.depth));
+  html=template;
   for(const [token,value] of Object.entries(page.replacements)){
    if(!html.includes(token))throw Error("Missing template token: "+token);
    html=html.replaceAll(token,value);
   }
   if(/@@FA_(?:LINE_|WORLD_)/.test(html))throw Error("Unresolved template token in "+page.path);
-  if(page.name==="competition-shared")html=html.replace('<script src="../../../assets/landing.js"','<script src="../../../assets/competition-model.js" defer></script>\n  <script src="../../../assets/landing.js"');
+  if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
  }
  writeOutput(page.path,normalizeRouteLinks(html,page.path));
 }
-writeOutput("app/competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
+writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest");

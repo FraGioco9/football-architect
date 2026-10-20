@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { once } from 'node:events';
 import { request } from 'node:http';
 import { createPreviewServer } from '../tools/dev-standings-preview.mjs';
@@ -23,7 +23,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
       }
     }
     assert.ok(read('index.html').includes('href="/dashboard"'));
-    assert.ok(read('app/index.html').includes('location.replace("/dashboard" +'));
+    assert.equal(existsSync(new URL('../app/index.html',import.meta.url)),false);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
 
@@ -45,4 +45,33 @@ test('publication aliases map canonical app URLs to the same allowlisted DEV fil
     assert.equal(target?.slice(1),publicRequestFile(path),path);
     assert.ok(isAllowlistedPublicPath(target.slice(1)),path);
   }
+});
+
+
+test('canonical pages and public artifacts have no physical app directory or legacy aliases', async () => {
+  const {planPublicFiles,publicRequestFile,isAllowlistedPublicPath}=await import('../tools/publication-guard.mjs');
+  assert.equal(existsSync(new URL('../app/',import.meta.url)),false);
+  const files=planPublicFiles();
+  assert.ok(files.every(path=>!path.startsWith('app/')));
+  for(const path of ['/dashboard','/calendar','/settings','/competitions','/competitions/it-1']) {
+    assert.equal(publicRequestFile(path),path.slice(1)+'/index.html');
+    assert.ok(isAllowlistedPublicPath(publicRequestFile(path)));
+    assert.equal(isAllowlistedPublicPath(publicRequestFile('/app'+path)),false);
+  }
+  assert.doesNotMatch(read('vercel.json'),/\/app(?:\/|["'])/);
+});
+
+test('DEV rejects removed app paths while canonical routes still load', async () => {
+  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
+  const get=path=>new Promise((resolve,reject)=>{
+    const req=request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
+      res.resume();res.on('end',()=>resolve(res.statusCode));
+    });req.on('error',reject);req.end();
+  });
+  try {
+    for(const path of ['/app','/app/','/app/index.html','/app/dashboard','/app/calendar/','/app/settings/index.html','/app/competitions','/app/competitions/it-1'])
+      assert.equal(await get(path),404,path);
+    for(const path of ['/','/dashboard','/calendar','/settings','/competitions','/competitions/it-1'])
+      assert.equal(await get(path),200,path);
+  } finally {await new Promise(resolve=>server.close(resolve));}
 });

@@ -5,12 +5,12 @@ import {runInNewContext} from "node:vm";
 
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const source = read("assets/theme.js");
-const shells = ["app/dashboard/index.html","app/calendar/index.html",
-  "app/settings/index.html","app/competitions/index.html",
-  "app/competitions/_shared/index.html"];
+const shells = ["dashboard/index.html","calendar/index.html",
+  "settings/index.html","competitions/index.html",
+  "competitions/_shared/index.html"];
 const countries = ["br","de","eng","es","fr","it","nl","pt"];
 const routes = countries.flatMap(country=>[1,2].map(tier=>
-  "app/competitions/"+country+"-"+tier+"/index.html"));
+  "competitions/"+country+"-"+tier+"/index.html"));
 
 function boot(value,blocked=false) {
   const attrs={};

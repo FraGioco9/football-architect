@@ -51,8 +51,8 @@ test("DEBUG-INFRA-02: protected contract is a separately verified, nonpublic art
   assert.equal(manifest.contract,"protected_debug");
   assert.deepEqual(manifest.files.map(x=>x.path),planned.filter(p=>p!=="__fa_dev__/artifact-manifest.json"));
   for(const file of manifest.files)assert.match(file.sha256,/^[0-9a-f]{64}$/);
-  const protectedHtml=readFileSync(join(protectedPath,"app","index.html"),"utf8");
-  const originalHtml=readFileSync(join(repositoryRoot,"app","index.html"),"utf8");
+  const protectedHtml=readFileSync(join(protectedPath,"dashboard","index.html"),"utf8");
+  const originalHtml=readFileSync(join(repositoryRoot,"dashboard","index.html"),"utf8");
   assert.doesNotMatch(originalHtml,/__fa_dev__\/debug-settings|faDebugPending/);
   assert.match(protectedHtml,/faDebugPending/);
   assert.equal(protectedHtml.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
@@ -71,7 +71,7 @@ test("DEBUG-INFRA-03: changes, missing files, and injections fail closed",()=>{
  const {root,debugRoot,protectedPath}=sandbox();
  try{
   stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
-  const page=join(protectedPath,"app","index.html");
+  const page=join(protectedPath,"dashboard","index.html");
   const original=readFileSync(page);
   writeFileSync(page,Buffer.concat([original,Buffer.from("tampered")]));
   assert.throws(()=>assertProtectedDebugArtifact(protectedPath,{sourceRoot:repositoryRoot,debugRoot}),/source mismatch/);
@@ -152,7 +152,7 @@ test('DEBUG-FIRST-PAINT: DEV defaults are gated synchronously and failure cannot
   timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)
  }
  const document={documentElement:{dataset:{}}};let release;
- runInNewContext(script,{document,window:{},location:{pathname:'/app/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(fn){release=fn}});
+ runInNewContext(script,{document,window:{},location:{pathname:'/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(fn){release=fn}});
  assert.equal(document.documentElement.dataset.faDebugPending,'true');
  release();assert.equal(document.documentElement.dataset.faDebugPending,undefined);
 });
@@ -165,7 +165,7 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
   assert.deepEqual(assertProtectedDebugArtifact(protectedPath,{sourceRoot:repositoryRoot,debugRoot}),staged);
   stagePublicArtifact(repositoryRoot,publicPath);
   assertPublicArtifact(publicPath);
-  const directory=join("app","competitions");
+  const directory="competitions";
   const index=readFileSync(join(protectedPath,directory,"index.html"),"utf8");
   assert.doesNotMatch(index,/data-dev-latest-season/);
   assert.equal((index.match(/\?season=1&amp;view=standings/g)||[]).length,16);
@@ -184,7 +184,7 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
     assert.ok(!original.includes("faDevSeasons")&&!original.includes("/__fa_dev__/"),
       path+" public HTML must remain clean");
    }
-  for(const path of ["app/index.html","app/dashboard/index.html","app/settings/index.html"]){
+  for(const path of ["dashboard/index.html","settings/index.html"]){
    assert.ok(!readFileSync(join(protectedPath,path),"utf8").includes("faDevSeasons"),
     path+" must not enable competition seasons");
   }
@@ -234,7 +234,7 @@ test("PUBLIC-03: execute the actual staging script for both approval contracts",
  try{
   const source=join(root,"source");mkdirSync(source);
   // Copy a source fixture; the staging script must import real builders and verify their output.
-  for(const path of ["assets","app","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
+  for(const path of ["assets","dashboard","calendar","settings","competitions","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
    fs.cpSync(join(repositoryRoot,path),join(source,path),{recursive:true});
   const debug=join(root,"expected-debug");stageProtectedDebugArtifact(repositoryRoot,debug);
   const approved=createHash("sha256").update(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"))).digest("hex");

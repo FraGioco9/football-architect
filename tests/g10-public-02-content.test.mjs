@@ -35,7 +35,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
   for(const path of pub){
    const publicBytes=readFileSync(join(pubDir,path));
    const debugBytes=readFileSync(join(debugDir,path));
-   if(path.startsWith("app/")&&path.endsWith("/index.html")){
+   if(/^(?:dashboard|calendar|settings|competitions)\//.test(path)&&path.endsWith("/index.html")){
     assert.notDeepEqual(debugBytes,publicBytes,"App HTML intentionally gains Debug entrypoints: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/debug-settings\.mjs"/,"Missing standings Debug entrypoint: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/stats-client\.mjs"/,"Missing stats Debug entrypoint: "+path);
@@ -67,7 +67,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
     assert.ok(debug.includes(resolved),"Unresolved Debug import: "+path+" -> "+resolved);
    }
   }
-  const publicManifest=JSON.parse(readFileSync(join(debugDir,"app/competitions/_shared/manifest.json"),"utf8"));
+  const publicManifest=JSON.parse(readFileSync(join(debugDir,"competitions/_shared/manifest.json"),"utf8"));
   fields(publicManifest,["schemaVersion","approved","profile","clubCrests","divisions"]);
   assert.deepEqual(publicManifest.profile,competitionModel.profile);
   assert.equal(competitionModel.validManifest(publicManifest),true);
@@ -97,7 +97,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
   const jsonPaths=debug.filter(path=>path.endsWith(".json")).sort();
   assert.deepEqual(jsonPaths,[
    "__fa_dev__/artifact-manifest.json",
-   "app/competitions/_shared/manifest.json",
+   "competitions/_shared/manifest.json",
    "data/divisions.json",
    "vercel.json"
   ]);

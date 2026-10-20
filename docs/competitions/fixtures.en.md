@@ -34,7 +34,7 @@ Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages
 Competition catalogue links open Standings in the latest available season.
 Public data currently supplies provisional season 1; the isolated DEV preview
 also supplies season 2. Canonical detail URLs have no trailing slash:
-`/app/competitions/it-1?season=1&view=fixtures&matchday=12`.
+`/competitions/it-1?season=1&view=fixtures&matchday=12`.
 The six supported views are `standings`, `fixtures`, `stats`, `history`, `rules`
 and `awards`. Only Fixtures carries `matchday` (1–30). Switching tabs preserves
 that selection in the current document. Direct links, refresh, Back and Forward

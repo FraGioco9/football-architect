@@ -9,7 +9,7 @@ const keys=html=>[...new Set([...html.matchAll(/data-app-i18n="(rules[A-Za-z0-9]
 
 test('RULES-04: all 16 division pages have correct shared and tier-specific regulations',()=>{
  for(const id of divisions){
-  const html=read('app/competitions/'+id+'/index.html'),rules=rulesPanel(html),tier=id.endsWith('-1')?1:2;
+  const html=read('competitions/'+id+'/index.html'),rules=rulesPanel(html),tier=id.endsWith('-1')?1:2;
   assert.ok(rules.startsWith('id="competition-panel-rules"'),id);
   for(const key of ['rulesClubs','rulesRounds','rulesLegs','rulesMatches','rulesFormatBody','rulesRankingBody'])
    assert.ok(rules.includes('data-app-i18n="'+key+'"'),id+' missing '+key);
@@ -28,7 +28,7 @@ test('RULES-04: all 16 division pages have correct shared and tier-specific regu
 });
 
 test('RULES-04: neutral shared document is not assigned tier-specific sporting outcomes',()=>{
- const html=read('app/competitions/_shared/index.html'),rules=rulesPanel(html);
+ const html=read('competitions/_shared/index.html'),rules=rulesPanel(html);
  assert.match(rules,/data-app-i18n="rulesNeutralOutcomes"/);
  assert.doesNotMatch(rules,/data-app-i18n="rulesPlayoutBody"|data-app-i18n="rulesPlayoffsBody"/);
  assert.equal((html.match(/id="app-competition-capacity"/g)||[]).length,1);
@@ -37,7 +37,7 @@ test('RULES-04: neutral shared document is not assigned tier-specific sporting o
 
 test('RULES-04: every displayed rule has translations in all five locales',()=>{
  const dictionary=read('assets/app.js');
- const sample=['it-1','it-2','_shared'].map(id=>read('app/competitions/'+id+'/index.html'));
+ const sample=['it-1','it-2','_shared'].map(id=>read('competitions/'+id+'/index.html'));
  const all=new Set(sample.flatMap(x=>keys(rulesPanel(x))));
  assert.ok(all.size>=23,'Expected complete regulations vocabulary');
  for(const key of all){
@@ -50,7 +50,7 @@ test('RULES-04: every displayed rule has translations in all five locales',()=>{
 test('RULES-04: non-Rules runtime and provisional manifest contracts are unchanged',()=>{
  const model=read('assets/competition-model.js');
  assert.match(model,/rules:\{status:"undefined",points:null,tiebreakers:null,promotion:null,relegation:null\}/);
- const manifest=JSON.parse(read('app/competitions/_shared/manifest.json'));
+ const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
  assert.equal(manifest.approved,false);
  assert.equal(manifest.profile.rules.status,'undefined');
  assert.equal(manifest.divisions.length,16);

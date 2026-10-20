@@ -1190,7 +1190,6 @@
   // Use app.<domain> for public app links without hard-coding a final domain.
   // Local and unconfigured preview hosts use the same canonical app paths.
   function appHref(route) {
-    route = route.replace(/^\/app(?=\/|$)/, "") || "/";
     const host = (window.location.hostname || "").toLowerCase();
     const previewOrigin = document.documentElement.dataset.faDevAppOrigin;
     if (previewOrigin) {
@@ -1251,7 +1250,7 @@
   }
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
-    const path = (window.location.pathname || "").replace(/\/+$/, "").replace(/^\/app(?=\/|$)/,"");
+    const path = (window.location.pathname || "").replace(/\/+$/, "");
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";

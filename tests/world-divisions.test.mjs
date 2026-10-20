@@ -10,10 +10,10 @@ const divisions=JSON.parse(read("data/divisions.json"));
 const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:"assets/flags/"+(d.countryId==="ENG"?"gb-eng":d.countryId.toLowerCase())+".svg"}])).values()];
 const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
 const clubs=JSON.parse(read("data/clubs.json"));
-const manifest=JSON.parse(read("app/competitions/_shared/manifest.json"));
-const shared=read("app/competitions/_shared/index.html");
-const index=read("app/competitions/index.html");
-const routes=divisions.map(d=>({division:d,file:"app/competitions/"+d.id.toLowerCase()+"/index.html"}));
+const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
+const shared=read("competitions/_shared/index.html");
+const index=read("competitions/index.html");
+const routes=divisions.map(d=>({division:d,file:"competitions/"+d.id.toLowerCase()+"/index.html"}));
 const cols=["standingsPosition","standingsClub","standingsPlayed","standingsWon",
  "standingsDrawn","standingsLost","standingsFor","standingsAgainst","standingsDifference",
  "standingsPoints","standingsForm"];
@@ -40,9 +40,9 @@ test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",(
 });
 
 test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()=>{
- const common=["app/dashboard/index.html","app/calendar/index.html",
-  "app/settings/index.html","app/competitions/index.html",
-  "app/competitions/_shared/index.html"];
+ const common=["dashboard/index.html","calendar/index.html",
+  "settings/index.html","competitions/index.html",
+  "competitions/_shared/index.html"];
  for(const file of [...common,...routes.map(r=>r.file)]){
   const html=read(file),base=new URL("../"+file,import.meta.url);
   for(const [,href] of html.matchAll(/(?:href|src)="([^"]+)"/g)){
@@ -237,7 +237,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
 
 
 test("COMPETITIONS-08 removes all provisional standings filters and highlights points",()=>{
- const page=read("app/competitions/_shared/index.html");
+ const page=read("competitions/_shared/index.html");
  const css=read("assets/app.css"),app=read("assets/app.js"),tabs=read("assets/competition-tabs.js");
  const generator=read("tools/generate-app-pages.mjs");
  for(const text of ["app-standing-filters","app-standing-filter-status","No match data for the selected filters",
@@ -261,7 +261,7 @@ test("COMPETITIONS-08 removes all provisional standings filters and highlights p
 test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club",()=>{
  const css=read("assets/app.css"),renderer=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
- const page=read("app/competitions/_shared/index.html");
+ const page=read("competitions/_shared/index.html");
  assert.ok(css.includes(".app-world-club-crest-placeholder{display:grid;place-items:center"));
  assert.ok(css.includes(".app-world-club-crest-placeholder::before{content:\"\";"));
  assert.ok(css.includes("@media(max-width:360px){.app-world-standing-table"));
@@ -320,7 +320,7 @@ test("COMPETITIONS-08 uses approved canonical primary names for all 256 particip
 });
 
 test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",()=>{
- const shared=read("app/competitions/_shared/index.html"),loader=read("assets/competition-page.js");
+ const shared=read("competitions/_shared/index.html"),loader=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
  assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
  assert.ok(shared.includes('class="app-world-flag-frame" aria-hidden="true"'));
@@ -341,7 +341,7 @@ test("COMPETITION-TABS-UNIFORM-01: all seven tabs have identical widths in five 
 });
 
 test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",()=>{
- const css=read("assets/app.css"),shared=read("app/competitions/_shared/index.html");
+ const css=read("assets/app.css"),shared=read("competitions/_shared/index.html");
  assert.ok(css.includes(".app-competition-return{display:inline-flex;"),"desktop link unchanged");
  assert.ok(css.includes("@media(max-width:620px){.app-competition-header{"));
  assert.ok(css.includes(".app-competition-return{display:none}"),"hidden on mobile");

@@ -5,7 +5,7 @@ import {runInNewContext} from 'node:vm';
 import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
 import * as previewData from '../tools/dev-standings-preview-data.mjs';
 const client=readFileSync(new URL('../tools/dev-standings-preview-client.mjs',import.meta.url),'utf8');
-const manifest=JSON.parse(readFileSync(new URL('../app/competitions/_shared/manifest.json',import.meta.url),'utf8'));
+const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 const plain=value=>JSON.parse(JSON.stringify(value));
 function records(seasons,played=seasons){
  const start=client.indexOf('function historyRecords('),end=client.indexOf('\nfunction historyNode',start);
@@ -142,7 +142,7 @@ test('Season 1 Matchday 0 has no historical statistics, holders or champions',()
 test('Every History route offers exactly three seasonal and four all-time player records without invented data',()=>{
  const routes=['_shared',...manifest.divisions.map(d=>d.id.toLowerCase())];
  for(const route of routes){
-  const html=readFileSync(new URL('../app/competitions/'+route+'/index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../competitions/'+route+'/index.html',import.meta.url),'utf8');
   const section=html.match(/<section[^>]*data-history-player-records[^>]*>([\s\S]*?)<\/section>/)?.[1];
   assert.ok(section,route+' has player records');
   const cards=[...section.matchAll(/<article([^>]*)>([\s\S]*?)<\/article>/g)];

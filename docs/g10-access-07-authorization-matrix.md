@@ -31,7 +31,7 @@ Test each principal above, with *fresh cookies and cache*, against all of the fo
 | Origin / request | Authorized identity expected | Unauthorized identity expected |
 | --- | --- | --- |
 | Immutable Debug deployment URL, `/` | Authorized HTML after auth | no private bytes |
-| Immutable Debug deployment URL, `/app/competitions/it-1/` | Authorized HTML after auth | no private bytes |
+| Immutable Debug deployment URL, `/competitions/it-1` | Authorized HTML after auth | no private bytes |
 | Direct `/__fa_dev__/debug-settings.mjs` | Protected module response | no private bytes |
 | Direct `/__fa_dev__/standings-client.mjs` | Protected module response | no private bytes |
 | Direct `/__fa_dev__/stats-data.mjs` | Protected module response | no private bytes |
