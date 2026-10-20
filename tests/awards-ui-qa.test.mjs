@@ -36,3 +36,17 @@ test("AWARDS-02-UI-QA-02: all award identities are SVG and medallions center con
  assert.match(css,/\.fa-awards-medallion\{[^}]*align-self:center/);
  assert.match(css,/\.fa-awards-symbol\{[^}]*width:100%;height:100%/);
 });
+
+test("AWARDS-02-UI-QA-03: initial Awards panels never flash obsolete fallback",()=>{
+ const generator=read("tools/render-competition-page.mjs");
+ assert.doesNotMatch(generator,/No season awards are available\./);
+ assert.match(generator,/if\(id==="awards"\)return/);
+ for(const country of ["br","de","eng","es","fr","it","nl","pt"]){
+  for(const tier of [1,2]){
+   const markup=read("app/competitions/"+country+"-"+tier+"/index.html");
+   assert.doesNotMatch(markup,/No season awards are available\./);
+   assert.match(markup,/id="competition-panel-awards"/);
+  }
+ }
+ assert.doesNotMatch(read("app/competitions/_shared/index.html"),/No season awards are available\./);
+});
