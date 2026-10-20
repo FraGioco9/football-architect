@@ -26,3 +26,14 @@
 .fa-awards-pitch-player{display:block;width:27px;height:27px;border:2px solid #c6dacc;border-radius:50%;background:#4b7362}
 @media(max-width:760px){.fa-awards-grid{grid-template-columns:1fr}.fa-awards-card{padding:18px}.fa-awards-honours .fa-awards-card:not(.fa-awards-card-champion){grid-column:1}.fa-awards-honours .fa-awards-card-champion{min-height:210px;padding:22px}.fa-awards-head{align-items:flex-start}.fa-awards-status{font-size:9px}}
 @media(prefers-reduced-motion:no-preference){.fa-awards-card{transition:border-color .18s ease}.fa-awards-card:hover{border-color:#a28d59}}
+
+/* AWARDS-02: accessible light variant, scoped to the Awards panel. */
+html[data-theme="light"] #competition-panel-awards .fa-awards{--award-gold:#79591D;--award-ink:#F5F8F4;--award-outline:#B8C9BD}
+html[data-theme="light"] #competition-panel-awards .fa-awards-card{color:#234236}
+html[data-theme="light"] #competition-panel-awards .fa-awards-card-title{color:#173C2D}
+html[data-theme="light"] #competition-panel-awards .fa-awards-card-pending{color:#436055}
+html[data-theme="light"] #competition-panel-awards .fa-awards-notice{color:#234236}
+html[data-theme="light"] #competition-panel-awards .fa-awards-status,html[data-theme="light"] #competition-panel-awards .fa-awards-chip{border-color:#997640}
+html[data-theme="light"] #competition-panel-awards .fa-awards-medallion{background:#F0E8D5;border-color:#997640}
+html[data-theme="light"] #competition-panel-awards .fa-awards-card-champion{background:linear-gradient(145deg,#F5F8F4,#E7EDE4);border-color:#997640}
+html[data-theme="light"] #competition-panel-awards .fa-awards-subtitle{color:#476558}
