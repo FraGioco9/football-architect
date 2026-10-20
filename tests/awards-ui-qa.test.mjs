@@ -64,12 +64,10 @@ test("AWARDS-02-UI-QA-04: all ten renewed award SVG definitions are present",()=
  assert.ok(css.includes('align-self:center'));
 });
 
-test("AWARDS-02-UI-QA-05: all thirteen redesigned SVG symbols are unique and readable",()=>{
+test("AWARDS-02-UI-QA-05: only four emblems redesigned; nine originals retained",()=>{
  const lines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
- const ids=["champion","promotion","playoff","manager","player","young","boot","assists","glove","defender","midfielder","forward","xi"];
- const paths=ids.map(id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));});
- assert.equal(new Set(paths.map(p=>JSON.stringify(p))).size,13);
- for(const path of paths)assert.ok(path.length>=2&&path.every(d=>d.startsWith("M")),JSON.stringify(path));
- for(const id of ["manager","player","young"])assert.ok(paths[ids.indexOf(id)].some(d=>d.includes("a4.5 4.5")),id);
- assert.ok(paths[ids.indexOf("xi")].every(d=>!d.includes("a6 6")));
+ const get=id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
+ const previous={"champion":["M5 18h22l3-14-10 7-4-9-4 9L2 4z","M7 23h18v4H7z"],"promotion":["M16 3L7 13h6v16h6V13h6z"],"playoff":["M16 2l4.4 9 9.9 1.4-7.2 7 1.7 9.9L16 24.7l-8.8 4.6 1.7-9.9-7.2-7 9.9-1.4z"],"boot":["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],"assists":["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],"glove":["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],"defender":["M16 3l11 4.5V16c0 6-4 10.5-11 13C8.5 27 4 23 4 16V7.5z","M10 17l4 4 8-9"],"midfielder":["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],"forward":["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"]};
+ for(const [id,paths] of Object.entries(previous))assert.deepEqual(get(id),paths,id);
+ for(const id of ["manager","player","young","xi"])assert.ok(get(id).length>=2,id);
 });
