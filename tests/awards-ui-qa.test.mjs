@@ -63,3 +63,17 @@ test("AWARDS-02-UI-QA-04: all ten renewed award SVG definitions are present",()=
  for(const id of renewed)assert.ok(awards.includes(' '+id+':['),id);
  assert.ok(css.includes('align-self:center'));
 });
+
+test("AWARDS-02-UI-QA-05: manager player young use the same human silhouette and team is eleven",()=>{
+ const iconLines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
+ const get=id=>{const line=iconLines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("[")).replace(/,\\s*$/,""));};
+ const people=["manager","player","young"].map(get);
+ assert.equal(people[0][0],people[1][0]);
+ assert.equal(people[1][0],people[2][0]);
+ assert.equal(people[0][1],people[1][1]);
+ assert.equal(people[1][1],people[2][1]);
+ assert.notEqual(people[0][2],people[1][2]);
+ assert.notEqual(people[1][2],people[2][2]);
+ assert.equal(get("xi").length,4);
+ assert.ok(!get("xi").some(path=>path.includes("a6 6")));
+});

@@ -26,16 +26,16 @@ const iconPaths={
  champion:["M5 18h22l3-14-10 7-4-9-4 9L2 4z","M7 23h18v4H7z"],
  promotion:["M16 3L7 13h6v16h6V13h6z"],
  playoff:["M16 2l4.4 9 9.9 1.4-7.2 7 1.7 9.9L16 24.7l-8.8 4.6 1.7-9.9-7.2-7 9.9-1.4z"],
- manager:["M9 5h14v8c0 5-3 8-7 8s-7-3-7-8z","M9 8H5v4c0 3 2 5 5 5M23 8h4v4c0 3-2 5-5 5","M16 21v5m-7 3h14m-11-3h8"],
- player:["M16 3l4 8.5 9 1.3-6.5 6.3 1.5 9-8-4.2-8 4.2 1.5-9L3 12.8l9-1.3z","M16 10v8m-4-4h8"],
- young:["M16 4l3 6.5 7 1-5.1 5 1.2 7.2L16 20.3l-6.1 3.4 1.2-7.2-5.1-5 7-1z","M16 25v4m-5-2h10"],
+ manager:["M16 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8","M6 27v-5c0-4.5 4-7 10-7s10 2.5 10 7v5","M11 17l5 5 5-5"],
+ player:["M16 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8","M6 27v-5c0-4.5 4-7 10-7s10 2.5 10 7v5","M10 20h12"],
+ young:["M16 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8","M6 27v-5c0-4.5 4-7 10-7s10 2.5 10 7v5","M23 15l1.3 2.7 3 .4-2.2 2.1.5 3-2.6-1.4-2.6 1.4.5-3-2.2-2.1 3-.4z"],
  boot:["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],
  assists:["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],
  glove:["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],
  defender:["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],
  midfielder:["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],
  forward:["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"],
- xi:["M5 5h22v22H5z","M16 5v22M5 16h22","M16 10a6 6 0 1 0 0 12 6 6 0 0 0 0-12","M5 11h4v10H5m22-10h-4v10h4"]
+ xi:["M7 7v18","M5 10l4-3v18","M20 7v18","M18 10l4-3v18"]
 };
 const createIcon=id=>{
  const svg=document.createElementNS(svgNS,"svg");svg.setAttribute("viewBox","0 0 32 32");svg.setAttribute("focusable","false");svg.setAttribute("aria-hidden","true");svg.classList.add("fa-awards-symbol");
