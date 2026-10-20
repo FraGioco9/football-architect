@@ -35,7 +35,7 @@ const iconPaths={
  defender:["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],
  midfielder:["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],
  forward:["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"],
- xi:["M7 7l4-3v24","M5 10l6-6","M21 7l4-3v24","M19 10l6-6"]
+ xi:["M5 11l5-4v19","M18 11l5-4v19","M6 26h8","M19 26h8"]
 };
 const createIcon=id=>{
  const svg=document.createElementNS(svgNS,"svg");svg.setAttribute("viewBox","0 0 32 32");svg.setAttribute("focusable","false");svg.setAttribute("aria-hidden","true");svg.classList.add("fa-awards-symbol");
