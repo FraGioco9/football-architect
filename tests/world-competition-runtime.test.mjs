@@ -81,6 +81,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   emit(name,event){for(const fn of this.events[name]??[])fn(event)},
   currentScript:{src:root+"/assets/competition-page.js"},
   head:{
+   append(...assets){for(const asset of assets)this.appendChild(asset)},
    appendChild(asset){
     if(asset.tagName==="link")return; // Stylesheets are not executable script loads.
     loaded.push(new URL(asset.src).pathname);
