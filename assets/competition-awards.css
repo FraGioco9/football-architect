@@ -49,3 +49,6 @@ html[data-theme="light"] #competition-panel-awards .fa-awards-subtitle{color:#47
 
 /* Top Assists: filled boot silhouette with transparent diagonal bands. */
 .fa-awards-card-assists .fa-awards-symbol{fill:currentColor;fill-rule:evenodd;stroke:none}
+
+/* Golden Boot: filled classic football with transparent panels. */
+.fa-awards-card-boot .fa-awards-symbol{fill:currentColor;fill-rule:evenodd;stroke:none}
