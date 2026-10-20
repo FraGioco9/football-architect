@@ -85,3 +85,12 @@ test("AWARDS-02-UI-QA-07: only three human award emblems use filled silhouette t
  for(const id of ids){const line=section.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);assert.equal(JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1)).length,3,id);assert.ok(css.includes("fa-awards-card-"+id+" .fa-awards-symbol"),id);}
  assert.match(css,/fill:currentColor;stroke:none/);
 });
+
+test("AWARDS-02-UI-QA-08: approved manager stays frozen while player and young receive distinct football silhouettes",()=>{
+ const lines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
+ const get=id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
+ assert.deepEqual(get("manager"),["M16 2.8a5.4 5.4 0 1 0 0 10.8 5.4 5.4 0 0 0 0-10.8Z","M9.3 15.4c-4.6.5-6.8 3.4-6.8 7.7v5.7c0 1.2 1 2.2 2.2 2.2h22.6c1.2 0 2.2-1 2.2-2.2v-5.7c0-4.3-2.2-7.2-6.8-7.7l-5.1 13.1c-.6 1.4-2.6 1.4-3.2 0Z","M14.4 15.5h3.2l1 1.9-2.1 2.7.8 4.3-1.3 3.3-1.3-3.3.8-4.3-2.1-2.7Z"]);
+ assert.deepEqual(get("player"),["M16 2.7a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2Z","M10.2 15.2 4.7 18c-.8.4-1.4 1-1.7 1.9L1.5 24l5.8 2.2 2.1-4.1V30h13.2v-7.9l2.1 4.1 5.8-2.2-1.5-4.1c-.3-.9-.9-1.5-1.7-1.9l-5.5-2.8-2.7 3.5h-6.2Z","M13 15.4l3 3.4 3-3.4-1.1-.8h-3.8Z"]);
+ assert.deepEqual(get("young"),["M15.2 3.5a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Z","M9.6 15.3l-5.1 2.8c-.6.3-1 .9-1.3 1.5L2 23.6l5.2 2 2-3.7V29h12v-7.1l2 3.7 5.2-2-1.2-4c-.2-.6-.7-1.2-1.3-1.5l-5.1-2.8-2.6 3.1h-6Z","M25 5l1.3 2.6 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4Z"]);
+ assert.notDeepEqual(get("player"),get("young"));
+});
