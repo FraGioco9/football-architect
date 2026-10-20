@@ -64,16 +64,12 @@ test("AWARDS-02-UI-QA-04: all ten renewed award SVG definitions are present",()=
  assert.ok(css.includes('align-self:center'));
 });
 
-test("AWARDS-02-UI-QA-05: manager player young use the same human silhouette and team is eleven",()=>{
- const iconLines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
- const get=id=>{const line=iconLines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
- const people=["manager","player","young"].map(get);
- assert.equal(people[0][0],people[1][0]);
- assert.equal(people[1][0],people[2][0]);
- assert.equal(people[0][1],people[1][1]);
- assert.equal(people[1][1],people[2][1]);
- assert.notEqual(people[0][2],people[1][2]);
- assert.notEqual(people[1][2],people[2][2]);
- assert.equal(get("xi").length,4);
- assert.ok(!get("xi").some(path=>path.includes("a6 6")));
+test("AWARDS-02-UI-QA-05: all thirteen redesigned SVG symbols are unique and readable",()=>{
+ const lines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
+ const ids=["champion","promotion","playoff","manager","player","young","boot","assists","glove","defender","midfielder","forward","xi"];
+ const paths=ids.map(id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));});
+ assert.equal(new Set(paths.map(p=>JSON.stringify(p))).size,13);
+ for(const path of paths)assert.ok(path.length>=2&&path.every(d=>d.startsWith("M")),JSON.stringify(path));
+ for(const id of ["manager","player","young"])assert.ok(paths[ids.indexOf(id)].some(d=>d.includes("a4.5 4.5")),id);
+ assert.ok(paths[ids.indexOf("xi")].every(d=>!d.includes("a6 6")));
 });
