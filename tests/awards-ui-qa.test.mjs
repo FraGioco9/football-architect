@@ -73,7 +73,7 @@ test("AWARDS-02-UI-QA-05: playoff bracket replaces trophy; seven original emblem
  assert.deepEqual(get("assists"),["M1.5 11.6C2.1 10.1 2.6 9.6 3.2 10.3C5.6 13.6 8.7 13.8 11.8 13.6C13.5 13.5 15 13 16.2 12.3L13.3 11C12.6 10.6 12.5 10.1 13 9.5L14.3 7.8C14.8 7.2 15.3 7.1 16.1 7.5L25.3 12.1C27.1 13 29.1 13.2 30.5 13.6C31.8 14 32 14.8 31.9 15.6C31.6 17.7 29.4 19 26.7 19.4L26.6 21C26.6 22.1 26.3 22.3 25.6 22.3H24.9C24.1 22.3 23.9 21.9 23.8 20.9L23.7 19.7H22.8L22.7 21C22.6 22 22.4 22.3 21.6 22.3H20.9C20.2 22.3 20 21.9 19.9 20.9L19.8 19.6H10.8L10.6 20.9C10.6 22 10.3 22.3 9.6 22.3H8.8C8.1 22.3 8 21.9 7.9 21L7.8 19.6H7L6.8 21C6.8 22 6.5 22.3 5.8 22.3H5.1C4.4 22.3 4.2 21.8 4.1 20.9L4 19.5C2.4 19.4 1.4 19.1 1 18.1C.3 16.3.6 13.5 1.5 11.6Z M15.8 12.4L8.1 17.5H10.7L18 13.6Z M18.7 13.9L13 17.5H15.4L20.5 14.7Z"],"Top Assists boot silhouette remains stable");
  for(const id of ["manager","young","xi"])assert.ok(get(id).length>=2,id);
  assert.equal(get("player").length,1,"approved star is one closed path");
- assert.match(css,/fa-awards-card-assists \\.fa-awards-symbol\\{fill:currentColor;fill-rule:evenodd;stroke:none\\}/);
+ assert.ok(css.includes(".fa-awards-card-assists .fa-awards-symbol{fill:currentColor;fill-rule:evenodd;stroke:none}"));
 });
 
 test("AWARDS-02-UI-QA-06: team eleven uses approved optical offset at unchanged size and weight",()=>{
