@@ -35,6 +35,7 @@ test("AWARDS-02-UI-QA-02: all award identities are SVG and medallions center con
  assert.match(awards,/medallion\.append\(createIcon\(award\.id\)\)/);
  assert.match(css,/\.fa-awards-medallion\{[^}]*align-self:center/);
  assert.match(css,/\.fa-awards-symbol\{[^}]*width:100%;height:100%/);
+ assert.ok(awards.includes('id==="assists"?"0 0.85 32 32":"0 0 32 32"'),"Top Assists bounding box optically centered; Golden Boot remains geometrically centered");
 });
 
 test("AWARDS-02-UI-QA-03: initial Awards panels never flash obsolete fallback",()=>{
