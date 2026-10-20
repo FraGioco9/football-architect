@@ -218,3 +218,10 @@ test("DEBUG-CREST-01 preserves mounted standings and Fixtures crest hosts",()=>{
  assert.match(fixtures,/const next=matches\.map\(item=>\{/);
  assert.match(fixtures,/if\(typeof fields\.list\.insertBefore==="function"\)/);
 });
+
+test("STANDINGS-DEBUG-OUTCOME-01 clears stale winner and position bands",()=>{
+ const page=read("assets/competition-page.js");
+ assert.match(page,/if \(row\.dataset\.standingOutcome\) delete row\.dataset\.standingOutcome;/);
+ assert.match(page,/row\.getAttribute\("aria-describedby"\)\?\.startsWith\("standings-outcome-"\)/);
+ assert.match(page,/if \(outcome\) \{\s*row\.dataset\.standingOutcome = outcome;/);
+});
