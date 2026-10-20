@@ -42,3 +42,6 @@ html[data-theme="light"] #competition-panel-awards .fa-awards-subtitle{color:#47
 .fa-awards-symbol{display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .fa-awards-card-champion .fa-awards-medallion{padding:12px}
 .fa-awards-card-xi .fa-awards-symbol{stroke-width:3.5}
+
+/* Three filled human silhouettes (the remaining ten SVG identities keep outline rendering). */
+.fa-awards-card-manager .fa-awards-symbol,.fa-awards-card-player .fa-awards-symbol,.fa-awards-card-young .fa-awards-symbol{fill:currentColor;stroke:none}
