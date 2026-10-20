@@ -72,8 +72,9 @@ test("AWARDS-02-UI-QA-05: only four emblems redesigned; nine originals retained"
  for(const id of ["manager","player","young","xi"])assert.ok(get(id).length>=2,id);
 });
 
-test("AWARDS-02-UI-QA-06: team eleven uses matching unadorned numerals",()=>{
+test("AWARDS-02-UI-QA-06: team eleven is bold and geometrically centered",()=>{
  const match=awards.match(/ xi:(\[[^\n]+\])/);
  assert.ok(match);
- assert.deepEqual(JSON.parse(match[1]),["M7 13l5-4v16","M19 13l5-4v16"]);
+ assert.deepEqual(JSON.parse(match[1]),["M8 12l5-4v16","M19 12l5-4v16"]);
+ assert.match(css,/\.fa-awards-card-xi \.fa-awards-symbol\{stroke-width:3\.5\}/);
 });
