@@ -66,7 +66,7 @@ test("AWARDS-02-UI-QA-04: all ten renewed award SVG definitions are present",()=
 
 test("AWARDS-02-UI-QA-05: manager player young use the same human silhouette and team is eleven",()=>{
  const iconLines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
- const get=id=>{const line=iconLines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("[")).replace(/,\\s*$/,""));};
+ const get=id=>{const line=iconLines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
  const people=["manager","player","young"].map(get);
  assert.equal(people[0][0],people[1][0]);
  assert.equal(people[1][0],people[2][0]);
