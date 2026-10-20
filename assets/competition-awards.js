@@ -38,7 +38,7 @@ const iconPaths={
  xi:["M6.5 12l5-4v16","M17.5 12l5-4v16"]
 };
 const createIcon=id=>{
- const svg=document.createElementNS(svgNS,"svg");svg.setAttribute("viewBox","0 0 32 32");svg.setAttribute("focusable","false");svg.setAttribute("aria-hidden","true");svg.classList.add("fa-awards-symbol");
+ const svg=document.createElementNS(svgNS,"svg");svg.setAttribute("viewBox",id==="assists"?"0 0.85 32 32":"0 0 32 32");svg.setAttribute("focusable","false");svg.setAttribute("aria-hidden","true");svg.classList.add("fa-awards-symbol");
  for(const d of iconPaths[id]){const path=document.createElementNS(svgNS,"path");path.setAttribute("d",d);svg.append(path)}
  return svg;
 };
