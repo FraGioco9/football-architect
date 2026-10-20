@@ -68,6 +68,12 @@
   }
   function decorateStanding(row, position) {
     const outcome = standingOutcome(position);
+    // Debug Settings can reorder the same mounted rows. Always clear the previous
+    // position band before applying the new one, or stale champion/gold highlights remain.
+    if (row.dataset.standingOutcome) delete row.dataset.standingOutcome;
+    if (row.getAttribute("aria-describedby")?.startsWith("standings-outcome-")) {
+      row.removeAttribute("aria-describedby");
+    }
     if (outcome) {
       row.dataset.standingOutcome = outcome;
       row.setAttribute("aria-describedby", "standings-outcome-" + outcome);
