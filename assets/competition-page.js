@@ -688,7 +688,8 @@
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
     createPostseason(division);
-    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js"])
+    const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
+    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js"])
       await loadScript(script);
   }
   start().catch(fail);
