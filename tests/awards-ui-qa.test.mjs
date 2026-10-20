@@ -64,10 +64,10 @@ test("AWARDS-02-UI-QA-04: all ten renewed award SVG definitions are present",()=
  assert.ok(css.includes('align-self:center'));
 });
 
-test("AWARDS-02-UI-QA-05: only four emblems redesigned; nine originals retained",()=>{
+test("AWARDS-02-UI-QA-05: playoff trophy replaces star; eight original emblems retained",()=>{
  const lines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
  const get=id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
- const previous={"champion":["M5 18h22l3-14-10 7-4-9-4 9L2 4z","M7 23h18v4H7z"],"promotion":["M16 3L7 13h6v16h6V13h6z"],"playoff":["M16 2l4.4 9 9.9 1.4-7.2 7 1.7 9.9L16 24.7l-8.8 4.6 1.7-9.9-7.2-7 9.9-1.4z"],"boot":["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],"assists":["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],"glove":["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],"defender":["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],"midfielder":["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],"forward":["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"]};
+ const previous={"champion":["M5 18h22l3-14-10 7-4-9-4 9L2 4z","M7 23h18v4H7z"],"promotion":["M16 3L7 13h6v16h6V13h6z"],"playoff":["M9 5h14v7c0 6-2.8 9-7 9s-7-3-7-9V5z","M9 8H5v4c0 4 2.4 6 6 6","M23 8h4v4c0 4-2.4 6-6 6","M16 21v5","M10 28h12"],"boot":["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],"assists":["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],"glove":["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],"defender":["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],"midfielder":["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],"forward":["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"]};
  for(const [id,paths] of Object.entries(previous))assert.deepEqual(get(id),paths,id);
  for(const id of ["manager","young","xi"])assert.ok(get(id).length>=2,id);
  assert.equal(get("player").length,1,"approved star is one closed path");
@@ -88,4 +88,11 @@ test("AWARDS-02-UI-QA-07: manager frozen, player star filled and young U21 outli
  assert.deepEqual(get("young"),["M4 8v10c0 3.8 1.8 6 4.6 6s4.6-2.2 4.6-6V8","M16 12c0-2.7 1.5-4.3 3.9-4.3s3.9 1.6 3.9 4c0 2-1.2 3.5-3.3 5.6L16 24h8","M26 10l2-2v16"]);
  assert.match(css,/fa-awards-card-manager \.fa-awards-symbol,.fa-awards-card-player \.fa-awards-symbol\{fill:currentColor;stroke:none\}/);
  assert.match(css,/fa-awards-card-young \.fa-awards-symbol\{fill:none;stroke:currentColor;stroke-width:2\.5\}/);
+});
+
+test("AWARDS-02-UI-QA-09: playoff trophy is distinct from the frozen player star",()=>{
+ const get=id=>{const line=awards.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
+ assert.deepEqual(get("playoff"),["M9 5h14v7c0 6-2.8 9-7 9s-7-3-7-9V5z","M9 8H5v4c0 4 2.4 6 6 6","M23 8h4v4c0 4-2.4 6-6 6","M16 21v5","M10 28h12"]);
+ assert.notDeepEqual(get("playoff"),get("player"));
+ assert.equal(get("player").length,1,"approved player star unchanged");
 });
