@@ -50,9 +50,10 @@ jobs:
           import {join} from "node:path";
 
           const directory=mkdtempSync(join(tmpdir(),"fa-debug-manifest-"));
+          const destination=join(directory,"artifact");
           try {
-            stageProtectedDebugArtifact(process.cwd(),directory);
-            const manifest=readFileSync(join(directory,"__fa_dev__/artifact-manifest.json"));
+            stageProtectedDebugArtifact(process.cwd(),destination);
+            const manifest=readFileSync(join(destination,"__fa_dev__/artifact-manifest.json"));
             const sha256=createHash("sha256").update(manifest).digest("hex");
             console.log("Debug manifest SHA-256:",sha256);
             appendFileSync(process.env.GITHUB_STEP_SUMMARY,
