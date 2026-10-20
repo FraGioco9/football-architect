@@ -82,6 +82,6 @@ test("AWARDS-02-UI-QA-06: team eleven uses approved optical offset at unchanged 
 test("AWARDS-02-UI-QA-07: only three human award emblems use filled silhouette treatment",()=>{
  const section=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
  const ids=["manager","player","young"];
- for(const id of ids){const line=section.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);assert.equal(JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1)).length,3,id);assert.match(css,new RegExp("fa-awards-card-"+id+" \\\.fa-awards-symbol"));}
+ for(const id of ids){const line=section.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);assert.equal(JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1)).length,3,id);assert.ok(css.includes("fa-awards-card-"+id+" .fa-awards-symbol"),id);}
  assert.match(css,/fill:currentColor;stroke:none/);
 });
