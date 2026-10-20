@@ -200,7 +200,7 @@
     // A club appears once per league round, but can appear in multiple postseason legs.
     const usedCrests=new Set();
     for(const item of next){
-      for(const placeholder of [...item.querySelectorAll("[data-club-crest]")]){
+      for(const placeholder of [...item.querySelectorAll?.("[data-club-crest]")||[]]){
         const id=placeholder.dataset.clubCrest;
         let hosts=crestHosts.get(id);
         if(!hosts){hosts=[];crestHosts.set(id,hosts)}
