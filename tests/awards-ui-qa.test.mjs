@@ -67,7 +67,7 @@ test("AWARDS-02-UI-QA-04: all ten renewed award SVG definitions are present",()=
 test("AWARDS-02-UI-QA-05: playoff bracket replaces trophy; seven original emblems retained",()=>{
  const lines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
  const get=id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
- const previous={"champion":["M13 7l3-3 3 3v20h-6","M11 27h10","M11 5C6 8 4 13 5 19c1 4 3 7 6 9","M21 5c5 3 7 8 6 14-1 4-3 7-6 9","M8 10l-4-1M7 15l-4 1M9 21l-4 3","M24 10l4-1M25 15l4 1M23 21l4 3"],"promotion":["M16 3L7 13h6v16h6V13h6z"],"playoff":["M4.5 5h7v7H4.5z","M4.5 20h7v7H4.5z","M11.5 8.5h5V16h5","M11.5 23.5h5V16","M24.5 16m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"],"boot":["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],"assists":["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],"glove":["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],"defender":["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],"midfielder":["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],"forward":["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"]};
+ const previous={"champion":["M16 3 27 7v9c0 7-4.4 11.4-11 14C9.4 27.4 5 23 5 16V7Z","M10 11h12v6c0 4-2.4 7-6 8-3.6-1-6-4-6-8Z","M12 14h8","M16 11v11"],"promotion":["M16 3L7 13h6v16h6V13h6z"],"playoff":["M4.5 5h7v7H4.5z","M4.5 20h7v7H4.5z","M11.5 8.5h5V16h5","M11.5 23.5h5V16","M24.5 16m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"],"boot":["M8 4h9v10l4 5h7v7H4v-6l4-4z","M4 26h24","M9 9h8m-8 5h8"],"assists":["M4 24l8-9 5 4L28 7","M20 7h8v8","M4 6h10v7H4z"],"glove":["M8 28V14c0-2.5 3.5-2.5 3.5 0V6c0-2.5 3.5-2.5 3.5 0v7-5c0-2.5 3.5-2.5 3.5 0v5-2c0-2.5 3.5-2.5 3.5 0v10c0 5-4 8-9 8z","M12 19l4 3 4-3"],"defender":["M16 3l11 4.5V16c0 6-4 10.5-11 13-7-2.5-11-7-11-13V7.5z","M10 17l4 4 8-9"],"midfielder":["M16 3l13 13-13 13L3 16z","M16 8v16M8 16h16","M12 12l8 8m0-8-8 8"],"forward":["M4 26L27 4l-4 13-6-6z","M4 18v9h9","M11 25l9-9"]};
  for(const [id,paths] of Object.entries(previous))assert.deepEqual(get(id),paths,id);
  for(const id of ["manager","young","xi"])assert.ok(get(id).length>=2,id);
  assert.equal(get("player").length,1,"approved star is one closed path");
@@ -97,9 +97,9 @@ test("AWARDS-02-UI-QA-09: playoff bracket optically centered with symmetric 7x7 
  assert.equal(get("player").length,1,"approved player star unchanged");
 });
 
-test("AWARDS-02-UI-QA-10: section headings are 16px and champion shows an independent laurel number one",()=>{
+test("AWARDS-02-UI-QA-10: section headings are 16px and champion uses a shield emblem",()=>{
  assert.match(css,/\.fa-awards-section-title\{font-size:16px;margin:0 0 14px\}/);
  const line=awards.split("\n").find(s=>s.startsWith(" champion:"));
  assert.ok(line);
- assert.deepEqual(JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1)),["M13 7l3-3 3 3v20h-6","M11 27h10","M11 5C6 8 4 13 5 19c1 4 3 7 6 9","M21 5c5 3 7 8 6 14-1 4-3 7-6 9","M8 10l-4-1M7 15l-4 1M9 21l-4 3","M24 10l4-1M25 15l4 1M23 21l4 3"]);
+ assert.deepEqual(JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1)),["M16 3 27 7v9c0 7-4.4 11.4-11 14C9.4 27.4 5 23 5 16V7Z","M10 11h12v6c0 4-2.4 7-6 8-3.6-1-6-4-6-8Z","M12 14h8","M16 11v11"]);
 });
