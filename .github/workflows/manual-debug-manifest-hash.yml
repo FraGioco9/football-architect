@@ -1,0 +1,68 @@
+name: Generate Debug Manifest Hash
+
+# Manual-only, read-only manifest calculation. Never deploy or upload debug content.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact 40-character main commit SHA to calculate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  calculate:
+    name: Generate approved-candidate Debug manifest SHA-256
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate owner, branch, and exact main SHA
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || exit 1
+          [[ "$GITHUB_REPOSITORY" == "FraGioco9/football-architect" ]] || exit 1
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || exit 1
+          [[ "${GITHUB_ACTOR,,}" == "fragioco9" ]] || exit 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          [[ "$GITHUB_SHA" == "$EXPECTED_SHA" ]] || { echo "main SHA changed: abort"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Calculate manifest hash without publishing Debug assets
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          node --input-type=module <<'NODE'
+          import {stageProtectedDebugArtifact} from "./tools/dev-preview-artifact.mjs";
+          import {createHash} from "node:crypto";
+          import {readFileSync,mkdtempSync,rmSync,appendFileSync} from "node:fs";
+          import {tmpdir} from "node:os";
+          import {join} from "node:path";
+
+          const directory=mkdtempSync(join(tmpdir(),"fa-debug-manifest-"));
+          try {
+            stageProtectedDebugArtifact(process.cwd(),directory);
+            const manifest=readFileSync(join(directory,"__fa_dev__/artifact-manifest.json"));
+            const sha256=createHash("sha256").update(manifest).digest("hex");
+            console.log("Debug manifest SHA-256:",sha256);
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+              "## Debug manifest hash (candidate for owner review)\n\n"+
+              "- Source commit: `"+process.env.EXPECTED_SHA+"`\n"+
+              "- Artifact contract: `protected_debug`\n"+
+              "- SHA-256: `"+sha256+"`\n\n"+
+              "Copy the SHA-256 into Manual Vercel Preview only after owner approval. "+
+              "This run does not approve or deploy anything.\n");
+          } finally {
+            rmSync(directory,{recursive:true,force:true});
+          }
+          NODE
