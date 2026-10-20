@@ -71,3 +71,9 @@ test("AWARDS-02-UI-QA-05: only four emblems redesigned; nine originals retained"
  for(const [id,paths] of Object.entries(previous))assert.deepEqual(get(id),paths,id);
  for(const id of ["manager","player","young","xi"])assert.ok(get(id).length>=2,id);
 });
+
+test("AWARDS-02-UI-QA-06: team icon has symmetric eleven with matching baselines",()=>{
+ const match=awards.match(/ xi:(\[[^\n]+\])/);
+ assert.ok(match);
+ assert.deepEqual(JSON.parse(match[1]),["M5 11l5-4v19","M18 11l5-4v19","M6 26h8","M19 26h8"]);
+});
