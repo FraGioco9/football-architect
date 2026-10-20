@@ -3,7 +3,6 @@
   "use strict";
   const copies = {
     en: {
-      skip:"Skip to main content",
       navWorld:"World",
       navCompetitions:"Competitions",
       divisionIntro:"Explore the 16 documented divisions across eight countries. No league season is running yet.",
@@ -221,7 +220,6 @@
       aboutText:"Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.",
     },
     de: {
-      skip:"Zum Hauptinhalt springen",
       navWorld:"Welt",
       navCompetitions:"Wettbewerbe",
       divisionIntro:"Entdecke die 16 dokumentierten Ligen in acht Ländern. Der Ligabetrieb hat noch nicht begonnen.",
@@ -439,7 +437,6 @@
       aboutText:"Football Architect zeigt eine alternative Fußballwelt mit realen Ländern sowie fiktiven Vereinen und Ligen. Dies ist eine Vorschau der Oberfläche, kein spielbares Spiel.",
     },
     es: {
-      skip:"Saltar al contenido principal",
       navWorld:"Mundo",
       navCompetitions:"Competiciones",
       divisionIntro:"Explora las 16 divisiones documentadas en ocho países. La competición aún no ha comenzado.",
@@ -657,7 +654,6 @@
       aboutText:"Football Architect presenta un mundo futbolístico alternativo con países reales, clubes y divisiones ficticios. Esta página es una vista previa, no un juego funcional.",
     },
     fr: {
-      skip:"Aller au contenu principal",
       navWorld:"Monde",
       navCompetitions:"Compétitions",
       divisionIntro:"Découvrez les 16 divisions répertoriées dans huit pays. Aucune compétition n'est encore en cours.",
@@ -875,7 +871,6 @@
       aboutText:"Football Architect présente un univers footballistique alternatif avec de vrais pays et des clubs et divisions fictifs. Cette page est un aperçu de l’interface, pas un jeu jouable.",
     },
     it: {
-      skip:"Vai al contenuto principale",
       navWorld:"Mondo",
       navCompetitions:"Competizioni",
       divisionIntro:"Esplora le 16 divisioni documentate di otto Paesi. I campionati non sono ancora attivi.",
