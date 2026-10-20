@@ -8,7 +8,7 @@
 .fa-awards-status,.fa-awards-chip{border:1px solid #806f43;border-radius:999px;color:var(--award-gold);font-weight:800;letter-spacing:.03em;font-size:10px;padding:6px 10px;white-space:nowrap}
 .fa-awards-notice{margin:0;padding:14px 16px;border:1px solid var(--award-outline);border-radius:12px;background:var(--award-ink);color:#d4ded9;line-height:1.5}
 .fa-awards-section{min-width:0}
-.fa-awards-section-title{font-size:13px;margin:0 0 14px}
+.fa-awards-section-title{font-size:16px;margin:0 0 14px}
 .fa-awards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .fa-awards-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;border:1px solid var(--award-outline);background:var(--award-ink);color:#eff6f1;border-radius:14px;overflow-wrap:anywhere}
 .fa-awards-medallion{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:1px solid #837147;background:#2d362b;color:var(--award-gold);font-size:25px;line-height:1}

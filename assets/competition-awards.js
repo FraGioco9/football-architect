@@ -23,7 +23,7 @@ const visible=definitions.filter(item=>!item.tier||item.tier===tier);
 const el=(tag,cls,text,key)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;if(key)node.dataset.appI18n=key;return node};
 const svgNS="http://www.w3.org/2000/svg";
 const iconPaths={
- champion:["M5 18h22l3-14-10 7-4-9-4 9L2 4z","M7 23h18v4H7z"],
+ champion:["M13 7l3-3 3 3v20h-6","M11 27h10","M11 5C6 8 4 13 5 19c1 4 3 7 6 9","M21 5c5 3 7 8 6 14-1 4-3 7-6 9","M8 10l-4-1M7 15l-4 1M9 21l-4 3","M24 10l4-1M25 15l4 1M23 21l4 3"],
  promotion:["M16 3L7 13h6v16h6V13h6z"],
  playoff:["M4.5 5h7v7H4.5z","M4.5 20h7v7H4.5z","M11.5 8.5h5V16h5","M11.5 23.5h5V16","M24.5 16m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"],
  manager:["M16 2.8a5.4 5.4 0 1 0 0 10.8 5.4 5.4 0 0 0 0-10.8Z","M9.3 15.4c-4.6.5-6.8 3.4-6.8 7.7v5.7c0 1.2 1 2.2 2.2 2.2h22.6c1.2 0 2.2-1 2.2-2.2v-5.7c0-4.3-2.2-7.2-6.8-7.7l-5.1 13.1c-.6 1.4-2.6 1.4-3.2 0Z","M14.4 15.5h3.2l1 1.9-2.1 2.7.8 4.3-1.3 3.3-1.3-3.3.8-4.3-2.1-2.7Z"],
