@@ -90,7 +90,9 @@ test("AWARDS-02-UI-QA-08: manager is frozen and only two athletic icons are revi
  const lines=awards.slice(awards.indexOf("const iconPaths="),awards.indexOf("const createIcon="));
  const get=id=>{const line=lines.split("\n").find(s=>s.startsWith(" "+id+":"));assert.ok(line,id);return JSON.parse(line.slice(line.indexOf("["),line.lastIndexOf("]")+1));};
  assert.deepEqual(get("manager"),["M16 2.8a5.4 5.4 0 1 0 0 10.8 5.4 5.4 0 0 0 0-10.8Z","M9.3 15.4c-4.6.5-6.8 3.4-6.8 7.7v5.7c0 1.2 1 2.2 2.2 2.2h22.6c1.2 0 2.2-1 2.2-2.2v-5.7c0-4.3-2.2-7.2-6.8-7.7l-5.1 13.1c-.6 1.4-2.6 1.4-3.2 0Z","M14.4 15.5h3.2l1 1.9-2.1 2.7.8 4.3-1.3 3.3-1.3-3.3.8-4.3-2.1-2.7Z"]);
- assert.deepEqual(get("player"),["M16 3a5.4 5.4 0 1 0 0 10.8A5.4 5.4 0 0 0 16 3Z","M10.5 15.5c-4.2.5-7.5 3.5-7.5 8V29h26v-5.5c0-4.5-3.3-7.5-7.5-8l-2.8 3.7H13.3Z","M12.7 17.2 16 20l3.3-2.8"]);
+ assert.deepEqual(get("player"),["M16 2.8a5.4 5.4 0 1 0 0 10.8 5.4 5.4 0 0 0 0-10.8Z","M9.3 15.4c-4.6.5-6.8 3.4-6.8 7.7v5.7c0 1.2 1 2.2 2.2 2.2h22.6c1.2 0 2.2-1 2.2-2.2v-5.7c0-4.3-2.2-7.2-6.8-7.7Z"]);
+ assert.equal(get("player").length,2,"solid head and torso only");
+ assert.equal(get("player")[0],get("manager")[0],"approved manager head unchanged");
  assert.deepEqual(get("young"),["M16 4a4.8 4.8 0 1 0 0 9.6A4.8 4.8 0 0 0 16 4Z","M11 15.5c-4.1.6-7.5 3.7-7.5 8.1V29h25v-5.4c0-4.4-3.4-7.5-7.5-8.1l-5 4.2Z","M23.5 15.8l1.2 2.6 2.9.4-2.1 2 .5 2.9-2.5-1.4-2.5 1.4.5-2.9-2.1-2 2.9-.4Z"]);
  assert.notDeepEqual(get("player"),get("young"));
 });
