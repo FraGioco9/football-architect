@@ -55,3 +55,6 @@ html[data-theme="light"] #competition-panel-awards .fa-awards-subtitle{color:#47
 
 /* Golden Glove: approved filled Bezier icon with separate wrist cuff. */
 .fa-awards-card-glove .fa-awards-symbol{fill:currentColor;stroke:none}
+
+/* Defender: approved single-path shield with interior cutout. */
+.fa-awards-card-defender .fa-awards-symbol{fill:currentColor;fill-rule:evenodd;stroke:none}
