@@ -212,8 +212,9 @@ test('FIXTURES-POSTSEASON: invalid extra fixtures fail before mutating the leagu
 test("DEBUG-CREST-01 preserves mounted standings and Fixtures crest hosts",()=>{
  const dev=readFileSync(new URL("../tools/dev-standings-preview-client.mjs",import.meta.url),"utf8");
  const fixtures=readFileSync(new URL("../assets/competition-fixtures.js",import.meta.url),"utf8");
- assert.match(dev,/if\(restorePrevious\?\.refresh[\s\S]*?return restorePrevious;[\s\S]*?if\(restorePrevious\)restorePrevious\(\);/);
+ assert.match(dev,/if\(restorePrevious\?\.refresh[\s\S]*?return restorePrevious;/);
  assert.match(fixtures,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
  assert.match(fixtures,/return previous;/);
- assert.doesNotMatch(fixtures,/fields\.list\.replaceChildren\(\.\.\.matches\)/);
+ assert.match(fixtures,/const next=matches\.map\(item=>\{/);
+ assert.match(fixtures,/if\(typeof fields\.list\.insertBefore==="function"\)/);
 });

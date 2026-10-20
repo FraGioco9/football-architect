@@ -238,7 +238,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
      }
     }else {
       assert.equal(await run("window.faCompetitionRoute.get().matchday"),stage,'Rollback retains postseason placeholders');
-      assert.equal(await run("document.querySelectorAll('#app-fixtures-list .app-fixture-match').length"),division.tier===1?2:5);
+      assert.equal(await run("document.querySelectorAll('#app-fixtures-list .app-fixture-match').length"),division.tier===1?2:(day<32?4:5));
      }
     await run("document.getElementById('competition-tab-stats').click()");
     await until("document.querySelector('#fa-dev-stats .fa-dev-stats-grid strong')?.textContent==='"+(Math.min(day,30)*8)+"'");

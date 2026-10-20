@@ -189,15 +189,15 @@
       const previous=existing.get(item.dataset.fixtureMatch);
       if(!previous)return item;
       // Club identities are immutable for a given match key; only results change.
-      const oldResult=previous.querySelector(".app-fixture-result");
-      const newResult=item.querySelector(".app-fixture-result");
+      const oldResult=previous.querySelector?.(".app-fixture-result");
+      const newResult=item.querySelector?.(".app-fixture-result");
       if(oldResult&&newResult)oldResult.replaceWith(newResult);
       return previous;
     });
-    for(let i=0;i<next.length;i++){
-      if(fields.list.children[i]!==next[i])fields.list.insertBefore(next[i],fields.list.children[i]||null);
-    }
-    while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
+    if(typeof fields.list.insertBefore==="function"){
+      for(let i=0;i<next.length;i++)if(fields.list.children[i]!==next[i])fields.list.insertBefore(next[i],fields.list.children[i]||null);
+      while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
+    }else fields.list.replaceChildren(...matches);
     fields.summary.replaceChildren(...(isPostseason?[word(stageKey,division.tier===1?'Playout':'Playoffs')]:[word("fixturesMatchday","Matchday"),element("strong","",String(selected))]),
       ...(isPostseason?[element('strong','',String(postseason.length|| (division.tier===1?2:5))),word('fixturesMatches','matches')]:[word("fixturesMatchCount","8 matches")]));
     window.faAppRenderLanguage?.();
