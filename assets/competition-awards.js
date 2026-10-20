@@ -23,7 +23,7 @@ const visible=definitions.filter(item=>!item.tier||item.tier===tier);
 const el=(tag,cls,text,key)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;if(key)node.dataset.appI18n=key;return node};
 const svgNS="http://www.w3.org/2000/svg";
 const iconPaths={
- champion:["M16 3 27 7v9c0 7-4.4 11.4-11 14C9.4 27.4 5 23 5 16V7Z","M10 11h12v6c0 4-2.4 7-6 8-3.6-1-6-4-6-8Z","M12 14h8","M16 11v11"],
+ champion:["M4 10l6.5 6L16 6l5.5 10L28 10l-2.5 14h-19Z","M7 27h18","M5.3 9a1.3 1.3 0 1 0-2.6 0 1.3 1.3 0 1 0 2.6 0Z","M17.3 5a1.3 1.3 0 1 0-2.6 0 1.3 1.3 0 1 0 2.6 0Z","M29.3 9a1.3 1.3 0 1 0-2.6 0 1.3 1.3 0 1 0 2.6 0Z"],
  promotion:["M16 3L7 13h6v16h6V13h6z"],
  playoff:["M4.5 5h7v7H4.5z","M4.5 20h7v7H4.5z","M11.5 8.5h5V16h5","M11.5 23.5h5V16","M24.5 16m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"],
  manager:["M16 2.8a5.4 5.4 0 1 0 0 10.8 5.4 5.4 0 0 0 0-10.8Z","M9.3 15.4c-4.6.5-6.8 3.4-6.8 7.7v5.7c0 1.2 1 2.2 2.2 2.2h22.6c1.2 0 2.2-1 2.2-2.2v-5.7c0-4.3-2.2-7.2-6.8-7.7l-5.1 13.1c-.6 1.4-2.6 1.4-3.2 0Z","M14.4 15.5h3.2l1 1.9-2.1 2.7.8 4.3-1.3 3.3-1.3-3.3.8-4.3-2.1-2.7Z"],
