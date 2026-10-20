@@ -23,7 +23,7 @@ const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg",
  "app/competitions/_shared/index.html","app/competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","app.css",
- "app-search.js","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","theme.js",
+ "app-search.js","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 
 // Only explicit app URL aliases are allowed; no hosting, auth or build overrides.
