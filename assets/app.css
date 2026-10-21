@@ -1,4 +1,4 @@
-:root{--fa-flag-width:24px;--fa-flag-height:16px}
+:root{--fa-flag-width:25px;--fa-flag-height:20px}
 /* HOME-01: historical UX-SHELL proportions, adapted to the Graphite & Petrol site. */
 html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
 .app-body{height:100vh;height:100svh;height:100dvh;overflow:hidden;--fa-shell-border:#294a49;--fa-shell-accent:#64cba9;--app-page-pad-inline:clamp(16px,2vw,28px);--app-page-pad-top:clamp(16px,2vw,28px);--app-page-pad-bottom:40px;--app-page-section-gap:28px;--app-page-title-size:clamp(28px,3vw,40px);min-width:0}
@@ -239,7 +239,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-countries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:var(--app-page-section-gap)}
 .app-world-country{min-width:0;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
 .app-world-country h2{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:16px;font-weight:750}
-.app-world-flag-frame{display:inline-flex;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none}.app-world-flag{display:block;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none;object-fit:fill;border:0;border-radius:0;clip-path:none}
+.app-world-flag-frame{display:inline-flex;align-items:center;justify-content:center;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none}.app-world-flag{display:block;width:100%;height:100%;flex:none;object-fit:contain;border:0;border-radius:0;clip-path:none}
 .app-world-grid{display:grid;gap:2px}
 .app-division-card{display:flex;align-items:center;gap:11px;min-width:0;min-height:54px;padding:9px 12px;border-radius:8px}
 .app-competition-logo-placeholder{display:grid;place-items:center;flex:none;width:36px;height:36px;border:1px dashed #567e70;border-radius:9px;background:#1d3532;color:#b6d9c7;font-size:10px;font-weight:750;letter-spacing:-.015em}
