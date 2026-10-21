@@ -38,3 +38,23 @@ test("ROUTE-02 resolves slash variants to one canonical resource",()=>{
   assert.equal(club.canonical,"/clubs/br/40/history");
   assert.equal(club.redirect,true);
 });
+
+test("ROUTE-02 publication resolves explicit competition views to allowlisted shells",async()=>{
+ const {publicRequestFile,isAllowlistedPublicPath}=await import("../tools/publication-guard.mjs");
+ for(const country of ["it","eng","es","de","fr","pt","nl","br"])
+  for(const tier of [1,2])
+   for(const view of competitionViews){
+    const path=competitionSubpage(country+"-"+tier,view);
+    const file=publicRequestFile(path);
+    assert.equal(file,"competitions/"+country+"-"+tier+"/index.html");
+    assert.equal(isAllowlistedPublicPath(file),true);
+   }
+ assert.equal(isAllowlistedPublicPath(publicRequestFile("/competitions/it-1/invalid")),false);
+});
+test("ROUTE-02 hosting has exact explicit view rewrites and base redirect",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const config=JSON.parse(readFileSync(new URL("../vercel.json",import.meta.url),"utf8"));
+ assert.ok(config.redirects.some(rule=>rule.source.includes(":division")&&rule.destination==="/competitions/:division/overview"));
+ assert.ok(config.rewrites.some(rule=>rule.source.includes(":view(")&&rule.destination==="/competitions/:division/index.html"));
+ assert.equal(config.rewrites.some(rule=>rule.destination.includes("/app/")),false);
+});
