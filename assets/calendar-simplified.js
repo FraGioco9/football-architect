@@ -3,6 +3,14 @@
  'use strict';
  const root=document.getElementById('world-calendar');
  if(!root)return;
+ const locales={
+  en:{season:'Season',week:'Week',currentWeek:'Current week',day:'Day',national:'Domestic round',international:'International round',postseason:'Playoffs / playouts · leg',competitions:'Competitions',pending:'Fixtures and results are not yet available.',preseason:'Preseason',transition:'Season transition',empty:'No official events.'},
+  de:{season:'Saison',week:'Woche',currentWeek:'Aktuelle Woche',day:'Tag',national:'Nationaler Spieltag',international:'Internationale Runde',postseason:'Playoffs / Playdowns · Spiel',competitions:'Wettbewerbe',pending:'Spielplan und Ergebnisse sind noch nicht verfügbar.',preseason:'Vorbereitung',transition:'Saisonübergang',empty:'Keine offiziellen Ereignisse.'},
+  es:{season:'Temporada',week:'Semana',currentWeek:'Semana actual',day:'Día',national:'Jornada nacional',international:'Ronda internacional',postseason:'Playoffs / permanencia · partido',competitions:'Competiciones',pending:'Los partidos y resultados aún no están disponibles.',preseason:'Pretemporada',transition:'Transición de temporada',empty:'Sin eventos oficiales.'},
+  fr:{season:'Saison',week:'Semaine',currentWeek:'Semaine actuelle',day:'Jour',national:'Journée nationale',international:'Tour international',postseason:'Playoffs / barrages · manche',competitions:'Compétitions',pending:'Rencontres et résultats pas encore disponibles.',preseason:'Pré-saison',transition:'Transition de saison',empty:'Aucun événement officiel.'},
+  it:{season:'Stagione',week:'Settimana',currentWeek:'Settimana attuale',day:'Giorno',national:'Giornata nazionale',international:'Turno internazionale',postseason:'Playoff / playout · gara',competitions:'Competizioni',pending:'Calendario partite e risultati non ancora disponibili.',preseason:'Prestagione',transition:'Transizione di stagione',empty:'Nessun evento ufficiale.'}
+ };
+ const t=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
  const dev=window.faDevCalendarClockSnapshot?.source?.kind==='dev';
  const heading=root.querySelector('.calendar-heading');
@@ -33,6 +41,7 @@
   menu.replaceChildren();
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
   value.textContent=String(selectedSeason);
+  selector.querySelector('#calendar-season-label').textContent=t().season;
   root.dataset.season=String(selectedSeason);
   syncCalendarLink();
   if(typeof updateCurrentDay==='function')updateCurrentDay();
@@ -71,7 +80,7 @@
   const syncControls=()=>{const showing=document.documentElement.dataset.calendarView==='week';weekControls.hidden=!showing;weekControls.style.display=showing?'flex':'none';syncWeek()};
   new MutationObserver(()=>{syncControls();syncCalendarLink()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-calendar-view','data-calendar-week']});
   for(const mode of ['calendar-season','calendar-week'])document.getElementById(mode)?.addEventListener('click',()=>queueMicrotask(syncControls));
-  function syncWeek(){const calendarState=window.faWorldCalendar?.getSelection?.();const n=calendarState?.view==='week'?Math.ceil(calendarState.day/7):(Number(document.documentElement.dataset.calendarWeek)||1);weekValue.textContent='Week '+n;for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.hidden=!dev||selectedSeason!==readDebugSeason()||n===currentWeek();current.disabled=!dev}
+  function syncWeek(){const calendarState=window.faWorldCalendar?.getSelection?.();const n=calendarState?.view==='week'?Math.ceil(calendarState.day/7):(Number(document.documentElement.dataset.calendarWeek)||1);weekValue.textContent=t().week+' '+n;current.querySelector('span').textContent=t().currentWeek;current.setAttribute('aria-label',t().currentWeek);for(const o of weekMenu.children){o.textContent=t().week+' '+o.dataset.menuValue}for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.hidden=!dev||selectedSeason!==readDebugSeason()||n===currentWeek();current.disabled=!dev}
   window.faCalendarSyncWeek=syncWeek;
   for(const a of [prev,next])a.addEventListener('click',()=>queueMicrotask(syncWeek));
   window.addEventListener('popstate',()=>queueMicrotask(()=>{syncWeek();syncCalendarLink()}));
@@ -89,28 +98,29 @@
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
  let previousFocus;
  dialog.addEventListener('close',()=>previousFocus?.focus?.());
- const names={national:'Domestic round',international:'International round'};
+ const names=()=>({national:t().national,international:t().international});
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
  const dayModel=window.faWorldCalendarModel?.createSeason(1).days||[];
  const displayMarker=e=>e.family==='national'&&e.phase==='postseason'?'P'+String(e.round-30).padStart(2,'0'):e.marker;
- const namesFor=e=>e.family==='national'&&e.phase==='postseason'?'Playoffs / playouts · leg '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names[e.family]||e.family)+' '+e.round;
+ const namesFor=e=>e.family==='national'&&e.phase==='postseason'?t().postseason+' '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names()[e.family]||e.family)+' '+e.round;
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
   tooltip.hidden=true;previousFocus=focus||day;
-  dialog.querySelector('#calendar-event-dialog-title').textContent='Day '+n;
+  dialog.querySelector('#calendar-event-dialog-title').textContent=t().day+' '+n;
   dialog.querySelector('#calendar-event-dialog-subtitle').textContent='Season '+selectedSeason;
   const body=dialog.querySelector('#calendar-event-dialog-details');body.replaceChildren();
-  if(!data.events.length){const p=document.createElement('p');p.textContent=data.kind==='preseason'?'Preseason':data.kind==='transition'?'Season transition':'No official events.';body.append(p)}
+  if(!data.events.length){const p=document.createElement('p');p.textContent=data.kind==='preseason'?t().preseason:data.kind==='transition'?t().transition:t().empty;body.append(p)}
   for(const event of data.events){
    const section=document.createElement('section'),heading=document.createElement('h3');
    heading.textContent=displayMarker(event)+' - '+namesFor(event);section.append(heading);
-   const scope=document.createElement('p');scope.textContent='Competitions: '+event.competitionIds.join(', ');section.append(scope);
-   const pending=document.createElement('p');pending.textContent='Fixtures and results are not yet available.';section.append(pending);
+   const scope=document.createElement('p');scope.textContent=t().competitions+': '+event.competitionIds.join(', ');section.append(scope);
+   const pending=document.createElement('p');pending.textContent=t().pending;section.append(pending);
    body.append(section);
   }
   if(!dialog.open)dialog.showModal();
  }
  window.faCalendarShowDay=day=>showDay(day,day);
+ new MutationObserver(()=>{updateSeason();window.faCalendarSyncWeek?.()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  function placeTooltip(element){const bounds=element.getBoundingClientRect();tooltip.hidden=false;const w=tooltip.offsetWidth;tooltip.style.left=Math.max(10,Math.min(innerWidth-w-10,bounds.left+bounds.width/2-w/2))+'px';tooltip.style.top=(bounds.bottom+10+tooltip.offsetHeight<innerHeight?bounds.bottom+8:Math.max(8,bounds.top-tooltip.offsetHeight-8))+'px'}
  for(const marker of root.querySelectorAll('.calendar-event')){
   const day=marker.closest('[data-calendar-day]'),data=dayModel[Number(day?.dataset.calendarDay)-1];
