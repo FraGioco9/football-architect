@@ -16,6 +16,7 @@
  heading?.after(selector);
  const readDebugSeason=()=>{try{const n=Number(sessionStorage.getItem(seasonKey));return Number.isInteger(n)&&n>=1&&n<=4?n:1}catch{return 1}};
  let selectedSeason=1;
+ window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?readDebugSeason():1);
  function updateSeason(){
   const limit=dev?readDebugSeason():1;
