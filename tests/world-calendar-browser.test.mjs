@@ -112,7 +112,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await run("document.documentElement.scrollWidth<=innerWidth"),true);
     await cmd('Page.navigate',{url:origin+route});
     for(let i=0;i<100;i++){if(await run("document.readyState==='complete'&&!!document.querySelector('#app-fixtures-toolbar')"))break;await delay(100)}
-    const back=await run("document.querySelector('#app-fixtures-toolbar a[href^="/calendar?"]')?.getAttribute('href')");
+    const back=await run("document.querySelector('#app-fixtures-toolbar a[href^=\\\"/calendar?\\\"]')?.getAttribute('href')");
     assert.match(back,/^\/calendar\?season=1&day=16&calendarView=week&competition=national&division=it-1$/);
     await cmd('Page.navigate',{url:origin+back});
     for(let i=0;i<100;i++){if(await run("document.documentElement.dataset.calendarReady==='true'&&window.faWorldCalendar?.getSelection().day===16"))break;await delay(100)}
