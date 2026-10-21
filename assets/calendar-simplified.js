@@ -48,7 +48,7 @@
   window.faCalendarSyncWeek?.();
  }
 
- window.addEventListener('fa:dev-progress-change',()=>{updateSeason();updateCurrentDay()});
+ window.addEventListener('fa:dev-progress-change',updateSeason);
  window.addEventListener('popstate',updateSeason);
  // A day is never a permanent route or selection.
  if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
@@ -151,7 +151,6 @@
  }
  function currentDay(){try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}}
  function updateCurrentDay(){const n=dev&&selectedSeason===readDebugSeason()?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current){cell.dataset.devCurrentDay='true';cell.setAttribute('aria-current','true')}else{delete cell.dataset.devCurrentDay;cell.removeAttribute('aria-current')}}}
- window.addEventListener('fa:dev-world-day-change',updateCurrentDay);
- window.addEventListener('fa:dev-progress-change',updateCurrentDay);
+ window.addEventListener('fa:dev-world-day-change',()=>{updateCurrentDay();window.faCalendarSyncWeek?.()});
  updateCurrentDay();
 })();
