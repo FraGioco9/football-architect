@@ -58,7 +58,7 @@
  if(weekControls){
   weekControls.classList.add('app-fixtures-navigation');
   const toolbar=root.querySelector('.calendar-toolbar');
-  toolbar?.after(weekControls);
+  if(toolbar&&weekControls.previousElementSibling!==toolbar)toolbar.after(weekControls);
   const prev=document.getElementById('calendar-previous'),next=document.getElementById('calendar-next'),label=document.getElementById('calendar-week-label');
   for(const arrow of [prev,next]){arrow.classList.add('language-trigger','app-fixtures-arrow');arrow.classList.remove('app-fixtures-current');arrow.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+(arrow===prev?'m14 6-6 6 6 6':'m10 6 6 6-6 6')+'"/></svg>'}
   const wrap=weekControls.querySelector('.app-fixtures-select')||document.createElement('div');wrap.className='language-control app-fixtures-select';
