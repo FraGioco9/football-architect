@@ -905,8 +905,9 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
  const read=(k,min,max,fallback)=>{try{const n=Number(sessionStorage.getItem(k));return Number.isInteger(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
  const day=()=>read(key,1,56,1),season=()=>read(seasonKey,1,4,1);
  const publish=()=>{
-  window.dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'fictional calendar DEV control'},current:{season:1,day:day()}}}));
+  window.dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'fictional calendar DEV control'},current:{season:season(),day:day()}}}));
   window.dispatchEvent(new CustomEvent('fa:dev-progress-change',{detail:{season:season(),worldDay:day()}}));
+  for(const id of ['season','world-day']){const input=document.querySelector('[data-dev-control="'+id+'"]');const n=id==='season'?season():day();if(input){input.value=String(n);input.dataset.previous=String(n)}const number=document.querySelector('[data-dev-control="'+id+'-number"]');if(number){number.value=String(n);number.dataset.previous=String(n)}}
  };
  registerDebugControls('general',[{
   type:'range',id:'season',label:'Season',min:1,max:4,step:1,scope:'general',
