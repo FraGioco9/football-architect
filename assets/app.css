@@ -863,7 +863,10 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .app-history-dev-season-button{cursor:default}
 .app-history-dev-season-button:hover{background:transparent}
 .app-history-dev-archive .app-history-dev-season-link{display:inline-flex;justify-self:start;align-self:center;min-height:0;white-space:nowrap}
+/* Archive identities reserve crest space so text links cannot overflow narrow desktop columns. */
+.app-history-dev-archive .app-world-club-identity{display:grid;grid-template-columns:48px minmax(0,1fr);flex:1;min-width:0}
 .app-history-dev-archive .app-world-club-identity .app-world-club-name{display:inline;width:max-content;max-width:100%}
+@media(max-width:620px){.app-history-dev-archive .app-world-club-identity{grid-template-columns:40px minmax(0,1fr)}}
 .app-history-dev-archive .app-history-dev-season-button:hover .app-history-dev-season{text-decoration:none}
 .app-history-dev-archive .app-history-dev-season-link:hover .app-history-dev-season,.app-history-dev-archive .app-history-dev-season-link:focus-visible .app-history-dev-season{text-decoration:none}
 /* CAL-IMP-04 */

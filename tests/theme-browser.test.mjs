@@ -702,7 +702,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           "scrollShifted:Math.abs(shifted-original)>1,"+
           "overflowX:css.overflowX,touchAction:css.touchAction,"+
           "inBounds:inner.left>=outer.left-1&&inner.right<=outer.right+1,"+
-          "gridOverflow:grid.scrollWidth>grid.clientWidth+1}})()");
+          "gridOverflow:grid.scrollWidth>grid.clientWidth+1,"+
+          "overflowing:[...panel.querySelectorAll('*')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().right>outer.right+1).slice(0,8).map(e=>({tag:e.tagName,cls:e.className,width:e.getBoundingClientRect().width}))}})()");
         if(width<=520){
           assert.equal(recordScroll.scrollShifted,false,
             'History records cannot horizontally scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(recordScroll));
