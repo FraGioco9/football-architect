@@ -846,3 +846,11 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 #competition-panel-history .app-history-dev-record-entry .app-world-club-identity{align-items:center}
 #competition-panel-history .app-history-dev-season-link{display:inline-flex;align-items:center;min-height:24px;line-height:1.35;white-space:nowrap;color:var(--muted)}
 #competition-panel-history .app-history-dev-season-link:hover,#competition-panel-history .app-history-dev-season-link:focus-visible{color:var(--text)}
+
+/* History record: crest in its own column, club name and season on one text baseline. */
+#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){display:grid;grid-template-columns:48px minmax(0,1fr) max-content;column-gap:8px;align-items:center}
+#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link)>.app-world-club-identity{display:contents}
+#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-world-club-crest-placeholder{grid-column:1;grid-row:1}
+#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-world-club-name{grid-column:2;grid-row:1;min-width:0;line-height:1.35}
+#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-history-dev-season-link{grid-column:3;grid-row:1;min-height:0;align-self:center}
+@media(max-width:520px){#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){grid-template-columns:40px minmax(0,1fr) max-content;column-gap:6px}}
