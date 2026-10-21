@@ -168,6 +168,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
     assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true);
     assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true,'Navigating without a view canonicalizes it');
+    assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true,'Season is always first in Calendar URL');
+    assert.equal(await runValue("[...new URL(location.href).searchParams.keys()].slice(0,2).join(',')"),'season,calendarView');
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
