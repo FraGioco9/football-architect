@@ -48,7 +48,7 @@ function syncCompetitionLinks(){
 }
 function syncDebugControls(){
  syncCompetitionLinks();
- for(const [id,value] of [["season",debugSeason],["matchdays",matchdays]])
+ for(const [id,value] of [["season",debugSeason],["matchdays",matchdays],["world-day",readWorldDay()??1]])
   for(const input of document.querySelectorAll(`[data-dev-control="${id}"],[data-dev-control="${id}-number"]`)){
    input.value=String(value);input.dataset.previous=String(value);
   }
@@ -96,7 +96,9 @@ async function resetPreview(){
  try{sessionStorage.removeItem(SEASON_KEY);sessionStorage.removeItem(ROUNDS_KEY);sessionStorage.removeItem('football-architect:calendar-dev-world-day')}catch{return false}
  progressRevision++;debugSeason=1;matchdays=0;
  await refreshSeason();
- return refreshProgress();
+ const ok=await refreshProgress();
+ window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:1,season:1}}));
+ return ok;
 }
 const DETAIL = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const LANG = {
@@ -388,7 +390,7 @@ if(validPath||indexPath){
    onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n);if(!await setMatchdays(target))return false;try{sessionStorage.setItem(DAY_KEY,String(n))}catch{return false}window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:n}}));return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
-   return widgetRoot?.resetWidgetState()===true;
+   widgetRoot?.resetWidgetState();syncDebugControls();return true;
   }}]);
   widgetRoot=createDebugWidget({page:validPath?"standings":"competitions"});
   // Keep the canonical placeholders invisible until DEV results are ready.
@@ -917,7 +919,7 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
   value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();return true}
  },{
   type:'button',id:'reset-global',label:'Reset',scope:'general',
-  onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();return true}
+  onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();window.dispatchEvent(new CustomEvent('fa:dev-world-day-change',{detail:{day:1,season:1}}));return true}
  }]);
   createDebugWidget({page:'calendar'});
  publish();
