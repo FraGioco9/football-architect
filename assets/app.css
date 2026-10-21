@@ -978,3 +978,12 @@ html[data-calendar-view="week"] #world-calendar>#calendar-controls{display:flex!
 #calendar-controls #calendar-previous:disabled,#calendar-controls #calendar-next:disabled,
 #calendar-controls #calendar-previous:disabled:hover,#calendar-controls #calendar-next:disabled:hover{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;opacity:.45!important;cursor:default!important;pointer-events:none!important;animation:none!important;transition:none!important;transform:none!important;box-shadow:none!important}
 #calendar-current-week[hidden]{display:none!important}
+
+/* CAL-SIMPLE-13: identical Fixtures arrow interactions; explicit high-specificity hidden state. */
+#world-calendar>#calendar-controls #calendar-current-week[hidden]{display:none!important;visibility:hidden!important}
+#world-calendar #calendar-controls #calendar-previous:not(:disabled),
+#world-calendar #calendar-controls #calendar-next:not(:disabled){transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease!important}
+#world-calendar #calendar-controls #calendar-previous:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-next:not(:disabled):hover{background:var(--surface-hover,var(--surface))!important;border-color:var(--border)!important;box-shadow:var(--shadow-hover,0 2px 8px rgba(0,0,0,.14))!important;transform:translateY(-1px)!important}
+#world-calendar #calendar-controls #calendar-previous:disabled:hover,
+#world-calendar #calendar-controls #calendar-next:disabled:hover{transform:none!important;box-shadow:none!important}
