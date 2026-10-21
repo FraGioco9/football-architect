@@ -9,11 +9,11 @@ const end=source.indexOf('  function language() {',start);
 assert.ok(start>=0&&end>start);
 const snippet=source.slice(start,end);
 
-function scenario({dev=false,snapshot=false,season='3',mobile=false}={}){
+function scenario({dev=false,preview=false,snapshot=false,season='3',mobile=false}={}){
  const listeners={};
  const link={dataset:{},setAttribute(name,value){this[name]=value},addEventListener(name,callback){listeners[name]=callback}};
  const links={calendar:link};
- const root={dataset:dev?{faDevAppOrigin:'http://localhost:2000'}:{}};
+ const root={dataset:{...(dev?{faDevAppOrigin:'http://localhost:2000'}:{}),...(preview?{faDevPreview:'true'}:{})}};
  const document={documentElement:root,querySelectorAll:()=>[]};
  const window={matchMedia:()=>({matches:mobile}),faDevCalendarClockSnapshot:snapshot?{source:{kind:'dev'}}:undefined};
  const sessionStorage={getItem:key=>key==='football-architect:standings-dev-season'?season:null};
@@ -44,4 +44,12 @@ test('CAL-SEASON-LINK-01 historical season URLs remain supported',()=>{
  const calendar=readFileSync(new URL('../assets/calendar-simplified.js',import.meta.url),'utf8');
  assert.match(calendar,/params\.has\('season'\)&&validSeason\(requested\)/);
  assert.match(calendar,/selectedSeason=requested/);
+});
+
+for(const mobile of [false,true])test('CAL-SEASON-LINK-01 localhost DEV without subdomains '+(mobile?'mobile':'desktop'),()=>{
+ assert.equal(scenario({preview:true,season:'4',mobile}).link.href,'/calendar?season=4&calendarView='+(mobile?'week':'season'));
+});
+test('CAL-SEASON-LINK-01 preview server sets DEV marker before page scripts',()=>{
+ const server=readFileSync(new URL('../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
+ assert.match(server,/dataset\\.faDevPreview="true"/);
 });
