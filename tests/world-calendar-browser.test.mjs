@@ -101,6 +101,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-subtitle').hidden"),true);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('Pending')"),false);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('competitions:')"),false);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').dataset.eventType"),'national');
     await runValue("document.querySelector('#calendar-event-dialog').close()");
     assert.equal(await runValue("document.querySelector('#calendar-day-16').getAttribute('aria-pressed')"),'false');
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
@@ -179,6 +180,13 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-picker').length"),1);
     assert.equal(await runValue("document.querySelectorAll('#calendar-day-26').length"),1);
     assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
+    const finalDay=await runValue("window.faWorldCalendarModel.createSeason(1).days.find(d=>d.events.some(e=>e.phase==='final'))?.day");
+    assert.ok(finalDay,'The model includes a final day');
+    await runValue("document.querySelector('#calendar-day-'+"+finalDay+").click()");
+    assert.equal(await runValue("document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code[data-event-type=final]').length>0"),true);
+    assert.equal(await runValue("[...document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code[data-event-type=final]')].every(e=>e.textContent==='F')"),true);
+    assert.equal(await runValue("[...document.querySelectorAll('#calendar-event-dialog-details .calendar-event-description')].some(e=>e.textContent.includes('Cup final'))"),true);
+    await runValue("document.querySelector('#calendar-event-dialog').close()");
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
