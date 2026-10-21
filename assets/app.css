@@ -890,3 +890,12 @@ html[data-theme="light"] .calendar-event--postseason{background:#D9E6F9;color:#2
 #world-calendar .calendar-day-events{min-height:36px;justify-content:flex-start}
 @media(max-width:620px){#world-calendar .calendar-day{height:82px;min-height:82px;max-height:82px}}
 html[data-calendar-view="week"] #world-calendar .calendar-day{height:76px;min-height:76px;max-height:76px}
+
+/* CAL-SIMPLE-05: match Fixtures navigation geometry while keeping Week first paint deterministic. */
+#calendar-controls{align-items:center;justify-content:center;gap:4px}
+#calendar-controls .app-fixtures-arrow{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px;min-height:32px;border-radius:8px;font-size:20px}
+#calendar-controls .app-fixtures-select{width:120px;min-width:100px;position:relative}
+#calendar-controls .app-fixtures-trigger{width:100%;height:32px;min-height:32px}
+#calendar-current-week{min-height:32px;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
+#calendar-current-week:disabled{opacity:.45;cursor:default}
+@media(max-width:620px){#calendar-controls{width:100%;justify-content:center;flex-wrap:nowrap;gap:4px}#calendar-controls .app-fixtures-select{width:110px;min-width:92px}#calendar-current-week{padding:0 6px;font-size:11px}}
