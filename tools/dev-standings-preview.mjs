@@ -187,6 +187,8 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
             return all;
           }), "utf8");
       }
+      // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
+      if(type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",'<script>window.faDevPreviewMode=true</script>\n</head>'),"utf8");
       res.writeHead(200, {
         "Content-Type": type,
         "Cache-Control": "no-store",
