@@ -356,4 +356,6 @@ test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
  assert.ok(css.includes(".app-world-standing-club-link:hover"));
  assert.ok(page.includes('name.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
  assert.ok(page.includes('clubLink.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
+ const dev=read("tools/dev-standings-preview-client.mjs");
+ assert.ok(dev.includes('clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview"'));
 });
