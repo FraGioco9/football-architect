@@ -27,14 +27,15 @@
   const requested=Number(params.get('season'));
   if(validSeason(requested))selectedSeason=requested;
   else if(selectedSeason>limit)selectedSeason=limit;
-  else if(!params.has('season'))selectedSeason=limit;
+  else if(!params.has('season')&&!root.dataset.seasonInitialized)selectedSeason=limit;
+  root.dataset.seasonInitialized='true';
   menu.replaceChildren();
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
   value.textContent=String(selectedSeason);
   root.dataset.season=String(selectedSeason);
  }
 
- window.addEventListener('fa:dev-progress-change',event=>{const next=Number(event.detail?.season);if(validSeason(next)){selectedSeason=next;const url=new URL(location.href);url.searchParams.set('season',String(next));url.searchParams.delete('day');history.replaceState(history.state,'',url)}updateSeason()});
+ window.addEventListener('fa:dev-progress-change',()=>{updateSeason();updateCurrentDay()});
  window.addEventListener('popstate',updateSeason);
  // A day is never a permanent route or selection.
  if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
@@ -91,7 +92,7 @@
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
  function currentDay(){try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}}
- function updateCurrentDay(){const n=dev?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current)cell.dataset.devCurrentDay='true';else delete cell.dataset.devCurrentDay}}
+ function updateCurrentDay(){const n=dev&&selectedSeason===readDebugSeason()?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current)cell.dataset.devCurrentDay='true';else delete cell.dataset.devCurrentDay}}
  window.addEventListener('fa:dev-world-day-change',updateCurrentDay);
  window.addEventListener('fa:dev-progress-change',updateCurrentDay);
  updateCurrentDay();
