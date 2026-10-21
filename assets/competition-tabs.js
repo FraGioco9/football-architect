@@ -84,6 +84,21 @@
   // Keep the selected view visible when viewport size or tab layout changes.
   window.addEventListener("resize",revealSelectedTab);
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
+  // CAL-IMP-04: validated return context; no external or legacy route.
+  const rawReturn=new URL(window.location.href).searchParams.get('calendarReturn');
+  let calendarReturn=null;
+  if(rawReturn){
+    try{const u=new URL(rawReturn,window.location.origin),p=u.searchParams;
+      if(u.origin===window.location.origin&&u.pathname==='/calendar'&&p.get('season')==='1'&&
+        /^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(p.get('day')||'')&&
+        ['season','week'].includes(p.get('calendarView'))&&
+        ['all','national','international','sovereign','federation'].includes(p.get('competition'))&&
+        (!p.has('division')||/^(it|eng|es|de|fr|pt|nl|br)-[12]$/.test(p.get('division'))))
+        calendarReturn=u.pathname+u.search;
+    }catch{}
+  }
+  const returnHost=document.getElementById('app-fixtures-toolbar');
+  if(calendarReturn&&returnHost){const a=document.createElement('a');a.href=calendarReturn;a.textContent='← Calendar';returnHost.append(a)}
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
@@ -108,6 +123,7 @@
     const url=new URL(window.location.href);
     url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/?$/,"").replace(/\/+$/,"")+"/"+state.view;
     url.search="";url.hash="";
+    if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
     if(state.view!=="history"&&state.view!=="rules")url.searchParams.set("season",state.season);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
