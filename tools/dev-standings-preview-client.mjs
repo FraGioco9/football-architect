@@ -92,7 +92,7 @@ async function resetPreview(){
  await refreshSeason();
  return refreshProgress();
 }
-const DETAIL = /^\/competitions\/([a-z]{2,3}-[12])(?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const LANG = {
   en: { round: "Matchday", dateUnknown: "Date TBD",
     home: "Home", away: "Away", W: "Win", D: "Draw", L: "Loss",
