@@ -21,6 +21,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations})
   '<noscript><p>JavaScript is required to display club pages.</p></noscript></section>';
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':content}))html=html.replaceAll(token,value);
+ html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"').replace('data-app-view="divisions" aria-current="page"','data-app-view="divisions"');
  html=html.replace('</head>','  <link rel="stylesheet" href="/assets/club-page.css">\n  <script src="/assets/club-model.js" defer></script>\n  <script src="/assets/club-page.js" defer></script>\n</head>');
  html=html.replace('<body class="app-body">','<body class="app-body">\n  <a class="skip-link" href="#main-content">Skip to content</a>');
  return [{path:'clubs/_shared/index.html',content:html},
