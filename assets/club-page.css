@@ -31,3 +31,23 @@
 .app-body>.skip-link:focus{transform:none}
 .club-header .app-link,.club-facts .app-link,.club-competition .app-link{border:0;box-shadow:none;background:transparent;border-radius:0}
 @media(max-width:360px){.club-facts>div{grid-template-columns:minmax(0,1fr);gap:4px}}
+
+/* CLUB-OVERVIEW-02: identity and rivalries left, reserved kits on the right. */
+.club-overview-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);gap:16px;margin-top:14px;align-items:start}
+.club-overview-main{display:grid;gap:16px;min-width:0}
+.club-overview-layout .app-panel{min-width:0;overflow-wrap:anywhere}
+.club-overview-layout h2{margin-top:0}
+.club-colors{display:flex;flex-wrap:wrap;gap:12px}
+.club-country-value{display:inline-flex;align-items:center;gap:7px}
+.club-country-value img{flex:none}
+.club-description-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px}
+.club-description-heading h3{margin:0;font-size:1rem}
+.club-translate-button{border:1px solid var(--border);background:var(--surface-raised);color:var(--text);border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer}
+.club-translate-button:hover{border-color:var(--primary)}
+.club-translate-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.club-rivalries-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.club-rivalries-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.club-rivalries-list .app-link{min-height:0;padding:0;display:inline;width:auto;border:0;background:transparent;text-align:left}
+.club-rivalries-list li span{color:var(--muted);font-size:.85rem}
+.club-kits{min-height:220px}.club-kits p{color:var(--muted)}
+@media(max-width:760px){.club-overview-layout{grid-template-columns:minmax(0,1fr)}}

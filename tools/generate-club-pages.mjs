@@ -8,7 +8,8 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations})
   const division=divisions.find(d=>d.id===allocation.divisionId);
   for(const id of allocation.clubIds)byClub.set(division.countryId+'-'+id,division.id);
  }
- const manifest={schemaVersion:1,approved:allocations.approved,clubCrests:clubCrestAssets().catalog,
+ const rivalries=JSON.parse(readFileSync(new URL('../data/club-rivalries.json',import.meta.url),'utf8'));
+ const manifest={schemaVersion:1,approved:allocations.approved,clubCrests:clubCrestAssets().catalog,rivalries,
   divisions:divisions.map(({id,name,tier,countryId,countryName})=>({id,name,tier,countryId,countryName})),
   clubs:[...clubs].sort((a,b)=>a.countryId.localeCompare(b.countryId,'en')||a.clubId-b.clubId).map(c=>{
    const native={DE:'de',ENG:'en',ES:'es',FR:'fr',IT:'it',PT:'pt',NL:'nl',BR:'pt'}[c.countryId];

@@ -8,6 +8,3176 @@
     "IT-2": "assets/clubs/IT/2/crest.svg",
     "PT-1": "assets/clubs/PT/1/crest.svg"
   },
+  "rivalries": [
+    {
+      "rivalryId": "IT-1__IT-5",
+      "clubAId": "IT-1",
+      "clubAName": "AC Meneghina",
+      "clubBId": "IT-5",
+      "clubBName": "US Ambrosiana",
+      "derbyName": "Derby di Milano",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-1__IT-26",
+      "clubAId": "IT-1",
+      "clubAName": "AC Meneghina",
+      "clubBId": "IT-26",
+      "clubBName": "Villa Reale Monza",
+      "derbyName": "Derby Milano–Brianza",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-1__IT-30",
+      "clubAId": "IT-1",
+      "clubAName": "AC Meneghina",
+      "clubBId": "IT-30",
+      "clubBName": "Cidneo Brescia",
+      "derbyName": "Duello delle Industrie Lombarde",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-2__IT-6",
+      "clubAId": "IT-2",
+      "clubAName": "US Capitolina",
+      "clubBId": "IT-6",
+      "clubBName": "AC Aventina",
+      "derbyName": "Derby di Roma",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-2__IT-29",
+      "clubAId": "IT-2",
+      "clubAName": "US Capitolina",
+      "clubBId": "IT-29",
+      "clubBName": "Frusinate Calcio",
+      "derbyName": "Derby del Lazio",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-3__IT-8",
+      "clubAId": "IT-3",
+      "clubAName": "Subalpina Torino",
+      "clubBId": "IT-8",
+      "clubBName": "AC Sabauda",
+      "derbyName": "Derby di Torino",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-4__IT-7",
+      "clubAId": "IT-4",
+      "clubAName": "SS Partenopea",
+      "clubBId": "IT-7",
+      "clubBName": "AC Vesuviana",
+      "derbyName": "Derby di Napoli",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-4__IT-39",
+      "clubAId": "IT-4",
+      "clubAName": "SS Partenopea",
+      "clubBId": "IT-39",
+      "clubBName": "US Arechi",
+      "derbyName": "Derby Campano",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-5__IT-9",
+      "clubAId": "IT-5",
+      "clubAName": "US Ambrosiana",
+      "clubBId": "IT-9",
+      "clubBName": "Orobica Bergamo",
+      "derbyName": "Derby della Lombardia Centrale",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-6__IT-29",
+      "clubAId": "IT-6",
+      "clubAName": "AC Aventina",
+      "clubBId": "IT-29",
+      "clubBName": "Frusinate Calcio",
+      "derbyName": "Derby Roma–Ciociaria",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-8__IT-13",
+      "clubAId": "IT-8",
+      "clubAName": "AC Sabauda",
+      "clubBId": "IT-13",
+      "clubBName": "Lario Comasco",
+      "derbyName": "Derby delle Prealpi",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-9__IT-30",
+      "clubAId": "IT-9",
+      "clubAName": "Orobica Bergamo",
+      "clubBId": "IT-30",
+      "clubBName": "Cidneo Brescia",
+      "derbyName": "Derby delle Due Lombardie",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-10__IT-15",
+      "clubAId": "IT-10",
+      "clubAName": "AC Felsina",
+      "clubBId": "IT-15",
+      "clubBName": "US Petroniana",
+      "derbyName": "Derby di Bologna",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-10__IT-19",
+      "clubAId": "IT-10",
+      "clubAName": "AC Felsina",
+      "clubBId": "IT-19",
+      "clubBName": "Sporting Secchia",
+      "derbyName": "Derby del Calcio Emiliano",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-10__IT-33",
+      "clubAId": "IT-10",
+      "clubAName": "AC Felsina",
+      "clubBId": "IT-33",
+      "clubBName": "US Ghirlandina",
+      "derbyName": "Derby della Via Emilia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-11__IT-16",
+      "clubAId": "IT-11",
+      "clubAName": "AS Medicea",
+      "clubBId": "IT-16",
+      "clubBName": "US Coverciano",
+      "derbyName": "Derby di Firenze",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-11__IT-27",
+      "clubAId": "IT-11",
+      "clubAName": "AS Medicea",
+      "clubBId": "IT-27",
+      "clubBName": "Tramontana Calcio",
+      "derbyName": "Derby Toscano",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-12__IT-17",
+      "clubAId": "IT-12",
+      "clubAName": "US Lanterna",
+      "clubBId": "IT-17",
+      "clubBName": "AC Marassi",
+      "derbyName": "Derby di Genova",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-12__IT-40",
+      "clubAId": "IT-12",
+      "clubAName": "US Lanterna",
+      "clubBId": "IT-40",
+      "clubBName": "FC Migliarina",
+      "derbyName": "Derby Genova–La Spezia di Levante",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-13__IT-26",
+      "clubAId": "IT-13",
+      "clubAName": "Lario Comasco",
+      "clubBId": "IT-26",
+      "clubBName": "Villa Reale Monza",
+      "derbyName": "Derby dei Laghi e della Brianza",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-14__IT-28",
+      "clubAId": "IT-14",
+      "clubAName": "US Crociata",
+      "clubBId": "IT-28",
+      "clubBName": "Torrazzo Cremona",
+      "derbyName": "Derby del Po",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-14__IT-33",
+      "clubAId": "IT-14",
+      "clubAName": "US Crociata",
+      "clubBId": "IT-33",
+      "clubBName": "US Ghirlandina",
+      "derbyName": "Derby dei Ducati",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-15__IT-34",
+      "clubAId": "IT-15",
+      "clubAName": "US Petroniana",
+      "clubBId": "IT-34",
+      "clubBName": "FC Malatestiana",
+      "derbyName": "Derby Emiliano-Romagnolo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-16__IT-37",
+      "clubAId": "IT-16",
+      "clubAName": "US Coverciano",
+      "clubBId": "IT-37",
+      "clubBName": "FC Monteluce",
+      "derbyName": "Derby dell'Appennino Centrale",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-17__IT-40",
+      "clubAId": "IT-17",
+      "clubAName": "AC Marassi",
+      "clubBId": "IT-40",
+      "clubBName": "FC Migliarina",
+      "derbyName": "Derby Genova–La Spezia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-18__IT-35",
+      "clubAId": "IT-18",
+      "clubAName": "US Scaligera",
+      "clubBId": "IT-35",
+      "clubBName": "Berici Vicenza",
+      "derbyName": "Derby dell'Adige e del Bacchiglione",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-18__IT-36",
+      "clubAId": "IT-18",
+      "clubAName": "US Scaligera",
+      "clubBId": "IT-36",
+      "clubBName": "Sporting Euganeo",
+      "derbyName": "Derby Verona–Padova",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-19__IT-33",
+      "clubAId": "IT-19",
+      "clubAName": "Sporting Secchia",
+      "clubBId": "IT-33",
+      "clubBName": "US Ghirlandina",
+      "derbyName": "Derby della Provincia Modenese",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-20__IT-21",
+      "clubAId": "IT-20",
+      "clubAName": "FC Barcola",
+      "clubBId": "IT-21",
+      "clubBName": "Friulana Calcio",
+      "derbyName": "Derby del Friuli e della Venezia Giulia",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-20__IT-23",
+      "clubAId": "IT-20",
+      "clubAName": "FC Barcola",
+      "clubBId": "IT-23",
+      "clubBName": "Arsenale Venezia",
+      "derbyName": "Derby dell'Alto Adriatico",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-21__IT-23",
+      "clubAId": "IT-21",
+      "clubAName": "Friulana Calcio",
+      "clubBId": "IT-23",
+      "clubBName": "Arsenale Venezia",
+      "derbyName": "Derby del Nordest",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-22__IT-24",
+      "clubAId": "IT-22",
+      "clubAName": "US Casteddu",
+      "clubBId": "IT-24",
+      "clubBName": "AS Arenella",
+      "derbyName": "Derby delle Isole",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-22__IT-32",
+      "clubAId": "IT-22",
+      "clubAName": "US Casteddu",
+      "clubBId": "IT-32",
+      "clubBName": "US Mongibello",
+      "derbyName": "Derby delle Due Isole",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-23__IT-36",
+      "clubAId": "IT-23",
+      "clubAName": "Arsenale Venezia",
+      "clubBId": "IT-36",
+      "clubBName": "Sporting Euganeo",
+      "derbyName": "Derby Veneto",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-24__IT-32",
+      "clubAId": "IT-24",
+      "clubAName": "AS Arenella",
+      "clubBId": "IT-32",
+      "clubBName": "US Mongibello",
+      "derbyName": "Derby di Sicilia",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-25__IT-31",
+      "clubAId": "IT-25",
+      "clubAName": "Salento Sporting",
+      "clubBId": "IT-31",
+      "clubBName": "Peucetia Bari",
+      "derbyName": "Derby di Puglia",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-25__IT-39",
+      "clubAId": "IT-25",
+      "clubAName": "Salento Sporting",
+      "clubBId": "IT-39",
+      "clubBName": "US Arechi",
+      "derbyName": "Derby del Mezzogiorno",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-27__IT-40",
+      "clubAId": "IT-27",
+      "clubAName": "Tramontana Calcio",
+      "clubBId": "IT-40",
+      "clubBName": "FC Migliarina",
+      "derbyName": "Derby del Litorale Tirrenico",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-28__IT-30",
+      "clubAId": "IT-28",
+      "clubAName": "Torrazzo Cremona",
+      "clubBId": "IT-30",
+      "clubBName": "Cidneo Brescia",
+      "derbyName": "Derby Cremona–Brescia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-29__IT-37",
+      "clubAId": "IT-29",
+      "clubAName": "Frusinate Calcio",
+      "clubBId": "IT-37",
+      "clubBName": "FC Monteluce",
+      "derbyName": "Duello dell'Italia Centrale",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-31__IT-39",
+      "clubAId": "IT-31",
+      "clubAName": "Peucetia Bari",
+      "clubBId": "IT-39",
+      "clubBName": "US Arechi",
+      "derbyName": "Derby del Sud Continentale",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-34__IT-38",
+      "clubAId": "IT-34",
+      "clubAName": "FC Malatestiana",
+      "clubBId": "IT-38",
+      "clubBName": "FC Aterno",
+      "derbyName": "Derby dell'Adriatico Centrale",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "IT-35__IT-36",
+      "clubAId": "IT-35",
+      "clubAName": "Berici Vicenza",
+      "clubBId": "IT-36",
+      "clubBName": "Sporting Euganeo",
+      "derbyName": "Derby tra Padova e Vicenza",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "IT-37__IT-38",
+      "clubAId": "IT-37",
+      "clubAName": "FC Monteluce",
+      "clubBId": "IT-38",
+      "clubBName": "FC Aterno",
+      "derbyName": "Derby della Dorsale Appenninica",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-1__ENG-5",
+      "clubAId": "ENG-1",
+      "clubAName": "Thamesgate FC",
+      "clubBId": "ENG-5",
+      "clubBName": "Southwark Athletic",
+      "derbyName": "London Borough Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-1__ENG-36",
+      "clubAId": "ENG-1",
+      "clubAName": "Thamesgate FC",
+      "clubBId": "ENG-36",
+      "clubBName": "Gade Park",
+      "derbyName": "North London Fringe Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-2__ENG-3",
+      "clubAId": "ENG-2",
+      "clubAName": "Medlock United",
+      "clubBId": "ENG-3",
+      "clubBName": "Mersey Albion",
+      "derbyName": "North-West Giants Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-2__ENG-6",
+      "clubAId": "ENG-2",
+      "clubAName": "Medlock United",
+      "clubBId": "ENG-6",
+      "clubBName": "Hulme Borough",
+      "derbyName": "Manchester Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-2__ENG-30",
+      "clubAId": "ENG-2",
+      "clubAName": "Medlock United",
+      "clubBId": "ENG-30",
+      "clubBName": "Farnworth United",
+      "derbyName": "Greater Manchester Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-3__ENG-7",
+      "clubAId": "ENG-3",
+      "clubAName": "Mersey Albion",
+      "clubBId": "ENG-7",
+      "clubBName": "Walton Rovers",
+      "derbyName": "Mersey Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-3__ENG-29",
+      "clubAId": "ENG-3",
+      "clubAName": "Mersey Albion",
+      "clubBId": "ENG-29",
+      "clubBName": "Deepdale Rovers",
+      "derbyName": "Mersey–Ribble Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-4__ENG-13",
+      "clubAId": "ENG-4",
+      "clubAName": "Bournbrook United",
+      "clubBId": "ENG-13",
+      "clubBName": "Bournville Village",
+      "derbyName": "Birmingham Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-4__ENG-21",
+      "clubAId": "ENG-4",
+      "clubAName": "Bournbrook United",
+      "clubBId": "ENG-21",
+      "clubBName": "Penn Rovers",
+      "derbyName": "Birmingham–Wolverhampton Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-5__ENG-35",
+      "clubAId": "ENG-5",
+      "clubAName": "Southwark Athletic",
+      "clubBId": "ENG-35",
+      "clubBName": "Tilehurst United",
+      "derbyName": "Capital–Thames Valley Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-6__ENG-30",
+      "clubAId": "ENG-6",
+      "clubAName": "Hulme Borough",
+      "clubBId": "ENG-30",
+      "clubBName": "Farnworth United",
+      "derbyName": "South Manchester–Bolton Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-7__ENG-39",
+      "clubAId": "ENG-7",
+      "clubAName": "Walton Rovers",
+      "clubBId": "ENG-39",
+      "clubBName": "FC Bloomfield",
+      "derbyName": "Mersey–Fylde Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-8__ENG-10",
+      "clubAId": "ENG-8",
+      "clubAName": "Aire Valley FC",
+      "clubBId": "ENG-10",
+      "clubBName": "Rivelin Works",
+      "derbyName": "Yorkshire Works Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-8__ENG-31",
+      "clubAId": "ENG-8",
+      "clubAName": "Aire Valley FC",
+      "clubBId": "ENG-31",
+      "clubBName": "FC Manningham",
+      "derbyName": "West Yorkshire Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-9__ENG-16",
+      "clubAId": "ENG-9",
+      "clubAName": "Tyne Quays",
+      "clubBId": "ENG-16",
+      "clubBName": "Wearmouth Dockers",
+      "derbyName": "Tyne–Wear Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-9__ENG-25",
+      "clubAId": "ENG-9",
+      "clubAName": "Tyne Quays",
+      "clubBId": "ENG-25",
+      "clubBName": "Acklam Rovers",
+      "derbyName": "Tyne–Tees Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-10__ENG-17",
+      "clubAId": "ENG-10",
+      "clubAName": "Rivelin Works",
+      "clubBId": "ENG-17",
+      "clubBName": "Kelham United",
+      "derbyName": "Sheffield Steel Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-11__ENG-15",
+      "clubAId": "ENG-11",
+      "clubAName": "Sherwood Foresters",
+      "clubBId": "ENG-15",
+      "clubBName": "Clarendon Rovers",
+      "derbyName": "Nottingham–Leicester Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-11__ENG-18",
+      "clubAId": "ENG-11",
+      "clubAName": "Sherwood Foresters",
+      "clubBId": "ENG-18",
+      "clubBName": "Trent Meadows",
+      "derbyName": "Nottingham Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-11__ENG-22",
+      "clubAId": "ENG-11",
+      "clubAName": "Sherwood Foresters",
+      "clubBId": "ENG-22",
+      "clubBName": "FC Markeaton",
+      "derbyName": "Derby of the East Midlands",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-12__ENG-20",
+      "clubAId": "ENG-12",
+      "clubAName": "Hove Lawns",
+      "clubBId": "ENG-20",
+      "clubBName": "Itchen Rovers",
+      "derbyName": "Solent–Sussex Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-12__ENG-34",
+      "clubAId": "ENG-12",
+      "clubAName": "Hove Lawns",
+      "clubBId": "ENG-34",
+      "clubBName": "AFC Fratton",
+      "derbyName": "South Coast Seafront Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-13__ENG-19",
+      "clubAId": "ENG-13",
+      "clubAName": "Bournville Village",
+      "clubBId": "ENG-19",
+      "clubBName": "Foleshill Weavers",
+      "derbyName": "West Midlands Neighbours Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-14__ENG-23",
+      "clubAId": "ENG-14",
+      "clubAName": "Clifton Bridge",
+      "clubBId": "ENG-23",
+      "clubBName": "Southbourne Rovers",
+      "derbyName": "South-West Coastal Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-14__ENG-38",
+      "clubAId": "ENG-14",
+      "clubAName": "Clifton Bridge",
+      "clubBId": "ENG-38",
+      "clubBName": "Devonport Shipwrights",
+      "derbyName": "Western Ports Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-15__ENG-19",
+      "clubAId": "ENG-15",
+      "clubAName": "Clarendon Rovers",
+      "clubBId": "ENG-19",
+      "clubBName": "Foleshill Weavers",
+      "derbyName": "Leicester–Coventry Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-16__ENG-25",
+      "clubAId": "ENG-16",
+      "clubAName": "Wearmouth Dockers",
+      "clubBId": "ENG-25",
+      "clubBName": "Acklam Rovers",
+      "derbyName": "Wear–Tees Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-18__ENG-22",
+      "clubAId": "ENG-18",
+      "clubAName": "Trent Meadows",
+      "clubBId": "ENG-22",
+      "clubBName": "FC Markeaton",
+      "derbyName": "Trent–Derwent Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-20__ENG-23",
+      "clubAId": "ENG-20",
+      "clubAName": "Itchen Rovers",
+      "clubBId": "ENG-23",
+      "clubBName": "Southbourne Rovers",
+      "derbyName": "Solent–Dorset Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-21__ENG-22",
+      "clubAId": "ENG-21",
+      "clubAName": "Penn Rovers",
+      "clubBId": "ENG-22",
+      "clubBName": "FC Markeaton",
+      "derbyName": "Wolverhampton–Derby Midlands Duel",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-21__ENG-24",
+      "clubAId": "ENG-21",
+      "clubAName": "Penn Rovers",
+      "clubBId": "ENG-24",
+      "clubBName": "Potteries United",
+      "derbyName": "West Midlands–Potteries Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-23__ENG-34",
+      "clubAId": "ENG-23",
+      "clubAName": "Southbourne Rovers",
+      "clubBId": "ENG-34",
+      "clubBName": "AFC Fratton",
+      "derbyName": "Dorset–Hampshire Coast Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-25__ENG-32",
+      "clubAId": "ENG-25",
+      "clubAName": "Acklam Rovers",
+      "clubBId": "ENG-32",
+      "clubBName": "Humber Dock FC",
+      "derbyName": "Humber–Tees Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-26__ENG-27",
+      "clubAId": "ENG-26",
+      "clubAName": "Wensum Mills",
+      "clubBId": "ENG-27",
+      "clubBName": "FC Orwell",
+      "derbyName": "East Anglian Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-27__ENG-36",
+      "clubAId": "ENG-27",
+      "clubAName": "FC Orwell",
+      "clubBId": "ENG-36",
+      "clubBName": "Gade Park",
+      "derbyName": "East Anglia–Home Counties Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-28__ENG-29",
+      "clubAId": "ENG-28",
+      "clubAName": "Ewood Looms",
+      "clubBId": "ENG-29",
+      "clubBName": "Deepdale Rovers",
+      "derbyName": "Blackburn–Preston Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-28__ENG-33",
+      "clubAId": "ENG-28",
+      "clubAName": "Ewood Looms",
+      "clubBId": "ENG-33",
+      "clubBName": "Towneley Grove",
+      "derbyName": "East Lancashire Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-29__ENG-39",
+      "clubAId": "ENG-29",
+      "clubAName": "Deepdale Rovers",
+      "clubBId": "ENG-39",
+      "clubBName": "FC Bloomfield",
+      "derbyName": "Fylde–Ribble Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-31__ENG-32",
+      "clubAId": "ENG-31",
+      "clubAName": "FC Manningham",
+      "clubBId": "ENG-32",
+      "clubBName": "Humber Dock FC",
+      "derbyName": "Yorkshire Trading Cities Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-33__ENG-39",
+      "clubAId": "ENG-33",
+      "clubAName": "Towneley Grove",
+      "clubBId": "ENG-39",
+      "clubBName": "FC Bloomfield",
+      "derbyName": "East Lancashire–Fylde Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-35__ENG-40",
+      "clubAId": "ENG-35",
+      "clubAName": "Tilehurst United",
+      "clubBId": "ENG-40",
+      "clubBName": "Cherwell Vale",
+      "derbyName": "Thames Valley Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-36__ENG-37",
+      "clubAId": "ENG-36",
+      "clubAName": "Gade Park",
+      "clubBId": "ENG-37",
+      "clubBName": "Stopsley United",
+      "derbyName": "Watford–Luton Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ENG-37__ENG-40",
+      "clubAId": "ENG-37",
+      "clubAName": "Stopsley United",
+      "clubBId": "ENG-40",
+      "clubBName": "Cherwell Vale",
+      "derbyName": "Oxford–Luton Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-1__ES-3",
+      "clubAId": "ES-1",
+      "clubAName": "CD Imperial Madrid",
+      "clubBId": "ES-3",
+      "clubBName": "SD Castellana",
+      "derbyName": "Derbi de Madrid",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-1__ES-22",
+      "clubAId": "ES-1",
+      "clubAName": "CD Imperial Madrid",
+      "clubBId": "ES-22",
+      "clubBName": "Aviación Getafe",
+      "derbyName": "Derbi del Sur de Madrid",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-2__ES-6",
+      "clubAId": "ES-2",
+      "clubAName": "Drassanes Reials",
+      "clubBId": "ES-6",
+      "clubBName": "UE Montjuïc",
+      "derbyName": "Derbi de Barcelona",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-2__ES-14",
+      "clubAId": "ES-2",
+      "clubAName": "Drassanes Reials",
+      "clubBId": "ES-14",
+      "clubBName": "FC Gavarres",
+      "derbyName": "Derbi Català del Nord",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-3__ES-22",
+      "clubAId": "ES-3",
+      "clubAName": "SD Castellana",
+      "clubBId": "ES-22",
+      "clubBName": "Aviación Getafe",
+      "derbyName": "Derbi de la Comunidad de Madrid",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-4__ES-8",
+      "clubAId": "ES-4",
+      "clubAName": "UD Azahar",
+      "clubBId": "ES-8",
+      "clubBName": "CD Cerámico",
+      "derbyName": "Derbi de la Comunidad Valenciana",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-4__ES-15",
+      "clubAId": "ES-4",
+      "clubAName": "UD Azahar",
+      "clubBId": "ES-15",
+      "clubBName": "Huerta de Levante",
+      "derbyName": "Derbi de Valencia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-4__ES-20",
+      "clubAId": "ES-4",
+      "clubAName": "UD Azahar",
+      "clubBId": "ES-20",
+      "clubBName": "UD Ponent",
+      "derbyName": "Clásico del Mediterráneo Occidental",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-5__ES-16",
+      "clubAId": "ES-5",
+      "clubAName": "Arenal de Sevilla",
+      "clubBId": "ES-16",
+      "clubBName": "Puerta de Jerez",
+      "derbyName": "Derbi de Sevilla",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-5__ES-40",
+      "clubAId": "ES-5",
+      "clubAName": "Arenal de Sevilla",
+      "clubBId": "ES-40",
+      "clubBName": "SD Jerezana",
+      "derbyName": "Derbi del Bajo Guadalquivir",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-6__ES-14",
+      "clubAId": "ES-6",
+      "clubAName": "UE Montjuïc",
+      "clubBId": "ES-14",
+      "clubBName": "FC Gavarres",
+      "derbyName": "Derbi de Cataluña Oriental",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-7__ES-11",
+      "clubAId": "ES-7",
+      "clubAName": "Begoñako KE",
+      "clubBId": "ES-11",
+      "clubBName": "Urgull KE",
+      "derbyName": "Euskal Derbia",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ES-7__ES-17",
+      "clubAId": "ES-7",
+      "clubAName": "Begoñako KE",
+      "clubBId": "ES-17",
+      "clubBName": "CF Indautxu",
+      "derbyName": "Bilboko Derbia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-8__ES-39",
+      "clubAId": "ES-8",
+      "clubAName": "CD Cerámico",
+      "clubBId": "ES-39",
+      "clubBName": "UD Magdalena",
+      "derbyName": "Derbi de la Plana",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-9__ES-21",
+      "clubAId": "ES-9",
+      "clubAName": "Ferroviario del Rabal",
+      "clubBId": "ES-21",
+      "clubBName": "Burgo de Navarrería",
+      "derbyName": "Duelo del Ebro y Navarra",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-9__ES-25",
+      "clubAId": "ES-9",
+      "clubAName": "Ferroviario del Rabal",
+      "clubBId": "ES-25",
+      "clubBName": "Ribera Pisuerga",
+      "derbyName": "Duelo del Valle del Ebro y la Meseta",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-10__ES-19",
+      "clubAId": "ES-10",
+      "clubAName": "UD Malagueta",
+      "clubBId": "ES-19",
+      "clubBName": "CD Gibralfaro",
+      "derbyName": "Derbi de Málaga",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-10__ES-26",
+      "clubAId": "ES-10",
+      "clubAName": "UD Malagueta",
+      "clubBId": "ES-26",
+      "clubBName": "Cármenes del Albaicín",
+      "derbyName": "Clásico de Andalucía Oriental",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-11__ES-32",
+      "clubAId": "ES-11",
+      "clubAName": "Urgull KE",
+      "clubBId": "ES-32",
+      "clubBName": "Sardinero Marítimo",
+      "derbyName": "Derbi del Cantábrico Oriental",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-12__ES-13",
+      "clubAId": "ES-12",
+      "clubAName": "CD Olívico",
+      "clubBId": "ES-13",
+      "clubBName": "Atlético Orillamar",
+      "derbyName": "Derbi Gallego",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ES-13__ES-32",
+      "clubAId": "ES-13",
+      "clubAName": "Atlético Orillamar",
+      "clubBId": "ES-32",
+      "clubBName": "Sardinero Marítimo",
+      "derbyName": "Duelo del Norte Atlántico y Cantábrico",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-15__ES-23",
+      "clubAId": "ES-15",
+      "clubAName": "Huerta de Levante",
+      "clubBId": "ES-23",
+      "clubBName": "UD Palmeral",
+      "derbyName": "Clásico del Levante Interior",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-15__ES-39",
+      "clubAId": "ES-15",
+      "clubAName": "Huerta de Levante",
+      "clubBId": "ES-39",
+      "clubBName": "UD Magdalena",
+      "derbyName": "Derbi del Turia y la Plana",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-16__ES-34",
+      "clubAId": "ES-16",
+      "clubAName": "Puerta de Jerez",
+      "clubBId": "ES-34",
+      "clubBName": "Caleta Atlántica",
+      "derbyName": "Derbi de Andalucía Atlántica",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-17__ES-24",
+      "clubAId": "ES-17",
+      "clubAName": "CF Indautxu",
+      "clubBId": "ES-24",
+      "clubBName": "CD Zabalgana",
+      "derbyName": "Derbi de Euskadi Interior",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-18__ES-35",
+      "clubAId": "ES-18",
+      "clubAName": "Guiniguada Triana",
+      "clubBId": "ES-35",
+      "clubBName": "Unión Teide",
+      "derbyName": "Derbi Canario",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-19__ES-33",
+      "clubAId": "ES-19",
+      "clubAName": "CD Gibralfaro",
+      "clubBId": "ES-33",
+      "clubBName": "UD Almadraba",
+      "derbyName": "Derbi de la Costa del Sol y Almería",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-21__ES-24",
+      "clubAId": "ES-21",
+      "clubAName": "Burgo de Navarrería",
+      "clubBId": "ES-24",
+      "clubBName": "CD Zabalgana",
+      "derbyName": "Derbi de Navarra y Álava",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-22__ES-25",
+      "clubAId": "ES-22",
+      "clubAName": "Aviación Getafe",
+      "clubBId": "ES-25",
+      "clubBName": "Ribera Pisuerga",
+      "derbyName": "Duelo Getafe–Valladolid",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-23__ES-27",
+      "clubAId": "ES-23",
+      "clubAName": "UD Palmeral",
+      "clubBId": "ES-27",
+      "clubBName": "CD Huertano",
+      "derbyName": "Derbi del Sureste",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-23__ES-30",
+      "clubAId": "ES-23",
+      "clubAName": "UD Palmeral",
+      "clubBId": "ES-30",
+      "clubBName": "Cabo de la Huerta",
+      "derbyName": "Derbi de Alicante y Elche",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-24__ES-37",
+      "clubAId": "ES-24",
+      "clubAName": "CD Zabalgana",
+      "clubBId": "ES-37",
+      "clubBName": "CD Gamonal",
+      "derbyName": "Derbi del Alto Ebro",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-25__ES-38",
+      "clubAId": "ES-25",
+      "clubAName": "Ribera Pisuerga",
+      "clubBId": "ES-38",
+      "clubBName": "Puente Tormes",
+      "derbyName": "Derbi de Castilla y León",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-26__ES-31",
+      "clubAId": "ES-26",
+      "clubAName": "Cármenes del Albaicín",
+      "clubBId": "ES-31",
+      "clubBName": "CD Califal",
+      "derbyName": "Derbi de Andalucía Interior",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-26__ES-33",
+      "clubAId": "ES-26",
+      "clubAName": "Cármenes del Albaicín",
+      "clubBId": "ES-33",
+      "clubBName": "UD Almadraba",
+      "derbyName": "Derbi de Andalucía Oriental",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-27__ES-30",
+      "clubAId": "ES-27",
+      "clubAName": "CD Huertano",
+      "clubBId": "ES-30",
+      "clubBName": "Cabo de la Huerta",
+      "derbyName": "Derbi Murcia–Alicante",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-27__ES-36",
+      "clubAId": "ES-27",
+      "clubAName": "CD Huertano",
+      "clubBId": "ES-36",
+      "clubBName": "CD Carthago",
+      "derbyName": "Derbi de la Región de Murcia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-28__ES-29",
+      "clubAId": "ES-28",
+      "clubAName": "Cimavilla Marinera",
+      "clubBId": "ES-29",
+      "clubBName": "CD Naranco",
+      "derbyName": "Derbi Asturiano",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ES-28__ES-32",
+      "clubAId": "ES-28",
+      "clubAName": "Cimavilla Marinera",
+      "clubBId": "ES-32",
+      "clubBName": "Sardinero Marítimo",
+      "derbyName": "Derbi de la Cornisa Cantábrica",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-29__ES-37",
+      "clubAId": "ES-29",
+      "clubAName": "CD Naranco",
+      "clubBId": "ES-37",
+      "clubBName": "CD Gamonal",
+      "derbyName": "Duelo de Asturias y Castilla",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-31__ES-34",
+      "clubAId": "ES-31",
+      "clubAName": "CD Califal",
+      "clubBId": "ES-34",
+      "clubBName": "Caleta Atlántica",
+      "derbyName": "Derbi de la Andalucía Histórica",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ES-33__ES-36",
+      "clubAId": "ES-33",
+      "clubAName": "UD Almadraba",
+      "clubBId": "ES-36",
+      "clubBName": "CD Carthago",
+      "derbyName": "Derbi del Sureste Mediterráneo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-34__ES-40",
+      "clubAId": "ES-34",
+      "clubAName": "Caleta Atlántica",
+      "clubBId": "ES-40",
+      "clubBName": "SD Jerezana",
+      "derbyName": "Derbi Gaditano",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "ES-37__ES-38",
+      "clubAId": "ES-37",
+      "clubAName": "CD Gamonal",
+      "clubBId": "ES-38",
+      "clubBName": "Puente Tormes",
+      "derbyName": "Derbi de Castilla Interior",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-1__DE-9",
+      "clubAId": "DE-1",
+      "clubAName": "FC Münchner Freiheit",
+      "clubBId": "DE-9",
+      "clubBName": "TSV Isar München",
+      "derbyName": "Münchner Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-1__DE-28",
+      "clubAId": "DE-1",
+      "clubAName": "FC Münchner Freiheit",
+      "clubBId": "DE-28",
+      "clubBName": "Fuggerstadt Augsburg",
+      "derbyName": "Oberbayerisch–Schwäbisches Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-2__DE-5",
+      "clubAId": "DE-2",
+      "clubAName": "SV Reinickendorf",
+      "clubBId": "DE-5",
+      "clubBName": "SC Spandau",
+      "derbyName": "Berliner Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-2__DE-35",
+      "clubAId": "DE-2",
+      "clubAName": "SV Reinickendorf",
+      "clubBId": "DE-35",
+      "clubBName": "Domstadt Magdeburg",
+      "derbyName": "Berlin–Magdeburg-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-3__DE-14",
+      "clubAId": "DE-3",
+      "clubAName": "FC Eving",
+      "clubBId": "DE-14",
+      "clubBName": "TSV Tremonia",
+      "derbyName": "Dortmunder Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-3__DE-24",
+      "clubAId": "DE-3",
+      "clubAName": "FC Eving",
+      "clubBId": "DE-24",
+      "clubBName": "SV Buer",
+      "derbyName": "Dortmund–Gelsenkirchen-Revierderby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "DE-4__DE-13",
+      "clubAId": "DE-4",
+      "clubAName": "Alster SV",
+      "clubBId": "DE-13",
+      "clubBName": "SC Altona",
+      "derbyName": "Hamburger Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-4__DE-30",
+      "clubAId": "DE-4",
+      "clubAName": "Alster SV",
+      "clubBId": "DE-30",
+      "clubBName": "Fördestadt Kiel",
+      "derbyName": "Hamburg–Kiel-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-5__DE-35",
+      "clubAId": "DE-5",
+      "clubAName": "SC Spandau",
+      "clubBId": "DE-35",
+      "clubBName": "Domstadt Magdeburg",
+      "derbyName": "Spree–Elbe-Duell",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-6__DE-16",
+      "clubAId": "DE-6",
+      "clubAName": "Pleiße Leipzig",
+      "clubBId": "DE-16",
+      "clubBName": "FC Lindenau",
+      "derbyName": "Leipziger Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-6__DE-21",
+      "clubAId": "DE-6",
+      "clubAName": "Pleiße Leipzig",
+      "clubBId": "DE-21",
+      "clubBName": "VfL Fallersleben",
+      "derbyName": "Mitteldeutsches Autobahnduell",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-7__DE-15",
+      "clubAId": "DE-7",
+      "clubAName": "VfB Frankfurt-West",
+      "clubBId": "DE-15",
+      "clubBName": "Mainufer Frankfurt",
+      "derbyName": "Frankfurter Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-7__DE-33",
+      "clubAId": "DE-7",
+      "clubAName": "VfB Frankfurt-West",
+      "clubBId": "DE-33",
+      "clubBName": "Mathildenhöhe Darmstadt",
+      "derbyName": "Frankfurt–Darmstadt-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-8__DE-11",
+      "clubAId": "DE-8",
+      "clubAName": "SC Ehrenfeld",
+      "clubBId": "DE-11",
+      "clubBName": "TSV Opladen",
+      "derbyName": "Köln–Leverkusen-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-8__DE-17",
+      "clubAId": "DE-8",
+      "clubAName": "SC Ehrenfeld",
+      "clubBId": "DE-17",
+      "clubBName": "FC Mülheim",
+      "derbyName": "Kölner Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-10__DE-27",
+      "clubAId": "DE-10",
+      "clubAName": "FC Cannstatt",
+      "clubBId": "DE-27",
+      "clubBName": "SV Kraichgau",
+      "derbyName": "Neckar–Kraichgau-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-10__DE-32",
+      "clubAId": "DE-10",
+      "clubAName": "FC Cannstatt",
+      "clubBId": "DE-32",
+      "clubBName": "VfB Heidenheim",
+      "derbyName": "Württembergisches Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-11__DE-20",
+      "clubAId": "DE-11",
+      "clubAName": "TSV Opladen",
+      "clubBId": "DE-20",
+      "clubBName": "FC Oberkassel",
+      "derbyName": "Rheinisches Nachbarschaftsderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-12__DE-23",
+      "clubAId": "DE-12",
+      "clubAName": "SV Weser Bremen",
+      "clubBId": "DE-23",
+      "clubBName": "Bremer Neustadt SV",
+      "derbyName": "Bremer Stadtderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-13__DE-30",
+      "clubAId": "DE-13",
+      "clubAName": "SC Altona",
+      "clubBId": "DE-30",
+      "clubBName": "Fördestadt Kiel",
+      "derbyName": "Elbe–Förde-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-14__DE-29",
+      "clubAId": "DE-14",
+      "clubAName": "TSV Tremonia",
+      "clubBId": "DE-29",
+      "clubBName": "VfL Weitmar",
+      "derbyName": "Östliches Ruhrgebietsderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-15__DE-26",
+      "clubAId": "DE-15",
+      "clubAName": "Mainufer Frankfurt",
+      "clubBId": "DE-26",
+      "clubBName": "TSV Gonsenheim",
+      "derbyName": "Main–Rhein-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-17__DE-20",
+      "clubAId": "DE-17",
+      "clubAName": "FC Mülheim",
+      "clubBId": "DE-20",
+      "clubBName": "FC Oberkassel",
+      "derbyName": "Köln–Düsseldorf-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-18__DE-21",
+      "clubAId": "DE-18",
+      "clubAName": "VfL Leine Hannover",
+      "clubBId": "DE-21",
+      "clubBName": "VfL Fallersleben",
+      "derbyName": "Hannover–Wolfsburg-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-18__DE-36",
+      "clubAId": "DE-18",
+      "clubAName": "VfL Leine Hannover",
+      "clubBId": "DE-36",
+      "clubBName": "VfB Oker Braunschweig",
+      "derbyName": "Niedersächsisches Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-19__DE-28",
+      "clubAId": "DE-19",
+      "clubAName": "FC Gostenhof",
+      "clubBId": "DE-28",
+      "clubBName": "Fuggerstadt Augsburg",
+      "derbyName": "Fränkisch–Schwäbisches Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-21__DE-35",
+      "clubAId": "DE-21",
+      "clubAName": "VfL Fallersleben",
+      "clubBId": "DE-35",
+      "clubBName": "Domstadt Magdeburg",
+      "derbyName": "Mitteldeutsches Industrie-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-22__DE-27",
+      "clubAId": "DE-22",
+      "clubAName": "FC Dreisam",
+      "clubBId": "DE-27",
+      "clubBName": "SV Kraichgau",
+      "derbyName": "Breisgau–Kraichgau-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-22__DE-31",
+      "clubAId": "DE-22",
+      "clubAName": "FC Dreisam",
+      "clubBId": "DE-31",
+      "clubBName": "VfB Karlsruhe",
+      "derbyName": "Baden-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-23__DE-40",
+      "clubAId": "DE-23",
+      "clubAName": "Bremer Neustadt SV",
+      "clubBId": "DE-40",
+      "clubBName": "VfB Gievenbeck",
+      "derbyName": "Weser–Westfalen-Duell",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-24__DE-25",
+      "clubAId": "DE-24",
+      "clubAName": "SV Buer",
+      "clubBId": "DE-25",
+      "clubBName": "VfB Bökelberg",
+      "derbyName": "Ruhr–Niederrhein-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-24__DE-38",
+      "clubAId": "DE-24",
+      "clubAName": "SV Buer",
+      "clubBId": "DE-38",
+      "clubBName": "Zechenstadt Essen",
+      "derbyName": "Westliches Revierderby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "DE-25__DE-39",
+      "clubAId": "DE-25",
+      "clubAName": "VfB Bökelberg",
+      "clubBId": "DE-39",
+      "clubBName": "SC Dreiländereck",
+      "derbyName": "Niederrhein–Aachen-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-26__DE-33",
+      "clubAId": "DE-26",
+      "clubAName": "TSV Gonsenheim",
+      "clubBId": "DE-33",
+      "clubBName": "Mathildenhöhe Darmstadt",
+      "derbyName": "Rhein–Main-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-28__DE-32",
+      "clubAId": "DE-28",
+      "clubAName": "Fuggerstadt Augsburg",
+      "clubBId": "DE-32",
+      "clubBName": "VfB Heidenheim",
+      "derbyName": "Schwäbisches Alb-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-29__DE-37",
+      "clubAId": "DE-29",
+      "clubAName": "VfL Weitmar",
+      "clubBId": "DE-37",
+      "clubBName": "Duisburger Hafen",
+      "derbyName": "Bochum–Duisburg-Revierderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-29__DE-38",
+      "clubAId": "DE-29",
+      "clubAName": "VfL Weitmar",
+      "clubBId": "DE-38",
+      "clubBName": "Zechenstadt Essen",
+      "derbyName": "Revierderby der Bergbaustädte",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-30__DE-34",
+      "clubAId": "DE-30",
+      "clubAName": "Fördestadt Kiel",
+      "clubBId": "DE-34",
+      "clubBName": "FC Warnow",
+      "derbyName": "Ostsee-Derby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-31__DE-39",
+      "clubAId": "DE-31",
+      "clubAName": "VfB Karlsruhe",
+      "clubBId": "DE-39",
+      "clubBName": "SC Dreiländereck",
+      "derbyName": "Westdeutsches Städteduell",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-37__DE-38",
+      "clubAId": "DE-37",
+      "clubAName": "Duisburger Hafen",
+      "clubBId": "DE-38",
+      "clubBName": "Zechenstadt Essen",
+      "derbyName": "Ruhrhafen–Zechen-Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "DE-37__DE-40",
+      "clubAId": "DE-37",
+      "clubAName": "Duisburger Hafen",
+      "clubBId": "DE-40",
+      "clubBName": "VfB Gievenbeck",
+      "derbyName": "Westfälisch–Rheinisches Duell",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "DE-39__DE-40",
+      "clubAId": "DE-39",
+      "clubAName": "SC Dreiländereck",
+      "clubBId": "DE-40",
+      "clubBName": "VfB Gievenbeck",
+      "derbyName": "Aachen–Münster-Duell",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-1__FR-4",
+      "clubAId": "FR-1",
+      "clubAName": "FC Parisien",
+      "clubBId": "FR-4",
+      "clubBName": "ES Paris",
+      "derbyName": "Derby de Paris",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-1__FR-27",
+      "clubAId": "FR-1",
+      "clubAName": "FC Parisien",
+      "clubBId": "FR-27",
+      "clubBName": "Racing Auxerrois",
+      "derbyName": "Duel de Paris et de l'Yonne",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-2__FR-7",
+      "clubAId": "FR-2",
+      "clubAName": "FC Massalia",
+      "clubBId": "FR-7",
+      "clubBName": "RC Azur",
+      "derbyName": "Classique de la Méditerranée",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-2__FR-8",
+      "clubAId": "FR-2",
+      "clubAName": "FC Massalia",
+      "clubBId": "FR-8",
+      "clubBName": "FC Maritime Marseille",
+      "derbyName": "Derby de Marseille",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-3__FR-9",
+      "clubAId": "FR-3",
+      "clubAName": "RC Fourvière",
+      "clubBId": "FR-9",
+      "clubBName": "Étoile des Canuts",
+      "derbyName": "Derby de Lyon",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-3__FR-16",
+      "clubAId": "FR-3",
+      "clubAName": "RC Fourvière",
+      "clubBId": "FR-16",
+      "clubBName": "FC Furan",
+      "derbyName": "Derby du Rhône et du Forez",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "FR-3__FR-38",
+      "clubAId": "FR-3",
+      "clubAName": "RC Fourvière",
+      "clubBId": "FR-38",
+      "clubBName": "FC Dauphiné",
+      "derbyName": "Derby des Alpes et du Rhône",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-4__FR-40",
+      "clubAId": "FR-4",
+      "clubAName": "ES Paris",
+      "clubBId": "FR-40",
+      "clubBName": "US La Source",
+      "derbyName": "Derby du Bassin Parisien",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-5__FR-12",
+      "clubAId": "FR-5",
+      "clubAName": "SC Deûle",
+      "clubBId": "FR-12",
+      "clubBName": "Corons de Lens",
+      "derbyName": "Derby du Nord Minier",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "FR-5__FR-17",
+      "clubAId": "FR-5",
+      "clubAName": "SC Deûle",
+      "clubBId": "FR-17",
+      "clubBName": "Stade Vauban Lille",
+      "derbyName": "Derby de Lille",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-5__FR-34",
+      "clubAId": "FR-5",
+      "clubAName": "SC Deûle",
+      "clubBId": "FR-34",
+      "clubBName": "FC Hainaut",
+      "derbyName": "Derby des Hauts-de-France Industriels",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-6__FR-7",
+      "clubAId": "FR-6",
+      "clubAName": "FC Rocher",
+      "clubBId": "FR-7",
+      "clubBName": "RC Azur",
+      "derbyName": "Derby de la Côte d'Azur",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-6__FR-8",
+      "clubAId": "FR-6",
+      "clubAName": "FC Rocher",
+      "clubBId": "FR-8",
+      "clubBName": "FC Maritime Marseille",
+      "derbyName": "Derby de la Méditerranée",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-7__FR-18",
+      "clubAId": "FR-7",
+      "clubAName": "RC Azur",
+      "clubBId": "FR-18",
+      "clubBName": "AS Riviera Niçoise",
+      "derbyName": "Derby de Nice",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-9__FR-38",
+      "clubAId": "FR-9",
+      "clubAName": "Étoile des Canuts",
+      "clubBId": "FR-38",
+      "clubBName": "FC Dauphiné",
+      "derbyName": "Derby du Rhône et des Alpes",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-10__FR-19",
+      "clubAId": "FR-10",
+      "clubAName": "FC Garonne",
+      "clubBId": "FR-19",
+      "clubBName": "SC Lauragais",
+      "derbyName": "Derby de Toulouse",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-10__FR-23",
+      "clubAId": "FR-10",
+      "clubAName": "FC Garonne",
+      "clubBId": "FR-23",
+      "clubBName": "Garrigues Montpellier",
+      "derbyName": "Duel d'Occitanie",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-11__FR-20",
+      "clubAId": "FR-11",
+      "clubAName": "RC de Gironde",
+      "clubBId": "FR-20",
+      "clubBName": "Bordeaux Garonne",
+      "derbyName": "Derby de Bordeaux",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-11__FR-33",
+      "clubAId": "FR-11",
+      "clubAName": "RC de Gironde",
+      "clubBId": "FR-33",
+      "clubBName": "AS Volcanique",
+      "derbyName": "Duel de la Garonne et des Volcans",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-12__FR-34",
+      "clubAId": "FR-12",
+      "clubAName": "Corons de Lens",
+      "clubBId": "FR-34",
+      "clubBName": "FC Hainaut",
+      "derbyName": "Derby du Bassin Minier",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-13__FR-15",
+      "clubAId": "FR-13",
+      "clubAName": "US Chantiers Nantais",
+      "clubBId": "FR-15",
+      "clubBName": "Vilaine Rennes",
+      "derbyName": "Derby de l'Ouest",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-13__FR-21",
+      "clubAId": "FR-13",
+      "clubAName": "US Chantiers Nantais",
+      "clubBId": "FR-21",
+      "clubBName": "FC Chantenay",
+      "derbyName": "Derby de Nantes",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-14__FR-28",
+      "clubAId": "FR-14",
+      "clubAName": "Étoile Krutenau",
+      "clubBId": "FR-28",
+      "clubBName": "FC Mosellan",
+      "derbyName": "Duel de l'Est",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-14__FR-37",
+      "clubAId": "FR-14",
+      "clubAName": "Étoile Krutenau",
+      "clubBId": "FR-37",
+      "clubBName": "FC Meurthe",
+      "derbyName": "Derby Alsace–Lorraine",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-15__FR-22",
+      "clubAId": "FR-15",
+      "clubAName": "Vilaine Rennes",
+      "clubBId": "FR-22",
+      "clubBName": "FC Penfeld",
+      "derbyName": "Derby Breton",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-15__FR-26",
+      "clubAId": "FR-15",
+      "clubAName": "Vilaine Rennes",
+      "clubBId": "FR-26",
+      "clubBName": "Étoile Angevine",
+      "derbyName": "Derby d'Anjou et de Bretagne",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-16__FR-33",
+      "clubAId": "FR-16",
+      "clubAName": "FC Furan",
+      "clubBId": "FR-33",
+      "clubBName": "AS Volcanique",
+      "derbyName": "Derby des Volcans et du Forez",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-17__FR-31",
+      "clubAId": "FR-17",
+      "clubAName": "Stade Vauban Lille",
+      "clubBId": "FR-31",
+      "clubBName": "US Risban",
+      "derbyName": "Derby du Nord Maritime",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-19__FR-36",
+      "clubAId": "FR-19",
+      "clubAName": "SC Lauragais",
+      "clubBId": "FR-36",
+      "clubBName": "Fontaine Nîmes",
+      "derbyName": "Derby du Midi",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-21__FR-26",
+      "clubAId": "FR-21",
+      "clubAName": "FC Chantenay",
+      "clubBId": "FR-26",
+      "clubBName": "Étoile Angevine",
+      "derbyName": "Derby Nantes–Angers",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-22__FR-32",
+      "clubAId": "FR-22",
+      "clubAName": "FC Penfeld",
+      "clubBId": "FR-32",
+      "clubBName": "FC Scorff",
+      "derbyName": "Derby Breton de l’Atlantique",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-23__FR-36",
+      "clubAId": "FR-23",
+      "clubAName": "Garrigues Montpellier",
+      "clubBId": "FR-36",
+      "clubBName": "Fontaine Nîmes",
+      "derbyName": "Derby du Languedoc",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-24__FR-30",
+      "clubAId": "FR-24",
+      "clubAName": "Reims Cathédrale",
+      "clubBId": "FR-30",
+      "clubBName": "Bouchon Troyen",
+      "derbyName": "Derby de Champagne",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-24__FR-35",
+      "clubAId": "FR-24",
+      "clubAName": "Reims Cathédrale",
+      "clubBId": "FR-35",
+      "clubBName": "Hortillons Amiens",
+      "derbyName": "Derby de la Champagne et de la Somme",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-25__FR-29",
+      "clubAId": "FR-25",
+      "clubAName": "Estuaire Havrais",
+      "clubBId": "FR-29",
+      "clubBName": "Stade Normand",
+      "derbyName": "Derby de Normandie",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-25__FR-31",
+      "clubAId": "FR-25",
+      "clubAName": "Estuaire Havrais",
+      "clubBId": "FR-31",
+      "clubBName": "US Risban",
+      "derbyName": "Derby des Ports de la Manche",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-26__FR-39",
+      "clubAId": "FR-26",
+      "clubAName": "Étoile Angevine",
+      "clubBId": "FR-39",
+      "clubBName": "Stade Manceau",
+      "derbyName": "Derby du Maine et de l'Anjou",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-27__FR-30",
+      "clubAId": "FR-27",
+      "clubAName": "Racing Auxerrois",
+      "clubBId": "FR-30",
+      "clubBName": "Bouchon Troyen",
+      "derbyName": "Derby de l'Yonne et de l'Aube",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-27__FR-40",
+      "clubAId": "FR-27",
+      "clubAName": "Racing Auxerrois",
+      "clubBId": "FR-40",
+      "clubBName": "US La Source",
+      "derbyName": "Duel de Bourgogne et de Loire",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "FR-28__FR-37",
+      "clubAId": "FR-28",
+      "clubAName": "FC Mosellan",
+      "clubBId": "FR-37",
+      "clubBName": "FC Meurthe",
+      "derbyName": "Derby de Lorraine",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-29__FR-39",
+      "clubAId": "FR-29",
+      "clubAName": "Stade Normand",
+      "clubBId": "FR-39",
+      "clubBName": "Stade Manceau",
+      "derbyName": "Derby de Normandie et du Maine",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-31__FR-35",
+      "clubAId": "FR-31",
+      "clubAName": "US Risban",
+      "clubBId": "FR-35",
+      "clubBName": "Hortillons Amiens",
+      "derbyName": "Derby des Hauts-de-France",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "FR-32__FR-39",
+      "clubAId": "FR-32",
+      "clubAName": "FC Scorff",
+      "clubBId": "FR-39",
+      "clubBName": "Stade Manceau",
+      "derbyName": "Duel de l'Atlantique et du Maine",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-1__PT-3",
+      "clubAId": "PT-1",
+      "clubAName": "FC Belém",
+      "clubBId": "PT-3",
+      "clubBName": "CF Alcântara",
+      "derbyName": "Dérbi de Lisboa",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-1__PT-11",
+      "clubAId": "PT-1",
+      "clubAName": "FC Belém",
+      "clubBId": "PT-11",
+      "clubBName": "FC São Martinho",
+      "derbyName": "Clássico do Atlântico Português",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-2__PT-5",
+      "clubAId": "PT-2",
+      "clubAName": "Atlético Portuense",
+      "clubBId": "PT-5",
+      "clubBName": "CF Campanhã",
+      "derbyName": "Dérbi do Porto",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-2__PT-18",
+      "clubAId": "PT-2",
+      "clubAName": "Atlético Portuense",
+      "clubBId": "PT-18",
+      "clubBName": "Atlético Matosinhense",
+      "derbyName": "Dérbi do Porto e Matosinhos",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-2__PT-31",
+      "clubAId": "PT-2",
+      "clubAName": "Atlético Portuense",
+      "clubBId": "PT-31",
+      "clubBName": "CD Espargo",
+      "derbyName": "Dérbi Entre o Vouga e o Douro",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-3__PT-27",
+      "clubAId": "PT-3",
+      "clubAName": "CF Alcântara",
+      "clubBId": "PT-27",
+      "clubBName": "UD Alhandra",
+      "derbyName": "Dérbi do Tejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-4__PT-6",
+      "clubAId": "PT-4",
+      "clubAName": "FC Nogueiró",
+      "clubBId": "PT-6",
+      "clubBName": "SC Oliveira",
+      "derbyName": "Clássico do Minho",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "PT-4__PT-10",
+      "clubAId": "PT-4",
+      "clubAName": "FC Nogueiró",
+      "clubBId": "PT-10",
+      "clubBName": "Bracarense Braga",
+      "derbyName": "Dérbi de Braga",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-5__PT-23",
+      "clubAId": "PT-5",
+      "clubAName": "CF Campanhã",
+      "clubBId": "PT-23",
+      "clubBName": "Penafidelis",
+      "derbyName": "Duelo do Grande Porto e Vale do Sousa",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-6__PT-15",
+      "clubAId": "PT-6",
+      "clubAName": "SC Oliveira",
+      "clubBId": "PT-15",
+      "clubBName": "SC Azurém",
+      "derbyName": "Dérbi de Guimarães",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-7__PT-16",
+      "clubAId": "PT-7",
+      "clubAName": "FC Arzila",
+      "clubBId": "PT-16",
+      "clubBName": "Mondego Coimbra",
+      "derbyName": "Dérbi de Coimbra",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-7__PT-24",
+      "clubAId": "PT-7",
+      "clubAName": "FC Arzila",
+      "clubBId": "PT-24",
+      "clubBName": "FC Parceiros",
+      "derbyName": "Dérbi Coimbra–Leiria",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-8__PT-17",
+      "clubAId": "PT-8",
+      "clubAName": "FC Azeitão",
+      "clubBId": "PT-17",
+      "clubBName": "SC Sado",
+      "derbyName": "Dérbi de Setúbal",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-8__PT-20",
+      "clubAId": "PT-8",
+      "clubAName": "FC Azeitão",
+      "clubBId": "PT-20",
+      "clubBName": "SC Monte Estoril",
+      "derbyName": "Dérbi da Costa de Lisboa",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-9__PT-20",
+      "clubAId": "PT-9",
+      "clubAName": "FC Alfragide",
+      "clubBId": "PT-20",
+      "clubBName": "SC Monte Estoril",
+      "derbyName": "Dérbi da Grande Lisboa Ocidental",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-9__PT-27",
+      "clubAId": "PT-9",
+      "clubAName": "FC Alfragide",
+      "clubBId": "PT-27",
+      "clubBName": "UD Alhandra",
+      "derbyName": "Dérbi da Grande Lisboa Ribeirinha",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-10__PT-15",
+      "clubAId": "PT-10",
+      "clubAName": "Bracarense Braga",
+      "clubBId": "PT-15",
+      "clubBName": "SC Azurém",
+      "derbyName": "Dérbi do Ave e do Cávado",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-11__PT-20",
+      "clubAId": "PT-11",
+      "clubAName": "FC São Martinho",
+      "clubBId": "PT-20",
+      "clubBName": "SC Monte Estoril",
+      "derbyName": "Clássico da Ilha e da Linha",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-12__PT-18",
+      "clubAId": "PT-12",
+      "clubAName": "SC Esgueira",
+      "clubBId": "PT-18",
+      "clubBName": "Atlético Matosinhense",
+      "derbyName": "Dérbi Aveiro–Matosinhos",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-12__PT-31",
+      "clubAId": "PT-12",
+      "clubAName": "SC Esgueira",
+      "clubBId": "PT-31",
+      "clubBName": "CD Espargo",
+      "derbyName": "Dérbi do Baixo Vouga",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-13__PT-26",
+      "clubAId": "PT-13",
+      "clubAName": "SC Montenegro",
+      "clubBId": "PT-26",
+      "clubBName": "UD Mexilhoeira",
+      "derbyName": "Dérbi do Algarve",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-13__PT-37",
+      "clubAId": "PT-13",
+      "clubAName": "SC Montenegro",
+      "clubBId": "PT-37",
+      "clubBName": "Planície de Beja",
+      "derbyName": "Dérbi Algarve–Alentejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-14__PT-21",
+      "clubAId": "PT-14",
+      "clubAName": "Desportivo do Vale do Ave",
+      "clubBId": "PT-21",
+      "clubBName": "SC Tamel",
+      "derbyName": "Dérbi Famalicão–Barcelos",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-14__PT-29",
+      "clubAId": "PT-14",
+      "clubAName": "Desportivo do Vale do Ave",
+      "clubBId": "PT-29",
+      "clubBName": "UD Tagilde",
+      "derbyName": "Dérbi do Vale do Ave",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-16__PT-28",
+      "clubAId": "PT-16",
+      "clubAName": "Mondego Coimbra",
+      "clubBId": "PT-28",
+      "clubBName": "GD Fontelo",
+      "derbyName": "Dérbi Coimbra–Viseu",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-17__PT-36",
+      "clubAId": "PT-17",
+      "clubAName": "SC Sado",
+      "clubBId": "PT-36",
+      "clubBName": "UD Eborense",
+      "derbyName": "Dérbi do Sado e Alentejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-18__PT-19",
+      "clubAId": "PT-18",
+      "clubAName": "Atlético Matosinhense",
+      "clubBId": "PT-19",
+      "clubBName": "Atlético Vilacondense",
+      "derbyName": "Dérbi do Litoral Norte",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-19__PT-25",
+      "clubAId": "PT-19",
+      "clubAName": "Atlético Vilacondense",
+      "clubBId": "PT-25",
+      "clubBName": "Atlético Poveiro",
+      "derbyName": "Dérbi da Foz do Ave",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-21__PT-30",
+      "clubAId": "PT-21",
+      "clubAName": "SC Tamel",
+      "clubBId": "PT-30",
+      "clubBName": "UD Bougado",
+      "derbyName": "Dérbi do Cávado e do Ave",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-22__PT-38",
+      "clubAId": "PT-22",
+      "clubAName": "GD São Neutel",
+      "clubBId": "PT-38",
+      "clubBName": "SC Teixoso",
+      "derbyName": "Clássico das Serras do Interior",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-22__PT-40",
+      "clubAId": "PT-22",
+      "clubAName": "GD São Neutel",
+      "clubBId": "PT-40",
+      "clubBName": "SC Britiande",
+      "derbyName": "Clássico de Trás-os-Montes e Douro",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-23__PT-25",
+      "clubAId": "PT-23",
+      "clubAName": "Penafidelis",
+      "clubBId": "PT-25",
+      "clubBName": "Atlético Poveiro",
+      "derbyName": "Dérbi Entre Douro e Atlântico",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-23__PT-30",
+      "clubAId": "PT-23",
+      "clubAName": "Penafidelis",
+      "clubBId": "PT-30",
+      "clubBName": "UD Bougado",
+      "derbyName": "Dérbi do Sousa e do Ave",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-24__PT-32",
+      "clubAId": "PT-24",
+      "clubAName": "FC Parceiros",
+      "clubBId": "PT-32",
+      "clubBName": "FC Marmeleira",
+      "derbyName": "Dérbi do Centro e Oeste",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-24__PT-33",
+      "clubAId": "PT-24",
+      "clubAName": "FC Parceiros",
+      "clubBId": "PT-33",
+      "clubBName": "GD dos Cucos",
+      "derbyName": "Dérbi Leiria–Torres Vedras",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-26__PT-37",
+      "clubAId": "PT-26",
+      "clubAName": "UD Mexilhoeira",
+      "clubBId": "PT-37",
+      "clubBName": "Planície de Beja",
+      "derbyName": "Dérbi do Algarve e Baixo Alentejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-27__PT-35",
+      "clubAId": "PT-27",
+      "clubAName": "UD Alhandra",
+      "clubBId": "PT-35",
+      "clubBName": "UD Ribeira",
+      "derbyName": "Dérbi do Ribatejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-28__PT-40",
+      "clubAId": "PT-28",
+      "clubAName": "GD Fontelo",
+      "clubBId": "PT-40",
+      "clubBName": "SC Britiande",
+      "derbyName": "Dérbi de Viseu e Lamego",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-29__PT-30",
+      "clubAId": "PT-29",
+      "clubAName": "UD Tagilde",
+      "clubBId": "PT-30",
+      "clubBName": "UD Bougado",
+      "derbyName": "Dérbi de Vizela e Trofa",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-32__PT-35",
+      "clubAId": "PT-32",
+      "clubAName": "FC Marmeleira",
+      "clubBId": "PT-35",
+      "clubBName": "UD Ribeira",
+      "derbyName": "Dérbi Rio Maior–Santarém",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-33__PT-34",
+      "clubAId": "PT-33",
+      "clubAName": "GD dos Cucos",
+      "clubBId": "PT-34",
+      "clubBName": "Atlético Mafrense",
+      "derbyName": "Dérbi do Oeste",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-34__PT-35",
+      "clubAId": "PT-34",
+      "clubAName": "Atlético Mafrense",
+      "clubBId": "PT-35",
+      "clubBName": "UD Ribeira",
+      "derbyName": "Dérbi do Oeste e Ribatejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-36__PT-37",
+      "clubAId": "PT-36",
+      "clubAName": "UD Eborense",
+      "clubBId": "PT-37",
+      "clubBName": "Planície de Beja",
+      "derbyName": "Dérbi do Alentejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-36__PT-39",
+      "clubAId": "PT-36",
+      "clubAName": "UD Eborense",
+      "clubBId": "PT-39",
+      "clubBName": "SC Alegrete",
+      "derbyName": "Dérbi do Alto Alentejo",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "PT-38__PT-39",
+      "clubAId": "PT-38",
+      "clubAName": "SC Teixoso",
+      "clubBId": "PT-39",
+      "clubBName": "SC Alegrete",
+      "derbyName": "Duelo das Serras da Beira e Alentejo",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-1__NL-4",
+      "clubAId": "NL-1",
+      "clubAName": "IJhaven Amsterdam",
+      "clubBId": "NL-4",
+      "clubBName": "ASV Westerpark",
+      "derbyName": "Amsterdamse Stadsderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-1__NL-17",
+      "clubAId": "NL-1",
+      "clubAName": "IJhaven Amsterdam",
+      "clubBId": "NL-17",
+      "clubBName": "FC Haarlemmerhout",
+      "derbyName": "Amsterdam–Haarlemderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-1__NL-38",
+      "clubAId": "NL-1",
+      "clubAName": "IJhaven Amsterdam",
+      "clubBId": "NL-38",
+      "clubBName": "SV Zuiderhage",
+      "derbyName": "Lelystad–Amsterdamderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-2__NL-5",
+      "clubAId": "NL-2",
+      "clubAName": "Rijnmond Rotterdam",
+      "clubBId": "NL-5",
+      "clubBName": "VV Schiehaven",
+      "derbyName": "Rotterdamse Stadsderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-2__NL-31",
+      "clubAId": "NL-2",
+      "clubAName": "Rijnmond Rotterdam",
+      "clubBId": "NL-31",
+      "clubBName": "SC Nieuwland",
+      "derbyName": "Rotterdam–Schiedamderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-3__NL-7",
+      "clubAId": "NL-3",
+      "clubAName": "SV Kempenland",
+      "clubBId": "NL-7",
+      "clubBName": "EVV Genneper",
+      "derbyName": "Eindhovense Stadsderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-3__NL-33",
+      "clubAId": "NL-3",
+      "clubAName": "SV Kempenland",
+      "clubBId": "NL-33",
+      "clubBName": "SV Brouwhuis",
+      "derbyName": "Eindhoven–Helmondderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-4__NL-28",
+      "clubAId": "NL-4",
+      "clubAName": "ASV Westerpark",
+      "clubBId": "NL-28",
+      "clubBName": "AVV Poelmeer",
+      "derbyName": "Amsterdam–Amstelveenderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-5__NL-30",
+      "clubAId": "NL-5",
+      "clubAName": "VV Schiehaven",
+      "clubBId": "NL-30",
+      "clubBName": "SC Ambacht",
+      "derbyName": "Rotterdam–Vlaardingenderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-6__NL-25",
+      "clubAId": "NL-6",
+      "clubAName": "SV Zuilen",
+      "clubBId": "NL-25",
+      "clubBName": "AVV Eemland",
+      "derbyName": "Utrecht–Amersfoortderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-6__NL-27",
+      "clubAId": "NL-6",
+      "clubAName": "SV Zuilen",
+      "clubBId": "NL-27",
+      "clubBName": "SV Kerkelanden",
+      "derbyName": "Utrecht–Hilversumderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-7__NL-35",
+      "clubAId": "NL-7",
+      "clubAName": "EVV Genneper",
+      "clubBId": "NL-35",
+      "clubBName": "Ossewaard Oss",
+      "derbyName": "Oost-Brabantse Stedenduel",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-8__NL-18",
+      "clubAId": "NL-8",
+      "clubAName": "Haagse Sportkring",
+      "clubBId": "NL-18",
+      "clubBName": "VV Rapenburg",
+      "derbyName": "Den Haag–Leidenderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-8__NL-21",
+      "clubAId": "NL-8",
+      "clubAName": "Haagse Sportkring",
+      "clubBId": "NL-21",
+      "clubBName": "SV Seghwaert",
+      "derbyName": "Haagse Streekderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-9__NL-24",
+      "clubAId": "NL-9",
+      "clubAName": "Ommelander Groningen",
+      "clubBId": "NL-24",
+      "clubBName": "LVV Bilgaard",
+      "derbyName": "Noordelijke Derby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "NL-9__NL-40",
+      "clubAId": "NL-9",
+      "clubAName": "Ommelander Groningen",
+      "clubBId": "NL-40",
+      "clubBName": "FC Emmerhout",
+      "derbyName": "Groningen–Emmenderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-10__NL-12",
+      "clubAId": "NL-10",
+      "clubAName": "RKVV Tilburgia",
+      "clubBId": "NL-12",
+      "clubBName": "FC Markdal",
+      "derbyName": "Brabantse Stedenderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-10__NL-36",
+      "clubAId": "NL-10",
+      "clubAName": "RKVV Tilburgia",
+      "clubBId": "NL-36",
+      "clubBName": "VV Kalsdonk",
+      "derbyName": "West-Brabantse Streekderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-11__NL-29",
+      "clubAId": "NL-11",
+      "clubAName": "Gooimeer Almere",
+      "clubBId": "NL-29",
+      "clubBName": "FC Weidevenne",
+      "derbyName": "Flevoland–Waterlandderby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-11__NL-38",
+      "clubAId": "NL-11",
+      "clubAName": "Gooimeer Almere",
+      "clubBId": "NL-38",
+      "clubBName": "SV Zuiderhage",
+      "derbyName": "Flevolandderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-12__NL-31",
+      "clubAId": "NL-12",
+      "clubAName": "FC Markdal",
+      "clubBId": "NL-31",
+      "clubBName": "SC Nieuwland",
+      "derbyName": "Breda–Schiedamderby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-12__NL-36",
+      "clubAId": "NL-12",
+      "clubAName": "FC Markdal",
+      "clubBId": "NL-36",
+      "clubBName": "VV Kalsdonk",
+      "derbyName": "West-Brabantse Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-13__NL-15",
+      "clubAId": "NL-13",
+      "clubAName": "SV Dukenburg",
+      "clubBId": "NL-15",
+      "clubBName": "SV Sonsbeek",
+      "derbyName": "Gelderse Rivierenderby",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "NL-13__NL-16",
+      "clubAId": "NL-13",
+      "clubAName": "SV Dukenburg",
+      "clubBId": "NL-16",
+      "clubBName": "CSV Sprengen",
+      "derbyName": "Veluwe–Waalderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-14__NL-23",
+      "clubAId": "NL-14",
+      "clubAName": "EVV Roombeek",
+      "clubBId": "NL-23",
+      "clubBName": "FC Brinkgreven",
+      "derbyName": "Twente–IJsselderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-14__NL-40",
+      "clubAId": "NL-14",
+      "clubAName": "EVV Roombeek",
+      "clubBId": "NL-40",
+      "clubBName": "FC Emmerhout",
+      "derbyName": "Twente–Drenthederby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-15__NL-26",
+      "clubAId": "NL-15",
+      "clubAName": "SV Sonsbeek",
+      "clubBId": "NL-26",
+      "clubBName": "VV Ugchelen",
+      "derbyName": "Arnhem–Apeldoornderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-16__NL-26",
+      "clubAId": "NL-16",
+      "clubAName": "CSV Sprengen",
+      "clubBId": "NL-26",
+      "clubBName": "VV Ugchelen",
+      "derbyName": "Apeldoornse Stadsderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-17__NL-39",
+      "clubAId": "NL-17",
+      "clubAName": "FC Haarlemmerhout",
+      "clubBId": "NL-39",
+      "clubBName": "Kanaalduin Velsen",
+      "derbyName": "IJmond–Haarlemderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-18__NL-37",
+      "clubAId": "NL-18",
+      "clubAName": "VV Rapenburg",
+      "clubBId": "NL-37",
+      "clubBName": "FC Ridderveld",
+      "derbyName": "Rijnlandse Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-19__NL-34",
+      "clubAId": "NL-19",
+      "clubAName": "VV Heuvelland",
+      "clubBId": "NL-34",
+      "clubBName": "VV Venlose Heide",
+      "derbyName": "Limburgse Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-20__NL-30",
+      "clubAId": "NL-20",
+      "clubAName": "VV De Staart",
+      "clubBId": "NL-30",
+      "clubBName": "SC Ambacht",
+      "derbyName": "Drecht–Waterwegderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-21__NL-37",
+      "clubAId": "NL-21",
+      "clubAName": "SV Seghwaert",
+      "clubBId": "NL-37",
+      "clubBName": "FC Ridderveld",
+      "derbyName": "Groene Hart-derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-22__NL-23",
+      "clubAId": "NL-22",
+      "clubAName": "VV Diezerpoort",
+      "clubBId": "NL-23",
+      "clubBName": "FC Brinkgreven",
+      "derbyName": "IJsselstedenderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-22__NL-24",
+      "clubAId": "NL-22",
+      "clubAName": "VV Diezerpoort",
+      "clubBId": "NL-24",
+      "clubBName": "LVV Bilgaard",
+      "derbyName": "Noordelijke Provinciederby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-22__NL-40",
+      "clubAId": "NL-22",
+      "clubAName": "VV Diezerpoort",
+      "clubBId": "NL-40",
+      "clubBName": "FC Emmerhout",
+      "derbyName": "Drents–Overijssels Duel",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "NL-25__NL-27",
+      "clubAId": "NL-25",
+      "clubAName": "AVV Eemland",
+      "clubBId": "NL-27",
+      "clubBName": "SV Kerkelanden",
+      "derbyName": "Eem–Gooiderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-27__NL-28",
+      "clubAId": "NL-27",
+      "clubAName": "SV Kerkelanden",
+      "clubBId": "NL-28",
+      "clubBName": "AVV Poelmeer",
+      "derbyName": "Gooi–Amstellandderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-28__NL-29",
+      "clubAId": "NL-28",
+      "clubAName": "AVV Poelmeer",
+      "clubBId": "NL-29",
+      "clubBName": "FC Weidevenne",
+      "derbyName": "Amstelland–Waterlandderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-29__NL-32",
+      "clubAId": "NL-29",
+      "clubAName": "FC Weidevenne",
+      "clubBId": "NL-32",
+      "clubBName": "VV Houttil",
+      "derbyName": "Noord-Hollandse Kanaalderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-32__NL-39",
+      "clubAId": "NL-32",
+      "clubAName": "VV Houttil",
+      "clubBId": "NL-39",
+      "clubBName": "Kanaalduin Velsen",
+      "derbyName": "Noord-Hollandse Kustderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-33__NL-34",
+      "clubAId": "NL-33",
+      "clubAName": "SV Brouwhuis",
+      "clubBId": "NL-34",
+      "clubBName": "VV Venlose Heide",
+      "derbyName": "Helmond–Venloderby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "NL-33__NL-35",
+      "clubAId": "NL-33",
+      "clubAName": "SV Brouwhuis",
+      "clubBId": "NL-35",
+      "clubBName": "Ossewaard Oss",
+      "derbyName": "Oost-Brabantse Derby",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-1__BR-3",
+      "clubAId": "BR-1",
+      "clubAName": "EC Bixiga",
+      "clubBId": "BR-3",
+      "clubBName": "EC Mooca",
+      "derbyName": "Clássico dos Bairros Paulistanos",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-1__BR-15",
+      "clubAId": "BR-1",
+      "clubAName": "EC Bixiga",
+      "clubBId": "BR-15",
+      "clubBName": "Ferroviário Campineiro",
+      "derbyName": "Clássico da Capital e do Interior Paulista",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-2__BR-4",
+      "clubAId": "BR-2",
+      "clubAName": "Estrela Carioca",
+      "clubBId": "BR-4",
+      "clubBName": "FC Laranjeiras",
+      "derbyName": "Clássico Carioca",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-3__BR-13",
+      "clubAId": "BR-3",
+      "clubAName": "EC Mooca",
+      "clubBId": "BR-13",
+      "clubBName": "Atlético Santista",
+      "derbyName": "Clássico São Paulo–Santos",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-4__BR-40",
+      "clubAId": "BR-4",
+      "clubAName": "FC Laranjeiras",
+      "clubBId": "BR-40",
+      "clubBName": "Tupi Central",
+      "derbyName": "Duelo do Rio e da Zona da Mata",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-5__BR-9",
+      "clubAId": "BR-5",
+      "clubAName": "Atlético Pampulha",
+      "clubBId": "BR-9",
+      "clubBName": "Desportiva Alterosas",
+      "derbyName": "Clássico de Belo Horizonte",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-5__BR-40",
+      "clubAId": "BR-5",
+      "clubAName": "Atlético Pampulha",
+      "clubBId": "BR-40",
+      "clubBName": "Tupi Central",
+      "derbyName": "Clássico da Zona da Mata e da Capital",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-6__BR-10",
+      "clubAId": "BR-6",
+      "clubAName": "União Farroupilha",
+      "clubBId": "BR-10",
+      "clubBName": "Gaúcho Central",
+      "derbyName": "Clássico da Capital Gaúcha",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-6__BR-25",
+      "clubAId": "BR-6",
+      "clubAName": "União Farroupilha",
+      "clubBId": "BR-25",
+      "clubBName": "Pioneiros da Serra",
+      "derbyName": "Clássico de Porto Alegre e Caxias",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-6__BR-36",
+      "clubAId": "BR-6",
+      "clubAName": "União Farroupilha",
+      "clubBId": "BR-36",
+      "clubBName": "Operário Carbonífero",
+      "derbyName": "Clássico do Sul e Serra",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-7__BR-18",
+      "clubAId": "BR-7",
+      "clubAName": "Porto da Barra",
+      "clubBId": "BR-18",
+      "clubBName": "EC Itapuã",
+      "derbyName": "Clássico de Salvador",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-7__BR-29",
+      "clubAId": "BR-7",
+      "clubAName": "Porto da Barra",
+      "clubBId": "BR-29",
+      "clubBName": "Esportiva Coroa do Meio",
+      "derbyName": "Clássico Aracaju–Salvador",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-8__BR-19",
+      "clubAId": "BR-8",
+      "clubAName": "EC Pilarzinho",
+      "clubBId": "BR-19",
+      "clubBName": "EC Água Verde",
+      "derbyName": "Clássico de Curitiba",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-8__BR-37",
+      "clubAId": "BR-8",
+      "clubAName": "EC Pilarzinho",
+      "clubBId": "BR-37",
+      "clubBName": "Itajaí-Açu",
+      "derbyName": "Clássico Curitiba–Blumenau",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-9__BR-40",
+      "clubAId": "BR-9",
+      "clubAName": "Desportiva Alterosas",
+      "clubBId": "BR-40",
+      "clubBName": "Tupi Central",
+      "derbyName": "Clássico das Minas Gerais",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-10__BR-34",
+      "clubAId": "BR-10",
+      "clubAName": "Gaúcho Central",
+      "clubBId": "BR-34",
+      "clubBName": "Esportivo das Charqueadas",
+      "derbyName": "Clássico do Guaíba e da Lagoa",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-11__BR-20",
+      "clubAId": "BR-11",
+      "clubAName": "União Mucuripe",
+      "clubBId": "BR-20",
+      "clubBName": "Atlético Meireles",
+      "derbyName": "Clássico de Fortaleza",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-11__BR-26",
+      "clubAId": "BR-11",
+      "clubAName": "União Mucuripe",
+      "clubBId": "BR-26",
+      "clubBName": "Forte dos Reis",
+      "derbyName": "Clássico das Capitais do Nordeste Setentrional",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-12__BR-21",
+      "clubAId": "BR-12",
+      "clubAName": "EC Afogados",
+      "clubBId": "BR-21",
+      "clubBName": "União da Várzea",
+      "derbyName": "Clássico do Recife",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-12__BR-28",
+      "clubAId": "BR-12",
+      "clubAName": "EC Afogados",
+      "clubBId": "BR-28",
+      "clubBName": "Marítimo Pajuçara",
+      "derbyName": "Clássico Recife–Maceió",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-13__BR-23",
+      "clubAId": "BR-13",
+      "clubAName": "Atlético Santista",
+      "clubBId": "BR-23",
+      "clubBName": "Esportiva Satélite",
+      "derbyName": "Clássico do Litoral e do Vale",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-14__BR-17",
+      "clubAId": "BR-14",
+      "clubAName": "EC Paranoá",
+      "clubBId": "BR-17",
+      "clubBName": "EC Goiabeiras",
+      "derbyName": "Clássico Brasília–Goiânia",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-14__BR-24",
+      "clubAId": "BR-14",
+      "clubAName": "EC Paranoá",
+      "clubBId": "BR-24",
+      "clubBName": "Dourado Cuiabano",
+      "derbyName": "Duelo das Capitais do Centro-Oeste",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-15__BR-22",
+      "clubAId": "BR-15",
+      "clubAName": "Ferroviário Campineiro",
+      "clubBId": "BR-22",
+      "clubBName": "FC Ribeirão",
+      "derbyName": "Clássico do Interior Paulista",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-15__BR-23",
+      "clubAId": "BR-15",
+      "clubAName": "Ferroviário Campineiro",
+      "clubBId": "BR-23",
+      "clubBName": "Esportiva Satélite",
+      "derbyName": "Clássico Campinas–São José dos Campos",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-16__BR-30",
+      "clubAId": "BR-16",
+      "clubAName": "Grêmio Guajará",
+      "clubBId": "BR-30",
+      "clubBName": "Carnaubal",
+      "derbyName": "Clássico do Norte e Meio-Norte",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-16__BR-31",
+      "clubAId": "BR-16",
+      "clubAName": "Grêmio Guajará",
+      "clubBId": "BR-31",
+      "clubBName": "Azulejos da Ilha",
+      "derbyName": "Clássico da Amazônia Oriental",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-17__BR-39",
+      "clubAId": "BR-17",
+      "clubAName": "EC Goiabeiras",
+      "clubBId": "BR-39",
+      "clubBName": "Sabiá do Cerrado",
+      "derbyName": "Clássico do Cerrado Goiano-Mineiro",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-18__BR-28",
+      "clubAId": "BR-18",
+      "clubAName": "EC Itapuã",
+      "clubBId": "BR-28",
+      "clubBName": "Marítimo Pajuçara",
+      "derbyName": "Clássico da Costa Nordestina",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-19__BR-38",
+      "clubAId": "BR-19",
+      "clubAName": "EC Água Verde",
+      "clubBId": "BR-38",
+      "clubBName": "Industrial Joinville",
+      "derbyName": "Clássico Curitiba–Joinville",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-20__BR-30",
+      "clubAId": "BR-20",
+      "clubAName": "Atlético Meireles",
+      "clubBId": "BR-30",
+      "clubBName": "Carnaubal",
+      "derbyName": "Clássico do Ceará e Piauí",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-21__BR-27",
+      "clubAId": "BR-21",
+      "clubAName": "União da Várzea",
+      "clubBId": "BR-27",
+      "clubBName": "União Tabajara",
+      "derbyName": "Clássico Recife–João Pessoa",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-22__BR-33",
+      "clubAId": "BR-22",
+      "clubAName": "FC Ribeirão",
+      "clubBId": "BR-33",
+      "clubBName": "Cidade Canção",
+      "derbyName": "Clássico das Terras do Café",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-22__BR-39",
+      "clubAId": "BR-22",
+      "clubAName": "FC Ribeirão",
+      "clubBId": "BR-39",
+      "clubBName": "Sabiá do Cerrado",
+      "derbyName": "Clássico do Triângulo e Nordeste Paulista",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-24__BR-39",
+      "clubAId": "BR-24",
+      "clubAName": "Dourado Cuiabano",
+      "clubBId": "BR-39",
+      "clubBName": "Sabiá do Cerrado",
+      "derbyName": "Duelo do Cerrado Brasileiro",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-25__BR-34",
+      "clubAId": "BR-25",
+      "clubAName": "Pioneiros da Serra",
+      "clubBId": "BR-34",
+      "clubBName": "Esportivo das Charqueadas",
+      "derbyName": "Clássico da Serra e da Campanha",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-25__BR-35",
+      "clubAId": "BR-25",
+      "clubAName": "Pioneiros da Serra",
+      "clubBId": "BR-35",
+      "clubBName": "FC Palmital",
+      "derbyName": "Clássico da Serra Gaúcha e Oeste Catarinense",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-26__BR-27",
+      "clubAId": "BR-26",
+      "clubAName": "Forte dos Reis",
+      "clubBId": "BR-27",
+      "clubBName": "União Tabajara",
+      "derbyName": "Clássico da Costa Potiguar-Paraibana",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-28__BR-29",
+      "clubAId": "BR-28",
+      "clubAName": "Marítimo Pajuçara",
+      "clubBId": "BR-29",
+      "clubBName": "Esportiva Coroa do Meio",
+      "derbyName": "Clássico do Litoral Nordeste",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-30__BR-31",
+      "clubAId": "BR-30",
+      "clubAName": "Carnaubal",
+      "clubBId": "BR-31",
+      "clubBName": "Azulejos da Ilha",
+      "derbyName": "Clássico do Meio-Norte",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-32__BR-33",
+      "clubAId": "BR-32",
+      "clubAName": "Grêmio dos Cafezais",
+      "clubBId": "BR-33",
+      "clubBName": "Cidade Canção",
+      "derbyName": "Clássico do Norte do Paraná",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-35__BR-36",
+      "clubAId": "BR-35",
+      "clubAName": "FC Palmital",
+      "clubBId": "BR-36",
+      "clubBName": "Operário Carbonífero",
+      "derbyName": "Clássico Catarinense do Interior",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "BR-35__BR-38",
+      "clubAId": "BR-35",
+      "clubAName": "FC Palmital",
+      "clubBId": "BR-38",
+      "clubBName": "Industrial Joinville",
+      "derbyName": "Clássico do Interior Catarinense",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "BR-37__BR-38",
+      "clubAId": "BR-37",
+      "clubAName": "Itajaí-Açu",
+      "clubBId": "BR-38",
+      "clubBName": "Industrial Joinville",
+      "derbyName": "Clássico do Vale do Itajaí e Norte",
+      "type": "territoriale"
+    },
+    {
+      "rivalryId": "IT-3__FR-38",
+      "clubAId": "IT-3",
+      "clubAName": "Subalpina Torino",
+      "clubBId": "FR-38",
+      "clubBName": "FC Dauphiné",
+      "derbyName": "Derby delle Alpi Occidentali / Derby des Alpes Occidentales",
+      "type": "storica"
+    },
+    {
+      "rivalryId": "ENG-1__FR-1",
+      "clubAId": "ENG-1",
+      "clubAName": "Thamesgate FC",
+      "clubBId": "FR-1",
+      "clubBName": "FC Parisien",
+      "derbyName": "Channel Derby / Derby de la Manche",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "ENG-32__NL-2",
+      "clubAId": "ENG-32",
+      "clubAName": "Humber Dock FC",
+      "clubBId": "NL-2",
+      "clubBName": "Rijnmond Rotterdam",
+      "derbyName": "North Sea Ports Derby / Noordzeehavenderby",
+      "type": "sportiva"
+    },
+    {
+      "rivalryId": "PT-1__BR-2",
+      "clubAId": "PT-1",
+      "clubAName": "FC Belém",
+      "clubBId": "BR-2",
+      "clubBName": "Estrela Carioca",
+      "derbyName": "Clássico do Atlântico Lusófono",
+      "type": "storica"
+    }
+  ],
   "divisions": [
     {
       "id": "BR-1",

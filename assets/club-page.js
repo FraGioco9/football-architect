@@ -31,6 +31,14 @@
    document.title=host.querySelector('h1').textContent+' · '+model.copies[language()][selected.view]+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
    for(const link of host.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   const translate=host.querySelector('[data-translate-club]');
+   if(translate)translate.addEventListener('click',()=>{
+    const description=host.querySelector('.club-description');
+    const translated=translate.getAttribute('aria-pressed')!=='true';
+    description.textContent=translated?description.dataset.translatedDescription:description.dataset.originalDescription;
+    translate.setAttribute('aria-pressed',String(translated));
+    translate.textContent=model.copies[language()][translated?'originalLabel':'translateLabel'];
+   });
    // Native links preserve standard Tab/Enter behavior; arrows, Home and End move focus.
    const links=[...host.querySelectorAll('.club-tabs a')];
    for(const link of links)link.addEventListener('click',event=>{

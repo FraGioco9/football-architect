@@ -14,6 +14,8 @@
   it:['Panoramica','Rosa','Partite','Statistiche','Storia','Identità del club','Profilo del club','Competizione','Nome principale','Nome completo','Nome breve','Abbreviazione','Soprannome','Città','Paese','Colore primario','Colore secondario','Stadio','Divisione','Assegnazione provvisoria · nessuna stagione attiva','Fuori dalla struttura di gioco corrente','Nessuna rosa disponibile.','Nessuna partita disponibile.','Nessuna statistica disponibile.','Nessuna storia del club disponibile.','Pagine del club','Segnaposto dello stemma del club','Le informazioni del club non sono disponibili. Ricarica la pagina.','Vai al contenuto']
  };
  const copies=Object.fromEntries(Object.entries(rows).map(([lang,row])=>[lang,Object.fromEntries(keys.map((key,i)=>[key,row[i]]))]));
+ const extraLabels={"en":["Name","Colors","Description","Rivalries","Kits","Kits not yet available","Translate","Show original","Tier","First division","Second division","No rivalries recorded"],"de":["Name","Farben","Beschreibung","Rivalitäten","Trikots","Noch keine Trikots verfügbar","Übersetzen","Original anzeigen","Spielklasse","Erste Liga","Zweite Liga","Keine Rivalitäten eingetragen"],"es":["Nombre","Colores","Descripción","Rivalidades","Equipaciones","Equipaciones aún no disponibles","Traducir","Mostrar original","Categoría","Primera división","Segunda división","Sin rivalidades registradas"],"fr":["Nom","Couleurs","Description","Rivalités","Maillots","Maillots pas encore disponibles","Traduire","Afficher l’original","Niveau","Première division","Deuxième division","Aucune rivalité répertoriée"],"it":["Nome","Colori","Descrizione","Rivalità","Divise","Divise non ancora disponibili","Traduci","Mostra originale","Livello","Prima divisione","Seconda divisione","Nessuna rivalità registrata"]};
+ for(const [locale,values] of Object.entries(extraLabels))for(let i=0;i<values.length;i++)copies[locale][["nameLabel","colorsLabel","descriptionLabel","rivalriesLabel","kitsLabel","kitsPending","translateLabel","originalLabel","tierLabel","tier1Label","tier2Label","noRivalries"][i]]=values[i];
  const countryNames={en:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil'],de:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien'],es:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil'],fr:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil'],it:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']};
  const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
  const flagCodes={IT:'it',ENG:'gb',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'br'};
@@ -46,10 +48,30 @@
   };
   let content;
   if(selected.view==='overview'){
-   content='<div class="club-overview-grid"><section class="app-panel" aria-labelledby="club-identity-title"><h2 id="club-identity-title">'+escape(t.identity)+'</h2><dl class="club-facts">'+
-    ['primaryName','fullName','compactName','abbr','nickname','city'].map(key=>fact(key,escape(c[key]))).join('')+fact('country',escape(country))+fact('primaryColor',swatch('primaryColor'))+fact('secondaryColor',swatch('secondaryColor'))+'</dl></section>'+
-    '<section class="app-panel" aria-labelledby="club-profile-title"><h2 id="club-profile-title">'+escape(t.profile)+'</h2><p class="club-description">'+escape(c.descriptions[lang])+'</p><dl class="club-facts">'+fact('stadium',escape(c.stadiumName))+fact('division',divisionValue)+'</dl></section>'+
-    '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2><p>'+divisionValue+'</p>'+(division?'<p class="club-placement">'+escape(t.provisional)+'</p>':'')+'</section></div>';
+   const originalLang={IT:'it',ENG:'en',ES:'es',DE:'de',FR:'fr',PT:'pt',BR:'pt',NL:'nl'}[c.countryId];
+   const translationAvailable=lang!==originalLang&&typeof c.descriptions?.[lang]==='string'&&c.descriptions[lang].trim();
+   const colors='<span class="club-colors">'+swatch('primaryColor')+swatch('secondaryColor')+'</span>';
+   const countryField='<span class="club-country-value"><img src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="" width="24" height="16"> '+escape(country)+'</span>';
+   const clubId=c.countryId+'-'+c.clubId;
+   const rivals=(manifest.rivalries||[]).filter(r=>r.clubAId===clubId||r.clubBId===clubId);
+   const rivalItems=rivals.map(r=>{
+    const opponent=r.clubAId===clubId?r.clubBId:r.clubAId;
+    const target=manifest.clubs.find(other=>other.countryId+'-'+other.clubId===opponent);
+    if(!target)return '';
+    const derby=escape(r.derbyName);
+    return '<li><a class="app-link" href="/clubs/'+target.countryId.toLowerCase()+'/'+target.clubId+'/overview">'+escape(target.primaryName)+'</a><span>'+derby+'</span></li>';
+   }).join('');
+   content='<div class="club-overview-layout"><div class="club-overview-main">'+
+    '<section class="app-panel club-identity" aria-labelledby="club-identity-title"><h2 id="club-identity-title">'+escape(t.identity)+'</h2>'+
+    '<dl class="club-facts">'+fact('nameLabel',escape(c.primaryName))+fact('country',countryField)+fact('city',escape(c.city))+fact('abbr',escape(c.abbr))+fact('colorsLabel',colors)+fact('nickname',escape(c.nickname))+fact('stadium',escape(c.stadiumName))+'</dl>'+
+    '<div class="club-description-heading"><h3>'+escape(t.descriptionLabel)+'</h3>'+
+    (translationAvailable?'<button type="button" class="club-translate-button" data-translate-club aria-pressed="false">'+escape(t.translateLabel)+'</button>':'')+'</div>'+
+    '<p class="club-description" data-original-description="'+escape(c.description)+'" data-translated-description="'+escape(translationAvailable?c.descriptions[lang]:c.description)+'">'+escape(c.description)+'</p></section>'+
+    '<section class="app-panel club-rivalries" aria-labelledby="club-rivalries-title"><h2 id="club-rivalries-title">'+escape(t.rivalriesLabel)+'</h2>'+
+    (rivalItems?'<ul class="club-rivalries-list">'+rivalItems+'</ul>':'<p>'+escape(t.noRivalries)+'</p>')+'</section>'+
+    '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
+    '<dl class="club-facts">'+fact('division',divisionValue)+(division?fact('tierLabel',escape(division.tier===1?t.tier1Label:t.tier2Label)):'')+'</dl></section></div>'+
+    '<aside class="app-panel club-kits" aria-labelledby="club-kits-title"><h2 id="club-kits-title">'+escape(t.kitsLabel)+'</h2><p>'+escape(t.kitsPending)+'</p></aside></div>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
