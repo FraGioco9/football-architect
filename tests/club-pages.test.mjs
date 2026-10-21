@@ -137,9 +137,9 @@ test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
 });
 
 test('CLUB-ID-01 CSV/JSON identities and rivalry references use unpadded canonical IDs',()=>{
- const registry=read('data/clubs-registry.csv').replace(/^\\uFEFF/,'').trim().split(/\\r?\\n/);
+ const registry=read('data/clubs-registry.csv').replace(/^\uFEFF/,'').trim().split(/\r?\n/);
  const rivalries=JSON.parse(read('data/club-rivalries.json'));
- const rivalryCsv=read('data/club-rivalries.csv').replace(/^\\uFEFF/,'').trim().split(/\\r?\\n/);
+ const rivalryCsv=read('data/club-rivalries.csv').replace(/^\uFEFF/,'').trim().split(/\r?\n/);
  const ids=new Set(clubs.map(c=>c.countryId+'-'+c.clubId));
  assert.equal(clubs.length,320);
  assert.equal(registry.length,321);
