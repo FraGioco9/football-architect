@@ -1,7 +1,7 @@
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {readFileSync} from 'node:fs';
 import {clubCrestAssets} from './club-crest-assets.mjs';
-export function clubOutputs({template,replacements,clubs,divisions,allocations}){
+export function clubOutputs({template,replacements,clubs,divisions,allocations,countryFlags}){
  const descriptions=JSON.parse(readFileSync(new URL('../data/club-descriptions.i18n.json',import.meta.url),'utf8'));
  const byClub=new Map();
  for(const allocation of allocations.allocations){
@@ -9,7 +9,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations})
   for(const id of allocation.clubIds)byClub.set(division.countryId+'-'+id,division.id);
  }
  const rivalries=JSON.parse(readFileSync(new URL('../data/club-rivalries.json',import.meta.url),'utf8'));
- const manifest={schemaVersion:1,approved:allocations.approved,clubCrests:clubCrestAssets().catalog,rivalries,
+ const manifest={schemaVersion:1,approved:allocations.approved,clubCrests:clubCrestAssets().catalog,countryFlags,rivalries,
   divisions:divisions.map(({id,name,tier,countryId,countryName})=>({id,name,tier,countryId,countryName})),
   clubs:[...clubs].sort((a,b)=>a.countryId.localeCompare(b.countryId,'en')||a.clubId-b.clubId).map(c=>{
    const native={DE:'de',ENG:'en',ES:'es',FR:'fr',IT:'it',PT:'pt',NL:'nl',BR:'pt'}[c.countryId];

@@ -18,7 +18,6 @@
  for(const [locale,values] of Object.entries(extraLabels))for(let i=0;i<values.length;i++)copies[locale][["nameLabel","colorsLabel","descriptionLabel","rivalriesLabel","kitsLabel","kitsPending","translateLabel","originalLabel","tierLabel","tier1Label","tier2Label","noRivalries"][i]]=values[i];
  const countryNames={en:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil'],de:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien'],es:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil'],fr:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil'],it:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']};
  const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
- const flagCodes={IT:'it',ENG:'gb-eng',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'br'};
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function route(path){
   const m=path.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)$/);
@@ -30,6 +29,12 @@
   if(!c)throw Error('Unknown club identity');
   const country=countryNames[lang][countries.indexOf(c.countryId)];
   const division=manifest.divisions.find(d=>d.id===c.divisionId);
+  // Reuse generated competition artwork, scoping SVG IDs for both placements.
+  const flag=placement=>manifest.countryFlags[c.countryId]
+   .replace('class="app-world-flag"','class="app-world-flag club-country-flag"')
+   .replace(/id="([^"]+)"/g,(_,id)=>'id="club-'+placement+'-'+id+'"')
+   .replace(/url\(#([^)]+)\)/g,(_,id)=>'url(#club-'+placement+'-'+id+')')
+   .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
   const link=division?'/competitions/'+division.id.toLowerCase()+'/overview':null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'" role="img" aria-label="'+escape(t.crest)+'"></span>';
@@ -57,7 +62,7 @@
    const originalLang={IT:'it',ENG:'en',ES:'es',DE:'de',FR:'fr',PT:'pt',BR:'pt',NL:'nl'}[c.countryId];
    const translationAvailable=lang!==originalLang&&typeof c.descriptions?.[lang]==='string'&&c.descriptions[lang].trim();
    const colors='<span class="club-colors">'+swatch('primaryColor')+swatch('secondaryColor')+'</span>';
-   const countryField='<span class="club-country-value"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="" width="25" height="20"> '+escape(country)+'</span>';
+   const countryField='<span class="club-country-value">'+flag('identity')+' '+escape(country)+'</span>';
    const clubId=c.countryId+'-'+c.clubId;
    const rivals=(manifest.rivalries||[]).filter(r=>r.clubAId===clubId||r.clubBId===clubId);
    const rivalItems=rivals.map(r=>{
@@ -81,7 +86,7 @@
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
   }
-  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="" width="25" height="20">'+escape(c.city)+', '+escape(country)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
+  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
    content;
  }
  return {views,copies,route,render};

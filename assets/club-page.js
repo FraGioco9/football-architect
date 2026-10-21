@@ -50,6 +50,7 @@
     history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
     selected=next;
     paint(true);
+    host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});
    });
    for(const link of links)link.addEventListener('keydown',event=>{
     const i=links.indexOf(link),n=links.length;
@@ -63,7 +64,7 @@
   new MutationObserver(()=>paint()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
-   if(next&&next.base===selected.base){selected=next;paint(true);}
+   if(next&&next.base===selected.base){selected=next;paint(true);host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{

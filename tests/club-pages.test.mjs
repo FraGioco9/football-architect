@@ -179,3 +179,22 @@ test('CLUB-OVERVIEW-02: all 320 clubs expose original descriptions, translations
  }
 });
 function requireVm(){return {runInNewContext:vmRunInNewContext}}
+
+
+test('CLUB-FLAGS-54: all countries reuse the competition SVG with independent clip IDs',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ assert.equal(Object.keys(manifest.countryFlags||{}).length,8);
+ for(const country of ['IT','ENG','ES','DE','FR','PT','NL','BR']){
+  const source=manifest.countryFlags[country];
+  assert.match(source,/viewBox="0 0 5 4"/);
+  const club=manifest.clubs.find(c=>c.countryId===country);
+  const html=model.render(manifest,model.route(`/clubs/${country.toLowerCase()}/${club.clubId}/overview`));
+  assert.equal((html.match(/class="app-world-flag club-country-flag"/g)||[]).length,2);
+  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(new Set(ids).size,ids.length,'Header and identity flags need independent SVG IDs');
+  assert.doesNotMatch(html,/<img[^>]+assets\/flags\//);
+  assert.doesNotMatch(html,/ns1:href=/);
+  for(const [,target] of html.matchAll(/(?:href="#|url\(#)([^"\)]+)/g))assert.ok(ids.includes(target),'Unresolved SVG fragment '+target);
+ }
+});
