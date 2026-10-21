@@ -40,6 +40,31 @@
  // A day is never a permanent route or selection.
  if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
  updateSeason();
+ // Fixtures-style week navigation: arrows, menu and current-week shortcut.
+ const weekControls=document.getElementById('calendar-controls');
+ if(weekControls){
+  weekControls.classList.add('app-fixtures-navigation');
+  const prev=document.getElementById('calendar-previous'),next=document.getElementById('calendar-next'),label=document.getElementById('calendar-week-label');
+  for(const arrow of [prev,next]){arrow.classList.add('app-fixtures-arrow','app-fixtures-current');arrow.textContent=arrow===prev?'‹':'›'}
+  const wrap=document.createElement('div');wrap.className='language-control app-fixtures-select';
+  wrap.innerHTML='<button type="button" class="language-trigger app-fixtures-trigger" id="calendar-week-trigger" role="combobox" aria-haspopup="listbox" aria-controls="calendar-week-menu" aria-expanded="false"><span id="calendar-week-value">Week 1</span><svg class="language-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" id="calendar-week-menu" role="listbox" hidden></div>';
+  const weekTrigger=wrap.querySelector('#calendar-week-trigger'),weekMenu=wrap.querySelector('#calendar-week-menu'),weekValue=wrap.querySelector('#calendar-week-value');
+  const current=document.createElement('button');current.type='button';current.id='calendar-current-week';current.className='app-fixtures-current';current.textContent='Current week';
+  const currentWeek=()=>{try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Math.ceil((Number.isInteger(n)&&n>=1&&n<=56?n:1)/7)}catch{return 1}};
+  const jump=n=>{window.faWorldCalendar?.setWeek(n);closeWeek();syncWeek()};
+  const closeWeek=()=>{weekMenu.hidden=true;weekTrigger.setAttribute('aria-expanded','false')};
+  weekTrigger.addEventListener('click',()=>{weekMenu.hidden=!weekMenu.hidden;weekTrigger.setAttribute('aria-expanded',String(!weekMenu.hidden))});
+  weekTrigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeWeek()});
+  document.addEventListener('pointerdown',e=>{if(!wrap.contains(e.target))closeWeek()});
+  for(let n=1;n<=8;n++){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.tabIndex=0;option.textContent='Week '+n;option.addEventListener('click',()=>jump(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump(n)}if(e.key==='Escape')closeWeek()});weekMenu.append(option)}
+  current.addEventListener('click',()=>jump(currentWeek()));
+  label.hidden=true;label.after(wrap,current);
+  function syncWeek(){const n=Number(document.documentElement.dataset.calendarWeek)||1;weekValue.textContent='Week '+n;for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.disabled=!dev}
+  for(const a of [prev,next])a.addEventListener('click',()=>queueMicrotask(syncWeek));
+  window.addEventListener('popstate',()=>queueMicrotask(syncWeek));
+  window.addEventListener('fa:dev-progress-change',()=>queueMicrotask(syncWeek));
+  syncWeek();
+ }
  const dialog=document.createElement('dialog');
  dialog.id='calendar-event-dialog';
  dialog.className='calendar-event-dialog';
