@@ -1225,7 +1225,7 @@
     const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
     const calendarNav=links.calendar;
-    if(calendarNav&&!calendarNav.dataset.calendarSeasonLinkBound){
+    if(calendarNav?.dataset&&!calendarNav.dataset.calendarSeasonLinkBound&&typeof calendarNav.addEventListener==="function"){
       calendarNav.dataset.calendarSeasonLinkBound="true";
       calendarNav.addEventListener("click",()=>rewriteAppLinks());
       calendarNav.addEventListener("focus",()=>rewriteAppLinks());
