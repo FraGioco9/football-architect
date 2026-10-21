@@ -860,3 +860,13 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 @keyframes calendar-popup-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes calendar-backdrop-in{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.calendar-event-dialog,.calendar-event-dialog::backdrop{animation:none}}
+
+/* CAL-SIMPLE-02: no persistent day selection, legend, or divider. */
+#world-calendar>.calendar-key{display:none!important}
+#world-calendar{border:0;border-radius:0;padding:0;background:transparent}
+.calendar-day[aria-pressed="true"],html[data-calendar-ready="true"] .calendar-day[aria-pressed="true"]{border-color:var(--line);background:transparent;box-shadow:none}
+.calendar-day:hover{background:rgba(91,142,121,.10)}
+.calendar-marker-tooltip{position:fixed;z-index:2147482000;max-width:min(330px,calc(100vw - 20px));padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);box-shadow:0 12px 30px #0007;pointer-events:none;animation:calendar-tooltip-in .16s ease both;font-size:12px;font-weight:700}
+@keyframes calendar-tooltip-in{from{opacity:0;transform:translateY(5px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.calendar-marker-tooltip{animation:none}}
+.calendar-season-picker .language-control{min-width:90px}
