@@ -135,6 +135,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await visit('/clubs/it/01/overview?season=4');assert.equal(await run('location.search'),'');
     assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
+    await run("window.__clubHeaderCrest=document.querySelector('.club-header .app-club-crest-image')");
+    await run("document.querySelector('.club-tabs a[href$='/roster']").click()");
+    assert.equal(await run("location.pathname.endsWith('/roster')"),true);
+    assert.equal(await run("document.querySelector('.club-header .app-club-crest-image')===window.__clubHeaderCrest"),true,'Tab navigation must preserve the loaded header crest');
+    await run("history.back()");
+    await wait("location.pathname.endsWith('/overview')");
+    assert.equal(await run("document.querySelector('.club-header .app-club-crest-image')===window.__clubHeaderCrest"),true,'Back navigation must preserve the same crest node');
     refuseCrests=true;await cmd('Network.setCacheDisabled',{cacheDisabled:true});await visit(knownPath);
     await wait("document.querySelectorAll('.app-club-crest-image').length===0&&document.querySelector('[data-club-crest-pending]')===null");
     assert.equal(await run("getComputedStyle(document.querySelector('.club-crest'),'::before').display"),'block');
