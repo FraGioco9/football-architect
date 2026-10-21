@@ -3,7 +3,7 @@ export const competitionViews=Object.freeze(["overview","standings","postseason"
 export const clubViews=Object.freeze(["overview","roster","fixtures","stats","history"]);
 const countries="it|eng|es|de|fr|pt|nl|br";
 const division=new RegExp("^/competitions/("+countries+")-([12])(?:/([^/]+))?/?$");
-const club=new RegExp("^/clubs/("+countries+")/(0[1-9]|[1-3][0-9]|40)(?:/([^/]+))?/?$");
+const club=new RegExp("^/clubs/("+countries+")/([1-9]|[1-3][0-9]|40)(?:/([^/]+))?/?$");
 export function resolveSubpage(pathname){
   const match=division.exec(pathname);
   if(match){
@@ -24,6 +24,6 @@ export function competitionSubpage(id,view="overview"){
   return "/competitions/"+id+"/"+view;
 }
 export function clubSubpage(country,id,view="overview"){
-  if(!/^(it|eng|es|de|fr|pt|nl|br)$/.test(country)||!/^(0[1-9]|[1-3][0-9]|40)$/.test(id)||!clubViews.includes(view))throw Error("Invalid club route");
+  if(!/^(it|eng|es|de|fr|pt|nl|br)$/.test(country)||!/^([1-9]|[1-3][0-9]|40)$/.test(id)||!clubViews.includes(view))throw Error("Invalid club route");
   return "/clubs/"+country+"/"+id+"/"+view;
 }
