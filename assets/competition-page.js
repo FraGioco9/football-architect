@@ -191,7 +191,7 @@
           if(name&&name.textContent!==club.primaryName)name.textContent=club.primaryName;
           return;
         }
-        const name=document.createElement("span");name.textContent=club.primaryName;
+        const name=document.createElement("a");name.className="app-world-standing-club-link";name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";name.textContent=club.primaryName;
         slot.replaceChildren(createCrestHost(id),name);
       }
       else slot.replaceChildren(word(key,label));
