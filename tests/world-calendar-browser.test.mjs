@@ -106,6 +106,13 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
       assert.deepEqual(await run("[...document.querySelectorAll('#calendar-details [data-marker]')].map(n=>n.dataset.marker)"),expected);
     }
     await run("document.getElementById('calendar-day-16').click();document.getElementById('calendar-filter').value='national';document.getElementById('calendar-filter').dispatchEvent(new Event('change'));document.getElementById('calendar-division').value='it-1';document.getElementById('calendar-division').dispatchEvent(new Event('change'));document.getElementById('calendar-week').click()");
+    for(const id of ['it-1','it-2','eng-1','eng-2','es-1','es-2','de-1','de-2','fr-1','fr-2','pt-1','pt-2','nl-1','nl-2','br-1','br-2']){
+      await run("(()=>{let n=document.getElementById('calendar-division');n.value="+JSON.stringify(id)+";n.dispatchEvent(new Event('change'))})()");
+      assert.ok((await run("document.querySelector('#calendar-details a[href*=fixtures]')?.getAttribute('href')")).startsWith('/competitions/'+id+'/fixtures?'));
+    }
+    await run("(()=>{let n=document.getElementById('calendar-division');n.value='it-1';n.dispatchEvent(new Event('change'))})()");
+    assert.equal(await run("document.querySelector('label[for=calendar-filter]')!==null&&document.querySelector('label[for=calendar-division]')!==null"),true);
+    assert.equal(await run("getComputedStyle(document.querySelector('#calendar-today')).visibility!=='hidden'"),true);
     const route=await run("document.querySelector('#calendar-details a[href*=fixtures]')?.getAttribute('href')");
     assert.match(route,/^\/competitions\/it-1\/fixtures\?season=1&matchday=4&calendarReturn=/);
     assert.equal(await run("document.getElementById('calendar-today').disabled"),true);
