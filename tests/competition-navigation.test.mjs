@@ -160,3 +160,19 @@ test('FIXTURES-POSTSEASON-URL: named rounds preserve deep links, tabs and browse
   assert.equal(competitionModel.validRound(31),false);
  }
 });
+
+test('ROUTE-02 History and Rules URLs omit season while other competition views retain it',()=>{
+ const s=setup('/competitions/it-1/standings?season=1');
+ s.window.faCompetitionRoute.set({view:'history'});
+ assert.equal(s.window.location.pathname,'/competitions/it-1/history');
+ assert.equal(s.window.location.search,'');
+ s.window.faCompetitionRoute.set({view:'rules'});
+ assert.equal(s.window.location.pathname,'/competitions/it-1/rules');
+ assert.equal(s.window.location.search,'');
+ s.window.faCompetitionRoute.set({view:'fixtures',matchday:9});
+ assert.equal(s.window.location.pathname,'/competitions/it-1/fixtures');
+ assert.equal(s.window.location.search,'?season=1&matchday=9');
+ const direct=setup('/competitions/it-1/history?season=4');
+ assert.equal(direct.window.location.pathname,'/competitions/it-1/history');
+ assert.equal(direct.window.location.search,'');
+});
