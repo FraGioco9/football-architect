@@ -135,15 +135,14 @@
   tooltip.hidden=true;previousFocus=focus||day;keyboardOpen=Boolean(previousFocus?.matches?.(':focus-visible'));
   previousFocus?.classList?.remove('app-search-escape-return');
   dialog.querySelector('#calendar-event-dialog-title').textContent=t().day+' '+n;
-  dialog.querySelector('#calendar-event-dialog-subtitle').textContent=t().season+' '+selectedSeason;
+  dialog.querySelector('#calendar-event-dialog-subtitle').hidden=true;
   const body=dialog.querySelector('#calendar-event-dialog-details');body.replaceChildren();
   if(!data.events.length){const p=document.createElement('p');p.textContent=data.kind==='preseason'?t().preseason:data.kind==='transition'?t().transition:t().empty;body.append(p)}
   for(const event of data.events){
-   const section=document.createElement('section'),heading=document.createElement('h3');
-   heading.textContent=displayMarker(event)+' - '+namesFor(event);section.append(heading);
-   const scope=document.createElement('p');scope.textContent=t().competitions+': '+event.competitionIds.join(', ');section.append(scope);
-   const pending=document.createElement('p');pending.textContent=t().pending;section.append(pending);
-   body.append(section);
+   const row=document.createElement('div'),code=document.createElement('strong'),description=document.createElement('span');
+   row.className='calendar-event-summary';code.className='calendar-event-code';description.className='calendar-event-description';
+   code.textContent=displayMarker(event);description.textContent=namesFor(event);
+   row.append(code,description);body.append(row);
   }
   if(!dialog.open&&closingTimer===null){dialog.showModal();if(keyboardOpen)closeButton.focus({preventScroll:true});else {dialog.tabIndex=-1;dialog.focus({preventScroll:true})}}
  }
