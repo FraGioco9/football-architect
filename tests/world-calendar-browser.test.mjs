@@ -147,6 +147,15 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await runValue("document.getElementById('calendar-season').click()");
     assert.equal(await runValue("(()=>{const tiles=['1','13','16','26','53'].map(n=>document.querySelector('#calendar-day-'+n));return new Set(tiles.map(e=>e.getBoundingClientRect().height)).size})()"),1);
 
+    // CAL-UX-10: explicit historical season URLs open on the DEV current week without a late jump.
+    await cmd('Page.navigate',{url:devOrigin+'/calendar?season=2&calendarView=week'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarUiReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4');
+    assert.equal(await runValue("document.getElementById('calendar-season-value').textContent"),'2');
+    assert.equal(await runValue("document.documentElement.dataset.calendarUiReady"),'true');
+    assert.equal(await runValue("document.getElementById('calendar-previous').disabled"),false);
+    assert.equal(await runValue("document.getElementById('calendar-next').disabled"),false);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog')?.classList.contains('app-search-dialog')"),true);
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
