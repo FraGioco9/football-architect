@@ -103,7 +103,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await visit();assert.equal((await measure()).selection.day,23);assert.equal((await measure()).view,'week');
     for(let i=0;i<3;i++)await click('#calendar-next');
     await run("document.getElementById('calendar-next').focus()");
-    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',windowsVirtualKeyCode:13});
     await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
     assert.equal(await run('document.documentElement.dataset.calendarWeek'),'8');
     assert.equal(await run("document.getElementById('calendar-next').disabled"),true);
