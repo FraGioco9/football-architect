@@ -186,7 +186,9 @@ function historyIdentity(club){
  const identity=historyNode("span","app-world-club-identity");
  const crest=historyNode("span","app-world-club-crest-placeholder");
  crest.dataset.clubCrest=club.countryId+"-"+club.clubId;crest.setAttribute("aria-hidden","true");
- identity.append(crest,historyNode("span","app-world-club-name",club.primaryName));return identity;
+ const link=historyNode("a","app-world-club-name app-world-standing-club-link",club.primaryName);
+ link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";
+ identity.append(crest,link);return identity;
 }
 function historySeasonLabel(season){
  const label=historyNode("span","app-history-dev-season");
