@@ -21,6 +21,7 @@
  let selectedSeason=1;
  window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?readDebugSeason():1);
+ function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?season="+selectedSeason+"&calendarView="+mode;try{sessionStorage.setItem("football-architect:calendar-route",route)}catch{}document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
  function updateSeason(){
   const limit=dev?readDebugSeason():1;
   const params=new URL(location.href).searchParams;
@@ -33,6 +34,7 @@
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
   value.textContent=String(selectedSeason);
   root.dataset.season=String(selectedSeason);
+  syncCalendarLink();
   if(typeof updateCurrentDay==='function')updateCurrentDay();
  }
 
@@ -63,11 +65,11 @@
   current.addEventListener('click',()=>jump(currentWeek()));
   label.hidden=true;label.after(wrap,current);
   const syncControls=()=>{const showing=document.documentElement.dataset.calendarView==='week';weekControls.hidden=!showing;weekControls.style.display=showing?'flex':'none';syncWeek()};
-  new MutationObserver(syncControls).observe(document.documentElement,{attributes:true,attributeFilter:['data-calendar-view','data-calendar-week']});
+  new MutationObserver(()=>{syncControls();syncCalendarLink()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-calendar-view','data-calendar-week']});
   for(const mode of ['calendar-season','calendar-week'])document.getElementById(mode)?.addEventListener('click',()=>queueMicrotask(syncControls));
   function syncWeek(){const n=Number(document.documentElement.dataset.calendarWeek)||1;weekValue.textContent='Week '+n;for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.disabled=!dev}
   for(const a of [prev,next])a.addEventListener('click',()=>queueMicrotask(syncWeek));
-  window.addEventListener('popstate',()=>queueMicrotask(syncWeek));
+  window.addEventListener('popstate',()=>queueMicrotask(()=>{syncWeek();syncCalendarLink()}));
   window.addEventListener('fa:dev-progress-change',()=>queueMicrotask(syncWeek));
   syncControls();
  }
