@@ -87,7 +87,7 @@ async function setMatchdays(value){
 }
 async function resetPreview(){
  if(validPath&&previewState!=="OFF" && !await setPreviewEnabled(false))return false;
- try{sessionStorage.removeItem(SEASON_KEY);sessionStorage.removeItem(ROUNDS_KEY)}catch{return false}
+ try{sessionStorage.removeItem(SEASON_KEY);sessionStorage.removeItem(ROUNDS_KEY);sessionStorage.removeItem('football-architect:calendar-dev-world-day')}catch{return false}
  progressRevision++;debugSeason=1;matchdays=0;
  await refreshSeason();
  return refreshProgress();
@@ -379,6 +379,9 @@ if(validPath||indexPath){
    value:()=>debugSeason,onChange:setSeason
   },{type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1,scope:"general",
    value:()=>matchdays,onChange:setMatchdays
+  },{type:"range",id:"world-day",label:"World day",min:1,max:56,step:1,scope:"general",
+   value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
+   onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem("football-architect:calendar-dev-world-day",String(n))}catch{return false}window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:n}}));return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    return widgetRoot?.resetWidgetState()===true;
