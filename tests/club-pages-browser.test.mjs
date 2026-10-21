@@ -109,6 +109,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.fa-shell-nav [aria-current=\"page\"]')===null"),true,'Club pages must not select a sidebar destination');
      assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const flag of flags)assert.deepEqual(flag,{width:25,height:20,fit:'contain'},'Club flag must fit in shared 5:4 slot');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
+     assert.equal(await run("document.querySelector('.club-competition-status .club-competition-label').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
+     const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-status').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
+     assert.equal(cardLayout.full,true,'Competition spans the Overview width');
+     assert.equal(width===1440?cardLayout.sideBySide:cardLayout.stacked,true,'Competition uses desktop columns and compact mobile rows');
      assert.equal(await run("document.querySelector('.club-description').textContent===document.querySelector('.club-description').dataset.originalDescription"),true);
      assert.equal(await run("document.querySelector('.club-kits').textContent.trim().length>0"),true);
      if(lang!=='it'){
@@ -165,6 +169,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("getComputedStyle(document.querySelector('.club-crest'),'::before').display"),'block');
     refuseCrests=false;
     await visit('/clubs/br/40/overview');assert.equal(await run("document.querySelector('.club-competition a')"),null);
+    assert.equal(await run("document.querySelectorAll('.club-competition .club-competition-empty').length"),1);
+    assert.equal(await run("document.querySelector('.club-competition img,.club-competition .club-competition-status')"),null);
     await visit('/clubs/it/1/overview',devOrigin);
     assert.equal(await run("document.querySelector('[data-fa-dev-preview]')"),null);
     await cmd('Page.navigate',{url:origin+'/competitions/it-1/overview'});

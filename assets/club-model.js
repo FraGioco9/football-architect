@@ -16,6 +16,7 @@
  const copies=Object.fromEntries(Object.entries(rows).map(([lang,row])=>[lang,Object.fromEntries(keys.map((key,i)=>[key,row[i]]))]));
  const extraLabels={"en":["Name","Colors","Description","Rivalries","Kits","Kits not yet available","Translate","Show original","Tier","First division","Second division","No rivalries recorded"],"de":["Name","Farben","Beschreibung","Rivalitäten","Trikots","Noch keine Trikots verfügbar","Übersetzen","Original anzeigen","Spielklasse","Erste Liga","Zweite Liga","Keine Rivalitäten eingetragen"],"es":["Nombre","Colores","Descripción","Rivalidades","Equipaciones","Equipaciones aún no disponibles","Traducir","Mostrar original","Categoría","Primera división","Segunda división","Sin rivalidades registradas"],"fr":["Nom","Couleurs","Description","Rivalités","Maillots","Maillots pas encore disponibles","Traduire","Afficher l’original","Niveau","Première division","Deuxième division","Aucune rivalité répertoriée"],"it":["Nome","Colori","Descrizione","Rivalità","Divise","Divise non ancora disponibili","Traduci","Mostra originale","Livello","Prima divisione","Seconda divisione","Nessuna rivalità registrata"]};
  for(const [locale,values] of Object.entries(extraLabels))for(let i=0;i<values.length;i++)copies[locale][["nameLabel","colorsLabel","descriptionLabel","rivalriesLabel","kitsLabel","kitsPending","translateLabel","originalLabel","tierLabel","tier1Label","tier2Label","noRivalries"][i]]=values[i];
+ for(const [lang,label] of Object.entries({en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}))copies[lang].statusLabel=label;
  const countryNames={en:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil'],de:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien'],es:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil'],fr:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil'],it:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']};
  const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -40,11 +41,12 @@
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'"></span>';
   const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
   const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
-  const competitionCard='<div class="club-competition-layout"><div class="club-competition-identity">'+
-   (divisionLogo?'<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">':'<span class="club-competition-logo club-competition-logo-empty" aria-hidden="true">—</span>')+
+  const competitionCard=division?'<div class="club-competition-layout"><div class="club-competition-identity">'+
+   '<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">'+
    '<div class="club-competition-copy"><span class="club-competition-label">'+escape(t.division)+'</span><strong class="club-competition-name">'+divisionValue+'</strong>'+
    (division?'<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>':'')+'</div></div>'+
-   '<div class="club-competition-status"><span class="club-competition-label">'+escape(t.competition)+'</span><strong>'+escape(division?t.provisional:t.outside)+'</strong></div></div>';
+   '<div class="club-competition-status"><span class="club-competition-label">'+escape(t.statusLabel)+'</span><strong>'+escape(t.provisional)+'</strong></div></div>':
+   '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
   const params=new URLSearchParams(search);
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.
   const temporal=new URLSearchParams();

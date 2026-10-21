@@ -198,3 +198,24 @@ test('CLUB-FLAGS-54: all countries reuse the competition SVG with independent cl
   for(const [,target] of html.matchAll(/(?:href="#|url\(#)([^"\)]+)/g))assert.ok(ids.includes(target),'Unresolved SVG fragment '+target);
  }
 });
+
+
+test('CLUB-COMPETITION-02: active cards show localized status and inactive cards have one message',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const labels={en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'};
+ for(const c of manifest.clubs)for(const [lang,label] of Object.entries(labels)){
+  const html=model.render(manifest,model.route(`/clubs/${c.countryId.toLowerCase()}/${c.clubId}/overview`),lang);
+  const box=html.match(/<section class="app-panel club-competition"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(box,'Every Overview has the competition panel');
+  if(c.divisionId){
+   assert.ok(box.includes('class="club-competition-label">'+label+'</span>'));
+   assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/overview"'));
+   assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
+   assert.ok(box.includes(model.copies[lang].provisional));
+  }else{
+   assert.equal(box.split(model.copies[lang].outside).length-1,1,'Inactive clubs show one status message');
+   assert.doesNotMatch(box,/<img|<a |club-competition-layout|club-competition-status/);
+  }
+ }
+});
