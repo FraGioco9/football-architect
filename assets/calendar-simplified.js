@@ -53,7 +53,8 @@
  const names={national:'Domestic round',international:'International round'};
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
  const dayModel=window.faWorldCalendarModel?.createSeason(1).days||[];
- const namesFor=e=>e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names[e.family]||e.family)+' '+e.round;
+ const displayMarker=e=>e.family==='national'&&e.phase==='postseason'?'P'+String(e.round-30).padStart(2,'0'):e.marker;
+ const namesFor=e=>e.family==='national'&&e.phase==='postseason'?'Playoffs / playouts · leg '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names[e.family]||e.family)+' '+e.round;
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
   tooltip.hidden=true;previousFocus=focus||day;
@@ -63,7 +64,7 @@
   if(!data.events.length){const p=document.createElement('p');p.textContent=data.kind==='preseason'?'Preseason':data.kind==='transition'?'Season transition':'No official events.';body.append(p)}
   for(const event of data.events){
    const section=document.createElement('section'),heading=document.createElement('h3');
-   heading.textContent=event.marker+' - '+namesFor(event);section.append(heading);
+   heading.textContent=displayMarker(event)+' - '+namesFor(event);section.append(heading);
    const scope=document.createElement('p');scope.textContent='Competitions: '+event.competitionIds.join(', ');section.append(scope);
    const pending=document.createElement('p');pending.textContent='Fixtures and results are not yet available.';section.append(pending);
    body.append(section);
@@ -79,10 +80,19 @@
   const day=marker.closest('[data-calendar-day]'),data=dayModel[Number(day?.dataset.calendarDay)-1];
   const event=data?.events.find(e=>e.marker===marker.dataset.calendarMarker);if(!event)continue;
   const description=namesFor(event);
+  if(event.family==='national'&&event.phase==='postseason'){
+   marker.textContent=displayMarker(event);
+   marker.classList.add('calendar-event--postseason');
+  }
   marker.removeAttribute('title');
   marker.setAttribute('aria-label',description);
   marker.addEventListener('pointerenter',()=>{tooltip.textContent=description;placeTooltip(marker)});
   marker.addEventListener('pointerleave',()=>{tooltip.hidden=true});
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
+ function currentDay(){try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}}
+ function updateCurrentDay(){const n=dev?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current)cell.dataset.devCurrentDay='true';else delete cell.dataset.devCurrentDay}}
+ window.addEventListener('fa:dev-world-day-change',updateCurrentDay);
+ window.addEventListener('fa:dev-progress-change',updateCurrentDay);
+ updateCurrentDay();
 })();
