@@ -11,7 +11,7 @@ const css = read("assets/landing.css");
 test("shared branding is linked from Landing and Guide", () => {
   assert.match(index, /href="\/" aria-label="Football Architect home"/);
   assert.match(guide, /href="\/" aria-label="Football Architect home"/);
-  for (const [page, prefix] of [[index,"./"],[guide,"../"]]) {
+  for (const [page, prefix] of [[index,"./"],[guide,"/"]]) {
     assert.ok(page.includes(prefix+"assets/brand/horizontal-dark.svg"));
     assert.ok(page.includes(prefix+"assets/brand/symbol-dark.svg"));
     assert.match(page, /class="brand-image brand-image-wide"/);
@@ -35,7 +35,7 @@ test("favicon and PNG icon are present; all five languages remain selectable", (
   assert.equal(ico.readUInt16LE(0), 0);
   assert.equal(ico.readUInt16LE(2), 1);
   assert.ok(index.includes('href="./assets/brand/favicon-32.png"'));
-  assert.ok(guide.includes('href="../assets/brand/favicon-32.png"'));
+  assert.ok(guide.includes('href="/assets/brand/favicon-32.png"'));
   const png = readFileSync(new URL("../assets/brand/favicon-32.png", import.meta.url));
   assert.equal(png.subarray(0,8).toString("hex"), "89504e470d0a1a0a");
   for (const lang of ["en","de","es","fr","it"]) {
