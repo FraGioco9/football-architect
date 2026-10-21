@@ -946,3 +946,14 @@ html[data-calendar-view="week"] #world-calendar>#calendar-controls{display:flex!
 #world-calendar .calendar-key,#world-calendar .calendar-selected,#world-calendar .calendar-note,
 #world-calendar .calendar-details{display:none!important}
 @media(max-width:620px){#world-calendar #calendar-controls .app-fixtures-select{flex-basis:120px!important;width:120px!important;min-width:120px!important;max-width:120px!important}}
+
+/* CAL-SIMPLE-10: do not expose legacy navigation before enhanced controls mount. */
+#calendar-controls:not(.app-fixtures-navigation){visibility:hidden!important;pointer-events:none!important}
+#calendar-controls.app-fixtures-navigation{visibility:visible}
+#world-calendar #calendar-controls .app-fixtures-select{flex:0 0 88px!important;width:88px!important;min-width:88px!important;max-width:88px!important}
+#world-calendar #calendar-week-trigger{box-sizing:border-box;width:88px!important;min-width:88px!important;max-width:88px!important;height:32px!important;min-height:32px!important;padding:4px 7px!important}
+#world-calendar #calendar-week-menu{width:88px;min-width:88px;max-width:88px}
+#calendar-previous:not(:disabled),#calendar-next:not(:disabled){opacity:1!important;cursor:pointer!important;color:var(--text)!important;background:var(--surface)!important;border-color:var(--border)!important;pointer-events:auto!important}
+#calendar-previous:disabled,#calendar-next:disabled{opacity:.35!important;cursor:default!important;color:var(--muted)!important;pointer-events:none!important;box-shadow:none!important;transform:none!important}
+#calendar-controls .app-fixtures-arrow:disabled:hover{background:var(--surface)!important}
+@media(max-width:620px){#world-calendar #calendar-controls .app-fixtures-select{flex-basis:88px!important;width:88px!important;min-width:88px!important;max-width:88px!important}}
