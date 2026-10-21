@@ -171,7 +171,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
-          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
+          body = Buffer.from(seasonHtml.replace("</head>", '<script>document.documentElement.dataset.faDevPreview="true"</script>' + DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
         }
       }
       if (subdomains && type === TYPES[".html"]) {
