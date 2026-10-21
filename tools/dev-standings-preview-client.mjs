@@ -12,7 +12,7 @@ function matchdaysForWorldDay(day){return NATIONAL_CALENDAR_DAYS.filter(d=>d<=da
 function readWorldDay(){try{const n=Number(sessionStorage.getItem(DAY_KEY));return Number.isInteger(n)&&n>=1&&n<=56?n:null}catch{return null}}
 
 function readMatchdays(){
- const day=readWorldDay();if(day!==null)return matchdaysForWorldDay(day);
+ const day=typeof readWorldDay==='function'?readWorldDay():null;if(day!==null)return matchdaysForWorldDay(day);
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
   const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=DEBUG_MAX_MATCHDAY?value:0;
  }catch{return 0}
