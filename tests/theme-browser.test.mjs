@@ -505,7 +505,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
     let expansionChecks=0;
     for(const division of historyManifest.divisions){
-      await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'?season=4&view=history'});
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'/history'});
       await wait("document.querySelectorAll('[data-history-season]').length===4");
       assert.equal(await run("!!document.querySelector('#app-history-hall,#app-history-final,.app-history-dev-banner,#competition-panel-history>h2')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('[data-history-season]')].map(b=>b.dataset.historySeason)"),['4','3','2','1']);
@@ -830,7 +830,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await cmd('Page.navigate',{url:devOrigin+'/'});
     await wait('document.readyState===\'complete\'&&location.origin==='+JSON.stringify(devOrigin));
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
-    await cmd('Page.navigate',{url:devOrigin+'/competitions/pt-1?season=4&view=fixtures&matchday=1'});
+    await cmd('Page.navigate',{url:devOrigin+'/competitions/pt-1/fixtures?season=4&matchday=1'});
     await wait("!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
     for(const width of [1440,390,320]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
