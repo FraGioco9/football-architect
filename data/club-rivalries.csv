@@ -1,16 +1,16 @@
 ﻿rivalryId,clubAId,clubAName,clubBId,clubBName,derbyName,type
-IT-01__IT-05,IT-01,AC Meneghina,IT-05,US Ambrosiana,Derby di Milano,territoriale
-IT-01__IT-26,IT-01,AC Meneghina,IT-26,Villa Reale Monza,Derby Milano–Brianza,territoriale
-IT-01__IT-30,IT-01,AC Meneghina,IT-30,Cidneo Brescia,Duello delle Industrie Lombarde,sportiva
-IT-02__IT-06,IT-02,US Capitolina,IT-06,AC Aventina,Derby di Roma,territoriale
-IT-02__IT-29,IT-02,US Capitolina,IT-29,Frusinate Calcio,Derby del Lazio,territoriale
-IT-03__IT-08,IT-03,Subalpina Torino,IT-08,AC Sabauda,Derby di Torino,territoriale
-IT-04__IT-07,IT-04,SS Partenopea,IT-07,AC Vesuviana,Derby di Napoli,territoriale
-IT-04__IT-39,IT-04,SS Partenopea,IT-39,US Arechi,Derby Campano,territoriale
-IT-05__IT-09,IT-05,US Ambrosiana,IT-09,Orobica Bergamo,Derby della Lombardia Centrale,storica
-IT-06__IT-29,IT-06,AC Aventina,IT-29,Frusinate Calcio,Derby Roma–Ciociaria,territoriale
-IT-08__IT-13,IT-08,AC Sabauda,IT-13,Lario Comasco,Derby delle Prealpi,sportiva
-IT-09__IT-30,IT-09,Orobica Bergamo,IT-30,Cidneo Brescia,Derby delle Due Lombardie,storica
+IT-1__IT-5,IT-1,AC Meneghina,IT-5,US Ambrosiana,Derby di Milano,territoriale
+IT-1__IT-26,IT-1,AC Meneghina,IT-26,Villa Reale Monza,Derby Milano–Brianza,territoriale
+IT-1__IT-30,IT-1,AC Meneghina,IT-30,Cidneo Brescia,Duello delle Industrie Lombarde,sportiva
+IT-2__IT-6,IT-2,US Capitolina,IT-6,AC Aventina,Derby di Roma,territoriale
+IT-2__IT-29,IT-2,US Capitolina,IT-29,Frusinate Calcio,Derby del Lazio,territoriale
+IT-3__IT-8,IT-3,Subalpina Torino,IT-8,AC Sabauda,Derby di Torino,territoriale
+IT-4__IT-7,IT-4,SS Partenopea,IT-7,AC Vesuviana,Derby di Napoli,territoriale
+IT-4__IT-39,IT-4,SS Partenopea,IT-39,US Arechi,Derby Campano,territoriale
+IT-5__IT-9,IT-5,US Ambrosiana,IT-9,Orobica Bergamo,Derby della Lombardia Centrale,storica
+IT-6__IT-29,IT-6,AC Aventina,IT-29,Frusinate Calcio,Derby Roma–Ciociaria,territoriale
+IT-8__IT-13,IT-8,AC Sabauda,IT-13,Lario Comasco,Derby delle Prealpi,sportiva
+IT-9__IT-30,IT-9,Orobica Bergamo,IT-30,Cidneo Brescia,Derby delle Due Lombardie,storica
 IT-10__IT-15,IT-10,AC Felsina,IT-15,US Petroniana,Derby di Bologna,territoriale
 IT-10__IT-19,IT-10,AC Felsina,IT-19,Sporting Secchia,Derby del Calcio Emiliano,sportiva
 IT-10__IT-33,IT-10,AC Felsina,IT-33,US Ghirlandina,Derby della Via Emilia,territoriale
@@ -43,22 +43,22 @@ IT-31__IT-39,IT-31,Peucetia Bari,IT-39,US Arechi,Derby del Sud Continentale,spor
 IT-34__IT-38,IT-34,FC Malatestiana,IT-38,FC Aterno,Derby dell'Adriatico Centrale,sportiva
 IT-35__IT-36,IT-35,Berici Vicenza,IT-36,Sporting Euganeo,Derby tra Padova e Vicenza,storica
 IT-37__IT-38,IT-37,FC Monteluce,IT-38,FC Aterno,Derby della Dorsale Appenninica,sportiva
-ENG-01__ENG-05,ENG-01,Thamesgate FC,ENG-05,Southwark Athletic,London Borough Derby,territoriale
-ENG-01__ENG-36,ENG-01,Thamesgate FC,ENG-36,Gade Park,North London Fringe Derby,territoriale
-ENG-02__ENG-03,ENG-02,Medlock United,ENG-03,Mersey Albion,North-West Giants Derby,storica
-ENG-02__ENG-06,ENG-02,Medlock United,ENG-06,Hulme Borough,Manchester Derby,territoriale
-ENG-02__ENG-30,ENG-02,Medlock United,ENG-30,Farnworth United,Greater Manchester Derby,territoriale
-ENG-03__ENG-07,ENG-03,Mersey Albion,ENG-07,Walton Rovers,Mersey Derby,territoriale
-ENG-03__ENG-29,ENG-03,Mersey Albion,ENG-29,Deepdale Rovers,Mersey–Ribble Derby,sportiva
-ENG-04__ENG-13,ENG-04,Bournbrook United,ENG-13,Bournville Village,Birmingham Derby,territoriale
-ENG-04__ENG-21,ENG-04,Bournbrook United,ENG-21,Penn Rovers,Birmingham–Wolverhampton Derby,storica
-ENG-05__ENG-35,ENG-05,Southwark Athletic,ENG-35,Tilehurst United,Capital–Thames Valley Derby,sportiva
-ENG-06__ENG-30,ENG-06,Hulme Borough,ENG-30,Farnworth United,South Manchester–Bolton Derby,territoriale
-ENG-07__ENG-39,ENG-07,Walton Rovers,ENG-39,FC Bloomfield,Mersey–Fylde Derby,sportiva
-ENG-08__ENG-10,ENG-08,Aire Valley FC,ENG-10,Rivelin Works,Yorkshire Works Derby,sportiva
-ENG-08__ENG-31,ENG-08,Aire Valley FC,ENG-31,FC Manningham,West Yorkshire Derby,storica
-ENG-09__ENG-16,ENG-09,Tyne Quays,ENG-16,Wearmouth Dockers,Tyne–Wear Derby,storica
-ENG-09__ENG-25,ENG-09,Tyne Quays,ENG-25,Acklam Rovers,Tyne–Tees Derby,territoriale
+ENG-1__ENG-5,ENG-1,Thamesgate FC,ENG-5,Southwark Athletic,London Borough Derby,territoriale
+ENG-1__ENG-36,ENG-1,Thamesgate FC,ENG-36,Gade Park,North London Fringe Derby,territoriale
+ENG-2__ENG-3,ENG-2,Medlock United,ENG-3,Mersey Albion,North-West Giants Derby,storica
+ENG-2__ENG-6,ENG-2,Medlock United,ENG-6,Hulme Borough,Manchester Derby,territoriale
+ENG-2__ENG-30,ENG-2,Medlock United,ENG-30,Farnworth United,Greater Manchester Derby,territoriale
+ENG-3__ENG-7,ENG-3,Mersey Albion,ENG-7,Walton Rovers,Mersey Derby,territoriale
+ENG-3__ENG-29,ENG-3,Mersey Albion,ENG-29,Deepdale Rovers,Mersey–Ribble Derby,sportiva
+ENG-4__ENG-13,ENG-4,Bournbrook United,ENG-13,Bournville Village,Birmingham Derby,territoriale
+ENG-4__ENG-21,ENG-4,Bournbrook United,ENG-21,Penn Rovers,Birmingham–Wolverhampton Derby,storica
+ENG-5__ENG-35,ENG-5,Southwark Athletic,ENG-35,Tilehurst United,Capital–Thames Valley Derby,sportiva
+ENG-6__ENG-30,ENG-6,Hulme Borough,ENG-30,Farnworth United,South Manchester–Bolton Derby,territoriale
+ENG-7__ENG-39,ENG-7,Walton Rovers,ENG-39,FC Bloomfield,Mersey–Fylde Derby,sportiva
+ENG-8__ENG-10,ENG-8,Aire Valley FC,ENG-10,Rivelin Works,Yorkshire Works Derby,sportiva
+ENG-8__ENG-31,ENG-8,Aire Valley FC,ENG-31,FC Manningham,West Yorkshire Derby,storica
+ENG-9__ENG-16,ENG-9,Tyne Quays,ENG-16,Wearmouth Dockers,Tyne–Wear Derby,storica
+ENG-9__ENG-25,ENG-9,Tyne Quays,ENG-25,Acklam Rovers,Tyne–Tees Derby,territoriale
 ENG-10__ENG-17,ENG-10,Rivelin Works,ENG-17,Kelham United,Sheffield Steel Derby,territoriale
 ENG-11__ENG-15,ENG-11,Sherwood Foresters,ENG-15,Clarendon Rovers,Nottingham–Leicester Derby,territoriale
 ENG-11__ENG-18,ENG-11,Sherwood Foresters,ENG-18,Trent Meadows,Nottingham Derby,territoriale
@@ -86,22 +86,22 @@ ENG-33__ENG-39,ENG-33,Towneley Grove,ENG-39,FC Bloomfield,East Lancashire–Fyld
 ENG-35__ENG-40,ENG-35,Tilehurst United,ENG-40,Cherwell Vale,Thames Valley Derby,territoriale
 ENG-36__ENG-37,ENG-36,Gade Park,ENG-37,Stopsley United,Watford–Luton Derby,territoriale
 ENG-37__ENG-40,ENG-37,Stopsley United,ENG-40,Cherwell Vale,Oxford–Luton Derby,sportiva
-ES-01__ES-03,ES-01,CD Imperial Madrid,ES-03,SD Castellana,Derbi de Madrid,territoriale
-ES-01__ES-22,ES-01,CD Imperial Madrid,ES-22,Aviación Getafe,Derbi del Sur de Madrid,territoriale
-ES-02__ES-06,ES-02,Drassanes Reials,ES-06,UE Montjuïc,Derbi de Barcelona,territoriale
-ES-02__ES-14,ES-02,Drassanes Reials,ES-14,FC Gavarres,Derbi Català del Nord,territoriale
-ES-03__ES-22,ES-03,SD Castellana,ES-22,Aviación Getafe,Derbi de la Comunidad de Madrid,territoriale
-ES-04__ES-08,ES-04,UD Azahar,ES-08,CD Cerámico,Derbi de la Comunidad Valenciana,territoriale
-ES-04__ES-15,ES-04,UD Azahar,ES-15,Huerta de Levante,Derbi de Valencia,territoriale
-ES-04__ES-20,ES-04,UD Azahar,ES-20,UD Ponent,Clásico del Mediterráneo Occidental,sportiva
-ES-05__ES-16,ES-05,Arenal de Sevilla,ES-16,Puerta de Jerez,Derbi de Sevilla,territoriale
-ES-05__ES-40,ES-05,Arenal de Sevilla,ES-40,SD Jerezana,Derbi del Bajo Guadalquivir,territoriale
-ES-06__ES-14,ES-06,UE Montjuïc,ES-14,FC Gavarres,Derbi de Cataluña Oriental,territoriale
-ES-07__ES-11,ES-07,Begoñako KE,ES-11,Urgull KE,Euskal Derbia,storica
-ES-07__ES-17,ES-07,Begoñako KE,ES-17,CF Indautxu,Bilboko Derbia,territoriale
-ES-08__ES-39,ES-08,CD Cerámico,ES-39,UD Magdalena,Derbi de la Plana,territoriale
-ES-09__ES-21,ES-09,Ferroviario del Rabal,ES-21,Burgo de Navarrería,Duelo del Ebro y Navarra,sportiva
-ES-09__ES-25,ES-09,Ferroviario del Rabal,ES-25,Ribera Pisuerga,Duelo del Valle del Ebro y la Meseta,sportiva
+ES-1__ES-3,ES-1,CD Imperial Madrid,ES-3,SD Castellana,Derbi de Madrid,territoriale
+ES-1__ES-22,ES-1,CD Imperial Madrid,ES-22,Aviación Getafe,Derbi del Sur de Madrid,territoriale
+ES-2__ES-6,ES-2,Drassanes Reials,ES-6,UE Montjuïc,Derbi de Barcelona,territoriale
+ES-2__ES-14,ES-2,Drassanes Reials,ES-14,FC Gavarres,Derbi Català del Nord,territoriale
+ES-3__ES-22,ES-3,SD Castellana,ES-22,Aviación Getafe,Derbi de la Comunidad de Madrid,territoriale
+ES-4__ES-8,ES-4,UD Azahar,ES-8,CD Cerámico,Derbi de la Comunidad Valenciana,territoriale
+ES-4__ES-15,ES-4,UD Azahar,ES-15,Huerta de Levante,Derbi de Valencia,territoriale
+ES-4__ES-20,ES-4,UD Azahar,ES-20,UD Ponent,Clásico del Mediterráneo Occidental,sportiva
+ES-5__ES-16,ES-5,Arenal de Sevilla,ES-16,Puerta de Jerez,Derbi de Sevilla,territoriale
+ES-5__ES-40,ES-5,Arenal de Sevilla,ES-40,SD Jerezana,Derbi del Bajo Guadalquivir,territoriale
+ES-6__ES-14,ES-6,UE Montjuïc,ES-14,FC Gavarres,Derbi de Cataluña Oriental,territoriale
+ES-7__ES-11,ES-7,Begoñako KE,ES-11,Urgull KE,Euskal Derbia,storica
+ES-7__ES-17,ES-7,Begoñako KE,ES-17,CF Indautxu,Bilboko Derbia,territoriale
+ES-8__ES-39,ES-8,CD Cerámico,ES-39,UD Magdalena,Derbi de la Plana,territoriale
+ES-9__ES-21,ES-9,Ferroviario del Rabal,ES-21,Burgo de Navarrería,Duelo del Ebro y Navarra,sportiva
+ES-9__ES-25,ES-9,Ferroviario del Rabal,ES-25,Ribera Pisuerga,Duelo del Valle del Ebro y la Meseta,sportiva
 ES-10__ES-19,ES-10,UD Malagueta,ES-19,CD Gibralfaro,Derbi de Málaga,territoriale
 ES-10__ES-26,ES-10,UD Malagueta,ES-26,Cármenes del Albaicín,Clásico de Andalucía Oriental,sportiva
 ES-11__ES-32,ES-11,Urgull KE,ES-32,Sardinero Marítimo,Derbi del Cantábrico Oriental,territoriale
@@ -130,21 +130,21 @@ ES-31__ES-34,ES-31,CD Califal,ES-34,Caleta Atlántica,Derbi de la Andalucía His
 ES-33__ES-36,ES-33,UD Almadraba,ES-36,CD Carthago,Derbi del Sureste Mediterráneo,territoriale
 ES-34__ES-40,ES-34,Caleta Atlántica,ES-40,SD Jerezana,Derbi Gaditano,territoriale
 ES-37__ES-38,ES-37,CD Gamonal,ES-38,Puente Tormes,Derbi de Castilla Interior,territoriale
-DE-01__DE-09,DE-01,FC Münchner Freiheit,DE-09,TSV Isar München,Münchner Stadtderby,territoriale
-DE-01__DE-28,DE-01,FC Münchner Freiheit,DE-28,Fuggerstadt Augsburg,Oberbayerisch–Schwäbisches Derby,territoriale
-DE-02__DE-05,DE-02,SV Reinickendorf,DE-05,SC Spandau,Berliner Stadtderby,territoriale
-DE-02__DE-35,DE-02,SV Reinickendorf,DE-35,Domstadt Magdeburg,Berlin–Magdeburg-Derby,territoriale
-DE-03__DE-14,DE-03,FC Eving,DE-14,TSV Tremonia,Dortmunder Stadtderby,territoriale
-DE-03__DE-24,DE-03,FC Eving,DE-24,SV Buer,Dortmund–Gelsenkirchen-Revierderby,storica
-DE-04__DE-13,DE-04,Alster SV,DE-13,SC Altona,Hamburger Stadtderby,territoriale
-DE-04__DE-30,DE-04,Alster SV,DE-30,Fördestadt Kiel,Hamburg–Kiel-Derby,territoriale
-DE-05__DE-35,DE-05,SC Spandau,DE-35,Domstadt Magdeburg,Spree–Elbe-Duell,sportiva
-DE-06__DE-16,DE-06,Pleiße Leipzig,DE-16,FC Lindenau,Leipziger Stadtderby,territoriale
-DE-06__DE-21,DE-06,Pleiße Leipzig,DE-21,VfL Fallersleben,Mitteldeutsches Autobahnduell,sportiva
-DE-07__DE-15,DE-07,VfB Frankfurt-West,DE-15,Mainufer Frankfurt,Frankfurter Stadtderby,territoriale
-DE-07__DE-33,DE-07,VfB Frankfurt-West,DE-33,Mathildenhöhe Darmstadt,Frankfurt–Darmstadt-Derby,territoriale
-DE-08__DE-11,DE-08,SC Ehrenfeld,DE-11,TSV Opladen,Köln–Leverkusen-Derby,territoriale
-DE-08__DE-17,DE-08,SC Ehrenfeld,DE-17,FC Mülheim,Kölner Stadtderby,territoriale
+DE-1__DE-9,DE-1,FC Münchner Freiheit,DE-9,TSV Isar München,Münchner Stadtderby,territoriale
+DE-1__DE-28,DE-1,FC Münchner Freiheit,DE-28,Fuggerstadt Augsburg,Oberbayerisch–Schwäbisches Derby,territoriale
+DE-2__DE-5,DE-2,SV Reinickendorf,DE-5,SC Spandau,Berliner Stadtderby,territoriale
+DE-2__DE-35,DE-2,SV Reinickendorf,DE-35,Domstadt Magdeburg,Berlin–Magdeburg-Derby,territoriale
+DE-3__DE-14,DE-3,FC Eving,DE-14,TSV Tremonia,Dortmunder Stadtderby,territoriale
+DE-3__DE-24,DE-3,FC Eving,DE-24,SV Buer,Dortmund–Gelsenkirchen-Revierderby,storica
+DE-4__DE-13,DE-4,Alster SV,DE-13,SC Altona,Hamburger Stadtderby,territoriale
+DE-4__DE-30,DE-4,Alster SV,DE-30,Fördestadt Kiel,Hamburg–Kiel-Derby,territoriale
+DE-5__DE-35,DE-5,SC Spandau,DE-35,Domstadt Magdeburg,Spree–Elbe-Duell,sportiva
+DE-6__DE-16,DE-6,Pleiße Leipzig,DE-16,FC Lindenau,Leipziger Stadtderby,territoriale
+DE-6__DE-21,DE-6,Pleiße Leipzig,DE-21,VfL Fallersleben,Mitteldeutsches Autobahnduell,sportiva
+DE-7__DE-15,DE-7,VfB Frankfurt-West,DE-15,Mainufer Frankfurt,Frankfurter Stadtderby,territoriale
+DE-7__DE-33,DE-7,VfB Frankfurt-West,DE-33,Mathildenhöhe Darmstadt,Frankfurt–Darmstadt-Derby,territoriale
+DE-8__DE-11,DE-8,SC Ehrenfeld,DE-11,TSV Opladen,Köln–Leverkusen-Derby,territoriale
+DE-8__DE-17,DE-8,SC Ehrenfeld,DE-17,FC Mülheim,Kölner Stadtderby,territoriale
 DE-10__DE-27,DE-10,FC Cannstatt,DE-27,SV Kraichgau,Neckar–Kraichgau-Derby,territoriale
 DE-10__DE-32,DE-10,FC Cannstatt,DE-32,VfB Heidenheim,Württembergisches Derby,territoriale
 DE-11__DE-20,DE-11,TSV Opladen,DE-20,FC Oberkassel,Rheinisches Nachbarschaftsderby,territoriale
@@ -172,21 +172,21 @@ DE-31__DE-39,DE-31,VfB Karlsruhe,DE-39,SC Dreiländereck,Westdeutsches Städtedu
 DE-37__DE-38,DE-37,Duisburger Hafen,DE-38,Zechenstadt Essen,Ruhrhafen–Zechen-Derby,territoriale
 DE-37__DE-40,DE-37,Duisburger Hafen,DE-40,VfB Gievenbeck,Westfälisch–Rheinisches Duell,sportiva
 DE-39__DE-40,DE-39,SC Dreiländereck,DE-40,VfB Gievenbeck,Aachen–Münster-Duell,sportiva
-FR-01__FR-04,FR-01,FC Parisien,FR-04,ES Paris,Derby de Paris,territoriale
-FR-01__FR-27,FR-01,FC Parisien,FR-27,Racing Auxerrois,Duel de Paris et de l'Yonne,sportiva
-FR-02__FR-07,FR-02,FC Massalia,FR-07,RC Azur,Classique de la Méditerranée,sportiva
-FR-02__FR-08,FR-02,FC Massalia,FR-08,FC Maritime Marseille,Derby de Marseille,territoriale
-FR-03__FR-09,FR-03,RC Fourvière,FR-09,Étoile des Canuts,Derby de Lyon,territoriale
-FR-03__FR-16,FR-03,RC Fourvière,FR-16,FC Furan,Derby du Rhône et du Forez,storica
-FR-03__FR-38,FR-03,RC Fourvière,FR-38,FC Dauphiné,Derby des Alpes et du Rhône,territoriale
-FR-04__FR-40,FR-04,ES Paris,FR-40,US La Source,Derby du Bassin Parisien,territoriale
-FR-05__FR-12,FR-05,SC Deûle,FR-12,Corons de Lens,Derby du Nord Minier,storica
-FR-05__FR-17,FR-05,SC Deûle,FR-17,Stade Vauban Lille,Derby de Lille,territoriale
-FR-05__FR-34,FR-05,SC Deûle,FR-34,FC Hainaut,Derby des Hauts-de-France Industriels,territoriale
-FR-06__FR-07,FR-06,FC Rocher,FR-07,RC Azur,Derby de la Côte d'Azur,territoriale
-FR-06__FR-08,FR-06,FC Rocher,FR-08,FC Maritime Marseille,Derby de la Méditerranée,sportiva
-FR-07__FR-18,FR-07,RC Azur,FR-18,AS Riviera Niçoise,Derby de Nice,territoriale
-FR-09__FR-38,FR-09,Étoile des Canuts,FR-38,FC Dauphiné,Derby du Rhône et des Alpes,territoriale
+FR-1__FR-4,FR-1,FC Parisien,FR-4,ES Paris,Derby de Paris,territoriale
+FR-1__FR-27,FR-1,FC Parisien,FR-27,Racing Auxerrois,Duel de Paris et de l'Yonne,sportiva
+FR-2__FR-7,FR-2,FC Massalia,FR-7,RC Azur,Classique de la Méditerranée,sportiva
+FR-2__FR-8,FR-2,FC Massalia,FR-8,FC Maritime Marseille,Derby de Marseille,territoriale
+FR-3__FR-9,FR-3,RC Fourvière,FR-9,Étoile des Canuts,Derby de Lyon,territoriale
+FR-3__FR-16,FR-3,RC Fourvière,FR-16,FC Furan,Derby du Rhône et du Forez,storica
+FR-3__FR-38,FR-3,RC Fourvière,FR-38,FC Dauphiné,Derby des Alpes et du Rhône,territoriale
+FR-4__FR-40,FR-4,ES Paris,FR-40,US La Source,Derby du Bassin Parisien,territoriale
+FR-5__FR-12,FR-5,SC Deûle,FR-12,Corons de Lens,Derby du Nord Minier,storica
+FR-5__FR-17,FR-5,SC Deûle,FR-17,Stade Vauban Lille,Derby de Lille,territoriale
+FR-5__FR-34,FR-5,SC Deûle,FR-34,FC Hainaut,Derby des Hauts-de-France Industriels,territoriale
+FR-6__FR-7,FR-6,FC Rocher,FR-7,RC Azur,Derby de la Côte d'Azur,territoriale
+FR-6__FR-8,FR-6,FC Rocher,FR-8,FC Maritime Marseille,Derby de la Méditerranée,sportiva
+FR-7__FR-18,FR-7,RC Azur,FR-18,AS Riviera Niçoise,Derby de Nice,territoriale
+FR-9__FR-38,FR-9,Étoile des Canuts,FR-38,FC Dauphiné,Derby du Rhône et des Alpes,territoriale
 FR-10__FR-19,FR-10,FC Garonne,FR-19,SC Lauragais,Derby de Toulouse,territoriale
 FR-10__FR-23,FR-10,FC Garonne,FR-23,Garrigues Montpellier,Duel d'Occitanie,sportiva
 FR-11__FR-20,FR-11,RC de Gironde,FR-20,Bordeaux Garonne,Derby de Bordeaux,territoriale
@@ -215,22 +215,22 @@ FR-28__FR-37,FR-28,FC Mosellan,FR-37,FC Meurthe,Derby de Lorraine,territoriale
 FR-29__FR-39,FR-29,Stade Normand,FR-39,Stade Manceau,Derby de Normandie et du Maine,territoriale
 FR-31__FR-35,FR-31,US Risban,FR-35,Hortillons Amiens,Derby des Hauts-de-France,territoriale
 FR-32__FR-39,FR-32,FC Scorff,FR-39,Stade Manceau,Duel de l'Atlantique et du Maine,sportiva
-PT-01__PT-03,PT-01,FC Belém,PT-03,CF Alcântara,Dérbi de Lisboa,territoriale
-PT-01__PT-11,PT-01,FC Belém,PT-11,FC São Martinho,Clássico do Atlântico Português,sportiva
-PT-02__PT-05,PT-02,Atlético Portuense,PT-05,CF Campanhã,Dérbi do Porto,territoriale
-PT-02__PT-18,PT-02,Atlético Portuense,PT-18,Atlético Matosinhense,Dérbi do Porto e Matosinhos,territoriale
-PT-02__PT-31,PT-02,Atlético Portuense,PT-31,CD Espargo,Dérbi Entre o Vouga e o Douro,sportiva
-PT-03__PT-27,PT-03,CF Alcântara,PT-27,UD Alhandra,Dérbi do Tejo,territoriale
-PT-04__PT-06,PT-04,FC Nogueiró,PT-06,SC Oliveira,Clássico do Minho,storica
-PT-04__PT-10,PT-04,FC Nogueiró,PT-10,Bracarense Braga,Dérbi de Braga,territoriale
-PT-05__PT-23,PT-05,CF Campanhã,PT-23,Penafidelis,Duelo do Grande Porto e Vale do Sousa,sportiva
-PT-06__PT-15,PT-06,SC Oliveira,PT-15,SC Azurém,Dérbi de Guimarães,territoriale
-PT-07__PT-16,PT-07,FC Arzila,PT-16,Mondego Coimbra,Dérbi de Coimbra,territoriale
-PT-07__PT-24,PT-07,FC Arzila,PT-24,FC Parceiros,Dérbi Coimbra–Leiria,territoriale
-PT-08__PT-17,PT-08,FC Azeitão,PT-17,SC Sado,Dérbi de Setúbal,territoriale
-PT-08__PT-20,PT-08,FC Azeitão,PT-20,SC Monte Estoril,Dérbi da Costa de Lisboa,sportiva
-PT-09__PT-20,PT-09,FC Alfragide,PT-20,SC Monte Estoril,Dérbi da Grande Lisboa Ocidental,territoriale
-PT-09__PT-27,PT-09,FC Alfragide,PT-27,UD Alhandra,Dérbi da Grande Lisboa Ribeirinha,territoriale
+PT-1__PT-3,PT-1,FC Belém,PT-3,CF Alcântara,Dérbi de Lisboa,territoriale
+PT-1__PT-11,PT-1,FC Belém,PT-11,FC São Martinho,Clássico do Atlântico Português,sportiva
+PT-2__PT-5,PT-2,Atlético Portuense,PT-5,CF Campanhã,Dérbi do Porto,territoriale
+PT-2__PT-18,PT-2,Atlético Portuense,PT-18,Atlético Matosinhense,Dérbi do Porto e Matosinhos,territoriale
+PT-2__PT-31,PT-2,Atlético Portuense,PT-31,CD Espargo,Dérbi Entre o Vouga e o Douro,sportiva
+PT-3__PT-27,PT-3,CF Alcântara,PT-27,UD Alhandra,Dérbi do Tejo,territoriale
+PT-4__PT-6,PT-4,FC Nogueiró,PT-6,SC Oliveira,Clássico do Minho,storica
+PT-4__PT-10,PT-4,FC Nogueiró,PT-10,Bracarense Braga,Dérbi de Braga,territoriale
+PT-5__PT-23,PT-5,CF Campanhã,PT-23,Penafidelis,Duelo do Grande Porto e Vale do Sousa,sportiva
+PT-6__PT-15,PT-6,SC Oliveira,PT-15,SC Azurém,Dérbi de Guimarães,territoriale
+PT-7__PT-16,PT-7,FC Arzila,PT-16,Mondego Coimbra,Dérbi de Coimbra,territoriale
+PT-7__PT-24,PT-7,FC Arzila,PT-24,FC Parceiros,Dérbi Coimbra–Leiria,territoriale
+PT-8__PT-17,PT-8,FC Azeitão,PT-17,SC Sado,Dérbi de Setúbal,territoriale
+PT-8__PT-20,PT-8,FC Azeitão,PT-20,SC Monte Estoril,Dérbi da Costa de Lisboa,sportiva
+PT-9__PT-20,PT-9,FC Alfragide,PT-20,SC Monte Estoril,Dérbi da Grande Lisboa Ocidental,territoriale
+PT-9__PT-27,PT-9,FC Alfragide,PT-27,UD Alhandra,Dérbi da Grande Lisboa Ribeirinha,territoriale
 PT-10__PT-15,PT-10,Bracarense Braga,PT-15,SC Azurém,Dérbi do Ave e do Cávado,territoriale
 PT-11__PT-20,PT-11,FC São Martinho,PT-20,SC Monte Estoril,Clássico da Ilha e da Linha,sportiva
 PT-12__PT-18,PT-12,SC Esgueira,PT-18,Atlético Matosinhense,Dérbi Aveiro–Matosinhos,territoriale
@@ -260,22 +260,22 @@ PT-34__PT-35,PT-34,Atlético Mafrense,PT-35,UD Ribeira,Dérbi do Oeste e Ribatej
 PT-36__PT-37,PT-36,UD Eborense,PT-37,Planície de Beja,Dérbi do Alentejo,territoriale
 PT-36__PT-39,PT-36,UD Eborense,PT-39,SC Alegrete,Dérbi do Alto Alentejo,territoriale
 PT-38__PT-39,PT-38,SC Teixoso,PT-39,SC Alegrete,Duelo das Serras da Beira e Alentejo,sportiva
-NL-01__NL-04,NL-01,IJhaven Amsterdam,NL-04,ASV Westerpark,Amsterdamse Stadsderby,territoriale
-NL-01__NL-17,NL-01,IJhaven Amsterdam,NL-17,FC Haarlemmerhout,Amsterdam–Haarlemderby,territoriale
-NL-01__NL-38,NL-01,IJhaven Amsterdam,NL-38,SV Zuiderhage,Lelystad–Amsterdamderby,territoriale
-NL-02__NL-05,NL-02,Rijnmond Rotterdam,NL-05,VV Schiehaven,Rotterdamse Stadsderby,territoriale
-NL-02__NL-31,NL-02,Rijnmond Rotterdam,NL-31,SC Nieuwland,Rotterdam–Schiedamderby,territoriale
-NL-03__NL-07,NL-03,SV Kempenland,NL-07,EVV Genneper,Eindhovense Stadsderby,territoriale
-NL-03__NL-33,NL-03,SV Kempenland,NL-33,SV Brouwhuis,Eindhoven–Helmondderby,territoriale
-NL-04__NL-28,NL-04,ASV Westerpark,NL-28,AVV Poelmeer,Amsterdam–Amstelveenderby,territoriale
-NL-05__NL-30,NL-05,VV Schiehaven,NL-30,SC Ambacht,Rotterdam–Vlaardingenderby,territoriale
-NL-06__NL-25,NL-06,SV Zuilen,NL-25,AVV Eemland,Utrecht–Amersfoortderby,territoriale
-NL-06__NL-27,NL-06,SV Zuilen,NL-27,SV Kerkelanden,Utrecht–Hilversumderby,territoriale
-NL-07__NL-35,NL-07,EVV Genneper,NL-35,Ossewaard Oss,Oost-Brabantse Stedenduel,sportiva
-NL-08__NL-18,NL-08,Haagse Sportkring,NL-18,VV Rapenburg,Den Haag–Leidenderby,territoriale
-NL-08__NL-21,NL-08,Haagse Sportkring,NL-21,SV Seghwaert,Haagse Streekderby,territoriale
-NL-09__NL-24,NL-09,Ommelander Groningen,NL-24,LVV Bilgaard,Noordelijke Derby,storica
-NL-09__NL-40,NL-09,Ommelander Groningen,NL-40,FC Emmerhout,Groningen–Emmenderby,territoriale
+NL-1__NL-4,NL-1,IJhaven Amsterdam,NL-4,ASV Westerpark,Amsterdamse Stadsderby,territoriale
+NL-1__NL-17,NL-1,IJhaven Amsterdam,NL-17,FC Haarlemmerhout,Amsterdam–Haarlemderby,territoriale
+NL-1__NL-38,NL-1,IJhaven Amsterdam,NL-38,SV Zuiderhage,Lelystad–Amsterdamderby,territoriale
+NL-2__NL-5,NL-2,Rijnmond Rotterdam,NL-5,VV Schiehaven,Rotterdamse Stadsderby,territoriale
+NL-2__NL-31,NL-2,Rijnmond Rotterdam,NL-31,SC Nieuwland,Rotterdam–Schiedamderby,territoriale
+NL-3__NL-7,NL-3,SV Kempenland,NL-7,EVV Genneper,Eindhovense Stadsderby,territoriale
+NL-3__NL-33,NL-3,SV Kempenland,NL-33,SV Brouwhuis,Eindhoven–Helmondderby,territoriale
+NL-4__NL-28,NL-4,ASV Westerpark,NL-28,AVV Poelmeer,Amsterdam–Amstelveenderby,territoriale
+NL-5__NL-30,NL-5,VV Schiehaven,NL-30,SC Ambacht,Rotterdam–Vlaardingenderby,territoriale
+NL-6__NL-25,NL-6,SV Zuilen,NL-25,AVV Eemland,Utrecht–Amersfoortderby,territoriale
+NL-6__NL-27,NL-6,SV Zuilen,NL-27,SV Kerkelanden,Utrecht–Hilversumderby,territoriale
+NL-7__NL-35,NL-7,EVV Genneper,NL-35,Ossewaard Oss,Oost-Brabantse Stedenduel,sportiva
+NL-8__NL-18,NL-8,Haagse Sportkring,NL-18,VV Rapenburg,Den Haag–Leidenderby,territoriale
+NL-8__NL-21,NL-8,Haagse Sportkring,NL-21,SV Seghwaert,Haagse Streekderby,territoriale
+NL-9__NL-24,NL-9,Ommelander Groningen,NL-24,LVV Bilgaard,Noordelijke Derby,storica
+NL-9__NL-40,NL-9,Ommelander Groningen,NL-40,FC Emmerhout,Groningen–Emmenderby,territoriale
 NL-10__NL-12,NL-10,RKVV Tilburgia,NL-12,FC Markdal,Brabantse Stedenderby,territoriale
 NL-10__NL-36,NL-10,RKVV Tilburgia,NL-36,VV Kalsdonk,West-Brabantse Streekderby,territoriale
 NL-11__NL-29,NL-11,Gooimeer Almere,NL-29,FC Weidevenne,Flevoland–Waterlandderby,sportiva
@@ -303,21 +303,21 @@ NL-29__NL-32,NL-29,FC Weidevenne,NL-32,VV Houttil,Noord-Hollandse Kanaalderby,te
 NL-32__NL-39,NL-32,VV Houttil,NL-39,Kanaalduin Velsen,Noord-Hollandse Kustderby,territoriale
 NL-33__NL-34,NL-33,SV Brouwhuis,NL-34,VV Venlose Heide,Helmond–Venloderby,territoriale
 NL-33__NL-35,NL-33,SV Brouwhuis,NL-35,Ossewaard Oss,Oost-Brabantse Derby,territoriale
-BR-01__BR-03,BR-01,EC Bixiga,BR-03,EC Mooca,Clássico dos Bairros Paulistanos,territoriale
-BR-01__BR-15,BR-01,EC Bixiga,BR-15,Ferroviário Campineiro,Clássico da Capital e do Interior Paulista,sportiva
-BR-02__BR-04,BR-02,Estrela Carioca,BR-04,FC Laranjeiras,Clássico Carioca,territoriale
-BR-03__BR-13,BR-03,EC Mooca,BR-13,Atlético Santista,Clássico São Paulo–Santos,territoriale
-BR-04__BR-40,BR-04,FC Laranjeiras,BR-40,Tupi Central,Duelo do Rio e da Zona da Mata,sportiva
-BR-05__BR-09,BR-05,Atlético Pampulha,BR-09,Desportiva Alterosas,Clássico de Belo Horizonte,territoriale
-BR-05__BR-40,BR-05,Atlético Pampulha,BR-40,Tupi Central,Clássico da Zona da Mata e da Capital,territoriale
-BR-06__BR-10,BR-06,União Farroupilha,BR-10,Gaúcho Central,Clássico da Capital Gaúcha,territoriale
-BR-06__BR-25,BR-06,União Farroupilha,BR-25,Pioneiros da Serra,Clássico de Porto Alegre e Caxias,territoriale
-BR-06__BR-36,BR-06,União Farroupilha,BR-36,Operário Carbonífero,Clássico do Sul e Serra,sportiva
-BR-07__BR-18,BR-07,Porto da Barra,BR-18,EC Itapuã,Clássico de Salvador,territoriale
-BR-07__BR-29,BR-07,Porto da Barra,BR-29,Esportiva Coroa do Meio,Clássico Aracaju–Salvador,territoriale
-BR-08__BR-19,BR-08,EC Pilarzinho,BR-19,EC Água Verde,Clássico de Curitiba,territoriale
-BR-08__BR-37,BR-08,EC Pilarzinho,BR-37,Itajaí-Açu,Clássico Curitiba–Blumenau,territoriale
-BR-09__BR-40,BR-09,Desportiva Alterosas,BR-40,Tupi Central,Clássico das Minas Gerais,territoriale
+BR-1__BR-3,BR-1,EC Bixiga,BR-3,EC Mooca,Clássico dos Bairros Paulistanos,territoriale
+BR-1__BR-15,BR-1,EC Bixiga,BR-15,Ferroviário Campineiro,Clássico da Capital e do Interior Paulista,sportiva
+BR-2__BR-4,BR-2,Estrela Carioca,BR-4,FC Laranjeiras,Clássico Carioca,territoriale
+BR-3__BR-13,BR-3,EC Mooca,BR-13,Atlético Santista,Clássico São Paulo–Santos,territoriale
+BR-4__BR-40,BR-4,FC Laranjeiras,BR-40,Tupi Central,Duelo do Rio e da Zona da Mata,sportiva
+BR-5__BR-9,BR-5,Atlético Pampulha,BR-9,Desportiva Alterosas,Clássico de Belo Horizonte,territoriale
+BR-5__BR-40,BR-5,Atlético Pampulha,BR-40,Tupi Central,Clássico da Zona da Mata e da Capital,territoriale
+BR-6__BR-10,BR-6,União Farroupilha,BR-10,Gaúcho Central,Clássico da Capital Gaúcha,territoriale
+BR-6__BR-25,BR-6,União Farroupilha,BR-25,Pioneiros da Serra,Clássico de Porto Alegre e Caxias,territoriale
+BR-6__BR-36,BR-6,União Farroupilha,BR-36,Operário Carbonífero,Clássico do Sul e Serra,sportiva
+BR-7__BR-18,BR-7,Porto da Barra,BR-18,EC Itapuã,Clássico de Salvador,territoriale
+BR-7__BR-29,BR-7,Porto da Barra,BR-29,Esportiva Coroa do Meio,Clássico Aracaju–Salvador,territoriale
+BR-8__BR-19,BR-8,EC Pilarzinho,BR-19,EC Água Verde,Clássico de Curitiba,territoriale
+BR-8__BR-37,BR-8,EC Pilarzinho,BR-37,Itajaí-Açu,Clássico Curitiba–Blumenau,territoriale
+BR-9__BR-40,BR-9,Desportiva Alterosas,BR-40,Tupi Central,Clássico das Minas Gerais,territoriale
 BR-10__BR-34,BR-10,Gaúcho Central,BR-34,Esportivo das Charqueadas,Clássico do Guaíba e da Lagoa,territoriale
 BR-11__BR-20,BR-11,União Mucuripe,BR-20,Atlético Meireles,Clássico de Fortaleza,territoriale
 BR-11__BR-26,BR-11,União Mucuripe,BR-26,Forte dos Reis,Clássico das Capitais do Nordeste Setentrional,sportiva
@@ -347,7 +347,7 @@ BR-32__BR-33,BR-32,Grêmio dos Cafezais,BR-33,Cidade Canção,Clássico do Norte
 BR-35__BR-36,BR-35,FC Palmital,BR-36,Operário Carbonífero,Clássico Catarinense do Interior,territoriale
 BR-35__BR-38,BR-35,FC Palmital,BR-38,Industrial Joinville,Clássico do Interior Catarinense,sportiva
 BR-37__BR-38,BR-37,Itajaí-Açu,BR-38,Industrial Joinville,Clássico do Vale do Itajaí e Norte,territoriale
-IT-03__FR-38,IT-03,Subalpina Torino,FR-38,FC Dauphiné,Derby delle Alpi Occidentali / Derby des Alpes Occidentales,storica
-ENG-01__FR-01,ENG-01,Thamesgate FC,FR-01,FC Parisien,Channel Derby / Derby de la Manche,sportiva
-ENG-32__NL-02,ENG-32,Humber Dock FC,NL-02,Rijnmond Rotterdam,North Sea Ports Derby / Noordzeehavenderby,sportiva
-PT-01__BR-02,PT-01,FC Belém,BR-02,Estrela Carioca,Clássico do Atlântico Lusófono,storica
+IT-3__FR-38,IT-3,Subalpina Torino,FR-38,FC Dauphiné,Derby delle Alpi Occidentali / Derby des Alpes Occidentales,storica
+ENG-1__FR-1,ENG-1,Thamesgate FC,FR-1,FC Parisien,Channel Derby / Derby de la Manche,sportiva
+ENG-32__NL-2,ENG-32,Humber Dock FC,NL-2,Rijnmond Rotterdam,North Sea Ports Derby / Noordzeehavenderby,sportiva
+PT-1__BR-2,PT-1,FC Belém,BR-2,Estrela Carioca,Clássico do Atlântico Lusófono,storica

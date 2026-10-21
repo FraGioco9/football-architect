@@ -19,7 +19,7 @@
  const flagCodes={IT:'it',ENG:'gb',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'br'};
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function route(path){
-  const m=path.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/(0[1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)$/);
+  const m=path.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)$/);
   return m?{countryId:m[1].toUpperCase(),clubId:Number(m[2]),view:m[3],base:'/clubs/'+m[1]+'/'+m[2]}:null;
  }
  function render(manifest,selected,language='en',search=''){

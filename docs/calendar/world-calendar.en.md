@@ -4,17 +4,18 @@ Spec: [CAL-01 #236](https://github.com/FraGioco9/football-architect/issues/236),
 WORLD-TIME QA-06 frozen by the owner on 2026-10-21. Related design records:
 [WORLD-TIME #94](https://github.com/FraGioco9/football-architect/issues/94) and
 [INT-24 #234](https://github.com/FraGioco9/football-architect/issues/234).
-This document covers the data-model lot only. CAL-01A/B/C/D stay frozen;
-CAL-IMP-02–05 are not implemented here.
+The data contract below is CAL-IMP-01. CAL-01A/B/C/D stay frozen.
+CAL-IMP-02 adds the Season/Week presentation described at the end of this document;
+CAL-IMP-03–05 remain deferred.
 
 ## Boundary
 
 `assets/world-calendar-model.js` is a pure, dependency-free library, following
 the repository's browser-global/CommonJS model pattern. It exposes
 `faWorldCalendarModel` in a browser and `module.exports` in Node. It is not
-loaded by any HTML, imported by existing runtime code or publication-allowlisted
-in this lot. No page, generator, route, stylesheet, workflow or publication
-configuration is changed.
+loaded by any HTML or publication-allowlisted in CAL-IMP-01. CAL-IMP-02 loads it
+only on `/calendar`, together with the presentation runtime; both assets are
+explicitly required and allowlisted. No live data source is added.
 
 The library constructs season-day and round/stage markers, **not individual
 club fixtures**. It does not read a clock, network, storage, database, DOM,
@@ -157,10 +158,53 @@ separately and inspect exact-head CI rather than marking them as local PASS.
 
 ## Deferred gates
 
-CAL-IMP-02–03 own the responsive calendar and inline details. CAL-IMP-04 must
+CAL-IMP-03 owns the inline event details. CAL-IMP-04 must
 wait for stabilized ROUTE-02 #235 and use canonical subpages without `/app/`
 or `view=`. CAL-IMP-05 owns DEV/Preview and clock adapters; its live behavior is
 blocked on WORLD-TIME epoch/timezone/day-boundary, kickoff, transition,
 synchronization and authoritative lifecycle-source decisions. The current
 contract does not approve those rules. Training and friendlies remain out of
 scope, including preseason friendlies.
+
+## CAL-IMP-02 — Season/Week presentation
+
+`tools/render-world-calendar.mjs` uses the frozen model to generate one static
+set of 56 day buttons. `templates/app-page.html` delegates its Calendar body to
+the generator: only `calendar/index.html` receives the full plan and the two
+calendar scripts; other generated documents retain their inactive empty shell.
+No duplicate competition-specific calendar implementation is added.
+
+Season displays eight rows of seven days. Week shows the selected seven-day
+row as seven vertical cards, with Previous/Next controls bounded to weeks 1–8.
+The row number represents seven real days in the cycle, not seven simulated
+football days. No real dates or weekdays are invented. Ordinary doubles and
+the two special final pairings stack international above national. FC/SC mean
+the Federation/Sovereign finals and have full localized accessible labels.
+
+The default is Season on desktop and Week on narrow or coarse-pointer devices,
+including landscape iPhone. Valid session state takes precedence. The small
+generated head bootstrap resolves the mode/week before CSS; the runtime then
+enables controls and binds labels/selection. Without JavaScript, the entire
+56-day static plan remains readable with disabled controls.
+
+The session-only key `football-architect:calendar-selection` stores
+`{version: 1, day: 1..56, view: "season"|"week"}`. Corrupt or denied storage falls
+back safely; in-page interaction works without persistence. Selection survives
+mode changes, viewport resize, language changes and reload. Resize never
+changes an already selected mode. `window.faWorldCalendar.getSelection()` returns
+a frozen `{day, view}` copy for read-only consumers. It exposes no simulation
+or time-advancement control.
+
+Native buttons expose pressed state; the selected day is the single tab stop
+within the days group. Arrows navigate days (Up/Down moves seven days in Season
+and one in Week); Home/End move within the seven-day row; Ctrl+Home/End select
+D01/D56; PageUp/PageDown move seven days. Every action is bounded to D01–D56.
+The selected-day announcement is a single line, not the CAL-IMP-03 details panel.
+No `aria-current`, Past/Current/Future or lifecycle state is fabricated.
+
+The UI is explicitly a season-structure plan with no live fixtures/results.
+It does not expose a fake active season, clock, filters, Today, club context or
+fixture links. Those remain later-lot work. EN/DE/ES/FR/IT, Dark/Light and
+no-horizontal-scroll layouts are tested; the browser suite covers 320/390/844/
+1440px, native keyboard, restore/resize, DEV/public parity and denied storage.
+Chrome device emulation is not certification on a physical iPhone or Safari.
