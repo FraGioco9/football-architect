@@ -44,6 +44,9 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared De
   });req.on('error',reject);req.end();
  });
  try{
+  const entrypoint=await get('/__fa_dev__/debug-settings.mjs');
+  assert.equal(entrypoint.status,200);
+  assert.match(entrypoint.body,/import "\.\/standings-client\.mjs"/);
   for(const c of clubs){
    const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
    assert.equal((await get(base)).location,base+'/overview');
