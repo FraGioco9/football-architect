@@ -12,11 +12,11 @@ const clubs=JSON.parse(read('data/clubs.json'));
 
 test('CLUB-01 all 320 identities and 1600 subpages resolve to one public template',()=>{
  for(const c of clubs)for(const view of clubViews){
-  const path=clubSubpage(c.countryId.toLowerCase(),String(c.clubId).padStart(2,'0'),view);
+  const path=clubSubpage(c.countryId.toLowerCase(),String(c.clubId),view);
   assert.equal(publicRequestFile(path),'clubs/_shared/index.html');
   assert.ok(isAllowlistedPublicPath(publicRequestFile(path)));
  }
- for(const path of ['/clubs/xx/01/overview','/clubs/it/00/overview','/clubs/it/41/overview','/clubs/it/1/overview','/clubs/it/01/unknown','/app/clubs/it/01/overview'])
+ for(const path of ['/clubs/xx/1/overview','/clubs/it/0/overview','/clubs/it/41/overview','/clubs/it/01/overview','/clubs/it/1/unknown','/app/clubs/it/1/overview'])
   assert.equal(isAllowlistedPublicPath(publicRequestFile(path)),false,path);
 });
 test('CLUB-01 derived manifest preserves canonical fields and provisional placement',()=>{
@@ -44,7 +44,7 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fi
  });
  try{
   for(const c of clubs){
-   const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId).padStart(2,'0');
+   const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
    assert.equal((await get(base)).location,base+'/overview');
    for(const view of clubViews){
     const page=await get(base+'/'+view);assert.equal(page.status,200);
@@ -52,14 +52,14 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fi
    }
   }
   for(const [path,target] of [
-   ['/clubs/it/01/?view=stats&season=2&matchday=7','/clubs/it/01/stats?season=2&matchday=7'],
-   ['/clubs/it/01/index.html?view=fixtures&season=3','/clubs/it/01/fixtures?season=3'],
-   ['/clubs/it/01/overview?season=2&matchday=5','/clubs/it/01/overview'],
-   ['/clubs/it/01/history/?season=3','/clubs/it/01/history'],
+   ['/clubs/it/1/?view=stats&season=2&matchday=7','/clubs/it/1/stats?season=2&matchday=7'],
+   ['/clubs/it/1/index.html?view=fixtures&season=3','/clubs/it/1/fixtures?season=3'],
+   ['/clubs/it/1/overview?season=2&matchday=5','/clubs/it/1/overview'],
+   ['/clubs/it/1/history/?season=3','/clubs/it/1/history'],
    ['/clubs/br/40/stats/?season=2','/clubs/br/40/stats?season=2']]){
     const page=await get(path);assert.equal(page.status,308);assert.equal(page.location,target);
   }
-  for(const path of ['/clubs/it/41/overview','/clubs/it/01/wrong','/clubs/it/1','/app/clubs/it/01'])assert.equal((await get(path)).status,404);
+  for(const path of ['/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/it/01','/app/clubs/it/1'])assert.equal((await get(path)).status,404);
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
 test('CLUB-01 generation is deterministic and canonical inputs are unchanged',()=>{
@@ -71,7 +71,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  for(const c of manifest.clubs)for(const lang of ['en','de','es','fr','it']){
-  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId).padStart(2,'0');
+  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
   for(const view of clubViews){
    const selected=model.route(base+'/'+view),html=model.render(manifest,selected,lang,'?season=2&matchday=7');
    assert.ok(html.includes('aria-current="page"'));
@@ -90,7 +90,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
  }
  const poisoned={...manifest,clubs:manifest.clubs.map((c,i)=>i?c:{...c,primaryName:'<script>alert(1)</script>'})};
  const c=poisoned.clubs[0];
- assert.doesNotMatch(model.render(poisoned,model.route('/clubs/'+c.countryId.toLowerCase()+'/01/overview')),/<script>/);
+ assert.doesNotMatch(model.render(poisoned,model.route('/clubs/'+c.countryId.toLowerCase()+'/1/overview')),/<script>/);
 });
 
 test('CLUB-01 public rewrites cover exactly the declared IDs and five subpages',()=>{
@@ -98,18 +98,18 @@ test('CLUB-01 public rewrites cover exactly the declared IDs and five subpages',
  const rule=config.rewrites.find(r=>r.destination==='/clubs/_shared/index.html');
  assert.ok(rule);
  const pattern=rule.source.replace(':country(it|eng|es|de|fr|pt|nl|br)','(?<country>it|eng|es|de|fr|pt|nl|br)')
-  .replace(':club(0[1-9]|[1-3][0-9]|40)','(?<club>0[1-9]|[1-3][0-9]|40)')
+  .replace(':club([1-9]|[1-3][0-9]|40)','(?<club>[1-9]|[1-3][0-9]|40)')
   .replace(':view(overview|roster|fixtures|stats|history)','(?<view>overview|roster|fixtures|stats|history)');
  const regex=new RegExp('^'+pattern+'$');
- for(const c of clubs)for(const view of clubViews)assert.ok(regex.test(clubSubpage(c.countryId.toLowerCase(),String(c.clubId).padStart(2,'0'),view)));
- for(const path of ['/clubs/it/1/overview','/clubs/it/41/overview','/clubs/it/01/wrong','/clubs/xx/01/overview','/clubs/it/01/overview/'])assert.equal(regex.test(path),false);
+ for(const c of clubs)for(const view of clubViews)assert.ok(regex.test(clubSubpage(c.countryId.toLowerCase(),String(c.clubId),view)));
+ for(const path of ['/clubs/it/01/overview','/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/xx/1/overview','/clubs/it/1/overview/'])assert.equal(regex.test(path),false);
 });
 
 test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
  const {redirects}=JSON.parse(read('vercel.json'));
  const compile=source=>new RegExp('^'+source
   .replace(':country(it|eng|es|de|fr|pt|nl|br)','(?<country>it|eng|es|de|fr|pt|nl|br)')
-  .replace(':club(0[1-9]|[1-3][0-9]|40)','(?<club>0[1-9]|[1-3][0-9]|40)')
+  .replace(':club([1-9]|[1-3][0-9]|40)','(?<club>[1-9]|[1-3][0-9]|40)')
   .replace(':view(overview|roster|fixtures|stats|history)','(?<view>overview|roster|fixtures|stats|history)')+'$');
  const clubRules=redirects.filter(r=>r.source.startsWith('/clubs/')).map(rule=>({...rule,regex:compile(rule.source)}));
  const target=(path,view=null)=>{
@@ -123,7 +123,7 @@ test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
   return null;
  };
  for(const c of clubs){
-  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId).padStart(2,'0');
+  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
   for(const suffix of ['','/','/index.html']){
    assert.equal(target(base+suffix),base+'/overview');
    for(const view of clubViews)assert.equal(target(base+suffix,view),base+'/'+view);
@@ -134,4 +134,23 @@ test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
    assert.equal(target(base+'/'+view),null,'Canonical paths must not redirect again');
   }
  }
+});
+
+test('CLUB-ID-01 CSV/JSON identities and rivalry references use unpadded canonical IDs',()=>{
+ const registry=read('data/clubs-registry.csv').replace(/^\uFEFF/,'').trim().split(/\r?\n/);
+ const rivalries=JSON.parse(read('data/club-rivalries.json'));
+ const rivalryCsv=read('data/club-rivalries.csv').replace(/^\uFEFF/,'').trim().split(/\r?\n/);
+ const ids=new Set(clubs.map(c=>c.countryId+'-'+c.clubId));
+ assert.equal(clubs.length,320);
+ assert.equal(registry.length,321);
+ for(const club of clubs)assert.ok(Number.isInteger(club.clubId)&&club.clubId>=1&&club.clubId<=40);
+ for(const line of registry.slice(1))assert.match(line,/^(?:IT|ENG|ES|DE|FR|PT|NL|BR),(?:[1-9]|[1-3][0-9]|40),/);
+ assert.equal(rivalries.length,352);
+ assert.equal(rivalryCsv.length,353);
+ for(const rivalry of rivalries){
+  assert.ok(ids.has(rivalry.clubAId));assert.ok(ids.has(rivalry.clubBId));
+  assert.equal(rivalry.rivalryId,rivalry.clubAId+'__'+rivalry.clubBId);
+  assert.doesNotMatch(rivalry.rivalryId,/(?:^|-)0[1-9](?:_|$)/);
+ }
+ assert.deepEqual(rivalryCsv.slice(1).map(line=>line.split(',').slice(0,2)),rivalries.map(r=>[r.rivalryId,r.clubAId]));
 });

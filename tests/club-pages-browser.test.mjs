@@ -95,12 +95,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     const manifest=JSON.parse(readFileSync(join(artifact,'clubs/_shared/manifest.json'),'utf8'));
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
-    const knownPath='/clubs/'+country.toLowerCase()+'/'+id.padStart(2,'0')+'/overview';
-    await visit('/clubs/it/01/overview');
+    const knownPath='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
+    await visit('/clubs/it/1/overview');
     for(const width of [1440,390,320])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
-     await visit('/clubs/it/01/overview');
+     await visit('/clubs/it/1/overview');
      assert.equal(await run('document.documentElement.lang'),lang);
      assert.equal(await run('document.documentElement.dataset.theme'),theme);
      const measured=await run(`(()=>{const main=document.querySelector('.fa-shell-content-scroll');return {overflow:document.documentElement.scrollWidth>innerWidth+1||main.scrollWidth>main.clientWidth+1,nav:document.querySelectorAll('.club-tabs a').length,title:document.querySelector('#club-title').textContent,description:document.querySelector('.club-description').textContent,selected:document.querySelector('[aria-current="page"].app-competition-tab')?.textContent}})()`);
@@ -115,16 +115,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/01/roster');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Home'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Home'});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/01/overview');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/overview');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight'});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/01/roster');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
     assert.notEqual(await run("getComputedStyle(document.activeElement).outlineStyle"),'none');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'End'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'End'});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/01/history');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/history');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
-    await wait("location.pathname==='/clubs/it/01/history'&&document.documentElement.dataset.clubReady==='true'");
+    await wait("location.pathname==='/clubs/it/1/history'&&document.documentElement.dataset.clubReady==='true'");
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-empty').length"),1);
     for(const view of ['roster','fixtures','stats','history']){
@@ -132,7 +132,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("!!document.querySelector('.club-empty')"),true);
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
-    await visit('/clubs/it/01/overview?season=4');assert.equal(await run('location.search'),'');
+    await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
     refuseCrests=true;await cmd('Network.setCacheDisabled',{cacheDisabled:true});await visit(knownPath);
@@ -140,7 +140,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("getComputedStyle(document.querySelector('.club-crest'),'::before').display"),'block');
     refuseCrests=false;
     await visit('/clubs/br/40/overview');assert.equal(await run("document.querySelector('.club-competition a')"),null);
-    await visit('/clubs/it/01/overview',devOrigin);
+    await visit('/clubs/it/1/overview',devOrigin);
     assert.equal(await run("document.querySelector('[data-fa-dev-preview]')"),null);
     await cmd('Page.navigate',{url:origin+'/competitions/it-1/overview'});
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
