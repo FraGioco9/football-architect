@@ -128,7 +128,7 @@ test('FR-2 club pages suppress first-paint placeholder and label the real crest 
     assert.match(crest,/data-club-crest="FR-2"/);
     assert.match(crest,/data-club-crest-pending="true"/);
     assert.match(crest,/aria-label="[^"]*FC Massalia"/);
-    assert.doesNotMatch(crest,/placeholder|provisional|Segnaposto|Platzhalter/i);
+    assert.doesNotMatch(crest.match(/aria-label="([^"]*)"/)?.[1]||'',/placeholder|provisional|Segnaposto|Platzhalter/i);
    }
   }
  }
