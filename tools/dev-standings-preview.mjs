@@ -1,4 +1,5 @@
 // Loopback-only static DEV server. Never stage this module in a public artifact.
+import {resolveSubpage,clubViews} from "../assets/subpage-routes.mjs";
 import { createServer } from "node:http";
 import { readFile, realpath, lstat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
@@ -109,6 +110,20 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           raw.includes("\\") || raw.includes("\0") || /\/\.{1,2}(?:\/|$)/.test(raw)) {
         return reject(res, 403);
       }
+      // Club aliases share ROUTE-02 validation; temporal parameters belong only to Fixtures/Stats.
+      const clubPath=raw.replace(/\/index\.html$/,"");
+      const clubRoute=resolveSubpage(clubPath);
+      if(clubRoute?.kind==="club"){
+        const params=new URL(req.url,"http://localhost").searchParams;
+        const base=clubPath===clubRoute.base||clubPath===clubRoute.base+"/";
+        const view=base&&clubViews.includes(params.get("view"))?params.get("view"):clubRoute.view;
+        params.delete("view");
+        if(view==="overview"||view==="history"){params.delete("season");params.delete("matchday");}
+        const target=clubRoute.base+"/"+view+(params.size?"?"+params:"");
+        if(req.url!==target){
+          res.writeHead(308,{"Location":target,"Cache-Control":"no-store"});res.end();return;
+        }
+      }
       const rootDivision = raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/?$/);
       if(rootDivision){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
@@ -160,7 +175,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';
         body = Buffer.from(body.toString("utf8").replace("</head>", config + "\n</head>")
           .replace(/(\bhref=")([^"#]+)(")/g, (all, prefix, href, quote) => {
-            if (/^\/(?:dashboard|calendar|settings|competitions)(?:[/?#]|$)/.test(href))
+            if (/^\/(?:dashboard|calendar|settings|competitions|clubs)(?:[/?#]|$)/.test(href))
               return prefix + appOrigin + href + quote;
             if (href === "/" || /^\/guide(?:[/?#]|$)/.test(href))
               return prefix + siteOrigin + (href === "/" ? "" : href) + quote;

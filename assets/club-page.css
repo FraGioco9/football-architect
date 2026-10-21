@@ -1,0 +1,29 @@
+/* Club pages share shell, panel, typography, theme and tab tokens with competitions. */
+.club-header{display:flex;align-items:center;gap:22px;min-width:0}
+.club-header>div{min-width:0}
+.club-header p{margin:6px 0;color:var(--muted);overflow-wrap:anywhere}
+.club-header h1{overflow-wrap:anywhere}
+.app-world-club-crest-placeholder.club-crest{width:88px;height:100px;flex:0 0 88px;position:relative}
+.club-tabs{display:flex;flex-wrap:wrap;overflow:visible;gap:4px;mask-image:none;-webkit-mask-image:none}
+.club-tabs .app-competition-tab{display:flex;align-items:center;justify-content:center;text-decoration:none;flex:1 1 120px;width:auto;min-width:0;max-width:none;white-space:normal;overflow-wrap:anywhere}
+.club-tabs .app-competition-tab.is-active{background:var(--surface-raised);color:var(--text)}
+.club-view-title{font-size:1.1rem;margin:22px 0 14px}
+.club-overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.club-overview-grid .app-panel{min-width:0;overflow-wrap:anywhere}
+.club-competition{grid-column:1/-1}
+.club-facts{display:grid;gap:0;margin:12px 0 0}
+.club-facts>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}
+.club-facts dt{color:var(--muted);font-size:.85rem}
+.club-facts dd{margin:0;overflow-wrap:anywhere;font-size:.9rem}
+.club-color{display:inline-block;vertical-align:middle;background:var(--club-color);border:1px solid var(--border);width:20px;height:20px;border-radius:5px;margin-right:8px}
+.club-description{line-height:1.65;clear:both}
+.club-placement,.club-empty p{color:var(--muted)}
+.club-header .app-link,.club-facts .app-link{padding:0;display:inline;white-space:normal}
+.club-tabs a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(max-width:760px){.club-overview-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:620px){.club-header{gap:14px;align-items:flex-start}.club-header h1{font-size:1.4rem}.club-header p{font-size:.82rem}.app-world-club-crest-placeholder.club-crest{width:64px;height:76px;flex-basis:64px}.club-tabs .app-competition-tab{flex-basis:calc(33.333% - 8px);font-size:11px}.club-facts>div{gap:10px;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}}
+
+.app-body>.skip-link{position:fixed;left:16px;top:8px;transform:translateY(-160%);z-index:1000;padding:10px 16px;background:var(--surface);color:var(--text);border:2px solid var(--focus);border-radius:6px}
+.app-body>.skip-link:focus{transform:none}
+.club-header .app-link,.club-facts .app-link,.club-competition .app-link{border:0;box-shadow:none;background:transparent;border-radius:0}
+@media(max-width:360px){.club-facts>div{grid-template-columns:minmax(0,1fr);gap:4px}}

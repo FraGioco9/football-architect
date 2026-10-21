@@ -1,5 +1,6 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
+import {clubOutputs} from "./generate-club-pages.mjs";
 import model from "../assets/competition-model.js";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
@@ -169,5 +170,7 @@ for(const page of outputPages){
  }
  writeOutput(page.path,normalizeRouteLinks(html,page.path));
 }
+for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments}))
+ writeOutput(output.path,output.path.endsWith(".html")?normalizeRouteLinks(output.content,output.path):output.content);
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
-if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest, 1 club template and 1 club manifest");

@@ -14,3 +14,6 @@ assets/flags/*.svg text eol=lf
 assets/divisions/**/*.svg -text
 # Preserve uploaded club crest artwork bytes on every platform.
 assets/clubs/**/*.svg -text
+
+clubs/_shared/index.html text eol=lf
+clubs/_shared/manifest.json text eol=lf
