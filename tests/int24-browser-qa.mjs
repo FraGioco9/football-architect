@@ -9,7 +9,7 @@ const browser=await chromium.launch({headless:true});
 const widths=[1440,390,320];
 const cups=["sovereign-cup","federation-cup"];
 const views=["overview","standings","fixtures","stats","history"];
-const languages=["en","de","es","fr","it"];
+const languages={en:"Overview",de:"Übersicht",es:"Resumen",fr:"Aperçu",it:"Panoramica"};
 let checks=0;
 try {
  for(const cup of cups)for(const width of widths){
@@ -30,15 +30,33 @@ try {
    assert.equal(overflow,false,"horizontal overflow "+cup+" "+width+" "+view);
    checks++;
   }
-  for(const lang of languages){
+  await page.goto(base+"/competitions/"+cup+"?view=overview",{waitUntil:"networkidle"});
+  for(const [lang,label] of Object.entries(languages)){
    await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
-   await page.waitForFunction(lang=>document.documentElement.lang===lang&&document.querySelector("#international-view-heading")?.textContent?.length>0,lang);
+   await page.waitForFunction(expected=>document.querySelector("#international-view-heading")?.textContent===expected,label);
+   assert.equal(await page.locator('[data-cup-tab="overview"]').innerText(),label);
    checks++;
   }
-  await page.goto(base+"/competitions/"+cup+"?view=overview",{waitUntil:"networkidle"});
-  await page.screenshot({path:out+"/"+cup+"-"+width+"-overview.png",fullPage:true});
+  for(const theme of ["dark","light"]){
+   await page.evaluate(value=>localStorage.setItem("football-architect:theme",value),theme);
+   await page.reload({waitUntil:"networkidle"});
+   assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
+   await page.screenshot({path:out+"/"+cup+"-"+width+"-"+theme+".png",fullPage:true});
+   checks++;
+  }
+  const tabs=page.locator("[data-cup-tab]");
+  assert.equal(await tabs.count(),5);
+  await tabs.first().focus();
+  assert.equal(await tabs.first().evaluate(el=>document.activeElement===el),true);
+  await page.keyboard.press("Tab");
+  assert.equal(await tabs.nth(1).evaluate(el=>document.activeElement===el),true);
+  await page.keyboard.press("Enter");
+  await page.waitForURL("**?view=standings");
+  assert.equal(await page.locator('[data-cup-tab="standings"]').getAttribute("aria-current"),"page");
+  checks++;
+
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
  }
- console.log("INT24 Chromium QA PASS: "+checks+" checks; 6 screenshots");
+ console.log("INT24 Chromium QA PASS: "+checks+" checks; 12 screenshots");
 }finally{await browser.close()}
