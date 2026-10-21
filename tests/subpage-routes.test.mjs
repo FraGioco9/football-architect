@@ -78,3 +78,11 @@ test("ROUTE-02 DEV routes redirect base and serve explicit views",async()=>{
   assert.equal((await get("/competitions/it-1/not-a-view")).status,404);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test("ROUTE-02 client renderer accepts only declared division subpages",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const client=readFileSync(new URL("../assets/competition-page.js",import.meta.url),"utf8");
+ assert.match(client,/divisionSegment!==routeId\.toLowerCase\(\)/);
+ assert.match(client,/allowedViews\.has\(viewSegment\)/);
+ assert.match(client,/segments\[0\]!=="competitions"/);
+});
