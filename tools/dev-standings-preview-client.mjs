@@ -12,7 +12,7 @@ const devWorldClock=createDevWorldClock(sessionStorage,(name,detail)=>{
   window.dispatchEvent(new CustomEvent(name,{detail}));
 });
 const matchdaysForWorldDay=nationalProgress;
-function readWorldDay(){return devWorldClock.read().day}
+function readWorldDay(){try{if(sessionStorage.getItem(DAY_KEY)===null)return null}catch{return null}return devWorldClock.read().day}
 
 function readMatchdays(){
  const day=typeof readWorldDay==='function'?readWorldDay():null;if(day!==null)return matchdaysForWorldDay(day);
