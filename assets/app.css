@@ -969,3 +969,7 @@ html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{vis
 #world-calendar .calendar-day.app-search-escape-return:focus-visible{outline:none!important;box-shadow:none!important}
 .calendar-event-dialog.app-search-dialog:focus{outline:none}
 .calendar-event-dialog .calendar-event-close.app-search-close:focus:not(:focus-visible){outline:none;box-shadow:none}
+
+/* CAL-UX-13: Week hover retains the same border as the arrow boxes. */
+#world-calendar #calendar-controls #calendar-week-trigger:hover:not(:disabled),
+#world-calendar #calendar-controls #calendar-week-trigger:active:not(:disabled){border-color:var(--line)!important}
