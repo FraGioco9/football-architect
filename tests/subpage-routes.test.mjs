@@ -29,3 +29,12 @@ test("ROUTE-02 unknown and malformed routes fail closed",()=>{
  assert.throws(()=>competitionSubpage("it-3","rules"));
  assert.throws(()=>clubSubpage("it","41"));
 });
+
+test("ROUTE-02 resolves slash variants to one canonical resource",()=>{
+  const c=resolveSubpage("/competitions/it-1/fixtures/");
+  assert.equal(c.canonical,"/competitions/it-1/fixtures");
+  assert.equal(c.redirect,true);
+  const club=resolveSubpage("/clubs/br/40/history/");
+  assert.equal(club.canonical,"/clubs/br/40/history");
+  assert.equal(club.redirect,true);
+});
