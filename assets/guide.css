@@ -37,3 +37,13 @@
 .guide-sidebar-nav{max-height:none;overflow:visible}
 @media(max-width:700px){.guide-sidebar-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-height:none;overflow:visible}.guide-sidebar-link{font-size:12px;padding:9px 8px}.guide-intro{font-size:14px}}
 @media(max-width:350px){.guide-sidebar-link{font-size:11px;padding-inline:5px}}
+
+/* GUIDE-02 multi-page chapters */
+.guide-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+.guide-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px;text-decoration:none;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0;min-height:88px}
+.guide-card h2{font-size:16px;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.guide-card:hover{border-color:var(--focus)}.guide-card:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.guide-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.guide-facts div{padding:15px;background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;gap:6px}
+.guide-facts strong{font-size:22px}.guide-facts span{font-size:12px;color:var(--muted)}
+@media(max-width:700px){.guide-card-grid{grid-template-columns:minmax(0,1fr)}.guide-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
