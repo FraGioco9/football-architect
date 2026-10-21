@@ -35,7 +35,7 @@ test("INT-24: five language dictionaries and empty states, no fabricated results
   for(const locale of ["en","de","es","fr","it"])assert.match(script,new RegExp('"'+locale+'":\\['));
   assert.ok(script.includes('document.documentElement.lang'));
   assert.ok(script.includes('MutationObserver'));
-  assert.ok(script.includes('aria-current'));
+  assert.ok(read("competitions/sovereign-cup/index.html").includes('aria-current'));
   for(const slug of names){
     const html=read("competitions/"+slug+"/index.html");
     assert.match(html,/Season fixtures and results are not yet available/);
