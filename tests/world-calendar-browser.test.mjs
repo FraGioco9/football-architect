@@ -182,7 +182,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
     const finalDay=await runValue("window.faWorldCalendarModel.createSeason(1).days.find(d=>d.events.some(e=>e.phase==='final'))?.day");
     assert.ok(finalDay,'The model includes a final day');
-    await runValue("document.querySelector('#calendar-day-'+"+finalDay+").click()");
+    await runValue("document.querySelector('#calendar-day-"+finalDay+"').click()");
     assert.equal(await runValue("document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code[data-event-type=final]').length>0"),true);
     assert.equal(await runValue("[...document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code[data-event-type=final]')].every(e=>e.textContent==='F')"),true);
     assert.equal(await runValue("[...document.querySelectorAll('#calendar-event-dialog-details .calendar-event-description')].some(e=>e.textContent.includes('Cup final'))"),true);
