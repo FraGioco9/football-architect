@@ -92,6 +92,24 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
         }
       }
     }
+    // CAL-IMP-03: inline details, special-final ordering, disclosure continuity.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+    await run("document.getElementById('calendar-season').click()");
+    for(const [day,markers] of [[16,['I01','N04']],[53,['FEDERATION-FINAL','N32']],[54,['SOVEREIGN-FINAL','N33']]]){
+      await run("document.getElementById('calendar-day-"+day+"').click()");
+      const result=await run("({markers:[...document.querySelectorAll('#calendar-details [data-marker]')].map(n=>n.dataset.marker),closed:[...document.querySelectorAll('#calendar-details details')].every(n=>!n.open),overflow:document.documentElement.scrollWidth>innerWidth})");
+      assert.deepEqual(result.markers,markers);assert.equal(result.closed,true);assert.equal(result.overflow,false);
+      assert.equal(await run("document.querySelector('#calendar-details summary').tagName"),'SUMMARY');
+      await run("document.querySelector('#calendar-details details').open=true");
+      await run("document.getElementById('calendar-week').click()");
+      assert.equal(await run("document.querySelector('#calendar-details details').open"),true,'view change preserves disclosure');
+      await run("document.getElementById('calendar-season').click()");
+    }
+    await run("document.getElementById('calendar-day-56').click()");
+    assert.equal(await run("document.querySelectorAll('#calendar-details details').length"),0);
+    assert.ok(await run("document.getElementById('calendar-details-content').textContent.length>10"));
+    await run("document.getElementById('calendar-day-16').click()");
+    assert.equal(await run("document.querySelector('#calendar-details details').open"),false,'day change closes disclosure');
     // Native keyboard navigation, week boundaries and persisted reload across resize.
     await run("document.getElementById('calendar-season').click();document.getElementById('calendar-day-16').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40});

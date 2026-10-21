@@ -41,6 +41,7 @@
     get('days').setAttribute('aria-label',state.view==='season'?w.season+' · '+w.days+' 1–56':w.week+' '+week);
     get('selected').textContent=w.selected+': '+label(days[state.day-1],w);
     root.dataset.calendarReady='true';
+    renderDetails();
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
@@ -59,6 +60,40 @@
       if(target===undefined)return;
       event.preventDefault();change({day:Math.max(1,Math.min(56,target))},true);
     });
+  }
+  // CAL-IMP-03: read-only inline details derived only from the frozen calendar contract.
+  const details=get('details'),heading=get('details-heading'),content=get('details-content');
+  const detailWords={
+    en:{day:'Day',events:'Official events',preseason:'Preseason',pause:'Pause',transition:'Transition',none:'No official events on this day.',preseasonText:'No official fixtures during preseason.',pauseText:'No official fixtures scheduled for this pause.',transitionText:'Season transition details are not defined.',national:'Domestic round',international:'International round',league:'League phase',playoffs:'Playoffs',quarterfinals:'Quarterfinals',semifinals:'Semifinals',postseason:'Postseason',final:'Final',show:'Show details',fixtures:'Fixtures unavailable',results:'Results unavailable',scope:'Competitions',unknown:'No authoritative fixtures or results are available.'},
+    de:{day:'Tag',events:'Offizielle Ereignisse',preseason:'Saisonvorbereitung',pause:'Pause',transition:'Übergang',none:'Keine offiziellen Ereignisse an diesem Tag.',preseasonText:'Keine offiziellen Spiele in der Saisonvorbereitung.',pauseText:'Keine offiziellen Spiele während der Pause.',transitionText:'Der Saisonübergang ist noch nicht definiert.',national:'Nationaler Spieltag',international:'Internationale Runde',league:'Ligaphase',playoffs:'Playoffs',quarterfinals:'Viertelfinale',semifinals:'Halbfinale',postseason:'Endrunde',final:'Finale',show:'Details anzeigen',fixtures:'Spielplan nicht verfügbar',results:'Ergebnisse nicht verfügbar',scope:'Wettbewerbe',unknown:'Keine offiziellen Spiele oder Ergebnisse verfügbar.'},
+    es:{day:'Día',events:'Eventos oficiales',preseason:'Pretemporada',pause:'Pausa',transition:'Transición',none:'No hay eventos oficiales este día.',preseasonText:'No hay partidos oficiales en pretemporada.',pauseText:'No hay partidos oficiales durante la pausa.',transitionText:'La transición de temporada aún no está definida.',national:'Jornada nacional',international:'Ronda internacional',league:'Fase de liga',playoffs:'Playoffs',quarterfinals:'Cuartos de final',semifinals:'Semifinales',postseason:'Fase final',final:'Final',show:'Ver detalles',fixtures:'Partidos no disponibles',results:'Resultados no disponibles',scope:'Competiciones',unknown:'No hay partidos ni resultados oficiales disponibles.'},
+    fr:{day:'Jour',events:'Événements officiels',preseason:'Présaison',pause:'Pause',transition:'Transition',none:'Aucun événement officiel ce jour.',preseasonText:'Aucun match officiel en présaison.',pauseText:'Aucun match officiel pendant la pause.',transitionText:'La transition de saison reste à définir.',national:'Journée nationale',international:'Tour international',league:'Phase de ligue',playoffs:'Barrages',quarterfinals:'Quarts de finale',semifinals:'Demi-finales',postseason:'Phase finale',final:'Finale',show:'Afficher les détails',fixtures:'Matchs indisponibles',results:'Résultats indisponibles',scope:'Compétitions',unknown:'Aucun match ni résultat officiel disponible.'},
+    it:{day:'Giorno',events:'Eventi ufficiali',preseason:'Prestagione',pause:'Pausa',transition:'Transizione',none:'Nessun evento ufficiale in questo giorno.',preseasonText:'Nessuna partita ufficiale in prestagione.',pauseText:'Nessuna partita ufficiale durante la pausa.',transitionText:'La transizione stagionale non è ancora definita.',national:'Giornata nazionale',international:'Turno internazionale',league:'Fase campionato',playoffs:'Playoff',quarterfinals:'Quarti di finale',semifinals:'Semifinali',postseason:'Postseason',final:'Finale',show:'Mostra dettagli',fixtures:'Partite non disponibili',results:'Risultati non disponibili',scope:'Competizioni',unknown:'Nessuna partita o risultato ufficiale disponibile.'}
+  };
+  const nameFor=(event,w)=>event.marker==='FEDERATION-FINAL'?'Federation Cup · '+w.final:event.marker==='SOVEREIGN-FINAL'?'Sovereign Cup · '+w.final:(event.family==='national'?w.national:w.international)+' '+event.round;
+  let lastDetailsDay=null,lastDetailsLanguage=null;
+  function renderDetails(){
+    if(!details||!heading||!content)return; // Old lightweight DOM harnesses do not create details.
+    if(lastDetailsDay===state.day&&lastDetailsLanguage===root.lang)return;
+    lastDetailsDay=state.day;lastDetailsLanguage=root.lang;
+    const w=detailWords[root.lang]||detailWords.en,d=days[state.day-1];
+    details.dataset.day=String(state.day);
+    heading.textContent=w.day+' '+d.day+' · '+(d.events.length?w.events:w[d.kind]);
+    content.replaceChildren();
+    if(!d.events.length){
+      const p=document.createElement('p');p.className='calendar-details-empty';p.textContent=w[d.kind+'Text']||w.none;content.append(p);return;
+    }
+    for(const e of d.events){
+      const article=document.createElement('article');article.className='calendar-detail-card';article.dataset.marker=e.marker;
+      const h=document.createElement('h4');h.textContent=e.marker+' · '+nameFor(e,w);article.append(h);
+      const summary=document.createElement('p');summary.className='calendar-detail-summary';summary.textContent=w[e.phase]||w.events;article.append(summary);
+      const disclosure=document.createElement('details');disclosure.className='calendar-detail-disclosure';
+      const label=document.createElement('summary');label.textContent=w.show;disclosure.append(label);
+      const info=document.createElement('div');info.className='calendar-detail-more';
+      const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='sovereign-cup'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
+      for(const value of [w.fixtures,w.results,w.unknown]){const p=document.createElement('p');p.textContent=value;info.append(p)}
+      disclosure.append(info);article.append(disclosure);content.append(article);
+    }
   }
   window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state})});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
