@@ -972,3 +972,7 @@ html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{vis
 
 /* CAL-UX-13: match arrow hover border; normal Week border stays --line. */
 #world-calendar #calendar-controls #calendar-week-trigger:is(:hover,:active):not(:disabled){border-color:var(--border)!important}
+
+/* FIXTURES-BORDER-01: Matchday and arrows follow Calendar Week normal/hover border. */
+.app-fixtures-navigation :is(.app-fixtures-trigger,.app-fixtures-arrow):not(#calendar-week-trigger):not(#calendar-previous):not(#calendar-next){border:1px solid var(--line)!important;border-radius:9px}
+.app-fixtures-navigation :is(.app-fixtures-trigger,.app-fixtures-arrow):not(#calendar-week-trigger):not(#calendar-previous):not(#calendar-next):is(:hover,:active):not(:disabled){border-color:var(--border)!important}
