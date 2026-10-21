@@ -177,14 +177,18 @@ for(const page of outputPages){
 }
 for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments}))
  writeOutput(output.path,output.path.endsWith(".html")?normalizeRouteLinks(output.content,output.path):output.content);
-// NAV-01: global directory from canonical club manifest, retaining shared shell.
+// NAV-01B: produce directory from the same canonical generated competitions shell.
 {
- const title="<section id=\"app-divisions\" class=\"app-view nav01-directory\" aria-labelledby=\"nav01-title\"><div id=\"nav01-clubs\"><h1 id=\"nav01-title\" class=\"app-page-title\">Clubs</h1><div class=\"nav01-filters\"><input type=\"search\" aria-label=\"Search clubs\"><select aria-label=\"Country\"><option value=\"\">All countries</option></select><select aria-label=\"Division\"><option value=\"\">All divisions</option></select><select aria-label=\"Status\"><option value=\"\">All clubs</option><option value=\"active\">Active</option><option value=\"inactive\">Inactive</option></select></div><p class=\"nav01-count\" aria-live=\"polite\"></p><div class=\"nav01-grid\"></div></div></section>";
- let html=template;
- const entries={...worldPageReplacements(),"@@FA_LINE_008@@":"  <title>Clubs — Football Architect</title>","@@FA_WORLD_SECTION@@":title};
- for(const [token,value] of Object.entries(entries))html=html.replaceAll(token,value);
+ const file=new URL("../competitions/index.html",import.meta.url);
+ const source=readFileSync(file,"utf8").replace(/\\r\\n/g,"\\n");
+ const begin=source.indexOf('<section id="app-divisions"');
+ const finish=source.indexOf("\\n      </main>",begin);
+ if(begin<0||finish<0)throw Error("Clubs source shell missing");
+ const content="<section id=\"app-divisions\" class=\"app-view nav01-directory\" aria-labelledby=\"nav01-title\"><div id=\"nav01-clubs\"><h1 id=\"nav01-title\" class=\"app-page-title\">Clubs</h1><div class=\"nav01-filters\"><input type=\"search\" aria-label=\"Search clubs\"><select aria-label=\"Country\"><option value=\"\">All countries</option></select><select aria-label=\"Division\"><option value=\"\">All divisions</option></select><select aria-label=\"Status\"><option value=\"\">All clubs</option><option value=\"active\">Active</option><option value=\"inactive\">Inactive</option></select></div><p class=\"nav01-count\" aria-live=\"polite\"></p><div class=\"nav01-grid\"></div></div></section>";
+ let html=source.slice(0,begin)+content+source.slice(finish);
+ html=html.replace("<title>Competitions — Football Architect</title>","<title>Clubs — Football Architect</title>");
  html=html.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/clubs-directory.js\" defer></script>\n</head>");
- writeOutput("clubs/index.html",normalizeRouteLinks(html,"clubs/index.html"));
+ writeOutput("clubs/index.html",html);
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest, 1 club template and 1 club manifest");
