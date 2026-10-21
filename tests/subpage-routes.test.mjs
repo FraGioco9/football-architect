@@ -6,7 +6,7 @@ test("ROUTE-02 competition routes have explicit canonical subpages",()=>{
  for(const country of ["it","eng","es","de","fr","pt","nl","br"])
   for(const tier of ["1","2"]){
    const base="/competitions/"+country+"-"+tier;
-   assert.equal(resolveSubpage(base)?.canonical,base+"/standings");
+   assert.equal(resolveSubpage(base)?.canonical,base+"/overview");
    assert.equal(resolveSubpage(base)?.redirect,true);
    for(const view of competitionViews){
     const path=competitionSubpage(country+"-"+tier,view);
