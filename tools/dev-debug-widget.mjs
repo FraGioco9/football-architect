@@ -114,7 +114,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  panel.append(element("h2","fa-dev-widget-title","Debug Settings"));
  const closeButton=element("button","fa-dev-widget-close","×");closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
  const sections=new Map();
- for(const [id,label] of [["general","General"],["page","Current page"]]){
+ for(const [id,label] of [["general","All settings"]]){
   const details=element("details","fa-dev-widget-section");details.dataset.section=id;
   details.append(element("summary","",label));details.open=true;
   try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");if(typeof saved[id]==="boolean")details.open=saved[id]}catch{}
@@ -122,7 +122,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   sections.set(id,details);
  }
  for(const control of controls){
-  const target=sections.get(control.scope==="general"?"general":"page");
+  const target=sections.get("general");
   if(!["switch","select","range","number","button"].includes(control.type)||!control.id||!control.label||
      typeof control.onChange!=="function")throw Error("Invalid DEV control");
   if(control.type==="button"){

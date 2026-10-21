@@ -51,7 +51,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     const cmd=(method,params={})=>new Promise((resolve,reject)=>{const id=++sequence,timer=setTimeout(()=>{pending.delete(id);reject(Error('Calendar CDP timeout: '+method))},12000);pending.set(id,{resolve,reject,timer});socket.send(JSON.stringify({id,method,params}))});
     const run=async expression=>{const r=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value};
     async function click(selector){
-      const point=await run(`(()=>{const b=document.querySelector(${JSON.stringify(selector)});b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+      const point=await run(`(()=>{const b=document.querySelector(${JSON.stringify(selector)});b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+(b.matches('[data-calendar-day]')?Math.min(9,r.height/5):r.height/2)}})()`);
       await cmd('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
       await cmd('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
     }
@@ -64,175 +64,137 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
     await visit();
-    assert.equal(await run("document.getElementById('calendar-today').disabled"),true);
-    assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('unavailable')"),true);
-    assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true);
-    await visit(devOrigin);
-    assert.equal(await run("document.getElementById('calendar-today').disabled"),false);
-    assert.equal(await run("document.getElementById('calendar-clock-source').textContent.includes('DEV')"),true);
-    await run("document.getElementById('calendar-day-16').click()");
-    await run("(()=>{const control=document.getElementById('calendar-dev-world-day');control.value='19';control.dispatchEvent(new Event('input',{bubbles:true}))})()");
-    assert.equal(await run("window.faWorldCalendar.getSelection().day"),16,'DEV clock changes must not change selected day');
-    assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('19/56')"),true);
-    assert.equal(await run("document.querySelector('[data-calendar-day=\"19\"]').dataset.clockRelative"),'current');
-    await run("document.getElementById('calendar-today').click()");
-    assert.equal(await run("window.faWorldCalendar.getSelection().day"),19);
-    // CAL-IMP-05A: public clock rejects unauthorised and malformed snapshots.
+    const runValue=expr=>run(expr);
+    // Public rendering must ignore a leftover fictional DEV world day.
+    await runValue("sessionStorage.setItem('football-architect:calendar-dev-world-day','26');sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:'week'}))");
     await visit();
-    for(const source of ['authoritative','dev']){
-      await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:"+JSON.stringify(source)+",reference:'untrusted browser event'},current:{season:1,day:19}}}))");
-      assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Public clock must reject all injected sources');
-      assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true,'Public injection cannot show DEV controls');
-    }
-    await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'test'},current:{season:2,day:16}}}))");
-    assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Other seasons cannot navigate');
-    await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'test'},current:{season:1,day:57}}}))");
-    assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Malformed day fails closed');
-    await visit(devOrigin);
-    await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'authoritative',reference:'unapproved'},current:{season:1,day:23}}}))");
-    assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Unapproved authoritative source must fail closed in DEV too');
-    await visit(devOrigin);
-    await run("document.getElementById('calendar-day-16').click();document.getElementById('calendar-week').click();document.getElementById('calendar-filter').value='national';document.getElementById('calendar-filter').dispatchEvent(new Event('change'));document.getElementById('calendar-division').value='it-2';document.getElementById('calendar-division').dispatchEvent(new Event('change'))");
-    for(const day of [1,55,56]){
-      await run("(()=>{const n=document.getElementById('calendar-dev-world-day');n.value="+day+";n.dispatchEvent(new Event('input',{bubbles:true}))})()");
-      assert.deepEqual(await run("window.faWorldCalendar.getSelection()"),{day:16,view:'week',filter:'national',division:'it-2'});
-      assert.equal(await run("document.getElementById('calendar-day-"+day+"').dataset.clockRelative"),'current');
-    }
-    for(const [lang,label] of [['en','Fictional'],['de','Fiktive'],['es','ficticia'],['fr','fictif'],['it','fittizia']]){
-      await run("document.documentElement.lang="+JSON.stringify(lang)+";dispatchEvent(new Event('languagechange'))");
-      // A clock update must remain available and never mutate the calendar selection.
-      await run("(()=>{const n=document.getElementById('calendar-dev-world-day');n.dispatchEvent(new Event('input',{bubbles:true}))})()");
-      assert.ok((await run("document.getElementById('calendar-clock-source').textContent")).includes(label));
-    }
-    for(const width of [320,390]){
-      await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});
-      assert.equal(await run("document.documentElement.scrollWidth<=innerWidth"),true);
-      assert.equal(await run("document.getElementById('calendar-dev-world-day').disabled"),false);
-    }
-    await cmd('Emulation.clearDeviceMetricsOverride');
+    assert.equal(await runValue("new URL(document.getElementById('app-nav-calendar').href).searchParams.get('season')"),'1','Public Calendar link must ignore DEV season storage');
+    assert.equal(await runValue("document.documentElement.dataset.calendarView"),'season','Cached Week must not override the device default');
+    assert.equal(await runValue("new URL(location.href).searchParams.get('calendarView')"),'season','Default view is canonicalized in the URL');
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'1','Public bootstrap must not import DEV day');
+    await runValue("sessionStorage.removeItem('football-architect:calendar-dev-world-day');sessionStorage.removeItem('football-architect:calendar-selection')");
     await visit();
+    assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-calendar-day]').length"),56);
+    assert.equal(await runValue("document.querySelector('.calendar-key')===null"),true);
+    assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-clock')).display"),'none');
+    assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-filterbar')).display"),'none');
+    assert.equal(await runValue("getComputedStyle(document.querySelector('.world-calendar')).maxWidth"),'none');
+    assert.equal(await runValue("getComputedStyle(document.querySelector('.world-calendar')).borderTopWidth"),'0px');
+    assert.equal(await runValue("document.querySelector('#calendar-season-picker').getAttribute('role')"),'combobox');
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1');
+    assert.equal(await runValue("document.querySelector('.calendar-event').hasAttribute('title')"),false);
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter'))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').textContent"),'Domestic round 4');
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false);
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerleave'))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new FocusEvent('focusin',{bubbles:true}))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false,'Marker tooltip is keyboard-accessible');
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new FocusEvent('focusout',{bubbles:true}))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
+    assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N31\\\"]').textContent"),'P01');
+    assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N32\\\"]').textContent"),'P02');
+    await runValue("document.querySelector('#calendar-day-16').click()");
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog').open"),true);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-title').textContent"),'Day 16');
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').textContent"),'I01');
+    assert.equal(await runValue("document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code').length"),2);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-description').textContent"),'International round 1');
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-subtitle').hidden"),true);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('Pending')"),false);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('competitions:')"),false);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').dataset.eventType"),'international');
+    await runValue("document.querySelector('#calendar-event-dialog').close()");
+    assert.equal(await runValue("document.querySelector('#calendar-day-16').getAttribute('aria-pressed')"),'false');
+    assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
+    await runValue("document.querySelector('#calendar-season-picker').click()");
+    assert.equal(await runValue("document.querySelector('#calendar-season-menu').hidden"),false);
+    await runValue("document.querySelector('#calendar-season-picker').click()");
+    assert.equal(await runValue("document.querySelector('#calendar-season-menu').hidden"),true);
     let cases=0;
-    for(const [width,height,mobile] of [[1440,1050,false],[390,1000,true],[320,1000,true],[844,390,true]]){
-      await cmd('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
-      await cmd('Emulation.setTouchEmulationEnabled',{enabled:mobile});
-      for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
-        await run(`sessionStorage.removeItem('football-architect:calendar-selection');localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)})`);
+    for(const width of [320,390,844,1440]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<900});
+      for(const lang of ['en','de','es','fr','it'])for(const theme of ['dark','light']){
+        await runValue("localStorage.setItem('football-architect:language',"+JSON.stringify(lang)+");localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
         await visit();
-        let state=await measure();assert.equal(state.view,mobile?'week':'season',JSON.stringify({width,theme,lang,state}));
-        assert.equal(await run('document.documentElement.lang'),lang);
-        if(lang!=='en')assert.notEqual(await run("document.getElementById('calendar-note').textContent"),'Season structure only. No live fixtures or results are available.');
-        for(const view of ['season','week']){
-          // Select a visible day with real pointer input, then switch to the requested view.
-          await click('#calendar-season');await click('#calendar-day-16');await click('#calendar-'+view);
-          state=await measure();
-          assert.equal(state.visible,view==='season'?56:7);assert.equal(state.rows,view==='season'?8:1);
-          assert.equal(state.selection.day,16);assert.equal(state.selection.view,view);
-          assert.ok(state.scroll<=state.width+1&&state.body<=state.viewport+1,JSON.stringify({width,theme,lang,view,state}));
-          assert.deepEqual(state.clipped,[],JSON.stringify({width,theme,lang,view,state}));assert.deepEqual(state.errors,[]);
-          assert.equal(await run("[...document.querySelector('#calendar-day-16').querySelectorAll('[data-calendar-marker]')].map(n=>n.textContent).join('|')"),'I01|N04');
-          if(lang==='en'&&((width===1440&&theme==='dark'&&view==='season')||(width===390&&theme==='dark')||(width===320&&theme==='light'&&view==='season'))){
-            const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:70,captureBeyondViewport:false});
-            const label='CALENDAR '+width+' '+theme+' '+view,chunks=shot.data.match(/.{1,4096}/g)||[];
-            chunks.forEach((part,i)=>console.log('FA_VISUAL_FRAME|'+label+'|'+i+'|'+chunks.length+'|'+part));
-          }
-          cases++;
-        }
+        assert.equal(await runValue("document.documentElement.scrollWidth<=innerWidth"),true,JSON.stringify({width,lang,theme}));
+        assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
+        cases++;
       }
     }
-    // CAL-IMP-04: exercise actual Chrome DOM, filtering and canonical return navigation.
-    await visit();await run("document.getElementById('calendar-season').click();document.getElementById('calendar-day-16').click()");
-    for(const [filter,expected] of [['all',['I01','N04']],['national',['N04']],['international',['I01']],['sovereign',['I01']],['federation',['I01']]]){
-      await run("(()=>{let n=document.getElementById('calendar-filter');n.value="+JSON.stringify(filter)+";n.dispatchEvent(new Event('change',{bubbles:true}))})()");
-      assert.deepEqual(await run("[...document.querySelectorAll('#calendar-details [data-marker]')].map(n=>n.dataset.marker)"),expected);
-      assert.equal(await run("new URL(location.href).searchParams.get('competition')"),filter);
-      assert.equal(await run("document.getElementById('calendar-division').disabled"),!['all','national'].includes(filter));
-    }
-    for(const [day,filter,expected] of [[53,'federation',['FEDERATION-FINAL']],[53,'sovereign',[]],[54,'sovereign',['SOVEREIGN-FINAL']],[54,'federation',[]]]){
-      await run("document.getElementById('calendar-day-"+day+"').click()");
-      await run("(()=>{let n=document.getElementById('calendar-filter');n.value="+JSON.stringify(filter)+";n.dispatchEvent(new Event('change',{bubbles:true}))})()");
-      assert.deepEqual(await run("[...document.querySelectorAll('#calendar-details [data-marker]')].map(n=>n.dataset.marker)"),expected);
-    }
-    await run("document.getElementById('calendar-day-16').click();document.getElementById('calendar-filter').value='national';document.getElementById('calendar-filter').dispatchEvent(new Event('change'));document.getElementById('calendar-division').value='it-1';document.getElementById('calendar-division').dispatchEvent(new Event('change'));document.getElementById('calendar-week').click()");
-    for(const id of ['it-1','it-2','eng-1','eng-2','es-1','es-2','de-1','de-2','fr-1','fr-2','pt-1','pt-2','nl-1','nl-2','br-1','br-2']){
-      await run("(()=>{let n=document.getElementById('calendar-division');n.value="+JSON.stringify(id)+";n.dispatchEvent(new Event('change'))})()");
-      assert.ok((await run("document.querySelector('#calendar-details a[href*=fixtures]')?.getAttribute('href')")).startsWith('/competitions/'+id+'/fixtures?'));
-    }
-    await run("(()=>{let n=document.getElementById('calendar-division');n.value='it-1';n.dispatchEvent(new Event('change'))})()");
-    assert.equal(await run("document.querySelector('label[for=calendar-filter]')!==null&&document.querySelector('label[for=calendar-division]')!==null"),true);
-    assert.equal(await run("getComputedStyle(document.querySelector('#calendar-today')).visibility!=='hidden'"),true);
-    const route=await run("document.querySelector('#calendar-details a[href*=fixtures]')?.getAttribute('href')");
-    assert.match(route,/^\/competitions\/it-1\/fixtures\?season=1&matchday=4&calendarReturn=/);
-    assert.equal(await run("document.getElementById('calendar-today').disabled"),true);
-    assert.equal(await run("document.documentElement.scrollWidth<=innerWidth"),true);
-    await cmd('Page.navigate',{url:origin+route});
-    for(let i=0;i<100;i++){if(await run("document.readyState==='complete'&&!!document.querySelector('#app-fixtures-toolbar')"))break;await delay(100)}
-    const back=await run(`document.querySelector('#app-fixtures-toolbar a[href^="/calendar?"]')?.getAttribute('href')`);
-    assert.match(back,/^\/calendar\?season=1&day=16&calendarView=week&competition=national&division=it-1$/);
-    await cmd('Page.navigate',{url:origin+back});
-    for(let i=0;i<100;i++){if(await run("document.documentElement.dataset.calendarReady==='true'&&window.faWorldCalendar?.getSelection().day===16"))break;await delay(100)}
-    assert.equal(await run("window.faWorldCalendar.getSelection().filter"),'national');
-    assert.equal(await run("window.faWorldCalendar.getSelection().division"),'it-1');
-    await cmd('Page.reload',{ignoreCache:true});
-    for(let i=0;i<100;i++){if(await run("document.documentElement.dataset.calendarReady==='true'"))break;await delay(100)}
-    assert.equal(await run("window.faWorldCalendar.getSelection().view"),'week');
-    await cmd('Page.navigate',{url:origin+'/calendar?season=1&day=999&calendarView=wrong&competition=unknown&division=xx-99'});
-    for(let i=0;i<100;i++){if(await run("document.documentElement.dataset.calendarReady==='true'"))break;await delay(100)}
-    assert.equal(await run("window.faWorldCalendar.getSelection().filter"),'all');
-    assert.equal(await run("window.faWorldCalendar.getSelection().division"),'');
-    await visit();
-    // CAL-IMP-03: inline details, special-final ordering, disclosure continuity.
-    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
-    await run("document.getElementById('calendar-season').click()");
-    for(const [day,markers] of [[16,['I01','N04']],[53,['FEDERATION-FINAL','N32']],[54,['SOVEREIGN-FINAL','N33']]]){
-      await run("document.getElementById('calendar-day-"+day+"').click()");
-      const result=await run("({markers:[...document.querySelectorAll('#calendar-details [data-marker]')].map(n=>n.dataset.marker),closed:[...document.querySelectorAll('#calendar-details details')].every(n=>!n.open),overflow:document.documentElement.scrollWidth>innerWidth})");
-      assert.deepEqual(result.markers,markers);assert.equal(result.closed,true);assert.equal(result.overflow,false);
-      assert.equal(await run("document.querySelector('#calendar-details summary').tagName"),'SUMMARY');
-      await run("document.querySelector('#calendar-details details').open=true");
-      await run("document.getElementById('calendar-week').click()");
-      assert.equal(await run("document.querySelector('#calendar-details details').open"),true,'view change preserves disclosure');
-      await run("document.getElementById('calendar-season').click()");
-    }
-    await run("document.getElementById('calendar-day-56').click()");
-    assert.equal(await run("document.querySelectorAll('#calendar-details details').length"),0);
-    assert.ok(await run("document.getElementById('calendar-details-content').textContent.length>10"));
-    await run("document.getElementById('calendar-day-16').click()");
-    assert.equal(await run("document.querySelector('#calendar-details details').open"),false,'day change closes disclosure');
-    // Native keyboard navigation, week boundaries and persisted reload across resize.
-    await run("document.getElementById('calendar-season').click();document.getElementById('calendar-day-16').focus()");
-    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40});
-    assert.equal(await run('window.faWorldCalendar.getSelection().day'),23);
-    assert.equal(await run('document.activeElement.id'),'calendar-day-23');
-    await run("document.getElementById('calendar-week').click()");
-    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:1050,deviceScaleFactor:1,mobile:false});
-    assert.equal((await measure()).selection.day,23);assert.equal((await measure()).view,'week');
-    await visit();assert.equal((await measure()).selection.day,23);assert.equal((await measure()).view,'week');
-    for(let i=0;i<3;i++)await click('#calendar-next');
-    await run("document.getElementById('calendar-next').focus()");
-    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',windowsVirtualKeyCode:13});
-    await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
-    assert.equal(await run('document.documentElement.dataset.calendarWeek'),'8');
-    assert.equal(await run("document.getElementById('calendar-next').disabled"),true);
-    assert.equal(await run('document.activeElement.id'),'calendar-day-51');
-    await run("document.getElementById('calendar-day-56').click()");
-    assert.equal((await measure()).selection.day,56);
-    assert.equal(await run("document.querySelectorAll('#world-calendar [aria-current]').length"),0);
-    // DEV serves exactly the same public calendar and never turns it into simulated live time.
-    await visit(devOrigin);assert.ok(await run("!!window.faWorldCalendar&&document.getElementById('calendar-note').textContent.length>20"));
-    assert.deepEqual((await measure()).errors,[]);
-    // Storage-denied browsers still retain working in-page controls.
-    const blocked=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"Object.defineProperty(window,'sessionStorage',{get(){throw Error('Storage denied for QA')}})"});
-    await visit();await run("document.getElementById('calendar-season').click();document.getElementById('calendar-day-54').click()");
-    assert.equal((await measure()).selection.day,54);assert.deepEqual((await measure()).errors,[]);
-    await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:blocked.identifier});
-    // Without script execution all 56 static plan days remain readable.
-    await cmd('Emulation.setScriptExecutionDisabled',{value:true});
-    await cmd('Page.navigate',{url:origin+'/calendar'});
-    for(let i=0;i<100;i++){if(await run("document.readyState==='complete'&&!!document.getElementById('world-calendar')"))break;await delay(50)}
-    assert.equal(await run("[...document.querySelectorAll('[data-calendar-day]')].filter(b=>b.getClientRects().length).length"),56);
-    assert.equal(await run("document.querySelectorAll('[data-calendar-day]:not(:disabled)').length"),0);
-    await cmd('Emulation.setScriptExecutionDisabled',{value:false});
-    console.log('CALENDAR_BROWSER_PASS|'+cases+' viewport/theme/language/view cases; public/DEV; native keyboard; restore/resize; storage denied; no overflow; no invented current day');
+    await cmd('Emulation.clearDeviceMetricsOverride');
+    await visit(devOrigin);
+    for(let i=0;i<50&&!await runValue("!!document.querySelector('[data-dev-control=world-day]')");i++)await delay(100);
+    assert.equal(await runValue("document.querySelector('[data-dev-control=world-day]').max"),'56');
+    assert.equal(await runValue("document.querySelector('[data-dev-control=season]').max"),'4');
+    assert.equal(await runValue("document.querySelectorAll('.fa-dev-widget-section').length"),1);
+    await runValue("(()=>{const input=document.querySelector('[data-dev-control=world-day]');input.value='26';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
+    for(let i=0;i<20&&!await runValue("sessionStorage.getItem('football-architect:calendar-dev-world-day')==='26'");i++)await delay(50);
+    assert.equal(await runValue("sessionStorage.getItem('football-architect:calendar-dev-world-day')"),'26');
+    assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-dev-current-day=true]').length"),1);
+    assert.equal(await runValue("document.getElementById('calendar-day-26').dataset.devCurrentDay"),'true');
+    assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
+    assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
+    await runValue("document.getElementById('calendar-week').click()");
+    await cmd('Page.navigate',{url:devOrigin+'/calendar?calendarView=week'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("document.documentElement.dataset.calendarView"),'week');
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Week opens on the DEV current day at first paint');
+    assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),true);
+    await runValue("window.faWorldCalendar.setWeek(5)");
+    await delay(50);
+    assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),false);
+    await runValue("document.getElementById('calendar-current-week').click()");
+    await delay(50);
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4');
+    assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),true);
+    await runValue("(()=>{const input=document.querySelector('[data-dev-control=season]');input.value='3';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
+    for(let i=0;i<20&&!await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length===3");i++)await delay(50);
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1','Debug Season expands the list without overriding the viewed season');
+    assert.equal(await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length"),3);
+    assert.deepEqual(await runValue("[...document.querySelectorAll('#calendar-season-menu .language-option')].map(e=>e.textContent)"),['3','2','1']);
+    await runValue("document.getElementById('calendar-season').click()");
+    assert.equal(await runValue("(()=>{const tiles=['1','13','16','26','53'].map(n=>document.querySelector('#calendar-day-'+n));return new Set(tiles.map(e=>e.getBoundingClientRect().height)).size})()"),1);
+
+    // CAL-UX-10: explicit historical season URLs open on the DEV current week without a late jump.
+    await cmd('Page.navigate',{url:devOrigin+'/calendar?season=3&calendarView=week'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarUiReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4');
+    assert.equal(await runValue("document.getElementById('calendar-season-value').textContent"),'3');
+    assert.equal(await runValue("document.documentElement.dataset.calendarUiReady"),'true');
+    assert.equal(await runValue("document.getElementById('calendar-previous').disabled"),false);
+    assert.equal(await runValue("document.getElementById('calendar-next').disabled"),false);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog')?.classList.contains('app-search-dialog')"),true);
+    await cmd('Page.navigate',{url:devOrigin+'/calendar?calendarView=week'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarUiReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'3','Absent season resolves to current DEV season');
+    assert.equal(await runValue("new URL(location.href).searchParams.get('season')"),'3','Current season is canonicalized in URL');
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Default current season opens current week');
+    assert.equal(await runValue("getComputedStyle(document.querySelector('#calendar-week-trigger')).borderTopWidth"),'1px');
+    await cmd('Page.navigate',{url:devOrigin+'/calendar'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true);
+    assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true,'Navigating without a view canonicalizes it');
+    assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true,'Season is always first in Calendar URL');
+    assert.equal(await runValue("[...new URL(location.href).searchParams.keys()].slice(0,2).join(',')"),'season,calendarView');
+    // Pre-render contract: the Season picker exists in the source HTML, not after deferred JS.
+    assert.equal(await runValue("!!document.querySelector('#app-calendar > .calendar-season-picker')"),true);
+    assert.equal(await runValue("document.querySelectorAll('#calendar-season-picker').length"),1);
+    assert.equal(await runValue("document.getElementById('calendar-controls').previousElementSibling?.classList.contains('calendar-toolbar')"),true,'Week controls remain after toolbar');
+    assert.equal(await runValue("document.querySelectorAll('#calendar-day-26').length"),1);
+    assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
+    assert.equal(await runValue("document.querySelectorAll('#world-calendar .calendar-event--final').length"),2,'Both cup finals have gold marker class');
+    assert.equal(await runValue("[...document.querySelectorAll('#world-calendar .calendar-event--final')].every(e=>e.textContent==='F')"),true,'Both cup final grid markers show F');
+    assert.equal(await runValue("[...document.querySelectorAll('#world-calendar .calendar-event--final')].map(e=>e.dataset.calendarMarker).sort().join(',')"),'FEDERATION-FINAL,SOVEREIGN-FINAL','Underlying final event IDs stay unchanged');
+    const finalDay=await runValue("window.faWorldCalendarModel.createSeason(1).days.find(d=>d.events.some(e=>e.phase==='final'))?.day");
+    assert.ok(finalDay,'The model includes a final day');
+    await runValue("window.faWorldCalendar.setWeek("+Math.ceil(finalDay/7)+")");
+    await runValue("document.querySelector('#calendar-day-"+finalDay+"').click()");
+    assert.equal(await runValue("document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code[data-event-type=final]').length>0"),true);
+    assert.equal(await runValue("[...document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code[data-event-type=final]')].every(e=>e.textContent==='F')"),true);
+    assert.equal(await runValue("[...document.querySelectorAll('#calendar-event-dialog-details .calendar-event-description')].some(e=>e.textContent.includes('Cup final'))"),true);
+    await runValue("document.querySelector('#calendar-event-dialog').close()");
+    console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
     for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);

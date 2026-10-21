@@ -30,7 +30,7 @@
     for(const button of buttons){
       const d=days[Number(button.dataset.calendarDay)-1],selected=d.day===state.day;
       button.disabled=false;button.tabIndex=selected?0:-1;
-      button.setAttribute('aria-pressed',String(selected));button.setAttribute('aria-label',label(d,w));
+      button.setAttribute('aria-pressed','false');button.setAttribute('aria-label',label(d,w));
       button.querySelector('.calendar-day-kind').textContent=kind(d,w);
     }
     for(const view of ['season','week']){get(view).textContent=w[view];get(view).disabled=false;get(view).setAttribute('aria-pressed',String(view===state.view))}
@@ -47,7 +47,6 @@
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
-    try{sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,day:state.day,view:state.view}))}catch{}
     saveUrl(true);
     if(focus)buttons[state.day-1].focus();
   }
@@ -55,7 +54,7 @@
   get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;change({day},day<=7)}});
   get('next').addEventListener('click',()=>{if(state.day<=49){const day=state.day+7;change({day},day>49)}});
   for(const button of buttons){
-    button.addEventListener('click',()=>change({day:Number(button.dataset.calendarDay)}));
+    button.addEventListener('click',()=>{if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)})});
     button.addEventListener('keydown',event=>{
       const day=state.day,start=Math.floor((day-1)/7)*7+1;
       const target={ArrowLeft:day-1,ArrowRight:day+1,ArrowUp:day-(state.view==='season'?7:1),ArrowDown:day+(state.view==='season'?7:1),PageUp:day-7,PageDown:day+7,
@@ -162,8 +161,8 @@
     (filter==='federation'&&e.competitionIds.includes('federation-cup'));
   const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
   const returnPath=()=>{
-    const p=new URLSearchParams({season:'1',day:String(state.day),calendarView:state.view,competition:filter});
-    if(division)p.set('division',division);
+    const p=new URLSearchParams({season:String(window.faCalendarSelectedSeason?.()||1),calendarView:state.view});
+    
     return '/calendar?'+p.toString();
   };
   const saveUrl=push=>{
@@ -176,7 +175,7 @@
     if(!hasLocation())return;
     const p=new URL(window.location.href).searchParams;
     filter='all';division=''; // Missing or malformed history parameters cannot inherit stale filters.
-    if(p.get('season')==='1'&&/^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(p.get('day')||''))state.day=Number(p.get('day'));
+    
     if(['season','week'].includes(p.get('calendarView')))state.view=p.get('calendarView');
     if(filters.includes(p.get('competition')))filter=p.get('competition');
     if(validDivision(p.get('division')||''))division=p.get('division');
@@ -192,7 +191,7 @@
     divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
     window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
   }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division})});
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
 })();
