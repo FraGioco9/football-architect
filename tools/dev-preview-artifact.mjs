@@ -50,7 +50,7 @@ function debugHtml(bytes,path) {
   throw Error("Unsafe protected Debug HTML: "+path);
  const detail=/^competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(path);
  return Buffer.from(html.replace("</head>",
-  DEBUG_FIRST_PAINT+(detail||path==="competitions/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");
+  DEBUG_FIRST_PAINT+(detail||path==="competitions/index.html"||path==="calendar/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");
 }
 
 function expectedBytes(sourceRoot,debugRoot) {
