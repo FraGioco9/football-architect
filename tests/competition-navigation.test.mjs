@@ -100,7 +100,7 @@ test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views
 });
 
 test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes retain the in-page selection',()=>{
- const s=setup('/competitions/it-1?season=1&matchday=12');
+ const s=setup('/competitions/it-1/fixtures?season=1&matchday=12');
  s.tabs[0].events.click();
  assert.equal(s.window.location.search,'?season=1');
  const refreshed=setup(s.window.location.href);
@@ -130,7 +130,7 @@ test('COMPETITION-TABS-SCROLL: edge hints follow scrolling and selection stays v
 });
 
 test('HISTORY-URL: season links use Standings and preserve browser navigation',()=>{
- const s=setup('/competitions/it-1');
+ const s=setup('/competitions/it-1/history');
  s.window.faCompetitionRoute.set({season:'1',view:'standings'},{focus:true});
  assert.equal(s.window.location.search,'?season=1');
  assert.equal(s.tabs[0].focused,true);
