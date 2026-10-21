@@ -1281,7 +1281,7 @@
         "fr": "FR", "pt": "PT", "nl": "NL", "br": "BR"
       })[asset.match(/\/assets\/flags\/([a-z-]+)\.svg(?:[?#]|$)/)?.[1]];
       const name = worldCountryNames[language()]?.[code] || (flag.tagName.toLowerCase() === "img" ? flag.alt : "");
-      if (name) flag.setAttribute("title", name);
+      if (name) { flag.setAttribute("title", name); flag.setAttribute("data-country-tooltip", name); }
     }
     const detail = document.getElementById("division-detail-name");
     if (activeView() !== "clubs") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
