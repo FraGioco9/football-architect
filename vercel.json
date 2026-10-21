@@ -19,6 +19,16 @@
       "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html",
       "destination": "/competitions/:division",
       "permanent": true
+    },
+    {
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])",
+      "destination": "/competitions/:division/overview",
+      "permanent": true
+    },
+    {
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)/",
+      "destination": "/competitions/:division/:view",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -32,6 +42,10 @@
     },
     {
       "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])",
+      "destination": "/competitions/:division/index.html"
+    },
+    {
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)",
       "destination": "/competitions/:division/index.html"
     }
   ]

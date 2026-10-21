@@ -14,7 +14,7 @@
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/landing.css">
   <link rel="stylesheet" href="/assets/app.css">
-  <script>(()=>{const p=new URLSearchParams(location.search),v=p.get("view"),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:"standings";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\d{0,8}$/.test(s||"")&&s!=="1")})();</script>
+  <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:"standings";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\d{0,8}$/.test(s||"")&&s!=="1")})();</script>
   <script src="/assets/competition-model.js" defer></script>
   <script src="/assets/competition-page.js" defer></script>
 </head>
