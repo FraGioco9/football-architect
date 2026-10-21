@@ -322,7 +322,7 @@ test("COMPETITIONS-08 uses approved canonical primary names for all 256 particip
 test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",()=>{
  const shared=read("competitions/_shared/index.html"),loader=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
- assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
+ assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="25" height="20"'));
  assert.ok(shared.includes('class="app-world-flag-frame" aria-hidden="true"'));
  assert.ok(!shared.includes('id="app-competition-flag" alt="" src='));
  assert.ok(loader.includes('flag.tagName.toLowerCase() !== "svg"'));
@@ -385,4 +385,17 @@ test("HISTORY-ARCHIVE-LINK-01 anchors have text-only hit areas and flags share n
  assert.ok(!dev.includes('button.addEventListener("click",()=>openHistorySeason(item.season))'));
  assert.ok(css.includes(".app-world-standing-club-link{display:inline;width:max-content;"));
  assert.ok(landing.includes('img[src*="assets/flags/"]{border-radius:0;clip-path:none;object-fit:contain}'));
+});
+
+test("FLAG-54 generated competition flags have vector 5:4 viewport",()=>{
+ const pages=["competitions/index.html",...["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"))];
+ for(const file of pages){
+  const html=read(file),flags=[...html.matchAll(/<svg class="app-world-flag"[\\s\\S]*?<\\/svg>/g)];
+  assert.ok(flags.length>0,file+" must contain inline SVG flags");
+  for(const [svg] of flags){
+   assert.match(svg,/viewBox="0 0 5 4"/,file);
+   assert.match(svg,/width="25" height="20"/,file);
+   assert.match(svg,/<g transform="matrix\\([^"]+\\)">/,file);
+  }
+ }
 });
