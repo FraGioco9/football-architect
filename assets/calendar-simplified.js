@@ -12,7 +12,7 @@
  const trigger=selector.querySelector('#calendar-season-picker'),menu=selector.querySelector('#calendar-season-menu'),value=selector.querySelector('#calendar-season-value');
  document.getElementById('calendar-title')?.after(selector);
  function closeMenu(){menu.hidden=true;trigger.setAttribute('aria-expanded','false')}
- function chooseSeason(n){selectedSeason=n;const url=new URL(location.href);url.searchParams.set('season',String(n));url.searchParams.delete('day');history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
+ function chooseSeason(n){selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.searchParams.set('season',String(n));url.searchParams.delete('day');history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
  trigger.addEventListener('click',()=>{menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden))});
  document.addEventListener('pointerdown',e=>{if(!selector.contains(e.target))closeMenu()});
  trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():1,selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
@@ -33,6 +33,7 @@
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
   value.textContent=String(selectedSeason);
   root.dataset.season=String(selectedSeason);
+  if(typeof updateCurrentDay==='function')updateCurrentDay();
  }
 
  window.addEventListener('fa:dev-progress-change',()=>{updateSeason();updateCurrentDay()});
@@ -59,11 +60,14 @@
   for(let n=1;n<=8;n++){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.tabIndex=0;option.textContent='Week '+n;option.addEventListener('click',()=>jump(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump(n)}if(e.key==='Escape')closeWeek()});weekMenu.append(option)}
   current.addEventListener('click',()=>jump(currentWeek()));
   label.hidden=true;label.after(wrap,current);
+  const syncControls=()=>{const showing=document.documentElement.dataset.calendarView==='week';weekControls.hidden=!showing;if(showing)weekControls.style.display='flex';else weekControls.style.display='none';syncWeek()};
+  new MutationObserver(syncControls).observe(document.documentElement,{attributes:true,attributeFilter:['data-calendar-view','data-calendar-week']});
+  for(const mode of ['calendar-season','calendar-week'])document.getElementById(mode)?.addEventListener('click',()=>queueMicrotask(syncControls));
   function syncWeek(){const n=Number(document.documentElement.dataset.calendarWeek)||1;weekValue.textContent='Week '+n;for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.disabled=!dev}
   for(const a of [prev,next])a.addEventListener('click',()=>queueMicrotask(syncWeek));
   window.addEventListener('popstate',()=>queueMicrotask(syncWeek));
   window.addEventListener('fa:dev-progress-change',()=>queueMicrotask(syncWeek));
-  syncWeek();
+  syncControls();
  }
  const dialog=document.createElement('dialog');
  dialog.id='calendar-event-dialog';
