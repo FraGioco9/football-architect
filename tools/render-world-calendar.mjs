@@ -1,7 +1,7 @@
 import model from '../assets/world-calendar-model.js';
 
 // Resolve presentation-only state before styles paint. No world-clock state is read.
-export const calendarBootstrap=`(()=>{let day=1,view=window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches?'week':'season';try{const s=JSON.parse(sessionStorage.getItem('football-architect:calendar-selection'));if(s&&s.version===1&&Number.isInteger(s.day)&&s.day>=1&&s.day<=56&&['season','week'].includes(s.view)){day=s.day;view=s.view}}catch{}const d=document.documentElement.dataset;d.calendarView=view;d.calendarDay=String(day);d.calendarWeek=String(Math.ceil(day/7))})();`;
+export const calendarBootstrap=`(()=>{let day=1,view=window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches?'week':'season';try{const s=JSON.parse(sessionStorage.getItem('football-architect:calendar-selection'));if(s&&s.version===1&&['season','week'].includes(s.view)){day=Number.isInteger(s.day)&&s.day>=1&&s.day<=56?s.day:1;view=s.view}}catch{}const d=document.documentElement.dataset;d.calendarView=view;d.calendarDay=String(day);d.calendarWeek=String(Math.ceil(day/7))})();`;
 
 export function renderWorldCalendar(){
   const days=model.createSeason(1).days;
