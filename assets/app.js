@@ -1251,7 +1251,8 @@
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
-    if (path.startsWith("/clubs/") || path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
+    if (path.startsWith("/clubs/")) return "clubs";
+    if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";
     if (path === "/dashboard") return "dashboard";
@@ -1271,7 +1272,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
   }
   function renderView() {
     rewriteAppLinks();
