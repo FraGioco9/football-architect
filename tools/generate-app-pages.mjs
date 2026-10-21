@@ -100,7 +100,7 @@ const competitionRoute = d=>{
  for(const [token,value] of Object.entries(worldPageReplacements(d)))html=html.replace(token,value);
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
- const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\\d{0,8}$/.test(s||\"\")&&s!==\"1\")})();";
+ const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=(location.pathname||\"\").split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\\d{0,8}$/.test(s||\"\")&&s!==\"1\")})();";
  return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
