@@ -55,11 +55,39 @@ test('A partial first season shows the completed-seasons empty state inside Seas
  assert.equal(table.children.length,2,'Completed seasons restore the archive header and list');
  assert.equal(table.children[1].className,'app-history-dev-archive');
 });
-test('Season archive only navigates to Standings and never claims a selected History season',()=>{
- const source=client.slice(client.indexOf('  for(const item of [...seasons].reverse()){'),client.indexOf('  const records=section("historyHistoricalRecords"',client.indexOf('  for(const item of [...seasons].reverse()){')));
- assert.ok(source.includes('button.dataset.historySeason=String(item.season)'));
- assert.ok(source.includes('button.addEventListener("click",()=>openHistorySeason(item.season))'));
- assert.doesNotMatch(source,/aria-pressed|chosen/,'Archive rows are navigation buttons, not toggle selections');
+test('Season archive links retain native navigation and guard in-page Standings changes',()=>{
+ const start=client.indexOf('  for(const item of [...seasons].reverse()){');
+ const end=client.indexOf('  const records=section("historyHistoricalRecords"',start);
+ const helpers=client.slice(client.indexOf('function historyIdentity('),client.indexOf('function historyExpandableHolders('));
+ const node=(tag,className='',textContent='')=>({tag,className,textContent,children:[],dataset:{},attributes:{},events:{},
+  append(...items){this.children.push(...items)},setAttribute(key,value){this.attributes[key]=value},
+  addEventListener(kind,fn){this.events[kind]=fn}});
+ const list=node('ol'),changes=[],document={documentElement:{dataset:{}},createTextNode:text=>node('#text','',text)};
+ const window={faCompetitionRoute:{get:()=>({season:'1',view:'history'}),set:(...args)=>changes.push(args)}};
+ runInNewContext(helpers+client.slice(start,end),{
+  historyNode:node,historyLabel:key=>node('span','',key),document,window,list,
+  seasons:[table(1,[1,2,3]),table(2,[4,5,6])],division:{id:'IT-1'}
+ });
+ assert.equal(list.children.length,2);
+ const row=list.children[0].children[0],link=row.children[0];
+ assert.equal(row.tag,'div','The whole row must not be a clickable button');
+ assert.deepEqual(Object.keys(row.events),[]);
+ assert.equal(link.tag,'a');
+ assert.equal(link.href,'/competitions/it-1/standings?season=2');
+ assert.equal(row.children.length,4,'Keep all three podium identities next to the season link');
+ assert.ok(row.children.slice(1).every(rank=>rank.children[1].children[1].tag==='a'));
+ assert.equal(link.attributes['aria-pressed'],undefined);
+ assert.equal(typeof link.events.click,'function','Primary activation uses the guarded competition router');
+ let prevented=0;
+ const click={button:0,preventDefault(){prevented++}};
+ link.events.click(click);
+ assert.equal(prevented,1);
+ assert.equal(document.documentElement.dataset.faDevSeasonTransition,'true');
+ assert.deepEqual(plain(changes),[[{season:'2',view:'standings'},{focus:true}]]);
+ for(const modifiers of [{ctrlKey:true},{metaKey:true},{shiftKey:true},{altKey:true},{button:1},{defaultPrevented:true}])
+  link.events.click({...click,...modifiers});
+ assert.equal(prevented,1,'Modified clicks retain native new-tab/window behavior');
+ assert.equal(changes.length,1);
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.doesNotMatch(css,/app-history-dev-season-button\[aria-pressed=/);
 });
@@ -262,7 +290,7 @@ test('History improved layout preserves archive navigation, confirmed records an
  const page=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
  assert.match(client,/app-history-dev-archive-champion/);
- assert.match(client,/button\.addEventListener\("click",\(\)=>openHistorySeason\(item\.season\)\)/);
+ assert.match(client,/seasonLink\.href="\/competitions\/"/);
  assert.match(client,/if\(result\.value===null\)continue/);
  assert.match(client,/const holders=historyNode\("div","app-history-record-holders"\)/);
  assert.doesNotMatch(client,/historyProvisional|app-history-provisional/);
@@ -289,7 +317,9 @@ test('Stats Teams rows align rank, crest, wrapping name and numeric value withou
  assert.match(source,/\.fa-dev-stats-top li\{[^}]*grid-template-columns:24px minmax\(0,1fr\) minmax\(3\.5ch,auto\)/);
  assert.match(source,/\.fa-dev-stats-top li>strong\{[^}]*justify-self:end;[^}]*text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums/);
  assert.match(source,/\.fa-dev-stats-top \.fa-dev-stats-team-name\{[^}]*white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere/);
- assert.match(source,/identity\.append\(crest,create\("span",team\.clubName,"fa-dev-stats-team-name"\)\)/);
+ assert.match(source,/const link=create\("a",team\.clubName,"fa-dev-stats-team-name app-world-standing-club-link"\)/);
+ assert.match(source,/link\.href="\/clubs\/"\+division\.countryId\.toLowerCase\(\)\+"\/"\+team\.clubId\+"\/overview"/);
+ assert.match(source,/identity\.append\(crest,link\)/);
  assert.match(source,/\.fa-dev-stats-top \.app-world-club-identity\{[^}]*align-items:center;min-width:0/);
  assert.match(source,/\.fa-dev-stats-top \.app-world-club-crest-placeholder\{flex-shrink:0\}/);
  assert.match(source,/app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);

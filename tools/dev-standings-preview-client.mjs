@@ -268,6 +268,10 @@ async function renderHistoryPreview(){
    const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
    seasonLink.href="/competitions/"+division.id.toLowerCase()+"/standings?season="+encodeURIComponent(item.season);
    seasonLink.append(historySeasonLabel(item.season));
+   seasonLink.addEventListener("click",event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();openHistorySeason(item.season);
+   });
    row.append(seasonLink);
    item.rows.slice(0,3).forEach((entry,index)=>{
     const rank=historyNode("span","app-history-dev-archive-club"+(index===0?" app-history-dev-archive-champion":""));
