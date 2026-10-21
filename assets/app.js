@@ -1280,7 +1280,7 @@
     dashboard.hidden = current !== "dashboard";
     calendar.hidden = current !== "calendar";
     settings.hidden = current !== "settings";
-    if (divisions) divisions.hidden = current !== "divisions";
+    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs";
     for (const [view, link] of Object.entries(links)) {
       if (!link) continue;
       const selected = current === view;
