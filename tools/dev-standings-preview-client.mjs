@@ -290,7 +290,11 @@ async function renderHistoryPreview(){
    if(result.entries){
     for(const {club,season} of result.entries){
      const entry=historyNode("div","app-history-dev-record-entry");entry.dataset.historyRecordSeason=String(season);
-     entry.append(historyIdentity(club),historySeasonLabel(season));holders.append(entry);
+     const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
+      const divisionId=window.faCompetitionDivision?.id||division?.id;
+      seasonLink.href="/competitions/"+String(divisionId).toLowerCase()+"/standings?season="+encodeURIComponent(season);
+      seasonLink.append(historySeasonLabel(season));
+      entry.append(historyIdentity(club),seasonLink);holders.append(entry);
     }
    }else for(const club of result.clubs){
     const entry=historyNode("div","app-history-dev-record-entry");
