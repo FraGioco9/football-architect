@@ -208,7 +208,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
  assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;align-items:center;justify-content:center;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none}"));
- assert.ok(css.includes(".app-world-flag{display:block;width:24px;height:16px;flex:none;object-fit:fill;border:0;border-radius:0;clip-path:none}"));
+ assert.ok(css.includes(".app-world-flag{display:block;width:100%;height:100%;flex:none;object-fit:contain;border:0;border-radius:0;clip-path:none}"));
  assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
  assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
 });
