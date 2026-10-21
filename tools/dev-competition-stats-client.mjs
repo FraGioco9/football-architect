@@ -27,7 +27,7 @@ await new Promise(resolve=>{
  });
  observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-club-ready']});
 });
-for(const event of ['fa:fictional-standings-change','fa:dev-world-day-change','pageshow'])window.addEventListener(event,refresh);
+for(const event of ['fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
 window.addEventListener('storage',event=>{if(event.key?.startsWith('football-architect:'))refresh();});
 await refresh();
 

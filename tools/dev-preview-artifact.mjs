@@ -10,7 +10,7 @@ export const DEBUG_SEASON_BOOTSTRAP='<script>document.documentElement.dataset.fa
 const MANIFEST="__fa_dev__/artifact-manifest.json";
 // Injected only into DEV responses/artifacts, before the body can paint.
 export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings,html[data-fa-debug-pending=\"true\"] #competition-panel-fixtures,html[data-fa-debug-pending=\"true\"] #competition-panel-history{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
-export const CLUB_SUMMARY_INJECTION='<script type="module" data-fa-dev-club-summary src="/__fa_dev__/stats-client.mjs"></script>';
+export const CLUB_SUMMARY_INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" data-fa-dev-club-summary src="/__fa_dev__/stats-client.mjs"></script>';
 const INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" src="/__fa_dev__/stats-client.mjs"></script>';
 const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],

@@ -82,10 +82,10 @@ test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed ro
 });
 
 test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset preview",async()=>{
- const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath){'),client.indexOf('\nfunction strings()'));
  const events={};let season=1,finishBoot;
  const context={
-  validPath:['/competitions/it-1','it-1'],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>String(season),
+  validPath:['/competitions/it-1','it-1'],indexPath:false,clubPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>String(season),
   window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
   document:{documentElement:{dataset:{}},querySelector:()=>null,querySelectorAll:()=>[]},
   selectedSeason:()=>season,availablePreviewSeasons:()=>[1,2,3,4],setSeason(){},
@@ -449,7 +449,7 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
 test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
-  const start = client.indexOf("if(validPath||indexPath){");
+  const start = client.indexOf("if(validPath||indexPath||clubPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");
   const initializer = client.slice(start, end);
@@ -462,7 +462,7 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
     const widgetMounted = new Promise(resolve => { signalMounted = resolve; });
     const operations = [];
     runWithModel(initializer, {
-      validPath: ["/competitions/it-1/", "it-1"],indexPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
+      validPath: ["/competitions/it-1/", "it-1"],indexPath:false,clubPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>"1:1:0",
       window: {faCompetitionRoute:{subscribe(){}},addEventListener(){}},
       selectedSeason: () => 1,
       syncHistoryPreview: () => {},
@@ -684,11 +684,11 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
 test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and rejects stale commits",async()=>{
  assert.ok(serverSource.includes('html[data-fa-dev-season-transition="true"] #competition-panel-standings'),
   "The DEV server must install its visibility rule before the route changes");
- const initializer=client.slice(client.indexOf('if(validPath||indexPath){'),client.indexOf('\nfunction strings()'));
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath){'),client.indexOf('\nfunction strings()'));
  const events={},dataset={},pending=[],cleanups=[];
  let season=4;
  const context={
-  validPath:['/competitions/it-1','it-1'],indexPath:false,syncCompetitionLinks(){},
+  validPath:['/competitions/it-1','it-1'],indexPath:false,clubPath:false,syncCompetitionLinks(){},
   debugSeason:4,matchdays:30,renderKey:()=>String(season),
   window:{faCompetitionRoute:{get:()=>({season:String(season)})},addEventListener(name,fn){(events[name]??=[]).push(fn)}},
   document:{documentElement:{dataset},querySelector:()=>null,querySelectorAll:()=>[]},

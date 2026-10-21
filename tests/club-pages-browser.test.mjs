@@ -113,6 +113,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Position',de:'Platz',es:'Posición',fr:'Position',it:'Posizione'}[lang]);
      const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-summary').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
      assert.equal(cardLayout.full,true,'Competition spans the Overview width');
+     assert.equal(await run("(()=>{const labels=[...document.querySelectorAll('.club-competition-metrics dt,.club-competition-next>.club-competition-label')].map(el=>el.getBoundingClientRect().top);return labels.length===3&&Math.max(...labels)-Math.min(...labels)<2})()"),true,'Position, points and next match share a row at '+width);
+     assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No provisional allocation label');
      assert.equal(width===1440?cardLayout.sideBySide:cardLayout.stacked,true,'Competition uses desktop columns and compact mobile rows');
      assert.equal(await run("document.querySelector('.club-description').textContent===document.querySelector('.club-description').dataset.originalDescription"),true);
      assert.equal(await run("document.querySelector('.club-kits').textContent.trim().length>0"),true);
@@ -173,7 +175,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.club-competition .club-competition-empty').length"),1);
     assert.equal(await run("document.querySelector('.club-competition img,.club-competition .club-competition-status')"),null);
     await visit('/clubs/it/1/overview',devOrigin);
-    assert.equal(await run("document.querySelector('[data-fa-dev-preview]')"),null);
+    await wait("document.querySelector('.fa-dev-widget')!==null");
+    assert.equal(await run("document.querySelectorAll('.fa-dev-widget').length"),1);
     const division=JSON.parse(readFileSync(join(artifact,'competitions/_shared/manifest.json'),'utf8')).divisions.find(d=>d.id==='IT-1');
     const current=createPreviewStandings(division,15,2),index=current.rows.findIndex(r=>r.club.clubId===1);
     const upcoming=createPreviewStandings(division,30,2).fixtures.find(f=>f.round===16&&(f.homeId===1||f.awayId===1));
@@ -195,9 +198,26 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.club-competition-next a')"),null,'Disabling DEV removes future fixtures');
      assert.equal(await run("document.activeElement.classList.contains('club-competition')"),true,'Removing a focused summary link retains focus in its panel');
     }
+    // Drive the actual shared widget rather than changing storage directly.
+    await visit('/clubs/it/1/overview',devOrigin);
+    await wait("document.querySelector('[data-dev-control=season-number]')!==null");
+    await run("document.querySelector('.fa-dev-widget-button').click()");
+    await run("(()=>{const control=document.querySelector('[data-dev-control=season-number]');control.value='3';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
+    await wait("document.querySelector('.club-competition-context')?.textContent.includes('3')");
+    await run("(()=>{const control=document.querySelector('[data-dev-control=world-day-number]');control.value='28';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
+    const advanced=createPreviewStandings(division,16,3),advancedIndex=advanced.rows.findIndex(r=>r.club.clubId===1);
+    await wait("document.querySelector('[data-club-points]')?.textContent==="+JSON.stringify(String(advanced.rows[advancedIndex].pts)));
+    assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(advancedIndex+1));
+    assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=3&matchday=17');
+    await run("document.querySelector('[data-dev-control=reset-global]').click()");
+    await wait("document.querySelector('[data-club-points]')?.textContent==='0'&&document.querySelector('.club-competition-context')?.textContent.includes('1')");
+    assert.equal(await run("document.querySelector('[data-club-position]').textContent"),'—');
+    await visit('/clubs/br/40/history',devOrigin);
+    await wait("document.querySelector('.fa-dev-widget')!==null");
     await visit('/clubs/it/1/overview');
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
     assert.equal(await run("document.querySelector('[data-club-points]').textContent"),'—','Public club pages never load fictional results');
+    assert.equal(await run("document.querySelector('.fa-dev-widget')"),null,'Public club pages never load Debug Settings');
     await cmd('Page.navigate',{url:origin+'/competitions/it-1/overview'});
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
     assert.equal(errors.length,0,errors.join('; '));

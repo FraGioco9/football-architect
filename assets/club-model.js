@@ -65,7 +65,7 @@
    '<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">'+
    '<div class="club-competition-copy"><strong class="club-competition-name">'+divisionValue+'</strong>'+
    '<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>'+
-   '<small class="club-competition-context">'+escape(summary?t.seasonLabel+' '+summary.season+' · '+t.previewLabel:t.provisional)+'</small></div></div>'+
+   (summary?'<small class="club-competition-context">'+escape(t.seasonLabel+' '+summary.season+' · '+t.previewLabel)+'</small>':'')+'</div></div>'+
    '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.positionLabel)+'</dt><dd data-club-position>'+rank+'</dd></div><div><dt>'+escape(t.pointsLabel)+'</dt><dd data-club-points>'+(summary?summary.points:'—')+'</dd></div></dl>'+
    '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span>'+nextContent+'</div></div></div>':
    '<p class="club-competition-empty">'+escape(t.outside)+'</p>';

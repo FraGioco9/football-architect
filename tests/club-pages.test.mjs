@@ -36,7 +36,7 @@ test('CLUB-01 derived manifest preserves canonical fields and provisional placem
  }
  assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,64);
 });
-test('CLUB-01 DEV redirects legacy URLs and serves all club views with only the read-only DEV summary',async()=>{
+test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared Debug Settings and the DEV summary',async()=>{
  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
  const get=path=>new Promise((resolve,reject)=>{
   const req=request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
@@ -50,7 +50,8 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views with only the 
    for(const view of clubViews){
     const page=await get(base+'/'+view);assert.equal(page.status,200);
     assert.match(page.body,/data-fa-dev-club-summary/);
-    assert.doesNotMatch(page.body,/data-fa-dev-preview|dev-debug|standings-client/);
+    assert.match(page.body,/__fa_dev__\/debug-settings\.mjs/);
+    assert.doesNotMatch(page.body,/data-fa-dev-preview|standings-client/);
    }
   }
   for(const [path,target] of [
@@ -215,7 +216,7 @@ test('CLUB-COMPETITION-02: active cards show localized metrics and inactive card
    assert.match(box,/data-club-points>—</);
    assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/overview"'));
    assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
-   assert.ok(box.includes(model.copies[lang].provisional));
+   assert.ok(!box.includes(model.copies[lang].provisional));
   }else{
    assert.equal(box.split(model.copies[lang].outside).length-1,1,'Inactive clubs show one status message');
    assert.doesNotMatch(box,/<img|<a |club-competition-layout|club-competition-status/);

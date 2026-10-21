@@ -55,6 +55,7 @@ function syncDebugControls(){
 }
 async function refreshProgress(){
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
+ if(clubPath){try{sessionStorage.setItem(FLAG,'on')}catch{return false}}
  if(validPath){
   if(!await setPreviewEnabled(true))return false;
   if(await refreshSeason()===false)return false;
@@ -124,6 +125,7 @@ const LANG = {
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
+const clubPath=/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)$/.test(location.pathname);
 const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
@@ -387,7 +389,8 @@ function setPreviewEnabled(enabled) {
  return transition;
 }
 
-if(validPath||indexPath){
+if(validPath||indexPath||clubPath){
+ if(clubPath){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
  syncCompetitionLinks();
  (validPath?waitForRows():Promise.resolve()).then(() => {
 
@@ -401,7 +404,7 @@ if(validPath||indexPath){
    if(!await resetPreview())return false;
    widgetRoot?.resetWidgetState();syncDebugControls();return true;
   }}]);
-  widgetRoot=createDebugWidget({page:validPath?"standings":"competitions"});
+  widgetRoot=createDebugWidget({page:validPath?"standings":clubPath?"clubs":"competitions"});
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};

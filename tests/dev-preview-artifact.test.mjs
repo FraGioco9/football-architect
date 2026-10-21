@@ -265,7 +265,8 @@ test('Club competition summaries are injected only into DEV/protected club HTML'
   const privateHtml=readFileSync(join(protectedPath,'clubs/_shared/index.html'),'utf8');
   assert.doesNotMatch(publicHtml,/__fa_dev__|data-fa-dev-club-summary/);
   assert.match(privateHtml,/data-fa-dev-club-summary/);
-  assert.doesNotMatch(privateHtml,/__fa_dev__\/(?:debug-settings|standings-client)/);
+  assert.match(privateHtml,/__fa_dev__\/debug-settings\.mjs/);
+  assert.doesNotMatch(privateHtml,/__fa_dev__\/standings-client/);
   assert.equal(existsSync(join(publicPath,'__fa_dev__/club-summary.mjs')),false);
   assert.equal(existsSync(join(protectedPath,'__fa_dev__/stats-client.mjs')),true);
  }finally{rmSync(root,{recursive:true,force:true})}
