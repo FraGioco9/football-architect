@@ -107,7 +107,7 @@
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
   tooltip.hidden=true;previousFocus=focus||day;
   dialog.querySelector('#calendar-event-dialog-title').textContent=t().day+' '+n;
-  dialog.querySelector('#calendar-event-dialog-subtitle').textContent='Season '+selectedSeason;
+  dialog.querySelector('#calendar-event-dialog-subtitle').textContent=t().season+' '+selectedSeason;
   const body=dialog.querySelector('#calendar-event-dialog-details');body.replaceChildren();
   if(!data.events.length){const p=document.createElement('p');p.textContent=data.kind==='preseason'?t().preseason:data.kind==='transition'?t().transition:t().empty;body.append(p)}
   for(const event of data.events){
