@@ -58,3 +58,9 @@
 
 /* Country flag SVGs already contain the canonical rounded mask. Avoid a second CSS clip. */
 .club-country-flag{border-radius:0;clip-path:none}
+
+/* Full-width competition panel beneath Identity / Kits. Two facts side by side on desktop. */
+.club-overview-layout>.club-competition{grid-column:1/-1;width:100%;box-sizing:border-box}
+.club-overview-layout>.club-competition>.club-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:10px}
+.club-overview-layout>.club-competition>.club-facts>div{min-width:0}
+@media(max-width:760px){.club-overview-layout>.club-competition>.club-facts{grid-template-columns:minmax(0,1fr)}}
