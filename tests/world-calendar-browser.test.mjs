@@ -116,6 +116,18 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.getElementById('calendar-day-26').dataset.devCurrentDay"),'true');
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
+    await runValue("document.getElementById('calendar-week').click()");
+    await visit(devOrigin);
+    assert.equal(await runValue("document.documentElement.dataset.calendarView"),'week');
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Week opens on the DEV current day at first paint');
+    assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),true);
+    await runValue("window.faWorldCalendar.setWeek(5)");
+    await delay(50);
+    assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),false);
+    await runValue("document.getElementById('calendar-current-week').click()");
+    await delay(50);
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4');
+    assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),true);
     await runValue("(()=>{const input=document.querySelector('[data-dev-control=season]');input.value='3';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
     for(let i=0;i<20&&!await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length===3");i++)await delay(50);
     assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1','Debug Season expands the list without overriding the viewed season');
