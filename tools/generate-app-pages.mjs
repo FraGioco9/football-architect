@@ -71,11 +71,12 @@ const inlineCountryFlag = (country, id = null) => {
  const originalViewBox=match[1];
  // Nested viewport scales the native paths to a real 5:4 silhouette.
  // Keep original SVG defs and masks inside their own coordinate system.
- const inner=svg.slice(svg.indexOf(">")+1,svg.lastIndexOf("</svg>"));
+ const inner=svg.slice(svg.indexOf(">")+1,svg.lastIndexOf("</svg>")).replace(/(<mask\b[^>]*>\s*<rect\b[^>]*?)\s+rx="[^"]+"\s+ry="[^"]+"/,'$1 rx="0" ry="0"');
  const identity=(id?'id="'+id+'" ':"");
  return '<span class="app-world-flag-frame" aria-hidden="true">'+
   '<svg class="app-world-flag" '+identity+'aria-hidden="true" focusable="false" width="25" height="20" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg">'+
-  '<svg x="0" y="0" width="5" height="4" viewBox="'+originalViewBox+'" preserveAspectRatio="none">'+inner+'</svg></svg></span>';
+  '<defs><clipPath id="fa-competition-flag-'+code+'"><rect width="5" height="4" rx="0.625" ry="0.625"/></clipPath></defs>'+
+  '<g clip-path="url(#fa-competition-flag-'+code+')"><svg x="0" y="0" width="5" height="4" viewBox="'+originalViewBox+'" preserveAspectRatio="none">'+inner+'</svg></g></svg></span>';
 };
 const indexContent = function indexContent(){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
