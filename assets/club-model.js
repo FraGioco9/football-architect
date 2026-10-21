@@ -51,7 +51,7 @@
    const originalLang={IT:'it',ENG:'en',ES:'es',DE:'de',FR:'fr',PT:'pt',BR:'pt',NL:'nl'}[c.countryId];
    const translationAvailable=lang!==originalLang&&typeof c.descriptions?.[lang]==='string'&&c.descriptions[lang].trim();
    const colors='<span class="club-colors">'+swatch('primaryColor')+swatch('secondaryColor')+'</span>';
-   const countryField='<span class="club-country-value"><img src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="" width="24" height="16"> '+escape(country)+'</span>';
+   const countryField='<span class="club-country-value"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="" width="25" height="20"> '+escape(country)+'</span>';
    const clubId=c.countryId+'-'+c.clubId;
    const rivals=(manifest.rivalries||[]).filter(r=>r.clubAId===clubId||r.clubBId===clubId);
    const rivalItems=rivals.map(r=>{
@@ -75,7 +75,7 @@
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
   }
-  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location"><span class="club-flag-tooltip" data-country-tooltip="'+escape(country)+'"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="'+escape(country)+'" width="24" height="18"></span>'+escape(c.city)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
+  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location"><span class="club-flag-tooltip" data-country-tooltip="'+escape(country)+'"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="'+escape(country)+'" width="25" height="20"></span>'+escape(c.city)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
    content;
  }
  return {views,copies,route,render};
