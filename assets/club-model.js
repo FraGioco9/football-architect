@@ -16,6 +16,7 @@
  const copies=Object.fromEntries(Object.entries(rows).map(([lang,row])=>[lang,Object.fromEntries(keys.map((key,i)=>[key,row[i]]))]));
  const countryNames={en:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil'],de:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien'],es:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil'],fr:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil'],it:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']};
  const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+ const flagCodes={IT:'it',ENG:'gb',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'br'};
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function route(path){
   const m=path.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/(0[1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)$/);
@@ -53,7 +54,7 @@
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
   }
-  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.primaryName)+'</h1><p class="club-full-name">'+escape(c.fullName)+'</p><p>'+escape(c.city)+' · '+escape(country)+'</p><p>'+divisionValue+'</p></div></header>'+tabs+
+  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="'+escape(country)+'" width="24" height="18">'+escape(c.city)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
    '<h2 id="club-view-title" class="club-view-title">'+escape(t[selected.view])+'</h2>'+content;
  }
  return {views,copies,route,render};
