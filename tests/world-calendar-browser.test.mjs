@@ -65,6 +65,13 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
     await visit();
     const runValue=expr=>run(expr);
+    // Public rendering must ignore a leftover fictional DEV world day.
+    await runValue("sessionStorage.setItem('football-architect:calendar-dev-world-day','26');sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:'week'}))");
+    await visit();
+    assert.equal(await runValue("document.documentElement.dataset.calendarView"),'week');
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'1','Public bootstrap must not import DEV day');
+    await runValue("sessionStorage.removeItem('football-architect:calendar-dev-world-day');sessionStorage.removeItem('football-architect:calendar-selection')");
+    await visit();
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-calendar-day]').length"),56);
     assert.equal(await runValue("document.querySelector('.calendar-key')===null"),true);
     assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-clock')).display"),'none');
