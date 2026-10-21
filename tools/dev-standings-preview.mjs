@@ -116,6 +116,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards"]);
         const next=allowed.has(legacy.get("view"))?legacy.get("view"):"overview";
         legacy.delete("view");
+        if(next==="history"||next==="rules"){legacy.delete("season");legacy.delete("matchday");}
         const suffix=legacy.toString();
         res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/"+next+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
