@@ -953,3 +953,11 @@ html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{vis
 .calendar-event-dialog .calendar-event-close.app-search-close:hover{background:#244040}
 .calendar-event-dialog::backdrop{background:rgba(5,12,17,.65)}
 @media(max-width:620px){.calendar-event-dialog .calendar-event-panel.app-search-panel{padding:18px}}
+
+/* CAL-UX-11: search-equivalent close animation and Escape return focus. */
+.calendar-event-dialog.app-search-dialog::backdrop{animation:app-search-backdrop-in 160ms ease-out both}
+.calendar-event-dialog.app-search-dialog .calendar-event-panel.app-search-panel{animation:app-search-in 160ms ease-out both}
+.calendar-event-dialog.app-search-dialog.is-closing::backdrop{animation:app-search-backdrop-out 150ms ease-in both}
+.calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:app-search-out 150ms ease-in both}
+.calendar-day.app-search-escape-return:focus-visible{outline:none!important}
+@media(prefers-reduced-motion:reduce){.calendar-event-dialog.app-search-dialog::backdrop,.calendar-event-dialog.app-search-dialog .calendar-event-panel.app-search-panel,.calendar-event-dialog.app-search-dialog.is-closing::backdrop,.calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:none!important}}
