@@ -177,7 +177,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
 
   // Exercise every Stats subview, then change the Debug matchday number.
   await run("document.getElementById('competition-tab-stats').click()");
-  await until("new URL(location.href).searchParams.get('view')==='stats' && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3 && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid').length===1");
+  await until("location.pathname.endsWith('/stats') && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3 && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid').length===1");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
   await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card').length===7");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[2].click()");
