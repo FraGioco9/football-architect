@@ -15,10 +15,10 @@
   if(!response.ok)throw Error('Club manifest unavailable');
   const manifest=await response.json();
   window.faClubCrests=manifest.clubCrests;
-  const paint=()=>{
+  const paint=(preserveCrest=false)=>{
    const markup=model.render(manifest,selected,language(),location.search);
    // Keep the existing header (and its loaded crest image) when switching club tabs.
-   if(host.querySelector('.club-header')&&host.dataset.clubBase===selected.base){
+   if(preserveCrest&&host.querySelector('.club-header')&&host.dataset.clubBase===selected.base){
     const staging=document.createElement('div');staging.innerHTML=markup;
     const currentHeader=host.querySelector('.club-header');
     staging.querySelector('.club-header').replaceWith(currentHeader);
@@ -41,7 +41,7 @@
     event.preventDefault();
     history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
     selected=next;
-    paint();
+    paint(true);
    });
    for(const link of links)link.addEventListener('keydown',event=>{
     const i=links.indexOf(link),n=links.length;
@@ -55,7 +55,7 @@
   new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
-   if(next&&next.base===selected.base){selected=next;paint();}
+   if(next&&next.base===selected.base){selected=next;paint(true);}
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
