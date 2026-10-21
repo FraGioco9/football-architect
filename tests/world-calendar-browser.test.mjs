@@ -84,6 +84,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await run("document.querySelector('[data-dev-control=season]')?.max"),'4');
     await run("(()=>{const n=document.querySelector('[data-dev-control=world-day]');n.value='26';n.dispatchEvent(new Event('change',{bubbles:true}))})()");
     assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('26/56')"),true);
+    assert.equal(await run("window.faWorldCalendar.getSelection().day"),26,'DEV World Day selects the matching calendar day');
     await delay(20);
     await run("(()=>{const n=document.querySelector('[data-dev-control=world-day]');n.value='1';n.dispatchEvent(new Event('change',{bubbles:true}))})()");
     assert.equal(await run("document.querySelector('#calendar-season-picker').value"),'1');
