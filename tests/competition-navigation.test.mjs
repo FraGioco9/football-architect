@@ -57,13 +57,13 @@ test('DEV future deep links normalize to the latest current season',()=>{
  assert.equal(s.fields.get('competition-panel-stats').hidden,false);
 });
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{
- const s=setup('/competitions/it-1/?season=1&view=fixtures&matchday=12');
- assert.equal(s.window.location.pathname,'/competitions/it-1');
+ const s=setup('/competitions/it-1/fixtures?season=1&matchday=12');
+ assert.equal(s.window.location.pathname,'/competitions/it-1/fixtures');
  assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.window.faCompetitionRoute.set({matchday:13});
- assert.equal(s.window.location.search,'?season=1&view=fixtures&matchday=13');
- s.tabs[3].events.click();assert.equal(s.window.location.search,'?season=1&view=stats');
+ assert.equal(s.window.location.search,'?season=1&matchday=13');
+ s.tabs[3].events.click();assert.equal(s.window.location.search,'?season=1');
  s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,13);assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.forward();assert.equal(s.window.faCompetitionRoute.get().matchday,13);
@@ -71,8 +71,8 @@ test('COMPETITION-URL: canonical deep links restore every view, round and browse
 });
 test('COMPETITION-URL: invalid parameters normalize, unavailable seasons never show another season',()=>{
  const s=setup('/competitions/it-1/index.html?season=bad&view=unknown&matchday=999');
- assert.equal(s.window.location.pathname,'/competitions/it-1');
- assert.equal(s.window.location.search,'?season=1&view=standings');assert.equal(s.count(),1);
+ assert.equal(s.window.location.pathname,'/competitions/it-1/standings');
+ assert.equal(s.window.location.search,'?season=1');assert.equal(s.count(),1);
  const missing=setup('/competitions/it-1?season=2&view=fixtures&matchday=4');
  assert.equal(missing.window.faCompetitionRoute.get().season,'2');
  assert.equal(missing.fields.get('app-competition-season-unavailable').hidden,false);
@@ -93,20 +93,20 @@ test('COMPETITION-URL: first paint hides unavailable seasons and unrelated views
  const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
  for(const season of ['1','2','12','999999999']){
   const document={addEventListener(){},documentElement:{dataset:{}}};
-  runInNewContext(bootstrap,{document,URLSearchParams,location:{search:'?season='+season+'&view=fixtures&matchday=12'}});
+  runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/it-1/fixtures',search:'?season='+season+'&matchday=12'}});
   assert.equal(document.documentElement.dataset.competitionView,'fixtures');
   assert.equal(document.documentElement.dataset.competitionSeasonUnavailable,String(season!=='1'));
  }
 });
 
 test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes retain the in-page selection',()=>{
- const s=setup('/competitions/it-1?season=1&view=fixtures&matchday=12');
+ const s=setup('/competitions/it-1/fixtures?season=1&matchday=12');
  s.tabs[0].events.click();
- assert.equal(s.window.location.search,'?season=1&view=standings');
+ assert.equal(s.window.location.search,'?season=1');
  const refreshed=setup(s.window.location.href);
  refreshed.tabs[2].events.click();
  assert.equal(refreshed.window.faCompetitionRoute.get().matchday,1);
- assert.equal(refreshed.window.location.search,'?season=1&view=fixtures&matchday=1');
+ assert.equal(refreshed.window.location.search,'?season=1&matchday=1');
  s.tabs[2].events.click();
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.back();s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
@@ -130,9 +130,9 @@ test('COMPETITION-TABS-SCROLL: edge hints follow scrolling and selection stays v
 });
 
 test('HISTORY-URL: season links use Standings and preserve browser navigation',()=>{
- const s=setup('/competitions/it-1?season=1&view=history');
+ const s=setup('/competitions/it-1/history');
  s.window.faCompetitionRoute.set({season:'1',view:'standings'},{focus:true});
- assert.equal(s.window.location.search,'?season=1&view=standings');
+ assert.equal(s.window.location.search,'?season=1');
  assert.equal(s.tabs[0].focused,true);
  const refreshed=setup(s.window.location.href);
  assert.equal(refreshed.window.faCompetitionRoute.get().view,'standings');
@@ -152,11 +152,27 @@ test('POSTSEASON-URL: direct load, keyboard selection and browser history restor
 
 test('FIXTURES-POSTSEASON-URL: named rounds preserve deep links, tabs and browser history without extending league rounds',()=>{
  for(const stage of ['playoffs','playout']){
-  const s=setup('/competitions/it-2?season=1&view=fixtures&matchday='+stage);
+  const s=setup('/competitions/it-2?season=1&matchday='+stage);
   assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
-  s.tabs[0].events.click();assert.equal(s.window.location.search,'?season=1&view=standings');
+  s.tabs[0].events.click();assert.equal(s.window.location.search,'?season=1');
   s.tabs[2].events.click();assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
   s.window.faCompetitionRoute.set({matchday:30});s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
   assert.equal(competitionModel.validRound(31),false);
  }
+});
+
+test('ROUTE-02 History and Rules URLs omit season while other competition views retain it',()=>{
+ const s=setup('/competitions/it-1/standings?season=1');
+ s.window.faCompetitionRoute.set({view:'history'});
+ assert.equal(s.window.location.pathname,'/competitions/it-1/history');
+ assert.equal(s.window.location.search,'');
+ s.window.faCompetitionRoute.set({view:'rules'});
+ assert.equal(s.window.location.pathname,'/competitions/it-1/rules');
+ assert.equal(s.window.location.search,'');
+ s.window.faCompetitionRoute.set({view:'fixtures',matchday:9});
+ assert.equal(s.window.location.pathname,'/competitions/it-1/fixtures');
+ assert.equal(s.window.location.search,'?season=1&matchday=9');
+ const direct=setup('/competitions/it-1/history?season=4');
+ assert.equal(direct.window.location.pathname,'/competitions/it-1/history');
+ assert.equal(direct.window.location.search,'');
 });

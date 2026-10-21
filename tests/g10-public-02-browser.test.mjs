@@ -169,7 +169,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
 
   // Verify the injected standings also supply a functioning fixtures calendar.
   await run("document.getElementById('competition-tab-fixtures').click()");
-  await until("new URL(location.href).searchParams.get('view')==='fixtures' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && !document.getElementById('app-fixtures-toolbar').hidden");
+  await until("location.pathname.endsWith('/fixtures') && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && !document.getElementById('app-fixtures-toolbar').hidden");
   await run("document.getElementById('app-fixtures-current').click()");
   await until("new URL(location.href).searchParams.get('matchday')==='16'");
   await run("document.getElementById('app-fixtures-previous').click()");
@@ -177,7 +177,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
 
   // Exercise every Stats subview, then change the Debug matchday number.
   await run("document.getElementById('competition-tab-stats').click()");
-  await until("new URL(location.href).searchParams.get('view')==='stats' && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3 && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid').length===1");
+  await until("location.pathname.endsWith('/stats') && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button').length===3 && document.querySelectorAll('#fa-dev-stats .fa-dev-stats-grid').length===1");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
   await until("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card').length===7");
   await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[2].click()");
@@ -233,7 +233,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
      assert.equal(await run("document.getElementById('app-fixtures-round-label').hidden"),true);
      if(day===33){
       await cmd('Page.reload',{ignoreCache:true});
-      await until("!!window.faFixtures && !document.querySelector('[data-dev-control=matchdays-number]')?.disabled && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length==="+count);
+      try{await until("!!window.faFixtures && !document.querySelector('[data-dev-control=matchdays-number]')?.disabled && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length==="+count)}catch(error){const state=await run("({url:location.href,route:window.faCompetitionRoute?.get?.(),fixtureCount:document.querySelectorAll('#app-fixtures-list .app-fixture-match').length,debugDisabled:document.querySelector('[data-dev-control=matchdays-number]')?.disabled,body:document.body?.textContent?.slice(0,120)})");throw Error(error.message+"; observed="+JSON.stringify(state)+"; refused="+JSON.stringify(refused.slice(-10)))}
       assert.equal(await run("window.faCompetitionRoute.get().matchday"),stage,'Named round survives refresh');
      }
     }else {

@@ -644,7 +644,11 @@
   async function start() {
     if (!sourceUrl || !/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
-    if (path.split("/").pop() !== routeId.toLowerCase()) throw Error("Route identity mismatch");
+    const segments=path.split("/").filter(Boolean);
+    const divisionSegment=segments[1];
+    const viewSegment=segments[2];
+    const allowedViews=new Set(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
+    if(segments.length<2||segments.length>3||segments[0]!=="competitions"||divisionSegment!==routeId.toLowerCase()||(viewSegment&&!allowedViews.has(viewSegment)))throw Error("Route identity mismatch");
     const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
     if(!dataResponse.ok)throw Error("Competition data unavailable");
     const manifest=await dataResponse.json();

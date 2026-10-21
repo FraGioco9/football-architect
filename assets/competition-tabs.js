@@ -75,7 +75,7 @@
     else if(rect.right>bounds.right-16)tablist.scrollLeft+=rect.right-bounds.right+16;
     syncTabOverflow();
   }
-  const tabScrollKey="football-architect:competition-tabs-scroll:"+new URL(window.location.href).pathname;
+  const tabScrollKey="football-architect:competition-tabs-scroll:"+new URL(window.location.href).pathname.replace(/\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/?$/,"");
   let restoringTabScroll=true;
   let savedTabScroll=null;
   try{const raw=sessionStorage.getItem(tabScrollKey);if(raw!==null&&Number.isFinite(Number(raw)))savedTabScroll=Math.max(0,Number(raw))}catch{}
@@ -99,16 +99,16 @@
     const id=params.get("season"),round=params.get("matchday");
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason;
     return {season:devSeasons.length&&!availableSeasons.includes(requested)?latestSeason:requested,
-      view:views.includes(params.get("view"))?params.get("view"):"standings",
+      view:views.includes(window.location.pathname.split("/").filter(Boolean).at(-1))?window.location.pathname.split("/").filter(Boolean).at(-1):views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:round==="playoffs"||round==="playout"?round:/^[1-9]\d*$/.test(round||"")&&model.validRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
     if(devSeasons.length&&!availableSeasons.includes(state.season))state.season=latestSeason;
     const url=new URL(window.location.href);
-    url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
+    url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/?$/,"").replace(/\/+$/,"")+"/"+state.view;
     url.search="";url.hash="";
-    url.searchParams.set("season",state.season);url.searchParams.set("view",state.view);
+    if(state.view!=="history"&&state.view!=="rules")url.searchParams.set("season",state.season);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);

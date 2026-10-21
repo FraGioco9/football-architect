@@ -168,10 +168,10 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
   const directory="competitions";
   const index=readFileSync(join(protectedPath,directory,"index.html"),"utf8");
   assert.doesNotMatch(index,/data-dev-latest-season/);
-  assert.equal((index.match(/\?season=1&amp;view=standings/g)||[]).length,16);
+  assert.equal((index.match(/\/standings\?season=1/g)||[]).length,16);
   const originalIndex=readFileSync(join(publicPath,directory,"index.html"),"utf8");
   assert.doesNotMatch(originalIndex,/data-dev-latest-season|__fa_dev__/);
-  assert.equal((originalIndex.match(/\?season=1&amp;view=standings/g)||[]).length,16);
+  assert.equal((originalIndex.match(/\/standings\?season=1/g)||[]).length,16);
   for(const division of ["it","eng","es","de","fr","pt","nl","br"])
    for(const tier of [1,2]){
     const path=join(directory,division+"-"+tier,"index.html");

@@ -27,7 +27,7 @@ const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","ap
 ]);
 
 // Only explicit canonical routes are allowed; no hosting, auth or build overrides.
-const competitionRouting={"redirects":[{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true}],"rewrites":[{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/competitions/:division/index.html"}]};
+const competitionRouting={"redirects":[{"source":"/:page(dashboard|calendar|settings|competitions)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|competitions)/index.html","destination":"/:page","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/competitions/:division/overview","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)/","destination":"/competitions/:division/:view","permanent":true}],"rewrites":[{"source":"/:page(dashboard|calendar|settings|competitions)","destination":"/:page/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json)","destination":"/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/competitions/:division/index.html"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)","destination":"/competitions/:division/index.html"}]};
 
 export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
  if(path.startsWith("assets/clubs/"))return clubCrestAssets(sourceRoot).paths.has(path);
@@ -104,6 +104,8 @@ export function stagePublicArtifact(sourceRoot,destination) {
 
 // Canonical request paths resolve directly to allowlisted physical files.
 export function publicRequestFile(pathname) {
+  const detail=pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)\/?$/);
+  if(detail)return "competitions/"+detail[1]+"/index.html";
   return (pathname.endsWith("/") ? pathname + "index.html"
     : /\.[a-z0-9]+$/i.test(pathname) ? pathname : pathname + "/index.html").slice(1);
 }

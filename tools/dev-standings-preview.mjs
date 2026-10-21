@@ -32,7 +32,7 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
@@ -108,6 +108,23 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||
           raw.includes("\\") || raw.includes("\0") || /\/\.{1,2}(?:\/|$)/.test(raw)) {
         return reject(res, 403);
+      }
+      const rootDivision = raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/?$/);
+      if(rootDivision){
+        const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
+        const legacy=new URLSearchParams(query);
+        const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards"]);
+        const next=allowed.has(legacy.get("view"))?legacy.get("view"):"overview";
+        legacy.delete("view");
+        if(next==="history"||next==="rules"){legacy.delete("season");legacy.delete("matchday");}
+        const suffix=legacy.toString();
+        res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/"+next+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
+      }
+      const viewSlash=raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/$/);
+      if(viewSlash){
+        const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
+        res.writeHead(308,{"Location":"/competitions/"+viewSlash[1]+"/"+viewSlash[2]+query,"Cache-Control":"no-store"});
+        res.end();return;
       }
       const virtual = VIRTUAL[raw];
       let body, type;
