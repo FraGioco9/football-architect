@@ -182,13 +182,13 @@ function historyNode(tag,className="",text){
 function historyLabel(key,tag="span"){
  const element=historyNode(tag);element.dataset.appI18n=key;return element;
 }
-function historyIdentity(club){
+function historyIdentity(club,linked=true){
  const identity=historyNode("span","app-world-club-identity");
  const crest=historyNode("span","app-world-club-crest-placeholder");
  crest.dataset.clubCrest=club.countryId+"-"+club.clubId;crest.setAttribute("aria-hidden","true");
- const link=historyNode("a","app-world-club-name app-world-standing-club-link",club.primaryName);
- link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";
- identity.append(crest,link);return identity;
+ const name=historyNode(linked?"a":"span",linked?"app-world-club-name app-world-standing-club-link":"app-world-club-name",club.primaryName);
+ if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";
+ identity.append(crest,name);return identity;
 }
 function historySeasonLabel(season){
  const label=historyNode("span","app-history-dev-season");
@@ -264,7 +264,7 @@ async function renderHistoryPreview(){
    item.rows.slice(0,3).forEach((row,index)=>{
     const rank=historyNode("span","app-history-dev-archive-club"+(index===0?" app-history-dev-archive-champion":""));
     const label=historyLabel(["historyChampionLabel","historyRunnerUp","historyThirdPlace"][index]);label.className="app-history-dev-podium-label";
-    rank.append(label,historyIdentity(row.club));button.append(rank);
+    rank.append(label,historyIdentity(row.club,false));button.append(rank);
    });
    button.addEventListener("click",()=>openHistorySeason(item.season));
    li.append(button);list.append(li);
