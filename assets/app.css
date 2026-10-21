@@ -961,3 +961,11 @@ html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{vis
 .calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:app-search-out 150ms ease-in both}
 .calendar-day.app-search-escape-return:focus-visible{outline:none!important}
 @media(prefers-reduced-motion:reduce){.calendar-event-dialog.app-search-dialog::backdrop,.calendar-event-dialog.app-search-dialog .calendar-event-panel.app-search-panel,.calendar-event-dialog.app-search-dialog.is-closing::backdrop,.calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:none!important}}
+
+/* CAL-UX-12: arrows share the exact resting border treatment of the Week trigger. */
+#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next){border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text)}
+#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next):disabled{border:1px solid var(--line)!important}
+/* Keep keyboard focus discoverable during Tab navigation, but avoid Escape-return rings. */
+.calendar-event-dialog .calendar-event-close.app-search-close:focus:not(:focus-visible){outline:none;box-shadow:none}
+.calendar-event-dialog .calendar-event-close.app-search-close:focus-visible{outline:2px solid #a2c0b4;outline-offset:2px}
+#world-calendar .calendar-day.app-search-escape-return:focus-visible{outline:none!important;box-shadow:none!important}
