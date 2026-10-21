@@ -48,7 +48,7 @@
   if(selected.view==='overview'){
    content='<div class="club-overview-grid"><section class="app-panel" aria-labelledby="club-identity-title"><h2 id="club-identity-title">'+escape(t.identity)+'</h2><dl class="club-facts">'+
     ['primaryName','fullName','compactName','abbr','nickname','city'].map(key=>fact(key,escape(c[key]))).join('')+fact('country',escape(country))+fact('primaryColor',swatch('primaryColor'))+fact('secondaryColor',swatch('secondaryColor'))+'</dl></section>'+
-    '<section class="app-panel" aria-labelledby="club-profile-title"><h2 id="club-profile-title">'+escape(t.profile)+'</h2>'+crest()+'<p class="club-description">'+escape(c.descriptions[lang])+'</p><dl class="club-facts">'+fact('stadium',escape(c.stadiumName))+fact('division',divisionValue)+'</dl></section>'+
+    '<section class="app-panel" aria-labelledby="club-profile-title"><h2 id="club-profile-title">'+escape(t.profile)+'</h2><p class="club-description">'+escape(c.descriptions[lang])+'</p><dl class="club-facts">'+fact('stadium',escape(c.stadiumName))+fact('division',divisionValue)+'</dl></section>'+
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2><p>'+divisionValue+'</p>'+(division?'<p class="club-placement">'+escape(t.provisional)+'</p>':'')+'</section></div>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
