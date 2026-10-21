@@ -1,5 +1,5 @@
 // ROUTE-02 canonical subpage contract. Pure helpers, no environment side effects.
-export const competitionViews=Object.freeze(["standings","postseason","fixtures","stats","history","rules","awards"]);
+export const competitionViews=Object.freeze(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
 export const clubViews=Object.freeze(["overview","roster","fixtures","stats","history"]);
 const countries="it|eng|es|de|fr|pt|nl|br";
 const division=new RegExp("^/competitions/("+countries+")-([12])(?:/([^/]+))?/?$");
@@ -8,7 +8,7 @@ export function resolveSubpage(pathname){
   const match=division.exec(pathname);
   if(match){
     const base="/competitions/"+match[1]+"-"+match[2];
-    const view=match[3]||"standings";
+    const view=match[3]||"overview";
     return competitionViews.includes(view)?{kind:"competition",base,view,canonical:base+"/"+view,redirect:!match[3]||pathname!==base+"/"+view}:null;
   }
   const found=club.exec(pathname);
@@ -19,7 +19,7 @@ export function resolveSubpage(pathname){
   }
   return null;
 }
-export function competitionSubpage(id,view="standings"){
+export function competitionSubpage(id,view="overview"){
   if(!/^(it|eng|es|de|fr|pt|nl|br)-[12]$/.test(id)||!competitionViews.includes(view))throw Error("Invalid competition route");
   return "/competitions/"+id+"/"+view;
 }
