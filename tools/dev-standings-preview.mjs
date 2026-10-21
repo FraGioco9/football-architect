@@ -156,9 +156,9 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         if(file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
           const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
-          body=Buffer.from(body.toString("utf8").replace('<script src="/assets/world-clock-adapter.js" defer></script>',bootstrap+'<script src="/assets/world-clock-adapter.js" defer></script>'),"utf8");
+          body=Buffer.from(body.toString("utf8").replace('<script data-calendar-bootstrap>',bootstrap+'<script data-calendar-bootstrap>'),"utf8");
         }
-        if (DETAIL.test(raw) || file === "competitions/index.html") {
+        if (DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html") {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.
@@ -171,7 +171,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
-          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + INJECT + "\n</head>"), "utf8");
+          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
         }
       }
       if (subdomains && type === TYPES[".html"]) {

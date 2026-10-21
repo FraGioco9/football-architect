@@ -20,8 +20,11 @@ function boot({mobile=false,saved=null,blocked=false}={}){
   const source=read('calendar/index.html').match(/<script data-calendar-bootstrap>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(source,'Calendar initial view must be resolved before CSS');
   const root={dataset:{}};
-  runInNewContext(source,{document:{documentElement:root},window:{matchMedia:()=>({matches:mobile})},
-    sessionStorage:{getItem(){if(blocked)throw Error('blocked');return saved}}});
+  const location={href:'http://localhost/calendar',pathname:'/calendar',search:''};
+  const history={state:null,replaceState(_state,_title,url){location.href=String(url);location.search=new URL(location.href).search}};
+  const createElement=()=>({dataset:{},textContent:''});
+  runInNewContext(source,{URL,URLSearchParams,location,history,document:{documentElement:root,createElement,head:{append(){}}},window:{matchMedia:()=>({matches:mobile})},
+    sessionStorage:{getItem(){if(blocked)throw Error('blocked');return null}}});
   return root;
 }
 function setup(options={}){
@@ -39,7 +42,7 @@ function setup(options={}){
   let saved;
   const window={faWorldCalendarModel:model};
   const document={documentElement:root,getElementById:id=>fields.get(id)};
-  runInNewContext(runtime(),{window,document,sessionStorage:{setItem(k,v){if(options.blocked)throw Error('blocked');saved={k,v}}},
+  runInNewContext(runtime(),{URL,URLSearchParams,location:{href:'http://localhost/calendar?season=1&calendarView=season',pathname:'/calendar',search:'?season=1&calendarView=season'},history:{state:null,replaceState(){},pushState(){}},window,document,sessionStorage:{setItem(k,v){if(options.blocked)throw Error('blocked');saved={k,v}}},
     MutationObserver:class{constructor(fn){observer=fn}observe(){}}});
   return {window,root,fields,days,rows,language(lang){root.lang=lang;observer()},saved:()=>saved};
 }
@@ -49,8 +52,8 @@ test('CAL-IMP-02 generates 56 selectable days in eight weeks with international 
   assert.equal((html.match(/data-calendar-day="\d+"/g)||[]).length,56);
   assert.equal((html.match(/class="calendar-week-row"/g)||[]).length,8);
   assert.match(html,/data-calendar-day="16"[\s\S]*?I01[\s\S]*?N04/);
-  assert.match(html,/data-calendar-day="53"[\s\S]*?FC[\s\S]*?N32/);
-  assert.match(html,/data-calendar-day="54"[\s\S]*?SC[\s\S]*?N33/);
+  assert.match(html,/data-calendar-day="53"[\s\S]*?F[\s\S]*?N32/);
+  assert.match(html,/data-calendar-day="54"[\s\S]*?F[\s\S]*?N33/);
   assert.match(html,/data-calendar-day="56"/);
   assert.ok(html.indexOf('data-calendar-bootstrap')<html.indexOf('/assets/app.css'));
   assert.ok(html.indexOf('/assets/world-calendar-model.js')<html.indexOf('/assets/world-calendar.js'));
@@ -68,7 +71,7 @@ test('CAL-IMP-02 defaults desktop to Season and mobile to Week, restores valid U
     const root=boot({mobile:true,saved});assert.equal(root.dataset.calendarDay,'1');assert.equal(root.dataset.calendarView,'week');
   }
   const root=boot({mobile:true,saved:JSON.stringify({version:1,day:16,view:'season'})});
-  assert.equal(root.dataset.calendarView,'season');assert.equal(root.dataset.calendarDay,'16');assert.equal(root.dataset.calendarWeek,'3');
+  assert.equal(root.dataset.calendarView,'week');assert.equal(root.dataset.calendarDay,'1');assert.equal(root.dataset.calendarWeek,'1');
   assert.equal(boot({blocked:true}).dataset.calendarView,'season');
 });
 
@@ -77,7 +80,7 @@ test('CAL-IMP-02 all day selections and view switches preserve QA-06 data and on
   for(let day=1;day<=56;day++){
     days[day-1].emit('click');
     assert.equal(window.faWorldCalendar.getSelection().day,day);
-    assert.equal(days.filter(b=>b.attrs['aria-pressed']==='true').length,1);
+    assert.equal(days.filter(b=>b.attrs['aria-pressed']==='true').length,0);
     assert.equal(days[day-1].tabIndex,0);
     fields.get('calendar-week').emit('click');
     assert.equal(window.faWorldCalendar.getSelection().day,day);
@@ -86,8 +89,7 @@ test('CAL-IMP-02 all day selections and view switches preserve QA-06 data and on
     assert.equal(window.faWorldCalendar.getSelection().day,day);
   }
   assert.equal(before,JSON.stringify(model.createSeason(1)));
-  assert.equal(saved().k,'football-architect:calendar-selection');
-  assert.deepEqual(JSON.parse(saved().v),{version:1,day:56,view:'season'});
+  assert.equal(saved(),undefined,'Calendar view is no longer persisted');
   assert.equal(Object.isFrozen(window.faWorldCalendar.getSelection()),true);
 });
 

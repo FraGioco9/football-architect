@@ -843,3 +843,158 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .calendar-clock #calendar-clock-source{font-size:12px;opacity:.76}.calendar-clock input{max-width:160px}
 .calendar-days [data-clock-relative="current"]{outline:2px solid currentColor;outline-offset:-2px}
 @media(max-width:620px){.calendar-clock{flex-direction:column;align-items:stretch}.calendar-clock input{width:100%;max-width:none}}
+
+/* CAL-SIMPLE-01: full-width calendar; compact season and event dialog. */
+.world-calendar{width:100%;max-width:none}
+#world-calendar>.calendar-heading,#world-calendar>.calendar-clock,#world-calendar>.calendar-filterbar,#world-calendar>.calendar-details,#world-calendar>.calendar-selected,#world-calendar>.calendar-note{display:none!important}
+.calendar-season-picker{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 16px;font-weight:700}
+.calendar-season-picker select{border:1px solid var(--line);border-radius:9px;padding:9px 30px 9px 12px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.calendar-event{cursor:pointer}
+.calendar-event:hover{filter:brightness(1.23);outline:none;outline-offset:0}
+.calendar-event:focus-visible{filter:brightness(1.23);outline:2px solid var(--focus);outline-offset:1px}
+.calendar-event-dialog{width:min(560px,calc(100vw - 28px));max-height:85dvh;margin:auto;padding:0;border:0;border-radius:14px;background:var(--surface);color:var(--text);box-shadow:0 24px 70px #0008;animation:calendar-popup-in .2s ease both}
+.calendar-event-dialog::backdrop{background:#0009;animation:calendar-backdrop-in .2s ease both}
+.calendar-event-panel{padding:24px;position:relative}
+.calendar-event-close{position:absolute;right:12px;top:12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font-size:24px;width:38px;height:38px;cursor:pointer}
+.calendar-event-panel h2{margin:4px 40px 12px 0;font-size:20px}
+.calendar-event-panel p{line-height:1.6;color:var(--muted)}
+@keyframes calendar-popup-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes calendar-backdrop-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.calendar-event-dialog,.calendar-event-dialog::backdrop{animation:none}}
+
+/* CAL-SIMPLE-02: no persistent day selection, legend, or divider. */
+#world-calendar>.calendar-key{display:none!important}
+#world-calendar{border:0;border-radius:0;padding:0;background:transparent}
+.calendar-day[aria-pressed="true"],html[data-calendar-ready="true"] .calendar-day[aria-pressed="true"]{border-color:var(--line);background:transparent;box-shadow:none}
+.calendar-day:hover{background:rgba(91,142,121,.10)}
+.calendar-marker-tooltip{position:fixed;z-index:2147482000;max-width:min(330px,calc(100vw - 20px));padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);box-shadow:0 12px 30px #0007;pointer-events:none;animation:calendar-tooltip-in .16s ease both;font-size:12px;font-weight:700}
+@keyframes calendar-tooltip-in{from{opacity:0;transform:translateY(5px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.calendar-marker-tooltip{animation:none}}
+
+/* World-day progress is global DEV state, not a selected calendar tile. */
+.calendar-days [data-clock-relative="current"]{outline:0!important;box-shadow:none!important}
+
+/* CAL-SIMPLE-03: season selector top right, DEV current world day marker. */
+#world-calendar .calendar-day[data-dev-current-day="true"]{border:2px solid var(--focus)!important;background:rgba(91,142,121,.14)!important;box-shadow:inset 0 0 0 1px var(--focus)!important}
+.calendar-event--postseason{background:#274A80;color:#E8F1FF}
+html[data-theme="light"] .calendar-event--postseason{background:#D9E6F9;color:#224A7C}
+
+/* CAL-SIMPLE-04: constant day tile dimensions independent of marker count/current highlight. */
+#world-calendar .calendar-week-row{align-items:stretch}
+#world-calendar .calendar-day{box-sizing:border-box;height:96px;min-height:96px;max-height:96px;border-width:2px;overflow:hidden}
+#world-calendar .calendar-day-events{min-height:36px;justify-content:flex-start}
+@media(max-width:620px){#world-calendar .calendar-day{height:82px;min-height:82px;max-height:82px}}
+html[data-calendar-view="week"] #world-calendar .calendar-day{height:76px;min-height:76px;max-height:76px}
+
+/* CAL-REFINE-01/04: Fixtures-aligned controls, canonical season positioning and hover. */
+#app-calendar{position:relative}
+#app-calendar>.calendar-season-picker{position:absolute;inset-inline-end:0;top:0;margin:0;display:flex;align-items:center;gap:8px;z-index:12}
+#app-calendar>.app-page-title{padding-inline-end:130px}
+#app-calendar>.calendar-season-picker .language-control{width:88px;min-width:88px;max-width:88px}
+#app-calendar>.calendar-season-picker .language-trigger{box-sizing:border-box;width:100%;min-width:0;height:44px;min-height:44px;padding:8px 10px}
+#app-calendar>.calendar-season-picker .language-menu{width:100%;min-width:0}
+#world-calendar .calendar-heading,#world-calendar .calendar-clock,#world-calendar .calendar-filterbar,
+#world-calendar .calendar-key,#world-calendar .calendar-selected,#world-calendar .calendar-note,
+#world-calendar .calendar-details{display:none!important}
+#world-calendar>.calendar-toolbar{display:flex;justify-content:flex-start;align-items:center}
+#world-calendar #calendar-controls{align-items:center;justify-content:center;gap:4px;margin:0 0 16px;max-width:100%;min-width:0}
+html[data-calendar-view="season"] #world-calendar #calendar-controls,
+#world-calendar #calendar-controls[hidden]{display:none!important}
+html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden]){display:flex}
+#world-calendar #calendar-controls:not(.app-fixtures-navigation){visibility:hidden;pointer-events:none}
+#world-calendar #calendar-controls.app-fixtures-navigation{visibility:visible}
+#world-calendar #calendar-controls #calendar-previous,
+#world-calendar #calendar-controls #calendar-next{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;box-sizing:border-box;width:32px;min-width:32px;height:32px;min-height:32px;padding:0;border-radius:9px}
+#world-calendar #calendar-controls #calendar-previous{order:0}
+#world-calendar #calendar-controls .app-fixtures-select{position:relative;flex:0 0 88px;width:88px;min-width:88px;max-width:88px;order:1}
+#world-calendar #calendar-controls #calendar-week-trigger{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;max-width:100%;height:32px;min-height:32px;padding:4px 7px;gap:3px;font-size:12px}
+#world-calendar #calendar-controls #calendar-next{order:2}
+#world-calendar #calendar-controls #calendar-current-week{order:3;position:static;display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;min-height:32px;gap:6px;padding:5px 8px;font-size:12px}
+#world-calendar #calendar-controls #calendar-current-week[hidden],
+#world-calendar #calendar-controls #calendar-week-menu[hidden]{display:none!important}
+#world-calendar #calendar-controls .language-menu{z-index:25}
+#world-calendar #calendar-controls #calendar-week-menu{box-sizing:border-box;width:88px;min-width:88px;max-width:88px;max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--muted) transparent}
+#world-calendar #calendar-controls #calendar-week-menu .language-option{box-sizing:border-box;display:flex;align-items:center;min-height:32px;height:32px;padding:0 8px;font-size:12px}
+#world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar{width:5px}
+#world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar-thumb{background:var(--muted);border-radius:6px}
+#world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar-track{background:transparent}
+#world-calendar #calendar-controls #calendar-previous:not(:disabled),
+#world-calendar #calendar-controls #calendar-next:not(:disabled),
+#world-calendar #calendar-controls #calendar-week-trigger:not(:disabled),
+#world-calendar #calendar-controls #calendar-current-week:not(:disabled){cursor:pointer;opacity:1;transform:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease}
+#world-calendar #calendar-controls #calendar-previous:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-next:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-week-trigger:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-current-week:not(:disabled):not([hidden]):hover{background:rgba(91,142,121,.18);border-color:var(--border);box-shadow:none;transform:none}
+#world-calendar #calendar-controls #calendar-previous:disabled,
+#world-calendar #calendar-controls #calendar-next:disabled{opacity:.45;cursor:default;pointer-events:none;transform:none;transition:none;box-shadow:none}
+#world-calendar #calendar-controls :is(button,[role="option"]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(max-width:1000px){#world-calendar #calendar-controls #calendar-current-week{width:32px;min-width:32px;padding:0}#world-calendar #calendar-controls #calendar-current-week span{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){#world-calendar #calendar-controls button{transition:none!important}}
+
+/* CAL-REFINE-05/06: accessible marker and event-dialog focus states. */
+#world-calendar .calendar-event:focus-visible,.calendar-event-close:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.calendar-event-dialog[open] .calendar-event-panel{overflow-wrap:anywhere}
+@media(max-width:620px){.calendar-event-panel{padding:18px}.calendar-event-dialog{max-height:calc(100dvh - 28px)}}
+
+/* CAL-UX-10: no first-paint relocation of Week controls; matching neutral controls. */
+/* Week navigation is present at its final position in the HTML; no readiness hide. */
+#world-calendar #calendar-controls #calendar-previous,
+#world-calendar #calendar-controls #calendar-next{background:var(--surface);color:var(--text);border:1px solid var(--line);box-shadow:none}
+#world-calendar #calendar-controls #calendar-previous:disabled,
+#world-calendar #calendar-controls #calendar-next:disabled{background:var(--surface)!important;color:var(--muted)!important;border-color:var(--line)!important;filter:none!important;transform:none!important;animation:none!important;transition:none!important;box-shadow:none!important}
+#world-calendar #calendar-controls #calendar-current-week{margin-inline-start:auto}
+#world-calendar #calendar-controls{width:100%;position:relative;justify-content:center!important}
+#world-calendar #calendar-controls #calendar-current-week{position:absolute!important;inset-inline-end:0;top:0}
+/* Mirror search modal structure and close control across light/dark themes. */
+.calendar-event-dialog.app-search-dialog{width:min(520px,calc(100vw - 28px));max-width:520px;max-height:min(78dvh,560px);background:transparent;overflow:visible}
+.calendar-event-dialog .calendar-event-panel.app-search-panel{position:relative;display:block;max-height:min(78dvh,560px);overflow-y:auto;padding:24px 22px;background:#142b2e;color:#f2f7f4;border:1px solid #385451;border-radius:12px}
+.calendar-event-dialog .calendar-event-panel.app-search-panel h2{color:#f2f7f4}
+.calendar-event-dialog .calendar-event-close.app-search-close{position:absolute;right:10px;top:10px;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:#c8d8d0}
+.calendar-event-dialog .calendar-event-close.app-search-close:hover{background:#244040}
+.calendar-event-dialog::backdrop{background:rgba(5,12,17,.65)}
+@media(max-width:620px){.calendar-event-dialog .calendar-event-panel.app-search-panel{padding:18px}}
+
+/* CAL-UX-11: search-equivalent close animation and Escape return focus. */
+.calendar-event-dialog.app-search-dialog::backdrop{animation:app-search-backdrop-in 160ms ease-out both}
+.calendar-event-dialog.app-search-dialog .calendar-event-panel.app-search-panel{animation:app-search-in 160ms ease-out both}
+.calendar-event-dialog.app-search-dialog.is-closing::backdrop{animation:app-search-backdrop-out 150ms ease-in both}
+.calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:app-search-out 150ms ease-in both}
+.calendar-day.app-search-escape-return:focus-visible{outline:none!important}
+@media(prefers-reduced-motion:reduce){.calendar-event-dialog.app-search-dialog::backdrop,.calendar-event-dialog.app-search-dialog .calendar-event-panel.app-search-panel,.calendar-event-dialog.app-search-dialog.is-closing::backdrop,.calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:none!important}}
+
+/* CAL-UX-12: Week selector adopts the existing arrow-box border; arrow rules are unchanged. */
+#world-calendar #calendar-controls #calendar-week-trigger{
+ border:1px solid var(--line)!important;border-radius:9px;background:var(--surface);box-shadow:none
+}
+#world-calendar .calendar-day.app-search-escape-return:focus-visible{outline:none!important;box-shadow:none!important}
+.calendar-event-dialog.app-search-dialog:focus{outline:none}
+.calendar-event-dialog .calendar-event-close.app-search-close:focus:not(:focus-visible){outline:none;box-shadow:none}
+
+/* CAL-UX-13: match arrow hover border; normal Week border stays --line. */
+#world-calendar #calendar-controls #calendar-week-trigger:is(:hover,:active):not(:disabled){border-color:var(--border)!important}
+
+/* FIXTURES-BORDER-01: Matchday and arrows follow Calendar Week normal/hover border. */
+.app-fixtures-navigation :is(.app-fixtures-trigger,.app-fixtures-arrow):not(#calendar-week-trigger):not(#calendar-previous):not(#calendar-next){border:1px solid var(--line)!important;border-radius:9px}
+.app-fixtures-navigation :is(.app-fixtures-trigger,.app-fixtures-arrow):not(#calendar-week-trigger):not(#calendar-previous):not(#calendar-next):is(:hover,:active):not(:disabled){border-color:var(--border)!important}
+
+/* CAL-POPUP-01 Essential: event code + localized meaning only. */
+.calendar-event-dialog #calendar-event-dialog-subtitle[hidden]{display:none!important}
+.calendar-event-dialog #calendar-event-dialog-details{display:grid;gap:10px}
+.calendar-event-dialog .calendar-event-summary{display:flex;align-items:center;gap:14px;min-width:0}
+.calendar-event-dialog .calendar-event-code{display:flex;align-items:center;justify-content:center;flex:0 0 68px;min-height:44px;box-sizing:border-box;padding:8px;border:1px solid #385451;border-radius:9px;background:#244040;color:#f2f7f4;font-size:15px;font-weight:750;overflow-wrap:anywhere;text-align:center}
+.calendar-event-dialog .calendar-event-description{min-width:0;color:#f2f7f4;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+
+/* CAL-POPUP-01: reuse calendar marker palette; finals have a dedicated gold. */
+.calendar-event-dialog .calendar-event-code[data-event-type="national"]{background:#21483D;color:#C7EBDD;border-color:#21483D}
+.calendar-event-dialog .calendar-event-code[data-event-type="international"]{background:#393650;color:#E8E0FF;border-color:#393650}
+.calendar-event-dialog .calendar-event-code[data-event-type="postseason"]{background:#274A80;color:#E8F1FF;border-color:#274A80}
+.calendar-event-dialog .calendar-event-code[data-event-type="final"]{background:#B58A36;color:#17130A;border-color:#B58A36}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="national"]{background:#DFEDE5;color:#1E543B;border-color:#C5DBCD}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="international"]{background:#EEE8F8;color:#51426C;border-color:#D6CCEA}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="postseason"]{background:#D9E6F9;color:#224A7C;border-color:#BDD1F0}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="final"]{background:#F1D99A;color:#624513;border-color:#D6B45B}
+
+/* CAL-FINAL-MARKER-01: gold final markers in the Calendar grid. */
+#world-calendar .calendar-event--final{background:#B58A36;color:#17130A}
+html[data-theme="light"] #world-calendar .calendar-event--final{background:#F1D99A;color:#624513}
