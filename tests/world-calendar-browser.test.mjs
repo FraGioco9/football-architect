@@ -64,6 +64,16 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
     await visit();
+    // CAL-SIMPLE-01: public UI is full width and event details use a native animated dialog.
+    assert.equal(await run("document.querySelector('.calendar-season-picker select').value"),'1');
+    assert.equal(await run("getComputedStyle(document.querySelector('.calendar-filterbar')).display"),'none');
+    assert.equal(await run("getComputedStyle(document.querySelector('.calendar-clock')).display"),'none');
+    assert.equal(await run("getComputedStyle(document.querySelector('.world-calendar')).maxWidth"),'none');
+    assert.equal(await run("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').title"),'N04 - Domestic round 4');
+    await run("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').click()");
+    assert.equal(await run("document.querySelector('#calendar-event-dialog').open"),true);
+    assert.ok((await run("document.querySelector('#calendar-event-dialog-title').textContent")).includes('Domestic round 4'));
+    await run("document.querySelector('#calendar-event-dialog').close()");
     assert.equal(await run("document.getElementById('calendar-today').disabled"),true);
     assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('unavailable')"),true);
     assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true);
