@@ -55,7 +55,7 @@
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
   }
   return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location"><img class="club-country-flag" src="/assets/flags/'+flagCodes[c.countryId]+'.svg" alt="'+escape(country)+'" width="24" height="18">'+escape(c.city)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
-   '<h2 id="club-view-title" class="club-view-title">'+escape(t[selected.view])+'</h2>'+content;
+   content;
  }
  return {views,copies,route,render};
 });
