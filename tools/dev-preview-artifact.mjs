@@ -49,7 +49,7 @@ function debugHtml(bytes,path) {
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);
  const detail=/^competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/index\.html$/.test(path);
- const calendarClock=path==="calendar/index.html"?\'<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>\':"";
+ const calendarClock=path==="calendar/index.html"?'<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>':"";
  return Buffer.from(html.replace("</head>",
   DEBUG_FIRST_PAINT+calendarClock+(detail||path==="competitions/index.html"||path==="calendar/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");
 }
