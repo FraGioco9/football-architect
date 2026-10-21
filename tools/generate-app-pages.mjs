@@ -66,7 +66,7 @@ const inlineCountryFlag = (country, id = null) => {
  const code=country.id==="ENG"?"gb-eng":country.id.toLowerCase();
  const svg=readFileSync(new URL("../"+country.flagAsset,import.meta.url),"utf8").replace(/\r\n/g,"\n").trim();
  if(!svg.startsWith("<svg ") || !svg.endsWith("</svg>"))throw Error("Invalid inline flag "+code);
- const vb=svg.match(/viewBox="([\\d.+-]+)\\s+([\\d.+-]+)\\s+([\\d.+-]+)\\s+([\\d.+-]+)"/);
+ const vb=svg.match(/viewBox="([\d.+-]+)\s+([\d.+-]+)\s+([\d.+-]+)\s+([\d.+-]+)"/);
  if(!vb)throw Error("Missing flag viewBox "+code);
  const [x,y,w,h]=vb.slice(1).map(Number);
  if(![x,y,w,h].every(Number.isFinite)||w<=0||h<=0)throw Error("Invalid flag viewBox "+code);
