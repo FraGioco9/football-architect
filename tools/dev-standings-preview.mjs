@@ -119,6 +119,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         const suffix=legacy.toString();
         res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/"+next+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
+      const viewSlash=raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/$/);
+      if(viewSlash){
+        const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
+        res.writeHead(308,{"Location":"/competitions/"+viewSlash[1]+"/"+viewSlash[2]+query,"Cache-Control":"no-store"});
+        res.end();return;
+      }
       const virtual = VIRTUAL[raw];
       let body, type;
       if (virtual) {
