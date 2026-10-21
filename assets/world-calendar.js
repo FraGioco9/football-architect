@@ -30,7 +30,7 @@
     for(const button of buttons){
       const d=days[Number(button.dataset.calendarDay)-1],selected=d.day===state.day;
       button.disabled=false;button.tabIndex=selected?0:-1;
-      button.setAttribute('aria-pressed',String(selected));button.setAttribute('aria-label',label(d,w));
+      button.setAttribute('aria-pressed','false');button.setAttribute('aria-label',label(d,w));
       button.querySelector('.calendar-day-kind').textContent=kind(d,w);
     }
     for(const view of ['season','week']){get(view).textContent=w[view];get(view).disabled=false;get(view).setAttribute('aria-pressed',String(view===state.view))}
@@ -47,7 +47,7 @@
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
-    try{sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,day:state.day,view:state.view}))}catch{}
+    try{sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:state.view}))}catch{}
     saveUrl(true);
     if(focus)buttons[state.day-1].focus();
   }
@@ -162,8 +162,8 @@
     (filter==='federation'&&e.competitionIds.includes('federation-cup'));
   const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
   const returnPath=()=>{
-    const p=new URLSearchParams({season:String(window.faCalendarSelectedSeason?.()||1),day:String(state.day),calendarView:state.view,competition:filter});
-    if(division)p.set('division',division);
+    const p=new URLSearchParams({season:String(window.faCalendarSelectedSeason?.()||1),calendarView:state.view});
+    
     return '/calendar?'+p.toString();
   };
   const saveUrl=push=>{
@@ -176,7 +176,7 @@
     if(!hasLocation())return;
     const p=new URL(window.location.href).searchParams;
     filter='all';division=''; // Missing or malformed history parameters cannot inherit stale filters.
-    if(/^[1-4]$/.test(p.get('season')||'1')&&/^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(p.get('day')||''))state.day=Number(p.get('day'));
+    
     if(['season','week'].includes(p.get('calendarView')))state.view=p.get('calendarView');
     if(filters.includes(p.get('competition')))filter=p.get('competition');
     if(validDivision(p.get('division')||''))division=p.get('division');
