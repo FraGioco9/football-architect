@@ -899,3 +899,12 @@ html[data-calendar-view="week"] #world-calendar .calendar-day{height:76px;min-he
 #calendar-current-week{min-height:32px;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
 #calendar-current-week:disabled{opacity:.45;cursor:default}
 @media(max-width:620px){#calendar-controls{width:100%;justify-content:center;flex-wrap:nowrap;gap:4px}#calendar-controls .app-fixtures-select{width:110px;min-width:92px}#calendar-current-week{padding:0 6px;font-size:11px}}
+
+/* CAL-SIMPLE-06: show the complete navigation in Week mode, with Fixtures dimensions. */
+html[data-calendar-view="week"] #calendar-controls{display:flex!important;visibility:visible;align-items:center;justify-content:center;gap:4px}
+html[data-calendar-view="season"] #calendar-controls{display:none!important}
+#calendar-controls #calendar-previous,#calendar-controls #calendar-next{display:inline-flex!important;flex:0 0 32px;width:32px;min-width:32px;height:32px;min-height:32px;max-height:32px;padding:0}
+#calendar-controls #calendar-week-trigger{min-width:0;width:100%;height:32px;min-height:32px;max-height:32px}
+#calendar-controls .app-fixtures-select{flex:0 0 108px;width:108px;min-width:108px;max-width:108px}
+#calendar-current-week{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;white-space:nowrap}
+@media(max-width:620px){#calendar-controls .app-fixtures-select{flex-basis:100px;width:100px;min-width:100px;max-width:100px}}
