@@ -20,7 +20,7 @@
  const trigger=selector.querySelector('#calendar-season-picker'),menu=selector.querySelector('#calendar-season-menu'),value=selector.querySelector('#calendar-season-value');
  document.getElementById('calendar-title')?.after(selector);
  function closeMenu(){menu.hidden=true;trigger.setAttribute('aria-expanded','false')}
- function chooseSeason(n){selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.searchParams.set('season',String(n));url.searchParams.delete('day');history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
+ function chooseSeason(n){selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.search='?'+new URLSearchParams({season:String(n),calendarView:document.documentElement.dataset.calendarView==='week'?'week':'season'});history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
  trigger.addEventListener('click',()=>{menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden))});
  document.addEventListener('pointerdown',e=>{if(!selector.contains(e.target))closeMenu()});
  trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():1,selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
@@ -36,6 +36,7 @@
   const requested=Number(params.get('season'));
   if(params.has('season')&&validSeason(requested))selectedSeason=requested;
   else {selectedSeason=limit;const url=new URL(location.href);url.searchParams.set('season',String(limit));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
+  const canonical=new URL(location.href);canonical.search='?'+new URLSearchParams({season:String(selectedSeason),calendarView:document.documentElement.dataset.calendarView==='week'?'week':'season'});if(location.pathname+location.search!==canonical.pathname+canonical.search)history.replaceState(history.state,'',canonical);
   root.dataset.seasonInitialized='true';
   menu.replaceChildren();
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
