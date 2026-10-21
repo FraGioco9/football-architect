@@ -110,7 +110,15 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         return reject(res, 403);
       }
       const rootDivision = raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/?$/);
-      if(rootDivision){res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/overview"+(req.url.includes("?")?req.url.slice(req.url.indexOf("?")):""),"Cache-Control":"no-store"});res.end();return;}
+      if(rootDivision){
+        const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
+        const legacy=new URLSearchParams(query);
+        const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards"]);
+        const next=allowed.has(legacy.get("view"))?legacy.get("view"):"overview";
+        legacy.delete("view");
+        const suffix=legacy.toString();
+        res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/"+next+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
+      }
       const virtual = VIRTUAL[raw];
       let body, type;
       if (virtual) {
