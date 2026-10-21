@@ -66,7 +66,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await visit();
     const runValue=expr=>run(expr);
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-calendar-day]').length"),56);
-    assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-key')).display"),'none');
+    assert.equal(await runValue("document.querySelector('.calendar-key')===null"),true);
     assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-clock')).display"),'none');
     assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-filterbar')).display"),'none');
     assert.equal(await runValue("getComputedStyle(document.querySelector('.world-calendar')).maxWidth"),'none');
