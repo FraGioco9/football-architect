@@ -95,7 +95,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     const manifest=JSON.parse(readFileSync(join(artifact,'clubs/_shared/manifest.json'),'utf8'));
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
-    const knownPath='/clubs/'+country.toLowerCase()+'/'+id.toString()+'/overview';
+    const knownPath='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
     await visit('/clubs/it/1/overview');
     for(const width of [1440,390,320])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
