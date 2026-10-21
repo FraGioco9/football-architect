@@ -78,7 +78,7 @@ const indexContent = function indexContent(){
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
  '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
  }).join("\n");
- return '          <div class="app-world-countries" id="domestic">\\n'+cards+'\\n          </div>\\n          <section id="international" class="app-panel" aria-label="International competitions"><h2>International competitions</h2><p>International competition pages are being prepared.</p></section>';
+ return '          <div class="app-world-countries" id="domestic">\n'+cards+'\n          </div>\n          <section id="international" class="app-panel" aria-label="International competitions"><h2>International competitions</h2><p>International competition pages are being prepared.</p></section>';
 };
 const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,
  renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});
