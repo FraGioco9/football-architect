@@ -98,11 +98,12 @@
   window.addEventListener('fa:dev-progress-change',()=>queueMicrotask(syncWeek));
   syncControls();
  }
+ document.documentElement.dataset.calendarUiReady='true';
  const dialog=document.createElement('dialog');
  dialog.id='calendar-event-dialog';
- dialog.className='calendar-event-dialog';
+ dialog.className='calendar-event-dialog app-search-dialog';
  dialog.setAttribute('aria-labelledby','calendar-event-dialog-title');
- dialog.innerHTML='<div class="calendar-event-panel"><button type="button" class="calendar-event-close" aria-label="Close">×</button><h2 id="calendar-event-dialog-title"></h2><p id="calendar-event-dialog-subtitle"></p><div id="calendar-event-dialog-details"></div></div>';
+ dialog.innerHTML='<div class="calendar-event-panel app-search-panel"><button type="button" class="calendar-event-close app-search-close" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button><h2 id="calendar-event-dialog-title"></h2><p id="calendar-event-dialog-subtitle"></p><div id="calendar-event-dialog-details"></div></div>';
  document.body.append(dialog);
  const close=dialog.querySelector('.calendar-event-close');
  close.addEventListener('click',()=>dialog.close());
