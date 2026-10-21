@@ -8,7 +8,7 @@ export function renderWorldCalendar(){
   const kind=d=>d.kind==='official'?'Official events':d.kind[0].toUpperCase()+d.kind.slice(1);
   const label=e=>e.marker==='FEDERATION-FINAL'?'Federation Cup final':e.marker==='SOVEREIGN-FINAL'?'Sovereign Cup final':(e.family==='national'?'Domestic round ':'International round ')+e.round;
   const button=d=>{
-    const events=d.events.map(e=>'<span class="calendar-event calendar-event--'+e.family+'" data-calendar-marker="'+e.marker+'">'+(e.phase==='final'?'F':e.marker)+'</span>').join('');
+    const events=d.events.map(e=>'<span class="calendar-event calendar-event--'+(e.phase==='final'?'final':e.family)+'" data-calendar-marker="'+e.marker+'">'+(e.phase==='final'?'F':e.marker)+'</span>').join('');
     return '                  <button class="calendar-day" id="calendar-day-'+d.day+'" type="button" data-calendar-day="'+d.day+'" data-kind="'+d.kind+'" aria-pressed="false" aria-label="Day '+d.day+' · '+kind(d)+(d.events.length?' · '+d.events.map(label).join(' · '):'')+'" tabindex="'+(d.day===1?'0':'-1')+'" disabled>\n'+
       '                    <span class="calendar-day-number" aria-hidden="true">'+String(d.day).padStart(2,'0')+'</span>\n'+
       '                    <span class="calendar-day-kind" aria-hidden="true">'+kind(d)+'</span>\n'+
