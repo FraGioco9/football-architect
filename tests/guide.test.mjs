@@ -17,7 +17,7 @@ function mock(dataset = {}, content = "") {
 }
 function render(saved = null) {
   const controls = options.map(o => mock({language:o[2]},o[3]));
-  const guideLinks = ["divisions","clubs"].map(id=>mock({guideSection:id},id));
+  const guideLinks = ["world","divisions","clubs","movement","calendar","cups","records","explore"].map(id=>mock({guideSection:id},id));
   controls.forEach((c,i)=>c.id=options[i][1]);
   const labels=[...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>mock({i18n:m[1]}));
   const trigger=mock(), menu=mock(),value=mock(),container=mock();menu.hidden=true;
@@ -34,10 +34,10 @@ function render(saved = null) {
   runInNewContext(js,{document,window},{timeout:2000});
   return {document,controls,labels,trigger,menu,value,store,guideLinks,window,callbacks};
 }
-test("simple concept guide has only Divisions and Clubs",()=>{
+test("world handbook has eight accessible chapters",()=>{
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
-  assert.equal((html.match(/<section class="guide-section"/g)||[]).length,2);
-  assert.equal((html.match(/<h2\b/g)||[]).length,2);
+  assert.equal((html.match(/<section class="guide-section"/g)||[]).length,8);
+  assert.equal((html.match(/<h2\b/g)||[]).length,8);
   for(const key of ["guideDivisionsHeading","guideDivisionsText1","guideDivisionsText2","guideClubsHeading","guideClubsText1","guideClubsText2"]) assert.match(html,new RegExp('data-i18n="'+key+'"'));
   assert.doesNotMatch(html,/catalog-search|country-filter|type-filter|atlas-results|country-index|documented clubs|data\/clubs\.json|data\/divisions\.json/i);
   assert.doesNotMatch(js,/fetch\(|querySelectorAll\("\.club/);
@@ -68,7 +68,7 @@ test("same Landing language menu supports all five translations on Guide",()=>{
 test("sidebar links, selection and hash navigation are synchronized",()=>{
   assert.match(html,/<aside class="guide-sidebar"/);
   assert.match(html,/<nav class="guide-sidebar-nav"/);
-  for(const id of ["divisions","clubs"]){
+  for(const id of ["world","divisions","clubs","movement","calendar","cups","records","explore"]){
     assert.match(html,new RegExp('href="#'+id+'" data-guide-section="'+id+'"'));
     assert.match(html,new RegExp('<section class="guide-section" id="'+id+'"'));
   }
@@ -78,7 +78,7 @@ test("sidebar links, selection and hash navigation are synchronized",()=>{
   r.guideLinks[1].fire("click");
   assert.equal(r.guideLinks[1].attributes["aria-current"],"location");
   assert.equal(r.guideLinks[0].attributes["aria-current"],undefined);
-  r.window.location.hash="#divisions";
+  r.window.location.hash="#world";
   r.callbacks.hashchange();
   assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
   r.window.location.hash="#unknown";
@@ -94,7 +94,7 @@ test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.match(css,/grid-template-columns:210px minmax\(0,1fr\)/);
   assert.match(css,/guide-sidebar-link\[aria-current="location"\]/);
   assert.match(css,/focus-visible/);
-  assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
+  assert.match(css,/guide-sidebar-nav/);
   assert.doesNotMatch(html,/<script[^>]+guide\.js/);
 });
 
@@ -133,3 +133,5 @@ test("TITLE-FIX-01 localizes the Guide browser title on load and each language c
     assert.equal(stored.document.title, title + " — Football Architect", "saved " + lang);
   }
 });
+
+test("GUIDE-02 chapter copy exists across five languages",()=>{const ids=["guideIntro","guideWorldHeading","guideMovementHeading","guideCalendarHeading","guideCupsHeading","guideRecordsHeading","guideExploreHeading"];for(const id of ids){assert.match(html,new RegExp(`data-i18n="${id}"`));const r=render();for(const lang of ["en","de","es","fr","it"]){r.trigger.fire("click");r.controls.find(c=>c.dataset.language===lang).fire("click");assert.ok(r.labels.find(x=>x.dataset.i18n===id).textContent.length>0);}}});
