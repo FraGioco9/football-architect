@@ -962,10 +962,9 @@ html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{vis
 .calendar-day.app-search-escape-return:focus-visible{outline:none!important}
 @media(prefers-reduced-motion:reduce){.calendar-event-dialog.app-search-dialog::backdrop,.calendar-event-dialog.app-search-dialog .calendar-event-panel.app-search-panel,.calendar-event-dialog.app-search-dialog.is-closing::backdrop,.calendar-event-dialog.app-search-dialog.is-closing .calendar-event-panel.app-search-panel{animation:none!important}}
 
-/* CAL-UX-12: one border declaration for Week trigger and both arrows, including disabled states. */
-#world-calendar #calendar-controls :is(#calendar-week-trigger,#calendar-previous,#calendar-next),
-#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next):disabled{
- border:1px solid var(--border)!important;border-radius:9px;background:var(--surface);box-shadow:none
+/* CAL-UX-12: Week selector adopts the existing arrow-box border; arrow rules are unchanged. */
+#world-calendar #calendar-controls #calendar-week-trigger{
+ border:1px solid var(--line)!important;border-radius:9px;background:var(--surface);box-shadow:none
 }
 #world-calendar .calendar-day.app-search-escape-return:focus-visible{outline:none!important;box-shadow:none!important}
 .calendar-event-dialog.app-search-dialog:focus{outline:none}
