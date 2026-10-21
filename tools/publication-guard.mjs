@@ -15,7 +15,7 @@ const required=[
  "calendar/index.html","settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "assets/club-crests.js","assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
- "data/divisions.json","assets/world-calendar-model.js","assets/world-calendar.js"
+ "data/divisions.json","assets/world-calendar-model.js","assets/world-clock-adapter.js","assets/world-calendar.js"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"));
@@ -24,7 +24,7 @@ const rootFiles=new Set(["clubs/_shared/index.html","clubs/_shared/manifest.json
  "settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "data/divisions.json"]);
-const runtimeAssets=new Set(["world-calendar-model.js","world-calendar.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
+const runtimeAssets=new Set(["world-calendar-model.js","world-clock-adapter.js","world-calendar.js","calendar-simplified.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
  "app-search.js","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 

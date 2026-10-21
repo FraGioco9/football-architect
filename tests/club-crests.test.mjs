@@ -81,3 +81,11 @@ test('reusing an identity host replaces its image and ignores stale load events'
  assert.equal(node.children.length,0);assert.equal(node.dataset.clubCrestLoaded,undefined);assert.equal(node.dataset.clubCrestPending,undefined);
  assert.equal(s.requests.length,4,'Unknown identities retain the placeholder without probing a URL');
 });
+
+
+test('FR-2 FC Massalia crest is present in generated manifest and public allowlist',()=>{
+ const path='assets/clubs/FR/2/crest.svg';
+ assert.equal(manifest().clubCrests['FR-2'],path);
+ assert.equal(isAllowlistedPublicPath(path),true);
+ assert.equal(existsSync(new URL('../'+path,import.meta.url)),true);
+});

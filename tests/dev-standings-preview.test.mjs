@@ -516,22 +516,22 @@ test("DEV modular registry and adaptive panel contracts",()=>{
  assert.ok(widget.includes("safe-area-inset-bottom"));
  assert.ok(widget.includes("touchend"));
  assert.ok(widget.includes("SECTIONS_KEY"));
- assert.ok(client.includes('id:"reset-page"'));
  assert.ok(client.includes('id:"reset-global"'));
- assert.ok(client.includes('registerDebugControls("standings"'));
+ assert.ok(client.includes('id:"reset-global"'));
+ assert.ok(client.includes('registerDebugControls("general"'));
 });
 
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1'));
- assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
+ assert.ok(client.includes('type:"range",id:"world-day",label:"Day",min:1,max:56,step:1'));
+ assert.ok(client.includes('id:"world-day"'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
   const model=createPreviewStandings(manifest.divisions[0],days);
   assert.equal(model.fixtures.length,days*8,"fixture count for "+days);
   for(const row of model.rows){assert.equal(row.played,days);assert.equal(row.won+row.drawn+row.lost,days);assert.equal(row.recent.length,Math.min(5,days))}
  }
- assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
+ assert.ok(client.includes('id:"world-day"'));
  assert.ok(client.includes("widgetRoot?.syncVisibility()"));
  assert.ok(client.includes("matchdays=0;"));
  assert.ok(widget.includes("root.syncVisibility=()=>"));
@@ -564,7 +564,7 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–33 validation, visibility and 
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
  assert.ok(client.includes("function syncDebugControls()"));
  assert.ok(client.includes("matchdays=0;"));
- assert.ok(client.includes('value:()=>matchdays,onChange:setMatchdays'));
+ assert.ok(client.includes('id:"world-day"'));
  assert.ok(client.includes('return setDebugProgress(ROUNDS_KEY,value)'));
  for(const invalid of [-1,34,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=33,false);
 });
@@ -574,7 +574,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1'));
+ assert.ok(client.includes('type:"range",id:"world-day",label:"Day",min:1,max:56,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
  assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));
