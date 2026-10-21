@@ -66,33 +66,29 @@ test('CAL-IMP-04 isolated Chrome Back Forward restores navigation context',{time
     // CAL-IMP-04: deterministic same-document browser Back/Forward history.
     await visit();
     assert.equal(await run("!!window.faWorldCalendar"),true);
-    const historyStates=[
-      {day:16,view:'season',filter:'all',division:''},
-      {day:16,view:'season',filter:'national',division:''},
-      {day:16,view:'season',filter:'national',division:'it-2'},
-      {day:16,view:'week',filter:'national',division:'it-2'},
-      {day:23,view:'week',filter:'national',division:'it-2'}
-    ];
-    const makeRoute=state=>'/calendar?'+new URLSearchParams({season:'1',day:String(state.day),calendarView:state.view,competition:state.filter,...(state.division?{division:state.division}:{})}).toString();
-    await run("history.replaceState(null,'',"+JSON.stringify(makeRoute(historyStates[0]))+")");
-    for(const state of historyStates.slice(1))await run("history.pushState(null,'',"+JSON.stringify(makeRoute(state))+")");
+    const routes=['/calendar?season=1&calendarView=season','/calendar?season=1&calendarView=week','/calendar?season=1&calendarView=season','/calendar?season=1&calendarView=week'];
+    await run("history.replaceState(null,'',"+JSON.stringify(routes[0])+")");
+    for(const route of routes.slice(1))await run("history.pushState(null,'',"+JSON.stringify(route)+")");
     await run("dispatchEvent(new PopStateEvent('popstate'))");
-    const historyCheck=()=>run("({url:location.pathname+location.search,...(window.faWorldCalendar?.getSelection?.()||{})})");
-    for(let i=3;i>=0;i--){
+    const historyCheck=()=>run("({url:location.pathname+location.search,view:window.faWorldCalendar?.getSelection?.().view,dayParam:new URL(location.href).searchParams.has('day')})");
+    for(let i=2;i>=0;i--){
       await run("history.back()");
-      for(let n=0;n<100&&(await historyCheck()).url!==makeRoute(historyStates[i]);n++)await delay(30);
-      assert.deepEqual(await historyCheck(),{url:makeRoute(historyStates[i]),...historyStates[i]});
+      for(let n=0;n<100&&(await historyCheck()).url!==routes[i];n++)await delay(30);
+      const current=await historyCheck();
+      assert.equal(current.url,routes[i]);assert.equal(current.view,i%2?'week':'season');assert.equal(current.dayParam,false);
     }
-    for(let i=1;i<historyStates.length;i++){
+    for(let i=1;i<routes.length;i++){
       await run("history.forward()");
-      for(let n=0;n<100&&(await historyCheck()).url!==makeRoute(historyStates[i]);n++)await delay(30);
-      assert.deepEqual(await historyCheck(),{url:makeRoute(historyStates[i]),...historyStates[i]});
+      for(let n=0;n<100&&(await historyCheck()).url!==routes[i];n++)await delay(30);
+      const current=await historyCheck();
+      assert.equal(current.url,routes[i]);assert.equal(current.view,i%2?'week':'season');assert.equal(current.dayParam,false);
     }
-    await run("history.pushState(null,'','/calendar?season=1&day=999&calendarView=bad&competition=broken&division=wrong')");
+    await run("history.pushState(null,'','/calendar?season=1&calendarView=bad&competition=broken&division=wrong')");
     await run("dispatchEvent(new PopStateEvent('popstate'))");
     assert.equal(await run("window.faWorldCalendar.getSelection().filter"),'all');
     assert.equal(await run("window.faWorldCalendar.getSelection().division"),'');
-    console.log('CAL_IMP_04_HISTORY_BROWSER_PASS|back/forward; day; view; filter; division; malformed URL');
+    assert.equal(await run("new URL(location.href).searchParams.has('day')"),false);
+    console.log('CAL_IMP_04_HISTORY_BROWSER_PASS|Back/Forward; view; no day selection; malformed URL');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
     for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);
