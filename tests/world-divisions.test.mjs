@@ -359,3 +359,20 @@ test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
  const dev=read("tools/dev-standings-preview-client.mjs");
  assert.ok(dev.includes('clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview"'));
 });
+
+test("CLUB-NAV-02 links competition views to approved club routes and seasons",()=>{
+ const page=read("assets/competition-page.js");
+ const fixtures=read("assets/competition-fixtures.js");
+ const stats=read("tools/dev-competition-stats-client.mjs");
+ const history=read("assets/competition-history.js");
+ const preview=read("tools/dev-standings-preview-client.mjs");
+ assert.ok(page.includes('name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
+ assert.ok(fixtures.includes('link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
+ assert.ok(stats.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+team.clubId+"/overview"'));
+ assert.ok(history.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+clubId+"/overview"'));
+ assert.ok(history.includes('"/standings?season="+encodeURIComponent(season)'));
+ assert.ok(preview.includes('if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
+ const css=read("assets/club-page.css");
+ assert.ok(css.includes("column-gap:16px;row-gap:8px"));
+ assert.ok(css.includes(".club-colors>.club-color{margin-right:-8px}"));
+});
