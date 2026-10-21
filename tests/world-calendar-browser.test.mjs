@@ -97,12 +97,13 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await runValue("document.querySelector('#calendar-day-16').click()");
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog').open"),true);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-title').textContent"),'Day 16');
-    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').textContent"),'N04');
-    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-description').textContent"),'Domestic round 4');
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').textContent"),'I01');
+    assert.equal(await runValue("document.querySelectorAll('#calendar-event-dialog-details .calendar-event-code').length"),2);
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-description').textContent"),'International round 1');
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-subtitle').hidden"),true);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('Pending')"),false);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('competitions:')"),false);
-    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').dataset.eventType"),'national');
+    assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').dataset.eventType"),'international');
     await runValue("document.querySelector('#calendar-event-dialog').close()");
     assert.equal(await runValue("document.querySelector('#calendar-day-16').getAttribute('aria-pressed')"),'false');
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
