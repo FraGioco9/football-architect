@@ -169,7 +169,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
 
   // Verify the injected standings also supply a functioning fixtures calendar.
   await run("document.getElementById('competition-tab-fixtures').click()");
-  await until("new URL(location.href).searchParams.get('view')==='fixtures' && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && !document.getElementById('app-fixtures-toolbar').hidden");
+  await until("location.pathname.endsWith('/fixtures') && document.querySelectorAll('#app-fixtures-list .app-fixture-match').length===8 && !document.getElementById('app-fixtures-toolbar').hidden");
   await run("document.getElementById('app-fixtures-current').click()");
   await until("new URL(location.href).searchParams.get('matchday')==='16'");
   await run("document.getElementById('app-fixtures-previous').click()");
