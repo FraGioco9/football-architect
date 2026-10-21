@@ -66,7 +66,15 @@ const inlineCountryFlag = (country, id = null) => {
  const code=country.id==="ENG"?"gb-eng":country.id.toLowerCase();
  const svg=readFileSync(new URL("../"+country.flagAsset,import.meta.url),"utf8").replace(/\r\n/g,"\n").trim();
  if(!svg.startsWith("<svg ") || !svg.endsWith("</svg>"))throw Error("Invalid inline flag "+code);
- return '<span class="app-world-flag-frame" aria-hidden="true">'+svg.replace("<svg ",'<svg class="app-world-flag" '+(id?'id="'+id+'" ':"")+'aria-hidden="true" focusable="false" width="24" height="16" ')+"</span>";
+ const vb=svg.match(/viewBox="([\\d.+-]+)\\s+([\\d.+-]+)\\s+([\\d.+-]+)\\s+([\\d.+-]+)"/);
+ if(!vb)throw Error("Missing flag viewBox "+code);
+ const [x,y,w,h]=vb.slice(1).map(Number);
+ if(![x,y,w,h].every(Number.isFinite)||w<=0||h<=0)throw Error("Invalid flag viewBox "+code);
+ const root=svg.indexOf(">"),end=svg.lastIndexOf("</svg>");
+ const sx=5/w,sy=4/h;
+ const opening=svg.slice(0,root+1).replace(/viewBox="[^"]+"/,'viewBox="0 0 5 4"').replace("<svg ",'<svg class="app-world-flag" '+(id?'id="'+id+'" ':"")+'aria-hidden="true" focusable="false" width="25" height="20" ');
+ const painted='<g transform="matrix('+sx+' 0 0 '+sy+' '+(-x*sx)+' '+(-y*sy)+')">'+svg.slice(root+1,end)+'</g>';
+ return '<span class="app-world-flag-frame" aria-hidden="true">'+opening+painted+'</svg></span>';
 };
 const indexContent = function indexContent(){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
