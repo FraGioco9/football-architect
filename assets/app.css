@@ -843,3 +843,20 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .calendar-clock #calendar-clock-source{font-size:12px;opacity:.76}.calendar-clock input{max-width:160px}
 .calendar-days [data-clock-relative="current"]{outline:2px solid currentColor;outline-offset:-2px}
 @media(max-width:620px){.calendar-clock{flex-direction:column;align-items:stretch}.calendar-clock input{width:100%;max-width:none}}
+
+/* CAL-SIMPLE-01: full-width calendar; compact season and event dialog. */
+.world-calendar{width:100%;max-width:none}
+#world-calendar>.calendar-heading,#world-calendar>.calendar-clock,#world-calendar>.calendar-filterbar,#world-calendar>.calendar-details,#world-calendar>.calendar-selected,#world-calendar>.calendar-note{display:none!important}
+.calendar-season-picker{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 16px;font-weight:700}
+.calendar-season-picker select{border:1px solid var(--line);border-radius:9px;padding:9px 30px 9px 12px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.calendar-event{cursor:pointer}
+.calendar-event:hover,.calendar-event:focus-visible{filter:brightness(1.23);outline:2px solid var(--focus);outline-offset:1px}
+.calendar-event-dialog{width:min(560px,calc(100vw - 28px));max-height:85dvh;margin:auto;padding:0;border:0;border-radius:14px;background:var(--surface);color:var(--text);box-shadow:0 24px 70px #0008;animation:calendar-popup-in .2s ease both}
+.calendar-event-dialog::backdrop{background:#0009;animation:calendar-backdrop-in .2s ease both}
+.calendar-event-panel{padding:24px;position:relative}
+.calendar-event-close{position:absolute;right:12px;top:12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font-size:24px;width:38px;height:38px;cursor:pointer}
+.calendar-event-panel h2{margin:4px 40px 12px 0;font-size:20px}
+.calendar-event-panel p{line-height:1.6;color:var(--muted)}
+@keyframes calendar-popup-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes calendar-backdrop-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.calendar-event-dialog,.calendar-event-dialog::backdrop{animation:none}}
