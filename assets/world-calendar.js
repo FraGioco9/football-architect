@@ -122,6 +122,7 @@
   const restoreUrl=()=>{
     if(!hasLocation())return;
     const p=new URL(window.location.href).searchParams;
+    filter='all';division=''; // Missing or malformed history parameters cannot inherit stale filters.
     if(p.get('season')==='1'&&/^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(p.get('day')||''))state.day=Number(p.get('day'));
     if(['season','week'].includes(p.get('calendarView')))state.view=p.get('calendarView');
     if(filters.includes(p.get('competition')))filter=p.get('competition');
