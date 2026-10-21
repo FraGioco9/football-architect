@@ -19,3 +19,13 @@ test('CAL-IMP-03 respects frozen model, international-first order and transition
  assert.match(runtime,/d\.events/);
  assert.match(runtime,/transitionText/);
 });
+
+test('CAL-IMP-03 checked-in HTML matches generated panel and is accessible',()=>{
+ const html=readFileSync(new URL('../calendar/index.html',import.meta.url),'utf8');
+ assert.match(html,/<section class="calendar-details" id="calendar-details" data-day="1" aria-labelledby="calendar-details-heading">/);
+ assert.match(html,/<h3 id="calendar-details-heading">/);
+ assert.ok(html.indexOf('id="calendar-selected"')<html.indexOf('id="calendar-details"'));
+ assert.ok(html.indexOf('id="calendar-details"')<html.indexOf('id="calendar-key"'));
+ assert.match(runtime,/lastDetailsDay===state\.day&&lastDetailsLanguage===root\.lang/);
+ assert.match(runtime,/renderDetails\(\);/);
+});

@@ -41,6 +41,7 @@
     get('days').setAttribute('aria-label',state.view==='season'?w.season+' · '+w.days+' 1–56':w.week+' '+week);
     get('selected').textContent=w.selected+': '+label(days[state.day-1],w);
     root.dataset.calendarReady='true';
+    renderDetails();
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
@@ -70,9 +71,13 @@
     it:{day:'Giorno',events:'Eventi ufficiali',preseason:'Prestagione',pause:'Pausa',transition:'Transizione',none:'Nessun evento ufficiale in questo giorno.',preseasonText:'Nessuna partita ufficiale in prestagione.',pauseText:'Nessuna partita ufficiale durante la pausa.',transitionText:'La transizione stagionale non è ancora definita.',national:'Giornata nazionale',international:'Turno internazionale',league:'Fase campionato',playoffs:'Playoff',quarterfinals:'Quarti di finale',semifinals:'Semifinali',postseason:'Postseason',final:'Finale',show:'Mostra dettagli',fixtures:'Partite non disponibili',results:'Risultati non disponibili',scope:'Competizioni',unknown:'Nessuna partita o risultato ufficiale disponibile.'}
   };
   const nameFor=(event,w)=>event.marker==='FEDERATION-FINAL'?'Federation Cup · '+w.final:event.marker==='SOVEREIGN-FINAL'?'Sovereign Cup · '+w.final:(event.family==='national'?w.national:w.international)+' '+event.round;
+  let lastDetailsDay=null,lastDetailsLanguage=null;
   function renderDetails(){
-    const w=detailWords[root.lang]||detailWords.en,d=days[state.day-1],old=details.dataset.day;
-    if(old!==String(state.day)){details.dataset.day=String(state.day);content.replaceChildren();}
+    if(!details||!heading||!content)return; // Old lightweight DOM harnesses do not create details.
+    if(lastDetailsDay===state.day&&lastDetailsLanguage===root.lang)return;
+    lastDetailsDay=state.day;lastDetailsLanguage=root.lang;
+    const w=detailWords[root.lang]||detailWords.en,d=days[state.day-1];
+    details.dataset.day=String(state.day);
     heading.textContent=w.day+' '+d.day+' · '+(d.events.length?w.events:w[d.kind]);
     content.replaceChildren();
     if(!d.events.length){
@@ -90,8 +95,6 @@
       disclosure.append(info);article.append(disclosure);content.append(article);
     }
   }
-  renderDetails();
-  new MutationObserver(renderDetails).observe(root,{attributes:true,attributeFilter:['lang','data-calendar-day']});
   window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state})});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
