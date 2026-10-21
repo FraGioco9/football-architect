@@ -29,7 +29,7 @@
  let selectedSeason=1;
  window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?readDebugSeason():1);
- function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?season="+selectedSeason+"&calendarView="+mode;try{sessionStorage.setItem("football-architect:calendar-route",route)}catch{}document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
+ function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?season="+selectedSeason+"&calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
  function updateSeason(){
   const limit=dev?readDebugSeason():1;
   const params=new URL(location.href).searchParams;
