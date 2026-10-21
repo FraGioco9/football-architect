@@ -13,9 +13,9 @@ function scenario({dev=false,preview=false,snapshot=false,season='3',mobile=fals
  const listeners={};
  const link={dataset:{},setAttribute(name,value){this[name]=value},addEventListener(name,callback){listeners[name]=callback}};
  const links={calendar:link};
- const root={dataset:{...(dev?{faDevAppOrigin:'http://localhost:2000'}:{}),...(preview?{faDevPreview:'true'}:{})}};
+ const root={dataset:{...(dev?{faDevAppOrigin:'http://localhost:2000'}:{}),}};
  const document={documentElement:root,querySelectorAll:()=>[]};
- const window={matchMedia:()=>({matches:mobile}),faDevCalendarClockSnapshot:snapshot?{source:{kind:'dev'}}:undefined};
+ const window={faDevPreviewMode:preview,matchMedia:()=>({matches:mobile}),faDevCalendarClockSnapshot:snapshot?{source:{kind:'dev'}}:undefined};
  const sessionStorage={getItem:key=>key==='football-architect:standings-dev-season'?season:null};
  runInNewContext(snippet+';rewriteAppLinks();',{document,window,sessionStorage,links,appHref:x=>x,siteHref:x=>x});
  return {link,listeners,storage:sessionStorage};
@@ -51,5 +51,5 @@ for(const mobile of [false,true])test('CAL-SEASON-LINK-01 localhost DEV without 
 });
 test('CAL-SEASON-LINK-01 preview server sets DEV marker before page scripts',()=>{
  const server=readFileSync(new URL('../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
- assert.ok(server.includes('dataset.faDevPreview="true"'));
+ assert.ok(server.includes('window.faDevPreviewMode=true'));
 });
