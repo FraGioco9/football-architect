@@ -17,6 +17,8 @@
   <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:"standings";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\d{0,8}$/.test(s||"")&&s!=="1")})();</script>
   <script src="/assets/competition-model.js" defer></script>
   <script src="/assets/competition-page.js" defer></script>
+  <link rel="stylesheet" href="/assets/sidebar-evolution.css">
+  <script src="/assets/sidebar-evolution.js" defer></script>
 </head>
 <body class="app-body">
   <div class="fa-career-shell">
