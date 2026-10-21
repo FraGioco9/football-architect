@@ -156,6 +156,12 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.getElementById('calendar-previous').disabled"),false);
     assert.equal(await runValue("document.getElementById('calendar-next').disabled"),false);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog')?.classList.contains('app-search-dialog')"),true);
+    await cmd('Page.navigate',{url:devOrigin+'/calendar?calendarView=week'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarUiReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'3','Absent season resolves to current DEV season');
+    assert.equal(await runValue("new URL(location.href).searchParams.get('season')"),'3','Current season is canonicalized in URL');
+    assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Default current season opens current week');
+    assert.equal(await runValue("getComputedStyle(document.querySelector('#calendar-week-trigger')).borderTopWidth"),'1px');
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
