@@ -75,10 +75,12 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1');
     assert.equal(await runValue("document.querySelector('.calendar-event').hasAttribute('title')"),false);
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter'))");
-    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').textContent"),'N04 - Domestic round 4');
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').textContent"),'Domestic round 4');
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false);
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerleave'))");
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
+    assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N31\\\"]').textContent"),'P01');
+    assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N32\\\"]').textContent"),'P02');
     await runValue("document.querySelector('#calendar-day-16').click()");
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog').open"),true);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-title').textContent"),'Day 16');
@@ -110,6 +112,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await runValue("(()=>{const input=document.querySelector('[data-dev-control=world-day]');input.value='26';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
     for(let i=0;i<20&&!await runValue("sessionStorage.getItem('football-architect:calendar-dev-world-day')==='26'");i++)await delay(50);
     assert.equal(await runValue("sessionStorage.getItem('football-architect:calendar-dev-world-day')"),'26');
+    assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-dev-current-day=true]').length"),1);
+    assert.equal(await runValue("document.querySelector('[data-calendar-day=26]').dataset.devCurrentDay"),'true');
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
     await runValue("(()=>{const input=document.querySelector('[data-dev-control=season]');input.value='3';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
