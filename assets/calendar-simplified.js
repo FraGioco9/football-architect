@@ -132,6 +132,7 @@
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
   tooltip.hidden=true;previousFocus=focus||day;
+  previousFocus?.classList?.remove('app-search-escape-return');
   dialog.querySelector('#calendar-event-dialog-title').textContent=t().day+' '+n;
   dialog.querySelector('#calendar-event-dialog-subtitle').textContent=t().season+' '+selectedSeason;
   const body=dialog.querySelector('#calendar-event-dialog-details');body.replaceChildren();
