@@ -310,7 +310,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-standing-scroll::-webkit-scrollbar{height:5px}
 .app-world-standing-scroll::-webkit-scrollbar-track{background:transparent}
 .app-world-standing-table{width:100%;min-width:766px;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:11.5px;color:var(--text);font-variant-numeric:tabular-nums}
-.app-world-standing-table tr>*{padding:6px 7px;border:0;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle;white-space:nowrap}
+.app-world-standing-table tr>*{padding:3px 4px;border:0;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle;white-space:nowrap}
 .app-world-standing-table thead th{height:36px;background:#172d30;color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.03em}
 .app-world-standing-table tbody tr>*{height:68px;background:var(--surface)}
 .app-world-standing-table tbody tr:nth-child(even)>*:not(:nth-child(10)){background:rgba(100,203,169,.025)}
@@ -504,7 +504,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 }
 @media (min-width:1160px) {
   .app-world-standing-table{min-width:852px}
-  .app-world-standing-table tr>*{padding:6px 8px}
+  .app-world-standing-table tr>*{padding:3px 4px}
   .app-world-standing-table tbody tr>*{height:68px}
   .app-world-standing-table tr>*:first-child{width:44px;min-width:44px;max-width:44px}
   .app-world-standing-table tr>*:nth-child(2){left:44px;min-width:210px}
@@ -836,3 +836,7 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 
 .app-fixtures-picker [hidden]{display:none}
 \n/* CAL-IMP-03: inline event details, never an overlay. */\n.calendar-details{min-width:0;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}\n.calendar-details h3{margin:0 0 14px;font-size:18px}\n.calendar-details-content{display:grid;gap:12px;min-width:0}\n.calendar-detail-card{min-width:0;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}\n.calendar-detail-card h4{margin:0 0 8px;font-size:15px;overflow-wrap:anywhere}\n.calendar-detail-summary,.calendar-details-empty{margin:0;color:var(--muted);font-size:13px;line-height:1.6}\n.calendar-detail-disclosure{margin-top:12px;font-size:13px}\n.calendar-detail-disclosure>summary{cursor:pointer;font-weight:700;list-style-position:inside;min-height:32px}\n.calendar-detail-disclosure>summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}\n.calendar-detail-more{padding-top:8px;color:var(--muted);overflow-wrap:anywhere}\n.calendar-detail-more p{margin:4px 0}\n@media(prefers-reduced-motion:reduce){.calendar-details *{scroll-behavior:auto;transition:none!important}}\n
+/* Compact standings and accessible club links. */
+.app-world-standing-club-link{color:inherit;text-decoration:none;text-underline-offset:3px}
+.app-world-standing-club-link:hover,.app-world-standing-club-link:focus-visible{text-decoration:underline}
+.app-world-standing-club-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
