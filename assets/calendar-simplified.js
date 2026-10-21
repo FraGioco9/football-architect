@@ -127,7 +127,7 @@
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
  function currentDay(){try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}}
- function updateCurrentDay(){const n=dev&&selectedSeason===readDebugSeason()?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current)cell.dataset.devCurrentDay='true';else delete cell.dataset.devCurrentDay}}
+ function updateCurrentDay(){const n=dev&&selectedSeason===readDebugSeason()?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current){cell.dataset.devCurrentDay='true';cell.setAttribute('aria-current','true')}else{delete cell.dataset.devCurrentDay;cell.removeAttribute('aria-current')}}}
  window.addEventListener('fa:dev-world-day-change',updateCurrentDay);
  window.addEventListener('fa:dev-progress-change',updateCurrentDay);
  updateCurrentDay();
