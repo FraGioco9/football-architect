@@ -32,7 +32,7 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:index\.html)?)?$/;
+const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
@@ -109,6 +109,8 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           raw.includes("\\") || raw.includes("\0") || /\/\.{1,2}(?:\/|$)/.test(raw)) {
         return reject(res, 403);
       }
+      const rootDivision = raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/?$/);
+      if(rootDivision){res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/overview"+(req.url.includes("?")?req.url.slice(req.url.indexOf("?")):""),"Cache-Control":"no-store"});res.end();return;}
       const virtual = VIRTUAL[raw];
       let body, type;
       if (virtual) {
