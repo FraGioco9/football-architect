@@ -906,13 +906,12 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
   type:'range',id:'season',label:'Season',min:1,max:4,step:1,scope:'general',
   value:season,onChange:n=>{if(!Number.isInteger(n)||n<1||n>4)return false;try{sessionStorage.setItem(seasonKey,String(n))}catch{return false}publish();return true}
  },{
-  type:'button',id:'reset-global',label:'Reset all',scope:'general',
-  onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();return true}
- }]);
- registerDebugControls('calendar',[{
   type:'range',id:'world-day',label:'Day',min:1,max:56,step:1,scope:'general',
   value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();return true}
+ },{
+  type:'button',id:'reset-global',label:'Reset',scope:'general',
+  onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();return true}
  }]);
- createDebugWidget({page:'calendar'});
+  createDebugWidget({page:'calendar'});
  publish();
 }
