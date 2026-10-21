@@ -60,8 +60,6 @@
   const complete=code+' - '+title;
   marker.title=complete;
   marker.setAttribute('aria-label',complete);
-  marker.setAttribute('role','button');
-  marker.tabIndex=0;
   marker.addEventListener('click',event=>{
    event.preventDefault();event.stopPropagation();
    previousFocus=marker;
@@ -74,6 +72,6 @@
    const pending=document.createElement('p');pending.textContent='Fixtures and results are not yet available.';body.append(pending);
    dialog.showModal();
   });
-  marker.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();marker.click()}});
+  day.addEventListener('keydown',event=>{if(event.target===day&&(event.key==='Enter'||event.key===' ')){event.preventDefault();marker.click()}});
  }
 })();
