@@ -1217,8 +1217,7 @@
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
-    let calendarRoute="/calendar";
-    try{const stored=sessionStorage.getItem("football-architect:calendar-route");if(stored&&/^\/calendar\?season=[1-4]&calendarView=(?:season|week)$/.test(stored))calendarRoute=stored}catch{}
+    const calendarRoute="/calendar";
     const routes = {dashboard:"/dashboard",calendar:calendarRoute,
       settings:"/settings",divisions:"/competitions"};
     for (const [view,link] of Object.entries(links)) {
