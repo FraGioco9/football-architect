@@ -17,7 +17,7 @@ test('opt-in subdomain preview separates site/app roots, links and Host gates',a
   assert.match(site.body,/href="http:\/\/app\.localhost:2000\/dashboard"/);
   const app=await get('/','app.localhost:2000');assert.equal(app.status,200);
   assert.match(app.body,/id="app-dashboard"/);assert.match(app.body,/href="http:\/\/localhost:2000"/);
-  for(const path of ['/guide','/assets/landing.js','/dashboard','/calendar','/settings','/competitions','/competitions/it-1?season=2&view=fixtures','/competitions/_shared/manifest.json'])
+  for(const path of ['/guide','/assets/landing.js','/dashboard','/calendar','/settings','/competitions','/competitions/it-1/fixtures?season=2','/competitions/_shared/manifest.json'])
    assert.equal((await get(path,'app.localhost:2000')).status,200,path);
   for(const host of ['app.localhost.evil:2000','other.localhost:2000','localhost:3000','app.example.com:2000'])
    assert.equal((await get('/',host)).status,403,host);
@@ -29,7 +29,7 @@ test('subdomain runtime helpers preserve port, query and fragment',()=>{
  const code=source.slice(source.indexOf('  function appHref('),source.indexOf('  window.faAppHref'));
  const context={window:{location:{hostname:'app.localhost',protocol:'http:'}},document:{documentElement:{dataset:{faDevAppOrigin:'http://app.localhost:2000',faDevSiteOrigin:'http://localhost:2000'}}}};
  runInNewContext(code,context);
- assert.equal(context.appHref('/competitions/it-1?season=2&view=fixtures#x/'),'/competitions/it-1?season=2&view=fixtures#x/');
+ assert.equal(context.appHref('/competitions/it-1/fixtures?season=2#x/'),'/competitions/it-1/fixtures?season=2#x/');
  assert.equal(context.siteHref('/'),'http://localhost:2000');
  assert.equal(context.siteHref('/guide#clubs'),'http://localhost:2000/guide#clubs');
  context.window.location.hostname='localhost';
