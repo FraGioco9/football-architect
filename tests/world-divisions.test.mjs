@@ -390,12 +390,12 @@ test("HISTORY-ARCHIVE-LINK-01 anchors have text-only hit areas and flags share n
 test("FLAG-54 generated competition flags have vector 5:4 viewport",()=>{
  const pages=["competitions/index.html",...["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"))];
  for(const file of pages){
-  const html=read(file),flags=[...html.matchAll(/<svg class="app-world-flag"[\\s\\S]*?<\\/svg>/g)];
+  const html=read(file),flags=[...html.matchAll(/<svg class="app-world-flag"[\s\S]*?<\/svg>/g)];
   assert.ok(flags.length>0,file+" must contain inline SVG flags");
   for(const [svg] of flags){
    assert.match(svg,/viewBox="0 0 5 4"/,file);
    assert.match(svg,/width="25" height="20"/,file);
-   assert.match(svg,/<g transform="matrix\\([^"]+\\)">/,file);
+   assert.match(svg,/<g transform="matrix\([^"]+\)">/,file);
   }
  }
 });
