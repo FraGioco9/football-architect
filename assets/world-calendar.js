@@ -112,8 +112,11 @@
     fr:['Jour mondial indisponible','Saison','Jour','DEV/Aperçu fictif','Aucune horloge mondiale officielle',"Aujourd’hui","Aujourd’hui indisponible"],
     it:['Giorno mondiale non disponibile','Stagione','Giorno','DEV/Anteprima fittizia','Orologio mondiale ufficiale non disponibile','Oggi','Oggi non disponibile']
   };
+  // DEV presentation is enabled only by the isolated server-side HTML bootstrap.
+  // Public pages must never accept a browser-dispatched fictional or authoritative clock.
+  const devClockEnabled=window.faDevCalendarClockSnapshot?.source?.kind==='dev';
   function updateClock(raw){
-    try{clockSnapshot=raw?.source?.kind==='authoritative'?null:clockAdapter?.normalize(raw)??null}catch{clockSnapshot=null}
+    try{clockSnapshot=devClockEnabled&&raw?.source?.kind==='dev'?clockAdapter?.normalize(raw)??null:null}catch{clockSnapshot=null}
     renderClock();
   }
   function renderClock(){
