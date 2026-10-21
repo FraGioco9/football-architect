@@ -138,7 +138,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
     await run("window.__clubHeaderCrest=document.querySelector('.club-header .app-club-crest-image')");
-    await run("document.querySelector('.club-tabs a[href$='/roster']").click()");
+    await run('document.querySelector(".club-tabs a[href$=\'/roster\']").click()');
     assert.equal(await run("location.pathname.endsWith('/roster')"),true);
     assert.equal(await run("document.querySelector('.club-header .app-club-crest-image')===window.__clubHeaderCrest"),true,'Tab navigation must preserve the loaded header crest');
     await run("history.back()");
