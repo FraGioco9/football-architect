@@ -15,6 +15,7 @@ const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],
  ["__fa_dev__/standings-client.mjs","tools/dev-standings-preview-client.mjs"],
  ["__fa_dev__/debug-widget.mjs","tools/dev-debug-widget.mjs"],
+  ["__fa_dev__/dev-world-clock.mjs","tools/dev-world-clock.mjs"],
  ["__fa_dev__/standings-data.mjs","tools/dev-standings-preview-data.mjs"],
  ["__fa_dev__/dev-standings-preview-data.mjs","tools/dev-standings-preview-data.mjs"],
  ["__fa_dev__/stats-client.mjs","tools/dev-competition-stats-client.mjs"],
