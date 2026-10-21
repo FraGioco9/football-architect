@@ -34,6 +34,12 @@
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'" role="img" aria-label="'+escape(t.crest)+'"></span>';
   const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
+  const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
+  const competitionCard='<div class="club-competition-layout"><div class="club-competition-identity">'+
+   (divisionLogo?'<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">':'<span class="club-competition-logo club-competition-logo-empty" aria-hidden="true">—</span>')+
+   '<div class="club-competition-copy"><span class="club-competition-label">'+escape(t.division)+'</span><strong class="club-competition-name">'+divisionValue+'</strong>'+
+   (division?'<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>':'')+'</div></div>'+
+   '<div class="club-competition-status"><span class="club-competition-label">'+escape(t.competition)+'</span><strong>'+escape(division?t.provisional:t.outside)+'</strong></div></div>';
   const params=new URLSearchParams(search);
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.
   const temporal=new URLSearchParams();
@@ -70,7 +76,7 @@
     (rivalItems?'<ul class="club-rivalries-list">'+rivalItems+'</ul>':escape(t.noRivalries))+'</dd></div></dl></section>'+
     '</div><aside class="app-panel club-kits" aria-labelledby="club-kits-title"><h2 id="club-kits-title">'+escape(t.kitsLabel)+'</h2><p>'+escape(t.kitsPending)+'</p></aside>'+
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
-    '<dl class="club-facts">'+fact('division',divisionValue)+(division?fact('tierLabel',escape(division.tier===1?t.tier1Label:t.tier2Label)):'')+'</dl></section></div>';
+    competitionCard+'</section></div>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
