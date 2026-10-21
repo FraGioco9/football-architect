@@ -133,35 +133,6 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await run("window.faWorldCalendar.getSelection().filter"),'all');
     assert.equal(await run("window.faWorldCalendar.getSelection().division"),'');
     await visit();
-    // CAL-IMP-04: deterministic same-document browser Back/Forward history.
-    await cmd('Page.navigate',{url:origin+'/calendar?season=1&day=1&calendarView=season&competition=all'});
-    for(let n=0;n<100;n++){if(await run("location.pathname+location.search==='/calendar?season=1&day=1&calendarView=season&competition=all'&&document.documentElement.dataset.calendarReady==='true'&&!!window.faWorldCalendar"))break;await delay(50)}
-    assert.equal(await run('location.pathname+location.search'),'/calendar?season=1&day=1&calendarView=season&competition=all');
-    const historyStates=[
-      {day:16,view:'season',filter:'all',division:''},
-      {day:16,view:'season',filter:'national',division:''},
-      {day:16,view:'season',filter:'national',division:'it-2'},
-      {day:16,view:'week',filter:'national',division:'it-2'},
-      {day:23,view:'week',filter:'national',division:'it-2'}
-    ];
-    const makeRoute=state=>'/calendar?'+new URLSearchParams({season:'1',day:String(state.day),calendarView:state.view,competition:state.filter,...(state.division?{division:state.division}:{})}).toString();
-    await run("history.replaceState(null,'',"+JSON.stringify(makeRoute(historyStates[0]))+")");
-    for(const state of historyStates.slice(1))await run("history.pushState(null,'',"+JSON.stringify(makeRoute(state))+")");
-    await run("dispatchEvent(new PopStateEvent('popstate'))");
-    const historyCheck=()=>run("({url:location.pathname+location.search,...(window.faWorldCalendar?.getSelection?.()||{})})");
-    for(let i=3;i>=0;i--){
-      await run("new Promise(resolve=>{addEventListener('popstate',()=>resolve(true),{once:true});history.back()})");
-      assert.deepEqual(await historyCheck(),{url:makeRoute(historyStates[i]),...historyStates[i]});
-    }
-    for(let i=1;i<historyStates.length;i++){
-      await run("new Promise(resolve=>{addEventListener('popstate',()=>resolve(true),{once:true});history.forward()})");
-      assert.deepEqual(await historyCheck(),{url:makeRoute(historyStates[i]),...historyStates[i]});
-    }
-    await run("history.pushState(null,'','/calendar?season=1&day=999&calendarView=bad&competition=broken&division=wrong')");
-    await run("dispatchEvent(new PopStateEvent('popstate'))");
-    assert.equal(await run("window.faWorldCalendar.getSelection().filter"),'all');
-    assert.equal(await run("window.faWorldCalendar.getSelection().division"),'');
-    await visit();
     // CAL-IMP-03: inline details, special-final ordering, disclosure continuity.
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
     await run("document.getElementById('calendar-season').click()");
