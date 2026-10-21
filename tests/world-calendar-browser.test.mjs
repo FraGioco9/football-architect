@@ -86,6 +86,10 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false);
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerleave'))");
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new FocusEvent('focusin',{bubbles:true}))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false,'Marker tooltip is keyboard-accessible');
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new FocusEvent('focusout',{bubbles:true}))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
     assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N31\\\"]').textContent"),'P01');
     assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N32\\\"]').textContent"),'P02');
     await runValue("document.querySelector('#calendar-day-16').click()");
