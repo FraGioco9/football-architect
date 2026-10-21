@@ -115,7 +115,7 @@
     const crest=element("span","app-world-club-crest-placeholder");
     crest.dataset.clubCrest=club.countryId+"-"+id;crest.setAttribute("aria-hidden","true");
     item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),crest,
-      element("span","app-fixture-name",club.primaryName||club.abbr));
+      (()=>{const link=element("a","app-fixture-name app-world-standing-club-link",club.primaryName||club.abbr);link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";return link})());
     return item;
   }
   function matchRow(game){
