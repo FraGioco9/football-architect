@@ -4,7 +4,7 @@
  const root=document.getElementById('world-calendar');
  if(!root)return;
  const seasonKey='football-architect:standings-dev-season';
- const dev=Boolean(document.querySelector('script[src="/__fa_dev__/debug-settings.mjs"]'));
+ const dev=window.faDevCalendarClockSnapshot?.source?.kind==='dev';
  const heading=root.querySelector('.calendar-heading');
  const selector=document.createElement('label');
  selector.className='calendar-season-picker';
