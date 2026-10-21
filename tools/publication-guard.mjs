@@ -10,7 +10,7 @@ import {clubCrestAssets} from "./club-crest-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
 const required=[
- "clubs/index.html","clubs/_shared/index.html","clubs/_shared/manifest.json","assets/club-page.js","assets/club-model.js","assets/club-page.css",
+ "clubs/_shared/index.html","clubs/_shared/manifest.json","assets/club-page.js","assets/club-model.js","assets/club-page.css",
  "vercel.json","index.html","guide/index.html","dashboard/index.html",
  "calendar/index.html","settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
