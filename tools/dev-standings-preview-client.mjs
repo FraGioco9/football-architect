@@ -909,8 +909,8 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
   onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();return true}
  }]);
  registerDebugControls('calendar',[{
-  type:'range',id:'world-day',label:'World day',min:1,max:56,step:1,
-  value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();document.getElementById('calendar-day-'+n)?.click();return true}
+  type:'range',id:'world-day',label:'World day',min:1,max:56,step:1,scope:'general',
+  value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();return true}
  }]);
  createDebugWidget({page:'calendar'});
  publish();
