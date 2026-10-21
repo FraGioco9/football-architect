@@ -82,7 +82,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
           assert.equal(state.selection.day,16);assert.equal(state.selection.view,view);
           assert.ok(state.scroll<=state.width+1&&state.body<=state.viewport+1,JSON.stringify({width,theme,lang,view,state}));
           assert.deepEqual(state.clipped,[],JSON.stringify({width,theme,lang,view,state}));assert.deepEqual(state.errors,[]);
-          assert.equal(await run("[...document.querySelector('[data-calendar-day=\"16\"]').querySelectorAll('[data-calendar-marker]')].map(n=>n.textContent).join('|')"),'I01|N04');
+          assert.equal(await run("[...document.querySelector('#calendar-day-16').querySelectorAll('[data-calendar-marker]')].map(n=>n.textContent).join('|')"),'I01|N04');
           if(lang==='en'&&((width===1440&&theme==='dark'&&view==='season')||(width===390&&theme==='dark')||(width===320&&theme==='light'&&view==='season'))){
             const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:70,captureBeyondViewport:false});
             const label='CALENDAR '+width+' '+theme+' '+view,chunks=shot.data.match(/.{1,4096}/g)||[];
