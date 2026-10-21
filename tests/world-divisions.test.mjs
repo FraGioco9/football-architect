@@ -395,7 +395,13 @@ test("FLAG-54 generated competition flags have vector 5:4 viewport",()=>{
   for(const [svg] of flags){
    assert.match(svg,/viewBox="0 0 5 4"/,file);
    assert.match(svg,/width="25" height="20"/,file);
-   assert.match(svg,/<g transform="matrix\([^"]+\)">/,file);
+   assert.match(svg,/<svg x="0" y="0" width="5" height="4" viewBox="[^"]+" preserveAspectRatio="none">/,file);
   }
  }
+});
+
+test("CLUB-COMPETITION-FULLWIDTH renders Competition after both top panels",()=>{
+ const model=read("assets/club-model.js"),css=read("assets/club-page.css");
+ assert.ok(model.includes("'</div><aside class=\"app-panel club-kits\""));
+ assert.ok(css.includes(".club-overview-layout>.club-competition{grid-column:1/-1"));
 });
