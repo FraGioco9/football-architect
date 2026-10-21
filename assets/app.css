@@ -987,3 +987,31 @@ html[data-calendar-view="week"] #world-calendar>#calendar-controls{display:flex!
 #world-calendar #calendar-controls #calendar-next:not(:disabled):hover{background:var(--surface-hover,var(--surface))!important;border-color:var(--border)!important;box-shadow:var(--shadow-hover,0 2px 8px rgba(0,0,0,.14))!important;transform:translateY(-1px)!important}
 #world-calendar #calendar-controls #calendar-previous:disabled:hover,
 #world-calendar #calendar-controls #calendar-next:disabled:hover{transform:none!important;box-shadow:none!important}
+
+/* CAL-SIMPLE-14: one visual hover behavior for the four Week controls. */
+#world-calendar #calendar-controls #calendar-previous,
+#world-calendar #calendar-controls #calendar-next,
+#world-calendar #calendar-controls #calendar-week-trigger,
+#world-calendar #calendar-controls #calendar-current-week{
+  transform:none!important;animation:none!important;
+  transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease!important;
+}
+#world-calendar #calendar-controls #calendar-previous:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-next:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-week-trigger:not(:disabled):hover,
+#world-calendar #calendar-controls #calendar-current-week:not(:disabled):not([hidden]):hover{
+  transform:none!important;
+  background:rgba(91,142,121,.18)!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+  color:var(--text)!important;
+}
+#world-calendar #calendar-controls #calendar-previous:disabled,
+#world-calendar #calendar-controls #calendar-next:disabled{transition:none!important;transform:none!important}
+#world-calendar #calendar-controls #calendar-current-week[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){
+ #world-calendar #calendar-controls #calendar-previous,
+ #world-calendar #calendar-controls #calendar-next,
+ #world-calendar #calendar-controls #calendar-week-trigger,
+ #world-calendar #calendar-controls #calendar-current-week{transition:none!important}
+}
