@@ -9,7 +9,7 @@ export function renderWorldCalendar(){
   const label=e=>e.marker==='FEDERATION-FINAL'?'Federation Cup final':e.marker==='SOVEREIGN-FINAL'?'Sovereign Cup final':(e.family==='national'?'Domestic round ':'International round ')+e.round;
   const button=d=>{
     const events=d.events.map(e=>'<span class="calendar-event calendar-event--'+e.family+'" data-calendar-marker="'+e.marker+'">'+(e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'FC':'SC'):e.marker)+'</span>').join('');
-    return '                  <button class="calendar-day" id="calendar-day-'+d.day+'" type="button" data-calendar-day="'+d.day+'" data-kind="'+d.kind+'" aria-pressed="'+(d.day===1)+'" aria-label="Day '+d.day+' · '+kind(d)+(d.events.length?' · '+d.events.map(label).join(' · '):'')+'" tabindex="'+(d.day===1?'0':'-1')+'" disabled>\n'+
+    return '                  <button class="calendar-day" id="calendar-day-'+d.day+'" type="button" data-calendar-day="'+d.day+'" data-kind="'+d.kind+'" aria-pressed="false" aria-label="Day '+d.day+' · '+kind(d)+(d.events.length?' · '+d.events.map(label).join(' · '):'')+'" tabindex="'+(d.day===1?'0':'-1')+'" disabled>\n'+
       '                    <span class="calendar-day-number" aria-hidden="true">'+String(d.day).padStart(2,'0')+'</span>\n'+
       '                    <span class="calendar-day-kind" aria-hidden="true">'+kind(d)+'</span>\n'+
       '                    <span class="calendar-day-events" aria-hidden="true">'+(events||'<span class="calendar-day-mark">'+(d.kind==='transition'?'T':'—')+'</span>')+'</span>\n'+
