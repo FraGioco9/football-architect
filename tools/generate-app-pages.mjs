@@ -78,7 +78,7 @@ const indexContent = function indexContent(){
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
  '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
  }).join("\n");
- return '          <div class="app-world-countries">\n'+cards+'\n          </div>';
+ return internationalIndexCards + '          <div class="app-world-countries">\n'+cards+'\n          </div>';
 };
 const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,
  renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});
@@ -117,6 +117,18 @@ const competitionManifest = {
  })
 };
 if(!model.validManifest(competitionManifest))throw Error("Invalid shared competition manifest");
+const internationalIndexCards="          <section class=\"app-world-country\" aria-labelledby=\"international-cups-heading\">\n            <h2 id=\"international-cups-heading\">International Cups</h2>\n            <div class=\"app-world-grid\">\n              <a class=\"app-division-card\" href=\"/competitions/sovereign-cup\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Sovereign Cup</strong><small>24 clubs · 8 countries</small></span></a>\n              <a class=\"app-division-card\" href=\"/competitions/federation-cup\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Federation Cup</strong><small>24 clubs · 8 countries</small></span></a>\n            </div>\n          </section>\n";
+const internationalDetail=name=>"          <div class=\"app-world-countries\">\n            <section class=\"app-world-country\" aria-labelledby=\"international-heading\">\n              <h2 id=\"international-heading\">Sovereign Cup</h2>\n              <p class=\"app-international-summary\">24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club</p>\n              <nav class=\"app-international-tabs\" aria-label=\"Sovereign Cup sections\">\n                <a href=\"?view=overview\" data-cup-tab=\"overview\">Overview</a>\n                <a href=\"?view=standings\" data-cup-tab=\"standings\">Standings</a>\n                <a href=\"?view=fixtures\" data-cup-tab=\"fixtures\">Fixtures</a>\n                <a href=\"?view=stats\" data-cup-tab=\"stats\">Stats</a>\n                <a href=\"?view=history\" data-cup-tab=\"history\">History</a>\n              </nav>\n              <section id=\"international-content\" aria-live=\"polite\" aria-label=\"Sovereign Cup details\">\n                <h3 id=\"international-view-heading\">Overview</h3>\n                <p id=\"international-view-body\">24 clubs qualify from eight countries. The six-round league phase is followed by playoffs, quarterfinals, semifinals and one neutral-site final. Season fixtures and results are not yet available.</p>\n              </section>\n              <p class=\"app-international-back\"><a href=\"/competitions\">← Competitions</a></p>\n            </section>\n          </div>".replaceAll("Sovereign Cup",name);
+const internationalStyle="<style>\n.app-international-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}\n.app-international-tabs a{border:1px solid var(--fa-shell-border,#476060);border-radius:8px;padding:10px 14px}\n.app-international-tabs a[aria-current=\"page\"]{border-color:var(--fa-shell-accent,#64cba9);font-weight:700}\n.app-international-summary{margin:10px 0;line-height:1.6}\n#international-content{min-height:160px;padding:20px;border:1px solid var(--fa-shell-border,#476060);border-radius:12px}\n#international-content h3{margin:0 0 12px}\n#international-view-body{line-height:1.7}\n.app-international-back{margin-top:20px}\n@media(max-width:390px){.app-international-tabs a{padding:8px 9px;font-size:13px}#international-content{padding:14px}}\n</style>";
+const internationalScript="<script>\n(()=>{\"use strict\";\nconst titles={overview:\"Overview\",standings:\"Standings\",fixtures:\"Fixtures\",stats:\"Stats\",history:\"History\"};\nconst pending={standings:\"The 24-club league table will appear when season standings are available.\",fixtures:\"The six league rounds and knockout fixtures will appear when the official schedule is generated.\",stats:\"Team and player statistics will appear once matches have been played.\",history:\"No completed international seasons are available yet.\"};\nconst qs=new URLSearchParams(location.search),view=Object.hasOwn(titles,qs.get(\"view\"))?qs.get(\"view\"):\"overview\";\nconst name=document.getElementById(\"international-heading\").textContent;\ndocument.getElementById(\"international-view-heading\").textContent=titles[view];\nif(view!==\"overview\")document.getElementById(\"international-view-body\").textContent=pending[view];\nfor(const tab of document.querySelectorAll(\"[data-cup-tab]\")){if(tab.dataset.cupTab===view)tab.setAttribute(\"aria-current\",\"page\");}\ndocument.title=name+\" — \"+titles[view]+\" — Football Architect\";\n})();\n</script>";
+const internationalRoute=name=>{
+ let html=template;
+ const replacements=worldPageReplacements();
+ for(const [key,value] of Object.entries(replacements))html=html.replaceAll(key,key==="@@FA_WORLD_SECTION@@"?worldSection(internationalDetail(name),true):value);
+ return html.replace("<title>Competitions — Football Architect</title>","<title>"+name+" — Football Architect</title>")
+ .replace("</head>",internationalStyle+"\n  <script src=\"/assets/international-cups.js\" defer></script>\n</head>").replace("</body>",internationalScript+"\n</body>");
+};
+
 const outputPages = [
  ...Object.entries(pages).map(([name,replacements])=>({
   name,path:name+"/index.html",
@@ -125,6 +137,7 @@ const outputPages = [
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
  {name:"competitions",path:"competitions/index.html",replacements:worldPageReplacements()},
+ ...["Sovereign Cup","Federation Cup"].map(name=>({name:"international-"+name.toLowerCase().split(" ")[0],path:"competitions/"+name.toLowerCase().replaceAll(" ","-")+"/index.html",directContent:internationalRoute(name)})),
  {name:"competition-shared",path:"competitions/_shared/index.html",
   replacements:worldPageReplacements(divisionData.find(d=>d.id==="IT-1"),true)},
  ...divisionData.map(division=>({
@@ -132,7 +145,7 @@ const outputPages = [
   directContent:competitionRoute(division)
  }))
 ];
-if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==21)
+if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==23)
  throw Error("Division catalogue cardinality changed; review the source data");
 const check = process.argv.length === 3 && process.argv[2] === "--check";
 if(process.argv.length > (check ? 3 : 2))throw Error("Usage: node tools/generate-app-pages.mjs [--check]");
@@ -170,6 +183,7 @@ for(const page of outputPages){
   if(/@@FA_(?:LINE_|WORLD_|CALENDAR_)/.test(html))throw Error("Unresolved template token in "+page.path);
   if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
  }
+ if(page.name==="competitions")html=html.replace("</head>","  <script src=\"/assets/international-cups.js\" defer></script>\n</head>");
  if(page.name==="calendar")html=html.replace('<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>','<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>\n          '+"<div class=\"calendar-season-picker app-competition-season\"><span id=\"calendar-season-label\">Season</span><div class=\"language-control\" id=\"calendar-season-control\"><button type=\"button\" id=\"calendar-season-picker\" class=\"language-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"calendar-season-menu\" aria-labelledby=\"calendar-season-label calendar-season-value\"><span id=\"calendar-season-value\">1</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"calendar-season-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"calendar-season-label\" hidden></div></div></div>"+"\n          "+"<script data-calendar-season-first-paint>(()=>{const n=document.documentElement.dataset.calendarSeason||'1';const value=document.getElementById('calendar-season-value');if(value)value.textContent=n})();</script>") ;
  if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-clock-adapter.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n  <script src="/assets/calendar-simplified.js" defer></script>\n  <style data-calendar-critical>html:has(#world-calendar) #world-calendar>.calendar-heading,html:has(#world-calendar) #world-calendar>.calendar-clock,html:has(#world-calendar) #world-calendar>.calendar-filterbar,html:has(#world-calendar) #world-calendar>.calendar-details,html:has(#world-calendar) #world-calendar>.calendar-selected,html:has(#world-calendar) #world-calendar>.calendar-note,html:has(#world-calendar) #world-calendar>.calendar-key{display:none!important}</style>\n</head>');
  writeOutput(page.path,normalizeRouteLinks(html,page.path));
@@ -177,4 +191,4 @@ for(const page of outputPages){
 for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments}))
  writeOutput(output.path,output.path.endsWith(".html")?normalizeRouteLinks(output.content,output.path):output.content);
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
-if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 18 Competitions), 1 competition manifest, 1 club template and 1 club manifest");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 20 Competitions), 1 competition manifest, 1 club template and 1 club manifest");
