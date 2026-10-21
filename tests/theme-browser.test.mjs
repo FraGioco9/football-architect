@@ -289,7 +289,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const standardRoutes=["/","/guide/","/dashboard/","/calendar/",
           "/settings/","/competitions/","/competitions/it-1/standings"];
         const allDivisionRoutes=JSON.parse(await readFile(join(root,"competitions/_shared/manifest.json"),"utf8"))
-          .divisions.map(d=>"/competitions/"+d.id.toLowerCase()+"/");
+          .divisions.map(d=>"/competitions/"+d.id.toLowerCase()+"/standings");
         const gutterRoutes=name==="desktop"&&theme==="dark"
           ? [...standardRoutes,...allDivisionRoutes.filter(route=>!standardRoutes.includes(route))]
           : standardRoutes;
