@@ -891,3 +891,27 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     console.error("Standings DEV Preview unavailable:", error);
   }
 }
+
+/* CAL-SIMPLE-01: Calendar-specific DEV controls, isolated from the public artifact. */
+if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
+ const key='football-architect:calendar-dev-world-day',seasonKey='football-architect:standings-dev-season';
+ const read=(k,min,max,fallback)=>{try{const n=Number(sessionStorage.getItem(k));return Number.isInteger(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
+ const day=()=>read(key,1,56,1),season=()=>read(seasonKey,1,4,1);
+ const publish=()=>{
+  window.dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'fictional calendar DEV control'},current:{season:1,day:day()}}}));
+  window.dispatchEvent(new CustomEvent('fa:dev-progress-change',{detail:{season:season(),worldDay:day()}}));
+ };
+ registerDebugControls('general',[{
+  type:'range',id:'season',label:'Season',min:1,max:4,step:1,scope:'general',
+  value:season,onChange:n=>{if(!Number.isInteger(n)||n<1||n>4)return false;try{sessionStorage.setItem(seasonKey,String(n))}catch{return false}publish();return true}
+ },{
+  type:'button',id:'reset-global',label:'Reset all',scope:'general',
+  onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();return true}
+ }]);
+ registerDebugControls('calendar',[{
+  type:'range',id:'world-day',label:'World day',min:1,max:56,step:1,
+  value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();return true}
+ }]);
+ createDebugWidget({page:'calendar'});
+ publish();
+}
