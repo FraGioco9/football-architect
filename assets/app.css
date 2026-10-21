@@ -976,3 +976,10 @@ html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden])
 /* FIXTURES-BORDER-01: Matchday and arrows follow Calendar Week normal/hover border. */
 .app-fixtures-navigation :is(.app-fixtures-trigger,.app-fixtures-arrow):not(#calendar-week-trigger):not(#calendar-previous):not(#calendar-next){border:1px solid var(--line)!important;border-radius:9px}
 .app-fixtures-navigation :is(.app-fixtures-trigger,.app-fixtures-arrow):not(#calendar-week-trigger):not(#calendar-previous):not(#calendar-next):is(:hover,:active):not(:disabled){border-color:var(--border)!important}
+
+/* CAL-POPUP-01 Essential: event code + localized meaning only. */
+.calendar-event-dialog #calendar-event-dialog-subtitle[hidden]{display:none!important}
+.calendar-event-dialog #calendar-event-dialog-details{display:grid;gap:10px}
+.calendar-event-dialog .calendar-event-summary{display:flex;align-items:center;gap:14px;min-width:0}
+.calendar-event-dialog .calendar-event-code{display:flex;align-items:center;justify-content:center;flex:0 0 68px;min-height:44px;box-sizing:border-box;padding:8px;border:1px solid #385451;border-radius:9px;background:#244040;color:#f2f7f4;font-size:15px;font-weight:750;overflow-wrap:anywhere;text-align:center}
+.calendar-event-dialog .calendar-event-description{min-width:0;color:#f2f7f4;font-size:14px;font-weight:600;overflow-wrap:anywhere}
