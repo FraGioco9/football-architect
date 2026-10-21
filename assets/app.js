@@ -1271,18 +1271,6 @@
       const countryName = worldCountryNames[language()]?.[node.dataset.worldCountry];
       if (countryName) node.textContent = countryName;
     }
-    // Keep localized flag tooltips in sync, including dynamically rendered flags.
-    for (const flag of document.querySelectorAll(".app-world-flag-frame, img[src*='/assets/flags/']")) {
-      const context = flag.closest("h2, .app-world-detail-meta");
-      const nearby = context?.querySelector("[data-world-country]");
-      const asset = flag.tagName.toLowerCase() === "img" ? flag.getAttribute("src") || "" : "";
-      const code = flag.dataset.worldFlag || nearby?.dataset.worldCountry || ({
-        "gb-eng": "ENG", "it": "IT", "es": "ES", "de": "DE",
-        "fr": "FR", "pt": "PT", "nl": "NL", "br": "BR"
-      })[asset.match(/\/assets\/flags\/([a-z-]+)\.svg(?:[?#]|$)/)?.[1]];
-      const name = worldCountryNames[language()]?.[code] || (flag.tagName.toLowerCase() === "img" ? flag.alt : "");
-      if (name) { flag.setAttribute("title", name); flag.setAttribute("data-country-tooltip", name); }
-    }
     const detail = document.getElementById("division-detail-name");
     if (activeView() !== "clubs") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
   }

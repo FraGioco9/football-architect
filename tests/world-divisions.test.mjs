@@ -207,7 +207,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
- assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;width:24px;height:16px;flex:none;position:relative;cursor:help}"));
+ assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;width:24px;height:16px;flex:none}"));
  assert.ok(css.includes(".app-world-flag{display:block;width:24px;height:16px;flex:none;object-fit:fill;border:0;border-radius:0;clip-path:none}"));
  assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
  assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
@@ -323,7 +323,7 @@ test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",(
  const shared=read("competitions/_shared/index.html"),loader=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
  assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
- assert.ok(shared.includes('class="app-world-flag-frame" data-world-flag="IT" title="Italy" aria-hidden="true"'));
+ assert.ok(shared.includes('class="app-world-flag-frame" aria-hidden="true"'));
  assert.ok(!shared.includes('id="app-competition-flag" alt="" src='));
  assert.ok(loader.includes('flag.tagName.toLowerCase() !== "svg"'));
  assert.ok(generator.includes("inlineCountryFlag(c)"));
