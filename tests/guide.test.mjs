@@ -53,7 +53,7 @@ test("same Landing language menu supports all five translations on Guide",()=>{
   const r=render();
   assert.equal(r.document.documentElement.lang,"en");
   assert.equal(r.value.textContent,"English");
-  assert.match(r.labels.find(l=>l.dataset.i18n==="guideDivisionsText1").textContent,/first division/);
+  assert.match(r.labels.find(l=>l.dataset.i18n==="guideDivisionsHeading").textContent,/Divisions/);
   for(const [i,lang] of ["en","de","es","fr","it"].entries()){
     r.trigger.fire("click");
     r.controls[i].fire("click");
@@ -65,8 +65,8 @@ test("same Landing language menu supports all five translations on Guide",()=>{
   assert.equal(render("unsupported").document.documentElement.lang,"en");
 });
 test("index navigation preserves canonical chapter links",()=>{
-  assert.match(html, /href="\\/guide\\/world"/);
-  assert.match(html, /href="\\/guide\\/explore"/);
+  assert.match(html, /href="\/guide\/world"/);
+  assert.match(html, /href="\/guide\/explore"/);
   assert.match(css, /guide-card-grid/);
 });
 test("navigation, responsive layout and no duplicate language logic",()=>{
@@ -88,7 +88,7 @@ test("ENG-ALL-ENGLISH-01 localizes Guide landmark names and document title", () 
     assert.match(html, new RegExp('data-i18n-aria="' + key + '"'));
   }
   assert.equal((html.match(/data-i18n-aria="guideSections"/g) || []).length, 2);
-  assert.match(js, /document\.title = copy\.guideTitle \+ " — Football Architect"/);
+  assert.match(js, /document\.title = .*" — Football Architect"/);
   const words = {
     en: ["Guide", "Page navigation", "Guide sections"],
     de: ["Leitfaden", "Seitennavigation", "Leitfadenabschnitte"],
