@@ -113,7 +113,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     for(let i=0;i<20&&!await runValue("sessionStorage.getItem('football-architect:calendar-dev-world-day')==='26'");i++)await delay(50);
     assert.equal(await runValue("sessionStorage.getItem('football-architect:calendar-dev-world-day')"),'26');
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-dev-current-day=true]').length"),1);
-    assert.equal(await runValue("document.querySelector('[data-calendar-day="26"]').dataset.devCurrentDay"),'true');
+    assert.equal(await runValue("document.querySelector('[data-calendar-day=26]').dataset.devCurrentDay"),'true');
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
     await runValue("(()=>{const input=document.querySelector('[data-dev-control=season]');input.value='3';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
