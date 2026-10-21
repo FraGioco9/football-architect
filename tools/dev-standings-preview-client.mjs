@@ -2,14 +2,17 @@
 // This file must never be copied into a public artifact or loaded by public HTML.
 import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
+import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
 const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
-const DAY_KEY = "football-architect:calendar-dev-world-day";
-const NATIONAL_CALENDAR_DAYS = Object.freeze([13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,34,35,37,39,40,42,44,45,47,49,50,52,53,54]);
-function matchdaysForWorldDay(day){return NATIONAL_CALENDAR_DAYS.filter(d=>d<=day).length}
-function readWorldDay(){try{const n=Number(sessionStorage.getItem(DAY_KEY));return Number.isInteger(n)&&n>=1&&n<=56?n:null}catch{return null}}
+const devWorldClock=createDevWorldClock(sessionStorage,(name,detail)=>{
+  if(name==='fa:world-clock-snapshot')window.faDevWorldClockSnapshot=detail;
+  window.dispatchEvent(new CustomEvent(name,{detail}));
+});
+const matchdaysForWorldDay=nationalProgress;
+function readWorldDay(){return devWorldClock.read().day}
 
 function readMatchdays(){
  const day=typeof readWorldDay==='function'?readWorldDay():null;if(day!==null)return matchdaysForWorldDay(day);
@@ -387,7 +390,7 @@ if(validPath||indexPath){
    value:()=>debugSeason,onChange:setSeason
   },{type:"range",id:"world-day",label:"Day",min:1,max:56,step:1,scope:"general",
    value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
-   onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;let previous;try{previous=sessionStorage.getItem(DAY_KEY);sessionStorage.setItem(DAY_KEY,String(n))}catch{return false}const target=matchdaysForWorldDay(n);if(!await setMatchdays(target)){try{if(previous===null)sessionStorage.removeItem(DAY_KEY);else sessionStorage.setItem(DAY_KEY,previous)}catch{}return false}syncDebugControls();window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:n}}));return true}
+   onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n);if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n))return false;syncDebugControls();return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    widgetRoot?.resetWidgetState();syncDebugControls();return true;
@@ -903,24 +906,26 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
 
 /* CAL-SIMPLE-01: Calendar-specific DEV controls, isolated from the public artifact. */
 if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
- const key='football-architect:calendar-dev-world-day',seasonKey='football-architect:standings-dev-season';
- const read=(k,min,max,fallback)=>{try{const n=Number(sessionStorage.getItem(k));return Number.isInteger(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
- const day=()=>read(key,1,56,1),season=()=>read(seasonKey,1,4,1);
- const publish=()=>{
-  window.dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'fictional calendar DEV control'},current:{season:season(),day:day()}}}));
-  window.dispatchEvent(new CustomEvent('fa:dev-progress-change',{detail:{season:season(),worldDay:day()}}));
-  for(const id of ['season','world-day']){const input=document.querySelector('[data-dev-control="'+id+'"]');const n=id==='season'?season():day();if(input){input.value=String(n);input.dataset.previous=String(n)}const number=document.querySelector('[data-dev-control="'+id+'-number"]');if(number){number.value=String(n);number.dataset.previous=String(n)}}
+ const day=()=>devWorldClock.read().day,season=()=>devWorldClock.read().season;
+ const syncInputs=()=>{
+  for(const id of ['season','world-day']){
+   const value=id==='season'?season():day();
+   for(const input of document.querySelectorAll('[data-dev-control="'+id+'"],[data-dev-control="'+id+'-number"]')){
+    input.value=String(value);input.dataset.previous=String(value);
+   }
+  }
  };
+ const publish=()=>{devWorldClock.publish();syncInputs()};
  registerDebugControls('general',[{
   type:'range',id:'season',label:'Season',min:1,max:4,step:1,scope:'general',
-  value:season,onChange:n=>{if(!Number.isInteger(n)||n<1||n>4)return false;try{sessionStorage.setItem(seasonKey,String(n))}catch{return false}publish();return true}
+  value:season,onChange:n=>{const ok=devWorldClock.setSeason(n);if(ok)syncInputs();return ok}
  },{
   type:'range',id:'world-day',label:'Day',min:1,max:56,step:1,scope:'general',
-  value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();return true}
+  value:day,onChange:n=>{const ok=devWorldClock.setDay(n);if(ok)syncInputs();return ok}
  },{
   type:'button',id:'reset-global',label:'Reset',scope:'general',
-  onChange:()=>{try{sessionStorage.removeItem(seasonKey);sessionStorage.removeItem(key)}catch{return false}publish();window.dispatchEvent(new CustomEvent('fa:dev-world-day-change',{detail:{day:1,season:1}}));return true}
+  onChange:()=>{const ok=devWorldClock.reset();if(ok)syncInputs();return ok}
  }]);
-  createDebugWidget({page:'calendar'});
+ createDebugWidget({page:'calendar'});
  publish();
 }
