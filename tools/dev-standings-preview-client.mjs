@@ -910,7 +910,7 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
  }]);
  registerDebugControls('calendar',[{
   type:'range',id:'world-day',label:'World day',min:1,max:56,step:1,
-  value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();return true}
+  value:day,onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem(key,String(n))}catch{return false}publish();document.getElementById('calendar-day-'+n)?.click();return true}
  }]);
  createDebugWidget({page:'calendar'});
  publish();
