@@ -59,7 +59,7 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fi
    ['/clubs/br/40/stats/?season=2','/clubs/br/40/stats?season=2']]){
     const page=await get(path);assert.equal(page.status,308);assert.equal(page.location,target);
   }
-  for(const path of ['/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/it/1','/app/clubs/it/1'])assert.equal((await get(path)).status,404);
+  for(const path of ['/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/it/01','/app/clubs/it/1'])assert.equal((await get(path)).status,404);
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
 test('CLUB-01 generation is deterministic and canonical inputs are unchanged',()=>{
