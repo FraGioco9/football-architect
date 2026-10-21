@@ -17,6 +17,9 @@
   window.faClubCrests=manifest.clubCrests;
   const paint=()=>{
    host.innerHTML=model.render(manifest,selected,language(),location.search);
+   for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
+    if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
+   }
    document.title=host.querySelector('h1').textContent+' · '+model.copies[language()][selected.view]+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
    for(const link of host.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
