@@ -1,0 +1,42 @@
+import model from '../assets/world-calendar-model.js';
+
+// Resolve presentation-only state before styles paint. No world-clock state is read.
+export const calendarBootstrap=`(()=>{let day=1,view=window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches?'week':'season';try{const s=JSON.parse(sessionStorage.getItem('football-architect:calendar-selection'));if(s&&s.version===1&&Number.isInteger(s.day)&&s.day>=1&&s.day<=56&&['season','week'].includes(s.view)){day=s.day;view=s.view}}catch{}const d=document.documentElement.dataset;d.calendarView=view;d.calendarDay=String(day);d.calendarWeek=String(Math.ceil(day/7))})();`;
+
+export function renderWorldCalendar(){
+  const days=model.createSeason(1).days;
+  const kind=d=>d.kind==='official'?'Official events':d.kind[0].toUpperCase()+d.kind.slice(1);
+  const label=e=>e.marker==='FEDERATION-FINAL'?'Federation Cup final':e.marker==='SOVEREIGN-FINAL'?'Sovereign Cup final':(e.family==='national'?'Domestic round ':'International round ')+e.round;
+  const button=d=>{
+    const events=d.events.map(e=>'<span class="calendar-event calendar-event--'+e.family+'" data-calendar-marker="'+e.marker+'">'+(e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'FC':'SC'):e.marker)+'</span>').join('');
+    return '                  <button class="calendar-day" id="calendar-day-'+d.day+'" type="button" data-calendar-day="'+d.day+'" data-kind="'+d.kind+'" aria-pressed="'+(d.day===1)+'" aria-label="Day '+d.day+' · '+kind(d)+(d.events.length?' · '+d.events.map(label).join(' · '):'')+'" tabindex="'+(d.day===1?'0':'-1')+'" disabled>\n'+
+      '                    <span class="calendar-day-number" aria-hidden="true">'+String(d.day).padStart(2,'0')+'</span>\n'+
+      '                    <span class="calendar-day-kind" aria-hidden="true">'+kind(d)+'</span>\n'+
+      '                    <span class="calendar-day-events" aria-hidden="true">'+(events||'<span class="calendar-day-mark">'+(d.kind==='transition'?'T':'—')+'</span>')+'</span>\n'+
+      '                  </button>';
+  };
+  const rows=Array.from({length:8},(_,i)=>'                <div class="calendar-week-row" role="group" data-week="'+(i+1)+'" aria-label="Days '+(i*7+1)+'–'+(i*7+7)+'">\n'+days.slice(i*7,i*7+7).map(button).join('\n')+'\n                </div>').join('\n');
+  return `          <section class="world-calendar" id="world-calendar" aria-labelledby="calendar-plan-label">
+            <header class="calendar-heading">
+              <h2 id="calendar-plan-label">Season plan</h2>
+              <span class="calendar-cycle" id="calendar-cycle">56 days · 8 weeks</span>
+            </header>
+            <div class="calendar-toolbar">
+              <div class="calendar-modes" role="group" aria-label="Calendar view" id="calendar-mode-label">
+                <button class="calendar-mode" id="calendar-season" type="button" aria-pressed="true" aria-controls="calendar-days" disabled>Season</button>
+                <button class="calendar-mode" id="calendar-week" type="button" aria-pressed="false" aria-controls="calendar-days" disabled>Week</button>
+              </div>
+              <div class="calendar-controls" id="calendar-controls" role="group" aria-label="Week navigation">
+                <button id="calendar-previous" class="calendar-arrow" type="button" aria-label="Previous week" aria-controls="calendar-days" disabled>‹</button>
+                <span id="calendar-week-label">Week 1 / 8</span>
+                <button id="calendar-next" class="calendar-arrow" type="button" aria-label="Next week" aria-controls="calendar-days" disabled>›</button>
+              </div>
+            </div>
+            <div class="calendar-days" id="calendar-days" role="group" aria-label="Season days">
+${rows}
+            </div>
+            <p class="calendar-selected" id="calendar-selected" role="status" aria-live="polite" aria-atomic="true">Selected: Day 1 · Preseason</p>
+            <p class="calendar-key" id="calendar-key">N · National &nbsp; I · International &nbsp; FC / SC · Cup finals &nbsp; — · Pause &nbsp; T · Transition</p>
+            <p class="calendar-note" id="calendar-note" data-app-i18n="calendarStatusText">Season structure only. No live fixtures or results are available.</p>
+          </section>`;
+}
