@@ -256,18 +256,17 @@ async function renderHistoryPreview(){
   }
   archive.append(archiveTable);
   for(const item of [...seasons].reverse()){
-   const li=historyNode("li"),button=historyNode("button","app-history-dev-season-button");button.type="button";
-   // Archive rows navigate to Standings; they are not toggle selections in History.
-   button.dataset.historySeason=String(item.season);
-   const action=historyLabel("historySelectSeason");action.className="sr-only";
-   button.append(historySeasonLabel(item.season),action);
-   item.rows.slice(0,3).forEach((row,index)=>{
+   const li=historyNode("li"),row=historyNode("div","app-history-dev-season-button");
+   const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
+   seasonLink.href="/competitions/"+division.id.toLowerCase()+"/standings?season="+encodeURIComponent(item.season);
+   seasonLink.append(historySeasonLabel(item.season));
+   row.append(seasonLink);
+   item.rows.slice(0,3).forEach((entry,index)=>{
     const rank=historyNode("span","app-history-dev-archive-club"+(index===0?" app-history-dev-archive-champion":""));
     const label=historyLabel(["historyChampionLabel","historyRunnerUp","historyThirdPlace"][index]);label.className="app-history-dev-podium-label";
-    rank.append(label,historyIdentity(row.club,false));button.append(rank);
+    rank.append(label,historyIdentity(entry.club));row.append(rank);
    });
-   button.addEventListener("click",()=>openHistorySeason(item.season));
-   li.append(button);list.append(li);
+   li.append(row);list.append(li);
   }
   const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
