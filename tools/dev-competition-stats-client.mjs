@@ -167,7 +167,9 @@ if (panel && divisionId) {
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
         crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
         crest.setAttribute("aria-hidden","true");
-        identity.append(crest,create("span",team.clubName,"fa-dev-stats-team-name"));
+        const link=create("a",team.clubName,"fa-dev-stats-team-name app-world-standing-club-link");
+        link.href="/clubs/"+division.countryId.toLowerCase()+"/"+team.clubId+"/overview";
+        identity.append(crest,link);
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         return li;
       };
