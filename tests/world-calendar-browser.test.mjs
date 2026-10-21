@@ -134,7 +134,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await run("window.faWorldCalendar.getSelection().division"),'');
     await visit();
     // CAL-IMP-04: browser history must restore all four presentation dimensions.
-    await visit();
+    await cmd('Page.navigate',{url:origin+'/calendar?season=1&day=1&calendarView=season&competition=all'});
+    for(let i=0;i<100;i++){if(await run("document.documentElement.dataset.calendarReady==='true'&&!!window.faWorldCalendar"))break;await delay(50)}
     await run("document.getElementById('calendar-season').click();document.getElementById('calendar-day-16').click()");
     const historyStart=await run("location.pathname+location.search");
     await run("(()=>{const n=document.getElementById('calendar-filter');n.value='national';n.dispatchEvent(new Event('change'))})()");
@@ -145,7 +146,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     const historyWeek=await run("location.pathname+location.search");
     await run("document.getElementById('calendar-day-23').click()");
     const historyEnd=await run("location.pathname+location.search");
-    const historyCheck=()=>run("({url:location.pathname+location.search,...window.faWorldCalendar.getSelection()})");
+    const historyCheck=()=>run("({url:location.pathname+location.search,...(window.faWorldCalendar?.getSelection?.()||{})})");
     await run("history.back()");
     for(let i=0;i<60&&(await historyCheck()).url!==historyWeek;i++)await delay(30);
     assert.deepEqual(await historyCheck(),{url:historyWeek,day:16,view:'week',filter:'national',division:'it-2'});
