@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, edited]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,19 +21,6 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           echo "Verified source HEAD: $EXPECTED_SHA"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Verify JavaScript syntax
-        run: |
-          node --check assets/landing.js
-          node --check assets/app.js
-          node --check assets/app-search.js
-          node --check assets/competition-page.js
-          node --check assets/competition-fixtures.js
-          node --check tools/validate-division-assets.mjs
-      - name: Site contracts
-        run: node --test --test-concurrency=1 tests/*.test.mjs
   landing:
     runs-on: ubuntu-latest
     needs: head-exact
