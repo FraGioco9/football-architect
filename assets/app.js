@@ -1279,7 +1279,7 @@
       const code = flag.dataset.worldFlag || nearby?.dataset.worldCountry || ({
         "gb-eng": "ENG", "it": "IT", "es": "ES", "de": "DE",
         "fr": "FR", "pt": "PT", "nl": "NL", "br": "BR"
-      })[asset.match(/\\/assets\\/flags\\/([a-z-]+)\\.svg(?:[?#]|$)/)?.[1]];
+      })[asset.match(/\/assets\/flags\/([a-z-]+)\.svg(?:[?#]|$)/)?.[1]];
       const name = worldCountryNames[language()]?.[code] || (flag.tagName.toLowerCase() === "img" ? flag.alt : "");
       if (name) flag.setAttribute("title", name);
     }
