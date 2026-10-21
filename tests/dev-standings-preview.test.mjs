@@ -352,7 +352,7 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     }
     for (const division of manifest.divisions) {
       assert.equal((await get("/competitions/" +
-        division.id.toLowerCase() + "/")).status,200);
+        division.id.toLowerCase() + "/standings")).status,200);
     }
   });
 });
