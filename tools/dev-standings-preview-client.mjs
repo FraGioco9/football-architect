@@ -6,7 +6,13 @@ import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 const FLAG = "football-architect:standings-dev-preview";
 const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
+const DAY_KEY = "football-architect:calendar-dev-world-day";
+const NATIONAL_CALENDAR_DAYS = Object.freeze([13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,34,35,37,39,40,42,44,45,47,49,50,52,53,54]);
+function matchdaysForWorldDay(day){return NATIONAL_CALENDAR_DAYS.filter(d=>d<=day).length}
+function readWorldDay(){try{const n=Number(sessionStorage.getItem(DAY_KEY));return Number.isInteger(n)&&n>=1&&n<=56?n:null}catch{return null}}
+
 function readMatchdays(){
+ const day=readWorldDay();if(day!==null)return matchdaysForWorldDay(day);
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
   const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=DEBUG_MAX_MATCHDAY?value:0;
  }catch{return 0}
@@ -379,7 +385,7 @@ if(validPath||indexPath){
    value:()=>debugSeason,onChange:setSeason
   },{type:"range",id:"world-day",label:"Day",min:1,max:56,step:1,scope:"general",
    value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
-   onChange:n=>{if(!Number.isInteger(n)||n<1||n>56)return false;try{sessionStorage.setItem("football-architect:calendar-dev-world-day",String(n))}catch{return false}window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:n}}));return true}
+   onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n);if(!await setMatchdays(target))return false;try{sessionStorage.setItem(DAY_KEY,String(n))}catch{return false}window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:n}}));return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    return widgetRoot?.resetWidgetState()===true;
