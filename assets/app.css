@@ -865,4 +865,4 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .app-history-dev-archive .app-history-dev-season-link{display:inline-flex;justify-self:start;align-self:center;min-height:0;white-space:nowrap}
 .app-history-dev-archive .app-world-club-identity .app-world-club-name{display:inline;width:max-content;max-width:100%}
 .app-history-dev-archive .app-history-dev-season-button:hover .app-history-dev-season{text-decoration:none}
-.app-history-dev-archive .app-history-dev-season-link:hover .app-history-dev-season,.app-history-dev-archive .app-history-dev-season-link:focus-visible .app-history-dev-season{text-decoration:underline;text-underline-offset:3px}
+.app-history-dev-archive .app-history-dev-season-link:hover .app-history-dev-season,.app-history-dev-archive .app-history-dev-season-link:focus-visible .app-history-dev-season{text-decoration:none}
