@@ -192,7 +192,7 @@
     divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
     window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
   }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division})});
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
 })();
