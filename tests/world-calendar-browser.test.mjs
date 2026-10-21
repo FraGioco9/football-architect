@@ -140,6 +140,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1','Debug Season expands the list without overriding the viewed season');
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length"),3);
     assert.deepEqual(await runValue("[...document.querySelectorAll('#calendar-season-menu .language-option')].map(e=>e.textContent)"),['3','2','1']);
+    await runValue("document.getElementById('calendar-season').click()");
     assert.equal(await runValue("(()=>{const tiles=['1','13','16','26','53'].map(n=>document.querySelector('#calendar-day-'+n));return new Set(tiles.map(e=>e.getBoundingClientRect().height)).size})()"),1);
 
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
