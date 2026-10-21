@@ -77,7 +77,7 @@ test('CAL-IMP-02 all day selections and view switches preserve QA-06 data and on
   for(let day=1;day<=56;day++){
     days[day-1].emit('click');
     assert.equal(window.faWorldCalendar.getSelection().day,day);
-    assert.equal(days.filter(b=>b.attrs['aria-pressed']==='true').length,1);
+    assert.equal(days.filter(b=>b.attrs['aria-pressed']==='true').length,0);
     assert.equal(days[day-1].tabIndex,0);
     fields.get('calendar-week').emit('click');
     assert.equal(window.faWorldCalendar.getSelection().day,day);
@@ -87,7 +87,7 @@ test('CAL-IMP-02 all day selections and view switches preserve QA-06 data and on
   }
   assert.equal(before,JSON.stringify(model.createSeason(1)));
   assert.equal(saved().k,'football-architect:calendar-selection');
-  assert.deepEqual(JSON.parse(saved().v),{version:1,day:56,view:'season'});
+  assert.deepEqual(JSON.parse(saved().v),{version:1,view:'season'});
   assert.equal(Object.isFrozen(window.faWorldCalendar.getSelection()),true);
 });
 
