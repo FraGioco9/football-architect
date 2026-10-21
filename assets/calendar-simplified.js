@@ -110,10 +110,7 @@
   }
   if(!dialog.open)dialog.showModal();
  }
- for(const day of root.querySelectorAll('[data-calendar-day]')){
-  day.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();showDay(day,day)},true);
-  day.addEventListener('keydown',e=>{if(e.target===day&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopImmediatePropagation();showDay(day,day)}},true);
- }
+ window.faCalendarShowDay=day=>showDay(day,day);
  function placeTooltip(element){const bounds=element.getBoundingClientRect();tooltip.hidden=false;const w=tooltip.offsetWidth;tooltip.style.left=Math.max(10,Math.min(innerWidth-w-10,bounds.left+bounds.width/2-w/2))+'px';tooltip.style.top=(bounds.bottom+10+tooltip.offsetHeight<innerHeight?bounds.bottom+8:Math.max(8,bounds.top-tooltip.offsetHeight-8))+'px'}
  for(const marker of root.querySelectorAll('.calendar-event')){
   const day=marker.closest('[data-calendar-day]'),data=dayModel[Number(day?.dataset.calendarDay)-1];
