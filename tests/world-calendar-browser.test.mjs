@@ -117,8 +117,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
     await runValue("(()=>{const input=document.querySelector('[data-dev-control=season]');input.value='3';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
-    for(let i=0;i<20&&!await runValue("document.querySelector('#calendar-season-value').textContent==='3'");i++)await delay(50);
-    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'3');
+    for(let i=0;i<20&&!await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length===3");i++)await delay(50);
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1','Debug Season expands the list without overriding the viewed season');
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length"),3);
     assert.deepEqual(await runValue("[...document.querySelectorAll('#calendar-season-menu .language-option')].map(e=>e.textContent)"),['3','2','1']);
     assert.equal(await runValue("(()=>{const tiles=['1','13','16','26','53'].map(n=>document.querySelector('#calendar-day-'+n));return new Set(tiles.map(e=>e.getBoundingClientRect().height)).size})()"),1);
