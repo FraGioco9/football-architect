@@ -69,7 +69,7 @@ const indexContent = function indexContent(){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
  const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="/competitions/'+d.id.toLowerCase()+'?season=1&amp;view=standings">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="/competitions/'+d.id.toLowerCase()+'/standings?season=1">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
@@ -100,7 +100,7 @@ const competitionRoute = d=>{
  for(const [token,value] of Object.entries(worldPageReplacements(d)))html=html.replace(token,value);
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
- const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=p.get(\"view\"),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\\d{0,8}$/.test(s||\"\")&&s!==\"1\")})();";
+ const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\\d{0,8}$/.test(s||\"\")&&s!==\"1\")})();";
  return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
