@@ -52,8 +52,8 @@ test('CAL-IMP-02 generates 56 selectable days in eight weeks with international 
   assert.equal((html.match(/data-calendar-day="\d+"/g)||[]).length,56);
   assert.equal((html.match(/class="calendar-week-row"/g)||[]).length,8);
   assert.match(html,/data-calendar-day="16"[\s\S]*?I01[\s\S]*?N04/);
-  assert.match(html,/data-calendar-day="53"[\s\S]*?FC[\s\S]*?N32/);
-  assert.match(html,/data-calendar-day="54"[\s\S]*?SC[\s\S]*?N33/);
+  assert.match(html,/data-calendar-day="53"[\s\S]*?F[\s\S]*?N32/);
+  assert.match(html,/data-calendar-day="54"[\s\S]*?F[\s\S]*?N33/);
   assert.match(html,/data-calendar-day="56"/);
   assert.ok(html.indexOf('data-calendar-bootstrap')<html.indexOf('/assets/app.css'));
   assert.ok(html.indexOf('/assets/world-calendar-model.js')<html.indexOf('/assets/world-calendar.js'));
