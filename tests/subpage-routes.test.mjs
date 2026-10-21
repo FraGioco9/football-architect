@@ -74,6 +74,7 @@ test("ROUTE-02 DEV routes redirect base and serve explicit views",async()=>{
   assert.deepEqual(await get("/competitions/it-1?season=2&view=fixtures&matchday=7"),{status:308,location:"/competitions/it-1/fixtures?season=2&matchday=7"});
   for(const view of ["standings","fixtures","stats","history","rules","awards","postseason"])
    assert.equal((await get("/competitions/it-1/"+view)).status,200,view);
+  assert.deepEqual(await get("/competitions/it-1/fixtures/?season=2"),{status:308,location:"/competitions/it-1/fixtures?season=2"});
   assert.equal((await get("/competitions/it-1/not-a-view")).status,404);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
