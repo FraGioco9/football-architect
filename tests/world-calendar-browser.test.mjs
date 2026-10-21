@@ -93,7 +93,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     for(const day of [1,55,56]){
       await run("(()=>{const n=document.getElementById('calendar-dev-world-day');n.value="+day+";n.dispatchEvent(new Event('input',{bubbles:true}))})()");
       assert.deepEqual(await run("window.faWorldCalendar.getSelection()"),{day:16,view:'week',filter:'national',division:'it-2'});
-      assert.equal(await run("document.getElementById('calendar-day-"+day).dataset.clockRelative"),'current');
+      assert.equal(await run("document.getElementById('calendar-day-"+day+"').dataset.clockRelative"),'current');
     }
     for(const [lang,label] of [['en','Fictional'],['de','Fiktive'],['es','ficticia'],['fr','fictif'],['it','fittizia']]){
       await run("document.documentElement.lang="+JSON.stringify(lang)+";dispatchEvent(new Event('languagechange'))");
