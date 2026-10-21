@@ -26,7 +26,7 @@
   const params=new URL(location.href).searchParams;
   const requested=Number(params.get('season'));
   if(validSeason(requested))selectedSeason=requested;
-  else if(selectedSeason>limit)selectedSeason=limit;
+  else if(selectedSeason>limit){selectedSeason=limit;const url=new URL(location.href);url.searchParams.set('season',String(limit));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
   else if(!params.has('season')&&!root.dataset.seasonInitialized)selectedSeason=limit;
   root.dataset.seasonInitialized='true';
   menu.replaceChildren();
