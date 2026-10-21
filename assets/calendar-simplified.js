@@ -36,6 +36,8 @@
 
  window.addEventListener('fa:dev-progress-change',updateSeason);
  window.addEventListener('popstate',updateSeason);
+ // A day is never a permanent route or selection.
+ if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
  updateSeason();
  const dialog=document.createElement('dialog');
  dialog.id='calendar-event-dialog';
