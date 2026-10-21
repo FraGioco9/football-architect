@@ -68,6 +68,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     // Public rendering must ignore a leftover fictional DEV world day.
     await runValue("sessionStorage.setItem('football-architect:calendar-dev-world-day','26');sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:'week'}))");
     await visit();
+    assert.equal(await runValue("new URL(document.getElementById('app-nav-calendar').href).searchParams.get('season')"),'1','Public Calendar link must ignore DEV season storage');
     assert.equal(await runValue("document.documentElement.dataset.calendarView"),'season','Cached Week must not override the device default');
     assert.equal(await runValue("new URL(location.href).searchParams.get('calendarView')"),'season','Default view is canonicalized in the URL');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'1','Public bootstrap must not import DEV day');
@@ -178,6 +179,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     // Pre-render contract: the Season picker exists in the source HTML, not after deferred JS.
     assert.equal(await runValue("!!document.querySelector('#app-calendar > .calendar-season-picker')"),true);
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-picker').length"),1);
+    assert.equal(await runValue("document.getElementById('calendar-controls').previousElementSibling?.classList.contains('calendar-toolbar')"),true,'Week controls remain after toolbar');
     assert.equal(await runValue("document.querySelectorAll('#calendar-day-26').length"),1);
     assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
     assert.equal(await runValue("document.querySelectorAll('#world-calendar .calendar-event--final').length"),2,'Both cup finals have gold marker class');
