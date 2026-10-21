@@ -594,7 +594,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       const crest = node("span", "app-world-club-crest-placeholder");
       crest.dataset.clubCrest = tr.dataset.worldClub;
       crest.setAttribute("aria-hidden", "true");
-      identity.append(crest, node("span", "app-world-club-name", r.club.primaryName));
+      const clubLink = node("a", "app-world-club-name app-world-standing-club-link", r.club.primaryName);
+      clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview";
+      identity.append(crest, clubLink);
       clubCell.append(identity);
       tr.append(clubCell);
       for (const number of [r.played, r.won, r.drawn, r.lost, r.gf, r.ga,
