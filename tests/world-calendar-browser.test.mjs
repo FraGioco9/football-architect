@@ -180,6 +180,9 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-picker').length"),1);
     assert.equal(await runValue("document.querySelectorAll('#calendar-day-26').length"),1);
     assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
+    assert.equal(await runValue("document.querySelectorAll('#world-calendar .calendar-event--final').length"),2,'Both cup finals have gold marker class');
+    assert.equal(await runValue("[...document.querySelectorAll('#world-calendar .calendar-event--final')].every(e=>e.textContent==='F')"),true,'Both cup final grid markers show F');
+    assert.equal(await runValue("[...document.querySelectorAll('#world-calendar .calendar-event--final')].map(e=>e.dataset.calendarMarker).sort().join(',')"),'FEDERATION-FINAL,SOVEREIGN-FINAL','Underlying final event IDs stay unchanged');
     const finalDay=await runValue("window.faWorldCalendarModel.createSeason(1).days.find(d=>d.events.some(e=>e.phase==='final'))?.day");
     assert.ok(finalDay,'The model includes a final day');
     await runValue("window.faWorldCalendar.setWeek("+Math.ceil(finalDay/7)+")");
