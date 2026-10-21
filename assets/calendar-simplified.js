@@ -34,7 +34,7 @@
   root.dataset.season=String(selectedSeason);
  }
 
- window.addEventListener('fa:dev-progress-change',updateSeason);
+ window.addEventListener('fa:dev-progress-change',event=>{const next=Number(event.detail?.season);if(validSeason(next)){selectedSeason=next;const url=new URL(location.href);url.searchParams.set('season',String(next));url.searchParams.delete('day');history.replaceState(history.state,'',url)}updateSeason()});
  window.addEventListener('popstate',updateSeason);
  // A day is never a permanent route or selection.
  if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
