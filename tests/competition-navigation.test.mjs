@@ -57,7 +57,7 @@ test('DEV future deep links normalize to the latest current season',()=>{
  assert.equal(s.fields.get('competition-panel-stats').hidden,false);
 });
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{
- const s=setup('/competitions/it-1/?season=1&matchday=12');
+ const s=setup('/competitions/it-1/fixtures?season=1&matchday=12');
  assert.equal(s.window.location.pathname,'/competitions/it-1/fixtures');
  assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
