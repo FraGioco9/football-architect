@@ -34,9 +34,8 @@
   const limit=dev?readDebugSeason():1;
   const params=new URL(location.href).searchParams;
   const requested=Number(params.get('season'));
-  if(validSeason(requested))selectedSeason=requested;
-  else if(params.has('season')||selectedSeason>limit){selectedSeason=limit;const url=new URL(location.href);url.searchParams.set('season',String(limit));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
-  else if(!params.has('season')&&!root.dataset.seasonInitialized)selectedSeason=limit;
+  if(params.has('season')&&validSeason(requested))selectedSeason=requested;
+  else {selectedSeason=limit;const url=new URL(location.href);url.searchParams.set('season',String(limit));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
   root.dataset.seasonInitialized='true';
   menu.replaceChildren();
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
