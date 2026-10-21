@@ -105,11 +105,25 @@
  dialog.setAttribute('aria-labelledby','calendar-event-dialog-title');
  dialog.innerHTML='<div class="calendar-event-panel app-search-panel"><button type="button" class="calendar-event-close app-search-close" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button><h2 id="calendar-event-dialog-title"></h2><p id="calendar-event-dialog-subtitle"></p><div id="calendar-event-dialog-details"></div></div>';
  document.body.append(dialog);
- const close=dialog.querySelector('.calendar-event-close');
- close.addEventListener('click',()=>dialog.close());
- dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
- let previousFocus;
- dialog.addEventListener('close',()=>previousFocus?.focus?.());
+ const closeButton=dialog.querySelector('.calendar-event-close');
+ let previousFocus=null,closingTimer=null,escapeReturn=false,backdropStart=null,validBackdropClick=false;
+ const resetPointer=()=>{backdropStart=null;validBackdropClick=false};
+ const finishClose=()=>{if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;resetPointer();dialog.classList.remove('is-closing');if(dialog.open)dialog.close()};
+ const requestClose=(fromEscape=false)=>{
+  if(!dialog.open||closingTimer!==null)return;
+  escapeReturn=fromEscape;
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finishClose();return}
+  dialog.classList.add('is-closing');closingTimer=setTimeout(finishClose,150);
+ };
+ closeButton.addEventListener('click',()=>requestClose());
+ dialog.addEventListener('keydown',event=>{if(event.key!=='Escape')return;event.preventDefault();event.stopPropagation();requestClose(true)},true);
+ dialog.addEventListener('cancel',event=>{event.preventDefault();requestClose(true)});
+ dialog.addEventListener('pointerdown',event=>{validBackdropClick=false;backdropStart=event.target===dialog?{id:event.pointerId,x:event.clientX,y:event.clientY}:null});
+ dialog.addEventListener('pointermove',event=>{if(backdropStart&&(event.pointerId!==backdropStart.id||event.target!==dialog||Math.hypot(event.clientX-backdropStart.x,event.clientY-backdropStart.y)>8))backdropStart=null});
+ dialog.addEventListener('pointerup',event=>{validBackdropClick=!!backdropStart&&event.target===dialog&&event.pointerId===backdropStart.id&&Math.hypot(event.clientX-backdropStart.x,event.clientY-backdropStart.y)<=8;backdropStart=null});
+ dialog.addEventListener('pointercancel',resetPointer);
+ dialog.addEventListener('click',event=>{const outside=event.target===dialog&&validBackdropClick;validBackdropClick=false;if(outside)requestClose()});
+ dialog.addEventListener('close',()=>{resetPointer();if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;dialog.classList.remove('is-closing');if(previousFocus?.isConnected){if(escapeReturn)previousFocus.classList.add('app-search-escape-return');else previousFocus.classList.remove('app-search-escape-return');previousFocus.focus({preventScroll:true})}escapeReturn=false});
  const names=()=>({national:t().national,international:t().international});
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
  const dayModel=window.faWorldCalendarModel?.createSeason(1).days||[];
@@ -129,7 +143,7 @@
    const pending=document.createElement('p');pending.textContent=t().pending;section.append(pending);
    body.append(section);
   }
-  if(!dialog.open)dialog.showModal();
+  if(!dialog.open&&closingTimer===null){dialog.showModal();closeButton.focus({preventScroll:true})}
  }
  window.faCalendarShowDay=day=>showDay(day,day);
  new MutationObserver(()=>{updateSeason();window.faCalendarSyncWeek?.()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
