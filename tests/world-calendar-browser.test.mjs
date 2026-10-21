@@ -68,7 +68,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     // Public rendering must ignore a leftover fictional DEV world day.
     await runValue("sessionStorage.setItem('football-architect:calendar-dev-world-day','26');sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:'week'}))");
     await visit();
-    assert.equal(await runValue("document.documentElement.dataset.calendarView"),'week');
+    assert.equal(await runValue("document.documentElement.dataset.calendarView"),'season','Cached Week must not override the device default');
+    assert.equal(await runValue("new URL(location.href).searchParams.get('calendarView')"),'season','Default view is canonicalized in the URL');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'1','Public bootstrap must not import DEV day');
     await runValue("sessionStorage.removeItem('football-architect:calendar-dev-world-day');sessionStorage.removeItem('football-architect:calendar-selection')");
     await visit();
@@ -128,7 +129,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[aria-pressed=true]').length"),0);
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
     await runValue("document.getElementById('calendar-week').click()");
-    await visit(devOrigin);
+    await cmd('Page.navigate',{url:devOrigin+'/calendar?calendarView=week'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
     assert.equal(await runValue("document.documentElement.dataset.calendarView"),'week');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Week opens on the DEV current day at first paint');
     assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),true);
@@ -162,6 +164,10 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("new URL(location.href).searchParams.get('season')"),'3','Current season is canonicalized in URL');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Default current season opens current week');
     assert.equal(await runValue("getComputedStyle(document.querySelector('#calendar-week-trigger')).borderTopWidth"),'1px');
+    await cmd('Page.navigate',{url:devOrigin+'/calendar'});
+    for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
+    assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true);
+    assert.equal(await runValue("sessionStorage.getItem('football-architect:calendar-route')"),null);
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
