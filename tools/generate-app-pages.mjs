@@ -146,7 +146,8 @@ const normalizeRouteLinks=(html,path)=>{
   return prefix+q+pathname+url.search+url.hash+q;
  });
 };
-const writeOutput=(path,content)=>{\n if(path.endsWith(".html"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
+const writeOutput=(path,content)=>{
+ if(path.endsWith(".html"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
@@ -182,7 +183,7 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  let html=template;
  const entries={...worldPageReplacements(),"@@FA_LINE_008@@":"  <title>Clubs — Football Architect</title>","@@FA_WORLD_SECTION@@":title};
  for(const [token,value] of Object.entries(entries))html=html.replaceAll(token,value);
- html=html.replace("</head>",'  <link rel="stylesheet" href="/assets/clubs-directory.css">\n  <script src="/assets/clubs-directory.js" defer></script>\n</head>');
+ html=html.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/clubs-directory.js\" defer></script>\n</head>");
  writeOutput("clubs/index.html",normalizeRouteLinks(html,"clubs/index.html"));
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
