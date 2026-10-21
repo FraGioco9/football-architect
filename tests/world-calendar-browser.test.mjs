@@ -170,6 +170,11 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true,'Navigating without a view canonicalizes it');
     assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true,'Season is always first in Calendar URL');
     assert.equal(await runValue("[...new URL(location.href).searchParams.keys()].slice(0,2).join(',')"),'season,calendarView');
+    // Pre-render contract: the Season picker exists in the source HTML, not after deferred JS.
+    assert.equal(await runValue("!!document.querySelector('#app-calendar > .calendar-season-picker')"),true);
+    assert.equal(await runValue("document.querySelectorAll('#calendar-season-picker').length"),1);
+    assert.equal(await runValue("document.querySelectorAll('#calendar-day-26').length"),1);
+    assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
