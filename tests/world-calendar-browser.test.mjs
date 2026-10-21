@@ -64,6 +64,53 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
     await visit();
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),true);
+    assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('unavailable')"),true);
+    assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true);
+    await visit(devOrigin);
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),false);
+    assert.equal(await run("document.getElementById('calendar-clock-source').textContent.includes('DEV')"),true);
+    await run("document.getElementById('calendar-day-16').click()");
+    await run("(()=>{const control=document.getElementById('calendar-dev-world-day');control.value='19';control.dispatchEvent(new Event('input',{bubbles:true}))})()");
+    assert.equal(await run("window.faWorldCalendar.getSelection().day"),16,'DEV clock changes must not change selected day');
+    assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('19/56')"),true);
+    assert.equal(await run("document.querySelector('[data-calendar-day=\"19\"]').dataset.clockRelative"),'current');
+    await run("document.getElementById('calendar-today').click()");
+    assert.equal(await run("window.faWorldCalendar.getSelection().day"),19);
+    // CAL-IMP-05A: public clock rejects unauthorised and malformed snapshots.
+    await visit();
+    for(const source of ['authoritative','dev']){
+      await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:"+JSON.stringify(source)+",reference:'untrusted browser event'},current:{season:1,day:19}}}))");
+      assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Public clock must reject all injected sources');
+      assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true,'Public injection cannot show DEV controls');
+    }
+    await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'test'},current:{season:2,day:16}}}))");
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Other seasons cannot navigate');
+    await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'dev',reference:'test'},current:{season:1,day:57}}}))");
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Malformed day fails closed');
+    await visit(devOrigin);
+    await run("dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:{source:{kind:'authoritative',reference:'unapproved'},current:{season:1,day:23}}}))");
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),true,'Unapproved authoritative source must fail closed in DEV too');
+    await visit(devOrigin);
+    await run("document.getElementById('calendar-day-16').click();document.getElementById('calendar-week').click();document.getElementById('calendar-filter').value='national';document.getElementById('calendar-filter').dispatchEvent(new Event('change'));document.getElementById('calendar-division').value='it-2';document.getElementById('calendar-division').dispatchEvent(new Event('change'))");
+    for(const day of [1,55,56]){
+      await run("(()=>{const n=document.getElementById('calendar-dev-world-day');n.value="+day+";n.dispatchEvent(new Event('input',{bubbles:true}))})()");
+      assert.deepEqual(await run("window.faWorldCalendar.getSelection()"),{day:16,view:'week',filter:'national',division:'it-2'});
+      assert.equal(await run("document.getElementById('calendar-day-"+day+"').dataset.clockRelative"),'current');
+    }
+    for(const [lang,label] of [['en','Fictional'],['de','Fiktive'],['es','ficticia'],['fr','fictif'],['it','fittizia']]){
+      await run("document.documentElement.lang="+JSON.stringify(lang)+";dispatchEvent(new Event('languagechange'))");
+      // A clock update must remain available and never mutate the calendar selection.
+      await run("(()=>{const n=document.getElementById('calendar-dev-world-day');n.dispatchEvent(new Event('input',{bubbles:true}))})()");
+      assert.ok((await run("document.getElementById('calendar-clock-source').textContent")).includes(label));
+    }
+    for(const width of [320,390]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});
+      assert.equal(await run("document.documentElement.scrollWidth<=innerWidth"),true);
+      assert.equal(await run("document.getElementById('calendar-dev-world-day').disabled"),false);
+    }
+    await cmd('Emulation.clearDeviceMetricsOverride');
+    await visit();
     let cases=0;
     for(const [width,height,mobile] of [[1440,1050,false],[390,1000,true],[320,1000,true],[844,390,true]]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});

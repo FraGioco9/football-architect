@@ -153,6 +153,11 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
+        if(file==="calendar/index.html"){
+          // Inject only on the DEV server; never present these fictional days as official time.
+          const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
+          body=Buffer.from(body.toString("utf8").replace('<script src="/assets/world-clock-adapter.js" defer></script>',bootstrap+'<script src="/assets/world-clock-adapter.js" defer></script>'),"utf8");
+        }
         if (DETAIL.test(raw) || file === "competitions/index.html") {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
