@@ -1217,7 +1217,7 @@
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
-    const defaultView=window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches?'week':'season';
+    const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
     let activeSeason=1;
     if(document.documentElement.dataset.faDevAppOrigin){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
