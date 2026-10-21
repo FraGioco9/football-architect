@@ -21,7 +21,7 @@ test('CRLF flag sources generate the same checked-in competition HTML without re
   }
   const flag=join(fixture,'assets/flags/gb-eng.svg'),before=readFileSync(flag);
   const output=execFileSync(process.execPath,['tools/generate-app-pages.mjs','--check'],{cwd:fixture,encoding:'utf8',stdio:['ignore','pipe','pipe']});
-  assert.match(output,/21\/21/);
+  assert.match(output,/23\/23/);
   assert.deepEqual(readFileSync(flag),before,'Generation must not modify source SVG bytes');
  }finally{rmSync(fixture,{recursive:true,force:true})}
 });
