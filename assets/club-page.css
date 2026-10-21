@@ -38,15 +38,19 @@
 .club-overview-layout .app-panel{min-width:0;overflow-wrap:anywhere}
 .club-overview-layout h2{margin-top:0}
 .club-colors{display:flex;flex-wrap:wrap;gap:12px}
+.club-colors>.club-color{margin-right:-8px}
+.club-fact-description dd{min-width:0}
+.club-fact-description .club-description{margin:0;line-height:1.65;white-space:normal}
+.club-fact-rivalries dd{min-width:0}
 .club-country-value{display:inline-flex;align-items:center;gap:7px}
 .club-country-value img{flex:none}
 .club-description-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px}
 .club-description-heading h3{margin:0;font-size:1rem}
-.club-translate-button{border:1px solid var(--border);background:var(--surface-raised);color:var(--text);border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer}
-.club-translate-button:hover{border-color:var(--primary)}
+.club-translate-button{display:block;width:max-content;min-height:28px;margin-top:6px;padding:2px 0;border:0;border-radius:0;background:transparent;color:var(--muted);font:inherit;font-size:.8rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.club-translate-button:hover{color:var(--text)}
 .club-translate-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .club-rivalries-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
-.club-rivalries-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.club-rivalries-list li{display:flex;align-items:baseline;justify-content:flex-start;gap:8px;flex-wrap:wrap}
 .club-rivalries-list .app-link{min-height:0;padding:0;display:inline;width:auto;border:0;background:transparent;text-align:left}
 .club-rivalries-list li span{color:var(--muted);font-size:.85rem}
 .club-kits{min-height:220px}.club-kits p{color:var(--muted)}
