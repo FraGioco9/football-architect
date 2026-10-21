@@ -891,127 +891,48 @@ html[data-theme="light"] .calendar-event--postseason{background:#D9E6F9;color:#2
 @media(max-width:620px){#world-calendar .calendar-day{height:82px;min-height:82px;max-height:82px}}
 html[data-calendar-view="week"] #world-calendar .calendar-day{height:76px;min-height:76px;max-height:76px}
 
-/* CAL-SIMPLE-05: match Fixtures navigation geometry while keeping Week first paint deterministic. */
-#calendar-controls{align-items:center;justify-content:center;gap:4px}
-#calendar-controls .app-fixtures-arrow{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px;min-height:32px;border-radius:8px;font-size:20px}
-#calendar-controls .app-fixtures-select{width:120px;min-width:100px;position:relative}
-#calendar-controls .app-fixtures-trigger{width:100%;height:32px;min-height:32px}
-#calendar-current-week{min-height:32px;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
-#calendar-current-week:disabled{opacity:.45;cursor:default}
-@media(max-width:620px){#calendar-controls{width:100%;justify-content:center;flex-wrap:nowrap;gap:4px}#calendar-controls .app-fixtures-select{width:110px;min-width:92px}#calendar-current-week{padding:0 6px;font-size:11px}}
-
-/* CAL-SIMPLE-06: show the complete navigation in Week mode, with Fixtures dimensions. */
-html[data-calendar-view="week"] #calendar-controls{display:flex!important;visibility:visible;align-items:center;justify-content:center;gap:4px}
-html[data-calendar-view="season"] #calendar-controls{display:none!important}
-#calendar-controls #calendar-previous,#calendar-controls #calendar-next{display:inline-flex!important;flex:0 0 32px;width:32px;min-width:32px;height:32px;min-height:32px;max-height:32px;padding:0}
-#calendar-controls #calendar-week-trigger{min-width:0;width:100%;height:32px;min-height:32px;max-height:32px}
-#calendar-controls .app-fixtures-select{flex:0 0 108px;width:108px;min-width:108px;max-width:108px}
-#calendar-current-week{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;white-space:nowrap}
-@media(max-width:620px){#calendar-controls .app-fixtures-select{flex-basis:100px;width:100px;min-width:100px;max-width:100px}}
-
-/* CAL-SIMPLE-07: Season is aligned above, not beside, the Week generator. */
-#app-calendar>.calendar-season-picker .language-control{width:108px;min-width:108px;max-width:108px}
-#app-calendar>.calendar-season-picker .language-trigger{width:100%;min-height:32px;height:32px}
-#world-calendar>.calendar-toolbar{display:flex;justify-content:flex-start;align-items:center}
-#world-calendar>#calendar-controls{display:flex;max-width:100%;min-width:0;justify-content:center;gap:4px;margin:0 0 16px}
-html[data-calendar-view="season"] #world-calendar>#calendar-controls{display:none!important}
-html[data-calendar-view="week"] #world-calendar>#calendar-controls{display:flex!important}
-#world-calendar>#calendar-controls #calendar-previous,#world-calendar>#calendar-controls #calendar-next{visibility:visible;display:inline-flex!important;opacity:1;align-items:center;justify-content:center}
-#world-calendar>#calendar-controls #calendar-current-week{visibility:visible;display:inline-flex!important}
-@media(max-width:620px){#app-calendar>.calendar-season-picker .language-control{width:100px;min-width:100px;max-width:100px}}
-
-/* CAL-SIMPLE-08: exact Competition season trigger and consistent Week generator dimensions. */
-#app-calendar>.calendar-season-picker{z-index:12;align-items:center;gap:8px}
-#app-calendar>.calendar-season-picker .language-control{width:120px;min-width:120px;max-width:120px}
-#app-calendar>.calendar-season-picker .language-trigger{height:38px;min-height:38px;padding:8px 12px;font:inherit}
-#calendar-controls .app-fixtures-select{flex:0 0 120px;width:120px;min-width:120px;max-width:120px}
-#calendar-controls #calendar-week-trigger{box-sizing:border-box;height:32px;min-height:32px;width:120px}
-#calendar-controls .language-menu{z-index:25}
-@media(max-width:620px){#app-calendar>.calendar-season-picker .language-control{width:110px;min-width:110px;max-width:110px}#calendar-controls .app-fixtures-select{flex:0 0 110px;width:110px;min-width:110px;max-width:110px}#calendar-controls #calendar-week-trigger{width:110px}}
-
-/* CAL-SIMPLE-09: match the actual Competition season selector (88 x 44). */
-#app-calendar>.calendar-season-picker .language-control{width:88px!important;min-width:88px!important;max-width:88px!important}
-#app-calendar>.calendar-season-picker .language-trigger{height:44px!important;min-height:44px!important;max-height:44px!important;padding:8px 10px!important}
-#app-calendar>.calendar-season-picker .language-menu{width:100%}
-#world-calendar #calendar-controls{gap:4px;align-items:center;justify-content:center}
-#world-calendar #calendar-controls .app-fixtures-select{flex:0 0 120px!important;width:120px!important;min-width:120px!important;max-width:120px!important}
-#world-calendar #calendar-week-trigger{width:100%!important;min-width:0!important;max-width:100%!important;height:32px;min-height:32px}
-#world-calendar #calendar-previous,#world-calendar #calendar-next{order:0}
-#world-calendar #calendar-controls .app-fixtures-select{order:1}
-#world-calendar #calendar-next{order:2}
-#world-calendar #calendar-current-week{order:3}
-#calendar-current-week[hidden],#calendar-controls[hidden],#calendar-week-menu[hidden]{display:none!important}
-/* Hide obsolete calendar furniture before scripts execute, including on reload. */
+/* CAL-AUDIT-03: one authoritative Calendar control style (shared Fixtures primitives). */
+#app-calendar{position:relative}
+#app-calendar>.calendar-season-picker{position:absolute;inset-inline-end:0;top:0;margin:0;display:flex;align-items:center;gap:8px;z-index:12}
+#app-calendar>.app-page-title{padding-inline-end:130px}
+#app-calendar>.calendar-season-picker .language-control{width:88px;min-width:88px;max-width:88px}
+#app-calendar>.calendar-season-picker .language-trigger{box-sizing:border-box;width:100%;min-width:0;height:44px;min-height:44px;padding:8px 10px}
+#app-calendar>.calendar-season-picker .language-menu{width:100%;min-width:0}
 #world-calendar .calendar-heading,#world-calendar .calendar-clock,#world-calendar .calendar-filterbar,
 #world-calendar .calendar-key,#world-calendar .calendar-selected,#world-calendar .calendar-note,
 #world-calendar .calendar-details{display:none!important}
-@media(max-width:620px){#world-calendar #calendar-controls .app-fixtures-select{flex-basis:120px!important;width:120px!important;min-width:120px!important;max-width:120px!important}}
-
-/* CAL-SIMPLE-10: do not expose legacy navigation before enhanced controls mount. */
-#calendar-controls:not(.app-fixtures-navigation){visibility:hidden!important;pointer-events:none!important}
-#calendar-controls.app-fixtures-navigation{visibility:visible}
-#world-calendar #calendar-controls .app-fixtures-select{flex:0 0 88px!important;width:88px!important;min-width:88px!important;max-width:88px!important}
-#world-calendar #calendar-week-trigger{box-sizing:border-box;width:88px!important;min-width:88px!important;max-width:88px!important;height:32px!important;min-height:32px!important;padding:4px 7px!important}
-#world-calendar #calendar-week-menu{width:88px;min-width:88px;max-width:88px}
-#calendar-previous:not(:disabled),#calendar-next:not(:disabled){opacity:1!important;cursor:pointer!important;color:var(--text)!important;background:var(--surface)!important;border-color:var(--border)!important;pointer-events:auto!important}
-#calendar-previous:disabled,#calendar-next:disabled{opacity:.35!important;cursor:default!important;color:var(--muted)!important;pointer-events:none!important;box-shadow:none!important;transform:none!important}
-#calendar-controls .app-fixtures-arrow:disabled:hover{background:var(--surface)!important}
-@media(max-width:620px){#world-calendar #calendar-controls .app-fixtures-select{flex-basis:88px!important;width:88px!important;min-width:88px!important;max-width:88px!important}}
-
-/* CAL-SIMPLE-11: initial Week navigation, interactive arrows, uniform options. */
-#calendar-controls.app-fixtures-navigation{visibility:visible!important;pointer-events:auto!important}
-#calendar-controls #calendar-previous:not(:disabled),#calendar-controls #calendar-next:not(:disabled){transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease!important}
-#calendar-controls #calendar-previous:not(:disabled):hover,#calendar-controls #calendar-next:not(:disabled):hover{background:var(--hover-surface,var(--surface-hover,rgba(91,142,121,.16)))!important;border-color:var(--focus)!important;box-shadow:0 3px 12px rgba(0,0,0,.17)!important;transform:translateY(-1px)!important}
-#calendar-controls #calendar-previous:not(:disabled):active,#calendar-controls #calendar-next:not(:disabled):active{transform:translateY(0)!important}
-#calendar-controls #calendar-week-menu .language-option{box-sizing:border-box;display:flex;align-items:center;min-height:32px;height:32px;padding:0 8px;font-size:12px}
-#calendar-controls #calendar-week-menu{scrollbar-width:thin;scrollbar-color:var(--muted) transparent;max-height:260px;overflow-y:auto}
-#calendar-controls #calendar-week-menu::-webkit-scrollbar{width:5px}
-#calendar-controls #calendar-week-menu::-webkit-scrollbar-thumb{background:var(--muted);border-radius:6px}
-#calendar-controls #calendar-week-menu::-webkit-scrollbar-track{background:transparent}
-#calendar-current-week[hidden]{display:none!important}
-@media(prefers-reduced-motion:reduce){#calendar-controls #calendar-previous,#calendar-controls #calendar-next{transition:none!important;transform:none!important}}
-
-/* CAL-SIMPLE-12: use the exact Fixtures arrow surface and disabled behaviour. */
-#calendar-controls #calendar-previous,#calendar-controls #calendar-next{box-sizing:border-box;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;justify-content:center!important;border-radius:9px}
-#calendar-controls #calendar-previous:not(:disabled),#calendar-controls #calendar-next:not(:disabled){background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;opacity:1!important;cursor:pointer!important;pointer-events:auto!important;transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease!important}
-#calendar-controls #calendar-previous:not(:disabled):hover,#calendar-controls #calendar-next:not(:disabled):hover{background:var(--surface-hover,var(--surface))!important;border-color:var(--focus)!important;box-shadow:none!important;transform:none!important}
-#calendar-controls #calendar-previous:disabled,#calendar-controls #calendar-next:disabled,
-#calendar-controls #calendar-previous:disabled:hover,#calendar-controls #calendar-next:disabled:hover{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;opacity:.45!important;cursor:default!important;pointer-events:none!important;animation:none!important;transition:none!important;transform:none!important;box-shadow:none!important}
-#calendar-current-week[hidden]{display:none!important}
-
-/* CAL-SIMPLE-13: identical Fixtures arrow interactions; explicit high-specificity hidden state. */
-#world-calendar>#calendar-controls #calendar-current-week[hidden]{display:none!important;visibility:hidden!important}
-#world-calendar #calendar-controls #calendar-previous:not(:disabled),
-#world-calendar #calendar-controls #calendar-next:not(:disabled){transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease!important}
-#world-calendar #calendar-controls #calendar-previous:not(:disabled):hover,
-#world-calendar #calendar-controls #calendar-next:not(:disabled):hover{background:var(--surface-hover,var(--surface))!important;border-color:var(--border)!important;box-shadow:var(--shadow-hover,0 2px 8px rgba(0,0,0,.14))!important;transform:translateY(-1px)!important}
-#world-calendar #calendar-controls #calendar-previous:disabled:hover,
-#world-calendar #calendar-controls #calendar-next:disabled:hover{transform:none!important;box-shadow:none!important}
-
-/* CAL-SIMPLE-14: one visual hover behavior for the four Week controls. */
+#world-calendar>.calendar-toolbar{display:flex;justify-content:flex-start;align-items:center}
+#world-calendar #calendar-controls{align-items:center;justify-content:center;gap:4px;margin:0 0 16px;max-width:100%;min-width:0}
+html[data-calendar-view="season"] #world-calendar #calendar-controls,
+#world-calendar #calendar-controls[hidden]{display:none!important}
+html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden]){display:flex}
+#world-calendar #calendar-controls:not(.app-fixtures-navigation){visibility:hidden;pointer-events:none}
+#world-calendar #calendar-controls.app-fixtures-navigation{visibility:visible}
 #world-calendar #calendar-controls #calendar-previous,
-#world-calendar #calendar-controls #calendar-next,
-#world-calendar #calendar-controls #calendar-week-trigger,
-#world-calendar #calendar-controls #calendar-current-week{
-  transform:none!important;animation:none!important;
-  transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease!important;
-}
+#world-calendar #calendar-controls #calendar-next{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;box-sizing:border-box;width:32px;min-width:32px;height:32px;min-height:32px;padding:0;border-radius:9px}
+#world-calendar #calendar-controls #calendar-previous{order:0}
+#world-calendar #calendar-controls .app-fixtures-select{position:relative;flex:0 0 88px;width:88px;min-width:88px;max-width:88px;order:1}
+#world-calendar #calendar-controls #calendar-week-trigger{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;max-width:100%;height:32px;min-height:32px;padding:4px 7px;gap:3px;font-size:12px}
+#world-calendar #calendar-controls #calendar-next{order:2}
+#world-calendar #calendar-controls #calendar-current-week{order:3;position:static;display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;min-height:32px;gap:6px;padding:5px 8px;font-size:12px}
+#world-calendar #calendar-controls #calendar-current-week[hidden],
+#world-calendar #calendar-controls #calendar-week-menu[hidden]{display:none!important}
+#world-calendar #calendar-controls .language-menu{z-index:25}
+#world-calendar #calendar-controls #calendar-week-menu{box-sizing:border-box;width:88px;min-width:88px;max-width:88px;max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--muted) transparent}
+#world-calendar #calendar-controls #calendar-week-menu .language-option{box-sizing:border-box;display:flex;align-items:center;min-height:32px;height:32px;padding:0 8px;font-size:12px}
+#world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar{width:5px}
+#world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar-thumb{background:var(--muted);border-radius:6px}
+#world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar-track{background:transparent}
+#world-calendar #calendar-controls #calendar-previous:not(:disabled),
+#world-calendar #calendar-controls #calendar-next:not(:disabled),
+#world-calendar #calendar-controls #calendar-week-trigger:not(:disabled),
+#world-calendar #calendar-controls #calendar-current-week:not(:disabled){cursor:pointer;opacity:1;transform:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease}
 #world-calendar #calendar-controls #calendar-previous:not(:disabled):hover,
 #world-calendar #calendar-controls #calendar-next:not(:disabled):hover,
 #world-calendar #calendar-controls #calendar-week-trigger:not(:disabled):hover,
-#world-calendar #calendar-controls #calendar-current-week:not(:disabled):not([hidden]):hover{
-  transform:none!important;
-  background:rgba(91,142,121,.18)!important;
-  border-color:var(--border)!important;
-  box-shadow:none!important;
-  color:var(--text)!important;
-}
+#world-calendar #calendar-controls #calendar-current-week:not(:disabled):not([hidden]):hover{background:rgba(91,142,121,.18);border-color:var(--border);box-shadow:none;transform:none}
 #world-calendar #calendar-controls #calendar-previous:disabled,
-#world-calendar #calendar-controls #calendar-next:disabled{transition:none!important;transform:none!important}
-#world-calendar #calendar-controls #calendar-current-week[hidden]{display:none!important}
-@media(prefers-reduced-motion:reduce){
- #world-calendar #calendar-controls #calendar-previous,
- #world-calendar #calendar-controls #calendar-next,
- #world-calendar #calendar-controls #calendar-week-trigger,
- #world-calendar #calendar-controls #calendar-current-week{transition:none!important}
-}
+#world-calendar #calendar-controls #calendar-next:disabled{opacity:.45;cursor:default;pointer-events:none;transform:none;transition:none;box-shadow:none}
+#world-calendar #calendar-controls :is(button,[role="option"]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(max-width:1000px){#world-calendar #calendar-controls #calendar-current-week{width:32px;min-width:32px;padding:0}#world-calendar #calendar-controls #calendar-current-week span{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){#world-calendar #calendar-controls button{transition:none!important}}
