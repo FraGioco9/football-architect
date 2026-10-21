@@ -167,7 +167,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.navigate',{url:devOrigin+'/calendar'});
     for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
     assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true);
-    assert.equal(await runValue("sessionStorage.getItem('football-architect:calendar-route')"),null);
+    assert.equal(await runValue("document.getElementById('app-nav-calendar').getAttribute('href').includes('calendarView=')"),false,'Navigation does not reuse cached Calendar view');
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
