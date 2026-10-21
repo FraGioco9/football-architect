@@ -72,6 +72,9 @@
    const pending=document.createElement('p');pending.textContent='Fixtures and results are not yet available.';body.append(pending);
    dialog.showModal();
   });
-  day.addEventListener('keydown',event=>{if(event.target===day&&(event.key==='Enter'||event.key===' ')){event.preventDefault();marker.click()}});
+  if(!day.dataset.calendarEventKeyboard){
+   day.dataset.calendarEventKeyboard='true';
+   day.addEventListener('keydown',event=>{if(event.target===day&&(event.key==='Enter'||event.key===' ')){event.preventDefault();marker.click()}});
+  }
  }
 })();
