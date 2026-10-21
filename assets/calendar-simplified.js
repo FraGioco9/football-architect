@@ -10,7 +10,7 @@
  selector.className='calendar-season-picker app-competition-season';
  selector.innerHTML='<span id="calendar-season-label">Season</span><div class="language-control" id="calendar-season-control"><button type="button" id="calendar-season-picker" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="calendar-season-menu" aria-labelledby="calendar-season-label calendar-season-value"><span id="calendar-season-value">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="calendar-season-menu" class="language-menu" role="listbox" aria-labelledby="calendar-season-label" hidden></div></div>';
  const trigger=selector.querySelector('#calendar-season-picker'),menu=selector.querySelector('#calendar-season-menu'),value=selector.querySelector('#calendar-season-value');
- heading?.after(selector);
+ document.getElementById('calendar-title')?.after(selector);
  function closeMenu(){menu.hidden=true;trigger.setAttribute('aria-expanded','false')}
  function chooseSeason(n){selectedSeason=n;const url=new URL(location.href);url.searchParams.set('season',String(n));url.searchParams.delete('day');history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
  trigger.addEventListener('click',()=>{menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden))});
@@ -78,7 +78,7 @@
  for(const marker of root.querySelectorAll('.calendar-event')){
   const day=marker.closest('[data-calendar-day]'),data=dayModel[Number(day?.dataset.calendarDay)-1];
   const event=data?.events.find(e=>e.marker===marker.dataset.calendarMarker);if(!event)continue;
-  const description=event.marker+' - '+namesFor(event);
+  const description=namesFor(event);
   marker.removeAttribute('title');
   marker.setAttribute('aria-label',description);
   marker.addEventListener('pointerenter',()=>{tooltip.textContent=description;placeTooltip(marker)});
