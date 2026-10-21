@@ -772,7 +772,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       for(const country of ['DE','BR','PT']){
-        await visit('/competitions/'+country.toLowerCase()+'-1','!!window.faFixtures');
+        await visit('/competitions/'+country.toLowerCase()+'-1/standings','!!window.faFixtures');
         const selector='[data-club-crest="'+country+'-1"]';
         await wait(JSON.stringify(selector)+"&&[...document.querySelectorAll("+JSON.stringify(selector)+")].every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)");
         const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
@@ -790,7 +790,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
-      await visit('/competitions/de-1',"[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
+      await visit('/competitions/de-1/standings',"[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
       for(const refresh of [false,true]){
         if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
         assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');
