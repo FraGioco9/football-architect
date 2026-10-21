@@ -134,7 +134,9 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await run("window.faWorldCalendar.getSelection().division"),'');
     await visit();
     // CAL-IMP-04: deterministic same-document browser Back/Forward history.
-    await visit();
+    await cmd('Page.navigate',{url:origin+'/calendar?season=1&day=1&calendarView=season&competition=all'});
+    for(let n=0;n<100;n++){if(await run("location.pathname+location.search==='/calendar?season=1&day=1&calendarView=season&competition=all'&&document.documentElement.dataset.calendarReady==='true'&&!!window.faWorldCalendar"))break;await delay(50)}
+    assert.equal(await run('location.pathname+location.search'),'/calendar?season=1&day=1&calendarView=season&competition=all');
     const historyStates=[
       {day:16,view:'season',filter:'all',division:''},
       {day:16,view:'season',filter:'national',division:''},
