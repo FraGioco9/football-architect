@@ -870,3 +870,7 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 @keyframes calendar-tooltip-in{from{opacity:0;transform:translateY(5px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){.calendar-marker-tooltip{animation:none}}
 .calendar-season-picker .language-control{min-width:90px}
+
+/* World-day progress is global DEV state, not a selected calendar tile. */
+.calendar-days [data-clock-relative="current"]{outline:0!important;box-shadow:none!important}
+#world-calendar>.calendar-key{border:0!important;margin:0!important;padding:0!important}
