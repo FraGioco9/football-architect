@@ -187,7 +187,7 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  const content="<section id=\"app-divisions\" class=\"app-view nav01-directory\" aria-labelledby=\"nav01-title\"><div id=\"nav01-clubs\"><h1 id=\"nav01-title\" class=\"app-page-title\">Clubs</h1><div class=\"nav01-filters\"><input type=\"search\" aria-label=\"Search clubs\"><select aria-label=\"Country\"><option value=\"\">All countries</option></select><select aria-label=\"Division\"><option value=\"\">All divisions</option></select><select aria-label=\"Status\"><option value=\"\">All clubs</option><option value=\"active\">Active</option><option value=\"inactive\">Inactive</option></select></div><p class=\"nav01-count\" aria-live=\"polite\"></p><div class=\"nav01-grid\"></div></div></section>";
  let html=source.slice(0,begin)+content+source.slice(finish);
  html=html.replace("<title>Competitions — Football Architect</title>","<title>Clubs — Football Architect</title>");
- html=html.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/clubs-directory.js\" defer></script>\n</head>");
+ html=html.replace('  <link rel="stylesheet" href="/assets/sidebar-evolution.css">', "  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/clubs-directory.js\" defer></script>\n  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">");
  writeOutput("clubs/index.html",html);
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
