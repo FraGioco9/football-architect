@@ -1218,9 +1218,9 @@
   window.faAppHref = appHref;
   function rewriteAppLinks() {
     const defaultView=window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches?'week':'season';
-    const devCalendar=window.faDevCalendarClockSnapshot?.source?.kind==='dev'||Boolean(document.querySelector('[data-dev-control="season"]'));
+    // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
     let activeSeason=1;
-    if(devCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
+    try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}
     const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
     const routes = {dashboard:"/dashboard",calendar:calendarRoute,
       settings:"/settings",divisions:"/competitions"};
