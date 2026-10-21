@@ -1220,8 +1220,16 @@
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
     let activeSeason=1;
-    if(document.documentElement.dataset.faDevAppOrigin){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
+    const isDevCalendar=Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev";
+    if(isDevCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
     const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
+    // Refresh on activation: the DEV season may change after the sidebar first renders.
+    const calendarNav=links.calendar;
+    if(calendarNav&&!calendarNav.dataset.calendarSeasonLinkBound){
+      calendarNav.dataset.calendarSeasonLinkBound="true";
+      calendarNav.addEventListener("click",()=>rewriteAppLinks());
+      calendarNav.addEventListener("focus",()=>rewriteAppLinks());
+    }
     const routes = {dashboard:"/dashboard",calendar:calendarRoute,
       settings:"/settings",divisions:"/competitions"};
     for (const [view,link] of Object.entries(links)) {
