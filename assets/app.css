@@ -957,3 +957,16 @@ html[data-calendar-view="week"] #world-calendar>#calendar-controls{display:flex!
 #calendar-previous:disabled,#calendar-next:disabled{opacity:.35!important;cursor:default!important;color:var(--muted)!important;pointer-events:none!important;box-shadow:none!important;transform:none!important}
 #calendar-controls .app-fixtures-arrow:disabled:hover{background:var(--surface)!important}
 @media(max-width:620px){#world-calendar #calendar-controls .app-fixtures-select{flex-basis:88px!important;width:88px!important;min-width:88px!important;max-width:88px!important}}
+
+/* CAL-SIMPLE-11: initial Week navigation, interactive arrows, uniform options. */
+#calendar-controls.app-fixtures-navigation{visibility:visible!important;pointer-events:auto!important}
+#calendar-controls #calendar-previous:not(:disabled),#calendar-controls #calendar-next:not(:disabled){transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease!important}
+#calendar-controls #calendar-previous:not(:disabled):hover,#calendar-controls #calendar-next:not(:disabled):hover{background:var(--hover-surface,var(--surface-hover,rgba(91,142,121,.16)))!important;border-color:var(--focus)!important;box-shadow:0 3px 12px rgba(0,0,0,.17)!important;transform:translateY(-1px)!important}
+#calendar-controls #calendar-previous:not(:disabled):active,#calendar-controls #calendar-next:not(:disabled):active{transform:translateY(0)!important}
+#calendar-controls #calendar-week-menu .language-option{box-sizing:border-box;display:flex;align-items:center;min-height:32px;height:32px;padding:0 8px;font-size:12px}
+#calendar-controls #calendar-week-menu{scrollbar-width:thin;scrollbar-color:var(--muted) transparent;max-height:260px;overflow-y:auto}
+#calendar-controls #calendar-week-menu::-webkit-scrollbar{width:5px}
+#calendar-controls #calendar-week-menu::-webkit-scrollbar-thumb{background:var(--muted);border-radius:6px}
+#calendar-controls #calendar-week-menu::-webkit-scrollbar-track{background:transparent}
+#calendar-current-week[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){#calendar-controls #calendar-previous,#calendar-controls #calendar-next{transition:none!important;transform:none!important}}
