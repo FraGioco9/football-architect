@@ -36,7 +36,7 @@ test('CLUB-01 derived manifest preserves canonical fields and provisional placem
  }
  assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,64);
 });
-test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fixtures',async()=>{
+test('CLUB-01 DEV redirects legacy URLs and serves all club views with only the read-only DEV summary',async()=>{
  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
  const get=path=>new Promise((resolve,reject)=>{
   const req=request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
@@ -49,7 +49,8 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fi
    assert.equal((await get(base)).location,base+'/overview');
    for(const view of clubViews){
     const page=await get(base+'/'+view);assert.equal(page.status,200);
-    assert.doesNotMatch(page.body,/__fa_dev__|dev-debug|standings-client/);
+    assert.match(page.body,/data-fa-dev-club-summary/);
+    assert.doesNotMatch(page.body,/data-fa-dev-preview|dev-debug|standings-client/);
    }
   }
   for(const [path,target] of [
@@ -200,16 +201,18 @@ test('CLUB-FLAGS-54: all countries reuse the competition SVG with independent cl
 });
 
 
-test('CLUB-COMPETITION-02: active cards show localized status and inactive cards have one message',async()=>{
+test('CLUB-COMPETITION-02: active cards show localized metrics and inactive cards have one message',async()=>{
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
- const labels={en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'};
+ const labels={en:'Position',de:'Platz',es:'Posición',fr:'Position',it:'Posizione'};
  for(const c of manifest.clubs)for(const [lang,label] of Object.entries(labels)){
   const html=model.render(manifest,model.route(`/clubs/${c.countryId.toLowerCase()}/${c.clubId}/overview`),lang);
   const box=html.match(/<section class="app-panel club-competition"[\s\S]*?<\/section>/)?.[0];
   assert.ok(box,'Every Overview has the competition panel');
   if(c.divisionId){
-   assert.ok(box.includes('class="club-competition-label">'+label+'</span>'));
+   assert.ok(box.includes('<dt>'+label+'</dt>'));
+   assert.match(box,/data-club-position>—</);
+   assert.match(box,/data-club-points>—</);
    assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/overview"'));
    assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
    assert.ok(box.includes(model.copies[lang].provisional));

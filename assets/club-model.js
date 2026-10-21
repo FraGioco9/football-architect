@@ -16,7 +16,14 @@
  const copies=Object.fromEntries(Object.entries(rows).map(([lang,row])=>[lang,Object.fromEntries(keys.map((key,i)=>[key,row[i]]))]));
  const extraLabels={"en":["Name","Colors","Description","Rivalries","Kits","Kits not yet available","Translate","Show original","Tier","First division","Second division","No rivalries recorded"],"de":["Name","Farben","Beschreibung","Rivalitäten","Trikots","Noch keine Trikots verfügbar","Übersetzen","Original anzeigen","Spielklasse","Erste Liga","Zweite Liga","Keine Rivalitäten eingetragen"],"es":["Nombre","Colores","Descripción","Rivalidades","Equipaciones","Equipaciones aún no disponibles","Traducir","Mostrar original","Categoría","Primera división","Segunda división","Sin rivalidades registradas"],"fr":["Nom","Couleurs","Description","Rivalités","Maillots","Maillots pas encore disponibles","Traduire","Afficher l’original","Niveau","Première division","Deuxième division","Aucune rivalité répertoriée"],"it":["Nome","Colori","Descrizione","Rivalità","Divise","Divise non ancora disponibili","Traduci","Mostra originale","Livello","Prima divisione","Seconda divisione","Nessuna rivalità registrata"]};
  for(const [locale,values] of Object.entries(extraLabels))for(let i=0;i<values.length;i++)copies[locale][["nameLabel","colorsLabel","descriptionLabel","rivalriesLabel","kitsLabel","kitsPending","translateLabel","originalLabel","tierLabel","tier1Label","tier2Label","noRivalries"][i]]=values[i];
- for(const [lang,label] of Object.entries({en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}))copies[lang].statusLabel=label;
+ const summaryLabels={
+  en:['Position','Points','Next match','No scheduled match available.','No upcoming match.','Season','Matchday','Playoffs','Playout','Preview'],
+  de:['Platz','Punkte','Nächstes Spiel','Kein angesetztes Spiel verfügbar.','Kein weiteres Spiel.','Saison','Spieltag','Playoffs','Relegation','Vorschau'],
+  es:['Posición','Puntos','Próximo partido','No hay partidos programados.','No hay próximos partidos.','Temporada','Jornada','Playoffs','Promoción','Vista previa'],
+  fr:['Position','Points','Prochain match','Aucun match programmé.','Aucun match à venir.','Saison','Journée','Barrages de promotion','Barrages de maintien','Aperçu'],
+  it:['Posizione','Punti','Prossima partita','Nessuna partita programmata disponibile.','Nessuna prossima partita.','Stagione','Giornata','Playoff','Playout','Anteprima']
+ };
+ for(const [lang,values] of Object.entries(summaryLabels))values.forEach((value,i)=>copies[lang][['positionLabel','pointsLabel','nextMatchLabel','noScheduledMatch','noUpcomingMatch','seasonLabel','matchdayLabel','playoffsLabel','playoutLabel','previewLabel'][i]]=value);
  const countryNames={en:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil'],de:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien'],es:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil'],fr:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil'],it:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']};
  const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -24,7 +31,7 @@
   const m=path.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)$/);
   return m?{countryId:m[1].toUpperCase(),clubId:Number(m[2]),view:m[3],base:'/clubs/'+m[1]+'/'+m[2]}:null;
  }
- function render(manifest,selected,language='en',search=''){
+ function render(manifest,selected,language='en',search='',snapshot=null){
   const lang=Object.hasOwn(copies,language)?language:'en',t=copies[lang];
   const c=manifest.clubs.find(c=>c.countryId===selected.countryId&&c.clubId===selected.clubId);
   if(!c)throw Error('Unknown club identity');
@@ -41,11 +48,26 @@
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'"></span>';
   const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
   const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
+  const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
+   Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
+   (snapshot.position===null||Number.isInteger(snapshot.position)&&snapshot.position>=1&&snapshot.position<=16)&&
+   Number.isInteger(snapshot.points)&&snapshot.points>=0&&snapshot.points<=90?snapshot:null;
+  const next=summary?.nextMatch;
+  const home=next&&manifest.clubs.find(other=>other.countryId===c.countryId&&other.clubId===next.homeId&&other.divisionId===c.divisionId);
+  const away=next&&manifest.clubs.find(other=>other.countryId===c.countryId&&other.clubId===next.awayId&&other.divisionId===c.divisionId);
+  const validNext=home&&away&&home.clubId!==away.clubId&&[home.clubId,away.clubId].includes(c.clubId)&&Number.isInteger(next.round)&&next.round>=1&&next.round<=33;
+  const standingsLink=summary?'/competitions/'+division.id.toLowerCase()+'/standings?season='+summary.season:null;
+  const fixtureLink=validNext?'/competitions/'+division.id.toLowerCase()+'/fixtures?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
+  const rank=summary?.position===null||!summary?'—':'<a class="app-link" href="'+escape(standingsLink)+'">'+summary.position+'</a>';
+  const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'">'+escape(home.primaryName+' – '+away.primaryName)+'</a><small>'+escape((next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+' · '+t.seasonLabel+' '+summary.season)+'</small>':
+   '<span class="club-competition-next-empty">'+escape(summary?t.noUpcomingMatch:t.noScheduledMatch)+'</span>';
   const competitionCard=division?'<div class="club-competition-layout"><div class="club-competition-identity">'+
    '<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">'+
-   '<div class="club-competition-copy"><span class="club-competition-label">'+escape(t.division)+'</span><strong class="club-competition-name">'+divisionValue+'</strong>'+
-   (division?'<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>':'')+'</div></div>'+
-   '<div class="club-competition-status"><span class="club-competition-label">'+escape(t.statusLabel)+'</span><strong>'+escape(t.provisional)+'</strong></div></div>':
+   '<div class="club-competition-copy"><strong class="club-competition-name">'+divisionValue+'</strong>'+
+   '<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>'+
+   '<small class="club-competition-context">'+escape(summary?t.seasonLabel+' '+summary.season+' · '+t.previewLabel:t.provisional)+'</small></div></div>'+
+   '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.positionLabel)+'</dt><dd data-club-position>'+rank+'</dd></div><div><dt>'+escape(t.pointsLabel)+'</dt><dd data-club-points>'+(summary?summary.points:'—')+'</dd></div></dl>'+
+   '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span>'+nextContent+'</div></div></div>':
    '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
   const params=new URLSearchParams(search);
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.

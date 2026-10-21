@@ -11,6 +11,7 @@ import {once} from 'node:events';
 import {setTimeout as delay} from 'node:timers/promises';
 import {repositoryRoot,stagePublicArtifact,publicRequestFile} from '../tools/publication-guard.mjs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
 const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
 const chrome=()=>{
   const windows=process.platform==="win32"?[
@@ -35,8 +36,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
    res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));
   }catch{res.writeHead(404);res.end()}
  });
- const router=createPreviewServer();
- const devServer=createServer((req,res)=>{req.headers.host='127.0.0.1:2000';router.emit('request',req,res)});
+ const router=createPreviewServer();let devManifestDelay=0;
+ const devServer=createServer((req,res)=>{req.headers.host='127.0.0.1:2000';if(devManifestDelay&&req.url==='/competitions/_shared/manifest.json')setTimeout(()=>router.emit('request',req,res),devManifestDelay);else router.emit('request',req,res)});
  server.listen(0,'127.0.0.1');await once(server,'listening');
  devServer.listen(0,'127.0.0.1');await once(devServer,'listening');
  const origin='http://127.0.0.1:'+server.address().port;
@@ -109,8 +110,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.fa-shell-nav [aria-current=\"page\"]')===null"),true,'Club pages must not select a sidebar destination');
      assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const flag of flags)assert.deepEqual(flag,{width:25,height:20,fit:'contain'},'Club flag must fit in shared 5:4 slot');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
-     assert.equal(await run("document.querySelector('.club-competition-status .club-competition-label').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
-     const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-status').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
+     assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Position',de:'Platz',es:'Posición',fr:'Position',it:'Posizione'}[lang]);
+     const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-summary').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
      assert.equal(cardLayout.full,true,'Competition spans the Overview width');
      assert.equal(width===1440?cardLayout.sideBySide:cardLayout.stacked,true,'Competition uses desktop columns and compact mobile rows');
      assert.equal(await run("document.querySelector('.club-description').textContent===document.querySelector('.club-description').dataset.originalDescription"),true);
@@ -173,6 +174,30 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelector('.club-competition img,.club-competition .club-competition-status')"),null);
     await visit('/clubs/it/1/overview',devOrigin);
     assert.equal(await run("document.querySelector('[data-fa-dev-preview]')"),null);
+    const division=JSON.parse(readFileSync(join(artifact,'competitions/_shared/manifest.json'),'utf8')).divisions.find(d=>d.id==='IT-1');
+    const current=createPreviewStandings(division,15,2),index=current.rows.findIndex(r=>r.club.clubId===1);
+    const upcoming=createPreviewStandings(division,30,2).fixtures.find(f=>f.round===16&&(f.homeId===1||f.awayId===1));
+    for(const width of [1440,390]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     devManifestDelay=150;
+     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
+     await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
+     await wait("document.querySelector('[data-club-points]')?.textContent==="+JSON.stringify(String(current.rows[index].pts)));
+     devManifestDelay=0;
+     assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
+     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(index+1));
+     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
+     const fixtureText=await run("document.querySelector('.club-competition-next a').textContent");
+     for(const id of [upcoming.homeId,upcoming.awayId])assert.ok(fixtureText.includes(division.clubs.find(c=>c.clubId===id).primaryName));
+     assert.equal(await run("(()=>{const root=document.querySelector('.fa-shell-content-scroll');return root.scrollWidth<=root.clientWidth+1})()"),true,'Live Competition summary fits at '+width);
+     await run("document.querySelector('[data-club-position] a').focus();sessionStorage.setItem('football-architect:standings-dev-preview','off');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
+     await wait("document.querySelector('[data-club-points]')?.textContent==='—'");
+     assert.equal(await run("document.querySelector('.club-competition-next a')"),null,'Disabling DEV removes future fixtures');
+     assert.equal(await run("document.activeElement.classList.contains('club-competition')"),true,'Removing a focused summary link retains focus in its panel');
+    }
+    await visit('/clubs/it/1/overview');
+    await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
+    assert.equal(await run("document.querySelector('[data-club-points]').textContent"),'—','Public club pages never load fictional results');
     await cmd('Page.navigate',{url:origin+'/competitions/it-1/overview'});
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
     assert.equal(errors.length,0,errors.join('; '));

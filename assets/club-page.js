@@ -2,7 +2,7 @@
 (async()=>{
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
- let selected=model.route(location.pathname);
+ let selected=model.route(location.pathname),competitionSnapshot=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
  try{
   if(!selected)throw Error('Unknown club route');
@@ -16,7 +16,7 @@
   const manifest=await response.json();
   window.faClubCrests=manifest.clubCrests;
   const paint=(preserveCrest=false)=>{
-   const markup=model.render(manifest,selected,language(),location.search);
+   const markup=model.render(manifest,selected,language(),location.search,competitionSnapshot);
    // Keep the existing header (and its loaded crest image) when switching club tabs.
    if(preserveCrest&&host.querySelector('.club-header')&&host.dataset.clubBase===selected.base){
     const staging=document.createElement('div');staging.innerHTML=markup;
@@ -59,6 +59,17 @@
    });
    document.documentElement.dataset.clubReady='true';
   };
+  window.addEventListener('fa:club-competition-summary',event=>{
+   competitionSnapshot=event.detail;
+   const panel=host.querySelector('.club-competition');if(!panel)return;
+   const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
+   const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
+   const replacement=staging.querySelector('.club-competition');
+   for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   panel.replaceWith(replacement);
+   if(focused){const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);
+    if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}}
+  });
   paint();
   // The app shell observes the same lang attribute; paint last to preserve the club title.
   new MutationObserver(()=>paint()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
