@@ -71,8 +71,8 @@ test("index navigation preserves canonical chapter links",()=>{
 });
 test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.match(html,/href="\/" aria-label="Football Architect home"/);
-  assert.match(html,/src="\.\.\/assets\/landing\.js"/);
-  assert.match(html,/href="\.\.\/favicon\.ico"/);
+  assert.match(html,/src="\/assets\/landing\.js"/);
+  assert.match(html,/href="\/favicon\.ico"/);
   assert.match(css,/max-width:700px/);
   assert.match(css,/position:sticky/);
   assert.match(css,/grid-template-columns:210px minmax\(0,1fr\)/);
