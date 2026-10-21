@@ -38,7 +38,7 @@
 .club-overview-layout .app-panel{min-width:0;overflow-wrap:anywhere}
 .club-overview-layout h2{margin-top:0}
 .club-colors{display:flex;flex-wrap:wrap;gap:12px}
-.club-colors>.club-color{margin-right:4px}
+.club-colors>.club-color{margin-right:0}
 .club-fact-description dd{min-width:0}
 .club-fact-description .club-description{margin:0;line-height:1.65;white-space:normal}
 .club-fact-rivalries dd{min-width:0}
