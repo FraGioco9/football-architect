@@ -47,7 +47,6 @@
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
-    try{sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:state.view}))}catch{}
     saveUrl(true);
     if(focus)buttons[state.day-1].focus();
   }
