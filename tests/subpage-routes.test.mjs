@@ -58,3 +58,22 @@ test("ROUTE-02 hosting has exact explicit view rewrites and base redirect",async
  assert.ok(config.rewrites.some(rule=>rule.source.includes(":view(")&&rule.destination==="/competitions/:division/index.html"));
  assert.equal(config.rewrites.some(rule=>rule.destination.includes("/app/")),false);
 });
+
+test("ROUTE-02 DEV routes redirect base and serve explicit views",async()=>{
+ const {once}=await import("node:events");
+ const {request}=await import("node:http");
+ const {createPreviewServer}=await import("../tools/dev-standings-preview.mjs");
+ const server=createPreviewServer();server.listen(0,"127.0.0.1");await once(server,"listening");
+ const get=path=>new Promise((resolve,reject)=>{
+  const req=request({host:"127.0.0.1",port:server.address().port,path,headers:{host:"127.0.0.1:2000"}},res=>{
+   res.resume();res.on("end",()=>resolve({status:res.statusCode,location:res.headers.location}));
+  });req.on("error",reject);req.end();
+ });
+ try{
+  assert.deepEqual(await get("/competitions/it-1"),{status:308,location:"/competitions/it-1/overview"});
+  assert.deepEqual(await get("/competitions/it-1?season=2&view=fixtures&matchday=7"),{status:308,location:"/competitions/it-1/fixtures?season=2&matchday=7"});
+  for(const view of ["standings","fixtures","stats","history","rules","awards","postseason"])
+   assert.equal((await get("/competitions/it-1/"+view)).status,200,view);
+  assert.equal((await get("/competitions/it-1/not-a-view")).status,404);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
