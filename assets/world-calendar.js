@@ -41,11 +41,12 @@
     get('days').setAttribute('aria-label',state.view==='season'?w.season+' · '+w.days+' 1–56':w.week+' '+week);
     get('selected').textContent=w.selected+': '+label(days[state.day-1],w);
     root.dataset.calendarReady='true';
-    renderDetails();
+    renderDetails();renderNav();
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
     try{sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,day:state.day,view:state.view}))}catch{}
+    saveUrl(true);
     if(focus)buttons[state.day-1].focus();
   }
   for(const view of ['season','week'])get(view).addEventListener('click',()=>change({view}));
@@ -74,16 +75,17 @@
   let lastDetailsDay=null,lastDetailsLanguage=null;
   function renderDetails(){
     if(!details||!heading||!content)return; // Old lightweight DOM harnesses do not create details.
-    if(lastDetailsDay===state.day&&lastDetailsLanguage===root.lang)return;
+    if(lastDetailsDay===state.day&&lastDetailsLanguage===root.lang&&content.dataset.filter===filter&&content.dataset.division===division)return;
     lastDetailsDay=state.day;lastDetailsLanguage=root.lang;
     const w=detailWords[root.lang]||detailWords.en,d=days[state.day-1];
-    details.dataset.day=String(state.day);
+    details.dataset.day=String(state.day);content.dataset.filter=filter;content.dataset.division=division;
     heading.textContent=w.day+' '+d.day+' · '+(d.events.length?w.events:w[d.kind]);
     content.replaceChildren();
-    if(!d.events.length){
+    const visible=d.events.filter(matches);
+    if(!visible.length){
       const p=document.createElement('p');p.className='calendar-details-empty';p.textContent=w[d.kind+'Text']||w.none;content.append(p);return;
     }
-    for(const e of d.events){
+    for(const e of visible){
       const article=document.createElement('article');article.className='calendar-detail-card';article.dataset.marker=e.marker;
       const h=document.createElement('h4');h.textContent=e.marker+' · '+nameFor(e,w);article.append(h);
       const summary=document.createElement('p');summary.className='calendar-detail-summary';summary.textContent=w[e.phase]||w.events;article.append(summary);
@@ -92,10 +94,52 @@
       const info=document.createElement('div');info.className='calendar-detail-more';
       const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='sovereign-cup'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
       for(const value of [w.fixtures,w.results,w.unknown]){const p=document.createElement('p');p.textContent=value;info.append(p)}
-      disclosure.append(info);article.append(disclosure);content.append(article);
+      disclosure.append(info);article.append(disclosure);
+      if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href='/competitions/'+division+'/fixtures?season=1&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
+      content.append(article);
     }
   }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state})});
+  // CAL-IMP-04: filter and navigation are presentation state, not sporting progress.
+  const filterElement=get('filter'),divisionElement=get('division');
+  const filters=['all','national','international','sovereign','federation'];
+  const validDivision=v=>/^(it|eng|es|de|fr|pt|nl|br)-[12]$/.test(v);
+  let filter='all',division='';
+  const matches=e=>filter==='all'||filter===e.family||
+    (filter==='sovereign'&&e.competitionIds.includes('sovereign-cup'))||
+    (filter==='federation'&&e.competitionIds.includes('federation-cup'));
+  const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
+  const returnPath=()=>{
+    const p=new URLSearchParams({season:'1',day:String(state.day),calendarView:state.view,competition:filter});
+    if(division)p.set('division',division);
+    return '/calendar?'+p.toString();
+  };
+  const saveUrl=push=>{
+    if(!hasLocation()||!window.history)return;
+    const target=returnPath();
+    if(window.location.pathname+window.location.search!==target)
+      window.history[push?'pushState':'replaceState'](null,'',target);
+  };
+  const restoreUrl=()=>{
+    if(!hasLocation())return;
+    const p=new URL(window.location.href).searchParams;
+    filter='all';division=''; // Missing or malformed history parameters cannot inherit stale filters.
+    if(p.get('season')==='1'&&/^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(p.get('day')||''))state.day=Number(p.get('day'));
+    if(['season','week'].includes(p.get('calendarView')))state.view=p.get('calendarView');
+    if(filters.includes(p.get('competition')))filter=p.get('competition');
+    if(validDivision(p.get('division')||''))division=p.get('division');
+  };
+  const renderNav=()=>{
+    if(!filterElement||!divisionElement)return;
+    filterElement.value=filter;divisionElement.value=division;
+    divisionElement.disabled=!['all','national'].includes(filter);
+  };
+  if(filterElement&&divisionElement){
+    restoreUrl();
+    filterElement.addEventListener('change',()=>{filter=filters.includes(filterElement.value)?filterElement.value:'all';lastDetailsDay=null;render();saveUrl(true)});
+    divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
+    window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
+  }
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division})});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
 })();

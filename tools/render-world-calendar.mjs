@@ -32,6 +32,13 @@ export function renderWorldCalendar(){
                 <button id="calendar-next" class="calendar-arrow" type="button" aria-label="Next week" aria-controls="calendar-days" disabled>›</button>
               </div>
             </div>
+            <div class="calendar-filterbar">
+              <label for="calendar-filter">Competition filter</label>
+              <select id="calendar-filter" aria-label="Competition filter"><option value="all">All competitions</option><option value="national">National competitions</option><option value="international">International competitions</option><option value="sovereign">Sovereign Cup</option><option value="federation">Federation Cup</option></select>
+              <label for="calendar-division">Domestic division</label>
+              <select id="calendar-division" aria-label="Domestic division"><option value="">Choose a division</option><option value="it-1">IT-1</option><option value="it-2">IT-2</option><option value="eng-1">ENG-1</option><option value="eng-2">ENG-2</option><option value="es-1">ES-1</option><option value="es-2">ES-2</option><option value="de-1">DE-1</option><option value="de-2">DE-2</option><option value="fr-1">FR-1</option><option value="fr-2">FR-2</option><option value="pt-1">PT-1</option><option value="pt-2">PT-2</option><option value="nl-1">NL-1</option><option value="nl-2">NL-2</option><option value="br-1">BR-1</option><option value="br-2">BR-2</option></select>
+              <button type="button" id="calendar-today" disabled>Today unavailable</button>
+            </div>
             <div class="calendar-days" id="calendar-days" role="group" aria-label="Season days">
 ${rows}
             </div>
