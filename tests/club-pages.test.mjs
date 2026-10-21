@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {runInNewContext as vmRunInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
@@ -154,3 +155,27 @@ test('CLUB-ID-01 CSV/JSON identities and rivalry references use unpadded canonic
  }
  assert.deepEqual(rivalryCsv.slice(1).map(line=>line.split(',').slice(0,2)),rivalries.map(r=>[r.rivalryId,r.clubAId]));
 });
+
+test('CLUB-OVERVIEW-02: all 320 clubs expose original descriptions, translations, rivalries and kits reserve',()=>{
+ const {runInNewContext}=requireVm();
+ const sandbox={module:{exports:{}},URLSearchParams};
+ runInNewContext(read('assets/club-model.js'),sandbox);
+ const model=sandbox.module.exports;
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ assert.equal(manifest.rivalries.length,352);
+ for(const c of manifest.clubs){
+  const selected=model.route('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview');
+  assert.ok(selected);
+  const html=model.render(manifest,selected,'it');
+  assert.match(html,/club-overview-layout/);
+  assert.match(html,/club-kits/);
+  assert.match(html,/club-rivalries/);
+  assert.match(html,/data-original-description=/);
+  assert.ok(html.includes(c.primaryName.replaceAll('&','&amp;')),'Canonical name not rendered');
+  const native={IT:'it',ENG:'en',ES:'es',DE:'de',FR:'fr',PT:'pt',BR:'pt',NL:'nl'}[c.countryId];
+  assert.equal(html.includes('data-translate-club'),native!=='it');
+  assert.ok(c.description.trim());
+  for(const lang of ['en','de','es','fr','it'])assert.ok(c.descriptions[lang]?.trim());
+ }
+});
+function requireVm(){return {runInNewContext:vmRunInNewContext}}
