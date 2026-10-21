@@ -935,3 +935,21 @@ html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden])
 #world-calendar .calendar-event:focus-visible,.calendar-event-close:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .calendar-event-dialog[open] .calendar-event-panel{overflow-wrap:anywhere}
 @media(max-width:620px){.calendar-event-panel{padding:18px}.calendar-event-dialog{max-height:calc(100dvh - 28px)}}
+
+/* CAL-UX-10: no first-paint relocation of Week controls; matching neutral controls. */
+html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{visibility:hidden!important;pointer-events:none!important}
+#world-calendar #calendar-controls #calendar-previous,
+#world-calendar #calendar-controls #calendar-next{background:var(--surface);color:var(--text);border:1px solid var(--line);box-shadow:none}
+#world-calendar #calendar-controls #calendar-previous:disabled,
+#world-calendar #calendar-controls #calendar-next:disabled{background:var(--surface)!important;color:var(--muted)!important;border-color:var(--line)!important;filter:none!important;transform:none!important;animation:none!important;transition:none!important;box-shadow:none!important}
+#world-calendar #calendar-controls #calendar-current-week{margin-inline-start:auto}
+#world-calendar #calendar-controls{width:100%;position:relative;justify-content:center!important}
+#world-calendar #calendar-controls #calendar-current-week{position:absolute!important;inset-inline-end:0;top:0}
+/* Mirror search modal structure and close control across light/dark themes. */
+.calendar-event-dialog.app-search-dialog{width:min(520px,calc(100vw - 28px));max-width:520px;max-height:min(78dvh,560px);background:transparent;overflow:visible}
+.calendar-event-dialog .calendar-event-panel.app-search-panel{position:relative;display:block;max-height:min(78dvh,560px);overflow-y:auto;padding:24px 22px;background:#142b2e;color:#f2f7f4;border:1px solid #385451;border-radius:12px}
+.calendar-event-dialog .calendar-event-panel.app-search-panel h2{color:#f2f7f4}
+.calendar-event-dialog .calendar-event-close.app-search-close{position:absolute;right:10px;top:10px;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:#c8d8d0}
+.calendar-event-dialog .calendar-event-close.app-search-close:hover{background:#244040}
+.calendar-event-dialog::backdrop{background:rgba(5,12,17,.65)}
+@media(max-width:620px){.calendar-event-dialog .calendar-event-panel.app-search-panel{padding:18px}}
