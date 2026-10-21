@@ -239,7 +239,7 @@
         for(const season of [...seasons].sort((a,b)=>a-b)){
           line.append(document.createTextNode(" · "));
           const link=element("a","app-world-standing-club-link",locale().season+" "+season);
-          link.href=location.pathname+"?season="+encodeURIComponent(season);
+          link.href="/competitions/"+division.id.toLowerCase()+"/standings?season="+encodeURIComponent(season);
           line.append(link);
         }
         clubs.append(line);
