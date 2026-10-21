@@ -60,9 +60,12 @@
   const jump=n=>{window.faWorldCalendar?.setWeek(n);closeWeek();syncWeek()};
   const closeWeek=()=>{weekMenu.hidden=true;weekTrigger.setAttribute('aria-expanded','false')};
   weekTrigger.addEventListener('click',()=>{weekMenu.hidden=!weekMenu.hidden;weekTrigger.setAttribute('aria-expanded',String(!weekMenu.hidden))});
-  weekTrigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeWeek()});
+  weekTrigger.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){closeWeek();return}
+   if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();weekMenu.hidden=false;weekTrigger.setAttribute('aria-expanded','true');const entries=[...weekMenu.children];const active=entries.findIndex(o=>o.dataset.menuValue===String(Number(document.documentElement.dataset.calendarWeek)||1));entries[Math.max(0,Math.min(entries.length-1,active+(e.key==='ArrowDown'?1:-1)))].focus()}
+  });
   document.addEventListener('pointerdown',e=>{if(!wrap.contains(e.target))closeWeek()});
-  for(let n=1;n<=8;n++){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.tabIndex=0;option.textContent='Week '+n;option.addEventListener('click',()=>jump(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump(n)}if(e.key==='Escape')closeWeek()});weekMenu.append(option)}
+  for(let n=1;n<=8;n++){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.tabIndex=0;option.textContent='Week '+n;option.addEventListener('click',()=>jump(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump(n)}if(e.key==='Escape'){closeWeek();weekTrigger.focus()}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const focus=Number(option.dataset.menuValue)+(e.key==='ArrowDown'?1:-1);weekMenu.querySelector('[data-menu-value="'+Math.max(1,Math.min(8,focus))+'"]')?.focus()}});weekMenu.append(option)}
   current.addEventListener('click',()=>jump(currentWeek()));
   label.hidden=true;if(wrap.parentElement!==weekControls)prev.after(wrap);if(current.parentElement!==weekControls)next.after(current);
   const syncControls=()=>{const showing=document.documentElement.dataset.calendarView==='week';weekControls.hidden=!showing;weekControls.style.display=showing?'flex':'none';syncWeek()};
