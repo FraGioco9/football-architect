@@ -229,9 +229,19 @@
       }
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
-        const line=element("li","",clubName(clubId)||locale().unknown);
-        line.append(element("span","", " · "+[...seasons].sort((a,b)=>a-b)
-          .map(season=>locale().season+" "+season).join(", ")));
+        const line=element("li","");
+        const name=clubName(clubId),division=window.faCompetitionDivision;
+        if(name&&division?.countryId){
+          const link=element("a","app-world-standing-club-link",name);
+          link.href="/clubs/"+division.countryId.toLowerCase()+"/"+clubId+"/overview";
+          line.append(link);
+        }else line.append(element("span","",name||locale().unknown));
+        for(const season of [...seasons].sort((a,b)=>a-b)){
+          line.append(document.createTextNode(" · "));
+          const link=element("a","app-world-standing-club-link",locale().season+" "+season);
+          link.href=location.pathname+"?season="+encodeURIComponent(season);
+          line.append(link);
+        }
         clubs.append(line);
       }
       li.append(clubs);list.append(li);
