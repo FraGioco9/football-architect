@@ -17,7 +17,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations})
    return {...c,descriptions:localized,divisionId:byClub.get(c.countryId+'-'+c.clubId)??null};
   })};
  const content='<section id="app-divisions" class="app-view app-world-view" aria-labelledby="club-title">'+
-  '<div id="club-page" aria-live="polite"><h1 id="club-title">Club</h1><p id="club-loading">Loading…</p></div>'+
+  '<div id="club-page" aria-live="polite"></div>'+
   '<noscript><p>JavaScript is required to display club pages.</p></noscript></section>';
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':content}))html=html.replaceAll(token,value);
