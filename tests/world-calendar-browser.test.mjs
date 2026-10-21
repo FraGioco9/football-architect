@@ -78,6 +78,11 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('unavailable')"),true);
     assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true);
     await visit(devOrigin);
+    // The DEV-only widget must expose the complete 1–56 world-day range.
+    for(let i=0;i<30&&!await run("!!document.querySelector('[data-dev-control=world-day]')");i++)await delay(100);
+    assert.equal(await run("document.querySelector('[data-dev-control=world-day]')?.max"),'56');
+    assert.equal(await run("document.querySelector('[data-dev-control=season]')?.max"),'4');
+    assert.equal(await run("document.querySelector('#calendar-season-picker').value"),'1');
     assert.equal(await run("document.getElementById('calendar-today').disabled"),false);
     assert.equal(await run("document.getElementById('calendar-clock-source').textContent.includes('DEV')"),true);
     await run("document.getElementById('calendar-day-16').click()");
