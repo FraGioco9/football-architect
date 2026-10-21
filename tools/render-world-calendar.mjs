@@ -26,14 +26,15 @@ export function renderWorldCalendar(){
                 <button class="calendar-mode" id="calendar-season" type="button" aria-pressed="true" aria-controls="calendar-days" disabled>Season</button>
                 <button class="calendar-mode" id="calendar-week" type="button" aria-pressed="false" aria-controls="calendar-days" disabled>Week</button>
               </div>
-              <div class="calendar-controls app-fixtures-navigation" id="calendar-controls" role="group" aria-label="Week navigation">
+              
+            </div>
+            <div class="calendar-controls app-fixtures-navigation" id="calendar-controls" role="group" aria-label="Week navigation">
                 <button id="calendar-previous" class="calendar-arrow language-trigger app-fixtures-arrow" type="button" aria-label="Previous week" aria-controls="calendar-days" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
                 <span id="calendar-week-label" hidden>Week 1 / 8</span>
                 <div class="language-control app-fixtures-select"><button type="button" class="language-trigger app-fixtures-trigger" id="calendar-week-trigger" role="combobox" aria-haspopup="listbox" aria-controls="calendar-week-menu" aria-expanded="false"><span id="calendar-week-value">Week 1</span><svg class="language-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" id="calendar-week-menu" role="listbox" aria-labelledby="calendar-week-trigger" hidden></div></div>
                 <button id="calendar-next" class="calendar-arrow language-trigger app-fixtures-arrow" type="button" aria-label="Next week" aria-controls="calendar-days" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
                 <button type="button" id="calendar-current-week" class="language-trigger app-fixtures-current" aria-label="Current week" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg><span>Current week</span></button>
               </div>
-            </div>
             <section class="calendar-clock" id="calendar-clock" aria-label="World Clock">
               <strong id="calendar-clock-title">World Clock</strong>
               <span id="calendar-clock-value" role="status" aria-live="polite">Current world day unavailable</span>
