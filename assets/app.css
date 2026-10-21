@@ -937,7 +937,7 @@ html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden])
 @media(max-width:620px){.calendar-event-panel{padding:18px}.calendar-event-dialog{max-height:calc(100dvh - 28px)}}
 
 /* CAL-UX-10: no first-paint relocation of Week controls; matching neutral controls. */
-html:not([data-calendar-ui-ready="true"]) #world-calendar #calendar-controls{visibility:hidden!important;pointer-events:none!important}
+/* Week navigation is present at its final position in the HTML; no readiness hide. */
 #world-calendar #calendar-controls #calendar-previous,
 #world-calendar #calendar-controls #calendar-next{background:var(--surface);color:var(--text);border:1px solid var(--line);box-shadow:none}
 #world-calendar #calendar-controls #calendar-previous:disabled,
