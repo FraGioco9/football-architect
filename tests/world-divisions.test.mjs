@@ -376,3 +376,13 @@ test("CLUB-NAV-02 links competition views to approved club routes and seasons",(
  assert.ok(css.includes("column-gap:16px;row-gap:8px"));
  assert.ok(css.includes(".club-colors>.club-color{margin-right:-8px}"));
 });
+
+test("HISTORY-ARCHIVE-LINK-01 anchors have text-only hit areas and flags share native masks",()=>{
+ const dev=read("tools/dev-standings-preview-client.mjs");
+ const css=read("assets/app.css"),landing=read("assets/landing.css");
+ assert.ok(dev.includes('const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link")'));
+ assert.ok(dev.includes('rank.append(label,historyIdentity(entry.club));row.append(rank)'));
+ assert.ok(!dev.includes('button.addEventListener("click",()=>openHistorySeason(item.season))'));
+ assert.ok(css.includes(".app-world-standing-club-link{display:inline;width:max-content;"));
+ assert.ok(landing.includes('img[src*="assets/flags/"]{border-radius:0;clip-path:none;object-fit:contain}'));
+});
