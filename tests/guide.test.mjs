@@ -94,7 +94,8 @@ test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.match(css,/grid-template-columns:210px minmax\(0,1fr\)/);
   assert.match(css,/guide-sidebar-link\[aria-current="location"\]/);
   assert.match(css,/focus-visible/);
-  assert.match(css,/guide-sidebar-nav/);
+  assert.doesNotMatch(css,/overflow-y:\s*(?:auto|scroll)/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.doesNotMatch(html,/<script[^>]+guide\.js/);
 });
 
@@ -135,3 +136,5 @@ test("TITLE-FIX-01 localizes the Guide browser title on load and each language c
 });
 
 test("GUIDE-02 chapter copy exists across five languages",()=>{const ids=["guideIntro","guideWorldHeading","guideMovementHeading","guideCalendarHeading","guideCupsHeading","guideRecordsHeading","guideExploreHeading"];for(const id of ids){assert.match(html,new RegExp(`data-i18n="${id}"`));const r=render();for(const lang of ["en","de","es","fr","it"]){r.trigger.fire("click");r.controls.find(c=>c.dataset.language===lang).fire("click");assert.ok(r.labels.find(x=>x.dataset.i18n===id).textContent.length>0);}}});
+
+test("GUIDE-02 complete translations and mobile layout",()=>{const keys=[...new Set([...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>m[1]))];for(const language of ["en","de","es","fr","it"]){const r=render(language);for(const key of keys){const labels=r.labels.filter(x=>x.dataset.i18n===key);assert.ok(labels.length,`${language}: ${key}`);for(const label of labels)assert.ok(label.textContent.trim(),`${language}: ${key} must not be empty`);}}assert.match(css,/@media\(max-width:700px\)/);assert.match(css, /max-width:350px/);});
