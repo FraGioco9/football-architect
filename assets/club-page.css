@@ -55,3 +55,6 @@
 .club-rivalries-list li span{color:var(--muted);font-size:.85rem}
 .club-kits{min-height:220px}.club-kits p{color:var(--muted)}
 @media(max-width:760px){.club-overview-layout{grid-template-columns:minmax(0,1fr)}}
+
+/* Country flag SVGs already contain the canonical rounded mask. Avoid a second CSS clip. */
+.club-country-flag{border-radius:0;clip-path:none}
