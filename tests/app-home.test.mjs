@@ -261,7 +261,7 @@ test("ENG-ALL-ENGLISH-01 localizes the app brand accessibility label", () => {
 test("CLEAN-OPT generated app shells match checked-in HTML across LF/CRLF checkouts", () => {
   const generator = fileURLToPath(new URL("../tools/generate-app-pages.mjs", import.meta.url));
   const output = execFileSync(process.execPath, [generator, "--check"], {encoding:"utf8"});
-  assert.match(output, /Static HTML matches checked-in pages: 21\/21/);
+  assert.match(output, /Static HTML matches checked-in pages: 23\/23/);
 });
 
 test("APP-HOST-URL-01: production app subdomain and local static preview routes",()=>{
