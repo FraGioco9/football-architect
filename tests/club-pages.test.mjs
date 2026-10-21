@@ -135,3 +135,22 @@ test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
   }
  }
 });
+
+test('CLUB-ID-01 CSV/JSON identities and rivalry references use unpadded canonical IDs',()=>{
+ const registry=read('data/clubs-registry.csv').replace(/^\\uFEFF/,'').trim().split(/\\r?\\n/);
+ const rivalries=JSON.parse(read('data/club-rivalries.json'));
+ const rivalryCsv=read('data/club-rivalries.csv').replace(/^\\uFEFF/,'').trim().split(/\\r?\\n/);
+ const ids=new Set(clubs.map(c=>c.countryId+'-'+c.clubId));
+ assert.equal(clubs.length,320);
+ assert.equal(registry.length,321);
+ for(const club of clubs)assert.ok(Number.isInteger(club.clubId)&&club.clubId>=1&&club.clubId<=40);
+ for(const line of registry.slice(1))assert.match(line,/^(?:IT|ENG|ES|DE|FR|PT|NL|BR),(?:[1-9]|[1-3][0-9]|40),/);
+ assert.equal(rivalries.length,352);
+ assert.equal(rivalryCsv.length,353);
+ for(const rivalry of rivalries){
+  assert.ok(ids.has(rivalry.clubAId));assert.ok(ids.has(rivalry.clubBId));
+  assert.equal(rivalry.rivalryId,rivalry.clubAId+'__'+rivalry.clubBId);
+  assert.doesNotMatch(rivalry.rivalryId,/(?:^|-)0[1-9](?:_|$)/);
+ }
+ assert.deepEqual(rivalryCsv.slice(1).map(line=>line.split(',').slice(0,2)),rivalries.map(r=>[r.rivalryId,r.clubAId]));
+});
