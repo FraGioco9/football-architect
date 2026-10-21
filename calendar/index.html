@@ -135,6 +135,7 @@
                 <button id="calendar-next" class="calendar-arrow language-trigger app-fixtures-arrow" type="button" aria-label="Next week" aria-controls="calendar-days" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
                 <button type="button" id="calendar-current-week" class="language-trigger app-fixtures-current" aria-label="Current week" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg><span>Current week</span></button>
               </div>
+            <script data-calendar-arrows-first-paint>(()=>{const week=Number(document.documentElement.dataset.calendarWeek)||1;const prev=document.getElementById('calendar-previous'),next=document.getElementById('calendar-next');if(prev)prev.disabled=week<=1;if(next)next.disabled=week>=8})();</script>
             <script data-calendar-week-first-paint>(()=>{const week=document.documentElement.dataset.calendarWeek||'1';const node=document.getElementById('calendar-week-value');if(node)node.textContent='Week '+week})();</script>
             <section class="calendar-clock" id="calendar-clock" aria-label="World Clock">
               <strong id="calendar-clock-title">World Clock</strong>
