@@ -113,17 +113,18 @@
     it:['Giorno mondiale non disponibile','Stagione','Giorno','DEV/Anteprima fittizia','Orologio mondiale ufficiale non disponibile','Oggi','Oggi non disponibile']
   };
   function updateClock(raw){
-    try{clockSnapshot=clockAdapter?.normalize(raw)??null}catch{clockSnapshot=null}
+    try{clockSnapshot=raw?.source?.kind==='authoritative'?null:clockAdapter?.normalize(raw)??null}catch{clockSnapshot=null}
     renderClock();
   }
   function renderClock(){
     if(!clockValue||!clockSource)return;
     const w=clockText[root.lang]||clockText.en;
     const valid=clockSnapshot?.current;
+    const navigable=Boolean(valid&&valid.season===1);
     const dev=clockSnapshot?.source.kind==='dev';
     clockValue.textContent=valid?w[1]+' '+valid.season+' · '+w[2]+' '+valid.day+'/56 · '+Math.round(valid.day/56*100)+'%':w[0];
     clockSource.textContent=dev?w[3]:w[4];
-    if(todayButton){todayButton.disabled=!valid;todayButton.textContent=valid?w[5]:w[6]}
+    if(todayButton){todayButton.disabled=!navigable;todayButton.textContent=navigable?w[5]:w[6]}
     if(devSlider&&devLabel){
       devSlider.hidden=devLabel.hidden=!dev;
       devSlider.disabled=!dev;

@@ -23,3 +23,10 @@ test('CAL-IMP-05A fail closed for malformed or untrusted lifecycle',()=>{
   assert.throws(()=>adapter.normalize({source:{kind:'dev',reference:'x'},current}));
  assert.throws(()=>adapter.normalize({source:{kind:'dev',reference:'x'},current:{season:1,day:1},eventStates:[{status:'completed'}]}));
 });
+
+test('CAL-IMP-05A adapter does not fabricate lifecycle for transition boundaries',()=>{
+ for(const day of [1,55,56]){
+  const s=adapter.normalize({source:{kind:'dev',reference:'fixture'},current:{season:1,day}});
+  assert.equal(adapter.project(1,s).days[day-1].relative,'current');
+ }
+});
