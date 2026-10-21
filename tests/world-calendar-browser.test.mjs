@@ -150,13 +150,11 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await run("dispatchEvent(new PopStateEvent('popstate'))");
     const historyCheck=()=>run("({url:location.pathname+location.search,...(window.faWorldCalendar?.getSelection?.()||{})})");
     for(let i=3;i>=0;i--){
-      await run("history.back()");
-      for(let n=0;n<100&&(await historyCheck()).url!==makeRoute(historyStates[i]);n++)await delay(30);
+      await run("new Promise(resolve=>{addEventListener('popstate',()=>resolve(true),{once:true});history.back()})");
       assert.deepEqual(await historyCheck(),{url:makeRoute(historyStates[i]),...historyStates[i]});
     }
     for(let i=1;i<historyStates.length;i++){
-      await run("history.forward()");
-      for(let n=0;n<100&&(await historyCheck()).url!==makeRoute(historyStates[i]);n++)await delay(30);
+      await run("new Promise(resolve=>{addEventListener('popstate',()=>resolve(true),{once:true});history.forward()})");
       assert.deepEqual(await historyCheck(),{url:makeRoute(historyStates[i]),...historyStates[i]});
     }
     await run("history.pushState(null,'','/calendar?season=1&day=999&calendarView=bad&competition=broken&division=wrong')");
