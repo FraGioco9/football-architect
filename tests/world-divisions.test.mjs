@@ -347,3 +347,13 @@ test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",
  assert.ok(css.includes(".app-competition-return{display:none}"),"hidden on mobile");
  assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions"'));
 });
+
+test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
+ const css=read("assets/app.css");
+ const page=read("assets/competition-page.js");
+ assert.ok(css.includes(".app-world-standing-table tr>*{padding:3px 4px"));
+ assert.ok(!css.includes(".app-world-standing-table tr>*{padding:5px 6px}"));
+ assert.ok(css.includes(".app-world-standing-club-link:hover"));
+ assert.ok(page.includes('name.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
+ assert.ok(page.includes('clubLink.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
+});
