@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{
     if(route.startsWith("/assets/clubs/")&&clubCrestDelay)await delay(clubCrestDelay);
     res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});
     res.end(await readFile(file));
-  }catch{res.writeHead(404);res.end("Not found");}
+  }catch(error){res.writeHead(404,{"Content-Type":"text/plain; charset=utf-8"});res.end("Not found: "+String(error?.code||error?.message||error));}
 });
 const devRouter=createPreviewServer();
 let devManifestDelay=0,devFixturesDelay=0,devLegacyGuard=false;
