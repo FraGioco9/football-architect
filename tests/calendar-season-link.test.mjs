@@ -51,5 +51,5 @@ for(const mobile of [false,true])test('CAL-SEASON-LINK-01 localhost DEV without 
 });
 test('CAL-SEASON-LINK-01 preview server sets DEV marker before page scripts',()=>{
  const server=readFileSync(new URL('../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
- assert.match(server,/dataset\\.faDevPreview="true"/);
+ assert.ok(server.includes('dataset.faDevPreview="true"'));
 });
