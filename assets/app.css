@@ -983,3 +983,13 @@ html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden])
 .calendar-event-dialog .calendar-event-summary{display:flex;align-items:center;gap:14px;min-width:0}
 .calendar-event-dialog .calendar-event-code{display:flex;align-items:center;justify-content:center;flex:0 0 68px;min-height:44px;box-sizing:border-box;padding:8px;border:1px solid #385451;border-radius:9px;background:#244040;color:#f2f7f4;font-size:15px;font-weight:750;overflow-wrap:anywhere;text-align:center}
 .calendar-event-dialog .calendar-event-description{min-width:0;color:#f2f7f4;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+
+/* CAL-POPUP-01: reuse calendar marker palette; finals have a dedicated gold. */
+.calendar-event-dialog .calendar-event-code[data-event-type="national"]{background:#21483D;color:#C7EBDD;border-color:#21483D}
+.calendar-event-dialog .calendar-event-code[data-event-type="international"]{background:#393650;color:#E8E0FF;border-color:#393650}
+.calendar-event-dialog .calendar-event-code[data-event-type="postseason"]{background:#274A80;color:#E8F1FF;border-color:#274A80}
+.calendar-event-dialog .calendar-event-code[data-event-type="final"]{background:#B58A36;color:#17130A;border-color:#B58A36}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="national"]{background:#DFEDE5;color:#1E543B;border-color:#C5DBCD}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="international"]{background:#EEE8F8;color:#51426C;border-color:#D6CCEA}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="postseason"]{background:#D9E6F9;color:#224A7C;border-color:#BDD1F0}
+html[data-theme="light"] .calendar-event-dialog .calendar-event-code[data-event-type="final"]{background:#F1D99A;color:#624513;border-color:#D6B45B}
