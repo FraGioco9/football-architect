@@ -12,11 +12,11 @@ const clubs=JSON.parse(read('data/clubs.json'));
 
 test('CLUB-01 all 320 identities and 1600 subpages resolve to one public template',()=>{
  for(const c of clubs)for(const view of clubViews){
-  const path=clubSubpage(c.countryId.toLowerCase(),String(c.clubId).toString(),view);
+  const path=clubSubpage(c.countryId.toLowerCase(),String(c.clubId),view);
   assert.equal(publicRequestFile(path),'clubs/_shared/index.html');
   assert.ok(isAllowlistedPublicPath(publicRequestFile(path)));
  }
- for(const path of ['/clubs/xx/1/overview','/clubs/it/0/overview','/clubs/it/41/overview','/clubs/it/1/overview','/clubs/it/1/unknown','/app/clubs/it/1/overview'])
+ for(const path of ['/clubs/xx/1/overview','/clubs/it/0/overview','/clubs/it/41/overview','/clubs/it/01/overview','/clubs/it/1/unknown','/app/clubs/it/1/overview'])
   assert.equal(isAllowlistedPublicPath(publicRequestFile(path)),false,path);
 });
 test('CLUB-01 derived manifest preserves canonical fields and provisional placement',()=>{
@@ -44,7 +44,7 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fi
  });
  try{
   for(const c of clubs){
-   const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId).toString();
+   const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
    assert.equal((await get(base)).location,base+'/overview');
    for(const view of clubViews){
     const page=await get(base+'/'+view);assert.equal(page.status,200);
@@ -71,7 +71,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  for(const c of manifest.clubs)for(const lang of ['en','de','es','fr','it']){
-  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId).toString();
+  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
   for(const view of clubViews){
    const selected=model.route(base+'/'+view),html=model.render(manifest,selected,lang,'?season=2&matchday=7');
    assert.ok(html.includes('aria-current="page"'));
@@ -90,7 +90,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
  }
  const poisoned={...manifest,clubs:manifest.clubs.map((c,i)=>i?c:{...c,primaryName:'<script>alert(1)</script>'})};
  const c=poisoned.clubs[0];
- assert.doesNotMatch(model.render(poisoned,model.route('/clubs/'+c.countryId.toLowerCase()+'/01/overview')),/<script>/);
+ assert.doesNotMatch(model.render(poisoned,model.route('/clubs/'+c.countryId.toLowerCase()+'/1/overview')),/<script>/);
 });
 
 test('CLUB-01 public rewrites cover exactly the declared IDs and five subpages',()=>{
@@ -101,8 +101,8 @@ test('CLUB-01 public rewrites cover exactly the declared IDs and five subpages',
   .replace(':club([1-9]|[1-3][0-9]|40)','(?<club>[1-9]|[1-3][0-9]|40)')
   .replace(':view(overview|roster|fixtures|stats|history)','(?<view>overview|roster|fixtures|stats|history)');
  const regex=new RegExp('^'+pattern+'$');
- for(const c of clubs)for(const view of clubViews)assert.ok(regex.test(clubSubpage(c.countryId.toLowerCase(),String(c.clubId).toString(),view)));
- for(const path of ['/clubs/it/1/overview','/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/xx/1/overview','/clubs/it/1/overview/'])assert.equal(regex.test(path),false);
+ for(const c of clubs)for(const view of clubViews)assert.ok(regex.test(clubSubpage(c.countryId.toLowerCase(),String(c.clubId),view)));
+ for(const path of ['/clubs/it/01/overview','/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/xx/1/overview','/clubs/it/1/overview/'])assert.equal(regex.test(path),false);
 });
 
 test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
@@ -123,7 +123,7 @@ test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
   return null;
  };
  for(const c of clubs){
-  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId).toString();
+  const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
   for(const suffix of ['','/','/index.html']){
    assert.equal(target(base+suffix),base+'/overview');
    for(const view of clubViews)assert.equal(target(base+suffix,view),base+'/'+view);
