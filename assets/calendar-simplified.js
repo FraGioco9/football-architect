@@ -128,7 +128,7 @@
  const names=()=>({national:t().national,international:t().international});
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
  const dayModel=window.faWorldCalendarModel?.createSeason(1).days||[];
- const displayMarker=e=>e.family==='national'&&e.phase==='postseason'?'P'+String(e.round-30).padStart(2,'0'):e.marker;
+ const displayMarker=e=>e.phase==='final'?'F':e.family==='national'&&e.phase==='postseason'?'P'+String(e.round-30).padStart(2,'0'):e.marker;
  const namesFor=e=>e.family==='national'&&e.phase==='postseason'?t().postseason+' '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names()[e.family]||e.family)+' '+e.round;
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
@@ -140,7 +140,7 @@
   if(!data.events.length){const p=document.createElement('p');p.textContent=data.kind==='preseason'?t().preseason:data.kind==='transition'?t().transition:t().empty;body.append(p)}
   for(const event of data.events){
    const row=document.createElement('div'),code=document.createElement('strong'),description=document.createElement('span');
-   row.className='calendar-event-summary';code.className='calendar-event-code';description.className='calendar-event-description';
+   row.className='calendar-event-summary';code.className='calendar-event-code';code.dataset.eventType=event.phase==='final'?'final':event.phase==='postseason'?'postseason':event.family;description.className='calendar-event-description';
    code.textContent=displayMarker(event);description.textContent=namesFor(event);
    row.append(code,description);body.append(row);
   }
