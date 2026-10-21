@@ -883,3 +883,10 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .calendar-event--postseason{background:#274A80;color:#E8F1FF}
 html[data-theme="light"] .calendar-event--postseason{background:#D9E6F9;color:#224A7C}
 @media(max-width:620px){#app-calendar>.calendar-season-picker{top:0;right:0}}
+
+/* CAL-SIMPLE-04: constant day tile dimensions independent of marker count/current highlight. */
+#world-calendar .calendar-week-row{align-items:stretch}
+#world-calendar .calendar-day{box-sizing:border-box;height:96px;min-height:96px;max-height:96px;border-width:2px;overflow:hidden}
+#world-calendar .calendar-day-events{min-height:36px;justify-content:flex-start}
+@media(max-width:620px){#world-calendar .calendar-day{height:82px;min-height:82px;max-height:82px}}
+html[data-calendar-view="week"] #world-calendar .calendar-day{height:76px;min-height:76px;max-height:76px}
