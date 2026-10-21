@@ -80,7 +80,18 @@
   const syncControls=()=>{const showing=document.documentElement.dataset.calendarView==='week';weekControls.hidden=!showing;weekControls.style.display=showing?'flex':'none';syncWeek()};
   new MutationObserver(()=>{syncControls();syncCalendarLink()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-calendar-view','data-calendar-week']});
   for(const mode of ['calendar-season','calendar-week'])document.getElementById(mode)?.addEventListener('click',()=>queueMicrotask(syncControls));
-  function syncWeek(){const calendarState=window.faWorldCalendar?.getSelection?.();const n=calendarState?.view==='week'?Math.ceil(calendarState.day/7):(Number(document.documentElement.dataset.calendarWeek)||1);weekValue.textContent=t().week+' '+n;current.querySelector('span').textContent=t().currentWeek;current.setAttribute('aria-label',t().currentWeek);for(const o of weekMenu.children){o.textContent=t().week+' '+o.dataset.menuValue}for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.hidden=!dev||selectedSeason!==readDebugSeason()||n===currentWeek();current.disabled=!dev}
+  function syncWeek(){
+   const state=window.faWorldCalendar?.getSelection?.();
+   const shown=state?.view==='week';
+   const week=shown?Math.ceil(state.day/7):(Number(document.documentElement.dataset.calendarWeek)||1);
+   const showShortcut=shown&&dev&&selectedSeason===readDebugSeason()&&week!==currentWeek();
+   weekValue.textContent=t().week+' '+week;
+   current.querySelector('span').textContent=t().currentWeek;
+   current.setAttribute('aria-label',t().currentWeek);
+   current.hidden=!showShortcut;
+   current.disabled=!showShortcut;
+   for(const option of weekMenu.children){option.textContent=t().week+' '+option.dataset.menuValue;option.setAttribute('aria-selected',String(Number(option.dataset.menuValue)===week))}
+  }
   window.faCalendarSyncWeek=syncWeek;
   for(const a of [prev,next])a.addEventListener('click',()=>queueMicrotask(syncWeek));
   window.addEventListener('popstate',()=>queueMicrotask(()=>{syncWeek();syncCalendarLink()}));
@@ -134,6 +145,8 @@
   marker.setAttribute('aria-label',description);
   marker.addEventListener('pointerenter',()=>{tooltip.textContent=description;placeTooltip(marker)});
   marker.addEventListener('pointerleave',()=>{tooltip.hidden=true});
+  marker.addEventListener('focusin',()=>{tooltip.textContent=namesFor(event);placeTooltip(marker)});
+  marker.addEventListener('focusout',()=>{tooltip.hidden=true});
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
  function currentDay(){try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}}
