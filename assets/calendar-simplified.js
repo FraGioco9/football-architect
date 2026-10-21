@@ -106,7 +106,7 @@
  dialog.innerHTML='<div class="calendar-event-panel app-search-panel"><button type="button" class="calendar-event-close app-search-close" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button><h2 id="calendar-event-dialog-title"></h2><p id="calendar-event-dialog-subtitle"></p><div id="calendar-event-dialog-details"></div></div>';
  document.body.append(dialog);
  const closeButton=dialog.querySelector('.calendar-event-close');
- let previousFocus=null,closingTimer=null,escapeReturn=false,backdropStart=null,validBackdropClick=false;
+ let previousFocus=null,closingTimer=null,escapeReturn=false,backdropStart=null,validBackdropClick=false,keyboardOpen=false;
  const resetPointer=()=>{backdropStart=null;validBackdropClick=false};
  const finishClose=()=>{if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;resetPointer();dialog.classList.remove('is-closing');if(dialog.open)dialog.close()};
  const requestClose=(fromEscape=false)=>{
@@ -123,7 +123,8 @@
  dialog.addEventListener('pointerup',event=>{validBackdropClick=!!backdropStart&&event.target===dialog&&event.pointerId===backdropStart.id&&Math.hypot(event.clientX-backdropStart.x,event.clientY-backdropStart.y)<=8;backdropStart=null});
  dialog.addEventListener('pointercancel',resetPointer);
  dialog.addEventListener('click',event=>{const outside=event.target===dialog&&validBackdropClick;validBackdropClick=false;if(outside)requestClose()});
- dialog.addEventListener('close',()=>{resetPointer();if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;dialog.classList.remove('is-closing');if(previousFocus?.isConnected){if(escapeReturn)previousFocus.classList.add('app-search-escape-return');else previousFocus.classList.remove('app-search-escape-return');previousFocus.focus({preventScroll:true})}escapeReturn=false});
+ dialog.addEventListener('close',()=>{resetPointer();if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;dialog.classList.remove('is-closing');if(previousFocus?.isConnected){if(escapeReturn&&!keyboardOpen)previousFocus.classList.add('app-search-escape-return');else previousFocus.classList.remove('app-search-escape-return');previousFocus.focus({preventScroll:true})}escapeReturn=false});
+ root.addEventListener('focusout',event=>event.target?.classList?.remove('app-search-escape-return'));
  const names=()=>({national:t().national,international:t().international});
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
  const dayModel=window.faWorldCalendarModel?.createSeason(1).days||[];
@@ -131,7 +132,7 @@
  const namesFor=e=>e.family==='national'&&e.phase==='postseason'?t().postseason+' '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names()[e.family]||e.family)+' '+e.round;
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
-  tooltip.hidden=true;previousFocus=focus||day;
+  tooltip.hidden=true;previousFocus=focus||day;keyboardOpen=Boolean(previousFocus?.matches?.(':focus-visible'));
   previousFocus?.classList?.remove('app-search-escape-return');
   dialog.querySelector('#calendar-event-dialog-title').textContent=t().day+' '+n;
   dialog.querySelector('#calendar-event-dialog-subtitle').textContent=t().season+' '+selectedSeason;
@@ -144,7 +145,7 @@
    const pending=document.createElement('p');pending.textContent=t().pending;section.append(pending);
    body.append(section);
   }
-  if(!dialog.open&&closingTimer===null){dialog.showModal();closeButton.focus({preventScroll:true})}
+  if(!dialog.open&&closingTimer===null){dialog.showModal();if(keyboardOpen)closeButton.focus({preventScroll:true});else {dialog.tabIndex=-1;dialog.focus({preventScroll:true})}}
  }
  window.faCalendarShowDay=day=>showDay(day,day);
  new MutationObserver(()=>{updateSeason();window.faCalendarSyncWeek?.()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
