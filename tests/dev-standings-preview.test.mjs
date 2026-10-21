@@ -574,7 +574,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
- assert.ok(client.includes('type:"range",id:"matchdays",label:"Matchdays",min:0,max:DEBUG_MAX_MATCHDAY,step:1'));
+ assert.ok(client.includes('type:"range",id:"world-day",label:"Day",min:1,max:56,step:1'));
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
  assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));
