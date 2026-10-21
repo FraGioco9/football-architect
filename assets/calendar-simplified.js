@@ -36,6 +36,7 @@
   root.dataset.season=String(selectedSeason);
   syncCalendarLink();
   if(typeof updateCurrentDay==='function')updateCurrentDay();
+  window.faCalendarSyncWeek?.();
  }
 
  window.addEventListener('fa:dev-progress-change',()=>{updateSeason();updateCurrentDay()});
@@ -67,7 +68,8 @@
   const syncControls=()=>{const showing=document.documentElement.dataset.calendarView==='week';weekControls.hidden=!showing;weekControls.style.display=showing?'flex':'none';syncWeek()};
   new MutationObserver(()=>{syncControls();syncCalendarLink()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-calendar-view','data-calendar-week']});
   for(const mode of ['calendar-season','calendar-week'])document.getElementById(mode)?.addEventListener('click',()=>queueMicrotask(syncControls));
-  function syncWeek(){const n=Number(document.documentElement.dataset.calendarWeek)||1;weekValue.textContent='Week '+n;for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.hidden=!dev||Number(root.dataset.season)!==readDebugSeason()||n===currentWeek();current.disabled=!dev;current.hidden=!dev||selectedSeason!==readDebugSeason()||n===currentWeek()}
+  function syncWeek(){const n=Number(document.documentElement.dataset.calendarWeek)||1;weekValue.textContent='Week '+n;for(const o of weekMenu.children)o.setAttribute('aria-selected',String(Number(o.dataset.menuValue)===n));current.hidden=!dev||selectedSeason!==readDebugSeason()||n===currentWeek();current.disabled=!dev}
+  window.faCalendarSyncWeek=syncWeek;
   for(const a of [prev,next])a.addEventListener('click',()=>queueMicrotask(syncWeek));
   window.addEventListener('popstate',()=>queueMicrotask(()=>{syncWeek();syncCalendarLink()}));
   window.addEventListener('fa:dev-progress-change',()=>queueMicrotask(syncWeek));
