@@ -390,7 +390,7 @@ if(validPath||indexPath){
    value:()=>debugSeason,onChange:setSeason
   },{type:"range",id:"world-day",label:"Day",min:1,max:56,step:1,scope:"general",
    value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
-   onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n);if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n))return false;syncDebugControls();return true}
+   onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n),previousMatchdays=matchdays;if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n)){if(target!==previousMatchdays)await setMatchdays(previousMatchdays);return false}syncDebugControls();return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    widgetRoot?.resetWidgetState();syncDebugControls();return true;
