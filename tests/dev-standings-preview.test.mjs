@@ -325,7 +325,7 @@ test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal
 
 test("DEV-GATE-01/03: only DEV responses inject private scripts; static source stays clean", async () => {
   await withServer(async get => {
-    const page = await get("/competitions/it-1/");
+    const page = await get("/competitions/it-1/standings");
     assert.equal(page.status,200);
     assert.equal(page.headers["cache-control"],"no-store");
     assert.equal(page.body.split(clientName).length,2);
