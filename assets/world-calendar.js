@@ -4,6 +4,8 @@
   const calendar=document.getElementById('world-calendar'),model=window.faWorldCalendarModel;
   if(!calendar||!model)return;
   const root=document.documentElement,days=model.createSeason(1).days;
+  const clockAdapter=window.faWorldClockAdapter;
+  let clockSnapshot=null;
   const buttons=[...calendar.querySelectorAll('[data-calendar-day]')];
   const rows=[...calendar.querySelectorAll('[data-week]')];
   const get=id=>document.getElementById('calendar-'+id);
@@ -41,7 +43,7 @@
     get('days').setAttribute('aria-label',state.view==='season'?w.season+' · '+w.days+' 1–56':w.week+' '+week);
     get('selected').textContent=w.selected+': '+label(days[state.day-1],w);
     root.dataset.calendarReady='true';
-    renderDetails();renderNav();
+    renderDetails();renderNav();renderClock();
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
@@ -100,6 +102,53 @@
     }
   }
   // CAL-IMP-04: filter and navigation are presentation state, not sporting progress.
+  // CAL-IMP-05A: only explicit DEV snapshots; public and missing sources remain unavailable.
+  const clockValue=get('clock-value'),clockSource=get('clock-source'),todayButton=get('today');
+  const devSlider=get('dev-world-day'),devLabel=get('dev-world-label');
+  const clockText={
+    en:['World day unavailable','Season','Day','Fictional DEV/Preview','No authoritative world clock','Today','Today unavailable'],
+    de:['Welttag nicht verfügbar','Saison','Tag','Fiktive DEV/Vorschau','Keine autoritative Weltzeit','Heute','Heute nicht verfügbar'],
+    es:['Día mundial no disponible','Temporada','Día','DEV/Vista previa ficticia','Sin reloj mundial oficial','Hoy','Hoy no disponible'],
+    fr:['Jour mondial indisponible','Saison','Jour','DEV/Aperçu fictif','Aucune horloge mondiale officielle',"Aujourd’hui","Aujourd’hui indisponible"],
+    it:['Giorno mondiale non disponibile','Stagione','Giorno','DEV/Anteprima fittizia','Orologio mondiale ufficiale non disponibile','Oggi','Oggi non disponibile']
+  };
+  function updateClock(raw){
+    try{clockSnapshot=clockAdapter?.normalize(raw)??null}catch{clockSnapshot=null}
+    renderClock();
+  }
+  function renderClock(){
+    if(!clockValue||!clockSource)return;
+    const w=clockText[root.lang]||clockText.en;
+    const valid=clockSnapshot?.current;
+    const dev=clockSnapshot?.source.kind==='dev';
+    clockValue.textContent=valid?w[1]+' '+valid.season+' · '+w[2]+' '+valid.day+'/56 · '+Math.round(valid.day/56*100)+'%':w[0];
+    clockSource.textContent=dev?w[3]:w[4];
+    if(todayButton){todayButton.disabled=!valid;todayButton.textContent=valid?w[5]:w[6]}
+    if(devSlider&&devLabel){
+      devSlider.hidden=devLabel.hidden=!dev;
+      devSlider.disabled=!dev;
+      if(dev)devSlider.value=String(valid.day);
+      devLabel.textContent=w[3]+' · '+w[2];
+    }
+    if(clockAdapter){
+      let projected;try{projected=clockAdapter.project(1,clockSnapshot)}catch{projected=clockAdapter.project(1,null)}
+      for(const button of buttons){
+        const day=Number(button.dataset.calendarDay),relative=projected.days[day-1].relative;
+        if(relative)button.dataset.clockRelative=relative;
+        else delete button.dataset.clockRelative;
+      }
+    }
+  }
+  if(todayButton)todayButton.addEventListener('click',()=>{if(clockSnapshot?.current?.season===1)change({day:clockSnapshot.current.day})});
+  if(devSlider)devSlider.addEventListener('input',()=>{
+    if(clockSnapshot?.source.kind!=='dev')return;
+    const day=Number(devSlider.value);
+    if(!Number.isInteger(day)||day<1||day>56)return;
+    // A DEV presentation fixture: this control does not touch fixtures, standings or global simulation state.
+    updateClock({source:{kind:'dev',reference:'fictional calendar DEV control'},current:{season:1,day}});
+  });
+  window.addEventListener?.('fa:world-clock-snapshot',event=>updateClock(event.detail));
+  updateClock(window.faDevCalendarClockSnapshot??null);
   const filterElement=get('filter'),divisionElement=get('division');
   const filters=['all','national','international','sovereign','federation'];
   const validDivision=v=>/^(it|eng|es|de|fr|pt|nl|br)-[12]$/.test(v);

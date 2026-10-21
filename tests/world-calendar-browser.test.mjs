@@ -64,6 +64,20 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
     await visit();
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),true);
+    assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('unavailable')"),true);
+    assert.equal(await run("document.getElementById('calendar-dev-world-day').hidden"),true);
+    await visit(devOrigin);
+    assert.equal(await run("document.getElementById('calendar-today').disabled"),false);
+    assert.equal(await run("document.getElementById('calendar-clock-source').textContent.includes('DEV')"),true);
+    await run("document.getElementById('calendar-day-16').click()");
+    await run("(()=>{const control=document.getElementById('calendar-dev-world-day');control.value='19';control.dispatchEvent(new Event('input',{bubbles:true}))})()");
+    assert.equal(await run("window.faWorldCalendar.getSelection().day"),16,'DEV clock changes must not change selected day');
+    assert.equal(await run("document.getElementById('calendar-clock-value').textContent.includes('19/56')"),true);
+    assert.equal(await run("document.querySelector('[data-calendar-day=\"19\"]').dataset.clockRelative"),'current');
+    await run("document.getElementById('calendar-today').click()");
+    assert.equal(await run("window.faWorldCalendar.getSelection().day"),19);
+    await visit();
     let cases=0;
     for(const [width,height,mobile] of [[1440,1050,false],[390,1000,true],[320,1000,true],[844,390,true]]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});

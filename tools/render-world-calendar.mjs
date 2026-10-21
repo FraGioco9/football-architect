@@ -32,6 +32,13 @@ export function renderWorldCalendar(){
                 <button id="calendar-next" class="calendar-arrow" type="button" aria-label="Next week" aria-controls="calendar-days" disabled>›</button>
               </div>
             </div>
+            <section class="calendar-clock" id="calendar-clock" aria-label="World Clock">
+              <strong id="calendar-clock-title">World Clock</strong>
+              <span id="calendar-clock-value" role="status" aria-live="polite">Current world day unavailable</span>
+              <span id="calendar-clock-source">No authoritative world clock</span>
+              <label for="calendar-dev-world-day" id="calendar-dev-world-label" hidden>Fictional DEV world day</label>
+              <input id="calendar-dev-world-day" type="range" min="1" max="56" value="1" hidden disabled>
+            </section>
             <div class="calendar-filterbar">
               <label for="calendar-filter">Competition filter</label>
               <select id="calendar-filter" aria-label="Competition filter"><option value="all">All competitions</option><option value="national">National competitions</option><option value="international">International competitions</option><option value="sovereign">Sovereign Cup</option><option value="federation">Federation Cup</option></select>
