@@ -13,7 +13,7 @@ const required=[
  "calendar/index.html","settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "assets/club-crests.js","assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
- "data/divisions.json"
+ "data/divisions.json","assets/world-calendar-model.js","assets/world-calendar.js"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"));
@@ -23,6 +23,7 @@ const rootFiles=new Set(["vercel.json","index.html","favicon.ico","favicon.svg",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["landing.js","landing.css","guide.css","app.js","app.css",
+ "world-calendar-model.js","world-calendar.js",
  "app-search.js","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 

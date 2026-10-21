@@ -9,12 +9,15 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script data-calendar-bootstrap>(()=>{let day=1,view=window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches?'week':'season';try{const s=JSON.parse(sessionStorage.getItem('football-architect:calendar-selection'));if(s&&s.version===1&&Number.isInteger(s.day)&&s.day>=1&&s.day<=56&&['season','week'].includes(s.view)){day=s.day;view=s.view}}catch{}const d=document.documentElement.dataset;d.calendarView=view;d.calendarDay=String(day);d.calendarWeek=String(Math.ceil(day/7))})();</script>
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/landing.css">
   <link rel="stylesheet" href="/assets/app.css">
   <script src="/assets/landing.js" defer></script>
   <script src="/assets/app.js" defer></script>
   <script src="/assets/app-search.js" defer></script>
+  <script src="/assets/world-calendar-model.js" defer></script>
+  <script src="/assets/world-calendar.js" defer></script>
 </head>
 <body class="app-body">
   <div class="fa-career-shell">
@@ -108,11 +111,324 @@
         </section>
         <section id="app-calendar" class="app-view" aria-labelledby="calendar-title">
           <h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>
-          <div class="app-panel app-calendar-empty">
-            <h2 data-app-i18n="calendarStatus">Schedule not available</h2>
-            <p data-app-i18n="calendarStatusText">Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.</p>
-            <a class="app-link app-link-secondary" href="/dashboard" data-app-i18n="backDashboard">Back to Dashboard</a>
-          </div>
+          <section class="world-calendar" id="world-calendar" aria-labelledby="calendar-plan-label">
+            <header class="calendar-heading">
+              <h2 id="calendar-plan-label">Season plan</h2>
+              <span class="calendar-cycle" id="calendar-cycle">56 days · 8 weeks</span>
+            </header>
+            <div class="calendar-toolbar">
+              <div class="calendar-modes" role="group" aria-label="Calendar view" id="calendar-mode-label">
+                <button class="calendar-mode" id="calendar-season" type="button" aria-pressed="true" aria-controls="calendar-days" disabled>Season</button>
+                <button class="calendar-mode" id="calendar-week" type="button" aria-pressed="false" aria-controls="calendar-days" disabled>Week</button>
+              </div>
+              <div class="calendar-controls" id="calendar-controls" role="group" aria-label="Week navigation">
+                <button id="calendar-previous" class="calendar-arrow" type="button" aria-label="Previous week" aria-controls="calendar-days" disabled>‹</button>
+                <span id="calendar-week-label">Week 1 / 8</span>
+                <button id="calendar-next" class="calendar-arrow" type="button" aria-label="Next week" aria-controls="calendar-days" disabled>›</button>
+              </div>
+            </div>
+            <div class="calendar-days" id="calendar-days" role="group" aria-label="Season days">
+                <div class="calendar-week-row" role="group" data-week="1" aria-label="Days 1–7">
+                  <button class="calendar-day" id="calendar-day-1" type="button" data-calendar-day="1" data-kind="preseason" aria-pressed="true" aria-label="Day 1 · Preseason" tabindex="0" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">01</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-2" type="button" data-calendar-day="2" data-kind="preseason" aria-pressed="false" aria-label="Day 2 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">02</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-3" type="button" data-calendar-day="3" data-kind="preseason" aria-pressed="false" aria-label="Day 3 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">03</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-4" type="button" data-calendar-day="4" data-kind="preseason" aria-pressed="false" aria-label="Day 4 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">04</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-5" type="button" data-calendar-day="5" data-kind="preseason" aria-pressed="false" aria-label="Day 5 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">05</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-6" type="button" data-calendar-day="6" data-kind="preseason" aria-pressed="false" aria-label="Day 6 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">06</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-7" type="button" data-calendar-day="7" data-kind="preseason" aria-pressed="false" aria-label="Day 7 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">07</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="2" aria-label="Days 8–14">
+                  <button class="calendar-day" id="calendar-day-8" type="button" data-calendar-day="8" data-kind="preseason" aria-pressed="false" aria-label="Day 8 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">08</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-9" type="button" data-calendar-day="9" data-kind="preseason" aria-pressed="false" aria-label="Day 9 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">09</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-10" type="button" data-calendar-day="10" data-kind="preseason" aria-pressed="false" aria-label="Day 10 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">10</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-11" type="button" data-calendar-day="11" data-kind="preseason" aria-pressed="false" aria-label="Day 11 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">11</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-12" type="button" data-calendar-day="12" data-kind="preseason" aria-pressed="false" aria-label="Day 12 · Preseason" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">12</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Preseason</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-13" type="button" data-calendar-day="13" data-kind="official" aria-pressed="false" aria-label="Day 13 · Official events · Domestic round 1" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">13</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N01">N01</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-14" type="button" data-calendar-day="14" data-kind="official" aria-pressed="false" aria-label="Day 14 · Official events · Domestic round 2" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">14</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N02">N02</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="3" aria-label="Days 15–21">
+                  <button class="calendar-day" id="calendar-day-15" type="button" data-calendar-day="15" data-kind="official" aria-pressed="false" aria-label="Day 15 · Official events · Domestic round 3" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">15</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N03">N03</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-16" type="button" data-calendar-day="16" data-kind="official" aria-pressed="false" aria-label="Day 16 · Official events · International round 1 · Domestic round 4" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">16</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I01">I01</span><span class="calendar-event calendar-event--national" data-calendar-marker="N04">N04</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-17" type="button" data-calendar-day="17" data-kind="official" aria-pressed="false" aria-label="Day 17 · Official events · Domestic round 5" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">17</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N05">N05</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-18" type="button" data-calendar-day="18" data-kind="official" aria-pressed="false" aria-label="Day 18 · Official events · Domestic round 6" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">18</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N06">N06</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-19" type="button" data-calendar-day="19" data-kind="official" aria-pressed="false" aria-label="Day 19 · Official events · International round 2 · Domestic round 7" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">19</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I02">I02</span><span class="calendar-event calendar-event--national" data-calendar-marker="N07">N07</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-20" type="button" data-calendar-day="20" data-kind="official" aria-pressed="false" aria-label="Day 20 · Official events · Domestic round 8" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">20</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N08">N08</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-21" type="button" data-calendar-day="21" data-kind="official" aria-pressed="false" aria-label="Day 21 · Official events · Domestic round 9" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">21</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N09">N09</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="4" aria-label="Days 22–28">
+                  <button class="calendar-day" id="calendar-day-22" type="button" data-calendar-day="22" data-kind="official" aria-pressed="false" aria-label="Day 22 · Official events · International round 3 · Domestic round 10" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">22</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I03">I03</span><span class="calendar-event calendar-event--national" data-calendar-marker="N10">N10</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-23" type="button" data-calendar-day="23" data-kind="official" aria-pressed="false" aria-label="Day 23 · Official events · Domestic round 11" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">23</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N11">N11</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-24" type="button" data-calendar-day="24" data-kind="official" aria-pressed="false" aria-label="Day 24 · Official events · Domestic round 12" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">24</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N12">N12</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-25" type="button" data-calendar-day="25" data-kind="official" aria-pressed="false" aria-label="Day 25 · Official events · International round 4 · Domestic round 13" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">25</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I04">I04</span><span class="calendar-event calendar-event--national" data-calendar-marker="N13">N13</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-26" type="button" data-calendar-day="26" data-kind="official" aria-pressed="false" aria-label="Day 26 · Official events · Domestic round 14" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">26</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N14">N14</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-27" type="button" data-calendar-day="27" data-kind="official" aria-pressed="false" aria-label="Day 27 · Official events · Domestic round 15" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">27</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N15">N15</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-28" type="button" data-calendar-day="28" data-kind="official" aria-pressed="false" aria-label="Day 28 · Official events · International round 5 · Domestic round 16" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">28</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I05">I05</span><span class="calendar-event calendar-event--national" data-calendar-marker="N16">N16</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="5" aria-label="Days 29–35">
+                  <button class="calendar-day" id="calendar-day-29" type="button" data-calendar-day="29" data-kind="official" aria-pressed="false" aria-label="Day 29 · Official events · Domestic round 17" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">29</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N17">N17</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-30" type="button" data-calendar-day="30" data-kind="official" aria-pressed="false" aria-label="Day 30 · Official events · Domestic round 18" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">30</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N18">N18</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-31" type="button" data-calendar-day="31" data-kind="official" aria-pressed="false" aria-label="Day 31 · Official events · International round 6 · Domestic round 19" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">31</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I06">I06</span><span class="calendar-event calendar-event--national" data-calendar-marker="N19">N19</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-32" type="button" data-calendar-day="32" data-kind="pause" aria-pressed="false" aria-label="Day 32 · Pause" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">32</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Pause</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-33" type="button" data-calendar-day="33" data-kind="pause" aria-pressed="false" aria-label="Day 33 · Pause" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">33</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Pause</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-34" type="button" data-calendar-day="34" data-kind="official" aria-pressed="false" aria-label="Day 34 · Official events · Domestic round 20" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">34</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N20">N20</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-35" type="button" data-calendar-day="35" data-kind="official" aria-pressed="false" aria-label="Day 35 · Official events · Domestic round 21" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">35</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N21">N21</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="6" aria-label="Days 36–42">
+                  <button class="calendar-day" id="calendar-day-36" type="button" data-calendar-day="36" data-kind="official" aria-pressed="false" aria-label="Day 36 · Official events · International round 7" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">36</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I07">I07</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-37" type="button" data-calendar-day="37" data-kind="official" aria-pressed="false" aria-label="Day 37 · Official events · Domestic round 22" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">37</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N22">N22</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-38" type="button" data-calendar-day="38" data-kind="official" aria-pressed="false" aria-label="Day 38 · Official events · International round 8" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">38</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I08">I08</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-39" type="button" data-calendar-day="39" data-kind="official" aria-pressed="false" aria-label="Day 39 · Official events · Domestic round 23" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">39</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N23">N23</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-40" type="button" data-calendar-day="40" data-kind="official" aria-pressed="false" aria-label="Day 40 · Official events · Domestic round 24" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">40</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N24">N24</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-41" type="button" data-calendar-day="41" data-kind="official" aria-pressed="false" aria-label="Day 41 · Official events · International round 9" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">41</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I09">I09</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-42" type="button" data-calendar-day="42" data-kind="official" aria-pressed="false" aria-label="Day 42 · Official events · Domestic round 25" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">42</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N25">N25</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="7" aria-label="Days 43–49">
+                  <button class="calendar-day" id="calendar-day-43" type="button" data-calendar-day="43" data-kind="official" aria-pressed="false" aria-label="Day 43 · Official events · International round 10" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">43</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I10">I10</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-44" type="button" data-calendar-day="44" data-kind="official" aria-pressed="false" aria-label="Day 44 · Official events · Domestic round 26" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">44</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N26">N26</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-45" type="button" data-calendar-day="45" data-kind="official" aria-pressed="false" aria-label="Day 45 · Official events · Domestic round 27" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">45</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N27">N27</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-46" type="button" data-calendar-day="46" data-kind="official" aria-pressed="false" aria-label="Day 46 · Official events · International round 11" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">46</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I11">I11</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-47" type="button" data-calendar-day="47" data-kind="official" aria-pressed="false" aria-label="Day 47 · Official events · Domestic round 28" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">47</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N28">N28</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-48" type="button" data-calendar-day="48" data-kind="official" aria-pressed="false" aria-label="Day 48 · Official events · International round 12" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">48</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="I12">I12</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-49" type="button" data-calendar-day="49" data-kind="official" aria-pressed="false" aria-label="Day 49 · Official events · Domestic round 29" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">49</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N29">N29</span></span>
+                  </button>
+                </div>
+                <div class="calendar-week-row" role="group" data-week="8" aria-label="Days 50–56">
+                  <button class="calendar-day" id="calendar-day-50" type="button" data-calendar-day="50" data-kind="official" aria-pressed="false" aria-label="Day 50 · Official events · Domestic round 30" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">50</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N30">N30</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-51" type="button" data-calendar-day="51" data-kind="pause" aria-pressed="false" aria-label="Day 51 · Pause" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">51</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Pause</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-52" type="button" data-calendar-day="52" data-kind="official" aria-pressed="false" aria-label="Day 52 · Official events · Domestic round 31" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">52</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--national" data-calendar-marker="N31">N31</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-53" type="button" data-calendar-day="53" data-kind="official" aria-pressed="false" aria-label="Day 53 · Official events · Federation Cup final · Domestic round 32" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">53</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="FEDERATION-FINAL">FC</span><span class="calendar-event calendar-event--national" data-calendar-marker="N32">N32</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-54" type="button" data-calendar-day="54" data-kind="official" aria-pressed="false" aria-label="Day 54 · Official events · Sovereign Cup final · Domestic round 33" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">54</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Official events</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-event calendar-event--international" data-calendar-marker="SOVEREIGN-FINAL">SC</span><span class="calendar-event calendar-event--national" data-calendar-marker="N33">N33</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-55" type="button" data-calendar-day="55" data-kind="pause" aria-pressed="false" aria-label="Day 55 · Pause" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">55</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Pause</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">—</span></span>
+                  </button>
+                  <button class="calendar-day" id="calendar-day-56" type="button" data-calendar-day="56" data-kind="transition" aria-pressed="false" aria-label="Day 56 · Transition" tabindex="-1" disabled>
+                    <span class="calendar-day-number" aria-hidden="true">56</span>
+                    <span class="calendar-day-kind" aria-hidden="true">Transition</span>
+                    <span class="calendar-day-events" aria-hidden="true"><span class="calendar-day-mark">T</span></span>
+                  </button>
+                </div>
+            </div>
+            <p class="calendar-selected" id="calendar-selected" role="status" aria-live="polite" aria-atomic="true">Selected: Day 1 · Preseason</p>
+            <p class="calendar-key" id="calendar-key">N · National &nbsp; I · International &nbsp; FC / SC · Cup finals &nbsp; — · Pause &nbsp; T · Transition</p>
+            <p class="calendar-note" id="calendar-note" data-app-i18n="calendarStatusText">Season structure only. No live fixtures or results are available.</p>
+          </section>
         </section>
         <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>
           <h1 class="app-page-title" id="settings-title" data-app-i18n="settings">Settings</h1>

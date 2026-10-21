@@ -1,4 +1,5 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
+import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import model from "../assets/competition-model.js";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
@@ -8,6 +9,7 @@ import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-ass
 
 // Normalize the source template too: Windows clones may retain CRLF from an earlier checkout.
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8").replace(/\r\n/g,"\n");
+const calendarFallback = "          <div class=\"app-panel app-calendar-empty\">\n            <h2 data-app-i18n=\"calendarStatus\">Schedule not available</h2>\n            <p data-app-i18n=\"calendarStatusText\">Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.</p>\n            <a class=\"app-link app-link-secondary\" href=\"/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>\n          </div>";
 const pages = {
   "dashboard": {
     "@@FA_LINE_008@@": "  <title>Dashboard — Football Architect</title>",
@@ -16,7 +18,7 @@ const pages = {
     "@@FA_LINE_044@@": "            <a class=\"fa-shell-link\" id=\"app-nav-settings\" href=\"/settings\" data-app-view=\"settings\" aria-label=\"Settings\" data-app-aria=\"settings\">",
     "@@FA_LINE_077@@": "        <section id=\"app-dashboard\" class=\"app-view\" aria-labelledby=\"dashboard-title\">",
     "@@FA_LINE_099@@": "        <section id=\"app-calendar\" class=\"app-view\" aria-labelledby=\"calendar-title\" hidden>",
-    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"./\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
+    "@@FA_CALENDAR_BODY@@": calendarFallback,
     "@@FA_LINE_107@@": "        <section id=\"app-settings\" class=\"app-view app-settings-view\" aria-labelledby=\"settings-title\" hidden>"
   },
   "calendar": {
@@ -26,7 +28,7 @@ const pages = {
     "@@FA_LINE_044@@": "            <a class=\"fa-shell-link\" id=\"app-nav-settings\" href=\"/settings\" data-app-view=\"settings\" aria-label=\"Settings\" data-app-aria=\"settings\">",
     "@@FA_LINE_077@@": "        <section id=\"app-dashboard\" class=\"app-view\" aria-labelledby=\"dashboard-title\" hidden>",
     "@@FA_LINE_099@@": "        <section id=\"app-calendar\" class=\"app-view\" aria-labelledby=\"calendar-title\">",
-    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
+    "@@FA_CALENDAR_BODY@@": renderWorldCalendar(),
     "@@FA_LINE_107@@": "        <section id=\"app-settings\" class=\"app-view app-settings-view\" aria-labelledby=\"settings-title\" hidden>"
   },
   "settings": {
@@ -36,7 +38,7 @@ const pages = {
     "@@FA_LINE_044@@": "            <a class=\"fa-shell-link is-active\" id=\"app-nav-settings\" href=\"/settings\" data-app-view=\"settings\" aria-current=\"page\" aria-label=\"Settings\" data-app-aria=\"settings\">",
     "@@FA_LINE_077@@": "        <section id=\"app-dashboard\" class=\"app-view\" aria-labelledby=\"dashboard-title\" hidden>",
     "@@FA_LINE_099@@": "        <section id=\"app-calendar\" class=\"app-view\" aria-labelledby=\"calendar-title\" hidden>",
-    "@@FA_LINE_104@@": "            <a class=\"app-link app-link-secondary\" href=\"/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>",
+    "@@FA_CALENDAR_BODY@@": calendarFallback,
     "@@FA_LINE_107@@": "        <section id=\"app-settings\" class=\"app-view app-settings-view\" aria-labelledby=\"settings-title\">"
   }
 };
@@ -88,7 +90,7 @@ const worldPageReplacements = (division = null, neutral = false) => {
     "@@FA_LINE_044@@": '            <a class="fa-shell-link" id="app-nav-settings" href="/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">',
     "@@FA_LINE_077@@": '        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title" hidden>',
     "@@FA_LINE_099@@": '        <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>',
-    "@@FA_LINE_104@@": '            <a class="app-link app-link-secondary" href="/dashboard" data-app-i18n="backDashboard">Back to Dashboard</a>',
+    "@@FA_CALENDAR_BODY@@": calendarFallback,
     "@@FA_LINE_107@@": '        <section id="app-settings" class="app-view app-settings-view" aria-labelledby="settings-title" hidden>',
     "@@FA_WORLD_LINK@@": worldNav("/competitions", true),
     "@@FA_WORLD_SECTION@@": worldSection(division ? detailContent(division,neutral) : indexContent(), true,division)
@@ -164,9 +166,10 @@ for(const page of outputPages){
    if(!html.includes(token))throw Error("Missing template token: "+token);
    html=html.replaceAll(token,value);
   }
-  if(/@@FA_(?:LINE_|WORLD_)/.test(html))throw Error("Unresolved template token in "+page.path);
+  if(/@@FA_(?:LINE_|WORLD_|CALENDAR_)/.test(html))throw Error("Unresolved template token in "+page.path);
   if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
  }
+ if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n</head>');
  writeOutput(page.path,normalizeRouteLinks(html,page.path));
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
