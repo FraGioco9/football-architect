@@ -840,3 +840,9 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .app-world-standing-club-link{color:inherit;text-decoration:none;text-underline-offset:3px}
 .app-world-standing-club-link:hover,.app-world-standing-club-link:focus-visible{text-decoration:underline}
 .app-world-standing-club-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+
+/* Align linked History seasons with club identities in record rows. */
+#competition-panel-history .app-history-dev-record-entry{align-items:center}
+#competition-panel-history .app-history-dev-record-entry .app-world-club-identity{align-items:center}
+#competition-panel-history .app-history-dev-season-link{display:inline-flex;align-items:center;min-height:24px;line-height:1.35;white-space:nowrap;color:var(--muted)}
+#competition-panel-history .app-history-dev-season-link:hover,#competition-panel-history .app-history-dev-season-link:focus-visible{color:var(--text)}
