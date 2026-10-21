@@ -24,7 +24,7 @@ test("ROUTE-02 club routes cover 320 IDs and five views",()=>{
   }
 });
 test("ROUTE-02 unknown and malformed routes fail closed",()=>{
- for(const path of ["/competitions/it-3","/competitions/it-1/unknown","/clubs/it/0","/clubs/it/41","/clubs/it/1","/clubs/it/1/unknown","/app/competitions/it-1","/clubs/xx/1/overview"])
+ for(const path of ["/competitions/it-3","/competitions/it-1/unknown","/clubs/it/0","/clubs/it/41","/clubs/it/01","/clubs/it/1/unknown","/app/competitions/it-1","/clubs/xx/1/overview"])
   assert.equal(resolveSubpage(path),null,path);
  assert.throws(()=>competitionSubpage("it-3","rules"));
  assert.throws(()=>clubSubpage("it","41"));
