@@ -97,6 +97,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
   const jsonPaths=debug.filter(path=>path.endsWith(".json")).sort();
   assert.deepEqual(jsonPaths,[
    "__fa_dev__/artifact-manifest.json",
+   "clubs/_shared/manifest.json",
    "competitions/_shared/manifest.json",
    "data/divisions.json",
    "vercel.json"

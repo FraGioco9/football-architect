@@ -11,7 +11,7 @@ const git=(cwd,...args)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ig
 test('CRLF flag sources generate the same checked-in competition HTML without rewriting artwork',()=>{
  const fixture=mkdtempSync(join(tmpdir(),'fa-crlf-flags-'));
  try{
-  for(const path of ['tools','data','dashboard','calendar','settings','competitions','templates','assets/flags','assets/divisions','assets/clubs','assets/competition-model.js']){
+  for(const path of ['clubs','tools','data','dashboard','calendar','settings','competitions','templates','assets/flags','assets/divisions','assets/clubs','assets/competition-model.js']){
    const destination=join(fixture,path);mkdirSync(join(destination,'..'),{recursive:true});
    cpSync(join(root,path),destination,{recursive:true});
   }
