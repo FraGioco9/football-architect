@@ -52,7 +52,7 @@
   };
   paint();
   // The app shell observes the same lang attribute; paint last to preserve the club title.
-  new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  new MutationObserver(()=>paint()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){selected=next;paint(true);}
