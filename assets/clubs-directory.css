@@ -27,3 +27,13 @@
 @media(max-width:720px){.nav01-directory .app-page-title{padding-bottom:15px;font-size:29px}.nav01-filters{padding:13px;gap:9px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:17px}.nav01-filters>input{grid-column:1/-1}.nav01-grid{gap:10px}.nav01-card{padding:14px;min-height:98px;gap:12px}.nav01-crest{width:49px;height:55px}.nav01-card strong{font-size:13px}}
 @media(max-width:500px){.nav01-filters{grid-template-columns:1fr}.nav01-filters>input{grid-column:auto}.nav01-grid{grid-template-columns:1fr}.nav01-card{min-height:88px}.nav01-count{min-height:46px}}
 @media(prefers-reduced-motion:reduce){.nav01-card{transition:none}}
+
+/* CLUBS-LAYOUT-02B: larger tiles and unframed team crests. */
+.nav01-grid{gap:18px}
+.nav01-card{min-height:146px;padding:25px 24px;gap:22px;border-radius:16px}
+.nav01-card strong{font-size:16px}
+.nav01-card small{font-size:12px;margin-top:9px}
+.nav01-crest{width:82px;height:88px;padding:0;border:0;border-radius:0;background:transparent;object-fit:contain}
+.nav01-country-flag{display:inline-block;vertical-align:-2px;width:17px;height:13px;object-fit:cover;margin-inline:4px 1px;border-radius:2px}
+@media(max-width:720px){.nav01-grid{gap:12px}.nav01-card{min-height:124px;padding:18px;gap:17px}.nav01-crest{width:68px;height:74px}.nav01-card strong{font-size:14px}.nav01-card small{font-size:11px}}
+@media(max-width:500px){.nav01-card{min-height:114px;padding:17px}.nav01-crest{width:64px;height:70px}}
