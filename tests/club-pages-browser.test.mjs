@@ -129,6 +129,24 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelectorAll('.nav01-card').length===320");
     await run("document.querySelector('.nav01-filters select').value='IT';document.querySelector('.nav01-filters select').dispatchEvent(new Event('change',{bubbles:true}))");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
+    // NAV-01C: keyboard operation of the sidebar disclosure and focus.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await run("sessionStorage.setItem('fa-nav01-expanded','false')");
+    await cmd('Page.reload');
+    await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='false'");
+    await run("document.querySelector('.nav01-expand').focus()");
+    assert.equal(await run("document.activeElement.classList.contains('nav01-expand')"),true);
+    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='true'");
+    assert.equal(await run("document.querySelector('.nav01-children').hidden"),false);
+    assert.equal(await run("document.querySelector('.nav01-expand').getAttribute('aria-controls')"),'nav01-children');
+    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Space',code:'Space',windowsVirtualKeyCode:32});
+    await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Space',code:'Space',windowsVirtualKeyCode:32});
+    await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='false'");
+    assert.equal(await run("document.querySelector('.nav01-children').hidden"),true);
     await visit('/clubs/it/1/overview');
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
