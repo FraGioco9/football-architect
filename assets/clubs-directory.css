@@ -79,3 +79,9 @@ html[data-theme="light"] .nav01-filters>input[type="search"]:focus,html[data-the
 /* CLUBS-LAYOUT-02I: match the neutral Fixtures arrow hover border. */
 .nav01-card:hover{border-color:var(--border);background:var(--surface);box-shadow:none}
 .nav01-card:focus-visible{border-color:var(--border)}
+
+/* CLUBS-LAYOUT-02J: dropdown hover matches Clubs tiles and Fixtures arrows. */
+.nav01-filter .language-trigger:hover,
+.nav01-filter .language-trigger[aria-expanded="true"]{background:var(--surface-raised);border-color:var(--border);box-shadow:none}
+html[data-theme="light"] .nav01-filter .language-trigger:hover,
+html[data-theme="light"] .nav01-filter .language-trigger[aria-expanded="true"]{background:var(--surface-raised);border-color:var(--border);box-shadow:none}
