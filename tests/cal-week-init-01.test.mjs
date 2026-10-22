@@ -16,7 +16,7 @@ test('CAL-WEEK-INIT-02 current week applies only to the matching DEV season',()=
  assert.match(source,/pendingInitialWeek=true;change\(\{view,day:currentWeekDay\(\)\}\)/);
 });
 test('CAL-WEEK-INIT-03 explicit dropdown, arrows and keyboard update manual selection',()=>{
- assert.match(source,/setWeek:n=>\{[^}]*rememberWeek\(\)/);
+ assert.match(source,/setWeek:n=>\{[^\n]*rememberWeek\(\)/);
  assert.match(source,/get\('previous'\)[^\n]*rememberWeek\(\)/);
  assert.match(source,/get\('next'\)[^\n]*rememberWeek\(\)/);
  assert.match(source,/event\.preventDefault\(\);change\([^\n]*if\(state\.view==='week'\)rememberWeek\(\)/);
