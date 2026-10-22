@@ -106,6 +106,7 @@ export function stagePublicArtifact(sourceRoot,destination) {
 
 // Canonical request paths resolve directly to allowlisted physical files.
 export function publicRequestFile(pathname) {
+  if(pathname==="/clubs"||pathname==="/clubs/")return "clubs/index.html";
   const club=resolveSubpage(pathname);
   if(club?.kind==="club"&&!club.redirect)return "clubs/_shared/index.html";
   const detail=pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)\/?$/);
