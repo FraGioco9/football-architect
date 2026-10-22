@@ -47,7 +47,7 @@ jobs:
           node --check tools/validate-division-assets.mjs
       - name: Site contracts
         env:
-          FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && runner.temp || '' }}/nav01-screenshots
+          FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && format('{0}/nav01-screenshots', runner.temp) || '' }}
         run: node --test --test-concurrency=1 tests/*.test.mjs
       - name: Upload NAV-01 Chromium screenshots
         if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
