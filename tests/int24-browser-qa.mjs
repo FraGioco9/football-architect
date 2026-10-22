@@ -58,5 +58,40 @@ try {
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
  }
+ // Season 0 is a DEV-only inactive state shared by cups, domestic divisions,
+ // Calendar and Club; it never creates a simulated season 0.
+ const page=await browser.newPage({viewport:{width:390,height:900}});
+ const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
+ for(const route of ["/competitions/sovereign-cup/standings","/competitions/federation-cup/fixtures","/competitions/it-1/standings","/calendar","/clubs/it/1/overview"]){
+  await page.goto(base+route,{waitUntil:"networkidle"});
+  await page.waitForSelector('.fa-dev-widget-button');
+  await page.locator('.fa-dev-widget-button').click();
+  const season=page.locator('[data-dev-control="season-number"]');
+  assert.equal(await season.getAttribute('min'),'0');
+  await season.fill('0');await season.dispatchEvent('change');
+  await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===true);
+  assert.equal(await page.locator('[data-dev-control="world-day-number"]').isDisabled(),true);
+  assert.equal(await page.locator('[data-dev-control-row="world-day"] button:disabled').count(),2);
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-season')),'0');
+  if(route.startsWith('/competitions/')){
+   assert.equal(await page.locator('#app-competition-season').isDisabled(),true);
+   assert.equal(await page.locator('#app-competition-season-value').innerText(),'No active season');
+   assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
+  }
+  if(route==='/calendar')assert.equal(await page.locator('#calendar-season-picker').isDisabled(),true);
+  await page.reload({waitUntil:'networkidle'});
+  await page.waitForSelector('.fa-dev-widget-button');
+  assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
+  await page.locator('.fa-dev-widget-button').click();
+  await page.locator('[data-dev-control="season-number"]').fill('1');
+  await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+  await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===false);
+  assert.equal(await page.evaluate(()=>window.faDevWorldClockSnapshot?.current?.season),1);
+  if(route.startsWith('/competitions/')){
+   await page.waitForFunction(()=>document.querySelector('#app-competition-season')?.disabled===false);
+  }
+  checks++;
+ }
+ assert.deepEqual(zeroErrors,[],"Season 0 JS errors");await page.close();
  console.log("INT24 Chromium QA PASS: "+checks+" checks; 12 screenshots");
 }finally{await browser.close()}

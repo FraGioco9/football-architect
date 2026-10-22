@@ -121,12 +121,12 @@ export function createPreviewHistory(division, season, matchdays) {
 
 export function readPreviewProgress(storage) {
   const read=(key,min,max,fallback)=>{
-    try{const raw=storage.getItem(key),value=raw===null?NaN:Number(raw);
+    try{const raw=storage.getItem(key),value=raw===null||raw.trim()===""?NaN:Number(raw);
       return Number.isInteger(value)&&value>=min&&value<=max?value:fallback;
     }catch{return fallback}
   };
-  return {season:read("football-architect:standings-dev-season",1,4,1),
-    matchdays:read("football-architect:standings-dev-matchdays",0,DEBUG_MAX_MATCHDAY,0)};
+  const season=read("football-architect:standings-dev-season",0,4,1);
+  return {season,matchdays:season===0?0:read("football-architect:standings-dev-matchdays",0,DEBUG_MAX_MATCHDAY,0)};
 }
 // A completed or not-yet-reached season has no upcoming matchday shortcut.
 // The league calendar still ends at 30; days 31–33 belong only to post-season brackets.
@@ -137,7 +137,7 @@ export function previewCurrentMatchday(season,progress) {
 
 export function previewSeasonProgress(season,progress) {
   if(!Number.isInteger(season)||season<1||season>4||
-    !Number.isInteger(progress?.season)||progress.season<1||progress.season>4||
+    !Number.isInteger(progress?.season)||progress.season<0||progress.season>4||
     !Number.isInteger(progress.matchdays)||progress.matchdays<0||progress.matchdays>DEBUG_MAX_MATCHDAY)
     throw Error("Invalid DEV progress");
   return season<progress.season?DEBUG_MAX_MATCHDAY:season===progress.season?progress.matchdays:0;
@@ -201,6 +201,7 @@ export function createPreviewPostseason(division,matchday,season=1) {
 
 // Read-only club projection: reuse league/post-season engines and expose no future scores.
 export function createPreviewClubSummary(division,clubId,progress){
+ if(progress?.season===0)return null;
  const played=previewSeasonMatchdays(progress.season,progress);
  const table=createPreviewStandings(division,played,progress.season);
  const position=table.rows.findIndex(row=>row.club.clubId===clubId);
@@ -224,6 +225,7 @@ export function createPreviewClubSummary(division,clubId,progress){
 }
 export function readPreviewClubProgress(storage){
  const progress=readPreviewProgress(storage);
+ if(progress.season===0)return progress;
  try{
   const day=Number(storage.getItem('football-architect:calendar-dev-world-day'));
   if(Number.isInteger(day)&&day>=1&&day<=56)

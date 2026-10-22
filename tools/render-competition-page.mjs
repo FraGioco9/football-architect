@@ -125,7 +125,8 @@ const postseasonContent = (d,neutral) => {
  return `<div id="app-postseason-bracket" class="app-postseason-grid${d.tier===1?" app-postseason-playout":""}">${bracket}</div>`;
 };
 const competitionTabs = function competitionTabs(d,standings,neutral) {
- const views=model.views.map(view=>view.id==="postseason"&&!neutral
+ const views=model.views.map(view=>view.id==="postseason"&&d.international
+  ?{...view,key:"competitionTabKnockouts",label:"Knockouts"}:view.id==="postseason"&&!neutral
   ?{...view,key:d.tier===1?"competitionTabPlayout":"competitionTabPlayoffs",label:d.tier===1?"Playout":"Playoffs"}:view);
  const nav=views.map(({id,key,label},i)=>
   `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`

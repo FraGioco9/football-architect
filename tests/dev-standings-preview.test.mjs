@@ -58,7 +58,7 @@ test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",asy
  const from=client.includes('async function setDebugProgress(')?client.indexOf('async function setDebugProgress('):client.indexOf('async function setSeason(');
  const source=client.slice(from,client.indexOf('async function resetPreview('));
  const stored=new Map([['days','7'],['season','2']]);
- const context={debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',
+ const context={devWorldClock:{publish(){}},debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',DAY_KEY:'world-day',
   sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
   refreshProgress:async()=>false,syncDebugControls(){},window:{dispatchEvent(){}},CustomEvent:class{},console};
  const change=runWithModel(source+';setMatchdays',context);
@@ -72,11 +72,11 @@ test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed ro
  const source=client.slice(client.indexOf('async function setDebugProgress('),client.indexOf('async function resetPreview('));
  assert.ok(source,'Season control must update the shared competition route');
  const changes=[],stored=new Map();
- const context={debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
+ const context={devWorldClock:{publish(){}},debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',DAY_KEY:'world-day',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
   refreshProgress:async()=>true,window:{faCompetitionRoute:{set:next=>changes.push(next)}}};
  const setSeason=runWithModel(source+';setSeason',context);
- for(const season of [1,2,3,4])assert.equal(await setSeason(season),true);
- for(const season of [0,5,1.5,NaN])assert.equal(await setSeason(season),false);
+ for(const season of [0,1,2,3,4])assert.equal(await setSeason(season),true);
+ for(const season of [-1,5,1.5,NaN])assert.equal(await setSeason(season),false);
  assert.deepEqual(changes,[]);
  assert.equal(context.debugSeason,4);assert.equal(stored.get('season'),'4');
 });

@@ -12,7 +12,7 @@
  };
  const t=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
- const dev=window.faDevCalendarClockSnapshot?.source?.kind==='dev';
+ const dev=window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev';
  const heading=root.querySelector('.calendar-heading');
  const selector=document.querySelector('#app-calendar > .calendar-season-picker')||document.createElement('div');
  selector.className='calendar-season-picker app-competition-season';
@@ -25,7 +25,7 @@
  document.addEventListener('pointerdown',e=>{if(!selector.contains(e.target))closeMenu()});
  trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():1,selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
  menu.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();trigger.focus()}});
- const readDebugSeason=()=>{try{const n=Number(sessionStorage.getItem(seasonKey));return Number.isInteger(n)&&n>=1&&n<=4?n:1}catch{return 1}};
+ const readDebugSeason=()=>{try{const raw=sessionStorage.getItem(seasonKey),n=raw===null||raw.trim()===''?NaN:Number(raw);return Number.isInteger(n)&&n>=0&&n<=4?n:1}catch{return 1}};
  let selectedSeason=1;
  window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?readDebugSeason():1);
@@ -35,12 +35,15 @@
   const params=new URL(location.href).searchParams;
   const requested=Number(params.get('season'));
   if(params.has('season')&&validSeason(requested))selectedSeason=requested;
-  else {selectedSeason=limit;const url=new URL(location.href);url.searchParams.set('season',String(limit));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
+  else {selectedSeason=Math.max(1,limit);const url=new URL(location.href);url.searchParams.set('season',String(selectedSeason));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
   const canonical=new URL(location.href);canonical.search='?'+new URLSearchParams({season:String(selectedSeason),calendarView:document.documentElement.dataset.calendarView==='week'?'week':'season'});if(location.pathname+location.search!==canonical.pathname+canonical.search)history.replaceState(history.state,'',canonical);
   root.dataset.seasonInitialized='true';
   menu.replaceChildren();
   for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
-  value.textContent=String(selectedSeason);
+  trigger.disabled=limit===0;
+  if(limit===0){value.textContent='No active season';value.dataset.appI18n='competitionNoActiveSeason';closeMenu()}
+  else {value.textContent=String(selectedSeason);delete value.dataset.appI18n}
+  window.faAppRenderLanguage?.();
   selector.querySelector('#calendar-season-label').textContent=t().season;
   root.dataset.season=String(selectedSeason);
   syncCalendarLink();

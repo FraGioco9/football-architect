@@ -15,6 +15,7 @@ const matchdaysForWorldDay=nationalProgress;
 function readWorldDay(){try{if(sessionStorage.getItem(DAY_KEY)===null)return null}catch{return null}return devWorldClock.read().day}
 
 function readMatchdays(){
+ try{if(sessionStorage.getItem("football-architect:standings-dev-season")==="0")return 0}catch{}
  const day=typeof readWorldDay==='function'?readWorldDay():null;if(day!==null)return matchdaysForWorldDay(day);
  try{const raw=sessionStorage.getItem(ROUNDS_KEY);if(raw===null)return 0;
   const value=Number(raw);return Number.isInteger(value)&&value>=0&&value<=DEBUG_MAX_MATCHDAY?value:0;
@@ -44,12 +45,14 @@ function selectedSeason(){
 function syncCompetitionLinks(){
  for(const link of document.querySelectorAll('a.app-division-card')){
   const url=new URL(link.getAttribute('href'),location.href);
-  url.searchParams.set('season',String(debugSeason));
+  url.searchParams.set('season',String(Math.max(1,debugSeason)));
   link.setAttribute('data-dev-latest-season',String(debugSeason));
   link.setAttribute('href',url.href);
  }
 }
 function syncDebugControls(){
+ document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
+ widgetRoot?.syncVisibility?.();
  syncCompetitionLinks();
  for(const [id,value] of [["season",debugSeason],["matchdays",matchdays],["world-day",readWorldDay()??1]])
   for(const input of document.querySelectorAll(`[data-dev-control="${id}"],[data-dev-control="${id}-number"]`)){
@@ -58,6 +61,14 @@ function syncDebugControls(){
 }
 async function refreshProgress(){
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
+ if(debugSeason===0){
+  if(validPath&&!await setPreviewEnabled(false))return false;
+  try{sessionStorage.removeItem(FLAG)}catch{return false}
+  clearHistoryPreview();syncDebugControls();devWorldClock.publish();
+  window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
+  window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:{season:0,matchdays:0}}));
+  return true;
+ }
  if(clubPath){try{sessionStorage.setItem(FLAG,'on')}catch{return false}}
  if(validPath){
   if(!await setPreviewEnabled(true))return false;
@@ -69,16 +80,16 @@ async function refreshProgress(){
  return true;
 }
 async function setDebugProgress(key,value){
- const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved;
- try{saved=sessionStorage.getItem(key);sessionStorage.setItem(key,String(value))}catch{return false}
+ const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay;
+ try{saved=sessionStorage.getItem(key);savedDay=sessionStorage.getItem(DAY_KEY);sessionStorage.setItem(key,String(value));if(key===SEASON_KEY&&value===0)sessionStorage.setItem(DAY_KEY,"1")}catch{try{if(saved===null)sessionStorage.removeItem(key);else if(saved!==undefined)sessionStorage.setItem(key,saved)}catch{}return false}
  const revision=++progressRevision;
- if(key===SEASON_KEY)debugSeason=value;else matchdays=value;
+ if(key===SEASON_KEY){debugSeason=value;if(value===0)matchdays=0}else matchdays=value;
  let ok=false;
  try{ok=await refreshProgress()}catch(error){console.error("DEV progress refresh failed:",error)}
  if(revision!==progressRevision)return true;
- if(ok)return true;
+ if(ok){if(key===SEASON_KEY&&value>0)devWorldClock.publish();return true;}
  debugSeason=previous.season;matchdays=previous.matchdays;
- try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved)}catch{}
+ try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else sessionStorage.setItem(DAY_KEY,savedDay)}catch{}
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(previousView)window.faCompetitionRoute?.set?.({season:previousView},{replace:true});
  syncDebugControls();
@@ -86,7 +97,7 @@ async function setDebugProgress(key,value){
  return false;
 }
 async function setSeason(value){
- if(!Number.isInteger(value)||value<1||value>4)return false;
+ if(!Number.isInteger(value)||value<0||value>4)return false;
  if(value===debugSeason)return true;
  return setDebugProgress(SEASON_KEY,value);
 }
@@ -129,7 +140,8 @@ const LANG = {
 };
 const validPath = location.pathname.match(DETAIL);
 const clubPath=/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)$/.test(location.pathname);
-const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname);
+// Index and cup routes use global Debug controls without domestic simulation.
+const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname)||/^\/competitions\/(?:sovereign-cup|federation-cup)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
 let widgetRoot;
@@ -393,16 +405,17 @@ function setPreviewEnabled(enabled) {
 }
 
 if(validPath||indexPath||clubPath){
- if(clubPath){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
+ if(debugSeason===0){try{sessionStorage.removeItem(FLAG)}catch{}}
+ if(clubPath&&debugSeason>0){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
  syncCompetitionLinks();
  (validPath?waitForRows():Promise.resolve()).then(() => {
 
   registerDebugControls("general",[{
-   type:"range",id:"season",label:"Season",min:1,max:4,step:1,scope:"general",
+   type:"range",id:"season",label:"Season",min:0,max:4,step:1,scope:"general",
    value:()=>debugSeason,onChange:setSeason
-  },{type:"range",id:"world-day",label:"Day",min:1,max:56,step:1,scope:"general",
+  },{type:"range",id:"world-day",label:"Day",min:1,max:56,step:1,scope:"general",disabled:()=>debugSeason===0,
    value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
-   onChange:async n=>{if(!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n),previousMatchdays=matchdays;if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n)){if(target!==previousMatchdays)await setMatchdays(previousMatchdays);return false}syncDebugControls();return true}
+   onChange:async n=>{if(debugSeason===0||!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n),previousMatchdays=matchdays;if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n)){if(target!==previousMatchdays)await setMatchdays(previousMatchdays);return false}syncDebugControls();return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
    if(!await resetPreview())return false;
    widgetRoot?.resetWidgetState();syncDebugControls();return true;
@@ -411,7 +424,7 @@ if(validPath||indexPath||clubPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(validPath)setPreviewEnabled(true).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  if(validPath)setPreviewEnabled(debugSeason>0).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   else reveal();
   let renderedSeason=renderKey();
   let seasonRefresh=Promise.resolve(true);
@@ -929,17 +942,17 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
    }
   }
  };
- const publish=()=>{devWorldClock.publish();syncInputs()};
+ const publish=()=>{devWorldClock.publish();syncInputs();calendarWidget?.syncVisibility?.()};
  registerDebugControls('general',[{
-  type:'range',id:'season',label:'Season',min:1,max:4,step:1,scope:'general',
-  value:season,onChange:n=>{const ok=devWorldClock.setSeason(n);if(ok)syncInputs();return ok}
+  type:'range',id:'season',label:'Season',min:0,max:4,step:1,scope:'general',
+  value:season,onChange:n=>{const ok=devWorldClock.setSeason(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  },{
-  type:'range',id:'world-day',label:'Day',min:1,max:56,step:1,scope:'general',
-  value:day,onChange:n=>{const ok=devWorldClock.setDay(n);if(ok)syncInputs();return ok}
+  type:'range',id:'world-day',label:'Day',min:1,max:56,step:1,scope:'general',disabled:()=>season()===0,
+  value:day,onChange:n=>{const ok=devWorldClock.setDay(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  },{
   type:'button',id:'reset-global',label:'Reset',scope:'general',
-  onChange:()=>{const ok=devWorldClock.reset();if(ok)syncInputs();return ok}
+  onChange:()=>{const ok=devWorldClock.reset();if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  }]);
- createDebugWidget({page:'calendar'});
+ const calendarWidget=createDebugWidget({page:'calendar'});
  publish();
 }

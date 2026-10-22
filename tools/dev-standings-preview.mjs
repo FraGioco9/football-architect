@@ -36,6 +36,7 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
+const CUP_DETAIL = /^\/competitions\/(sovereign-cup|federation-cup)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
@@ -161,7 +162,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
           body=Buffer.from(body.toString("utf8").replace('<script data-calendar-bootstrap>',bootstrap+'<script data-calendar-bootstrap>'),"utf8");
         }
-        if (DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html") {
+        if (DETAIL.test(raw) || CUP_DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html") {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.

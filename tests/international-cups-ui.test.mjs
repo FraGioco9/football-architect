@@ -54,3 +54,32 @@ test("INT-24: shared theme controls and responsive CSS exist",()=>{
     assert.ok(!html.includes('class="app-international-tabs"'));
   }
 });
+
+test('INT-24 cup knockout tab uses its own label without changing domestic playoffs',()=>{
+ for(const slug of names){
+  const html=read('competitions/'+slug+'/index.html');
+  assert.match(html,/id="competition-tab-postseason"[^>]+data-app-i18n="competitionTabKnockouts">Knockouts<\/button>/);
+  assert.doesNotMatch(html,/\/__fa_dev__\//);
+ }
+ assert.match(read('competitions/it-1/index.html'),/data-app-i18n="competitionTabPlayout">Playout/);
+});
+
+test('INT-24 DEV injects shared Debug controls on cup root and subpage routes',async()=>{
+ const {createPreviewServer}=await import('../tools/dev-standings-preview.mjs');
+ const {once}=await import('node:events');
+ const {request}=await import('node:http');
+ const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=path=>new Promise((resolve,reject)=>{
+  request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
+   let body='';res.setEncoding('utf8');res.on('data',part=>body+=part);res.on('end',()=>resolve({status:res.statusCode,body}));
+  }).on('error',reject).end();
+ });
+ try{
+  for(const slug of names)for(const suffix of ['',...views.map(v=>'/'+v)]){
+   const response=await get('/competitions/'+slug+suffix+'?season=99');
+   assert.equal(response.status,200);
+   assert.match(response.body,/data-fa-dev-preview src="\/__fa_dev__\/standings-client.mjs"/);
+   assert.match(response.body,/dataset.faDevSeasons="1,2,3,4"/);
+  }
+ }finally{await new Promise(resolve=>server.close(resolve))}
+});

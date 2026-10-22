@@ -68,7 +68,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-option select{max-width:55%;min-width:0}",
   ".fa-dev-widget-option select:focus-visible,.fa-dev-widget-option input:focus-visible,.fa-dev-widget-reset:focus-visible{outline:2px solid var(--focus,#8ee5c5);outline-offset:2px}",
   ".fa-dev-widget-option select:hover,.fa-dev-widget-reset:hover{border-color:var(--primary,#47b58d)}",
-  ".fa-dev-widget-option input:disabled,.fa-dev-widget-reset:disabled{opacity:.6;cursor:wait}",
+  ".fa-dev-widget-option input:disabled,.fa-dev-widget-reset:disabled{opacity:.6;cursor:not-allowed}",
+  ".fa-dev-widget-option[data-disabled=true]{opacity:.5}",
   ".fa-dev-widget-option input[type=number]::-webkit-inner-spin-button,.fa-dev-widget-option input[type=number]::-webkit-outer-spin-button{opacity:1;cursor:pointer}",
   "html[data-theme=\"light\"] .fa-dev-widget-option input[type=number]{background:var(--surface,#fff);color:var(--text,#18332d)}",
   ".fa-dev-widget-panel{box-sizing:border-box;width:min(320px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 32px);overflow-x:hidden;overflow-y:auto}",
@@ -166,7 +167,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     const previous=input.dataset.previous;input.disabled=true;number.disabled=true;
     try{if(await control.onChange(Number(input.value))===false)input.value=previous;else input.dataset.previous=input.value}
     catch(error){input.value=previous;console.error("DEV Debug range change failed:",error)}
-    finally{number.value=input.value;number.dataset.previous=input.value;number.disabled=false;input.disabled=false}
+    finally{number.value=input.value;number.dataset.previous=input.value;number.disabled=false;input.disabled=false;syncVisibility()}
    });
    number.addEventListener("change",async()=>{
     const previous=number.dataset.previous,value=number.valueAsNumber;
@@ -174,7 +175,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     input.disabled=true;number.disabled=true;
     try{if(await control.onChange(value)===false)number.value=previous;else number.dataset.previous=number.value}
     catch(error){number.value=previous;console.error("DEV Debug number change failed:",error)}
-    finally{input.value=number.value;input.dataset.previous=number.value;number.disabled=false;input.disabled=false}
+    finally{input.value=number.value;input.dataset.previous=number.value;number.disabled=false;input.disabled=false;syncVisibility()}
    });
    row.append(input,numberWrap);target.append(row);continue;
   }
@@ -242,9 +243,10 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   row.append(input);
   target.append(row);
  }
- root.syncVisibility=()=>{for(const control of controls){const row=panel.querySelector(`[data-dev-control-row="${control.id}"]`);if(row)row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false}};
+ root.syncVisibility=()=>{for(const control of controls){const row=panel.querySelector(`[data-dev-control-row="${control.id}"]`);if(row){row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;const disabled=typeof control.disabled==="function"?control.disabled():control.disabled===true;row.dataset.disabled=String(disabled);if(control.disabled!==undefined)for(const input of row.querySelectorAll("input,button,select"))input.disabled=disabled}}};
  function syncVisibility(){root.syncVisibility()}
  for(const details of sections.values())if(details.children.length>1)panel.append(details);
+ syncVisibility();
  const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
  root.append(button);
  document.head.append(style);
