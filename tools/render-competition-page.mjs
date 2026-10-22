@@ -78,11 +78,12 @@ ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;
 function renderRules(d,neutral,attrs,key,label){
+ const international=d.international;
  const metric=(code,name,value,id="")=>`                <div class="app-rules-metric"><dt data-app-i18n="${code}">${name}</dt><dd${id?` id="${id}"`:""}>${value}</dd></div>`;
- const paragraph=(code,fallback)=>`              <p data-app-i18n="${code}">${fallback}</p>`;
+ const paragraph=(code,fallback)=>`              <p${code?` data-app-i18n="${code}"`:""}>${fallback}</p>`;
  const section=(id,titleKey,title,body)=>`            <section class="app-rules-section" aria-labelledby="${id}">\n              <h3 id="${id}" data-app-i18n="${titleKey}">${title}</h3>\n${body}\n            </section>`;
  const position=(range,code,fallback,kind)=>`                <div class="app-rules-outcome" data-outcome="${kind}"><strong class="app-rules-range">${range}</strong><span data-app-i18n="${code}">${fallback}</span></div>`;
- const outcomes=neutral
+ const outcomes=international?paragraph("rulesCupPending","International competition rules are not available yet."):neutral
  ?paragraph("rulesNeutralOutcomes","Select a division to view its promotion and relegation rules.")
  :d.tier===1
  ?`              <div class="app-rules-outcomes">\n${[
@@ -99,14 +100,14 @@ function renderRules(d,neutral,attrs,key,label){
  const playSection=neutral?"":d.tier===1
  ?section("rules-playout","rulesPlayoutTitle","Relegation play-out",paragraph("rulesPlayoutBody","The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. If aggregate scores are level after the second leg, extra time and then penalties decide the winner."))
  :section("rules-playoffs","rulesPlayoffsTitle","Promotion play-offs",paragraph("rulesPlayoffsBody","The semi-finals are 3rd vs 6th and 4th vs 5th, each played over two legs with the higher-ranked club at home in the return leg. The winners meet in a single-match final hosted by the finalist with the better regular-season ranking. The final winner earns promotion. No points-gap threshold applies. Tied aggregate semi-finals or a tied final go to extra time and then penalties if necessary."));
- return `          <section ${attrs}>\n            <div class="app-rules-content">\n${section("rules-format","rulesFormatTitle","Competition format",paragraph("rulesFormatBody","Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.")+`\n              <dl class="app-rules-metrics">\n${[
- metric("rulesClubs","Clubs",neutral?"—":"16","app-competition-capacity"),
- metric("rulesRounds","Matchdays",neutral?"—":"30"),
+ return `          <section ${attrs}>\n            <div class="app-rules-content">\n${section("rules-format","rulesFormatTitle","Competition format",paragraph(international?"":"rulesFormatBody",international?"24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club":"Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.")+`\n              <dl class="app-rules-metrics">\n${[
+ metric("rulesClubs","Clubs",international?"24":neutral?"—":"16","app-competition-capacity"),
+ metric("rulesRounds","Matchdays",international?"6":neutral?"—":"30"),
  metric("rulesLegs","Legs",neutral?"—":"2"),
  metric("rulesMatches","Matches",neutral?"—":"240")
  ].join("\n")}\n              </dl>`)}\n${section("rules-points","rulesPointsTitle","Points system",`              <dl class="app-rules-points">\n${[
  metric("rulesWin","Win","3"),metric("rulesDraw","Draw","1"),metric("rulesLoss","Loss","0")
- ].join("\n")}\n              </dl>`)}\n${section("rules-ranking","rulesRankingTitle","League ranking",paragraph("rulesRankingBody","Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw."))}\n${section("rules-outcomes","rulesOutcomesTitle","Sporting outcomes",outcomes)}${playSection?"\n"+playSection:""}\n              <strong id="app-competition-level" hidden>${neutral?"—":d.tier}</strong>\n            </div>\n          </section>`;
+ ].join("\n")}\n              </dl>`)}\n${section("rules-ranking","rulesRankingTitle","League ranking",paragraph(international?"rulesCupPending":"rulesRankingBody",international?"International competition rules are not available yet.":"Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw."))}\n${section("rules-outcomes","rulesOutcomesTitle","Sporting outcomes",outcomes)}${playSection?"\n"+playSection:""}\n              <strong id="app-competition-level" hidden>${neutral?"—":d.tier}</strong>\n            </div>\n          </section>`;
 }
 const postseasonContent = (d,neutral) => {
  const word=(key,text)=>`<span data-app-i18n="${key}">${text}</span>`;
@@ -153,8 +154,9 @@ const detailContent = function detailContent(d,neutral=false){
  return '          <header class="app-competition-header">\n'+
  '            '+(neutral?'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>':renderLogo(d))+'\n'+
  '            <div class="app-competition-identity">\n'+
- '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+(neutral?"Competition":encode(d.name))+'</span></h1>\n'+
- '              <div class="app-world-detail-meta">'+inlineCountryFlag(c,"app-competition-flag")+' <span id="app-competition-country" data-world-country="'+(neutral?"":d.countryId)+'">'+(neutral?"Country":encode(c.name.en))+'</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n'+
+ '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+(d.international?encode(d.name):neutral?"Competition":encode(d.name))+'</span></h1>\n'+
+ (d.international?'              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>\n':
+ '              <div class="app-world-detail-meta">'+inlineCountryFlag(c,"app-competition-flag")+' <span id="app-competition-country" data-world-country="'+(neutral?"":d.countryId)+'">'+(neutral?"Country":encode(c.name.en))+'</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n')+
  '            </div>\n'+
  '            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span>'+menuChevron+'</button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions">All competitions</a>\n'+

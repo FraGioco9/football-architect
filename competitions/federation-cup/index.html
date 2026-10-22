@@ -12,22 +12,12 @@
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/landing.css">
   <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/competition-model.js" defer></script>
   <script src="/assets/landing.js" defer></script>
   <script src="/assets/app.js" defer></script>
   <script src="/assets/app-search.js" defer></script>
-<style>
-.app-world-countries:has(.app-international-tabs){grid-template-columns:minmax(0,1fr)}
-.app-international-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:20px 0}
-.app-international-tabs a{text-align:center;min-width:0}
-.app-international-tabs a{border:1px solid var(--fa-shell-border,#476060);border-radius:8px;padding:10px 14px}
-.app-international-tabs a[aria-current="page"]{border-color:var(--fa-shell-accent,#64cba9);font-weight:700}
-.app-international-summary{margin:10px 0;line-height:1.6}
-#international-content{min-height:160px;padding:20px;border:1px solid var(--fa-shell-border,#476060);border-radius:12px}
-#international-content h3{margin:0 0 12px}
-#international-view-body{line-height:1.7}
-.app-international-back{margin-top:20px}
-@media(max-width:620px){.app-international-tabs{display:flex;overflow-x:auto;flex-wrap:nowrap;padding-bottom:6px}.app-international-tabs a{flex:0 0 auto;padding:8px 10px;font-size:13px}#international-content{padding:14px}}
-</style>
+  <script>(()=>{const v=location.pathname.split("/").filter(Boolean).at(-1),q=new URLSearchParams(location.search).get("view");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:["standings","postseason","fixtures","stats","history","rules","awards"].includes(q)?q:"standings"})();</script>
+  <link rel="stylesheet" href="/assets/competition-awards.css">
   <script src="/assets/international-cups.js" defer></script>
 </head>
 <body class="app-body">
@@ -189,25 +179,186 @@
           </div>
         </section>
         <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">
-          <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>
-          <div class="app-world-countries">
-            <section class="app-world-country" aria-labelledby="international-heading">
-              <h2 id="international-heading">Federation Cup</h2>
-              <p class="app-international-summary">24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club</p>
-              <nav class="app-international-tabs" aria-label="Federation Cup sections">
-                <a href="/competitions/federation-cup?view=overview" data-cup-tab="overview">Overview</a>
-                <a href="/competitions/federation-cup?view=standings" data-cup-tab="standings">Standings</a>
-                <a href="/competitions/federation-cup?view=fixtures" data-cup-tab="fixtures">Fixtures</a>
-                <a href="/competitions/federation-cup?view=stats" data-cup-tab="stats">Stats</a>
-                <a href="/competitions/federation-cup?view=history" data-cup-tab="history">History</a>
-              </nav>
-              <section id="international-content" aria-live="polite" aria-label="Federation Cup details">
-                <h3 id="international-view-heading">Overview</h3>
-                <p id="international-view-body">24 clubs qualify from eight countries. The six-round league phase is followed by playoffs, quarterfinals, semifinals and one neutral-site final. Season fixtures and results are not yet available.</p>
-              </section>
-              <p class="app-international-back"><a href="/competitions">← Competitions</a></p>
-            </section>
+          <header class="app-competition-header">
+            <div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>
+            <div class="app-competition-identity">
+              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Federation Cup</span></h1>
+              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>
+            </div>
+            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>
+            <a class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions">All competitions</a>
+          </header>
+          <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>
+          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
+            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-postseason" aria-controls="competition-panel-postseason" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPostseason">Playoffs / Playout</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
           </div>
+          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>
+          <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
+          <div class="app-world-standings">
+            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+              <table class="app-world-standing-table">
+                <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <thead>
+                  <tr>
+                  <th scope="col" data-app-i18n="standingsPosition">Pos</th>
+                  <th scope="col" class="app-world-standing-name-head" data-app-i18n="standingsClub">Club</th>
+                  <th scope="col" data-app-i18n="standingsPlayed">P</th>
+                  <th scope="col" data-app-i18n="standingsWon">W</th>
+                  <th scope="col" data-app-i18n="standingsDrawn">D</th>
+                  <th scope="col" data-app-i18n="standingsLost">L</th>
+                  <th scope="col" data-app-i18n="standingsFor">GF</th>
+                  <th scope="col" data-app-i18n="standingsAgainst">GA</th>
+                  <th scope="col" data-app-i18n="standingsDifference">GD</th>
+                  <th scope="col" data-app-i18n="standingsPoints">Pts</th>
+                  <th scope="col" data-app-i18n="standingsForm">Form</th>
+                  </tr>
+                </thead>
+                <tbody id="app-standings-body">
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </div>
+          <section id="competition-panel-postseason" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-postseason" tabindex="0" hidden><p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>
+          </section>
+          <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
+            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
+              <div class="app-fixtures-navigation">
+                <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+                <div class="language-control app-fixtures-select">
+                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-1" data-menu-value="1" data-fixture-round-choice="1" aria-selected="true"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;1</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-2" data-menu-value="2" data-fixture-round-choice="2" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;2</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-3" data-menu-value="3" data-fixture-round-choice="3" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;3</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-4" data-menu-value="4" data-fixture-round-choice="4" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;4</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-5" data-menu-value="5" data-fixture-round-choice="5" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;5</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-6" data-menu-value="6" data-fixture-round-choice="6" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;6</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-7" data-menu-value="7" data-fixture-round-choice="7" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;7</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-8" data-menu-value="8" data-fixture-round-choice="8" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;8</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-9" data-menu-value="9" data-fixture-round-choice="9" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;9</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-10" data-menu-value="10" data-fixture-round-choice="10" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;10</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-11" data-menu-value="11" data-fixture-round-choice="11" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;11</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-12" data-menu-value="12" data-fixture-round-choice="12" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;12</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-13" data-menu-value="13" data-fixture-round-choice="13" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;13</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-14" data-menu-value="14" data-fixture-round-choice="14" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;14</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-15" data-menu-value="15" data-fixture-round-choice="15" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;15</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-16" data-menu-value="16" data-fixture-round-choice="16" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;16</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-17" data-menu-value="17" data-fixture-round-choice="17" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;17</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-18" data-menu-value="18" data-fixture-round-choice="18" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;18</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-19" data-menu-value="19" data-fixture-round-choice="19" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;19</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-20" data-menu-value="20" data-fixture-round-choice="20" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;20</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-21" data-menu-value="21" data-fixture-round-choice="21" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;21</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-22" data-menu-value="22" data-fixture-round-choice="22" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;22</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-23" data-menu-value="23" data-fixture-round-choice="23" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;23</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-24" data-menu-value="24" data-fixture-round-choice="24" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;24</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-25" data-menu-value="25" data-fixture-round-choice="25" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;25</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-26" data-menu-value="26" data-fixture-round-choice="26" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;26</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-27" data-menu-value="27" data-fixture-round-choice="27" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;27</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-28" data-menu-value="28" data-fixture-round-choice="28" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;28</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-29" data-menu-value="29" data-fixture-round-choice="29" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;29</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-30" data-menu-value="30" data-fixture-round-choice="30" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;30</div>
+                </div>
+                </div>
+                <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+              </div>
+              <button type="button" class="language-trigger app-fixtures-current" id="app-fixtures-current" data-app-aria="fixturesCurrent" aria-label="Current matchday" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg><span data-app-i18n="fixturesCurrent">Current matchday</span></button>
+              <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+            </div>
+            <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>
+          </section>
+          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
+            <h2 data-app-i18n="competitionTabStats">Stats</h2>
+            <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
+          </section>
+          <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
+            <div class="app-history-empty" data-history-empty>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
+                <div class="app-world-standings"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+              </section>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
+                <div class="app-history-record-controls" data-history-record-controls role="group" data-app-aria="historyRecordScope" aria-label="Record scope">
+                  <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season records</button>
+                  <button type="button" data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time records</button>
+                </div>
+                <section class="app-history-record-group" data-history-team-records>
+                  <h4 data-app-i18n="historyTeamRecords">Team records</h4>
+                <div class="app-competition-stat-grid">
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyBestAttack">Best attack in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyBestDefence">Best defence in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyMostSeasonWins">Most wins in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyMostSeasonPoints">Most points in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyBestGoalDifference">Best goal difference in a season</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyLargestTitleMargin">Largest title-winning points margin</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTitles">Most league titles</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostPodiums">Most podium finishes</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyLongestTitleStreak">Most consecutive league titles</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTotalWins">Most wins overall</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTotalGoals">Most goals scored overall</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                  <article class="app-competition-stat-card" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyMostTotalPoints">Most points overall</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>
+                </div>
+                </section>
+                <section class="app-history-record-group" data-history-player-records>
+                  <h4 data-app-i18n="historyPlayerRecords">Player records</h4>
+                  <div class="app-competition-stat-grid">
+                    <article class="app-competition-stat-card" data-history-player-record="seasonGoals" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerSeasonGoals">Most goals in a season</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="seasonAssists" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerSeasonAssists">Most assists in a season</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="seasonCleanSheets" data-history-scope="season"><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerSeasonCleanSheets">Most clean sheets in a season</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalGoals" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalGoals">Most goals overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalAssists" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalAssists">Most assists overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalAppearances" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalAppearances">Most appearances overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                    <article class="app-competition-stat-card" data-history-player-record="totalCleanSheets" data-history-scope="all-time" hidden><h5 class="app-competition-stat-label" data-app-i18n="historyPlayerTotalCleanSheets">Most clean sheets overall</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>
+                  </div>
+                </section>
+              </section>
+            </div>
+            <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>
+          </section>
+          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
+            <div class="app-rules-content">
+            <section class="app-rules-section" aria-labelledby="rules-format">
+              <h3 id="rules-format" data-app-i18n="rulesFormatTitle">Competition format</h3>
+              <p>24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club</p>
+              <dl class="app-rules-metrics">
+                <div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">24</dd></div>
+                <div class="app-rules-metric"><dt data-app-i18n="rulesRounds">Matchdays</dt><dd>6</dd></div>
+                <div class="app-rules-metric"><dt data-app-i18n="rulesLegs">Legs</dt><dd>—</dd></div>
+                <div class="app-rules-metric"><dt data-app-i18n="rulesMatches">Matches</dt><dd>—</dd></div>
+              </dl>
+            </section>
+            <section class="app-rules-section" aria-labelledby="rules-points">
+              <h3 id="rules-points" data-app-i18n="rulesPointsTitle">Points system</h3>
+              <dl class="app-rules-points">
+                <div class="app-rules-metric"><dt data-app-i18n="rulesWin">Win</dt><dd>3</dd></div>
+                <div class="app-rules-metric"><dt data-app-i18n="rulesDraw">Draw</dt><dd>1</dd></div>
+                <div class="app-rules-metric"><dt data-app-i18n="rulesLoss">Loss</dt><dd>0</dd></div>
+              </dl>
+            </section>
+            <section class="app-rules-section" aria-labelledby="rules-ranking">
+              <h3 id="rules-ranking" data-app-i18n="rulesRankingTitle">League ranking</h3>
+              <p data-app-i18n="rulesCupPending">International competition rules are not available yet.</p>
+            </section>
+            <section class="app-rules-section" aria-labelledby="rules-outcomes">
+              <h3 id="rules-outcomes" data-app-i18n="rulesOutcomesTitle">Sporting outcomes</h3>
+              <p data-app-i18n="rulesCupPending">International competition rules are not available yet.</p>
+            </section>
+              <strong id="app-competition-level" hidden>—</strong>
+            </div>
+          </section>
+          <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
+          </section>
+          <script src="/assets/competition-tabs.js" defer></script>
+          <script src="/assets/competition-history.js" defer></script>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
@@ -231,17 +382,7 @@
     </section>
   </dialog>
 
-<script>
-(()=>{"use strict";
-const titles={overview:"Overview",standings:"Standings",fixtures:"Fixtures",stats:"Stats",history:"History"};
-const pending={standings:"The 24-club league table will appear when season standings are available.",fixtures:"The six league rounds and knockout fixtures will appear when the official schedule is generated.",stats:"Team and player statistics will appear once matches have been played.",history:"No completed international seasons are available yet."};
-const qs=new URLSearchParams(location.search),view=Object.hasOwn(titles,qs.get("view"))?qs.get("view"):"overview";
-const name=document.getElementById("international-heading").textContent;
-document.getElementById("international-view-heading").textContent=titles[view];
-if(view!=="overview")document.getElementById("international-view-body").textContent=pending[view];
-for(const tab of document.querySelectorAll("[data-cup-tab]")){if(tab.dataset.cupTab===view)tab.setAttribute("aria-current","page");}
-document.title=name+" — "+titles[view]+" — Football Architect";
-})();
-</script>
+  <script src="/assets/competition-fixtures.js" defer></script>
+  <script src="/assets/competition-awards.js" defer></script>
 </body>
 </html>
