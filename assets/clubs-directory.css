@@ -58,3 +58,8 @@
 .nav01-filter .language-option{box-sizing:border-box;width:100%;min-height:38px;padding:9px 10px;font-size:13px;line-height:1.35}
 .nav01-filter .language-option:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 @media(max-width:500px){.nav01-filter .language-menu{width:100%;max-width:100%}}
+
+/* CLUBS-LAYOUT-02E: stronger club-name hierarchy. */
+.nav01-card strong{font-size:18px;line-height:1.35}
+@media(max-width:720px){.nav01-card strong{font-size:16px}}
+@media(max-width:500px){.nav01-card strong{font-size:16px}}
