@@ -16,7 +16,9 @@
   <script src="/assets/app.js" defer></script>
   <script src="/assets/app-search.js" defer></script>
 <style>
-.app-international-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}
+.app-world-countries:has(.app-international-tabs){grid-template-columns:minmax(0,1fr)}
+.app-international-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:20px 0}
+.app-international-tabs a{text-align:center;min-width:0}
 .app-international-tabs a{border:1px solid var(--fa-shell-border,#476060);border-radius:8px;padding:10px 14px}
 .app-international-tabs a[aria-current="page"]{border-color:var(--fa-shell-accent,#64cba9);font-weight:700}
 .app-international-summary{margin:10px 0;line-height:1.6}
@@ -24,7 +26,7 @@
 #international-content h3{margin:0 0 12px}
 #international-view-body{line-height:1.7}
 .app-international-back{margin-top:20px}
-@media(max-width:390px){.app-international-tabs a{padding:8px 9px;font-size:13px}#international-content{padding:14px}}
+@media(max-width:620px){.app-international-tabs{display:flex;overflow-x:auto;flex-wrap:nowrap;padding-bottom:6px}.app-international-tabs a{flex:0 0 auto;padding:8px 10px;font-size:13px}#international-content{padding:14px}}
 </style>
   <script src="/assets/international-cups.js" defer></script>
 </head>
