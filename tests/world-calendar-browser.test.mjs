@@ -83,13 +83,14 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('#calendar-season-picker').getAttribute('role')"),'combobox');
     assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1');
     assert.equal(await runValue("document.querySelector('.calendar-event').hasAttribute('title')"),false);
-    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter'))");
-    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').textContent"),'Domestic round 4');
-    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false);
+    const fineHover=await runValue("matchMedia('(hover: hover) and (pointer: fine)').matches");
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse'}))");
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),!fineHover);
+    if(fineHover)assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').textContent"),'Domestic round 4');
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerleave'))");
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new FocusEvent('focusin',{bubbles:true}))");
-    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false,'Marker tooltip is keyboard-accessible');
+    assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),!fineHover,'Tooltip visibility follows hover capability');
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new FocusEvent('focusout',{bubbles:true}))");
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),true);
     assert.equal(await runValue("document.querySelector('[data-calendar-marker=\\\"N31\\\"]').textContent"),'P01');

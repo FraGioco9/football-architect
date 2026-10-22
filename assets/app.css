@@ -851,6 +851,7 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 .calendar-season-picker select{border:1px solid var(--line);border-radius:9px;padding:9px 30px 9px 12px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
 .calendar-event{cursor:pointer}
 .calendar-event:hover{filter:brightness(1.23);outline:none;outline-offset:0}
+@media(hover:none),(pointer:coarse){.calendar-event:hover{filter:none;outline:none}.calendar-marker-tooltip{display:none!important}}
 .calendar-event:focus-visible{filter:brightness(1.23);outline:2px solid var(--focus);outline-offset:1px}
 .calendar-event-dialog{width:min(560px,calc(100vw - 28px));max-height:85dvh;margin:auto;padding:0;border:0;border-radius:14px;background:var(--surface);color:var(--text);box-shadow:0 24px 70px #0008;animation:calendar-popup-in .2s ease both}
 .calendar-event-dialog::backdrop{background:#0009;animation:calendar-backdrop-in .2s ease both}
