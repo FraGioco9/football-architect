@@ -9,11 +9,11 @@ import {join,extname} from "node:path";
 import {once} from "node:events";
 import {setTimeout as delay} from "node:timers/promises";
 import {repositoryRoot,stagePublicArtifact,publicRequestFile} from "../tools/publication-guard.mjs";
-const chapters=["","world","divisions","clubs","movement","calendar","cups","records","explore"];
+const chapters=["","world","assets","divisions","clubs","movement","calendar","cups","records","explore"];
 const languages=["en","de","es","fr","it"];
 const mime={".html":"text/html",".css":"text/css",".js":"text/javascript",".svg":"image/svg+xml",".png":"image/png",".ico":"image/x-icon",".json":"application/json"};
 const binary=()=>{for(const x of [process.env.CHROME_BIN,"google-chrome","chromium","chromium-browser"].filter(Boolean))if(spawnSync(x,["--version"],{stdio:"ignore",timeout:4000}).status===0)return x;throw Error("Chromium required for GUIDE-02 visual QA");};
-test("GUIDE-02 Chromium: 9 pages x 1440/390/320 x dark/light x 5 languages, routes, assets and accessibility",{timeout:240000},async()=>{
+test("GUIDE-02 Chromium: 10 pages x 1440/390/320 x dark/light x 5 languages, routes, assets and accessibility",{timeout:240000},async()=>{
  const chrome=binary(),dir=mkdtempSync(join(tmpdir(),"fa-guide-browser-")),allowed=new Set(stagePublicArtifact(repositoryRoot,join(dir,"public"))),errors=[];
  const server=createServer((req,res)=>{try{const name=publicRequestFile(new URL(req.url,"http://127.0.0.1").pathname);if(!allowed.has(name))throw Error("not allowlisted");res.writeHead(200,{"Content-Type":mime[extname(name)]||"application/octet-stream"});res.end(readFileSync(join(dir,"public",name)));}catch{res.writeHead(404);res.end("Not found");}});
  server.listen(0,"127.0.0.1");await once(server,"listening");
@@ -53,6 +53,6 @@ test("GUIDE-02 Chromium: 9 pages x 1440/390/320 x dark/light x 5 languages, rout
     }
    }
   }
-  console.log("GUIDE-02 CHROMIUM PASS: 270 language/viewport/theme/page checks; 54 screenshots; staged artifact only");
+  console.log("GUIDE-02 CHROMIUM PASS: 300 language/viewport/theme/page checks; 60 screenshots; staged artifact only");
  }finally{ws?.close();if(proc.exitCode===null){const exited=new Promise(ok=>proc.once("exit",ok));proc.kill();await Promise.race([exited,delay(2500)]);}await new Promise(ok=>server.close(ok));for(let attempt=0;attempt<8;attempt++){try{rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:100});break;}catch(error){if(attempt===7)throw error;await delay(250);}}}
 });
