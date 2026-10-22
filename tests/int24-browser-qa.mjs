@@ -73,6 +73,7 @@ try {
   assert.equal(await page.locator('[data-dev-control="world-day-number"]').isDisabled(),true);
   assert.equal(await page.locator('[data-dev-control-row="world-day"] button:disabled').count(),2);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-season')),'0');
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-matchdays')),'0');
   if(route.startsWith('/competitions/')){
    assert.equal(await page.locator('#app-competition-season').isDisabled(),true);
    assert.equal(await page.locator('#app-competition-season-value').innerText(),'No active season');

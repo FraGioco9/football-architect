@@ -98,3 +98,21 @@ test('W56-18 season 0 clears legacy progress and provides no club summary',async
  const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
  assert.equal(createPreviewClubSummary(manifest.divisions[0],1,readPreviewProgress(s)),null);
 });
+
+test('W56-19 resuming from season 0 cannot reuse completed legacy matchdays',async()=>{
+ const {readPreviewProgress}=await import('../tools/dev-standings-preview-data.mjs');
+ const {s,clock}=make({[SEASON_KEY]:'3',[DAY_KEY]:'54',[ROUNDS_KEY]:'33'});
+ assert.equal(clock.setSeason(0),true);assert.equal(clock.setSeason(1),true);
+ assert.deepEqual(readPreviewProgress(s),{season:1,matchdays:0});
+ assert.equal(clock.nationalProgress(),0);
+});
+
+
+test('W56-20 a persisted inactive season ignores a stale Day and clears legacy rounds on resume',async()=>{
+ const {readPreviewProgress}=await import('../tools/dev-standings-preview-data.mjs');
+ const {s,clock}=make({[SEASON_KEY]:'0',[DAY_KEY]:'54',[ROUNDS_KEY]:'33'});
+ assert.deepEqual(clock.read(),{season:0,day:1});
+ assert.equal(clock.setSeason(1),true);
+ assert.deepEqual(clock.read(),{season:1,day:1});
+ assert.deepEqual(readPreviewProgress(s),{season:1,matchdays:0});
+});

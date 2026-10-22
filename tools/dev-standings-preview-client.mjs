@@ -80,8 +80,8 @@ async function refreshProgress(){
  return true;
 }
 async function setDebugProgress(key,value){
- const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay;
- try{saved=sessionStorage.getItem(key);savedDay=sessionStorage.getItem(DAY_KEY);sessionStorage.setItem(key,String(value));if(key===SEASON_KEY&&value===0)sessionStorage.setItem(DAY_KEY,"1")}catch{try{if(saved===null)sessionStorage.removeItem(key);else if(saved!==undefined)sessionStorage.setItem(key,saved)}catch{}return false}
+ const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay,savedRounds;
+ try{saved=sessionStorage.getItem(key);savedDay=sessionStorage.getItem(DAY_KEY);savedRounds=sessionStorage.getItem(ROUNDS_KEY);sessionStorage.setItem(key,String(value));if(key===SEASON_KEY&&(value===0||previous.season===0)){sessionStorage.setItem(DAY_KEY,"1");sessionStorage.setItem(ROUNDS_KEY,"0")}}catch{try{if(saved===null)sessionStorage.removeItem(key);else if(saved!==undefined)sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else if(savedDay!==undefined)sessionStorage.setItem(DAY_KEY,savedDay);if(savedRounds===null)sessionStorage.removeItem(ROUNDS_KEY);else if(savedRounds!==undefined)sessionStorage.setItem(ROUNDS_KEY,savedRounds)}catch{}return false}
  const revision=++progressRevision;
  if(key===SEASON_KEY){debugSeason=value;if(value===0)matchdays=0}else matchdays=value;
  let ok=false;
@@ -89,7 +89,7 @@ async function setDebugProgress(key,value){
  if(revision!==progressRevision)return true;
  if(ok){if(key===SEASON_KEY&&value>0)devWorldClock.publish();return true;}
  debugSeason=previous.season;matchdays=previous.matchdays;
- try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else sessionStorage.setItem(DAY_KEY,savedDay)}catch{}
+ try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else sessionStorage.setItem(DAY_KEY,savedDay);if(savedRounds===null)sessionStorage.removeItem(ROUNDS_KEY);else sessionStorage.setItem(ROUNDS_KEY,savedRounds)}catch{}
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(previousView)window.faCompetitionRoute?.set?.({season:previousView},{replace:true});
  syncDebugControls();

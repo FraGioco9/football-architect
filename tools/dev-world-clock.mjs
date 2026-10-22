@@ -13,7 +13,7 @@ export const nationalProgress=day=>{
 };
 export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
   let revision=0;
-  const read=()=>Object.freeze({season:stored(storage,SEASON_KEY,0,4,1),day:stored(storage,DAY_KEY,1,56,1)});
+  const read=()=>{const season=stored(storage,SEASON_KEY,0,4,1);return Object.freeze({season,day:season===0?1:stored(storage,DAY_KEY,1,56,1)})};
   const snapshot=s=>s.season===0?null:({source:{kind:'dev',reference:'fictional DEV clock'},current:{season:s.season,day:s.day}});
   const emit=(s,previous)=>{
     dispatch('fa:world-clock-snapshot',snapshot(s));
@@ -25,13 +25,14 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
     if(next.season===0)next={season:0,day:1};
     const before=read();
     if(before.season===next.season&&before.day===next.day)return true;
-    let savedSeason,savedDay;
+    let savedSeason,savedDay,savedRounds;
     try{
-      savedSeason=storage.getItem(SEASON_KEY);savedDay=storage.getItem(DAY_KEY);
-      storage.setItem(SEASON_KEY,String(next.season));storage.setItem(DAY_KEY,String(next.day));
+      savedSeason=storage.getItem(SEASON_KEY);savedDay=storage.getItem(DAY_KEY);savedRounds=storage.getItem(ROUNDS_KEY);
+      storage.setItem(SEASON_KEY,String(next.season));storage.setItem(DAY_KEY,String(next.day));if(next.season===0||before.season===0)storage.setItem(ROUNDS_KEY,"0");
     }catch{
       try{if(savedSeason===null)storage.removeItem(SEASON_KEY);else if(savedSeason!==undefined)storage.setItem(SEASON_KEY,savedSeason);
-        if(savedDay===null)storage.removeItem(DAY_KEY);else if(savedDay!==undefined)storage.setItem(DAY_KEY,savedDay)}catch{}
+        if(savedDay===null)storage.removeItem(DAY_KEY);else if(savedDay!==undefined)storage.setItem(DAY_KEY,savedDay);
+        if(savedRounds===null)storage.removeItem(ROUNDS_KEY);else if(savedRounds!==undefined)storage.setItem(ROUNDS_KEY,savedRounds)}catch{}
       return false;
     }
     revision++;
