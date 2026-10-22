@@ -54,3 +54,15 @@
 /* GUIDE-02: breadcrumb closer to the site header. */
 .guide-main{padding-top:18px}
 @media(max-width:700px){.guide-main{padding-top:12px}.guide-nav{margin-bottom:12px}}
+
+/* GUIDE-02 UI-UNIFORM-01: coherent chapter rhythm and visible current navigation. */
+.guide-sidebar-link[aria-current="page"]{border-color:var(--border);background:rgba(41,116,91,.21);color:var(--text)}
+.guide-content>.guide-section:first-child{border-top:0;padding-top:0}
+.guide-content>.guide-section{width:100%;min-width:0}
+.guide-content>.guide-section h2{max-width:100%;overflow-wrap:anywhere}
+.guide-content>.guide-section p{max-width:76ch}
+.guide-content>.guide-chapter-link,.guide-content>.guide-explore-links{margin-top:20px}
+.guide-content>.guide-explore-links{display:flex;flex-wrap:wrap;align-items:center;column-gap:24px;row-gap:8px}
+.guide-content>.guide-facts,.guide-content>.guide-format-facts{max-width:100%}
+.guide-content>.guide-section a,.guide-content>.guide-explore-links a{overflow-wrap:anywhere}
+@media(max-width:700px){.guide-content>.guide-explore-links{flex-direction:column;align-items:flex-start;gap:10px}.guide-content>.guide-chapter-link{margin-top:14px}}
