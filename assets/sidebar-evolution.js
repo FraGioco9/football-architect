@@ -1,10 +1,10 @@
 /* NAV-01: initialize static navigation before first paint; no career writes. */
 (()=>{'use strict';const nav=document.querySelector('.fa-shell-nav[data-nav01-static]');if(!nav)return;
 if(nav.dataset.nav01Bound==='true'){for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));window.faSidebarPaint?.();return;}
-const lang={en:['Competitions','Domestic','International','Football World','Clubs','Guide'],de:['Wettbewerbe','National','International','Fußballwelt','Vereine','Handbuch'],es:['Competiciones','Nacionales','Internacionales','Mundo del fútbol','Clubes','Guía'],fr:['Compétitions','Nationales','Internationales','Monde du football','Clubs','Guide'],it:['Competizioni','Nazionali','Internazionali','Mondo del calcio','Club','Guida']};
+const lang={en:['World','Domestic','International','Explore','Clubs','Guide'],de:['Welt','National','International','Entdecken','Vereine','Handbuch'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida']};
 const baseLabels={en:['Home','Dashboard','Calendar','Settings','Career pages'],de:['Start','Dashboard','Kalender','Einstellungen','Karriereseiten'],es:['Inicio','Panel','Calendario','Ajustes','Páginas de carrera'],fr:['Accueil','Tableau de bord','Calendrier','Paramètres','Pages de carrière'],it:['Inizio','Dashboard','Calendario','Impostazioni','Pagine della carriera']};
-const expandLabels={en:'Expand competitions',de:'Wettbewerbe aufklappen',es:'Expandir competiciones',fr:'Développer les compétitions',it:'Espandi competizioni'};
-const collapseLabels={en:'Collapse competitions',de:'Wettbewerbe zuklappen',es:'Contraer competiciones',fr:'Réduire les compétitions',it:'Comprimi competizioni'};
+const expandLabels={en:'Expand world navigation',de:'Weltnavigation aufklappen',es:'Expandir navegación del mundo',fr:'Développer la navigation du monde',it:'Espandi navigazione del mondo'};
+const collapseLabels={en:'Collapse world navigation',de:'Weltnavigation zuklappen',es:'Contraer navegación del mundo',fr:'Réduire la navigation du monde',it:'Comprimi navigazione del mondo'};
 const button=nav.querySelector('.nav01-expand'),submenu=nav.querySelector('#nav01-children');
 try{const saved=localStorage.getItem('football-architect:language');if(Object.hasOwn(lang,saved))document.documentElement.lang=saved;}catch{}
 function paint(){
@@ -13,7 +13,6 @@ function paint(){
  const labels=baseLabels[locale];
  ['navHome','dashboard','calendar','settings'].forEach((key,i)=>nav.querySelectorAll('[data-app-i18n="'+key+'"]').forEach(el=>el.textContent=labels[i]));
  ['dashboard','calendar','settings'].forEach((key,i)=>nav.querySelector('[data-app-aria="'+key+'"]')?.setAttribute('aria-label',labels[i+1]));
- nav.querySelectorAll('[data-app-i18n="navCompetitions"]').forEach(el=>el.textContent=lang[locale][0]);
  nav.setAttribute('aria-label',labels[4]);nav.querySelector('#app-nav-divisions').setAttribute('aria-label',lang[locale][0]);
  button.setAttribute('aria-label',(button.getAttribute('aria-expanded')==='true'?collapseLabels:expandLabels)[locale]);
 }
@@ -28,6 +27,21 @@ button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!
 button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();expand(button.getAttribute('aria-expanded')!=='true');}});
 expand(onCompetition||opened);
 const brand=document.querySelector('.fa-shell-sidebar .app-brand-symbol');if(brand){const source=brand.getAttribute('src');if(source)brand.setAttribute('src',source.replace(/-(?:dark|light)\.svg$/,'-'+(document.documentElement.dataset.theme==='light'?'light':'dark')+'.svg'));}
+// Fragment targets live in the central scroll pane, not in the document viewport.
+let fragmentFrame=0;
+function syncFragment(){
+ cancelAnimationFrame(fragmentFrame);fragmentFrame=requestAnimationFrame(()=>{
+  let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}if(!id)return;
+  const pane=document.querySelector('.fa-shell-content-scroll'),target=document.getElementById(id);
+  if(!pane||!target||!pane.contains(target))return;
+  const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;
+  pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding,behavior:'instant'});
+ });
+}
+window.addEventListener('hashchange',syncFragment);
+window.addEventListener('load',syncFragment,{once:true});window.addEventListener('pageshow',syncFragment);
+document.addEventListener('DOMContentLoaded',syncFragment,{once:true});
+nav.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(!link)return;const url=new URL(link.href,location.href);if(url.pathname===location.pathname&&url.hash)syncFragment();});
 window.faSidebarPaint=paint;nav.dataset.nav01Bound='true';
 new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});paint();
 })();

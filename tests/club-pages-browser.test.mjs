@@ -120,6 +120,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        await wait("document.fonts.status==='loaded'");
        const before=await run(navSnapshot);
        assert.equal(before.lang,lang);assert.equal(before.theme,theme);
+       assert.equal(await run("document.querySelector('#app-nav-world-title').textContent"),{en:'World',de:'Welt',es:'Mundo',fr:'Monde',it:'Mondo'}[lang]);
+       assert.equal(await run("document.querySelector('#nav01-world-title').textContent"),{en:'Explore',de:'Entdecken',es:'Explorar',fr:'Explorer',it:'Esplora'}[lang]);
+       assert.equal(await run("document.querySelectorAll('.nav01-children svg[aria-hidden=\"true\"]').length"),2);
        assert.equal(before.nodes.filter(n=>n.current==='page').length,1);
        assert.equal(before.nodes.filter(n=>n.active).length,1);
        const capture=width===1440&&theme==='dark'&&lang==='it'&&path==='/clubs'&&mode==='cold';
@@ -134,6 +137,30 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
     await cmd('Network.setCacheDisabled',{cacheDisabled:false});
+    const fragmentAligned="(()=>{const pane=document.querySelector('.fa-shell-content-scroll'),target=document.getElementById(location.hash.slice(1));if(!pane||!target)return false;const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const desired=pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,desired));return Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0&&document.querySelector('.fa-shell-sidebar').getBoundingClientRect().top===0})()";
+    for(const width of [1440,390])for(const theme of ['dark','light']){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});`);
+     for(const hash of ['domestic','international']){
+      await cmd('Page.navigate',{url:origin+'/dashboard'});
+      await wait("location.pathname==='/dashboard'&&document.readyState==='complete'");
+      await cmd('Page.navigate',{url:origin+'/competitions#'+hash});
+      await wait("location.pathname==='/competitions'&&document.readyState==='complete'");await wait(fragmentAligned);
+      assert.equal(await run('document.documentElement.dataset.theme'),theme);
+      // Deliberately leave the anchor before reloading: hash wins over scroll restoration.
+      await run("(()=>{const pane=document.querySelector('.fa-shell-content-scroll');pane.scrollTop=pane.scrollTop>1?0:pane.scrollHeight})()");
+      await cmd('Page.reload',{ignoreCache:true});
+      await wait("document.readyState==='complete'");await wait(fragmentAligned);
+     }
+     if(width===1440){
+      await run("document.querySelector('.nav01-children a[href$=\"#domestic\"]').click()");
+      await wait("location.hash==='#domestic'");await wait(fragmentAligned);
+      await run("document.querySelector('.nav01-children a[href$=\"#international\"]').click()");
+      await wait("location.hash==='#international'");await wait(fragmentAligned);
+      await run('history.back()');await wait("location.hash==='#domestic'");await wait(fragmentAligned);
+     }
+    }
+    console.log('NAV_FRAGMENT: cold load, scrolled refresh, desktop links and browser history passed; central pane scrolls, sidebar stays fixed');
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
     const knownPath='/clubs/'+country.toLowerCase()+'/'+id.toString()+'/overview';
