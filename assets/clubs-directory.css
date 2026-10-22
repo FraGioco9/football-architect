@@ -44,3 +44,9 @@
 .nav01-filters{grid-template-columns:minmax(220px,2fr) repeat(2,minmax(155px,1fr))}
 @media(max-width:1160px){.nav01-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.nav01-filters{grid-template-columns:1fr}}
+
+/* CLUBS-LAYOUT-02C: match the shell's title metrics and use the full page width. */
+.nav01-directory{max-width:none;width:100%;margin:0;min-width:0}
+.nav01-directory .app-page-title{margin:0;padding:0;border:0;font-size:var(--app-page-title-size);line-height:1.2;letter-spacing:-.035em}
+@media(max-width:720px){.nav01-directory .app-page-title{margin:0;padding:0;border:0;font-size:var(--app-page-title-size)}}
+.nav01-filters>input[type="search"]:focus,.nav01-filters>input[type="search"]:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 1px var(--primary);background:var(--surface-raised)}
