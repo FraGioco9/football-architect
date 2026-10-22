@@ -7,3 +7,6 @@
 html[data-theme="light"] .nav01-children a:hover{background:#EAF2ED;color:#17664E}
 @media(prefers-reduced-motion:reduce){.nav01-children a{transition:none}}
 
+
+/* Height animation must clip child links until the submenu has revealed them. */
+.nav01-children.nav01-is-animating{overflow:hidden}
