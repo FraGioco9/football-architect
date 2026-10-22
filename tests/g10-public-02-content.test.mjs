@@ -71,11 +71,12 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
    }
   }
   const publicManifest=JSON.parse(readFileSync(join(debugDir,"competitions/_shared/manifest.json"),"utf8"));
-  fields(publicManifest,["schemaVersion","approved","profile","clubCrests","divisions"]);
+  fields(publicManifest,["schemaVersion","approved","profile","clubCrests","divisions","competitions"]);
   assert.deepEqual(publicManifest.profile,competitionModel.profile);
   assert.equal(competitionModel.validManifest(publicManifest),true);
   assert.equal(publicManifest.approved,false);
   assert.equal(publicManifest.divisions.length,16);
+  assert.equal(publicManifest.competitions.length,18);
   const divFields=["id","name","countryId","countryName","flagAsset","tier","capacity","clubs"];
   const clubFields=["countryId","clubId","abbr","fullName","primaryName","stadiumName"];
   const allClubIds=new Set();
