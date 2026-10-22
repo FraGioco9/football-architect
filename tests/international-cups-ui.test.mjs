@@ -49,7 +49,7 @@ test("INT-24: shared theme controls and responsive CSS exist",()=>{
     const html=read("competitions/"+slug+"/index.html");
     assert.ok(html.includes('src="/assets/theme.js"'));
     assert.ok(html.includes('href="/assets/app.css"'));
-    assert.match(html,/@media\(max-width:390px\)/);
+    assert.match(html,/@media\(max-width:620px\)/);
     assert.ok(html.includes('class="app-international-tabs"'));
   }
 });
