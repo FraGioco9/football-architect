@@ -1,11 +1,7 @@
 name: INT-24 Chromium QA
 on:
   pull_request:
-    paths:
-      - 'assets/international-cups.js'
-      - 'competitions/**'
-      - 'tests/int24-browser-qa.mjs'
-      - '.github/workflows/int24-browser-qa.yml'
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 permissions:
   contents: read
