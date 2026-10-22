@@ -9,6 +9,13 @@
   const asset=Object.hasOwn(catalog,id)?catalog[id]:null;
   if(rendered.has(host)&&rendered.get(host)===asset)return;
   rendered.set(host,asset);
+  const existing=host.querySelector('.app-club-crest-image');
+  if(existing&&typeof asset==='string'&&existing.getAttribute('src')==='/'+asset){
+   delete host.dataset.clubCrestPending;
+   delete host.dataset.clubCrestFallback;
+   host.dataset.clubCrestLoaded='true';
+   return;
+  }
   for(const image of host.querySelectorAll('.app-club-crest-image'))image.remove();
   delete host.dataset.clubCrestLoaded;
   delete host.dataset.clubCrestPending;
