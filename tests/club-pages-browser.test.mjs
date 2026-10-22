@@ -204,14 +204,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('[data-dev-control=season-number]')!==null");
     await run("document.querySelector('.fa-dev-widget-button').click()");
     await run("(()=>{const control=document.querySelector('[data-dev-control=season-number]');control.value='3';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
-    await wait("document.querySelector('.club-competition-context')?.textContent.includes('3')");
+    await wait("document.querySelector('[data-club-position] a')?.getAttribute('href').endsWith('season=3')");
+    assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No Season/Preview caption in DEV');
     await run("(()=>{const control=document.querySelector('[data-dev-control=world-day-number]');control.value='28';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
     const advanced=createPreviewStandings(division,16,3),advancedIndex=advanced.rows.findIndex(r=>r.club.clubId===1);
     await wait("document.querySelector('[data-club-points]')?.textContent==="+JSON.stringify(String(advanced.rows[advancedIndex].pts)));
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(advancedIndex+1));
     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=3&matchday=17');
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
-    await wait("document.querySelector('[data-club-points]')?.textContent==='0'&&document.querySelector('.club-competition-context')?.textContent.includes('1')");
+    await wait("document.querySelector('[data-club-points]')?.textContent==='0'&&document.querySelector('.club-competition-next a')?.getAttribute('href').includes('season=1&matchday=1')");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),'—');
     await visit('/clubs/br/40/history',devOrigin);
     await wait("document.querySelector('.fa-dev-widget')!==null");
