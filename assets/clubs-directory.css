@@ -75,3 +75,7 @@ html[data-theme="light"] .nav01-filters>input[type="search"]:focus,html[data-the
 
 /* CLUBS-LAYOUT-02H: focus uses the same box border only, with no outer ring. */
 .nav01-filters>input[type="search"]:focus,.nav01-filters>input[type="search"]:focus-visible{outline:none!important;outline-offset:0;box-shadow:none!important;border-color:var(--border)}
+
+/* CLUBS-LAYOUT-02I: match the neutral Fixtures arrow hover border. */
+.nav01-card:hover{border-color:var(--border);background:var(--surface);box-shadow:none}
+.nav01-card:focus-visible{border-color:var(--border)}
