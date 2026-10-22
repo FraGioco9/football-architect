@@ -293,7 +293,7 @@ jobs:
             const manifest=JSON.parse(manifestBytes);
             demand(manifest.schemaVersion===1&&manifest.contract==="protected_debug","Invalid Debug manifest identity");
             verifyFiles(manifest.files,actual.filter(path=>path!==manifestPath));
-            const modules=["debug-settings","standings-client","debug-widget","standings-data","dev-standings-preview-data","stats-client","stats-data"].map(name=>"__fa_dev__/"+name+".mjs");
+            const modules=["debug-settings","standings-client","debug-widget","dev-world-clock","standings-data","dev-standings-preview-data","stats-client","stats-data"].map(name=>"__fa_dev__/"+name+".mjs");
             demand(JSON.stringify(actual.filter(path=>path.startsWith("__fa_dev__/")))===JSON.stringify([...modules,manifestPath].sort()),"Unexpected Debug modules");
           }
           console.log("Post-download inventory and hashes verified:",contract,actual.length,approvedInventory);
