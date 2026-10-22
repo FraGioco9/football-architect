@@ -32,7 +32,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
   assert.deepEqual(assertProtectedDebugArtifact(debugDir),debug);
   const extras=debug.filter(path=>!pub.includes(path));
   assert.deepEqual(extras,DEBUG_PATHS);
-  assert.equal(debug.length,pub.length+8);
+  assert.equal(debug.length,pub.length+DEBUG_PATHS.length);
   for(const path of pub){
    const publicBytes=readFileSync(join(pubDir,path));
    const debugBytes=readFileSync(join(debugDir,path));
