@@ -159,9 +159,9 @@
   }
   marker.removeAttribute('title');
   marker.setAttribute('aria-label',description);
-  marker.addEventListener('pointerenter',()=>{tooltip.textContent=description;placeTooltip(marker)});
+  marker.addEventListener('pointerenter',event=>{if(event.pointerType!=='mouse'||!window.matchMedia('(hover: hover) and (pointer: fine)').matches)return;tooltip.textContent=description;placeTooltip(marker)});
   marker.addEventListener('pointerleave',()=>{tooltip.hidden=true});
-  marker.addEventListener('focusin',()=>{tooltip.textContent=namesFor(event);placeTooltip(marker)});
+  marker.addEventListener('focusin',()=>{if(!window.matchMedia('(hover: hover) and (pointer: fine)').matches)return;tooltip.textContent=namesFor(event);placeTooltip(marker)});
   marker.addEventListener('focusout',()=>{tooltip.hidden=true});
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
