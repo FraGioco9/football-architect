@@ -93,7 +93,7 @@ const indexContent = function indexContent(){
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
  '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
  }).join("\n");
- return '          <div class="app-world-countries" id="domestic">\n'+cards+'\n          </div>\n          <section id="international" class="app-panel" aria-label="International competitions"><h2>International competitions</h2><p>International competition pages are being prepared.</p></section>';
+ return '          <section id="domestic" class="nav01-competition-section" aria-labelledby="domestic-heading"><h2 id="domestic-heading" data-nav01-section="1">Domestic</h2>\n          <div class="app-world-countries">\n'+cards+'\n          </div></section>\n          <section id="international" class="nav01-competition-section" aria-labelledby="international-heading"><h2 id="international-heading" data-nav01-section="2">International</h2><div class="app-panel"><p data-nav01-pending>International competition pages are being prepared.</p></div></section>';
 };
 const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,
  renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});

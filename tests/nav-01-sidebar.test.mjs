@@ -51,7 +51,17 @@ test('NAV-01 World and Explore labels and submenu icons are present in initial H
  const html=readFileSync(new URL('../competitions/index.html',import.meta.url),'utf8');
  const nav=html.slice(html.indexOf('<nav class="fa-shell-nav"'),html.indexOf('</nav>'));
  assert.match(nav,/data-nav01="0">World/);
+ assert.match(nav,/data-nav01="6">Competitions/);
  assert.match(nav,/data-nav01="3">Explore/);
  for(const hash of ['domestic','international'])assert.match(nav,new RegExp('href="/competitions#'+hash+'"[^>]*><svg[^>]+aria-hidden="true"'));
  assert.ok(!nav.includes('data-app-i18n="navCompetitions"'),'Sidebar World label must not be overwritten by the Competitions page dictionary');
+});
+
+test('NAV-01 fragments are aligned before revealing the central pane',()=>{
+ const html=readFileSync(new URL('../competitions/index.html',import.meta.url),'utf8');
+ for(const id of ['domestic','international'])assert.match(html,new RegExp('<section id="'+id+'"[^>]+aria-labelledby="'+id+'-heading"'));
+ assert.match(html,/id="domestic-heading" data-nav01-section="1">Domestic/);
+ assert.match(html,/id="international-heading" data-nav01-section="2">International/);
+ assert.ok(html.indexOf('data-nav01-fragment-state')<html.indexOf('<body'));
+ assert.ok(html.indexOf('data-nav01-fragment-align')>html.indexOf('</main>'));
 });

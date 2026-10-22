@@ -84,6 +84,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
     });
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`if(location.hash){window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample)}`});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -136,21 +137,33 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      }
     }
     console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
-    await cmd('Network.setCacheDisabled',{cacheDisabled:false});
     const fragmentAligned="(()=>{const pane=document.querySelector('.fa-shell-content-scroll'),target=document.getElementById(location.hash.slice(1));if(!pane||!target)return false;const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const desired=pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,desired));return Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0&&document.querySelector('.fa-shell-sidebar').getBoundingClientRect().top===0})()";
+    const fragmentLoad=async(method,params,context)=>{
+     holdDeferred=true;
+     try{
+      await cmd(method,params);
+      await wait("document.readyState==='interactive'&&window.__navFragmentFrames?.length>0");
+      const frames=await run('window.__navFragmentFrames');
+      assert.ok(frames.every(frame=>frame.aligned),'No visible frame starts at the wrong scroll position: '+JSON.stringify({context,frames}));
+      assert.equal(await run(fragmentAligned),true);
+      if(context.theme==='dark'&&context.hash==='international'&&context.mode==='refresh'){
+       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:80,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('NAV_FRAGMENT_PAINT|'+context.width+'|'+i+'|'+chunks.length+'|'+chunk));
+      }
+      holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
+      await wait("document.readyState==='complete'");await wait(fragmentAligned);
+     }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+    };
     for(const width of [1440,390])for(const theme of ['dark','light']){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});`);
      for(const hash of ['domestic','international']){
       await cmd('Page.navigate',{url:origin+'/dashboard'});
       await wait("location.pathname==='/dashboard'&&document.readyState==='complete'");
-      await cmd('Page.navigate',{url:origin+'/competitions#'+hash});
-      await wait("location.pathname==='/competitions'&&document.readyState==='complete'");await wait(fragmentAligned);
+      await fragmentLoad('Page.navigate',{url:origin+'/competitions#'+hash},{width,theme,hash,mode:'cold'});
       assert.equal(await run('document.documentElement.dataset.theme'),theme);
       // Deliberately leave the anchor before reloading: hash wins over scroll restoration.
       await run("(()=>{const pane=document.querySelector('.fa-shell-content-scroll');pane.scrollTop=pane.scrollTop>1?0:pane.scrollHeight})()");
-      await cmd('Page.reload',{ignoreCache:true});
-      await wait("document.readyState==='complete'");await wait(fragmentAligned);
+      await fragmentLoad('Page.reload',{ignoreCache:true},{width,theme,hash,mode:'refresh'});
      }
      if(width===1440){
       await run("document.querySelector('.nav01-children a[href$=\"#domestic\"]').click()");
@@ -160,7 +173,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       await run('history.back()');await wait("location.hash==='#domestic'");await wait(fragmentAligned);
      }
     }
-    console.log('NAV_FRAGMENT: cold load, scrolled refresh, desktop links and browser history passed; central pane scrolls, sidebar stays fixed');
+    console.log('NAV_FRAGMENT: first visible frames aligned with deferred scripts held; cold load, scrolled refresh, desktop links and browser history passed');
+    await cmd('Network.setCacheDisabled',{cacheDisabled:false});
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
     const knownPath='/clubs/'+country.toLowerCase()+'/'+id.toString()+'/overview';
