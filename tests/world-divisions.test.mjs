@@ -114,7 +114,7 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and seven tabs
   "app-standings-caption"]){
   assert.ok(shared.includes('id="'+id+'"'),id);
  }
- assert.ok(shared.includes('data-app-i18n="navCompetitions">Competitions'));
+ assert.ok(shared.includes('data-nav01="0">World'));
  assert.ok(shared.includes('class="app-competition-header"'));
  assert.ok(shared.includes('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"'));
  assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions"'));

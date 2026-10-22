@@ -36,13 +36,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
- let refuseCrests=false;
+ let refuseCrests=false,holdDeferred=false;const deferredResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
-   res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));
+   const send=()=>{res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));};
+   if(holdDeferred&&file.endsWith('.js')&&file!=='assets/theme.js')deferredResponses.push(send);else send();
   }catch{res.writeHead(404);res.end()}
  });
  const router=createPreviewServer();let devManifestDelay=0;
@@ -82,7 +83,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error("CDP timeout "+method));},15000);
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
     });
+    await cmd('Page.enable');
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -103,6 +106,76 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.text);
     });
     const manifest=JSON.parse(readFileSync(join(artifact,'clubs/_shared/manifest.json'),'utf8'));
+    // Observe actual first contentful paint while all deferred JS is held back.
+    // Releasing those responses must not change sidebar labels, selection or geometry.
+    const navSnapshot="(()=>{const nav=document.querySelector('.fa-shell-nav');return {lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,expanded:nav.querySelector('.nav01-expand').getAttribute('aria-expanded'),nodes:[...nav.querySelectorAll('h2,a,button')].map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {text:el.textContent.trim(),label:el.getAttribute('aria-label'),current:el.getAttribute('aria-current'),active:el.classList.contains('is-active'),x:r.x,y:r.y,w:r.width,h:r.height,display:s.display}})}})()";
+    await cmd('Network.enable');await cmd('Network.setCacheDisabled',{cacheDisabled:true});
+    for(const width of [1440,390])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await cmd('Page.navigate',{url:origin+'/dashboard'});await wait("document.readyState==='complete'");
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});sessionStorage.setItem('fa-nav01-expanded','true');`);
+     for(const path of ['/dashboard','/clubs','/clubs/it/1/overview','/competitions/it-1/standings'])for(const mode of ['cold','refresh']){
+      holdDeferred=true;
+      try{
+       if(mode==='cold')await cmd('Page.navigate',{url:origin+path});else await cmd('Page.reload',{ignoreCache:true});
+       await wait("document.readyState==='interactive'&&document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
+       await wait("document.fonts.status==='loaded'");
+       const before=await run(navSnapshot);
+       assert.equal(before.lang,lang);assert.equal(before.theme,theme);
+       assert.equal(await run("document.querySelector('#app-nav-world-title').textContent"),{en:'World',de:'Welt',es:'Mundo',fr:'Monde',it:'Mondo'}[lang]);
+       assert.equal(await run("document.querySelector('#nav01-world-title').textContent"),{en:'Explore',de:'Entdecken',es:'Explorar',fr:'Explorer',it:'Esplora'}[lang]);
+       assert.equal(await run("document.querySelectorAll('.nav01-children svg[aria-hidden=\"true\"]').length"),2);
+       assert.equal(before.nodes.filter(n=>n.current==='page').length,1);
+       assert.equal(before.nodes.filter(n=>n.active).length,1);
+       const capture=width===1440&&theme==='dark'&&lang==='it'&&path==='/clubs'&&mode==='cold';
+       const captureNav=async label=>{const clip=await run("(()=>{const r=document.querySelector('.fa-shell-sidebar').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip});const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('NAV_FIRST_PAINT|'+label+'|'+i+'|'+chunks.length+'|'+chunk));};
+       if(capture)await captureNav('before');
+       holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
+       await wait("document.readyState==='complete'");await delay(50);
+       const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
+       if(capture)await captureNav('after');
+      }catch(error){throw new Error('NAV first paint '+JSON.stringify({width,theme,lang,path,mode})+': '+error.message,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+     }
+    }
+    console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
+    const fragmentAligned="(()=>{const pane=document.querySelector('.fa-shell-content-scroll'),target=document.getElementById(location.hash.slice(1));if(!pane||!target)return false;const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const desired=pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,desired));return Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0&&document.querySelector('.fa-shell-sidebar').getBoundingClientRect().top===0})()";
+    const fragmentLoad=async(method,params,context)=>{
+     holdDeferred=true;
+     try{
+      await cmd(method,params);
+      await wait("document.readyState==='interactive'&&window.__navFragmentFrames?.length>0");
+      const frames=await run('window.__navFragmentFrames');
+      assert.ok(frames.every(frame=>frame.aligned),'No visible frame starts at the wrong scroll position: '+JSON.stringify({context,frames}));
+      assert.equal(await run(fragmentAligned),true);
+      if(context.theme==='dark'&&context.hash==='international'&&context.mode==='refresh'){
+       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:80,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('NAV_FRAGMENT_PAINT|'+context.width+'|'+i+'|'+chunks.length+'|'+chunk));
+      }
+      holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
+      await wait("document.readyState==='complete'");await wait(fragmentAligned);
+     }catch(error){const diagnostic=await run("JSON.stringify({href:location.href,state:document.readyState,pending:document.documentElement.dataset.nav01Fragment,visibility:getComputedStyle(document.querySelector('.fa-shell-content-scroll')).visibility,frames:window.__navFragmentFrames,errors:window.__faRuntimeErrors,bootstrap:!!window.faSidebarAlignFragment,tail:!!document.querySelector('[data-nav01-fragment-align]')})");throw new Error(JSON.stringify(context)+' '+error.message+' '+diagnostic,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+    };
+    for(const width of [1440,390])for(const theme of ['dark','light']){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});`);
+     for(const hash of ['domestic','international']){
+      await cmd('Page.navigate',{url:origin+'/dashboard'});
+      await wait("location.pathname==='/dashboard'&&document.readyState==='complete'");
+      await fragmentLoad('Page.navigate',{url:origin+'/competitions#'+hash},{width,theme,hash,mode:'cold'});
+      assert.equal(await run('document.documentElement.dataset.theme'),theme);
+      // Deliberately leave the anchor before reloading: hash wins over scroll restoration.
+      await run("(()=>{const pane=document.querySelector('.fa-shell-content-scroll');pane.scrollTop=pane.scrollTop>1?0:pane.scrollHeight})()");
+      await fragmentLoad('Page.reload',{ignoreCache:true},{width,theme,hash,mode:'refresh'});
+     }
+     if(width===1440){
+      await run("document.querySelector('.nav01-children a[href$=\"#domestic\"]').click()");
+      await wait("location.hash==='#domestic'");await wait(fragmentAligned);
+      await run("document.querySelector('.nav01-children a[href$=\"#international\"]').click()");
+      await wait("location.hash==='#international'");await wait(fragmentAligned);
+      await run('history.back()');await wait("location.hash==='#domestic'");await wait(fragmentAligned);
+     }
+    }
+    console.log('NAV_FRAGMENT: first visible frames aligned with deferred scripts held; cold load, scrolled refresh, desktop links and browser history passed');
+    await cmd('Network.setCacheDisabled',{cacheDisabled:false});
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
     const knownPath='/clubs/'+country.toLowerCase()+'/'+id.toString()+'/overview';
@@ -117,7 +190,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(measured.overflow,false,JSON.stringify({width,theme,lang,measured}));
      assert.equal(measured.nav,5);
      assert.equal(await run("(()=>{const row=document.querySelector('.club-fact-description').getBoundingClientRect(),label=document.querySelector('.club-fact-description dt').getBoundingClientRect(),text=document.querySelector('.club-fact-description dd').getBoundingClientRect();return Math.abs(text.left-row.left)<1&&Math.abs(text.width-row.width)<1&&text.top>=label.bottom+7})()"),true,'Description spans the identity width beneath its label: '+JSON.stringify({width,theme,lang}));
-     assert.equal(await run("document.querySelector('.fa-shell-nav [aria-current=\"page\"]')===null"),true,'Club pages must not select a sidebar destination');
+     assert.equal(await run("document.querySelectorAll('.fa-shell-nav [aria-current=\"page\"]').length===1&&document.querySelector('[data-nav01-clubs][aria-current=\"page\"]')?.getAttribute('href')==='/clubs'&&!document.querySelector('#app-nav-divisions').hasAttribute('aria-current')"),true,'Club pages select only the NAV-01 Clubs sidebar destination');
      assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const flag of flags)assert.deepEqual(flag,{width:25,height:20,fit:'contain'},'Club flag must fit in shared 5:4 slot');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
      assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
@@ -155,6 +228,75 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`club-${width}-${theme}.png`),bytes)}
      }
     }
+    // NAV-01C: directory browser smoke matrix on staged public bytes.
+    for(const width of [320,390,768,801,1024,1440])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
+     await cmd('Page.navigate',{url:origin+'/clubs'});
+     await wait("document.querySelectorAll('.nav01-card').length===320");
+     const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
+     assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
+     assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
+     assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
+     assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),3);
+     assert.equal(await run("[...document.querySelectorAll('.nav01-filter button')].every(el=>el.getBoundingClientRect().width<=el.parentElement.getBoundingClientRect().width+1)"),true,JSON.stringify({width,theme,lang}));
+     assert.equal(await run("[...document.querySelectorAll('.nav01-filters select')].every(el=>getComputedStyle(el).display==='none')"),true);
+     for(const name of ['country','division','status']){
+      await run(`document.getElementById('nav01-${name}-trigger').click()`);
+      const menuState=await run(`(()=>{const trigger=document.getElementById('nav01-${name}-trigger'),menu=document.getElementById(trigger.getAttribute('aria-controls')),rect=menu.getBoundingClientRect();return {expanded:trigger.getAttribute('aria-expanded'),hidden:menu.hidden,active:menu.querySelector('[data-active="true"]')?.id,descendant:trigger.getAttribute('aria-activedescendant'),selected:menu.querySelectorAll('[aria-selected="true"]').length,inBounds:rect.left>=0&&rect.right<=innerWidth+1,stroke:trigger.querySelector('path').getAttribute('stroke-width')}})()`);
+      assert.equal(menuState.expanded,'true');assert.equal(menuState.hidden,false);assert.equal(menuState.active,menuState.descendant);assert.equal(menuState.selected,1);assert.equal(menuState.inBounds,true);assert.equal(menuState.stroke,'1.75');
+      if(name==='division'&&lang==='en'&&((width===390&&theme==='dark')||(width===1440&&theme==='light'))){
+       await wait("(()=>{const matrix=new DOMMatrix(getComputedStyle(document.querySelector('#nav01-division-trigger svg')).transform);return Math.abs(matrix.a+1)<.001&&Math.abs(matrix.d+1)<.001})()");
+       const clip=await run("(()=>{const r=document.querySelector('.nav01-filters').getBoundingClientRect();const y=Math.max(0,r.top-12);return {x:r.left,y,width:r.width,height:Math.min(500,innerHeight-y),scale:1}})()");
+       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:55,clip,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,2000}/g);for(let i=0;i<chunks.length;i++)console.log(`NAV_CHEVRON_PAINT|${width}|${i}|${chunks.length}|${chunks[i]}`);
+      }
+      await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',windowsVirtualKeyCode:27});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',windowsVirtualKeyCode:27});
+      assert.equal(await run(`document.getElementById('nav01-${name}-menu').hidden&&document.activeElement.id==='nav01-${name}-trigger'`),true);
+     }
+     if(lang==='en'){const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`nav01-${width}-${theme}.png`),bytes)}}
+    }
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await run("document.querySelector('.nav01-filters select').value='IT';document.querySelector('.nav01-filters select').dispatchEvent(new Event('change',{bubbles:true}))");
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
+    // The public Clubs controls use the same keyboard model as Season/Matchday.
+    const key=async(key,code)=>{await cmd('Input.dispatchKeyEvent',{type:'keyDown',key,windowsVirtualKeyCode:code});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key,windowsVirtualKeyCode:code})};
+    await run("document.querySelector('.nav01-filter select').value='';document.querySelector('.nav01-filter select').dispatchEvent(new Event('change'));document.getElementById('nav01-status-trigger').focus()");
+    await key('Enter',13);await key('End',35);await key('Enter',13);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),64);
+    assert.equal(await run("document.getElementById('nav01-status-trigger').value"),'inactive');
+    await key(' ',32);await key('Home',36);await key('ArrowDown',40);await key('Enter',13);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),256);
+    await key('Enter',13);await key('Home',36);await key('Enter',13);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
+    await run("document.getElementById('nav01-country-trigger').click()");await key('Tab',9);
+    assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
+    await run("document.getElementById('nav01-country-trigger').click();document.querySelector('.nav01-filters input').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
+    assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
+    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=IT-1]').click()");
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),16);
+    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Lega Federale');
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
+    console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
+    // NAV-01C: keyboard operation of the sidebar disclosure and focus.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await run("sessionStorage.setItem('fa-nav01-expanded','false')");
+    await cmd('Page.reload');
+    await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='false'");
+    await run("document.querySelector('.nav01-expand').focus()");
+    assert.equal(await run("document.activeElement.classList.contains('nav01-expand')"),true);
+    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='true'");
+    assert.equal(await run("document.querySelector('.nav01-children').hidden"),false);
+    assert.equal(await run("document.querySelector('.nav01-expand').getAttribute('aria-controls')"),'nav01-children');
+    await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
+    await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:' ',code:'Space',windowsVirtualKeyCode:32});
+    await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='false'");
+    await wait("document.querySelector('.nav01-children').hidden===true");
+    await visit('/clubs/it/1/overview');
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
     assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');

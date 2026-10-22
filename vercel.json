@@ -1,6 +1,16 @@
 {
   "redirects": [
     {
+      "source": "/clubs/",
+      "destination": "/clubs",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/index.html",
+      "destination": "/clubs",
+      "permanent": true
+    },
+    {
       "source": "/:page(dashboard|calendar|settings|competitions)/",
       "destination": "/:page",
       "permanent": true
@@ -237,6 +247,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/clubs",
+      "destination": "/clubs/index.html"
+    },
     {
       "source": "/:page(dashboard|calendar|settings|competitions)",
       "destination": "/:page/index.html"
