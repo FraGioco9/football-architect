@@ -80,7 +80,7 @@
       const phaseIds=new Set();
       let total=0;
       for(const phase of x.rules.phases){
-        if(!phase||typeof phase.id!=="string"||phaseIds.has(phase.id)||!Array.isArray(phase.calendarEvents))return false;
+        if(!phase||typeof phase.id!=="string"||!phase.id||phaseIds.has(phase.id)||!Array.isArray(phase.calendarEvents)||!phase.calendarEvents.length)return false;
         phaseIds.add(phase.id);
         let rounds,perRound,matches;
         if(phase.type==="roundRobin"){
@@ -94,6 +94,11 @@
           rounds=phase.calendarEvents.length;perRound=null;
           matches=phase.ties.reduce((sum,t)=>sum+(Number.isSafeInteger(t?.legs)?t.legs:NaN),0);
         }else return false;
+        if((phase.type==="roundRobin"||phase.type==="leaguePhase")&&(
+          !phase.points||["win","draw","loss"].some(k=>!Number.isSafeInteger(phase.points[k])||phase.points[k]<0)||
+          !Array.isArray(phase.rankOutcomes)||!Array.isArray(phase.tiebreakers)||!phase.tiebreakers.length||
+          phase.rankOutcomes.some(b=>!b||!Number.isSafeInteger(b.from)||!Number.isSafeInteger(b.to)||b.from<1||b.to<b.from||b.to>x.capacity)||
+          phase.rankOutcomes.reduce((n,b)=>n+(b.to-b.from+1),0)!==x.capacity))return false;
         if(!Number.isSafeInteger(matches)||phase.calendarEvents.length!==rounds||!same(x.metrics.phases?.[phase.id],{rounds,matchesPerRound:perRound,matches}))return false;
         total+=matches;
       }
