@@ -1,2 +1,8 @@
 .nav01-row{display:flex;gap:2px;align-items:center;min-width:0}.nav01-row>.fa-shell-link{min-width:0;flex:1}.nav01-expand{width:29px;min-width:29px;height:34px;display:grid;place-items:center;background:transparent;border:1px solid transparent;border-radius:8px;color:inherit;cursor:pointer}.nav01-expand .language-chevron{color:inherit}.nav01-expand[aria-expanded=true] .language-chevron{transform:rotate(180deg)}.nav01-children{display:grid;gap:2px;padding-left:18px}.nav01-children[hidden]{display:none}.nav01-children a{display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none;padding:9px 7px;font-size:11px;border-radius:8px}.nav01-children .fa-icon{flex:none}.nav01-children a:focus-visible,.nav01-expand:focus-visible{outline:2px solid var(--focus);outline-offset:2px}.fa-shell-nav{overflow-y:auto;scrollbar-width:thin}@media(max-width:720px){.nav01-expand,.nav01-children{display:none!important}}
 .nav01-competition-section{min-width:0;margin-top:var(--app-page-section-gap)}.nav01-competition-section>h2{margin:0 0 14px;font-size:20px}.nav01-competition-section>.app-world-countries{margin-top:0}
+
+/* NAV-01: subtle hover feedback for the Domestic / International submenu. */
+.nav01-children a{transition:background-color 150ms ease,color 150ms ease,transform 150ms ease}
+.nav01-children a:hover{background:#1b3838;color:#e5f5ed;transform:translateX(2px)}
+html[data-theme="light"] .nav01-children a:hover{background:#EAF2ED;color:#17664E}
+@media(prefers-reduced-motion:reduce){.nav01-children a{transition:none}.nav01-children a:hover{transform:none}}
