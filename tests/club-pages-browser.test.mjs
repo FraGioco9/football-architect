@@ -219,6 +219,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(lang==='en'){
       if(width===1440||width===390){
        await run("document.querySelector('.club-fact-description').scrollIntoView({block:'center'})");
+       await wait("(()=>{const matrix=new DOMMatrix(getComputedStyle(document.querySelector('#nav01-division-trigger svg')).transform);return Math.abs(matrix.a+1)<.001&&Math.abs(matrix.d+1)<.001})()");
        const clip=await run("(()=>{const r=document.querySelector('.club-fact-description').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
        const descriptionShot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
        const chunks=descriptionShot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_DESCRIPTION_REVIEW|'+width+'-'+theme+'|'+i+'|'+chunks.length+'|'+chunk));
@@ -246,7 +247,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const menuState=await run(`(()=>{const trigger=document.getElementById('nav01-${name}-trigger'),menu=document.getElementById(trigger.getAttribute('aria-controls')),rect=menu.getBoundingClientRect();return {expanded:trigger.getAttribute('aria-expanded'),hidden:menu.hidden,active:menu.querySelector('[data-active="true"]')?.id,descendant:trigger.getAttribute('aria-activedescendant'),selected:menu.querySelectorAll('[aria-selected="true"]').length,inBounds:rect.left>=0&&rect.right<=innerWidth+1,stroke:trigger.querySelector('path').getAttribute('stroke-width')}})()`);
       assert.equal(menuState.expanded,'true');assert.equal(menuState.hidden,false);assert.equal(menuState.active,menuState.descendant);assert.equal(menuState.selected,1);assert.equal(menuState.inBounds,true);assert.equal(menuState.stroke,'1.75');
       if(name==='division'&&lang==='en'&&((width===390&&theme==='dark')||(width===1440&&theme==='light'))){
-       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:65,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,3500}/g);for(let i=0;i<chunks.length;i++)console.log(`NAV_CHEVRON_PAINT|${width}|${i}|${chunks.length}|${chunks[i]}`);
+       await wait("(()=>{const matrix=new DOMMatrix(getComputedStyle(document.querySelector('#nav01-division-trigger svg')).transform);return Math.abs(matrix.a+1)<.001&&Math.abs(matrix.d+1)<.001})()");
+       const clip=await run("(()=>{const r=document.querySelector('.nav01-filters').getBoundingClientRect();const y=Math.max(0,r.top-12);return {x:r.left,y,width:r.width,height:Math.min(500,innerHeight-y),scale:1}})()");
+       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:55,clip,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,2000}/g);for(let i=0;i<chunks.length;i++)console.log(`NAV_CHEVRON_PAINT|${width}|${i}|${chunks.length}|${chunks[i]}`);
       }
       await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',windowsVirtualKeyCode:27});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',windowsVirtualKeyCode:27});
       assert.equal(await run(`document.getElementById('nav01-${name}-menu').hidden&&document.activeElement.id==='nav01-${name}-trigger'`),true);
@@ -271,7 +274,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
     await run("document.getElementById('nav01-country-trigger').click();document.querySelector('.nav01-filters input').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
-    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=it-1]').click()");
+    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=IT-1]').click()");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),16);
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Lega Federale');
     await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
@@ -363,6 +366,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
+       await wait("(()=>{const matrix=new DOMMatrix(getComputedStyle(document.querySelector('#nav01-division-trigger svg')).transform);return Math.abs(matrix.a+1)<.001&&Math.abs(matrix.d+1)<.001})()");
        const clip=await run("(()=>{const r=document.querySelector('.club-competition').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
        const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
        const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_ALIGN_REVIEW|'+width+'-'+label+'|'+i+'|'+chunks.length+'|'+chunk));
