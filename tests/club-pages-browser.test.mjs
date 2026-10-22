@@ -113,6 +113,23 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`club-${width}-${theme}.png`),bytes)}
      }
     }
+    // NAV-01C: directory browser smoke matrix on staged public bytes.
+    for(const width of [320,390,768,1440])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
+     await cmd('Page.navigate',{url:origin+'/clubs'});
+     await wait("document.querySelectorAll('.nav01-card').length===320");
+     const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
+     assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
+     assert.match(state.href,/^\\/clubs\\/(it|eng|es|de|fr|pt|nl|br)\\/([1-9]|[1-3][0-9]|40)\\/overview$/);
+     assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
+     if(lang==='en'){const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`nav01-${width}-${theme}.png`),bytes)}}
+    }
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await run("document.querySelector('.nav01-filters select').value='IT';document.querySelector('.nav01-filters select').dispatchEvent(new Event('change',{bubbles:true}))");
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
+    await visit('/clubs/it/1/overview');
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
     assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
