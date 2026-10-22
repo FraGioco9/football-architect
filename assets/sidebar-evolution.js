@@ -28,7 +28,7 @@ let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true'
 let submenuMotion=null;
 function expand(state,animate=false){
  const from=submenu.hidden?0:submenu.getBoundingClientRect().height;
- if(submenuMotion){submenuMotion.cancel();submenuMotion=null;}
+ if(submenuMotion){submenuMotion.cancel();submenuMotion=null;submenu.classList.remove('nav01-is-animating');}
  button.setAttribute('aria-expanded',String(state));
  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
  if(!animate||reduced||!submenu.animate){
@@ -36,12 +36,13 @@ function expand(state,animate=false){
  }else{
   submenu.hidden=false;
   const to=state?submenu.scrollHeight:0;
+  submenu.classList.add('nav01-is-animating');
   submenuMotion=submenu.animate([
    {height:from+'px',opacity:state?0:1},
    {height:to+'px',opacity:state?1:0}
   ],{duration:260,easing:'cubic-bezier(.2,.75,.25,1)'});
   const current=submenuMotion;
-  current.onfinish=()=>{if(submenuMotion!==current)return;submenu.hidden=!state;submenuMotion=null;};
+  current.onfinish=()=>{if(submenuMotion!==current)return;submenu.hidden=!state;submenu.classList.remove('nav01-is-animating');submenuMotion=null;};
  }
  try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}
  paint();
