@@ -36,10 +36,13 @@ test("GUIDE-02 Chromium: 9 pages x 1440/390/320 x dark/light x 5 languages, rout
     for(const chapter of chapters){
      const route="/guide"+(chapter?"/"+chapter:"");
      await cmd("Page.navigate",{url:origin+route});
+     for(let i=0;i<50;i++){if(await run("document.readyState==='complete'"))break;await delay(50);}
+     await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(mode)+")");
+     await cmd("Page.reload",{ignoreCache:true});
      let ready=false;for(let i=0;i<75;i++){ready=await run("document.readyState==='complete'&&!!document.querySelector('main h1')");if(ready)break;await delay(60);}assert.ok(ready,route+" did not load");
      for(const lang of languages){
-      const state=await run(`(()=>{const lang=${JSON.stringify(lang)};const trigger=document.querySelector('#site-language');if(trigger){trigger.click();document.querySelector('[data-language="'+lang+'"]')?.click();}const images=[...document.images];const links=[...document.querySelectorAll('a[href]')];const focus=[...document.querySelectorAll('a,button,[role="option"]')];return {lang:document.documentElement.lang,title:document.querySelector('main h1')?.textContent?.trim(),overflow:document.documentElement.scrollWidth-innerWidth,broken:images.filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.src),links:links.filter(x=>x.getAttribute('href')==='#'||x.getAttribute('href')?.includes('undefined')).map(x=>x.href),missingNames:focus.filter(x=>!((x.getAttribute('aria-label')||x.textContent||'').trim())&&!x.querySelector('img[alt]')).length,sections:document.querySelectorAll('.guide-section').length}})()`);
-      assert.equal(state.lang,lang,route+" language "+lang);
+      const state=await run(`(()=>{const lang=${JSON.stringify(lang)};const trigger=document.querySelector('#site-language');if(trigger){trigger.click();document.querySelector('[data-language="'+lang+'"]')?.click();}const images=[...document.images];const links=[...document.querySelectorAll('a[href]')];const focus=[...document.querySelectorAll('a,button,[role="option"]')];return {lang:document.documentElement.lang,title:document.querySelector('main h1')?.textContent?.trim(),theme:document.documentElement.getAttribute("data-theme"),overflow:document.documentElement.scrollWidth-innerWidth,broken:images.filter(x=>!x.complete||x.naturalWidth===0).map(x=>x.src),links:links.filter(x=>x.getAttribute('href')==='#'||x.getAttribute('href')?.includes('undefined')).map(x=>x.href),missingNames:focus.filter(x=>!((x.getAttribute('aria-label')||x.textContent||'').trim())&&!x.querySelector('img[alt]')).length,sections:document.querySelectorAll('.guide-section').length}})()`);
+      assert.equal(state.lang,lang,route+" language "+lang);assert.equal(state.theme,mode,route+" theme "+mode);
       assert.ok(state.title&&!/undefined/i.test(state.title),route+" title");
       assert.ok(state.overflow<=1,route+" horizontal overflow "+width+" "+mode+" "+lang+": "+state.overflow);
       assert.deepEqual(state.broken,[],route+" broken image");
