@@ -21,6 +21,8 @@ test("v1, duplicate identity, mismatched metrics and forged projection fail clos
  const bad=mutation=>{const x=manifest();mutation(x);assert.equal(model.validManifest(x),false)};
  bad(x=>{x.schemaVersion=1});
  bad(x=>{x.competitions[1].id=x.competitions[0].id});
+ bad(x=>{x.competitions[0].slug="incorrect-slug"});
+ bad(x=>{x.competitions[0].name="Incorrect division name"});
  bad(x=>{x.competitions[0].capacity=24});
  bad(x=>{x.competitions[0].metrics.totalMatches++});
  bad(x=>{x.competitions[0].rules.phases[0].points.win=-1});
