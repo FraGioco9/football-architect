@@ -45,7 +45,7 @@
     return keys.length===Object.keys(b).length&&keys.every(key=>Object.hasOwn(b,key)&&same(a[key],b[key]));
   }
   function validManifest(data){
-    if(data?.schemaVersion!==1||data.approved!==false||!same(data.profile,profile)||
+    if(data?.schemaVersion!==2||data.approved!==false||!same(data.profile,profile)||
       !Array.isArray(data.divisions)||data.divisions.length!==divisionCount)return false;
     if(!data.clubCrests||typeof data.clubCrests!=="object"||Array.isArray(data.clubCrests))return false;
     for(const [id,path] of Object.entries(data.clubCrests)){
@@ -73,7 +73,18 @@
         clubs.add(key);previous=club.clubId;
       }
     }
-    return ids.size===divisionCount&&clubs.size===participantCount;
+    if(ids.size!==divisionCount||clubs.size!==participantCount||!Array.isArray(data.competitions)||data.competitions.length!==18)return false;
+    const names=new Set(),slugs=new Set();
+    for(const x of data.competitions){
+      if(!x||typeof x.id!=="string"||typeof x.slug!=="string"||names.has(x.id)||slugs.has(x.slug)||!x.rules||x.rules.schemaVersion!==1||!Array.isArray(x.rules.phases)||!x.metrics||!x.capabilities)return false;
+      names.add(x.id);slugs.add(x.slug);
+      if(x.category==="domestic"){
+        const d=data.divisions.find(y=>y.id===x.id);
+        if(!d||x.countryId!==d.countryId||x.tier!==d.tier||x.capacity!==16||x.rules.version!==(x.tier===1?"domestic-top-v1":"domestic-second-v1")||x.metrics.phases?.league?.matches!==240)return false;
+      }else if(x.category!=="international"||!["sovereign-cup","federation-cup"].includes(x.id)||x.capacity!==24||x.rules.version!=="international-int24-v1"||x.metrics.phases?.league?.matches!==72||x.metrics.totalMatches!==93)return false;
+    }
+    return data.divisions.every(d=>names.has(d.id))&&names.has("sovereign-cup")&&names.has("federation-cup");
   }
-  return freeze({countries,tiers,profile,schedule,views,divisionCount,participantCount,firstClubId,validRound,validManifest});
+  const competitionById=(manifest,id)=>validManifest(manifest)?manifest.competitions.find(x=>x.id===id)||null:null;
+  return freeze({countries,tiers,profile,schedule,views,divisionCount,participantCount,firstClubId,validRound,validManifest,competitionById});
 });
