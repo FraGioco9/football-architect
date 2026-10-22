@@ -104,10 +104,11 @@
         total+=matches;
       }
       if(!same(x.capabilities.phaseIds,x.rules.phases.map(p=>p.id))||!same(x.capabilities.awardIds,x.rules.awards)||Object.keys(x.metrics.phases).length!==phaseIds.size||x.metrics.totalMatches!==total)return false;
+      if(x.slug!==x.id.toLowerCase())return false;
       names.add(x.id);slugs.add(x.slug);
       if(x.category==="domestic"){
         const d=data.divisions.find(y=>y.id===x.id);
-        if(!d||x.countryId!==d.countryId||x.tier!==d.tier||x.capacity!==16||x.rules.version!==(x.tier===1?"domestic-top-v1":"domestic-second-v1")||x.metrics.phases?.league?.matches!==240)return false;
+        if(!d||x.name!==d.name||x.countryId!==d.countryId||x.countryName!==d.countryName||x.tier!==d.tier||x.capacity!==16||x.rules.version!==(x.tier===1?"domestic-top-v1":"domestic-second-v1")||x.metrics.phases?.league?.matches!==240)return false;
       }else if(x.category!=="international"||!["sovereign-cup","federation-cup"].includes(x.id)||x.capacity!==24||x.rules.version!=="international-int24-v1"||x.metrics.phases?.league?.matches!==72||x.metrics.totalMatches!==93)return false;
     }
     return data.divisions.every(d=>names.has(d.id))&&names.has("sovereign-cup")&&names.has("federation-cup");
