@@ -246,12 +246,12 @@
       "permanent": true
     },
     {
-      "source": "/guide/:chapter(world|divisions|clubs|movement|calendar|cups|records|explore)/",
+      "source": "/guide/:chapter(world|assets|divisions|clubs|movement|calendar|cups|records|explore)/",
       "destination": "/guide/:chapter",
       "permanent": true
     },
     {
-      "source": "/guide/:chapter(world|divisions|clubs|movement|calendar|cups|records|explore)/index.html",
+      "source": "/guide/:chapter(world|assets|divisions|clubs|movement|calendar|cups|records|explore)/index.html",
       "destination": "/guide/:chapter",
       "permanent": true
     }
@@ -282,7 +282,7 @@
       "destination": "/guide/index.html"
     },
     {
-      "source": "/guide/:chapter(world|divisions|clubs|movement|calendar|cups|records|explore)",
+      "source": "/guide/:chapter(world|assets|divisions|clubs|movement|calendar|cups|records|explore)",
       "destination": "/guide/:chapter/index.html"
     }
   ]
