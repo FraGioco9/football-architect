@@ -115,7 +115,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       holdDeferred=true;
       try{
        if(mode==='cold')await cmd('Page.navigate',{url:origin+path});else await cmd('Page.reload',{ignoreCache:true});
-       await wait("document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
+       await wait("document.readyState==='interactive'&&document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
        await run('document.fonts.ready');
        const before=await run(navSnapshot);
        assert.equal(before.lang,lang);assert.equal(before.theme,theme);
