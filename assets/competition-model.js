@@ -98,7 +98,8 @@
           !phase.points||["win","draw","loss"].some(k=>!Number.isSafeInteger(phase.points[k])||phase.points[k]<0)||
           !Array.isArray(phase.rankOutcomes)||!Array.isArray(phase.tiebreakers)||!phase.tiebreakers.length||
           phase.rankOutcomes.some(b=>!b||!Number.isSafeInteger(b.from)||!Number.isSafeInteger(b.to)||b.from<1||b.to<b.from||b.to>x.capacity)||
-          phase.rankOutcomes.reduce((n,b)=>n+(b.to-b.from+1),0)!==x.capacity))return false;
+          phase.rankOutcomes.reduce((n,b)=>n+(b.to-b.from+1),0)!==x.capacity||
+          new Set(phase.rankOutcomes.flatMap(b=>Array.from({length:b.to-b.from+1},(_,i)=>b.from+i))).size!==x.capacity))return false;
         if(!Number.isSafeInteger(matches)||phase.calendarEvents.length!==rounds||!same(x.metrics.phases?.[phase.id],{rounds,matchesPerRound:perRound,matches}))return false;
         total+=matches;
       }
