@@ -54,5 +54,5 @@ test("GUIDE-02 Chromium: 9 pages x 1440/390/320 x dark/light x 5 languages, rout
    }
   }
   console.log("GUIDE-02 CHROMIUM PASS: 270 language/viewport/theme/page checks; 54 screenshots; staged artifact only");
- }finally{ws?.close();proc.kill();await new Promise(ok=>server.close(ok));rmSync(dir,{recursive:true,force:true});}
+ }finally{ws?.close();if(proc.exitCode===null){const exited=new Promise(ok=>proc.once("exit",ok));proc.kill();await Promise.race([exited,delay(2500)]);}await new Promise(ok=>server.close(ok));for(let attempt=0;attempt<8;attempt++){try{rmSync(dir,{recursive:true,force:true,maxRetries:3,retryDelay:100});break;}catch(error){if(attempt===7)throw error;await delay(250);}}}
 });
