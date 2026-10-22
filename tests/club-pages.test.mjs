@@ -208,7 +208,7 @@ test('CLUB-FLAGS-54: all countries reuse the competition SVG with independent cl
 test('CLUB-COMPETITION-02: active cards show localized metrics and inactive cards have one message',async()=>{
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
- const labels={en:'Position',de:'Platz',es:'Posición',fr:'Position',it:'Posizione'};
+ const labels={en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'};
  for(const c of manifest.clubs)for(const [lang,label] of Object.entries(labels)){
   const html=model.render(manifest,model.route(`/clubs/${c.countryId.toLowerCase()}/${c.clubId}/overview`),lang);
   const box=html.match(/<section class="app-panel club-competition"[\s\S]*?<\/section>/)?.[0];
@@ -216,7 +216,7 @@ test('CLUB-COMPETITION-02: active cards show localized metrics and inactive card
   if(c.divisionId){
    assert.ok(box.includes('<dt>'+label+'</dt>'));
    assert.match(box,/data-club-position>—</);
-   assert.match(box,/data-club-points>—</);
+   assert.doesNotMatch(box,/data-club-points/);
    assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/overview"'));
    assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
    assert.ok(!box.includes(model.copies[lang].provisional));

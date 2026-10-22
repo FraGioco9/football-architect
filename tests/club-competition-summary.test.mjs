@@ -58,13 +58,15 @@ test('Club card renders rank, points and next fixture only from its own current 
  const snapshot=preview.createPreviewClubSummary(division,1,{season:3,matchdays:15});
  const card=summary=>model.render(clubs,selected,'en','',summary).match(/<section class="app-panel club-competition"[\s\S]*?<\/section>/)[0];
  const empty=card(null);
- assert.doesNotMatch(empty,/>Division<|>Status</);
+ assert.doesNotMatch(empty,/>Division</);
  assert.match(empty,/data-club-position>—</);
- assert.match(empty,/data-club-points>—</);
+ assert.doesNotMatch(empty,/data-club-points/);
+ assert.match(empty,/>Status</);
  assert.ok(empty.includes('No scheduled match available.'));
  const html=card(snapshot);
  assert.ok(html.includes('standings?season=3'));
- assert.match(html,new RegExp('data-club-points>'+snapshot.points+'<'));
+ assert.doesNotMatch(html,/data-club-points/);
+ assert.ok(html.includes('>'+snapshot.position+'</a>'));
  assert.ok(html.includes('fixtures?season=3&amp;matchday=16'));
  for(const id of [snapshot.nextMatch.homeId,snapshot.nextMatch.awayId])
   assert.ok(html.includes(division.clubs.find(c=>c.clubId===id).primaryName));
