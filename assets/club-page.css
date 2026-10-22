@@ -69,8 +69,8 @@
 .club-competition-name{font-size:18px;font-weight:700;overflow-wrap:anywhere}
 .club-competition-name .app-link{display:inline;padding:0;min-height:0;color:inherit;font:inherit;text-decoration:none}
 .club-competition-name .app-link:hover,.club-competition-name .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
-.club-competition-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);align-items:start;gap:16px;min-width:0;width:min(100%,480px);box-sizing:border-box;justify-self:end;border-left:1px solid var(--line);padding-left:32px}
-.club-competition-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0}
+.club-competition-summary{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:start;gap:16px;min-width:0;width:min(100%,560px);box-sizing:border-box;justify-self:end;border-left:1px solid var(--line);padding-left:32px}
+.club-competition-metrics{display:grid;grid-template-columns:repeat(2,max-content);gap:16px;margin:0}
 .club-competition-metrics dt,.club-competition-next small{font-size:.8rem;color:var(--muted)}
 .club-competition-metrics dd{margin:3px 0 0;font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums}
 .club-competition-next>.club-competition-label{font-size:.8rem}
