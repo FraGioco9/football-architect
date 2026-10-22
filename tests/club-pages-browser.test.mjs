@@ -214,6 +214,21 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(width===1440?['.club-competition-name a','[data-club-position]','.club-competition-next a']:['[data-club-position]','.club-competition-next a'])});const details=(${measureBaselines.toString()})(${JSON.stringify(width===1440?['.club-competition-tier','.club-competition-next small']:['.club-competition-next small'])});const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&Math.max(...baselines)-Math.min(...baselines)<1.5&&Math.max(...details)-Math.min(...details)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
+     if(width===1440){
+      const capture=async label=>{
+       await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
+       const clip=await run("(()=>{const r=document.querySelector('.club-competition').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
+       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
+       const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_ALIGN_REVIEW|'+label+'|'+i+'|'+chunks.length+'|'+chunk));
+      };
+      await capture('current-normal');
+      await run("window.__statusText=document.querySelector('[data-club-position]').textContent;document.querySelector('[data-club-position]').textContent='Eliminated in the quarter-finals'");
+      await capture('current-long');
+      await run("(()=>{const style=document.createElement('style');style.id='alignment-review-candidate';style.textContent='.club-competition-layout{grid-template-rows:auto;align-items:center}.club-competition-identity{grid-row:auto;grid-template-rows:auto auto;row-gap:5px}.club-competition-name{grid-row:1}.club-competition-tier{grid-row:2}.club-competition-summary{grid-row:auto;grid-template-rows:auto auto auto;row-gap:5px}';document.head.append(style)})()");
+      await capture('candidate-long');
+      await run("document.getElementById('alignment-review-candidate').remove();document.querySelector('[data-club-position]').textContent=window.__statusText");
+     }
+
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),'16px','Next match uses 16px on desktop and mobile');
      const fixtureText=await run("document.querySelector('.club-competition-next a').textContent");
      for(const id of [upcoming.homeId,upcoming.awayId])assert.ok(fixtureText.includes(division.clubs.find(c=>c.clubId===id).primaryName));
