@@ -219,7 +219,6 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(lang==='en'){
       if(width===1440||width===390){
        await run("document.querySelector('.club-fact-description').scrollIntoView({block:'center'})");
-       await wait("(()=>{const matrix=new DOMMatrix(getComputedStyle(document.querySelector('#nav01-division-trigger svg')).transform);return Math.abs(matrix.a+1)<.001&&Math.abs(matrix.d+1)<.001})()");
        const clip=await run("(()=>{const r=document.querySelector('.club-fact-description').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
        const descriptionShot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
        const chunks=descriptionShot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_DESCRIPTION_REVIEW|'+width+'-'+theme+'|'+i+'|'+chunks.length+'|'+chunk));
@@ -366,7 +365,6 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
-       await wait("(()=>{const matrix=new DOMMatrix(getComputedStyle(document.querySelector('#nav01-division-trigger svg')).transform);return Math.abs(matrix.a+1)<.001&&Math.abs(matrix.d+1)<.001})()");
        const clip=await run("(()=>{const r=document.querySelector('.club-competition').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
        const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
        const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_ALIGN_REVIEW|'+width+'-'+label+'|'+i+'|'+chunks.length+'|'+chunk));
