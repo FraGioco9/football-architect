@@ -39,6 +39,7 @@
 .club-overview-layout h2{margin-top:0}
 .club-colors{display:flex;flex-wrap:wrap;column-gap:16px;row-gap:8px}
 .club-colors>.club-color{margin-right:-8px}
+.club-facts>.club-fact-description{grid-template-columns:minmax(0,1fr);gap:8px}
 .club-fact-description dd{min-width:0}
 .club-fact-description .club-description{margin:0;line-height:1.65;white-space:normal}
 .club-fact-rivalries dd{min-width:0}

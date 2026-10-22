@@ -116,6 +116,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      const measured=await run(`(()=>{const main=document.querySelector('.fa-shell-content-scroll');return {overflow:document.documentElement.scrollWidth>innerWidth+1||main.scrollWidth>main.clientWidth+1,nav:document.querySelectorAll('.club-tabs a').length,title:document.querySelector('#club-title').textContent,description:document.querySelector('.club-description').textContent,selected:document.querySelector('[aria-current="page"].app-competition-tab')?.textContent}})()`);
      assert.equal(measured.overflow,false,JSON.stringify({width,theme,lang,measured}));
      assert.equal(measured.nav,5);
+     assert.equal(await run("(()=>{const row=document.querySelector('.club-fact-description').getBoundingClientRect(),label=document.querySelector('.club-fact-description dt').getBoundingClientRect(),text=document.querySelector('.club-fact-description dd').getBoundingClientRect();return Math.abs(text.left-row.left)<1&&Math.abs(text.width-row.width)<1&&text.top>=label.bottom+7})()"),true,'Description spans the identity width beneath its label: '+JSON.stringify({width,theme,lang}));
      assert.equal(await run("document.querySelector('.fa-shell-nav [aria-current=\"page\"]')===null"),true,'Club pages must not select a sidebar destination');
      assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const flag of flags)assert.deepEqual(flag,{width:25,height:20,fit:'contain'},'Club flag must fit in shared 5:4 slot');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
@@ -143,6 +144,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      }else assert.equal(await run("document.querySelector('[data-translate-club]')===null"),true);
      assert.equal(await run("document.querySelectorAll('.app-world-country').length"),0,'No competition index leaked into club shell');
      if(lang==='en'){
+      if(width===1440||width===390){
+       await run("document.querySelector('.club-fact-description').scrollIntoView({block:'center'})");
+       const clip=await run("(()=>{const r=document.querySelector('.club-fact-description').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
+       const descriptionShot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
+       const chunks=descriptionShot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_DESCRIPTION_REVIEW|'+width+'-'+theme+'|'+i+'|'+chunks.length+'|'+chunk));
+      }
       const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
       const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);
       if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`club-${width}-${theme}.png`),bytes)}
