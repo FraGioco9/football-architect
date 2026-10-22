@@ -116,3 +116,14 @@ test('W56-20 a persisted inactive season ignores a stale Day and clears legacy r
  assert.deepEqual(clock.read(),{season:1,day:1});
  assert.deepEqual(readPreviewProgress(s),{season:1,matchdays:0});
 });
+
+test('W56-21 first-paint Debug bootstrap distinguishes an explicit 0 from absent or blank storage',async()=>{
+ const {DEBUG_SEASON_BOOTSTRAP}=await import('../tools/dev-preview-artifact.mjs');
+ const {runInNewContext}=await import('node:vm');
+ const source=DEBUG_SEASON_BOOTSTRAP.slice('<script>'.length,-'</script>'.length);
+ for(const raw of [null,'','bad','0','1','3']){
+  const document={documentElement:{dataset:{}}};
+  runInNewContext(source,{document,sessionStorage:{getItem:()=>raw}});
+  assert.equal(document.documentElement.dataset.faDevCurrentSeason,raw==='0'?'0':raw==='3'?'3':'1');
+ }
+});
