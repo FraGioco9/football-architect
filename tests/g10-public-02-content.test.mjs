@@ -13,6 +13,7 @@ const DEBUG_PATHS=[
   "__fa_dev__/debug-settings.mjs",
   "__fa_dev__/standings-client.mjs",
   "__fa_dev__/debug-widget.mjs",
+  "__fa_dev__/dev-world-clock.mjs",
   "__fa_dev__/standings-data.mjs",
   "__fa_dev__/dev-standings-preview-data.mjs",
   "__fa_dev__/stats-client.mjs",
@@ -21,7 +22,7 @@ const DEBUG_PATHS=[
 ].sort();
 const fields=(object,expected)=>assert.deepEqual(Object.keys(object).sort(),[...expected].sort());
 
-test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{timeout:20000},()=>{
+test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{timeout:20000},()=>{
  const root=mkdtempSync(join(tmpdir(),"fa-g10-content-"));
  try{
   const pubDir=join(root,"public"),debugDir=join(root,"debug");
@@ -31,7 +32,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
   assert.deepEqual(assertProtectedDebugArtifact(debugDir),debug);
   const extras=debug.filter(path=>!pub.includes(path));
   assert.deepEqual(extras,DEBUG_PATHS);
-  assert.equal(debug.length,pub.length+8);
+  assert.equal(debug.length,pub.length+DEBUG_PATHS.length);
   for(const path of pub){
    const publicBytes=readFileSync(join(pubDir,path));
    const debugBytes=readFileSync(join(debugDir,path));
