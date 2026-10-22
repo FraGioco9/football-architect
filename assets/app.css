@@ -1037,3 +1037,7 @@ html[data-theme="light"] #world-calendar .calendar-event--final{background:#F1D9
 /* CLUBS-LAYOUT-02G: center chevrons in Fixtures arrow buttons. */
 .app-fixtures-navigation .app-fixtures-arrow{display:inline-grid;place-items:center;align-content:center;justify-content:center;line-height:0}
 .app-fixtures-navigation .app-fixtures-arrow>.site-chevron,.app-fixtures-navigation .app-fixtures-arrow>svg{display:block;margin:0;flex:none}
+
+/* Center directional SVGs geometrically in all Calendar/Fixtures arrow boxes. */
+.calendar-arrow:has(> .site-chevron),.app-fixtures-navigation .app-fixtures-arrow:has(> .site-chevron){position:relative}
+.calendar-arrow> .site-chevron,.app-fixtures-navigation .app-fixtures-arrow> .site-chevron{position:absolute;inset-block-start:50%;inset-inline-start:50%;translate:-50% -50%;margin:0;flex:none;display:block}
