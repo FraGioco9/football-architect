@@ -37,3 +37,10 @@
 .nav01-country-flag{display:inline-block;vertical-align:-2px;width:17px;height:13px;object-fit:cover;margin-inline:4px 1px;border-radius:2px}
 @media(max-width:720px){.nav01-grid{gap:12px}.nav01-card{min-height:124px;padding:18px;gap:17px}.nav01-crest{width:68px;height:74px}.nav01-card strong{font-size:14px}.nav01-card small{font-size:11px}}
 @media(max-width:500px){.nav01-card{min-height:114px;padding:17px}.nav01-crest{width:64px;height:70px}}
+
+/* Keep search focus consistent with the site's accessible controls. */
+.nav01-filters>input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 2px var(--focus)}
+.nav01-filters>input:focus-visible{outline:none;border-color:var(--focus);box-shadow:0 0 0 2px var(--focus)}
+.nav01-filters{grid-template-columns:minmax(220px,2fr) repeat(2,minmax(155px,1fr))}
+@media(max-width:1160px){.nav01-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.nav01-filters{grid-template-columns:1fr}}
