@@ -26,7 +26,9 @@ if(nav.dataset.nav01Bound==='true'){
    window.faSidebarPaint?.();
   };
   button.addEventListener('click',event=>{event.stopImmediatePropagation();toggle();},true);
-  // Native button click handles Enter and Space; do not synthesize a second activation.
+  // The inline first-paint handler intercepts Enter; capture it here to preserve animation.
+  // Preventing default avoids a second synthetic native click after this toggle.
+  button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.stopImmediatePropagation();toggle();}},true);
  }
  for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
  window.faSidebarPaint?.();return;
