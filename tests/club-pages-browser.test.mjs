@@ -187,22 +187,23 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      devManifestDelay=150;
      await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
      await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
-     await wait("document.querySelector('[data-club-position] a')?.textContent==="+JSON.stringify(String(index+1)));
+     await wait("document.querySelector('[data-club-position]')?.textContent==="+JSON.stringify(String(index+1)));
      devManifestDelay=0;
      assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
      assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(index+1));
-     assert.equal(await run("getComputedStyle(document.querySelector('[data-club-position] a')).fontSize"),'20px','Status value uses 20px');
+     assert.equal(await run("getComputedStyle(document.querySelector('[data-club-position]')).fontSize"),'20px','Status value uses 20px');
+     assert.equal(await run("document.querySelector('[data-club-position] a,[data-club-position] [tabindex]')"),null,'Status is plain text without navigation');
      assert.equal(await run("document.querySelector('[data-club-points]')"),null,'Points are not shown');
      // Presentation probes only: do not introduce fictional sporting results.
      for(const status of ['Semifinals','Eliminated in the quarter-finals','Ausgeschieden in der Qualifikationsrunde','Eliminado en la ronda de clasificación','Éliminé au tour de qualification','Eliminato al turno di qualificazione']){
-      assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position] a'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value.parentElement,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis';value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
+      assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis';value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),'16px','Next match uses 16px on desktop and mobile');
      const fixtureText=await run("document.querySelector('.club-competition-next a').textContent");
      for(const id of [upcoming.homeId,upcoming.awayId])assert.ok(fixtureText.includes(division.clubs.find(c=>c.clubId===id).primaryName));
      assert.equal(await run("(()=>{const root=document.querySelector('.fa-shell-content-scroll');return root.scrollWidth<=root.clientWidth+1})()"),true,'Live Competition summary fits at '+width);
-     await run("document.querySelector('[data-club-position] a').focus();sessionStorage.setItem('football-architect:standings-dev-preview','off');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
+     await run("document.querySelector('.club-competition-next a').focus();sessionStorage.setItem('football-architect:standings-dev-preview','off');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
      await wait("document.querySelector('[data-club-position]')?.textContent==='—'");
      assert.equal(await run("document.querySelector('.club-competition-next a')"),null,'Disabling DEV removes future fixtures');
      assert.equal(await run("document.activeElement.classList.contains('club-competition')"),true,'Removing a focused summary link retains focus in its panel');
@@ -212,7 +213,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('[data-dev-control=season-number]')!==null");
     await run("document.querySelector('.fa-dev-widget-button').click()");
     await run("(()=>{const control=document.querySelector('[data-dev-control=season-number]');control.value='3';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
-    await wait("document.querySelector('[data-club-position] a')?.getAttribute('href').endsWith('season=3')");
+    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href').includes('season=3&')");
     assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No Season/Preview caption in DEV');
     await run("(()=>{const control=document.querySelector('[data-dev-control=world-day-number]');control.value='28';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
     const advanced=createPreviewStandings(division,16,3),advancedIndex=advanced.rows.findIndex(r=>r.club.clubId===1);

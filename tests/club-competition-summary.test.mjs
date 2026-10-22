@@ -64,9 +64,9 @@ test('Club card renders rank, points and next fixture only from its own current 
  assert.match(empty,/>Status</);
  assert.ok(empty.includes('No scheduled match available.'));
  const html=card(snapshot);
- assert.ok(html.includes('standings?season=3'));
+ assert.doesNotMatch(html,/standings\?season=|data-club-position><a/);
  assert.doesNotMatch(html,/data-club-points/);
- assert.ok(html.includes('>'+snapshot.position+'</a>'));
+ assert.ok(html.includes('data-club-position>'+snapshot.position+'</dd>'));
  assert.ok(html.includes('fixtures?season=3&amp;matchday=16'));
  for(const id of [snapshot.nextMatch.homeId,snapshot.nextMatch.awayId])
   assert.ok(html.includes(division.clubs.find(c=>c.clubId===id).primaryName));

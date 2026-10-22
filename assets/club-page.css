@@ -76,7 +76,6 @@
 .club-competition-next>.club-competition-label{font-size:.8rem}
 .club-competition-next{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;overflow-wrap:anywhere}
 .club-competition-summary .app-link{display:inline;min-height:0;padding:0;color:inherit;text-decoration:none}
-.club-competition-metrics dd .app-link{font:inherit}
 .club-competition-summary .app-link:hover,.club-competition-summary .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 .club-competition-next>a.app-link,.club-competition-next-empty{font-size:16px;line-height:1.4}
 .club-competition-next-empty{color:var(--muted)}
