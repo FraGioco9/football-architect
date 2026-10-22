@@ -16,8 +16,8 @@ test('CAL-WEEK-INIT-03 explicit week dropdown, arrows, mouse and keyboard mark m
  assert.match(source,/setWeek:n=>\{[^}]*manualWeekSelected=true/);
  assert.match(source,/get\('previous'\)[^\n]*manualWeekSelected=true/);
  assert.match(source,/get\('next'\)[^\n]*manualWeekSelected=true/);
- assert.match(source,/button\.addEventListener\('click',\(\)=>\{manualWeekSelected=true/);
- assert.match(source,/event\.preventDefault\(\);manualWeekSelected=true;change/);
+ assert.match(source,/button\.addEventListener\('click',\(\)=>\{if\(state\.view==='week'\)manualWeekSelected=true/);
+ assert.match(source,/event\.preventDefault\(\);if\(state\.view==='week'\)manualWeekSelected=true;change/);
 });
 test('CAL-WEEK-INIT-04 no persistent clock or simulation writes',()=>{
  const changed=source.slice(source.indexOf('let manualWeekSelected=false;'),source.indexOf('const kind=(d,w)'));
