@@ -73,3 +73,17 @@
 .guide-main>.guide-nav{margin-bottom:14px}
 .guide-main>.guide-layout{align-items:start}
 @media(max-width:700px){.guide-main>.guide-nav{margin-bottom:12px}}
+
+/* GUIDE-02 UI-UNIFORM-02: one presentation for every guide route. */
+.guide-main{justify-content:flex-start;width:100%}
+.guide-main>.guide-nav{width:100%;margin:0 0 14px;align-self:stretch}
+.guide-nav>a,.guide-nav>span{font:inherit;font-size:13px;font-weight:400;line-height:1.5;color:var(--muted);letter-spacing:normal;text-transform:none}
+.guide-nav>[aria-current="page"]{font-size:13px;font-weight:400;color:var(--muted)}
+.guide-main>.guide-layout{width:100%;grid-template-columns:210px minmax(0,1fr);gap:clamp(20px,4vw,54px);align-items:start}
+.guide-main>.guide-layout>.guide-content{width:100%;max-width:850px;min-width:0}
+.guide-main>.guide-layout>.guide-sidebar{align-self:start}
+.guide-main>.guide-layout .guide-section{padding-block:24px}
+.guide-main>.guide-layout .guide-section:first-child{padding-top:0;border-top:0}
+.guide-main>.guide-layout .guide-section h2{font-size:19px;line-height:1.35;font-weight:710;margin:0 0 14px}
+.guide-main>.guide-layout .guide-section p{font-size:15px;line-height:1.65;margin:0 0 12px}
+@media(max-width:700px){.guide-main>.guide-layout{grid-template-columns:minmax(0,1fr);gap:18px}.guide-main>.guide-nav{margin-bottom:12px}.guide-main>.guide-layout .guide-section{padding-block:20px}.guide-main>.guide-layout .guide-section:first-child{padding-top:0}.guide-main>.guide-layout .guide-section h2{font-size:18px}.guide-main>.guide-layout .guide-section p{font-size:14px}}
