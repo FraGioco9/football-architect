@@ -25,9 +25,29 @@ const onClubs=path==='/clubs'||path.startsWith('/clubs/');
 const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':'dashboard'));
 for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
 let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
-function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}paint();}
-button.addEventListener('click',()=>{const opening=button.getAttribute('aria-expanded')!=='true';submenu.classList.toggle('nav01-animate-open',opening);expand(opening);});
-button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();const opening=button.getAttribute('aria-expanded')!=='true';submenu.classList.toggle('nav01-animate-open',opening);expand(opening);}});
+let submenuMotion=null;
+function expand(state,animate=false){
+ const from=submenu.hidden?0:submenu.getBoundingClientRect().height;
+ if(submenuMotion){submenuMotion.cancel();submenuMotion=null;}
+ button.setAttribute('aria-expanded',String(state));
+ const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ if(!animate||reduced||!submenu.animate){
+  submenu.hidden=!state;
+ }else{
+  submenu.hidden=false;
+  const to=state?submenu.scrollHeight:0;
+  submenuMotion=submenu.animate([
+   {height:from+'px',opacity:state?0:1},
+   {height:to+'px',opacity:state?1:0}
+  ],{duration:260,easing:'cubic-bezier(.2,.75,.25,1)'});
+  const current=submenuMotion;
+  current.onfinish=()=>{if(submenuMotion!==current)return;submenu.hidden=!state;submenuMotion=null;};
+ }
+ try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}
+ paint();
+}
+button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!=='true',true));
+button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();expand(button.getAttribute('aria-expanded')!=='true',true);}});
 expand(onCompetition||opened);
 const brand=document.querySelector('.fa-shell-sidebar .app-brand-symbol');if(brand){const source=brand.getAttribute('src');if(source)brand.setAttribute('src',source.replace(/-(?:dark|light)\.svg$/,'-'+(document.documentElement.dataset.theme==='light'?'light':'dark')+'.svg'));}
 // Fragment targets live in the central scroll pane, not in the document viewport.
