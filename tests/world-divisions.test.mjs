@@ -193,7 +193,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("for (let i = form.length - 1; i >= 0; i--)"));
  assert.ok(read("assets/competition-model.js").includes("data.approved!==false"));
- assert.ok(read("assets/competition-model.js").includes("clubs.size===participantCount"));
+ assert.ok(read("assets/competition-model.js").includes("clubs.size!==participantCount"));
  assert.ok(renderer.includes('document.createElement("tr")'));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
@@ -232,7 +232,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  assert.doesNotThrow(()=>new Script(runtime,{filename:"competition-page.js"}));
  assert.ok(runtime.includes('routeId.toLowerCase()'));
  assert.ok(runtime.includes("model.validManifest(manifest)"));
- assert.ok(read("assets/competition-model.js").includes("clubs.size===participantCount"));
+ assert.ok(read("assets/competition-model.js").includes("clubs.size!==participantCount"));
  assert.ok(runtime.includes("start().catch(fail)"));
 });
 
