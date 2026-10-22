@@ -23,6 +23,15 @@ const chrome=()=>{
     if(spawnSync(binary,["--version"],{timeout:4000,stdio:"ignore"}).status===0)return binary;
   throw Error("Chrome is required for visual QA; set CHROME_BIN to its executable path");
 };
+// A zero-size inline probe measures the first text baseline regardless of font size.
+function measureBaselines(selectors){
+ return selectors.map(selector=>{
+  const node=document.querySelector(selector);if(!node)throw Error('Missing baseline target: '+selector);
+  const probe=document.createElement('span');probe.setAttribute('aria-hidden','true');
+  probe.style.cssText='display:inline-block;width:0;height:0;padding:0;margin:0;border:0;vertical-align:baseline';
+  node.prepend(probe);const baseline=probe.getBoundingClientRect().top;probe.remove();return baseline;
+ });
+}
 test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh and crest fallback',{timeout:180000},async()=>{
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
@@ -113,6 +122,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
      const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-summary').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
      assert.equal(cardLayout.full,true,'Competition spans the Overview width');
+     const valueSelectors=['[data-club-position]','.club-competition-next-empty'];
+     if(width===1440)valueSelectors.unshift('.club-competition-name a');
+     const valueBaselines=await run(`(${measureBaselines.toString()})(${JSON.stringify(valueSelectors)})`);
+     assert.ok(Math.max(...valueBaselines)-Math.min(...valueBaselines)<1.5,'Main values share their first text baseline: '+JSON.stringify({width,theme,lang,valueBaselines}));
+     assert.equal(await run("(()=>{const logo=document.querySelector('.club-competition-logo').getBoundingClientRect(),identity=document.querySelector('.club-competition-identity').getBoundingClientRect();return Math.abs((logo.top+logo.bottom)-(identity.top+identity.bottom))<2})()"),true,'Competition logo is centered within its row');
+     if(width===1440)assert.equal(await run("(()=>{const summary=document.querySelector('.club-competition-summary').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect();return Math.abs(summary.top-layout.top)<1&&Math.abs(summary.height-layout.height)<1})()"),true,'Vertical separator spans the shared rows');
      if(width===1440)assert.equal(await run("(()=>{const summary=document.querySelector('.club-competition-summary').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect();return summary.width<=740.5&&Math.abs(summary.right-layout.right)<2})()"),true,'Competition data occupies the right edge of the box');
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-name a')).fontSize"),width>760?'18px':'16px','League link uses the requested responsive font size');
      assert.equal(await run("(()=>{const labels=[...document.querySelectorAll('.club-competition-metrics dt,.club-competition-next>.club-competition-label')].map(el=>el.getBoundingClientRect().top);return labels.length===2&&Math.max(...labels)-Math.min(...labels)<2})()"),true,'Status and next match share a row at '+width);
@@ -196,7 +211,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('[data-club-points]')"),null,'Points are not shown');
      // Presentation probes only: do not introduce fictional sporting results.
      for(const status of ['Semifinals','Eliminated in the quarter-finals','Ausgeschieden in der Qualifikationsrunde','Eliminado en la ronda de clasificación','Éliminé au tour de qualification','Eliminato al turno di qualificazione']){
-      assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis';value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
+      assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(width===1440?['.club-competition-name a','[data-club-position]','.club-competition-next a']:['[data-club-position]','.club-competition-next a'])});const details=(${measureBaselines.toString()})(${JSON.stringify(width===1440?['.club-competition-tier','.club-competition-next small']:['.club-competition-next small'])});const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&Math.max(...baselines)-Math.min(...baselines)<1.5&&Math.max(...details)-Math.min(...details)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),'16px','Next match uses 16px on desktop and mobile');
