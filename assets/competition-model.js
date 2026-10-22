@@ -76,7 +76,7 @@
     if(ids.size!==divisionCount||clubs.size!==participantCount||!Array.isArray(data.competitions)||data.competitions.length!==18)return false;
     const names=new Set(),slugs=new Set();
     for(const x of data.competitions){
-      if(!x||typeof x.id!=="string"||typeof x.slug!=="string"||names.has(x.id)||slugs.has(x.slug)||!x.rules||x.rules.schemaVersion!==1||!Array.isArray(x.rules.phases)||!x.metrics||!x.capabilities)return false;
+      if(!x||typeof x.id!=="string"||!x.id||typeof x.slug!=="string"||!x.slug||names.has(x.id)||slugs.has(x.slug)||!x.rules||x.rules.schemaVersion!==1||!Array.isArray(x.rules.phases)||!x.metrics||!x.metrics.phases||typeof x.metrics.phases!=="object"||Array.isArray(x.metrics.phases)||!x.capabilities||!Array.isArray(x.capabilities.phaseIds)||!Array.isArray(x.capabilities.awardIds)||!Array.isArray(x.rules.awards))return false;
       const phaseIds=new Set();
       let total=0;
       for(const phase of x.rules.phases){
