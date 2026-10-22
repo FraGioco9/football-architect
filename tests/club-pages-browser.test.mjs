@@ -123,7 +123,6 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-summary').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
      assert.equal(cardLayout.full,true,'Competition spans the Overview width');
      const valueSelectors=['[data-club-position]','.club-competition-next-empty'];
-     if(width===1440)valueSelectors.unshift('.club-competition-name a');
      const valueBaselines=await run(`(${measureBaselines.toString()})(${JSON.stringify(valueSelectors)})`);
      assert.ok(Math.max(...valueBaselines)-Math.min(...valueBaselines)<1.5,'Main values share their first text baseline: '+JSON.stringify({width,theme,lang,valueBaselines}));
      assert.equal(await run("(()=>{const logo=document.querySelector('.club-competition-logo').getBoundingClientRect(),identity=document.querySelector('.club-competition-identity').getBoundingClientRect();return Math.abs((logo.top+logo.bottom)-(identity.top+identity.bottom))<2})()"),true,'Competition logo is centered within its row');
@@ -211,22 +210,20 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('[data-club-points]')"),null,'Points are not shown');
      // Presentation probes only: do not introduce fictional sporting results.
      for(const status of ['Semifinals','Eliminated in the quarter-finals','Ausgeschieden in der Qualifikationsrunde','Eliminado en la ronda de clasificación','Éliminé au tour de qualification','Eliminato al turno di qualificazione']){
-      assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(width===1440?['.club-competition-name a','[data-club-position]','.club-competition-next a']:['[data-club-position]','.club-competition-next a'])});const details=(${measureBaselines.toString()})(${JSON.stringify(width===1440?['.club-competition-tier','.club-competition-next small']:['.club-competition-next small'])});const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&Math.max(...baselines)-Math.min(...baselines)<1.5&&Math.max(...details)-Math.min(...details)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
+      assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(['[data-club-position]','.club-competition-next a'])});const match=document.querySelector('.club-competition-next a').getBoundingClientRect(),round=document.querySelector('.club-competition-next small').getBoundingClientRect(),name=document.querySelector('.club-competition-name').getBoundingClientRect(),tier=document.querySelector('.club-competition-tier').getBoundingClientRect();const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&Math.max(...baselines)-Math.min(...baselines)<1.5&&Math.abs(round.top-match.bottom-5)<1.5&&Math.abs(tier.top-name.bottom-5)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
-     if(width===1440){
+     if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
        const clip=await run("(()=>{const r=document.querySelector('.club-competition').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");
        const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip,captureBeyondViewport:true});
-       const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_ALIGN_REVIEW|'+label+'|'+i+'|'+chunks.length+'|'+chunk));
+       const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('CLUB_ALIGN_REVIEW|'+width+'-'+label+'|'+i+'|'+chunks.length+'|'+chunk));
       };
-      await capture('current-normal');
+      await capture('aligned-normal');
       await run("window.__statusText=document.querySelector('[data-club-position]').textContent;document.querySelector('[data-club-position]').textContent='Eliminated in the quarter-finals'");
-      await capture('current-long');
-      await run("(()=>{const style=document.createElement('style');style.id='alignment-review-candidate';style.textContent='.club-competition-layout{grid-template-rows:auto;align-items:center}.club-competition-identity{grid-row:auto;grid-template-rows:auto auto;row-gap:5px}.club-competition-name{grid-row:1}.club-competition-tier{grid-row:2}.club-competition-summary{grid-row:auto;grid-template-rows:auto auto auto;row-gap:5px}';document.head.append(style)})()");
-      await capture('candidate-long');
-      await run("document.getElementById('alignment-review-candidate').remove();document.querySelector('[data-club-position]').textContent=window.__statusText");
+      await capture('aligned-long');
+      await run("document.querySelector('[data-club-position]').textContent=window.__statusText");
      }
 
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),'16px','Next match uses 16px on desktop and mobile');

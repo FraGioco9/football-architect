@@ -66,7 +66,7 @@
    '<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>'+
    '</div></div>'+
    '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+rank+'</dd></div></dl>'+
-   '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span>'+nextContent+'</div></div></div>':
+   '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextContent+'</div></div></div></div>':
    '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
   const params=new URLSearchParams(search);
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.

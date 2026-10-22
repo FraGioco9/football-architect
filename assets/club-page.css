@@ -59,18 +59,17 @@
 /* Country flag SVGs already contain the canonical rounded mask. Avoid a second CSS clip. */
 .club-country-flag{border-radius:0;clip-path:none}
 
-/* CLUB-240: full-width competition identity and participation status. */
+/* CLUB-240: compact identity and a baseline-aligned competition summary. */
 .club-overview-layout>.club-competition{grid-column:1/-1;width:100%;box-sizing:border-box}
-.club-competition-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr);grid-template-rows:auto auto auto;align-items:stretch;column-gap:24px;row-gap:5px;min-height:64px;margin-top:14px}
-.club-competition-identity{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:subgrid;grid-row:1/-1;column-gap:16px;min-width:0}
-.club-competition-logo{display:block;width:64px;height:64px;object-fit:contain;grid-column:1;grid-row:1/-1;align-self:center}
-.club-competition-copy{display:grid;grid-template-rows:subgrid;grid-column:2;grid-row:1/-1;min-width:0}
+.club-competition-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr);align-items:center;gap:24px;min-height:64px;margin-top:14px}
+.club-competition-identity{display:flex;align-items:center;gap:16px;min-width:0}
+.club-competition-logo{display:block;flex:0 0 64px;width:64px;height:64px;object-fit:contain}
+.club-competition-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:5px}
 .club-competition-label,.club-competition-tier{color:var(--muted);font-size:.85rem}
-.club-competition-name{grid-row:2;align-self:first baseline;font-size:18px;font-weight:700;overflow-wrap:anywhere}
-.club-competition-tier{grid-row:3;align-self:first baseline}
+.club-competition-name{font-size:18px;font-weight:700;overflow-wrap:anywhere}
 .club-competition-name .app-link{display:inline;padding:0;min-height:0;color:inherit;font:inherit;text-decoration:none}
 .club-competition-name .app-link:hover,.club-competition-name .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
-.club-competition-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-rows:subgrid;grid-row:1/-1;align-items:stretch;column-gap:32px;min-width:0;width:min(100%,740px);box-sizing:border-box;justify-self:end;border-left:1px solid var(--line);padding-left:32px}
+.club-competition-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-rows:auto auto;align-content:center;align-self:stretch;column-gap:32px;row-gap:5px;min-width:0;width:min(100%,740px);box-sizing:border-box;justify-self:end;border-left:1px solid var(--line);padding-left:32px}
 .club-competition-metrics{display:grid;grid-template-rows:subgrid;grid-row:1/-1;min-width:0;margin:0;overflow-wrap:anywhere}
 .club-competition-metrics>div{display:grid;grid-template-rows:subgrid;grid-row:1/-1;min-width:0}
 .club-competition-metrics dt{grid-row:1}
@@ -78,10 +77,10 @@
 .club-competition-metrics dd{grid-row:2;align-self:first baseline;margin:0;font-size:20px;line-height:1.3;font-weight:700;font-variant-numeric:tabular-nums}
 .club-competition-next>.club-competition-label{grid-row:1;font-size:.8rem}
 .club-competition-next{display:grid;grid-template-rows:subgrid;grid-row:1/-1;min-width:0;overflow-wrap:anywhere}
-.club-competition-summary .app-link{display:inline;min-height:0;padding:0;color:inherit;text-decoration:none}
+.club-competition-next-content{display:flex;flex-direction:column;align-items:flex-start;grid-row:2;align-self:first baseline;gap:5px;min-width:0;text-align:left}
+.club-competition-summary .app-link{display:inline;min-height:0;padding:0;color:inherit;text-decoration:none;text-align:left}
 .club-competition-summary .app-link:hover,.club-competition-summary .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
-.club-competition-next small{grid-row:3;align-self:first baseline}
-.club-competition-next>a.app-link,.club-competition-next-empty{grid-row:2;align-self:first baseline;font-size:16px;line-height:1.4}
+.club-competition-next-content>a.app-link,.club-competition-next-empty{font-size:16px;line-height:1.4}
 .club-competition-next-empty{color:var(--muted)}
 .club-competition-empty{margin:12px 0 0;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
-@media(max-width:760px){.club-competition-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;gap:12px}.club-competition-identity{grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto auto;grid-row:auto;row-gap:5px}.club-competition-identity .club-competition-name{grid-row:1}.club-competition-tier{grid-row:2}.club-competition-name{font-size:16px}.club-competition-summary{width:100%;grid-row:auto;grid-template-rows:auto auto auto;row-gap:5px;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:20px;justify-self:stretch;border-left:0;border-top:1px solid var(--line);padding:12px 0 0 8px}.club-competition-next small{grid-row:3}.club-competition-logo{width:56px;height:56px}}
+@media(max-width:760px){.club-competition-layout{grid-template-columns:minmax(0,1fr);gap:12px}.club-competition-name{font-size:16px}.club-competition-summary{width:100%;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:20px;justify-self:stretch;border-left:0;border-top:1px solid var(--line);padding:12px 0 0 8px}.club-competition-logo{width:56px;height:56px;flex-basis:56px}}
