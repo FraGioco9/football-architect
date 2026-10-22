@@ -23,6 +23,9 @@ test("v1, duplicate identity, mismatched metrics and forged projection fail clos
  bad(x=>{x.competitions[1].id=x.competitions[0].id});
  bad(x=>{x.competitions[0].capacity=24});
  bad(x=>{x.competitions[0].metrics.totalMatches++});
+ bad(x=>{delete x.competitions[0].metrics.phases});
+ bad(x=>{delete x.competitions[0].capabilities.phaseIds});
+ bad(x=>{x.competitions[0].rules.awards=null});
  bad(x=>{x.competitions[0].metrics.phases.league.matches++});
  bad(x=>{x.competitions[0].capabilities.phaseIds.pop()});
  bad(x=>{x.competitions[0].rules.phases[0].meetingsPerPair=4});
