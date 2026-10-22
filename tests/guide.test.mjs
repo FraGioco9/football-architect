@@ -34,8 +34,8 @@ function render(saved = null) {
   runInNewContext(js,{document,window},{timeout:2000});
   return {document,controls,labels,trigger,menu,value,store,guideLinks,window,callbacks};
 }
-test("GUIDE-02 has an index and eight dedicated chapters",()=>{
-  assert.equal((html.match(/class="guide-card"/g)||[]).length,8);
+test("GUIDE-02 has an index and nine dedicated chapters",()=>{
+  assert.equal((html.match(/class="guide-card"/g)||[]).length,9);
   for(const id of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){
     assert.match(html,new RegExp('href="/guide/'+id+'"'));
   }
@@ -158,3 +158,5 @@ test("GUIDE-02 previous and next navigation follows chapter order",()=>{const ch
 test("GUIDE-02 vector arrows place previous left and next right",()=>{const css=read("assets/guide.css");assert.ok(css.includes(".guide-step-previous .guide-step-arrow{left:17px;right:auto}"));assert.ok(css.includes(".guide-step-next .guide-step-arrow{right:17px;left:auto}"));for(const name of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){const html=read("guide/"+name+"/index.html");assert.equal((html.match(/<svg class="guide-step-arrow"/g)||[]).length,2);assert.ok(html.includes('M19 12H5 M12 19l-7-7 7-7'));assert.ok(html.includes('M5 12h14 m-7-7 7 7-7 7'));}});
 
 test("GUIDE-02 section H2 headings are enlarged without changing navigation cards",()=>{const css=read("assets/guide.css");assert.ok(css.includes(".guide-main>.guide-layout .guide-section h2{font-size:23px;line-height:1.3}"));assert.ok(css.includes(".guide-main>.guide-layout .guide-section h2{font-size:21px}"));assert.ok(!css.includes(".guide-step-title{font-size:19px"));});
+
+test("GUIDE-02 Assets introduces players without claiming availability",()=>{const page=read("guide/assets/index.html");assert.match(page,/guideAssetsPlayersText/);assert.match(page,/guideAssetsClubsText/);assert.match(page,/future stage/);assert.match(page,/href="\/guide\/clubs"/);});
