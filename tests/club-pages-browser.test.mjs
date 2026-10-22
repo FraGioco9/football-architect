@@ -121,7 +121,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await wait("document.querySelectorAll('.nav01-card').length===320");
      const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
-     assert.match(state.href,/^\\/clubs\\/(it|eng|es|de|fr|pt|nl|br)\\/([1-9]|[1-3][0-9]|40)\\/overview$/);
+     assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
      assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
      if(lang==='en'){const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`nav01-${width}-${theme}.png`),bytes)}}
     }
