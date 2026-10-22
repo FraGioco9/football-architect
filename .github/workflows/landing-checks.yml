@@ -45,8 +45,15 @@ jobs:
           node --check assets/competition-page.js
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
+      - name: Install Chrome for NAV-01 visual QA
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
+        id: nav01-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
       - name: Site contracts
         env:
+          CHROME_BIN: ${{ steps.nav01-chrome.outputs.chrome-path }}
           FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && format('{0}/nav01-screenshots', runner.temp) || '' }}
         run: node --test --test-concurrency=1 tests/*.test.mjs
       - name: Upload NAV-01 Chromium screenshots
