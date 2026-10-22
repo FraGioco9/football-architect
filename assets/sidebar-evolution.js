@@ -14,7 +14,8 @@ const onCompetition=/^\/(?:app\/)?competitions(?:\/|$)/.test(location.pathname);
 const onClubs=/^\/(?:app\/)?clubs(?:\/|$)/.test(location.pathname);
 const open=()=>{try{return sessionStorage.getItem('fa-nav01-expanded')==='true'}catch{return false}};
 function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state))}catch{}paint()}
-button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!=='true'));expand(onCompetition||open());
+button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!=='true'));
+button.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '||event.key==='Spacebar'){event.preventDefault();expand(button.getAttribute('aria-expanded')!=='true')}});expand(onCompetition||open());
 const clubLink=clubs.querySelector('a');clubLink.classList.toggle('is-active',onClubs);if(onClubs)clubLink.setAttribute('aria-current','page');
 if(onClubs){old.classList.remove('is-active');old.removeAttribute('aria-current')}
 for(const a of nav.querySelectorAll('a[href]')){if(window.faAppHref)a.href=window.faAppHref(a.getAttribute('href'))}
