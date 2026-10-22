@@ -59,7 +59,7 @@
   const standingsLink=summary?'/competitions/'+division.id.toLowerCase()+'/standings?season='+summary.season:null;
   const fixtureLink=validNext?'/competitions/'+division.id.toLowerCase()+'/fixtures?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
   const rank=summary?.position===null||!summary?'—':'<a class="app-link" href="'+escape(standingsLink)+'">'+summary.position+'</a>';
-  const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'">'+escape(home.primaryName+' – '+away.primaryName)+'</a><small>'+escape((next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+' · '+t.seasonLabel+' '+summary.season)+'</small>':
+  const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'">'+escape(home.primaryName+' – '+away.primaryName)+'</a><small>'+escape(next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+'</small>':
    '<span class="club-competition-next-empty">'+escape(summary?t.noUpcomingMatch:t.noScheduledMatch)+'</span>';
   const competitionCard=division?'<div class="club-competition-layout"><div class="club-competition-identity">'+
    '<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">'+
