@@ -83,7 +83,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('#calendar-season-picker').getAttribute('role')"),'combobox');
     assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1');
     assert.equal(await runValue("document.querySelector('.calendar-event').hasAttribute('title')"),false);
-    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter'))");
+    await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse'}))");
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').textContent"),'Domestic round 4');
     assert.equal(await runValue("document.querySelector('.calendar-marker-tooltip').hidden"),false);
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerleave'))");
