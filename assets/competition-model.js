@@ -77,6 +77,27 @@
     const names=new Set(),slugs=new Set();
     for(const x of data.competitions){
       if(!x||typeof x.id!=="string"||typeof x.slug!=="string"||names.has(x.id)||slugs.has(x.slug)||!x.rules||x.rules.schemaVersion!==1||!Array.isArray(x.rules.phases)||!x.metrics||!x.capabilities)return false;
+      const phaseIds=new Set();
+      let total=0;
+      for(const phase of x.rules.phases){
+        if(!phase||typeof phase.id!=="string"||phaseIds.has(phase.id)||!Array.isArray(phase.calendarEvents))return false;
+        phaseIds.add(phase.id);
+        let rounds,perRound,matches;
+        if(phase.type==="roundRobin"){
+          if(!Number.isSafeInteger(phase.meetingsPerPair)||phase.meetingsPerPair<1)return false;
+          rounds=(x.capacity-1)*phase.meetingsPerPair;perRound=x.capacity/2;matches=rounds*perRound;
+        }else if(phase.type==="leaguePhase"){
+          if(!Number.isSafeInteger(phase.rounds)||!Number.isSafeInteger(phase.matchesPerClub)||phase.homeMatchesPerClub+phase.awayMatchesPerClub!==phase.matchesPerClub)return false;
+          rounds=phase.rounds;perRound=x.capacity/2;matches=x.capacity*phase.matchesPerClub/2;
+        }else if(phase.type==="knockout"){
+          if(!Array.isArray(phase.ties))return false;
+          rounds=phase.calendarEvents.length;perRound=null;
+          matches=phase.ties.reduce((sum,t)=>sum+(Number.isSafeInteger(t?.legs)?t.legs:NaN),0);
+        }else return false;
+        if(!Number.isSafeInteger(matches)||phase.calendarEvents.length!==rounds||!same(x.metrics.phases?.[phase.id],{rounds,matchesPerRound:perRound,matches}))return false;
+        total+=matches;
+      }
+      if(!same(x.capabilities.phaseIds,x.rules.phases.map(p=>p.id))||!same(x.capabilities.awardIds,x.rules.awards)||Object.keys(x.metrics.phases).length!==phaseIds.size||x.metrics.totalMatches!==total)return false;
       names.add(x.id);slugs.add(x.slug);
       if(x.category==="domestic"){
         const d=data.divisions.find(y=>y.id===x.id);
