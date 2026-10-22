@@ -50,3 +50,11 @@
 .nav01-directory .app-page-title{margin:0;padding:0;border:0;font-size:var(--app-page-title-size);line-height:1.2;letter-spacing:-.035em}
 @media(max-width:720px){.nav01-directory .app-page-title{margin:0;padding:0;border:0;font-size:var(--app-page-title-size)}}
 .nav01-filters>input[type="search"]:focus,.nav01-filters>input[type="search"]:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 1px var(--primary);background:var(--surface-raised)}
+
+/* CLUBS-LAYOUT-02D: anchor dropdowns to their resized filter triggers. */
+.nav01-filter{position:relative;width:100%;min-width:0;align-self:stretch}
+.nav01-filter .language-trigger{box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+.nav01-filter .language-menu{box-sizing:border-box;inset-inline-start:0;inset-inline-end:auto;top:calc(100% + 6px);width:100%;min-width:0;max-width:100%;max-height:min(320px,calc(100svh - 100px));padding:5px}
+.nav01-filter .language-option{box-sizing:border-box;width:100%;min-height:38px;padding:9px 10px;font-size:13px;line-height:1.35}
+.nav01-filter .language-option:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+@media(max-width:500px){.nav01-filter .language-menu{width:100%;max-width:100%}}
