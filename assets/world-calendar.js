@@ -18,7 +18,9 @@
   };
   let state={day:Number(root.dataset.calendarDay),view:root.dataset.calendarView};
   if(!Number.isInteger(state.day)||state.day<1||state.day>56||!['season','week'].includes(state.view))state={day:1,view:'season'};
-  let manualWeekSelected=false;
+  let manualWeekDay=null;
+  let pendingInitialWeek=false;
+  const rememberWeek=()=>{manualWeekDay=state.day;pendingInitialWeek=false};
   const currentWeekDay=()=>{
     const current=clockSnapshot?.current;
     const viewedSeason=window.faCalendarSelectedSeason?.()??1;
@@ -58,18 +60,19 @@
   }
   for(const view of ['season','week'])get(view).addEventListener('click',()=>{
     const enteringWeek=view==='week'&&state.view!=='week';
-    change(enteringWeek&&!manualWeekSelected?{view,day:currentWeekDay()}:{view});
+    if(enteringWeek&&manualWeekDay===null){pendingInitialWeek=true;change({view,day:currentWeekDay()})}
+    else change(enteringWeek?{view,day:manualWeekDay??state.day}:{view});
   });
-  get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;manualWeekSelected=true;change({day},day<=7)}});
-  get('next').addEventListener('click',()=>{if(state.day<=49){const day=state.day+7;manualWeekSelected=true;change({day},day>49)}});
+  get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;change({day},day<=7);rememberWeek()}});
+  get('next').addEventListener('click',()=>{if(state.day<=49){const day=state.day+7;change({day},day>49);rememberWeek()}});
   for(const button of buttons){
-    button.addEventListener('click',()=>{if(state.view==='week')manualWeekSelected=true;if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)})});
+    button.addEventListener('click',()=>{if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)});if(state.view==='week')rememberWeek()});
     button.addEventListener('keydown',event=>{
       const day=state.day,start=Math.floor((day-1)/7)*7+1;
       const target={ArrowLeft:day-1,ArrowRight:day+1,ArrowUp:day-(state.view==='season'?7:1),ArrowDown:day+(state.view==='season'?7:1),PageUp:day-7,PageDown:day+7,
         Home:event.ctrlKey?1:start,End:event.ctrlKey?56:start+6}[event.key];
       if(target===undefined)return;
-      event.preventDefault();if(state.view==='week')manualWeekSelected=true;change({day:Math.max(1,Math.min(56,target))},true);
+      event.preventDefault();change({day:Math.max(1,Math.min(56,target))},true);if(state.view==='week')rememberWeek();
     });
   }
   // CAL-IMP-03: read-only inline details derived only from the frozen calendar contract.
@@ -125,6 +128,10 @@
   const devClockEnabled=window.faDevCalendarClockSnapshot?.source?.kind==='dev';
   function updateClock(raw){
     try{clockSnapshot=devClockEnabled&&raw?.source?.kind==='dev'?clockAdapter?.normalize(raw)??null:null}catch{clockSnapshot=null}
+    if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){
+      const day=currentWeekDay();
+      if(day!==state.day){state={...state,day};render();}
+    }
     renderClock();
   }
   function renderClock(){
@@ -200,7 +207,7 @@
     divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
     window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
   }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;manualWeekSelected=true;change({day:(n-1)*7+1,view:'week'});return true}});
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});rememberWeek();return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
 })();
