@@ -1,0 +1,562 @@
+[
+  {
+    "id": "sovereign-cup",
+    "slug": "sovereign-cup",
+    "name": "Sovereign Cup",
+    "category": "international",
+    "capacity": 24,
+    "rules": {
+      "schemaVersion": 1,
+      "version": "international-int24-v1",
+      "qualificationPolicyId": "int24ChampionAwareV1",
+      "awards": [
+        "champion"
+      ],
+      "phases": [
+        {
+          "id": "league",
+          "type": "leaguePhase",
+          "labelKey": "league",
+          "calendarEvents": [
+            "I01",
+            "I02",
+            "I03",
+            "I04",
+            "I05",
+            "I06"
+          ],
+          "rounds": 6,
+          "matchesPerClub": 6,
+          "homeMatchesPerClub": 3,
+          "awayMatchesPerClub": 3,
+          "drawPolicyId": "int24SixOpponentsV1",
+          "points": {
+            "win": 3,
+            "draw": 1,
+            "loss": 0
+          },
+          "tiebreakers": [
+            "points",
+            "goalDifference",
+            "goalsFor",
+            "wins",
+            "awayGoals",
+            "awayWins",
+            "opponentsPoints",
+            "opponentsGoalDifference",
+            "opponentsGoalsFor",
+            "compositeClubId"
+          ],
+          "rankOutcomes": [
+            {
+              "from": 1,
+              "to": 4,
+              "kind": "quarterfinals",
+              "targetPhaseId": "quarterfinals"
+            },
+            {
+              "from": 5,
+              "to": 12,
+              "kind": "knockouts",
+              "targetPhaseId": "playoffs"
+            },
+            {
+              "from": 13,
+              "to": 24,
+              "kind": "eliminated"
+            }
+          ]
+        },
+        {
+          "id": "playoffs",
+          "type": "knockout",
+          "labelKey": "knockouts",
+          "calendarEvents": [
+            "I07",
+            "I08"
+          ],
+          "ties": [
+            {
+              "id": "p512",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 5
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 12
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "p611",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 6
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 11
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "p710",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 7
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 10
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "p89",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 8
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 9
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            }
+          ]
+        },
+        {
+          "id": "quarterfinals",
+          "type": "knockout",
+          "labelKey": "quarterfinals",
+          "calendarEvents": [
+            "I09",
+            "I10"
+          ],
+          "ties": [
+            {
+              "id": "q1",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 1
+                },
+                {
+                  "tieId": "p89"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "q2",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 4
+                },
+                {
+                  "tieId": "p512"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "q3",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 2
+                },
+                {
+                  "tieId": "p710"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "q4",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 3
+                },
+                {
+                  "tieId": "p611"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            }
+          ]
+        },
+        {
+          "id": "semifinals",
+          "type": "knockout",
+          "labelKey": "semifinals",
+          "calendarEvents": [
+            "I11",
+            "I12"
+          ],
+          "ties": [
+            {
+              "id": "s1",
+              "participants": [
+                {
+                  "tieId": "q1"
+                },
+                {
+                  "tieId": "q2"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "s2",
+              "participants": [
+                {
+                  "tieId": "q3"
+                },
+                {
+                  "tieId": "q4"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            }
+          ]
+        },
+        {
+          "id": "final",
+          "type": "knockout",
+          "labelKey": "final",
+          "calendarEvents": [
+            "SOVEREIGN-FINAL"
+          ],
+          "ties": [
+            {
+              "id": "final",
+              "participants": [
+                {
+                  "tieId": "s1"
+                },
+                {
+                  "tieId": "s2"
+                }
+              ],
+              "legs": 1,
+              "homePolicy": "neutral",
+              "resolution": "singleExtraTimePenalties"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "federation-cup",
+    "slug": "federation-cup",
+    "name": "Federation Cup",
+    "category": "international",
+    "capacity": 24,
+    "rules": {
+      "schemaVersion": 1,
+      "version": "international-int24-v1",
+      "qualificationPolicyId": "int24ChampionAwareV1",
+      "awards": [
+        "champion"
+      ],
+      "phases": [
+        {
+          "id": "league",
+          "type": "leaguePhase",
+          "labelKey": "league",
+          "calendarEvents": [
+            "I01",
+            "I02",
+            "I03",
+            "I04",
+            "I05",
+            "I06"
+          ],
+          "rounds": 6,
+          "matchesPerClub": 6,
+          "homeMatchesPerClub": 3,
+          "awayMatchesPerClub": 3,
+          "drawPolicyId": "int24SixOpponentsV1",
+          "points": {
+            "win": 3,
+            "draw": 1,
+            "loss": 0
+          },
+          "tiebreakers": [
+            "points",
+            "goalDifference",
+            "goalsFor",
+            "wins",
+            "awayGoals",
+            "awayWins",
+            "opponentsPoints",
+            "opponentsGoalDifference",
+            "opponentsGoalsFor",
+            "compositeClubId"
+          ],
+          "rankOutcomes": [
+            {
+              "from": 1,
+              "to": 4,
+              "kind": "quarterfinals",
+              "targetPhaseId": "quarterfinals"
+            },
+            {
+              "from": 5,
+              "to": 12,
+              "kind": "knockouts",
+              "targetPhaseId": "playoffs"
+            },
+            {
+              "from": 13,
+              "to": 24,
+              "kind": "eliminated"
+            }
+          ]
+        },
+        {
+          "id": "playoffs",
+          "type": "knockout",
+          "labelKey": "knockouts",
+          "calendarEvents": [
+            "I07",
+            "I08"
+          ],
+          "ties": [
+            {
+              "id": "p512",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 5
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 12
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "p611",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 6
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 11
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "p710",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 7
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 10
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "p89",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 8
+                },
+                {
+                  "phaseId": "league",
+                  "rank": 9
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            }
+          ]
+        },
+        {
+          "id": "quarterfinals",
+          "type": "knockout",
+          "labelKey": "quarterfinals",
+          "calendarEvents": [
+            "I09",
+            "I10"
+          ],
+          "ties": [
+            {
+              "id": "q1",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 1
+                },
+                {
+                  "tieId": "p89"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "q2",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 4
+                },
+                {
+                  "tieId": "p512"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "q3",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 2
+                },
+                {
+                  "tieId": "p710"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "q4",
+              "participants": [
+                {
+                  "phaseId": "league",
+                  "rank": 3
+                },
+                {
+                  "tieId": "p611"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            }
+          ]
+        },
+        {
+          "id": "semifinals",
+          "type": "knockout",
+          "labelKey": "semifinals",
+          "calendarEvents": [
+            "I11",
+            "I12"
+          ],
+          "ties": [
+            {
+              "id": "s1",
+              "participants": [
+                {
+                  "tieId": "q1"
+                },
+                {
+                  "tieId": "q2"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            },
+            {
+              "id": "s2",
+              "participants": [
+                {
+                  "tieId": "q3"
+                },
+                {
+                  "tieId": "q4"
+                }
+              ],
+              "legs": 2,
+              "homePolicy": "higherOriginalTableRank",
+              "resolution": "aggregateExtraTimePenalties"
+            }
+          ]
+        },
+        {
+          "id": "final",
+          "type": "knockout",
+          "labelKey": "final",
+          "calendarEvents": [
+            "FEDERATION-FINAL"
+          ],
+          "ties": [
+            {
+              "id": "final",
+              "participants": [
+                {
+                  "tieId": "s1"
+                },
+                {
+                  "tieId": "s2"
+                }
+              ],
+              "legs": 1,
+              "homePolicy": "neutral",
+              "resolution": "singleExtraTimePenalties"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
