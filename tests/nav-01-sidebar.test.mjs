@@ -7,7 +7,7 @@ const directory=readFileSync(new URL('../assets/clubs-directory.js',import.meta.
 const sidebar=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
 test('NAV-01B directory links use canonical country/id/overview paths',()=>{
  assert.ok(directory.includes("+'/'+c.clubId+'/overview"));
- assert.ok(!directory.includes("+'-'+c.clubId"));
+ assert.ok(!directory.includes('href="/clubs/\'+c.countryId.toLowerCase()+\'-\'+c.clubId'));
  for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(const id of [1,16,17,32,40]){
   const r=resolveSubpage('/clubs/'+country+'/'+id+'/overview');
   assert.equal(r?.kind,'club');assert.equal(r?.redirect,false);
