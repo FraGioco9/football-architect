@@ -117,7 +117,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       try{
        if(mode==='cold')await cmd('Page.navigate',{url:origin+path});else await cmd('Page.reload',{ignoreCache:true});
        await wait("document.readyState==='interactive'&&document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
-       await run('document.fonts.ready');
+       await wait("document.fonts.status==='loaded'");
        const before=await run(navSnapshot);
        assert.equal(before.lang,lang);assert.equal(before.theme,theme);
        assert.equal(before.nodes.filter(n=>n.current==='page').length,1);
@@ -129,7 +129,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        await wait("document.readyState==='complete'");await delay(50);
        const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
        if(capture)await captureNav('after');
-      }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+      }catch(error){throw new Error('NAV first paint '+JSON.stringify({width,theme,lang,path,mode})+': '+error.message,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
      }
     }
     console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
