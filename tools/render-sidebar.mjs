@@ -1,6 +1,6 @@
 import {readFileSync} from 'node:fs';
 
-const bootstrap=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8').replace(/\r\n/g,'\n').trim();
+const bootstrap=readFileSync(new URL('../assets/sidebar-first-paint.js',import.meta.url),'utf8').replace(/\r\n/g,'\n').trim();
 // The full navigation is static. Preferences need no deferred network request.
 export function renderSidebar(html){
  if(html.includes('data-nav01-static'))return html;
