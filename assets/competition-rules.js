@@ -43,6 +43,16 @@ rules.phases.forEach((p,i)=>{if(!isObject(p))return;const path="rules.phases["+i
 if(Array.isArray(p.rankOutcomes))p.rankOutcomes.forEach((o,j)=>{if(o.targetPhaseId!==undefined&&(!phases.has(o.targetPhaseId)||phases.get(o.targetPhaseId)<=i))err(path+".rankOutcomes["+j+"].targetPhaseId","Target must be a later phase")});
 if(p.type==="knockout"&&Array.isArray(p.ties)){p.ties.forEach((t,j)=>{if(!isObject(t)||!Array.isArray(t.participants))return;t.participants.forEach((ref,k)=>{const rp=path+".ties["+j+"].participants["+k+"]";if(!isObject(ref)){err(rp,"Expected participant reference");return}if(typeof ref.tieId==="string"){const src=ties.get(ref.tieId);if(!src||src.phase>i||src.phase===i&&src.index>=j)err(rp,"Unknown, later or cyclic tie");}else if(typeof ref.phaseId==="string"){const phaseIndex=phases.get(ref.phaseId);const target=rules.phases[phaseIndex];if(phaseIndex===undefined||phaseIndex>=i||!target||!["roundRobin","leaguePhase"].includes(target.type)||!integer(ref.rank)||ref.rank<1||ref.rank>capacity)err(rp,"Invalid ranked participant reference")}else err(rp,"Unknown participant reference")})})}
 });
+if(category==="international"){
+  const expectedFinal=id==="sovereign-cup"?"SOVEREIGN-FINAL":id==="federation-cup"?"FEDERATION-FINAL":null;
+  if(!expectedFinal)err("id","Unsupported international competition identity");
+  if(capacity!==24)err("capacity","INT-24 requires 24 participants");
+  const finalPhase=rules.phases.find(p=>p&&p.id==="final");
+  if(!finalPhase||finalPhase.type!=="knockout"||!Array.isArray(finalPhase.calendarEvents)||finalPhase.calendarEvents.length!==1||finalPhase.calendarEvents[0]!==expectedFinal)err("rules.phases.final.calendarEvents","Final must use its canonical cup event");
+  for(const p of rules.phases){if(!isObject(p)||!Array.isArray(p.calendarEvents))continue;
+    for(const event of p.calendarEvents)if((event==="SOVEREIGN-FINAL"||event==="FEDERATION-FINAL")&&event!==expectedFinal)err("rules.phases."+p.id+".calendarEvents","Other cup's final is forbidden");
+  }
+}
 return {valid:errors.length===0,errors};
 }
 function phaseMetrics(definition,phaseId){const p=definition.rules.phases.find(p=>p.id===phaseId);if(!p)return null;const n=definition.capacity;if(p.type==="roundRobin"){const rounds=(n-1)*p.meetingsPerPair;return freeze({rounds,matchesPerRound:n/2,matches:rounds*n/2})}if(p.type==="leaguePhase")return freeze({rounds:p.rounds,matchesPerRound:n/2,matches:n*p.matchesPerClub/2});return freeze({rounds:p.calendarEvents.length,matchesPerRound:null,matches:p.ties.reduce((a,t)=>a+t.legs,0)})}
