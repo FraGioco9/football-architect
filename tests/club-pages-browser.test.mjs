@@ -84,7 +84,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
     });
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
-    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`if(location.hash){window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample)}`});
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -151,7 +151,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }
       holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
       await wait("document.readyState==='complete'");await wait(fragmentAligned);
-     }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+     }catch(error){const diagnostic=await run("JSON.stringify({href:location.href,state:document.readyState,pending:document.documentElement.dataset.nav01Fragment,visibility:getComputedStyle(document.querySelector('.fa-shell-content-scroll')).visibility,frames:window.__navFragmentFrames,errors:window.__faRuntimeErrors,bootstrap:!!window.faSidebarAlignFragment,tail:!!document.querySelector('[data-nav01-fragment-align]')})");throw new Error(JSON.stringify(context)+' '+error.message+' '+diagnostic,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
     };
     for(const width of [1440,390])for(const theme of ['dark','light']){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
