@@ -182,7 +182,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     const division=JSON.parse(readFileSync(join(artifact,'competitions/_shared/manifest.json'),'utf8')).divisions.find(d=>d.id==='IT-1');
     const current=createPreviewStandings(division,15,2),index=current.rows.findIndex(r=>r.club.clubId===1);
     const upcoming=createPreviewStandings(division,30,2).fixtures.find(f=>f.round===16&&(f.homeId===1||f.awayId===1));
-    for(const width of [1440,390]){
+    for(const width of [1440,390,320]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      devManifestDelay=150;
      await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
@@ -191,8 +191,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      devManifestDelay=0;
      assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
      assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(index+1));
-     assert.equal(await run("getComputedStyle(document.querySelector('[data-club-position] a')).fontSize"),'16px','Status value uses 16px');
+     assert.equal(await run("getComputedStyle(document.querySelector('[data-club-position] a')).fontSize"),'20px','Status value uses 20px');
      assert.equal(await run("document.querySelector('[data-club-points]')"),null,'Points are not shown');
+     assert.equal(await run("(()=>{const value=document.querySelector('[data-club-position] a'),previous=value.textContent;value.textContent='Semifinals';const box=value.parentElement;const fits=box.scrollWidth<=box.clientWidth+1&&box.getBoundingClientRect().height<=parseFloat(getComputedStyle(box).lineHeight)+1;value.textContent=previous;return fits})()"),true,'Semifinals fits the Status column on one line at '+width);
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),'16px','Next match uses 16px on desktop and mobile');
      const fixtureText=await run("document.querySelector('.club-competition-next a').textContent");
