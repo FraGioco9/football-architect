@@ -35,3 +35,14 @@ test('NAV-01C public server resolves the extensionless directory route',()=>{
  assert.equal(publicRequestFile('/clubs'),'clubs/index.html');
  assert.equal(publicRequestFile('/clubs/'),'clubs/index.html');
 });
+
+test('NAV-01 first paint ships complete navigation before deferred scripts',()=>{
+ for(const file of ['dashboard/index.html','calendar/index.html','settings/index.html','competitions/index.html','competitions/_shared/index.html','clubs/index.html','clubs/_shared/index.html']){
+  const html=readFileSync(new URL('../'+file,import.meta.url),'utf8');
+  const nav=html.slice(html.indexOf('<nav class="fa-shell-nav"'),html.indexOf('</nav>'));
+  for(const href of ['/clubs','/guide','/competitions#domestic','/competitions#international'])assert.ok(nav.includes('href="'+href+'"'),file+' lacks initial '+href);
+  assert.match(nav,/aria-expanded="false"[^>]*aria-controls="nav01-children"/);
+  assert.ok(html.indexOf('<script data-nav01-bootstrap>')>html.indexOf('</nav>'));
+  assert.ok(html.indexOf('<script data-nav01-bootstrap>')<html.indexOf('<main'));
+ }
+});

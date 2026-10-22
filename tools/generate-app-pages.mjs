@@ -1,5 +1,6 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
+import {renderSidebar} from "./render-sidebar.mjs";
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {clubOutputs} from "./generate-club-pages.mjs";
 import model from "../assets/competition-model.js";
@@ -162,6 +163,7 @@ const normalizeRouteLinks=(html,path)=>{
 };
 const writeOutput=(path,content)=>{
  if(path.endsWith(".html")&&!content.includes("/assets/sidebar-evolution.js"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
+ if(path.endsWith('.html'))content=renderSidebar(content);
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");

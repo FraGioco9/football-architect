@@ -36,13 +36,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
- let refuseCrests=false;
+ let refuseCrests=false,holdDeferred=false;const deferredResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
-   res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));
+   const send=()=>{res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));};
+   if(holdDeferred&&file.endsWith('.js')&&file!=='assets/theme.js')deferredResponses.push(send);else send();
   }catch{res.writeHead(404);res.end()}
  });
  const router=createPreviewServer();let devManifestDelay=0;
@@ -103,6 +104,34 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.text);
     });
     const manifest=JSON.parse(readFileSync(join(artifact,'clubs/_shared/manifest.json'),'utf8'));
+    // Observe actual first contentful paint while all deferred JS is held back.
+    // Releasing those responses must not change sidebar labels, selection or geometry.
+    const navSnapshot="(()=>{const nav=document.querySelector('.fa-shell-nav');return {lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,expanded:nav.querySelector('.nav01-expand').getAttribute('aria-expanded'),nodes:[...nav.querySelectorAll('h2,a,button')].map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {text:el.textContent.trim(),label:el.getAttribute('aria-label'),current:el.getAttribute('aria-current'),active:el.classList.contains('is-active'),x:r.x,y:r.y,w:r.width,h:r.height,display:s.display}})}})()";
+    for(const width of [1440,390])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await cmd('Page.navigate',{url:origin+'/dashboard'});await wait("document.readyState==='complete'");
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});sessionStorage.setItem('fa-nav01-expanded','true');`);
+     for(const path of ['/dashboard','/clubs','/clubs/it/1/overview','/competitions/it-1/standings'])for(const mode of ['cold','refresh']){
+      holdDeferred=true;
+      try{
+       if(mode==='cold')await cmd('Page.navigate',{url:origin+path});else await cmd('Page.reload',{ignoreCache:true});
+       await wait("document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
+       await run('document.fonts.ready');
+       const before=await run(navSnapshot);
+       assert.equal(before.lang,lang);assert.equal(before.theme,theme);
+       assert.equal(before.nodes.filter(n=>n.current==='page').length,1);
+       assert.equal(before.nodes.filter(n=>n.active).length,1);
+       const capture=width===1440&&theme==='dark'&&lang==='it'&&path==='/clubs'&&mode==='cold';
+       const captureNav=async label=>{const clip=await run("(()=>{const r=document.querySelector('.fa-shell-sidebar').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip});const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('NAV_FIRST_PAINT|'+label+'|'+i+'|'+chunks.length+'|'+chunk));};
+       if(capture)await captureNav('before');
+       holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
+       await wait("document.readyState==='complete'");await delay(50);
+       const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
+       if(capture)await captureNav('after');
+      }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+     }
+    }
+    console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
     const knownPath='/clubs/'+country.toLowerCase()+'/'+id.toString()+'/overview';
