@@ -66,3 +66,10 @@
 .guide-content>.guide-facts,.guide-content>.guide-format-facts{max-width:100%}
 .guide-content>.guide-section a,.guide-content>.guide-explore-links a{overflow-wrap:anywhere}
 @media(max-width:700px){.guide-content>.guide-explore-links{flex-direction:column;align-items:flex-start;gap:10px}.guide-content>.guide-chapter-link{margin-top:14px}}
+
+/* GUIDE-02 breadcrumb and chapter menu alignment. */
+.guide-nav{display:flex;flex-wrap:wrap;align-items:center;column-gap:7px;row-gap:4px;line-height:1.5}
+.guide-nav [aria-current="page"]{color:var(--text);font-weight:650;overflow-wrap:anywhere}
+.guide-main>.guide-nav{margin-bottom:14px}
+.guide-main>.guide-layout{align-items:start}
+@media(max-width:700px){.guide-main>.guide-nav{margin-bottom:12px}}
