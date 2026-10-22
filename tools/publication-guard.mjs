@@ -19,7 +19,7 @@ const required=[
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"));
-const rootFiles=new Set(["clubs/_shared/index.html","clubs/_shared/manifest.json","vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
+const rootFiles=new Set(["clubs/index.html","clubs/_shared/index.html","clubs/_shared/manifest.json","vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
  "dashboard/index.html","calendar/index.html",
  "settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
