@@ -295,7 +295,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
     await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:' ',code:'Space',windowsVirtualKeyCode:32});
     await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='false'");
-    assert.equal(await run("document.querySelector('.nav01-children').hidden"),true);
+    await wait("document.querySelector('.nav01-children').hidden===true");
     await visit('/clubs/it/1/overview');
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
