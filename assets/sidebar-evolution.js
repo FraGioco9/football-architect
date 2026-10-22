@@ -1,6 +1,36 @@
 /* NAV-01: initialize static navigation before first paint; no career writes. */
 (()=>{'use strict';const nav=document.querySelector('.fa-shell-nav[data-nav01-static]');if(!nav)return;
-if(nav.dataset.nav01Bound==='true'){for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));window.faSidebarPaint?.();return;}
+if(nav.dataset.nav01Bound==='true'){
+ // The first-paint inline bootstrap has already bound an immediate click handler.
+ // Capture user input before it reaches that handler, while preserving its static DOM.
+ const button=nav.querySelector('.nav01-expand'),submenu=nav.querySelector('#nav01-children');
+ if(button&&submenu&&!button.dataset.nav01Animated){
+  button.dataset.nav01Animated='true';
+  let motion=null;
+  const toggle=()=>{
+   const opening=button.getAttribute('aria-expanded')!=='true';
+   const from=submenu.hidden?0:submenu.getBoundingClientRect().height;
+   if(motion){motion.cancel();motion=null;}
+   button.setAttribute('aria-expanded',String(opening));
+   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+   if(reduced||!submenu.animate){submenu.hidden=!opening;submenu.classList.remove('nav01-is-animating');}
+   else{
+    submenu.hidden=false;
+    const to=opening?submenu.scrollHeight:0;
+    submenu.classList.add('nav01-is-animating');
+    motion=submenu.animate([{height:from+'px',opacity:opening?0:1},{height:to+'px',opacity:opening?1:0}],{duration:320,easing:'cubic-bezier(.2,.75,.25,1)'});
+    const current=motion;
+    current.onfinish=()=>{if(motion!==current)return;submenu.hidden=!opening;submenu.classList.remove('nav01-is-animating');motion=null;};
+   }
+   try{sessionStorage.setItem('fa-nav01-expanded',String(opening));}catch{}
+   window.faSidebarPaint?.();
+  };
+  button.addEventListener('click',event=>{event.stopImmediatePropagation();toggle();},true);
+  button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.stopImmediatePropagation();toggle();}},true);
+ }
+ for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+ window.faSidebarPaint?.();return;
+}
 const lang={en:['World','Domestic','International','Explore','Clubs','Guide','Competitions'],de:['Welt','National','International','Entdecken','Vereine','Handbuch','Wettbewerbe'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía','Competiciones'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide','Compétitions'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida','Competizioni']};
 const baseLabels={en:['Home','Dashboard','Calendar','Settings','Career pages'],de:['Start','Dashboard','Kalender','Einstellungen','Karriereseiten'],es:['Inicio','Panel','Calendario','Ajustes','Páginas de carrera'],fr:['Accueil','Tableau de bord','Calendrier','Paramètres','Pages de carrière'],it:['Inizio','Dashboard','Calendario','Impostazioni','Pagine della carriera']};
 const expandLabels={en:'Expand world navigation',de:'Weltnavigation aufklappen',es:'Expandir navegación del mundo',fr:'Développer la navigation du monde',it:'Espandi navigazione del mondo'};
