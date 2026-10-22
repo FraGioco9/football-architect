@@ -112,7 +112,7 @@
   function read(){
     const params=new URL(window.location.href).searchParams;
     const id=params.get("season"),round=params.get("matchday");
-    const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason;
+    const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
     return {season:availableSeasons.includes(requested)?requested:"1",
       view:views.includes(window.location.pathname.split("/").filter(Boolean).at(-1))?window.location.pathname.split("/").filter(Boolean).at(-1):views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:round==="playoffs"||round==="playout"?round:/^[1-9]\d*$/.test(round||"")&&model.validRound(Number(round))?Number(round):1};

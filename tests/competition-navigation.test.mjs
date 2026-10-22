@@ -219,3 +219,11 @@ test('DEV season 0 survives direct loads and normalizes old season URLs to seaso
   assert.equal(s.fields.get('competition-panel-fixtures').hidden,true);
  }
 });
+
+test('Explicit invalid season values fall back to season 1 even when later DEV seasons exist',()=>{
+ for(const value of ['bad','0','9999999999']){
+  const s=setup('/competitions/it-1/fixtures?season='+value+'&matchday=4',3);
+  assert.equal(s.window.faCompetitionRoute.get().season,'1');
+  assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
+ }
+});

@@ -2,7 +2,8 @@ import {chromium} from "playwright";
 import {mkdirSync} from "node:fs";
 import assert from "node:assert/strict";
 
-const base="http://127.0.0.1:2000";
+// Match the canonical app origin used by generated <base> URLs and DEV modules.
+const base="http://app.localhost:2000";
 const out="int24-browser-artifacts";
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
