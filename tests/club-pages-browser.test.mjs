@@ -113,6 +113,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Position',de:'Platz',es:'Posición',fr:'Position',it:'Posizione'}[lang]);
      const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-summary').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1,stacked:status.top>=identity.bottom-1}})()");
      assert.equal(cardLayout.full,true,'Competition spans the Overview width');
+     if(width===1440)assert.equal(await run("(()=>{const summary=document.querySelector('.club-competition-summary').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect();return summary.width<=480.5&&Math.abs(summary.right-layout.right)<2})()"),true,'Competition data occupies the right edge of the box');
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-name a')).fontSize"),width>760?'18px':'16px','League link uses the requested responsive font size');
      assert.equal(await run("(()=>{const labels=[...document.querySelectorAll('.club-competition-metrics dt,.club-competition-next>.club-competition-label')].map(el=>el.getBoundingClientRect().top);return labels.length===3&&Math.max(...labels)-Math.min(...labels)<2})()"),true,'Position, points and next match share a row at '+width);
      assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No provisional allocation label');
@@ -191,6 +192,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
      assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(index+1));
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
+     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),'16px','Next match uses 16px on desktop and mobile');
      const fixtureText=await run("document.querySelector('.club-competition-next a').textContent");
      for(const id of [upcoming.homeId,upcoming.awayId])assert.ok(fixtureText.includes(division.clubs.find(c=>c.clubId===id).primaryName));
      assert.equal(await run("(()=>{const root=document.querySelector('.fa-shell-content-scroll');return root.scrollWidth<=root.clientWidth+1})()"),true,'Live Competition summary fits at '+width);
