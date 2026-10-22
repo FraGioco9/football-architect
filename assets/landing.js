@@ -5,6 +5,7 @@
   const SUPPORTED = ["en","de","es","fr","it"];
   const messages = {
     en: {
+      guideStepPrevious:"Previous",guideStepNext:"Next",guideChapterNavigation:"Guide chapter navigation",
       language:"Language",brandHome:"Football Architect home",guideNavigation:"Page navigation",guideSections:"Guide sections",summary:"Explore an alternative football world.",
       enter:"Explore app preview",guide:"Guide",universe:"Football world",
       countries:"Countries",divisions:"Divisions",clubs:"Documented clubs",
@@ -136,6 +137,7 @@
       guideClubsText2:"Clubs are the teams that take part in divisions. Their identity remains separate from the division in which they compete."
     },
     de: {
+      guideStepPrevious:"Zurück",guideStepNext:"Weiter",guideChapterNavigation:"Kapitelnavigation",
       language:"Sprache",brandHome:"Football Architect – Startseite",guideNavigation:"Seitennavigation",guideSections:"Leitfadenabschnitte",summary:"Entdecke eine alternative Fußballwelt.",
       enter:"App-Vorschau öffnen",guide:"Leitfaden",universe:"Fußballwelt",
       countries:"Länder",divisions:"Ligen",clubs:"Dokumentierte Vereine",
@@ -267,6 +269,7 @@
       guideClubsText2:"Vereine nehmen an Ligawettbewerben teil. Ihre Identität bleibt unabhängig von der Liga, in der sie spielen."
     },
     es: {
+      guideStepPrevious:"Anterior",guideStepNext:"Siguiente",guideChapterNavigation:"Navegación por capítulos",
       language:"Idioma",brandHome:"Inicio de Football Architect",guideNavigation:"Navegación de la página",guideSections:"Secciones de la guía",summary:"Explora un universo futbolístico alternativo.",
       enter:"Explorar vista previa de la app",guide:"Guía",universe:"Mundo del fútbol",
       countries:"Países",divisions:"Divisiones",clubs:"Clubes documentados",
@@ -398,6 +401,7 @@
       guideClubsText2:"Los clubes participan en las divisiones, pero su identidad es independiente de la división en la que compiten."
     },
     fr: {
+      guideStepPrevious:"Précédent",guideStepNext:"Suivant",guideChapterNavigation:"Navigation des chapitres",
       language:"Langue",brandHome:"Accueil de Football Architect",guideNavigation:"Navigation de la page",guideSections:"Sections du guide",summary:"Explorez un univers footballistique alternatif.",
       enter:"Explorer l’aperçu de l’app",guide:"Guide",universe:"Univers du football",
       countries:"Pays",divisions:"Divisions",clubs:"Clubs répertoriés",
@@ -529,6 +533,7 @@
       guideClubsText2:"Les clubs participent aux divisions, mais leur identité reste indépendante de la division dans laquelle ils évoluent."
     },
     it: {
+      guideStepPrevious:"Precedente",guideStepNext:"Successivo",guideChapterNavigation:"Navigazione tra i capitoli",
       language:"Lingua",brandHome:"Home di Football Architect",guideNavigation:"Navigazione della pagina",guideSections:"Sezioni della guida",summary:"Esplora un universo calcistico alternativo.",
       enter:"Esplora l’anteprima dell’app",guide:"Guida",universe:"Mondo calcistico",
       countries:"Paesi",divisions:"Divisioni",clubs:"Club documentati",
