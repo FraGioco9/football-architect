@@ -26,4 +26,7 @@ test("reject invalid rank overlap, points, policies and cyclic ties",()=>{
  change(x=>x.rules.qualificationPolicyId="unknown");
  change(x=>x.rules.phases[2].ties[0].participants[1].tieId="q4");
  change(x=>x.rules.phases[1].calendarEvents=["N01"]);
+ change(x=>x.rules.phases.at(-1).calendarEvents=["FEDERATION-FINAL"]);
+ change(x=>x.rules.phases[0].rankOutcomes[0].to=25);
+ change(x=>x.rules.phases[1].ties[0].participants[0].rank=25);
 });
