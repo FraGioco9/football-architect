@@ -1,6 +1,6 @@
 # Configurable competition rules and shared pages
 
-Status: proposed written specification, awaiting owner review.
+Status: approved by the owner on 2026-10-23; implementation plan review is the next stage.
 Baseline: PR #253, `23197b29104341a1a8e449787c4e3f32451051c3`.
 
 ## Goal and boundaries
