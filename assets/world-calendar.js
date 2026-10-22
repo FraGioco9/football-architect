@@ -63,13 +63,13 @@
   get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;manualWeekSelected=true;change({day},day<=7)}});
   get('next').addEventListener('click',()=>{if(state.day<=49){const day=state.day+7;manualWeekSelected=true;change({day},day>49)}});
   for(const button of buttons){
-    button.addEventListener('click',()=>{manualWeekSelected=true;if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)})});
+    button.addEventListener('click',()=>{if(state.view==='week')manualWeekSelected=true;if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)})});
     button.addEventListener('keydown',event=>{
       const day=state.day,start=Math.floor((day-1)/7)*7+1;
       const target={ArrowLeft:day-1,ArrowRight:day+1,ArrowUp:day-(state.view==='season'?7:1),ArrowDown:day+(state.view==='season'?7:1),PageUp:day-7,PageDown:day+7,
         Home:event.ctrlKey?1:start,End:event.ctrlKey?56:start+6}[event.key];
       if(target===undefined)return;
-      event.preventDefault();manualWeekSelected=true;change({day:Math.max(1,Math.min(56,target))},true);
+      event.preventDefault();if(state.view==='week')manualWeekSelected=true;change({day:Math.max(1,Math.min(56,target))},true);
     });
   }
   // CAL-IMP-03: read-only inline details derived only from the frozen calendar contract.
