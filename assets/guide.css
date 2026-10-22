@@ -104,6 +104,6 @@
 .guide-step-previous .guide-step-arrow{left:17px;right:auto}
 .guide-step-next .guide-step-arrow{right:17px;left:auto}
 
-/* GUIDE-02: more prominent chapter names in Previous / Next cards. */
-.guide-step-title{font-size:19px;line-height:1.35;font-weight:700}
-@media(max-width:600px){.guide-step-title{font-size:17px}}
+/* GUIDE-02: larger section H2 headings, cards retain original typography. */
+.guide-main>.guide-layout .guide-section h2{font-size:23px;line-height:1.3}
+@media(max-width:700px){.guide-main>.guide-layout .guide-section h2{font-size:21px}}
