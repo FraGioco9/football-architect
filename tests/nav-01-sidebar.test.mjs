@@ -19,3 +19,13 @@ test('NAV-01A sidebar keeps five language keys and accessible expansion',()=>{
  assert.ok(sidebar.includes('aria-expanded'));
  assert.ok(sidebar.includes('sessionStorage'));
 });
+
+test('NAV-01C localized accessible controls in five languages',()=>{
+ for(const code of ['en','de','es','fr','it']){
+  assert.ok(sidebar.includes(code+':'));
+  assert.ok(directory.includes(code+':'));
+ }
+ assert.ok(sidebar.includes('expandLabels'));
+ assert.ok(sidebar.includes('collapseLabels'));
+ assert.ok(directory.includes("setAttribute('aria-label',filterLabels"));
+});
