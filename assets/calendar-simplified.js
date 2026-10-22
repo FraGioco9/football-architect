@@ -65,7 +65,7 @@
   if(!wrap.querySelector('#calendar-week-trigger'))wrap.innerHTML='<button type="button" class="language-trigger app-fixtures-trigger" id="calendar-week-trigger" role="combobox" aria-haspopup="listbox" aria-controls="calendar-week-menu" aria-expanded="false"><span id="calendar-week-value">Week 1</span><svg class="language-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" id="calendar-week-menu" role="listbox" hidden></div>';
   const weekTrigger=wrap.querySelector('#calendar-week-trigger'),weekMenu=wrap.querySelector('#calendar-week-menu'),weekValue=wrap.querySelector('#calendar-week-value');
   const current=document.getElementById('calendar-current-week')||document.createElement('button');current.type='button';current.id='calendar-current-week';current.className='language-trigger app-fixtures-current';current.setAttribute('aria-label','Current week');current.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg><span>Current week</span>';
-  const currentWeek=()=>{try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Math.ceil((Number.isInteger(n)&&n>=1&&n<=56?n:1)/7)}catch{return 1}};
+  const currentWeek=()=>Math.ceil(currentDay()/7);
   const jump=n=>{window.faWorldCalendar?.setWeek(n);closeWeek();syncWeek()};
   const closeWeek=()=>{weekMenu.hidden=true;weekTrigger.setAttribute('aria-expanded','false')};
   weekTrigger.addEventListener('click',()=>{weekMenu.hidden=!weekMenu.hidden;weekTrigger.setAttribute('aria-expanded',String(!weekMenu.hidden))});
@@ -165,8 +165,9 @@
   marker.addEventListener('focusout',()=>{tooltip.hidden=true});
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
- function currentDay(){try{const n=Number(sessionStorage.getItem('football-architect:calendar-dev-world-day'));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}}
+ function currentDay(){const n=window.faDevWorldClockSnapshot?.current?.day;if(dev&&Number.isInteger(n)&&n>=1&&n<=56)return n;try{const stored=sessionStorage.getItem('football-architect:calendar-dev-world-day');const value=stored===null?NaN:Number(stored);return Number.isInteger(value)&&value>=1&&value<=56?value:1}catch{return 1}}
  function updateCurrentDay(){const n=dev&&selectedSeason===readDebugSeason()?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current){cell.dataset.devCurrentDay='true';cell.setAttribute('aria-current','true')}else{delete cell.dataset.devCurrentDay;cell.removeAttribute('aria-current')}}document.querySelector('style[data-calendar-dev-highlight]')?.remove()}
  window.addEventListener('fa:dev-world-day-change',()=>{updateCurrentDay();window.faCalendarSyncWeek?.()});
+  window.addEventListener('fa:world-clock-snapshot',()=>{updateCurrentDay();window.faCalendarSyncWeek?.()});
  updateCurrentDay();
 })();
