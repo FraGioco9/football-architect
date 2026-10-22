@@ -67,7 +67,8 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
 });
 
 test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional data",()=>{
- assert.equal(manifest.schemaVersion,1);
+ assert.equal(manifest.schemaVersion,2);
+  assert.equal(manifest.competitions.length,18);
  assert.equal(manifest.approved,false);
  assert.equal(allocation.approved,false);
  assert.equal(manifest.divisions.length,16);
