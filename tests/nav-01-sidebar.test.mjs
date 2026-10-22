@@ -65,3 +65,14 @@ test('NAV-01 fragments are aligned before revealing the central pane',()=>{
  assert.ok(html.indexOf('data-nav01-fragment-state')<html.indexOf('<body'));
  assert.ok(html.indexOf('data-nav01-fragment-align')>html.indexOf('</main>'));
 });
+
+
+test('Site chevrons and Clubs filters are present in initial HTML',()=>{
+ const html=readFileSync(new URL('../clubs/index.html',import.meta.url),'utf8');
+ assert.match(html,/<button[^>]+class="nav01-expand"[^>]*><svg/);
+ for(const name of ['country','division','status']){
+  assert.match(html,new RegExp('id="nav01-'+name+'-trigger"[^>]+role="combobox"'));
+  assert.match(html,new RegExp('id="nav01-'+name+'-menu"[^>]+role="listbox"'));
+ }
+ assert.ok(html.indexOf('/assets/competition-tabs.js')<html.indexOf('/assets/clubs-directory.js'));
+});

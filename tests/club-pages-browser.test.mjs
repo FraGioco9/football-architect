@@ -229,7 +229,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      }
     }
     // NAV-01C: directory browser smoke matrix on staged public bytes.
-    for(const width of [320,390,768,1440])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
+    for(const width of [320,390,768,801,1024,1440])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
      await cmd('Page.navigate',{url:origin+'/clubs'});
@@ -238,12 +238,44 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
      assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
+     assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),3);
+     assert.equal(await run("[...document.querySelectorAll('.nav01-filter button')].every(el=>el.getBoundingClientRect().width<=el.parentElement.getBoundingClientRect().width+1)"),true,JSON.stringify({width,theme,lang}));
+     assert.equal(await run("[...document.querySelectorAll('.nav01-filters select')].every(el=>getComputedStyle(el).display==='none')"),true);
+     for(const name of ['country','division','status']){
+      await run(`document.getElementById('nav01-${name}-trigger').click()`);
+      const menuState=await run(`(()=>{const trigger=document.getElementById('nav01-${name}-trigger'),menu=document.getElementById(trigger.getAttribute('aria-controls')),rect=menu.getBoundingClientRect();return {expanded:trigger.getAttribute('aria-expanded'),hidden:menu.hidden,active:menu.querySelector('[data-active="true"]')?.id,descendant:trigger.getAttribute('aria-activedescendant'),selected:menu.querySelectorAll('[aria-selected="true"]').length,inBounds:rect.left>=0&&rect.right<=innerWidth+1,stroke:trigger.querySelector('path').getAttribute('stroke-width')}})()`);
+      assert.equal(menuState.expanded,'true');assert.equal(menuState.hidden,false);assert.equal(menuState.active,menuState.descendant);assert.equal(menuState.selected,1);assert.equal(menuState.inBounds,true);assert.equal(menuState.stroke,'1.75');
+      if(name==='division'&&lang==='en'&&((width===390&&theme==='dark')||(width===1440&&theme==='light'))){
+       const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:65,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,3500}/g);for(let i=0;i<chunks.length;i++)console.log(`NAV_CHEVRON_PAINT|${width}|${i}|${chunks.length}|${chunks[i]}`);
+      }
+      await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',windowsVirtualKeyCode:27});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',windowsVirtualKeyCode:27});
+      assert.equal(await run(`document.getElementById('nav01-${name}-menu').hidden&&document.activeElement.id==='nav01-${name}-trigger'`),true);
+     }
      if(lang==='en'){const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`nav01-${width}-${theme}.png`),bytes)}}
     }
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320");
     await run("document.querySelector('.nav01-filters select').value='IT';document.querySelector('.nav01-filters select').dispatchEvent(new Event('change',{bubbles:true}))");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
+    // The public Clubs controls use the same keyboard model as Season/Matchday.
+    const key=async(key,code)=>{await cmd('Input.dispatchKeyEvent',{type:'keyDown',key,windowsVirtualKeyCode:code});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key,windowsVirtualKeyCode:code})};
+    await run("document.querySelector('.nav01-filter select').value='';document.querySelector('.nav01-filter select').dispatchEvent(new Event('change'));document.getElementById('nav01-status-trigger').focus()");
+    await key('Enter',13);await key('End',35);await key('Enter',13);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),64);
+    assert.equal(await run("document.getElementById('nav01-status-trigger').value"),'inactive');
+    await key(' ',32);await key('Home',36);await key('ArrowDown',40);await key('Enter',13);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),256);
+    await key('Enter',13);await key('Home',36);await key('Enter',13);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
+    await run("document.getElementById('nav01-country-trigger').click()");await key('Tab',9);
+    assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
+    await run("document.getElementById('nav01-country-trigger').click();document.querySelector('.nav01-filters input').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
+    assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
+    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=it-1]').click()");
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),16);
+    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Lega Federale');
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
+    console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
     // NAV-01C: keyboard operation of the sidebar disclosure and focus.
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await cmd('Page.navigate',{url:origin+'/clubs'});
