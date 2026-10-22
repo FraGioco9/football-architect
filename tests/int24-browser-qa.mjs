@@ -62,9 +62,12 @@ try {
  // Calendar and Club; it never creates a simulated season 0.
  const page=await browser.newPage({viewport:{width:390,height:900}});
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
+ page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
+ page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
  for(const route of ["/competitions/sovereign-cup/standings","/competitions/federation-cup/fixtures","/competitions/it-1/standings","/calendar","/clubs/it/1/overview"]){
+  console.log("Season 0 QA route: "+route);
   await page.goto(base+route,{waitUntil:"networkidle"});
-  await page.waitForSelector('.fa-dev-widget-button');
+  try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
   await page.locator('.fa-dev-widget-button').click();
   const season=page.locator('[data-dev-control="season-number"]');
   assert.equal(await season.getAttribute('min'),'0');
