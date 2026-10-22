@@ -26,8 +26,8 @@ const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector
 for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
 let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
 function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}paint();}
-button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!=='true'));
-button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();expand(button.getAttribute('aria-expanded')!=='true');}});
+button.addEventListener('click',()=>{const opening=button.getAttribute('aria-expanded')!=='true';submenu.classList.toggle('nav01-animate-open',opening);expand(opening);});
+button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();const opening=button.getAttribute('aria-expanded')!=='true';submenu.classList.toggle('nav01-animate-open',opening);expand(opening);}});
 expand(onCompetition||opened);
 const brand=document.querySelector('.fa-shell-sidebar .app-brand-symbol');if(brand){const source=brand.getAttribute('src');if(source)brand.setAttribute('src',source.replace(/-(?:dark|light)\.svg$/,'-'+(document.documentElement.dataset.theme==='light'?'light':'dark')+'.svg'));}
 // Fragment targets live in the central scroll pane, not in the document viewport.
