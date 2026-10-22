@@ -30,3 +30,17 @@ test("reject invalid rank overlap, points, policies and cyclic ties",()=>{
  change(x=>x.rules.phases[0].rankOutcomes[0].to=25);
  change(x=>x.rules.phases[1].ties[0].participants[0].rank=25);
 });
+
+test("catalogue preserves country/tier and approved rule version identity",()=>{
+ const countries=new Set(["IT","ENG","ES","DE","FR","PT","NL","BR"]);
+ for(const item of items){
+   if(item.category==="domestic"){
+     assert.ok(countries.has(item.countryId));
+     assert.equal(item.id,item.countryId+"-"+item.tier);
+     assert.equal(item.rules.version,item.tier===1?"domestic-top-v1":"domestic-second-v1");
+   }else{
+     assert.ok(["sovereign-cup","federation-cup"].includes(item.id));
+     assert.equal(item.rules.version,"international-int24-v1");
+   }
+ }
+});
