@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {resolveSubpage} from '../assets/subpage-routes.mjs';
+import {publicRequestFile} from '../tools/publication-guard.mjs';
 const directory=readFileSync(new URL('../assets/clubs-directory.js',import.meta.url),'utf8');
 const sidebar=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
 test('NAV-01B directory links use canonical country/id/overview paths',()=>{
@@ -28,4 +29,9 @@ test('NAV-01C localized accessible controls in five languages',()=>{
  assert.ok(sidebar.includes('expandLabels'));
  assert.ok(sidebar.includes('collapseLabels'));
  assert.ok(directory.includes("setAttribute('aria-label',filterLabels"));
+});
+
+test('NAV-01C public server resolves the extensionless directory route',()=>{
+ assert.equal(publicRequestFile('/clubs'),'clubs/index.html');
+ assert.equal(publicRequestFile('/clubs/'),'clubs/index.html');
 });
