@@ -10,7 +10,7 @@ if(nav.dataset.nav01Bound==='true'){
   const toggle=()=>{
    const opening=button.getAttribute('aria-expanded')!=='true';
    const from=submenu.hidden?0:submenu.getBoundingClientRect().height;
-   if(motion){motion.cancel();motion=null;}
+   if(motion){motion.cancel();motion=null;submenu.classList.remove('nav01-is-animating');}
    button.setAttribute('aria-expanded',String(opening));
    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
    if(reduced||!submenu.animate){submenu.hidden=!opening;submenu.classList.remove('nav01-is-animating');}
@@ -26,7 +26,7 @@ if(nav.dataset.nav01Bound==='true'){
    window.faSidebarPaint?.();
   };
   button.addEventListener('click',event=>{event.stopImmediatePropagation();toggle();},true);
-  button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.stopImmediatePropagation();toggle();}},true);
+  // Native button click handles Enter and Space; do not synthesize a second activation.
  }
  for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
  window.faSidebarPaint?.();return;
