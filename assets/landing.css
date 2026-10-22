@@ -77,7 +77,7 @@ a.cta:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 }
 
 /* Rounded national flags throughout the static site. */
-img[src*="assets/flags/"]{border-radius:6px}
+img[src*="assets/flags/"]{border-radius:0;clip-path:none;object-fit:contain}
 
 /* UI-THEME #96: original dark palette is unchanged. */
 :root[data-theme="light"]{

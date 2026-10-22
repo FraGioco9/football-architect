@@ -212,7 +212,7 @@
       openGuide:"Explore the game guide",backToSite:"Back to website",
       world:"World foundations",worldText:"The fictional world catalogues are available, but these identities are not yet an active playable league system.",
       countries:"Countries",divisions:"Divisions",clubs:"Documented clubs",
-      calendarStatus:"Schedule not available",calendarStatusText:"Season structure only. No live fixtures or results are available.",
+      calendarStatus:"Schedule not available",calendarStatusText:"Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.",
       backDashboard:"Back to Dashboard",offline:"OFFLINE · SINGLE PLAYER",
       navGeneral:"General",
       settings:"Settings",
@@ -446,7 +446,7 @@
       openGuide:"Spielführer ansehen",backToSite:"Zurück zur Website",
       world:"Grundlagen der Spielwelt",worldText:"Die fiktiven Kataloge sind vorhanden, bilden aber noch kein spielbares Ligasystem.",
       countries:"Länder",divisions:"Ligen",clubs:"Dokumentierte Vereine",
-      calendarStatus:"Kein Spielplan verfügbar",calendarStatusText:"Nur die Saisonstruktur. Keine Live-Spielpläne oder Ergebnisse verfügbar.",
+      calendarStatus:"Kein Spielplan verfügbar",calendarStatusText:"Die Spielplanung ist noch nicht implementiert. Es werden keine Begegnungen oder Ergebnisse simuliert.",
       backDashboard:"Zurück zum Dashboard",offline:"OFFLINE · EINZELSPIELER",
       navGeneral:"Allgemein",
       settings:"Einstellungen",
@@ -680,7 +680,7 @@
       openGuide:"Explorar la guía",backToSite:"Volver al sitio",
       world:"Bases del mundo",worldText:"Los catálogos del mundo ficticio están disponibles, pero aún no forman un sistema de ligas jugable.",
       countries:"Países",divisions:"Divisiones",clubs:"Clubes documentados",
-      calendarStatus:"Calendario no disponible",calendarStatusText:"Solo la estructura de la temporada. No hay partidos en directo ni resultados disponibles.",
+      calendarStatus:"Calendario no disponible",calendarStatusText:"La programación de partidos aún no está implementada. No se simulan encuentros ni resultados.",
       backDashboard:"Volver al panel",offline:"SIN CONEXIÓN · UN JUGADOR",
       navGeneral:"General",
       settings:"Ajustes",
@@ -914,7 +914,7 @@
       openGuide:"Explorer le guide",backToSite:"Retour au site",
       world:"Fondations de l’univers",worldText:"Les catalogues de l’univers fictif existent, mais ne forment pas encore un système de ligues jouable.",
       countries:"Pays",divisions:"Divisions",clubs:"Clubs répertoriés",
-      calendarStatus:"Calendrier indisponible",calendarStatusText:"Structure de la saison uniquement. Aucun calendrier en direct ni résultat disponible.",
+      calendarStatus:"Calendrier indisponible",calendarStatusText:"La programmation des matchs n’est pas encore implémentée. Aucun match ou résultat n’est simulé.",
       backDashboard:"Retour au tableau de bord",offline:"HORS LIGNE · SOLO",
       navGeneral:"Général",
       settings:"Paramètres",
@@ -1148,7 +1148,7 @@
       openGuide:"Esplora la guida al gioco",backToSite:"Torna al sito",
       world:"Fondamenti del mondo",worldText:"I cataloghi del mondo calcistico sono disponibili, ma non costituiscono ancora un sistema di campionati giocabile.",
       countries:"Paesi",divisions:"Divisioni",clubs:"Club documentati",
-      calendarStatus:"Calendario non disponibile",calendarStatusText:"Solo la struttura stagionale. Calendario live e risultati non ancora disponibili.",
+      calendarStatus:"Calendario non disponibile",calendarStatusText:"La programmazione delle partite non è ancora implementata. Nessun incontro o risultato viene simulato.",
       backDashboard:"Torna alla Dashboard",offline:"OFFLINE · GIOCATORE SINGOLO",
       navGeneral:"Generale",
       settings:"Impostazioni",
@@ -1264,7 +1264,8 @@
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
-    if ((path === "/clubs" || path.startsWith("/clubs/")) || path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
+    if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
+    if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";
     if (path === "/dashboard") return "dashboard";
@@ -1284,7 +1285,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
   }
   function renderView() {
     rewriteAppLinks();
@@ -1292,7 +1293,7 @@
     dashboard.hidden = current !== "dashboard";
     calendar.hidden = current !== "calendar";
     settings.hidden = current !== "settings";
-    if (divisions) divisions.hidden = current !== "divisions";
+    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs";
     for (const [view, link] of Object.entries(links)) {
       if (!link) continue;
       const selected = current === view;

@@ -7,7 +7,7 @@ import {tmpdir} from "node:os";
 import {join,posix} from "node:path";
 import {createHash} from "node:crypto";
 import {repositoryRoot,stagePublicArtifact,assertPublicArtifact} from "../tools/publication-guard.mjs";
-import {stageProtectedDebugArtifact,assertProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
+import {stageProtectedDebugArtifact,assertProtectedDebugArtifact,CLUB_SUMMARY_INJECTION} from "../tools/dev-preview-artifact.mjs";
 
 const DEBUG_PATHS=[
   "__fa_dev__/debug-settings.mjs",
@@ -40,6 +40,8 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
     assert.notDeepEqual(debugBytes,publicBytes,"App HTML intentionally gains Debug entrypoints: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/debug-settings\.mjs"/,"Missing standings Debug entrypoint: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/stats-client\.mjs"/,"Missing stats Debug entrypoint: "+path);
+   }else if(path==="clubs/_shared/index.html"){
+    assert.equal(debugBytes.toString("utf8").replace(CLUB_SUMMARY_INJECTION+"\n",""),publicBytes.toString("utf8"));
    }else assert.deepEqual(debugBytes,publicBytes,"Inherited asset must remain byte-for-byte unchanged: "+path);
   }
   for(const path of debug) {

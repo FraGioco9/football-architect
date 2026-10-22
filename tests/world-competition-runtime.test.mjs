@@ -155,7 +155,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
    assert.ok(r.fields.get("app-competition-badge"),"initial logo host is preserved");
    assert.equal(r.fields.get("app-competition-flag").tagName,"svg");
    assert.ok(r.fields.get("app-competition-flag").closest(".app-world-flag-frame"));
-   assert.ok(r.body.innerHTML.includes('id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
+   assert.ok(r.body.innerHTML.includes('id="app-competition-flag" aria-hidden="true" focusable="false" width="25" height="20"'));
    assert.equal(r.fields.get("app-competition-country").dataset.worldCountry,division.countryId);
    assert.equal(r.fields.get("app-competition-tier").dataset.appI18n,
     division.tier===1?"divisionTier1":"divisionTier2");
@@ -206,7 +206,8 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     assert.equal(crest.dataset.clubCrest,club.countryId+"-"+club.clubId);
     assert.equal(crest.dataset.clubCrestPending,Object.hasOwn(manifest.clubCrests,row.dataset.worldClub)?'true':undefined,'Initial desktop loading state exists before image renderer');
     assert.equal(crest.attrs["aria-hidden"],"true");
-    assert.equal(name.className,"app-world-club-name");
+    assert.equal(name.className,"app-world-club-name app-world-standing-club-link");
+    assert.equal(name.href,"/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview");
     assert.equal(name.textContent,club.primaryName);
     // Approved primary and full names may legitimately be identical.
     if(preview){
