@@ -66,7 +66,21 @@ const inlineCountryFlag = (country, id = null) => {
  const code=country.id==="ENG"?"gb-eng":country.id.toLowerCase();
  const svg=readFileSync(new URL("../"+country.flagAsset,import.meta.url),"utf8").replace(/\r\n/g,"\n").trim();
  if(!svg.startsWith("<svg ") || !svg.endsWith("</svg>"))throw Error("Invalid inline flag "+code);
- return '<span class="app-world-flag-frame" aria-hidden="true">'+svg.replace("<svg ",'<svg class="app-world-flag" '+(id?'id="'+id+'" ':"")+'aria-hidden="true" focusable="false" width="24" height="16" ')+"</span>";
+ const match=svg.match(/viewBox="([^"]+)"/);
+ if(!match)throw Error("Missing flag viewBox "+code);
+ const originalViewBox=match[1];
+ // Nested viewport scales the native paths to a real 5:4 silhouette.
+ // Keep original SVG defs and masks inside their own coordinate system.
+ const inner=svg.slice(svg.indexOf(">")+1,svg.lastIndexOf("</svg>")).replace(/(<mask\b[^>]*>\s*<rect\b[^>]*?)\s+rx="[^"]+"\s+ry="[^"]+"/,'$1 rx="0" ry="0"')
+  .replace(/(?:ns1|xlink):href=/g,'href=')
+  .replace(/id="([^"]+)"/g,(_,id)=>'id="fa-'+code+'-'+id+'"')
+  .replace(/url\(#([^)]+)\)/g,(_,id)=>'url(#fa-'+code+'-'+id+')')
+  .replace(/href="#([^"]+)"/g,(_,id)=>'href="#fa-'+code+'-'+id+'"');
+ const identity=(id?'id="'+id+'" ':"");
+ return '<span class="app-world-flag-frame" aria-hidden="true">'+
+  '<svg class="app-world-flag" '+identity+'aria-hidden="true" focusable="false" width="25" height="20" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg">'+
+  '<defs><clipPath id="fa-competition-flag-'+code+'"><rect width="5" height="4" rx="0.625" ry="0.625"/></clipPath></defs>'+
+  '<g clip-path="url(#fa-competition-flag-'+code+')"><svg x="0" y="0" width="5" height="4" viewBox="'+originalViewBox+'" preserveAspectRatio="none">'+inner+'</svg></g></svg></span>';
 };
 const indexContent = function indexContent(){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
@@ -188,7 +202,7 @@ for(const page of outputPages){
  if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-clock-adapter.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n  <script src="/assets/calendar-simplified.js" defer></script>\n  <style data-calendar-critical>html:has(#world-calendar) #world-calendar>.calendar-heading,html:has(#world-calendar) #world-calendar>.calendar-clock,html:has(#world-calendar) #world-calendar>.calendar-filterbar,html:has(#world-calendar) #world-calendar>.calendar-details,html:has(#world-calendar) #world-calendar>.calendar-selected,html:has(#world-calendar) #world-calendar>.calendar-note,html:has(#world-calendar) #world-calendar>.calendar-key{display:none!important}</style>\n</head>');
  writeOutput(page.path,normalizeRouteLinks(html,page.path));
 }
-for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments}))
+for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments,countryFlags:Object.fromEntries(Object.values(countryById).map(country=>[country.id,inlineCountryFlag(country)]))}))
  writeOutput(output.path,output.path.endsWith(".html")?normalizeRouteLinks(output.content,output.path):output.content);
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 20 Competitions), 1 competition manifest, 1 club template and 1 club manifest");

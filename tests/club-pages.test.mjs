@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {runInNewContext as vmRunInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
@@ -35,7 +36,7 @@ test('CLUB-01 derived manifest preserves canonical fields and provisional placem
  }
  assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,64);
 });
-test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fixtures',async()=>{
+test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared Debug Settings and the DEV summary',async()=>{
  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
  const get=path=>new Promise((resolve,reject)=>{
   const req=request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
@@ -43,12 +44,17 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views without DEV fi
   });req.on('error',reject);req.end();
  });
  try{
+  const entrypoint=await get('/__fa_dev__/debug-settings.mjs');
+  assert.equal(entrypoint.status,200);
+  assert.match(entrypoint.body,/import "\.\/standings-client\.mjs"/);
   for(const c of clubs){
    const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
    assert.equal((await get(base)).location,base+'/overview');
    for(const view of clubViews){
     const page=await get(base+'/'+view);assert.equal(page.status,200);
-    assert.doesNotMatch(page.body,/__fa_dev__|dev-debug|standings-client/);
+    assert.match(page.body,/data-fa-dev-club-summary/);
+    assert.match(page.body,/__fa_dev__\/debug-settings\.mjs/);
+    assert.doesNotMatch(page.body,/data-fa-dev-preview|standings-client/);
    }
   }
   for(const [path,target] of [
@@ -153,4 +159,70 @@ test('CLUB-ID-01 CSV/JSON identities and rivalry references use unpadded canonic
   assert.doesNotMatch(rivalry.rivalryId,/(?:^|-)0[1-9](?:_|$)/);
  }
  assert.deepEqual(rivalryCsv.slice(1).map(line=>line.split(',').slice(0,2)),rivalries.map(r=>[r.rivalryId,r.clubAId]));
+});
+
+test('CLUB-OVERVIEW-02: all 320 clubs expose original descriptions, translations, rivalries and kits reserve',()=>{
+ const {runInNewContext}=requireVm();
+ const sandbox={module:{exports:{}},URLSearchParams};
+ runInNewContext(read('assets/club-model.js'),sandbox);
+ const model=sandbox.module.exports;
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ assert.equal(manifest.rivalries.length,352);
+ for(const c of manifest.clubs){
+  const selected=model.route('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview');
+  assert.ok(selected);
+  const html=model.render(manifest,selected,'it');
+  assert.match(html,/club-overview-layout/);
+  assert.match(html,/club-kits/);
+  assert.match(html,/club-rivalries/);
+  assert.match(html,/data-original-description=/);
+  assert.ok(html.includes(c.primaryName.replaceAll('&','&amp;')),'Canonical name not rendered');
+  const native={IT:'it',ENG:'en',ES:'es',DE:'de',FR:'fr',PT:'pt',BR:'pt',NL:'nl'}[c.countryId];
+  assert.equal(html.includes('data-translate-club'),native!=='it');
+  assert.ok(c.description.trim());
+  for(const lang of ['en','de','es','fr','it'])assert.ok(c.descriptions[lang]?.trim());
+ }
+});
+function requireVm(){return {runInNewContext:vmRunInNewContext}}
+
+
+test('CLUB-FLAGS-54: all countries reuse the competition SVG with independent clip IDs',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ assert.equal(Object.keys(manifest.countryFlags||{}).length,8);
+ for(const country of ['IT','ENG','ES','DE','FR','PT','NL','BR']){
+  const source=manifest.countryFlags[country];
+  assert.match(source,/viewBox="0 0 5 4"/);
+  const club=manifest.clubs.find(c=>c.countryId===country);
+  const html=model.render(manifest,model.route(`/clubs/${country.toLowerCase()}/${club.clubId}/overview`));
+  assert.equal((html.match(/class="app-world-flag club-country-flag"/g)||[]).length,2);
+  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(new Set(ids).size,ids.length,'Header and identity flags need independent SVG IDs');
+  assert.doesNotMatch(html,/<img[^>]+assets\/flags\//);
+  assert.doesNotMatch(html,/ns1:href=/);
+  for(const [,target] of html.matchAll(/(?:href="#|url\(#)([^"\)]+)/g))assert.ok(ids.includes(target),'Unresolved SVG fragment '+target);
+ }
+});
+
+
+test('CLUB-COMPETITION-02: active cards show localized metrics and inactive cards have one message',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const labels={en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'};
+ for(const c of manifest.clubs)for(const [lang,label] of Object.entries(labels)){
+  const html=model.render(manifest,model.route(`/clubs/${c.countryId.toLowerCase()}/${c.clubId}/overview`),lang);
+  const box=html.match(/<section class="app-panel club-competition"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(box,'Every Overview has the competition panel');
+  if(c.divisionId){
+   assert.ok(box.includes('<dt>'+label+'</dt>'));
+   assert.match(box,/data-club-position>—</);
+   assert.doesNotMatch(box,/data-club-points/);
+   assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/overview"'));
+   assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
+   assert.ok(!box.includes(model.copies[lang].provisional));
+  }else{
+   assert.equal(box.split(model.copies[lang].outside).length-1,1,'Inactive clubs show one status message');
+   assert.doesNotMatch(box,/<img|<a |club-competition-layout|club-competition-status/);
+  }
+ }
 });

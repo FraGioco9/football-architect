@@ -118,12 +118,12 @@ test('FR-2 crest loads once, retains the accessible host and falls back on failu
 test('FR-2 club pages suppress first-paint placeholder and label the real crest in every language',()=>{
  const club={countryId:'FR',clubId:2,primaryName:'FC Massalia',fullName:'Football Club Massalia',compactName:'Massalia',abbr:'MAS',nickname:'Les Phocéens',city:'Marseille',primaryColor:'#6C5B93',secondaryColor:'#C6814F',stadiumName:'Stade du Vieux-Port',
  descriptions:{en:'Club',de:'Club',es:'Club',fr:'Club',it:'Club'},divisionId:null};
- const base={clubs:[club],divisions:[],clubCrests:{'FR-2':'assets/clubs/FR/2/crest.svg'}};
+ const base={clubs:[club],divisions:[],countryFlags:JSON.parse(read('clubs/_shared/manifest.json')).countryFlags,clubCrests:{'FR-2':'assets/clubs/FR/2/crest.svg'}};
  for(const view of clubModel.views){
   for(const lang of ['en','de','es','fr','it']){
    const html=clubModel.render(base,{countryId:'FR',clubId:2,view,base:'/clubs/fr/2'},lang);
    const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest"[^>]*><\/span>/g)].map(x=>x[0]);
-   assert.equal(hosts.length,view==='overview'?2:1,view+' '+lang);
+   assert.equal(hosts.length,1,view+' '+lang+' retains the single header crest');
    for(const crest of hosts){
     assert.match(crest,/data-club-crest="FR-2"/);
     assert.match(crest,/data-club-crest-pending="true"/);

@@ -7,12 +7,13 @@ import {tmpdir} from "node:os";
 import {join,posix} from "node:path";
 import {createHash} from "node:crypto";
 import {repositoryRoot,stagePublicArtifact,assertPublicArtifact} from "../tools/publication-guard.mjs";
-import {stageProtectedDebugArtifact,assertProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
+import {stageProtectedDebugArtifact,assertProtectedDebugArtifact,CLUB_SUMMARY_INJECTION} from "../tools/dev-preview-artifact.mjs";
 
 const DEBUG_PATHS=[
   "__fa_dev__/debug-settings.mjs",
   "__fa_dev__/standings-client.mjs",
   "__fa_dev__/debug-widget.mjs",
+  "__fa_dev__/dev-world-clock.mjs",
   "__fa_dev__/standings-data.mjs",
   "__fa_dev__/dev-standings-preview-data.mjs",
   "__fa_dev__/stats-client.mjs",
@@ -21,7 +22,7 @@ const DEBUG_PATHS=[
 ].sort();
 const fields=(object,expected)=>assert.deepEqual(Object.keys(object).sort(),[...expected].sort());
 
-test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{timeout:20000},()=>{
+test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{timeout:20000},()=>{
  const root=mkdtempSync(join(tmpdir(),"fa-g10-content-"));
  try{
   const pubDir=join(root,"public"),debugDir=join(root,"debug");
@@ -31,7 +32,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
   assert.deepEqual(assertProtectedDebugArtifact(debugDir),debug);
   const extras=debug.filter(path=>!pub.includes(path));
   assert.deepEqual(extras,DEBUG_PATHS);
-  assert.equal(debug.length,pub.length+8);
+  assert.equal(debug.length,pub.length+DEBUG_PATHS.length);
   for(const path of pub){
    const publicBytes=readFileSync(join(pubDir,path));
    const debugBytes=readFileSync(join(debugDir,path));
@@ -39,6 +40,8 @@ test("G10-PUBLIC-02: staged Debug adds precisely eight public-intended paths",{t
     assert.notDeepEqual(debugBytes,publicBytes,"App HTML intentionally gains Debug entrypoints: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/debug-settings\.mjs"/,"Missing standings Debug entrypoint: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/stats-client\.mjs"/,"Missing stats Debug entrypoint: "+path);
+   }else if(path==="clubs/_shared/index.html"){
+    assert.equal(debugBytes.toString("utf8").replace(CLUB_SUMMARY_INJECTION+"\n",""),publicBytes.toString("utf8"));
    }else assert.deepEqual(debugBytes,publicBytes,"Inherited asset must remain byte-for-byte unchanged: "+path);
   }
   for(const path of debug) {

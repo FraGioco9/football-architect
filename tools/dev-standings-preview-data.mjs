@@ -1,6 +1,7 @@
 // Deterministic fictional league fixtures for isolated local DEV preview only.
 // This module is NOT on the publication-guard allowlist. Never use as sports data.
 import "../assets/competition-model.js";
+import "../assets/world-calendar-model.js";
 export const competitionModel=globalThis.faCompetitionModel;
 const {capacity}=competitionModel.profile;
 const {rounds,roundsPerLeg,matchesPerRound,matches,pairings:pairingCount}=competitionModel.schedule;
@@ -196,4 +197,38 @@ export function createPreviewPostseason(division,matchday,season=1) {
     result.winnerId=result.final.winnerId;
   }
   return result;
+}
+
+// Read-only club projection: reuse league/post-season engines and expose no future scores.
+export function createPreviewClubSummary(division,clubId,progress){
+ const played=previewSeasonMatchdays(progress.season,progress);
+ const table=createPreviewStandings(division,played,progress.season);
+ const position=table.rows.findIndex(row=>row.club.clubId===clubId);
+ if(position<0)throw Error("Unknown DEV club");
+ let nextMatch=null;
+ if(progress.matchdays<30){
+  const fixture=createPreviewStandings(division,30,progress.season).fixtures.find(game=>
+   game.round===played+1&&(game.homeId===clubId||game.awayId===clubId));
+  if(fixture)nextMatch={round:fixture.round,homeId:fixture.homeId,awayId:fixture.awayId};
+ }else{
+  const bracket=createPreviewPostseason(division,progress.matchdays,progress.season);
+  if(progress.matchdays<32){
+   const tie=bracket.ties.find(tie=>tie.clubIds.includes(clubId));
+   if(tie){const [better,lower]=tie.clubIds;nextMatch={round:progress.matchdays+1,
+    homeId:progress.matchdays===30?lower:better,awayId:progress.matchdays===30?better:lower};}
+  }else if(progress.matchdays===32&&bracket.final&&[bracket.final.homeId,bracket.final.awayId].includes(clubId))
+   nextMatch={round:33,homeId:bracket.final.homeId,awayId:bracket.final.awayId};
+ }
+ return {source:'dev',divisionId:division.id,clubId,season:progress.season,
+  position:played===0?null:position+1,points:table.rows[position].pts,nextMatch};
+}
+export function readPreviewClubProgress(storage){
+ const progress=readPreviewProgress(storage);
+ try{
+  const day=Number(storage.getItem('football-architect:calendar-dev-world-day'));
+  if(Number.isInteger(day)&&day>=1&&day<=56)
+   progress.matchdays=globalThis.faWorldCalendarModel.createSeason(progress.season).days
+    .filter(item=>item.day<=day&&item.events.some(event=>event.family==='national')).length;
+ }catch{}
+ return progress;
 }
