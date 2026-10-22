@@ -18,6 +18,12 @@
   };
   let state={day:Number(root.dataset.calendarDay),view:root.dataset.calendarView};
   if(!Number.isInteger(state.day)||state.day<1||state.day>56||!['season','week'].includes(state.view))state={day:1,view:'season'};
+  let manualWeekSelected=false;
+  const currentWeekDay=()=>{
+    const current=clockSnapshot?.current;
+    const viewedSeason=window.faCalendarSelectedSeason?.()??1;
+    return current&&current.season===viewedSeason&&Number.isInteger(current.day)&&current.day>=1&&current.day<=56?current.day:1;
+  };
   const kind=(d,w)=>w[d.kind];
   const label=(d,w)=>w.day+' '+d.day+' · '+kind(d,w)+(d.events.length?' · '+d.events.map(e=>e.phase==='final'?w[e.marker==='FEDERATION-FINAL'?'federationFinal':'sovereignFinal']:w[e.family]+' '+e.round).join(' · '):'');
   function render(){
@@ -50,17 +56,20 @@
     saveUrl(true);
     if(focus)buttons[state.day-1].focus();
   }
-  for(const view of ['season','week'])get(view).addEventListener('click',()=>change({view}));
-  get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;change({day},day<=7)}});
-  get('next').addEventListener('click',()=>{if(state.day<=49){const day=state.day+7;change({day},day>49)}});
+  for(const view of ['season','week'])get(view).addEventListener('click',()=>{
+    const enteringWeek=view==='week'&&state.view!=='week';
+    change(enteringWeek&&!manualWeekSelected?{view,day:currentWeekDay()}:{view});
+  });
+  get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;manualWeekSelected=true;change({day},day<=7)}});
+  get('next').addEventListener('click',()=>{if(state.day<=49){const day=state.day+7;manualWeekSelected=true;change({day},day>49)}});
   for(const button of buttons){
-    button.addEventListener('click',()=>{if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)})});
+    button.addEventListener('click',()=>{manualWeekSelected=true;if(typeof window.faCalendarShowDay==='function')window.faCalendarShowDay(button);else change({day:Number(button.dataset.calendarDay)})});
     button.addEventListener('keydown',event=>{
       const day=state.day,start=Math.floor((day-1)/7)*7+1;
       const target={ArrowLeft:day-1,ArrowRight:day+1,ArrowUp:day-(state.view==='season'?7:1),ArrowDown:day+(state.view==='season'?7:1),PageUp:day-7,PageDown:day+7,
         Home:event.ctrlKey?1:start,End:event.ctrlKey?56:start+6}[event.key];
       if(target===undefined)return;
-      event.preventDefault();change({day:Math.max(1,Math.min(56,target))},true);
+      event.preventDefault();manualWeekSelected=true;change({day:Math.max(1,Math.min(56,target))},true);
     });
   }
   // CAL-IMP-03: read-only inline details derived only from the frozen calendar contract.
@@ -191,7 +200,7 @@
     divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
     window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
   }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});return true}});
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;manualWeekSelected=true;change({day:(n-1)*7+1,view:'week'});return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
 })();
