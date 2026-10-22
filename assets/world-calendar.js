@@ -22,7 +22,7 @@
   const currentWeekDay=()=>{
     const current=clockSnapshot?.current;
     const viewedSeason=window.faCalendarSelectedSeason?.()??1;
-    return current&&current.season===viewedSeason&&Number.isInteger(current.day)&&current.day>=1&&current.day<=56?current.day:1;
+    return current&&current.season===viewedSeason&&Number.isInteger(current.day)&&current.day>=1&&current.day<=56?current.day:state.day;
   };
   const kind=(d,w)=>w[d.kind];
   const label=(d,w)=>w.day+' '+d.day+' · '+kind(d,w)+(d.events.length?' · '+d.events.map(e=>e.phase==='final'?w[e.marker==='FEDERATION-FINAL'?'federationFinal':'sovereignFinal']:w[e.family]+' '+e.round).join(' · '):'');
