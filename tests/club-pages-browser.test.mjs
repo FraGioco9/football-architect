@@ -107,6 +107,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     // Observe actual first contentful paint while all deferred JS is held back.
     // Releasing those responses must not change sidebar labels, selection or geometry.
     const navSnapshot="(()=>{const nav=document.querySelector('.fa-shell-nav');return {lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,expanded:nav.querySelector('.nav01-expand').getAttribute('aria-expanded'),nodes:[...nav.querySelectorAll('h2,a,button')].map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {text:el.textContent.trim(),label:el.getAttribute('aria-label'),current:el.getAttribute('aria-current'),active:el.classList.contains('is-active'),x:r.x,y:r.y,w:r.width,h:r.height,display:s.display}})}})()";
+    await cmd('Network.enable');await cmd('Network.setCacheDisabled',{cacheDisabled:true});
     for(const width of [1440,390])for(const theme of ['dark','light'])for(const lang of ['en','de','es','fr','it']){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await cmd('Page.navigate',{url:origin+'/dashboard'});await wait("document.readyState==='complete'");
@@ -132,6 +133,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      }
     }
     console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
+    await cmd('Network.setCacheDisabled',{cacheDisabled:false});
     const known=Object.keys(manifest.clubCrests)[0];assert.ok(known);
     const [country,id]=known.split('-');
     const knownPath='/clubs/'+country.toLowerCase()+'/'+id.toString()+'/overview';

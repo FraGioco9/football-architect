@@ -74,6 +74,7 @@ function paint(){
  const labels=baseLabels[locale];
  ['navHome','dashboard','calendar','settings'].forEach((key,i)=>nav.querySelectorAll('[data-app-i18n="'+key+'"]').forEach(el=>el.textContent=labels[i]));
  ['dashboard','calendar','settings'].forEach((key,i)=>nav.querySelector('[data-app-aria="'+key+'"]')?.setAttribute('aria-label',labels[i+1]));
+ nav.querySelectorAll('[data-app-i18n="navCompetitions"]').forEach(el=>el.textContent=lang[locale][0]);
  nav.setAttribute('aria-label',labels[4]);nav.querySelector('#app-nav-divisions').setAttribute('aria-label',lang[locale][0]);
  button.setAttribute('aria-label',(button.getAttribute('aria-expanded')==='true'?collapseLabels:expandLabels)[locale]);
 }
