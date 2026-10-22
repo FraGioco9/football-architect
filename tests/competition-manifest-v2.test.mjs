@@ -1,0 +1,30 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {createRequire} from "node:module";
+const require=createRequire(import.meta.url);
+const model=require("../assets/competition-model.js");
+const manifest=()=>JSON.parse(readFileSync(new URL("../competitions/_shared/manifest.json",import.meta.url),"utf8"));
+test("v2 carries distinct competition definitions and the legacy domestic projection",()=>{
+ const data=manifest();
+ assert.equal(data.schemaVersion,2);
+ assert.equal(data.competitions.length,18);
+ assert.equal(data.divisions.length,16);
+ assert.equal(new Set(data.competitions.map(x=>x.id)).size,18);
+ assert.equal(new Set(data.competitions.map(x=>x.slug)).size,18);
+ assert.equal(new Set(data.divisions.flatMap(d=>d.clubs.map(c=>c.countryId+":"+c.clubId))).size,256);
+ assert.equal(model.validManifest(data),true);
+ assert.equal(model.competitionById(data,"federation-cup")?.capacity,24);
+ assert.equal(model.competitionById(data,"unknown"),null);
+});
+test("v1, duplicate identity, mismatched metrics and forged projection fail closed",()=>{
+ const bad=mutation=>{const x=manifest();mutation(x);assert.equal(model.validManifest(x),false)};
+ bad(x=>{x.schemaVersion=1});
+ bad(x=>{x.competitions[1].id=x.competitions[0].id});
+ bad(x=>{x.competitions[0].capacity=24});
+ bad(x=>{x.competitions[0].metrics.totalMatches++});
+ bad(x=>{x.competitions[0].metrics.phases.league.matches++});
+ bad(x=>{x.competitions[0].capabilities.phaseIds.pop()});
+ bad(x=>{x.competitions[0].rules.phases[0].meetingsPerPair=4});
+ bad(x=>{x.divisions[0].clubs[0].clubId=40});
+});
