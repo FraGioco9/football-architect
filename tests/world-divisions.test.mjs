@@ -207,8 +207,8 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-world-standing-table tr>*:first-child{position:sticky"));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(2){position:sticky"));
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
- assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;width:24px;height:16px;flex:none}"));
- assert.ok(css.includes(".app-world-flag{display:block;width:24px;height:16px;flex:none;object-fit:fill;border:0;border-radius:0;clip-path:none}"));
+ assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;align-items:center;justify-content:center;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none}"));
+ assert.ok(css.includes(".app-world-flag{display:block;width:100%;height:100%;flex:none;object-fit:contain;border:0;border-radius:0;clip-path:none}"));
  assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
  assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
 });
@@ -322,7 +322,7 @@ test("COMPETITIONS-08 uses approved canonical primary names for all 256 particip
 test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",()=>{
  const shared=read("competitions/_shared/index.html"),loader=read("assets/competition-page.js");
  const generator=read("tools/generate-app-pages.mjs");
- assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="24" height="16"'));
+ assert.ok(shared.includes('class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="25" height="20"'));
  assert.ok(shared.includes('class="app-world-flag-frame" aria-hidden="true"'));
  assert.ok(!shared.includes('id="app-competition-flag" alt="" src='));
  assert.ok(loader.includes('flag.tagName.toLowerCase() !== "svg"'));
@@ -346,4 +346,62 @@ test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",
  assert.ok(css.includes("@media(max-width:620px){.app-competition-header{"));
  assert.ok(css.includes(".app-competition-return{display:none}"),"hidden on mobile");
  assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions"'));
+});
+
+test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
+ const css=read("assets/app.css");
+ const page=read("assets/competition-page.js");
+ assert.ok(css.includes(".app-world-standing-table tr>*{padding:3px 4px"));
+ assert.ok(!css.includes(".app-world-standing-table tr>*{padding:5px 6px}"));
+ assert.ok(css.includes(".app-world-standing-club-link:hover"));
+ assert.ok(page.includes('name.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
+ assert.ok(page.includes('clubLink.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
+ const dev=read("tools/dev-standings-preview-client.mjs");
+ assert.ok(dev.includes('clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview"'));
+});
+
+test("CLUB-NAV-02 links competition views to approved club routes and seasons",()=>{
+ const page=read("assets/competition-page.js");
+ const fixtures=read("assets/competition-fixtures.js");
+ const stats=read("tools/dev-competition-stats-client.mjs");
+ const history=read("assets/competition-history.js");
+ const preview=read("tools/dev-standings-preview-client.mjs");
+ assert.ok(page.includes('name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
+ assert.ok(fixtures.includes('link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
+ assert.ok(stats.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+team.clubId+"/overview"'));
+ assert.ok(history.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+clubId+"/overview"'));
+ assert.ok(history.includes('"/standings?season="+encodeURIComponent(season)'));
+ assert.ok(preview.includes('if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
+ const css=read("assets/club-page.css");
+ assert.ok(css.includes("column-gap:16px;row-gap:8px"));
+ assert.ok(css.includes(".club-colors>.club-color{margin-right:-8px}"));
+});
+
+test("HISTORY-ARCHIVE-LINK-01 anchors have text-only hit areas and flags share native masks",()=>{
+ const dev=read("tools/dev-standings-preview-client.mjs");
+ const css=read("assets/app.css"),landing=read("assets/landing.css");
+ assert.ok(dev.includes('const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link")'));
+ assert.ok(dev.includes('rank.append(label,historyIdentity(entry.club));row.append(rank)'));
+ assert.ok(!dev.includes('button.addEventListener("click",()=>openHistorySeason(item.season))'));
+ assert.ok(css.includes(".app-world-standing-club-link{display:inline;width:max-content;"));
+ assert.ok(landing.includes('img[src*="assets/flags/"]{border-radius:0;clip-path:none;object-fit:contain}'));
+});
+
+test("FLAG-54 generated competition flags have vector 5:4 viewport",()=>{
+ const pages=["competitions/index.html",...["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"))];
+ for(const file of pages){
+  const html=read(file),flags=[...html.matchAll(/<svg class="app-world-flag"[\s\S]*?<\/svg>/g)];
+  assert.ok(flags.length>0,file+" must contain inline SVG flags");
+  for(const [svg] of flags){
+   assert.match(svg,/viewBox="0 0 5 4"/,file);
+   assert.match(svg,/width="25" height="20"/,file);
+   assert.match(svg,/<svg x="0" y="0" width="5" height="4" viewBox="[^"]+" preserveAspectRatio="none">/,file);
+  }
+ }
+});
+
+test("CLUB-COMPETITION-FULLWIDTH renders Competition after both top panels",()=>{
+ const model=read("assets/club-model.js"),css=read("assets/club-page.css");
+ assert.ok(model.includes("'</div><aside class=\"app-panel club-kits\""));
+ assert.ok(css.includes(".club-overview-layout>.club-competition{grid-column:1/-1"));
 });

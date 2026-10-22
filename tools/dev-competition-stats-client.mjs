@@ -1,8 +1,41 @@
-import {readPreviewProgress,previewSeasonMatchdays} from "./dev-standings-preview-data.mjs";
+import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPreviewClubSummary,readPreviewClubProgress} from "./dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
+async function startClubSummary(){
+const enabled=()=>{try{return sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+let catalogue,revision=0;
+const publish=snapshot=>window.dispatchEvent(new CustomEvent('fa:club-competition-summary',{detail:snapshot}));
+async function refresh(){
+ const version=++revision;
+ const route=window.faClubModel?.route(location.pathname);
+ if(!enabled()||!route){publish(null);return;}
+ try{
+  catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'same-origin',cache:'no-store'}).then(async response=>{
+   if(!response.ok)throw Error('Unavailable club competition data');
+   const data=await response.json();if(!competitionModel.validManifest(data))throw Error('Invalid club competition data');return data;
+  }).catch(error=>{catalogue=null;throw error});
+  const data=await catalogue;
+  if(version!==revision||!enabled())return;
+  const division=data.divisions.find(d=>d.countryId===route.countryId&&d.clubs.some(c=>c.clubId===route.clubId));
+  publish(division?createPreviewClubSummary(division,route.clubId,readPreviewClubProgress(sessionStorage)):null);
+ }catch{if(version===revision)publish(null);}
+}
+await new Promise(resolve=>{
+ if(document.documentElement.dataset.clubReady==='true')return resolve();
+ const observer=new MutationObserver(()=>{
+  if(document.documentElement.dataset.clubReady==='true'){observer.disconnect();resolve();}
+ });
+ observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-club-ready']});
+});
+for(const event of ['fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
+window.addEventListener('storage',event=>{if(event.key?.startsWith('football-architect:'))refresh();});
+await refresh();
+
+}
+if(document.getElementById('club-page'))await startClubSummary();
+
 // The shared competition shell is hydrated asynchronously by competition-page.js.
-const panel = await new Promise(resolve => {
+const panel = document.getElementById('club-page')?null:await new Promise(resolve => {
   const existing = document.getElementById("competition-panel-stats");
   if (existing) return resolve(existing);
   const observer = new MutationObserver(() => {
@@ -167,7 +200,9 @@ if (panel && divisionId) {
         const crest=create("span",undefined,"app-world-club-crest-placeholder");
         crest.dataset.clubCrest=division.countryId+"-"+team.clubId;
         crest.setAttribute("aria-hidden","true");
-        identity.append(crest,create("span",team.clubName,"fa-dev-stats-team-name"));
+        const link=create("a",team.clubName,"fa-dev-stats-team-name app-world-standing-club-link");
+        link.href="/clubs/"+division.countryId.toLowerCase()+"/"+team.clubId+"/overview";
+        identity.append(crest,link);
         li.append(position,identity,create("strong",key==="ppg"?team[key].toFixed(2):number(team[key])));
         return li;
       };

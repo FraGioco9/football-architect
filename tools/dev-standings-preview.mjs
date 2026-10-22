@@ -6,7 +6,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
-import { DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP } from "./dev-preview-artifact.mjs";
+import { DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP, CLUB_SUMMARY_INJECTION } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -15,6 +15,7 @@ const LAN_ENABLED = process.env.FA_DEV_LAN === "1";
 const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK;
 const PORT = 2000;
 const VIRTUAL = Object.freeze({
+  "/__fa_dev__/debug-settings.mjs": "dev-debug-settings.mjs",
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
   "/__fa_dev__/dev-world-clock.mjs": "dev-world-clock.mjs",
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
@@ -154,6 +155,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
+        if(file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
         if(file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
           const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';

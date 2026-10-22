@@ -58,6 +58,7 @@ function syncDebugControls(){
 }
 async function refreshProgress(){
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
+ if(clubPath){try{sessionStorage.setItem(FLAG,'on')}catch{return false}}
  if(validPath){
   if(!await setPreviewEnabled(true))return false;
   if(await refreshSeason()===false)return false;
@@ -127,6 +128,7 @@ const LANG = {
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
+const clubPath=/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)$/.test(location.pathname);
 const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
@@ -193,11 +195,13 @@ function historyNode(tag,className="",text){
 function historyLabel(key,tag="span"){
  const element=historyNode(tag);element.dataset.appI18n=key;return element;
 }
-function historyIdentity(club){
+function historyIdentity(club,linked=true){
  const identity=historyNode("span","app-world-club-identity");
  const crest=historyNode("span","app-world-club-crest-placeholder");
  crest.dataset.clubCrest=club.countryId+"-"+club.clubId;crest.setAttribute("aria-hidden","true");
- identity.append(crest,historyNode("span","app-world-club-name",club.primaryName));return identity;
+ const name=historyNode(linked?"a":"span",linked?"app-world-club-name app-world-standing-club-link":"app-world-club-name",club.primaryName);
+ if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";
+ identity.append(crest,name);return identity;
 }
 function historySeasonLabel(season){
  const label=historyNode("span","app-history-dev-season");
@@ -265,18 +269,21 @@ async function renderHistoryPreview(){
   }
   archive.append(archiveTable);
   for(const item of [...seasons].reverse()){
-   const li=historyNode("li"),button=historyNode("button","app-history-dev-season-button");button.type="button";
-   // Archive rows navigate to Standings; they are not toggle selections in History.
-   button.dataset.historySeason=String(item.season);
-   const action=historyLabel("historySelectSeason");action.className="sr-only";
-   button.append(historySeasonLabel(item.season),action);
-   item.rows.slice(0,3).forEach((row,index)=>{
+   const li=historyNode("li"),row=historyNode("div","app-history-dev-season-button");
+   const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
+   seasonLink.href="/competitions/"+division.id.toLowerCase()+"/standings?season="+encodeURIComponent(item.season);
+   seasonLink.append(historySeasonLabel(item.season));
+   seasonLink.addEventListener("click",event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();openHistorySeason(item.season);
+   });
+   row.append(seasonLink);
+   item.rows.slice(0,3).forEach((entry,index)=>{
     const rank=historyNode("span","app-history-dev-archive-club"+(index===0?" app-history-dev-archive-champion":""));
     const label=historyLabel(["historyChampionLabel","historyRunnerUp","historyThirdPlace"][index]);label.className="app-history-dev-podium-label";
-    rank.append(label,historyIdentity(row.club));button.append(rank);
+    rank.append(label,historyIdentity(entry.club));row.append(rank);
    });
-   button.addEventListener("click",()=>openHistorySeason(item.season));
-   li.append(button);list.append(li);
+   li.append(row);list.append(li);
   }
   const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
@@ -299,7 +306,11 @@ async function renderHistoryPreview(){
    if(result.entries){
     for(const {club,season} of result.entries){
      const entry=historyNode("div","app-history-dev-record-entry");entry.dataset.historyRecordSeason=String(season);
-     entry.append(historyIdentity(club),historySeasonLabel(season));holders.append(entry);
+     const seasonLink=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
+      const divisionId=window.faCompetitionDivision?.id||division?.id;
+      seasonLink.href="/competitions/"+String(divisionId).toLowerCase()+"/standings?season="+encodeURIComponent(season);
+      seasonLink.append(historySeasonLabel(season));
+      entry.append(historyIdentity(club),seasonLink);holders.append(entry);
     }
    }else for(const club of result.clubs){
     const entry=historyNode("div","app-history-dev-record-entry");
@@ -381,7 +392,8 @@ function setPreviewEnabled(enabled) {
  return transition;
 }
 
-if(validPath||indexPath){
+if(validPath||indexPath||clubPath){
+ if(clubPath){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
  syncCompetitionLinks();
  (validPath?waitForRows():Promise.resolve()).then(() => {
 
@@ -395,7 +407,7 @@ if(validPath||indexPath){
    if(!await resetPreview())return false;
    widgetRoot?.resetWidgetState();syncDebugControls();return true;
   }}]);
-  widgetRoot=createDebugWidget({page:validPath?"standings":"competitions"});
+  widgetRoot=createDebugWidget({page:validPath?"standings":clubPath?"clubs":"competitions"});
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
@@ -606,7 +618,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       const crest = node("span", "app-world-club-crest-placeholder");
       crest.dataset.clubCrest = tr.dataset.worldClub;
       crest.setAttribute("aria-hidden", "true");
-      identity.append(crest, node("span", "app-world-club-name", r.club.primaryName));
+      const clubLink = node("a", "app-world-club-name app-world-standing-club-link", r.club.primaryName);
+      clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview";
+      identity.append(crest, clubLink);
       clubCell.append(identity);
       tr.append(clubCell);
       for (const number of [r.played, r.won, r.drawn, r.lost, r.gf, r.ga,
