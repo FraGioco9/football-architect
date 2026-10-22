@@ -28,6 +28,10 @@ test('all sixteen divisions share one immutable participant, capacity, format, p
  const model=getModel(),data=manifest();
  assert.deepEqual(data.profile,model.profile);
  assert.equal(model.validManifest(data),true);
+ assert.equal(data.schemaVersion,2);
+ assert.equal(data.competitions.length,18);
+ assert.equal(model.competitionById(data,"sovereign-cup")?.capacity,24);
+ assert.equal(model.competitionById(data,"unknown"),null);
  assert.equal(model.profile.capacity,16);
  assert.equal(model.profile.participants.status,'provisional');
  assert.equal(model.profile.participants.approved,false);
