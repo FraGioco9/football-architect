@@ -17,7 +17,7 @@ function mock(dataset = {}, content = "") {
 }
 function render(saved = null) {
   const controls = options.map(o => mock({language:o[2]},o[3]));
-  const guideLinks = ["divisions","clubs"].map(id=>mock({guideSection:id},id));
+  const guideLinks = [];
   controls.forEach((c,i)=>c.id=options[i][1]);
   const labels=[...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>mock({i18n:m[1]}));
   const trigger=mock(), menu=mock(),value=mock(),container=mock();menu.hidden=true;
@@ -34,13 +34,12 @@ function render(saved = null) {
   runInNewContext(js,{document,window},{timeout:2000});
   return {document,controls,labels,trigger,menu,value,store,guideLinks,window,callbacks};
 }
-test("simple concept guide has only Divisions and Clubs",()=>{
-  assert.equal((html.match(/<h1\b/g)||[]).length,1);
-  assert.equal((html.match(/<section class="guide-section"/g)||[]).length,2);
-  assert.equal((html.match(/<h2\b/g)||[]).length,2);
-  for(const key of ["guideDivisionsHeading","guideDivisionsText1","guideDivisionsText2","guideClubsHeading","guideClubsText1","guideClubsText2"]) assert.match(html,new RegExp('data-i18n="'+key+'"'));
-  assert.doesNotMatch(html,/catalog-search|country-filter|type-filter|atlas-results|country-index|documented clubs|data\/clubs\.json|data\/divisions\.json/i);
-  assert.doesNotMatch(js,/fetch\(|querySelectorAll\("\.club/);
+test("GUIDE-02 has an index and nine dedicated chapters",()=>{
+  assert.equal((html.match(/class="guide-card"/g)||[]).length,9);
+  for(const id of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){
+    assert.match(html,new RegExp('href="/guide/'+id+'"'));
+  }
+  assert.doesNotMatch(html,/<section class="guide-section"/);
 });
 test("division and club definitions follow documented design scope",()=>{
   assert.equal(new Set(source.map(d=>d.countryId)).size,8);
@@ -54,7 +53,7 @@ test("same Landing language menu supports all five translations on Guide",()=>{
   const r=render();
   assert.equal(r.document.documentElement.lang,"en");
   assert.equal(r.value.textContent,"English");
-  assert.match(r.labels.find(l=>l.dataset.i18n==="guideDivisionsText1").textContent,/first division/);
+  assert.match(r.labels.find(l=>l.dataset.i18n==="guideDivisionsHeading").textContent,/Divisions/);
   for(const [i,lang] of ["en","de","es","fr","it"].entries()){
     r.trigger.fire("click");
     r.controls[i].fire("click");
@@ -65,36 +64,22 @@ test("same Landing language menu supports all five translations on Guide",()=>{
   assert.equal(render("de").labels.find(l=>l.dataset.i18n==="guideClubsHeading").textContent,"Vereine");
   assert.equal(render("unsupported").document.documentElement.lang,"en");
 });
-test("sidebar links, selection and hash navigation are synchronized",()=>{
-  assert.match(html,/<aside class="guide-sidebar"/);
-  assert.match(html,/<nav class="guide-sidebar-nav"/);
-  for(const id of ["divisions","clubs"]){
-    assert.match(html,new RegExp('href="#'+id+'" data-guide-section="'+id+'"'));
-    assert.match(html,new RegExp('<section class="guide-section" id="'+id+'"'));
-  }
-  const r=render();
-  assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
-  assert.equal(r.guideLinks[1].attributes["aria-current"],undefined);
-  r.guideLinks[1].fire("click");
-  assert.equal(r.guideLinks[1].attributes["aria-current"],"location");
-  assert.equal(r.guideLinks[0].attributes["aria-current"],undefined);
-  r.window.location.hash="#divisions";
-  r.callbacks.hashchange();
-  assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
-  r.window.location.hash="#unknown";
-  r.callbacks.hashchange();
-  assert.equal(r.guideLinks[0].attributes["aria-current"],"location");
+test("index navigation preserves canonical chapter links",()=>{
+  assert.match(html, /href="\/guide\/world"/);
+  assert.match(html, /href="\/guide\/explore"/);
+  assert.match(css, /guide-card-grid/);
 });
 test("navigation, responsive layout and no duplicate language logic",()=>{
   assert.match(html,/href="\/" aria-label="Football Architect home"/);
-  assert.match(html,/src="\.\.\/assets\/landing\.js"/);
-  assert.match(html,/href="\.\.\/favicon\.ico"/);
+  assert.match(html,/src="\/assets\/landing\.js"/);
+  assert.match(html,/href="\/favicon\.ico"/);
   assert.match(css,/max-width:700px/);
   assert.match(css,/position:sticky/);
   assert.match(css,/grid-template-columns:210px minmax\(0,1fr\)/);
   assert.match(css,/guide-sidebar-link\[aria-current="location"\]/);
   assert.match(css,/focus-visible/);
-  assert.doesNotMatch(css,/overflow-y:\s*(auto|scroll)/);
+  assert.doesNotMatch(css,/overflow-y:\s*(?:auto|scroll)/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.doesNotMatch(html,/<script[^>]+guide\.js/);
 });
 
@@ -103,7 +88,7 @@ test("ENG-ALL-ENGLISH-01 localizes Guide landmark names and document title", () 
     assert.match(html, new RegExp('data-i18n-aria="' + key + '"'));
   }
   assert.equal((html.match(/data-i18n-aria="guideSections"/g) || []).length, 2);
-  assert.match(js, /document\.title = copy\.guideTitle \+ " — Football Architect"/);
+  assert.match(js, /document\.title = .*" — Football Architect"/);
   const words = {
     en: ["Guide", "Page navigation", "Guide sections"],
     de: ["Leitfaden", "Seitennavigation", "Leitfadenabschnitte"],
@@ -133,3 +118,45 @@ test("TITLE-FIX-01 localizes the Guide browser title on load and each language c
     assert.equal(stored.document.title, title + " — Football Architect", "saved " + lang);
   }
 });
+
+test("GUIDE-02 chapter copy exists across five languages",()=>{const ids=["guideIntro","guideWorldHeading","guideMovementHeading","guideCalendarHeading","guideCupsHeading","guideRecordsHeading","guideExploreHeading"];for(const id of ids){assert.match(html,new RegExp(`data-i18n="${id}"`));const r=render();for(const lang of ["en","de","es","fr","it"]){r.trigger.fire("click");r.controls.find(c=>c.dataset.language===lang).fire("click");assert.ok(r.labels.find(x=>x.dataset.i18n===id).textContent.length>0);}}});
+
+test("GUIDE-02 complete translations and mobile layout",()=>{const keys=[...new Set([...html.matchAll(/data-i18n="([^"]+)"/g)].map(m=>m[1]))];for(const language of ["en","de","es","fr","it"]){const r=render(language);for(const key of keys){const labels=r.labels.filter(x=>x.dataset.i18n===key);assert.ok(labels.length,`${language}: ${key}`);for(const label of labels)assert.ok(label.textContent.trim(),`${language}: ${key} must not be empty`);}}assert.match(css,/@media\(max-width:700px\)/);assert.match(css, /max-width:350px/);});
+
+test("GUIDE-02 world facts and stand-alone chapter paths",()=>{for(const id of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){const page=read(`guide/${id}/index.html`);assert.match(page,new RegExp(`href="/guide/${id}"`));assert.match(page,/aria-current="page"/);assert.match(page,/<main class="guide-main/);assert.match(page,/assets\/landing\.js/);}const world=read("guide/world/index.html");assert.match(world,/What is Football Architect\?/);assert.doesNotMatch(world,/64 inactive clubs|club registry|database/i);});
+
+test("GUIDE-02 domestic divisions catalogue and translation hooks",()=>{const page=read("guide/divisions/index.html");const divisions=JSON.parse(read("data/divisions.json"));assert.equal((page.match(/class="guide-division-country"/g)||[]).length,8);assert.equal((page.match(/class="guide-tier-card"/g)||[]).length,16);for(const d of divisions){assert.ok(page.includes(d.name));assert.ok(page.includes('href="/competitions/'+d.countryId.toLowerCase()+'-'+d.tier+'"'));}for(const id of ["guideDivDetailFormat","guideDivDetailCaution","guideDivDetailCatalogueTitle","guideDivTier1","guideDivTier2"])assert.ok(page.includes('data-i18n="'+id+'"'));assert.match(css,/guide-tier-diagram/);assert.match(css,/guide-division-list/);});
+
+test("GUIDE-02 clubs chapter preserves identity facts and translations",()=>{const page=read("guide/clubs/index.html");for(const key of ["guideClubIntroTitle","guideClubIntro","guideClubIdentityTitle","guideClubIdentity","guideClubColoursTitle","guideClubColours","guideClubPlacesTitle","guideClubPlaces","guideClubRivalriesTitle","guideClubRivalries","guideClubExploreTitle","guideClubExplore"])assert.ok(page.includes('data-i18n="'+key+'"'));for(const value of ["320","256","64","8"])assert.ok(page.includes("<strong>"+value+"</strong>"));assert.doesNotMatch(page,/>undefined</);});
+
+test("GUIDE-02 movement chapter explains approved two-tier format without claiming live simulation",()=>{const page=read("guide/movement/index.html");for(const key of ["guideMoveIntroTitle","guideMoveIntro","guideMoveRelegationTitle","guideMoveRelegation","guideMovePromotionTitle","guideMovePromotion","guideMoveNoteTitle","guideMoveNote",])assert.ok(page.includes('data-i18n="'+key+'"'));assert.ok(page.includes("13th and 14th"));assert.ok(page.includes("3rd through 6th"));assert.doesNotMatch(page,/>undefined</);});
+
+test("GUIDE-02 calendar chapter matches the canonical conceptual cycle",()=>{const page=read("guide/calendar/index.html");for(const key of ["guideCalCycleTitle","guideCalCycle","guideCalDomesticTitle","guideCalDomestic","guideCalInternationalTitle","guideCalInternational","guideCalPausesTitle","guideCalPauses","guideCalDataTitle","guideCalData","guideCalDays","guideCalWeeks","guideCalPreseason"])assert.ok(page.includes('data-i18n="'+key+'"'),key);for(const value of ["56","8","12","30"])assert.ok(page.includes("<strong>"+value+"</strong>"));assert.doesNotMatch(page,/>undefined</);});
+
+test("GUIDE-02 international cups chapter preserves INT-24 format",()=>{const page=read("guide/cups/index.html");for(const key of ["guideCupIntroTitle","guideCupIntro","guideCupLeagueTitle","guideCupLeague","guideCupKnockoutTitle","guideCupKnockout","guideCupTimelineTitle","guideCupTimeline","guideCupDataTitle","guideCupData","guideCupMetricCups","guideCupMetricClubs","guideCupMetricLeague","guideCupMetricSlots"])assert.ok(page.includes('data-i18n="'+key+'"'),key);for(const n of ["2","24","6","13"])assert.ok(page.includes("<strong>"+n+"</strong>"));for(const stage of ["I01–I06","I07–I08","I09–I10","I11–I12","I13"])assert.ok(page.includes(stage),stage);assert.doesNotMatch(page,/>undefined</);});
+
+test("GUIDE-02 records chapter distinguishes statistics, history and missing data",()=>{const page=read("guide/records/index.html");for(const key of ["guideRecIntroTitle","guideRecIntro","guideRecTeamsTitle","guideRecTeams","guideRecHistoryTitle","guideRecHistory","guideRecAllTimeTitle","guideRecAllTime","guideRecIntegrityTitle","guideRecIntegrity",])assert.ok(page.includes('data-i18n="'+key+'"'),key);assert.match(page,/Top 5/);assert.match(page,/completed seasons/);assert.doesNotMatch(page,/>undefined</);});
+
+test("GUIDE-02 Explore the App uses canonical navigation and translated labels",()=>{const page=read("guide/explore/index.html");for(const key of ["guideExpIntroTitle","guideExpIntro","guideExpDashboardTitle","guideExpDashboard","guideExpCompetitionsTitle","guideExpCompetitions","guideExpCalendarTitle","guideExpCalendar","guideExpClubsTitle","guideExpClubs","guideExpEmptyTitle","guideExpEmpty",])assert.ok(page.includes('data-i18n="'+key+'"'),key);assert.doesNotMatch(page,/>undefined</);});
+
+test("GUIDE-02 final fixes: readable first paint and no unavailable club links",()=>{const world=read("guide/world/index.html");const clubs=read("guide/clubs/index.html");const explore=read("guide/explore/index.html");assert.doesNotMatch(world,/>undefined</);for(const k of ["guideWorldStructureTitle","guideWorldParticipationTitle","guideWorldCountryDetail"])assert.ok(world.includes('data-i18n="'+k+'"'),k);assert.doesNotMatch(clubs,/href="\/app\/clubs"/);assert.match(clubs,/href="\/guide\/clubs"/);});
+
+test("GUIDE-02 public release is fail-closed and routes every chapter",async()=>{const {isAllowlistedPublicPath,publicRequestFile,planPublicFiles}=await import("../tools/publication-guard.mjs");const config=JSON.parse(read("vercel.json"));const chapters=["world","assets","divisions","clubs","movement","calendar","cups","records","explore"];const paths=planPublicFiles();for(const name of chapters){const physical="guide/"+name+"/index.html";assert.ok(isAllowlistedPublicPath(physical),name);assert.ok(paths.includes(physical),name);assert.equal(publicRequestFile("/guide/"+name),physical);assert.ok(config.rewrites.some(rule=>rule.source.includes(":chapter(")&&rule.destination==="/guide/:chapter/index.html"));}assert.ok(config.rewrites.some(rule=>rule.source==="/guide"&&rule.destination==="/guide/index.html"));assert.equal(isAllowlistedPublicPath("guide/private/index.html"),false);});
+
+test("GUIDE-02 introduction is player-facing and breadcrumb is raised",()=>{const page=read("guide/world/index.html");assert.match(page,/What is Football Architect\?/);assert.doesNotMatch(page,/64 inactive clubs|club registry|database/i);assert.match(css,/\.guide-main\{padding-top:18px\}/);});
+
+test("GUIDE-02 opening remains general without country or club counts",()=>{const page=read("guide/world/index.html");assert.doesNotMatch(page,/eight countries|two divisions|64 inactive|320 clubs|256 active/i);assert.match(page,/fictional football world/);});
+
+test("GUIDE-02 uniform chapter styling and active sidebar",()=>{const style=read("assets/guide.css");for(const rule of ['.guide-sidebar-link[aria-current="page"]','.guide-content>.guide-section:first-child','.guide-content>.guide-explore-links'])assert.ok(style.includes(rule),rule);for(const chapter of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){const page=read("guide/"+chapter+"/index.html");assert.match(page,/class="guide-sidebar-link"[^>]+aria-current="page"/);assert.match(page,/class="guide-content"><section class="guide-section"/);assert.match(page,/<h1 id="page-title" data-i18n="/);}});
+
+test("GUIDE-02 breadcrumb follows the current chapter",()=>{const chapters={world:"guideWorldHeading",assets:"guideAssetsHeading",divisions:"guideDivisionsHeading",clubs:"guideClubsHeading",movement:"guideMovementHeading",calendar:"guideCalendarHeading",cups:"guideCupsHeading",records:"guideRecordsHeading",explore:"guideExploreHeading"};const index=read("guide/index.html");const indexNav=index.split('<nav class="guide-nav"')[1].split("</nav>")[0];assert.ok(!indexNav.includes('aria-current="page"'));for(const [chapter,key] of Object.entries(chapters)){const html=read("guide/"+chapter+"/index.html");const nav=html.split('<nav class="guide-nav"')[1].split("</nav>")[0];assert.ok(nav.includes('href="/guide"'));assert.ok(nav.includes('aria-current="page" data-i18n="'+key+'"'),chapter);assert.ok(html.includes('class="guide-sidebar-link" href="/guide/'+chapter+'" data-i18n="'+key+'" aria-current="page"'));}assert.ok(read("assets/guide.css").includes('.guide-nav [aria-current="page"]'));});
+
+test("GUIDE-02 UI-UNIFORM-02 gives all breadcrumb labels identical typography",()=>{const css=read("assets/guide.css");assert.ok(css.includes('.guide-nav>a,.guide-nav>span{font:inherit;font-size:13px;font-weight:400'));assert.ok(css.includes('.guide-nav>[aria-current="page"]{font-size:13px;font-weight:400'));assert.ok(css.includes('.guide-main>.guide-layout>.guide-content{width:100%;max-width:850px'));for(const name of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){const page=read("guide/"+name+"/index.html");assert.ok(page.split('<nav class="guide-nav"')[1].split("</nav>")[0].includes('<span aria-current="page"'));}});
+
+test("GUIDE-02 previous and next navigation follows chapter order",()=>{const chapters=["world","assets","divisions","clubs","movement","calendar","cups","records","explore"];for(let i=0;i<chapters.length;i++){const html=read("guide/"+chapters[i]+"/index.html");for(const [type,dest] of [["previous",i===0?"/guide":"/guide/"+chapters[i-1]],["next",i===chapters.length-1?"/guide":"/guide/"+chapters[i+1]]])assert.ok(html.includes('class="guide-step-card guide-step-'+type+'" href="'+dest+'"'),chapters[i]+" "+type);assert.ok(html.includes('data-i18n-aria="guideChapterNavigation"'));}assert.ok(read("assets/guide.css").includes(".guide-step-nav{"));});
+
+test("GUIDE-02 vector arrows place previous left and next right",()=>{const css=read("assets/guide.css");assert.ok(css.includes(".guide-step-previous .guide-step-arrow{left:17px;right:auto}"));assert.ok(css.includes(".guide-step-next .guide-step-arrow{right:17px;left:auto}"));for(const name of ["world","assets","divisions","clubs","movement","calendar","cups","records","explore"]){const html=read("guide/"+name+"/index.html");assert.equal((html.match(/<svg class="guide-step-arrow"/g)||[]).length,2);assert.ok(html.includes('M19 12H5 M12 19l-7-7 7-7'));assert.ok(html.includes('M5 12h14 m-7-7 7 7-7 7'));}});
+
+test("GUIDE-02 section H2 headings are enlarged without changing navigation cards",()=>{const css=read("assets/guide.css");assert.ok(css.includes(".guide-main>.guide-layout .guide-section h2{font-size:23px;line-height:1.3}"));assert.ok(css.includes(".guide-main>.guide-layout .guide-section h2{font-size:21px}"));assert.ok(!css.includes(".guide-step-title{font-size:19px"));});
+
+test("GUIDE-02 Assets introduces players without claiming availability",()=>{const page=read("guide/assets/index.html");assert.match(page,/guideAssetsPlayersText/);assert.match(page,/guideAssetsClubsText/);assert.match(page,/future stage/);assert.match(page,/href="\/guide\/clubs"/);});

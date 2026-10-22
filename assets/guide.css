@@ -30,3 +30,80 @@
  .guide-section h2{font-size:18px}
  .guide-section p{font-size:14px}
 }
+
+/* GUIDE-02: long-form world handbook */
+.guide-intro{font-size:16px;line-height:1.65;color:var(--muted);margin:0 0 24px;max-width:70ch}
+.guide-section{scroll-margin-top:30px}
+.guide-sidebar-nav{max-height:none;overflow:visible}
+@media(max-width:700px){.guide-sidebar-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-height:none;overflow:visible}.guide-sidebar-link{font-size:12px;padding:9px 8px}.guide-intro{font-size:14px}}
+@media(max-width:350px){.guide-sidebar-link{font-size:11px;padding-inline:5px}}
+
+/* GUIDE-02 multi-page chapters */
+.guide-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+.guide-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px;text-decoration:none;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0;min-height:88px}
+.guide-card h2{font-size:16px;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.guide-card:hover{border-color:var(--focus)}.guide-card:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.guide-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.guide-facts div{padding:15px;background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;gap:6px}
+.guide-facts strong{font-size:22px}.guide-facts span{font-size:12px;color:var(--muted)}
+@media(max-width:700px){.guide-card-grid{grid-template-columns:minmax(0,1fr)}.guide-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* GUIDE-02 Domestic Divisions chapter */
+.guide-tier-diagram{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);gap:10px;align-items:center;margin:20px 0}.guide-tier-diagram>div:not(.guide-tier-connector),.guide-format-facts>div{display:flex;flex-direction:column;gap:6px;min-width:0;padding:18px;border:1px solid var(--line);background:var(--surface);border-radius:12px}.guide-tier-diagram strong,.guide-format-facts strong{font-size:26px}.guide-tier-diagram span,.guide-format-facts span{font-size:13px;color:var(--muted)}.guide-tier-connector{text-align:center;font-size:25px;color:var(--muted)}.guide-format-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}.guide-division-note{padding:14px;border-left:3px solid var(--focus);background:var(--surface);border-radius:5px}.guide-division-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.guide-division-country{min-width:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.guide-division-country h3{margin:0 0 12px;font-size:17px}.guide-tier-pair{display:grid;gap:8px}.guide-tier-card{display:flex;flex-direction:column;gap:4px;min-width:0;padding:11px;border:1px solid var(--line);border-radius:9px}.guide-tier-card a{font-size:15px;font-weight:650;color:var(--text);overflow-wrap:anywhere}.guide-tier-card a:focus-visible,.guide-chapter-link:focus-visible{outline:2px solid var(--focus);outline-offset:3px}.guide-tier-label,.guide-division-code{color:var(--muted);font-size:12px}.guide-chapter-link{display:inline-flex;min-height:44px;align-items:center;color:var(--text);font-weight:700;text-decoration:underline}@media(max-width:700px){.guide-division-list{grid-template-columns:minmax(0,1fr)}.guide-format-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.guide-format-facts>div{padding:10px}.guide-tier-diagram{grid-template-columns:minmax(0,1fr) 25px minmax(0,1fr);gap:5px}.guide-tier-diagram>div:not(.guide-tier-connector){padding:10px}}@media(max-width:350px){.guide-format-facts{grid-template-columns:minmax(0,1fr)}}
+
+/* GUIDE-02: breadcrumb closer to the site header. */
+.guide-main{padding-top:18px}
+@media(max-width:700px){.guide-main{padding-top:12px}.guide-nav{margin-bottom:12px}}
+
+/* GUIDE-02 UI-UNIFORM-01: coherent chapter rhythm and visible current navigation. */
+.guide-sidebar-link[aria-current="page"]{border-color:var(--border);background:rgba(41,116,91,.21);color:var(--text)}
+.guide-content>.guide-section:first-child{border-top:0;padding-top:0}
+.guide-content>.guide-section{width:100%;min-width:0}
+.guide-content>.guide-section h2{max-width:100%;overflow-wrap:anywhere}
+.guide-content>.guide-section p{max-width:76ch}
+.guide-content>.guide-chapter-link,.guide-content>.guide-explore-links{margin-top:20px}
+.guide-content>.guide-explore-links{display:flex;flex-wrap:wrap;align-items:center;column-gap:24px;row-gap:8px}
+.guide-content>.guide-facts,.guide-content>.guide-format-facts{max-width:100%}
+.guide-content>.guide-section a,.guide-content>.guide-explore-links a{overflow-wrap:anywhere}
+@media(max-width:700px){.guide-content>.guide-explore-links{flex-direction:column;align-items:flex-start;gap:10px}.guide-content>.guide-chapter-link{margin-top:14px}}
+
+/* GUIDE-02 breadcrumb and chapter menu alignment. */
+.guide-nav{display:flex;flex-wrap:wrap;align-items:center;column-gap:7px;row-gap:4px;line-height:1.5}
+.guide-nav [aria-current="page"]{color:var(--text);font-weight:650;overflow-wrap:anywhere}
+.guide-main>.guide-nav{margin-bottom:14px}
+.guide-main>.guide-layout{align-items:start}
+@media(max-width:700px){.guide-main>.guide-nav{margin-bottom:12px}}
+
+/* GUIDE-02 UI-UNIFORM-02: one presentation for every guide route. */
+.guide-main{justify-content:flex-start;width:100%}
+.guide-main>.guide-nav{width:100%;margin:0 0 14px;align-self:stretch}
+.guide-nav>a,.guide-nav>span{font:inherit;font-size:13px;font-weight:400;line-height:1.5;color:var(--muted);letter-spacing:normal;text-transform:none}
+.guide-nav>[aria-current="page"]{font-size:13px;font-weight:400;color:var(--muted)}
+.guide-main>.guide-layout{width:100%;grid-template-columns:210px minmax(0,1fr);gap:clamp(20px,4vw,54px);align-items:start}
+.guide-main>.guide-layout>.guide-content{width:100%;max-width:850px;min-width:0}
+.guide-main>.guide-layout>.guide-sidebar{align-self:start}
+.guide-main>.guide-layout .guide-section{padding-block:24px}
+.guide-main>.guide-layout .guide-section:first-child{padding-top:0;border-top:0}
+.guide-main>.guide-layout .guide-section h2{font-size:19px;line-height:1.35;font-weight:710;margin:0 0 14px}
+.guide-main>.guide-layout .guide-section p{font-size:15px;line-height:1.65;margin:0 0 12px}
+@media(max-width:700px){.guide-main>.guide-layout{grid-template-columns:minmax(0,1fr);gap:18px}.guide-main>.guide-nav{margin-bottom:12px}.guide-main>.guide-layout .guide-section{padding-block:20px}.guide-main>.guide-layout .guide-section:first-child{padding-top:0}.guide-main>.guide-layout .guide-section h2{font-size:18px}.guide-main>.guide-layout .guide-section p{font-size:14px}}
+
+/* GUIDE-02 previous / next chapter cards */
+.guide-step-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.guide-step-card{position:relative;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0;min-height:94px;padding:17px 44px 17px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);text-decoration:none;overflow-wrap:anywhere}
+.guide-step-card:hover{border-color:var(--focus);background:rgba(91,142,121,.12)}
+.guide-step-card:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.guide-step-direction{font-size:12px;color:var(--muted)}.guide-step-title{font-size:15px;line-height:1.4;font-weight:700}
+.guide-step-arrow{position:absolute;right:17px;top:50%;transform:translateY(-50%);font-size:21px;color:var(--muted)}
+@media(max-width:600px){.guide-step-nav{grid-template-columns:1fr;gap:10px}.guide-step-card{min-height:76px}}
+
+/* GUIDE-02: arrows follow site icon style and logical direction. */
+.guide-step-card.guide-step-previous{padding-left:48px;padding-right:18px}
+.guide-step-card.guide-step-next{padding-right:48px}
+.guide-step-arrow{width:20px;height:20px;left:auto;right:17px;font-size:inherit;flex-shrink:0}
+.guide-step-previous .guide-step-arrow{left:17px;right:auto}
+.guide-step-next .guide-step-arrow{right:17px;left:auto}
+
+/* GUIDE-02: larger section H2 headings, cards retain original typography. */
+.guide-main>.guide-layout .guide-section h2{font-size:23px;line-height:1.3}
+@media(max-width:700px){.guide-main>.guide-layout .guide-section h2{font-size:21px}}
