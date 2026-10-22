@@ -197,13 +197,16 @@ test('All competition routes fall back to season 1 without hiding the requested 
  }
 });
 
-test('DEV season 0 disables the competition season picker without creating a season 0 URL',()=>{
+test('DEV season 0 keeps season 1 available without creating a season 0 URL',()=>{
  const s=setup('/competitions/it-1/standings?season=3',3);
  s.window.faCompetitionRoute.setSeasonLimit(0);
  assert.equal(s.window.faCompetitionRoute.get().season,'1');
- assert.equal(s.fields.get('app-competition-season').disabled,true);
- assert.equal(s.fields.get('app-competition-season-value').attrs['data-app-i18n'],'competitionNoActiveSeason');
- assert.equal(s.fields.get('competition-panel-standings').hidden,true);
+ assert.equal(s.fields.get('app-competition-season').disabled,false);
+ assert.equal(s.fields.get('app-competition-season-value').textContent,'1');
+ assert.equal(s.fields.get('app-competition-season-value').attrs['data-app-i18n'],undefined);
+ assert.equal(s.fields.get('app-competition-season-unavailable').hidden,true);
+ assert.deepEqual(s.fields.get('app-competition-season-menu').options.map(node=>node.dataset.menuValue),['1']);
+ assert.equal(s.fields.get('competition-panel-standings').hidden,false);
  assert.equal(s.window.location.search,'?season=1');
  s.window.faCompetitionRoute.setSeasonLimit(1);
  assert.equal(s.fields.get('app-competition-season').disabled,false);
@@ -212,11 +215,13 @@ test('DEV season 0 disables the competition season picker without creating a sea
 
 
 test('DEV season 0 survives direct loads and normalizes old season URLs to season 1',()=>{
- for(const slug of ['it-1','sovereign-cup','federation-cup']){
+ for(const slug of ['sovereign-cup','federation-cup',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
   const s=setup('/competitions/'+slug+'/fixtures?season=3',0);
   assert.equal(s.window.faCompetitionRoute.get().season,'1');
-  assert.equal(s.fields.get('app-competition-season').disabled,true);
-  assert.equal(s.fields.get('competition-panel-fixtures').hidden,true);
+  assert.equal(s.fields.get('app-competition-season').disabled,false);
+  assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
+  assert.equal(s.fields.get('app-competition-season-value').textContent,'1');
+  assert.equal(s.fields.get('app-competition-season-unavailable').hidden,true);
  }
 });
 

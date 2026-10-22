@@ -128,21 +128,17 @@
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
-    const inactive=devSeasons.length>0&&document.documentElement.dataset.faDevCurrentSeason==="0";
-    season.disabled=inactive;
+    season.disabled=false;
     document.documentElement.dataset.competitionView=state.view;
     document.documentElement.dataset.competitionSeasonUnavailable=String(!available);
-    seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available&&!inactive;
-    unavailable.setAttribute("data-app-i18n",inactive?"competitionNoActiveSeason":"competitionSeasonUnavailable");
-    if(inactive)unavailable.textContent="No active season";
+    seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available;
     seasonValue.textContent=available?state.season:unavailable.textContent;
-    if(inactive){seasonValue.textContent=unavailable.textContent;seasonValue.setAttribute("data-app-i18n","competitionNoActiveSeason")}
-    else if(available)seasonValue.removeAttribute("data-app-i18n");
+    if(available)seasonValue.removeAttribute("data-app-i18n");
     else seasonValue.setAttribute("data-app-i18n","competitionSeasonUnavailable");
     for(let i=0;i<tabs.length;i++){
       const active=i===index;
       tabs[i].setAttribute("aria-selected",String(active));tabs[i].tabIndex=active?0:-1;
-      tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active||!available||inactive;
+      tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active||!available;
     }
     if(focus)tabs[index].focus({preventScroll:true});
     if(focus||!restoringTabScroll)revealSelectedTab();

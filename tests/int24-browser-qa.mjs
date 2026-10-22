@@ -79,14 +79,33 @@ try {
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-season')),'0');
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-matchdays')),'0');
   if(route.startsWith('/competitions/')){
-   assert.equal(await page.locator('#app-competition-season').isDisabled(),true);
-   assert.equal(await page.locator('#app-competition-season-value').innerText(),'No active season');
+   assert.equal(await page.locator('#app-competition-season').isDisabled(),false);
+   assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
+   assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
+   assert.equal(await page.locator('#competition-panel-'+(route.endsWith('/fixtures')?'fixtures':'standings')).isVisible(),true);
    assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
   }
-  if(route==='/calendar')assert.equal(await page.locator('#calendar-season-picker').isDisabled(),true);
+  if(route==='/calendar'){
+   assert.equal(await page.locator('#calendar-season-picker').isDisabled(),false);
+   assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
+  }
   await page.reload({waitUntil:'networkidle'});
   await page.waitForSelector('.fa-dev-widget-button');
   assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
+  if(route.startsWith('/competitions/')){
+   assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
+   assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
+   assert.equal(await page.locator('#competition-panel-'+(route.endsWith('/fixtures')?'fixtures':'standings')).isVisible(),true);
+   await page.locator('#app-competition-season').click();
+   assert.deepEqual(await page.locator('#app-competition-season-menu [role=option]').allTextContents(),['1']);
+   await page.locator('#app-competition-season').click();
+  }
+  if(route==='/calendar'){
+   assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
+   await page.locator('#calendar-season-picker').click();
+   assert.deepEqual(await page.locator('#calendar-season-menu [role=option]').allTextContents(),['1']);
+   await page.locator('#calendar-season-picker').click();
+  }
   await page.locator('.fa-dev-widget-button').click();
   await page.locator('[data-dev-control="season-number"]').fill('1');
   await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');

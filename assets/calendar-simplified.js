@@ -28,7 +28,7 @@
  const readDebugSeason=()=>{try{const raw=sessionStorage.getItem(seasonKey),n=raw===null||raw.trim()===''?NaN:Number(raw);return Number.isInteger(n)&&n>=0&&n<=4?n:1}catch{return 1}};
  let selectedSeason=1;
  window.faCalendarSelectedSeason=()=>selectedSeason;
- const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?readDebugSeason():1);
+ const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=Math.max(1,dev?readDebugSeason():1);
  function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?season="+selectedSeason+"&calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
  function updateSeason(){
   const limit=dev?readDebugSeason():1;
@@ -39,10 +39,10 @@
   const canonical=new URL(location.href);canonical.search='?'+new URLSearchParams({season:String(selectedSeason),calendarView:document.documentElement.dataset.calendarView==='week'?'week':'season'});if(location.pathname+location.search!==canonical.pathname+canonical.search)history.replaceState(history.state,'',canonical);
   root.dataset.seasonInitialized='true';
   menu.replaceChildren();
-  for(let n=limit;n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
-  trigger.disabled=limit===0;
-  if(limit===0){value.textContent='No active season';value.dataset.appI18n='competitionNoActiveSeason';closeMenu()}
-  else {value.textContent=String(selectedSeason);delete value.dataset.appI18n}
+  for(let n=Math.max(1,limit);n>=1;n--){const option=document.createElement('div');option.className='language-option';option.role='option';option.dataset.menuValue=String(n);option.textContent=String(n);option.setAttribute('aria-selected',String(n===selectedSeason));option.tabIndex=0;option.addEventListener('click',()=>chooseSeason(n));option.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseSeason(n)}});menu.append(option)}
+  trigger.disabled=false;
+  value.textContent=String(selectedSeason);
+  delete value.dataset.appI18n;
   window.faAppRenderLanguage?.();
   selector.querySelector('#calendar-season-label').textContent=t().season;
   root.dataset.season=String(selectedSeason);
