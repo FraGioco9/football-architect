@@ -103,3 +103,7 @@
 .guide-step-arrow{width:20px;height:20px;left:auto;right:17px;font-size:inherit;flex-shrink:0}
 .guide-step-previous .guide-step-arrow{left:17px;right:auto}
 .guide-step-next .guide-step-arrow{right:17px;left:auto}
+
+/* GUIDE-02: more prominent chapter names in Previous / Next cards. */
+.guide-step-title{font-size:19px;line-height:1.35;font-weight:700}
+@media(max-width:600px){.guide-step-title{font-size:17px}}
