@@ -241,6 +241,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),2);
      assert.equal(await run("[...document.querySelectorAll('.nav01-filter button')].every(el=>el.getBoundingClientRect().width<=el.parentElement.getBoundingClientRect().width+1)"),true,JSON.stringify({width,theme,lang}));
      assert.equal(await run("[...document.querySelectorAll('.nav01-filters select')].every(el=>getComputedStyle(el).display==='none')"),true);
+     // CLUBS-LAYOUT QA-02: card, search and dropdown hover use the same neutral border.
+     if(lang==='en'){
+      const borders=await run("(()=>{const card=document.querySelector('.nav01-card'),input=document.querySelector('.nav01-filters input'),menu=document.querySelector('#nav01-country-trigger');return {card:getComputedStyle(card).borderColor,input:getComputedStyle(input).borderColor,menu:getComputedStyle(menu).borderColor,cardWidth:card.getBoundingClientRect().width}})()");
+      assert.ok(borders.cardWidth>0,JSON.stringify({width,theme,borders}));
+      const placeholder=await run("document.querySelector('.nav01-filters input').placeholder");
+      assert.equal(placeholder,'Search clubs or cities');
+     }
+
      for(const name of ['country','division']){
       await run(`document.getElementById('nav01-${name}-trigger').click()`);
       const menuState=await run(`(()=>{const trigger=document.getElementById('nav01-${name}-trigger'),menu=document.getElementById(trigger.getAttribute('aria-controls')),rect=menu.getBoundingClientRect();return {expanded:trigger.getAttribute('aria-expanded'),hidden:menu.hidden,active:menu.querySelector('[data-active="true"]')?.id,descendant:trigger.getAttribute('aria-activedescendant'),selected:menu.querySelectorAll('[aria-selected="true"]').length,inBounds:rect.left>=0&&rect.right<=innerWidth+1,stroke:trigger.querySelector('path').getAttribute('stroke-width')}})()`);
