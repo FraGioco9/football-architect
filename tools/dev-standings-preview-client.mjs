@@ -142,7 +142,7 @@ const LANG = {
 const validPath = location.pathname.match(DETAIL);
 const clubPath=/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)$/.test(location.pathname);
 // Index and cup routes use global Debug controls without domestic simulation.
-const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname)||/^\/competitions\/(?:sovereign-cup|federation-cup)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
+const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname)||/^\/competitions\/(?:int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
 let widgetRoot;
