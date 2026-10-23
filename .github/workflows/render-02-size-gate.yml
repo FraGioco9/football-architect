@@ -1,0 +1,39 @@
+name: RENDER-02 SIZE-GATE-03
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - tools/benchmark-render-02-size-gate.mjs
+      - .github/workflows/render-02-size-gate.yml
+permissions:
+  contents: read
+jobs:
+  isolated-size-gate:
+    if: github.event.pull_request.head.ref == 'qa/render-02-size-gate-03'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact PR HEAD
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+      - name: Run isolated build, write and compression measurements
+        run: |
+          node --check tools/benchmark-render-02-size-gate.mjs
+          node tools/benchmark-render-02-size-gate.mjs render-02-size-gate.json
+      - name: Assert no tracked files changed
+        run: test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Upload measurement JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-02-size-gate-03
+          path: render-02-size-gate.json
+          if-no-files-found: warn
+          retention-days: 14
