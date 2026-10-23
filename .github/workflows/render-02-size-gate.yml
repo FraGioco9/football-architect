@@ -29,7 +29,11 @@ jobs:
           node --check tools/benchmark-render-02-size-gate.mjs
           node tools/benchmark-render-02-size-gate.mjs render-02-size-gate.json
       - name: Assert no tracked files changed
-        run: test -z "$(git status --porcelain --untracked-files=no)"
+        run: |
+          git status --short
+          git diff --name-only
+          git diff --exit-code
+          git diff --cached --exit-code
       - name: Upload measurement JSON
         if: always()
         uses: actions/upload-artifact@v4
