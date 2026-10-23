@@ -36,12 +36,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
- let refuseCrests=false,holdDeferred=false;const deferredResponses=[];
+ let refuseCrests=false,holdDeferred=false,manifestMode='ok';const deferredResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
+   if(file==='clubs/_shared/manifest.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
    const send=()=>{res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));};
    if(holdDeferred&&file.endsWith('.js')&&file!=='assets/theme.js')deferredResponses.push(send);else send();
   }catch{res.writeHead(404);res.end()}
@@ -300,6 +301,26 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Page.reload');await wait("document.querySelector('.nav01-filters input')?.value==='Sao'");
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320");
+    // CLUBS-PAGE-03B: failed manifest, accessible localized retry, and recovery without refresh.
+    manifestMode='unavailable';
+    await cmd('Page.navigate',{url:origin+'/clubs?country=IT&division=first'});
+    await wait("!!document.querySelector('.nav01-retry')");
+    assert.equal(await run("document.querySelector('.nav01-grid').getAttribute('aria-busy')"),'false');
+    assert.equal(await run("document.querySelector('.nav01-load-status').getAttribute('role')"),'alert');
+    await run("document.documentElement.lang='it'");
+    await wait("document.querySelector('.nav01-retry')?.textContent==='Riprova'");
+    manifestMode='ok';
+    await run("document.querySelector('.nav01-retry').click()");
+    await wait("document.querySelector('.nav01-card')&&document.querySelector('.nav01-filters select').value==='IT'");
+    assert.equal(await run("document.querySelector('.nav01-grid').getAttribute('aria-busy')"),'false');
+    assert.equal(await run("new URLSearchParams(location.search).get('division')"),'first');
+    manifestMode='bad-json';
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("!!document.querySelector('.nav01-retry')");
+    manifestMode='ok';
+    await run("document.querySelector('.nav01-retry').click()");
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    console.log('CLUBS_03B: HTTP error, JSON error, retry, localization and URL recovery passed');
     // QA-02: use an accented city/name from the actual public manifest, not invented fixtures.
     const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/manifest.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
     assert.ok(accentCase,'The public manifest should contain a real accented club name or city');
