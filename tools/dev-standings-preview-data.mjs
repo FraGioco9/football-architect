@@ -8,7 +8,7 @@ const configuredRules=globalThis.faCompetitionRules;
 const previewDefinition=division=>configuredRules.normalizeCompetition({...domesticDefinitions.find(d=>d.id===division.id),...(division.rules?{rules:division.rules}:{}),capacity:division.capacity});
 export const competitionModel=globalThis.faCompetitionModel;
 const {capacity}=competitionModel.profile;
-const {rounds,roundsPerLeg,matchesPerRound,matches,pairings:pairingCount}=competitionModel.schedule;
+const {rounds}=competitionModel.schedule;
 // Fictional scoring only. Official rules remain undefined in the shared profile.
 export const PREVIEW_RULES=Object.freeze({win:3,draw:1,loss:0});
 export const comparePreviewRows=(a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.clubId-b.club.clubId;
@@ -110,19 +110,32 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
       rows.reduce((n, x) => n + x.won, 0) !== rows.reduce((n, x) => n + x.lost, 0)) {
     throw Error("Unbalanced DEV fixture model");
   }
-  return { divisionId: division.id, season, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs };
+  return { divisionId: division.id, season, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs,
+    rulesVersion:definition.rules.version,rulesSnapshot:JSON.parse(JSON.stringify(definition.rules)) };
 }
 
 // The selected season/day is a progress boundary, never a catalogue of future results.
-export function createPreviewHistory(division, season, matchdays) {
+export function createPreviewHistory(division, season, matchdays, savedSeasons=[]) {
   const leagueDays=previewSeasonMatchdays(season,{season,matchdays});
-  const current=createPreviewStandings(division,leagueDays,season);
-  const completed=[];
-  for(let previous=1;previous<season;previous++)
-    completed.push(createPreviewStandings(division,rounds,previous));
-  const played=[...completed];
-  if(matchdays>0)played.push(current);
-  if(leagueDays===rounds)completed.push(current);
+  const definition=previewDefinition(division),saved=new Map();
+  if(!Array.isArray(savedSeasons))throw Error('Invalid saved season history');
+  for(const record of savedSeasons){
+    if(!Number.isSafeInteger(record?.season)||record.season<1||saved.has(record.season)||record.divisionId!==division.id||!Array.isArray(record.rows)||!Array.isArray(record.fixtures)||!competitionModel.resolveSeasonRules(definition,record))throw Error('Invalid saved season history');
+    saved.set(record.season,record);
+  }
+  const completed=[],played=[];
+  for(let year=1;year<=season;year++){
+    const archived=year<season;
+    const applicable=archived?competitionModel.resolveSeasonDefinition(definition,{season:year,formatId:'domestic-league-v1'}):definition;
+    if(!applicable)throw Error('Unavailable historical rules');
+    const phase=applicable.rules.phases.find(p=>p.type==='roundRobin'),total=applicable.metrics.phases[phase.id];
+    const record=saved.get(year)||createPreviewStandings({...division,rules:applicable.rules},archived?total.rounds:leagueDays,year);
+    const resolved=competitionModel.resolveSeasonDefinition(definition,record),league=resolved?.rules.phases.find(p=>p.type==='roundRobin');
+    if(!resolved||!league||record.rows.length!==resolved.capacity)throw Error('Invalid saved season history');
+    const metrics=resolved.metrics.phases[league.id];
+    if(record.fixtures.length)played.push(record);
+    if(record.fixtures.length===metrics.matches&&record.rows.every(row=>row.played===metrics.rounds))completed.push(record);
+  }
   return {completed,played};
 }
 

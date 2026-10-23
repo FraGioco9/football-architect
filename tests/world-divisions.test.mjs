@@ -368,7 +368,8 @@ test("CLUB-NAV-02 links competition views to approved club routes and seasons",(
  const preview=read("tools/dev-standings-preview-client.mjs");
  assert.ok(page.includes('name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
  assert.ok(fixtures.includes('link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
- assert.ok(history.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+clubId+"/overview"'));
+ // Actual domestic/cup History dialog links are exercised by
+ // competition-season-history-view.test.mjs; presentation no longer uses a domestic-only division.
  assert.ok(history.includes('"/standings?season="+encodeURIComponent(season)'));
  assert.ok(preview.includes('if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
  const css=read("assets/club-page.css");

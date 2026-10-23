@@ -130,10 +130,10 @@ Task 5 provider boundary: ordered supplied table rows live in `statistics.standi
 
 **Interfaces:** `resolveSeasonRules(definition, seasonRecord) -> frozen rules | null`: validated stored `rulesSnapshot` wins; absent snapshot with the known baseline legacy format maps to its immutable baseline version; an explicitly unknown version or malformed snapshot returns null. Do not infer completed seasons from a definition alone.
 
-- [ ] Add failing tests for current configuration differing from a valid historical snapshot, known legacy records with no snapshot, malformed/unknown versions, and missing cup history. Assert supplied historical scores and standings are byte-identical before and after viewing under changed current configuration.
-- [ ] Run the new test and confirm failure before implementing resolution.
-- [ ] Implement the version resolver, attach snapshots to newly created DEV season records only, and make History/context honor the resolved rules. Existing saved records remain untouched. Remove obsolete domestic-only presentation gates and constants only after searches prove all generic callers migrated; retain legacy compatibility APIs used by unrelated Club features.
-- [ ] Run `node --test tests/competition-season-rules.test.mjs tests/competition-history.test.mjs tests/club-competition-summary.test.mjs`; expect PASS and unchanged Club summaries. Commit `feat: preserve season-specific rules in shared competition history`.
+- [x] Add failing tests for current configuration differing from a valid historical snapshot, known legacy records with no snapshot, malformed/unknown versions, and missing cup history. Assert supplied historical scores and standings are byte-identical before and after viewing under changed current configuration.
+- [x] Run the new test and confirm failure before implementing resolution.
+- [x] Implement the version resolver, attach snapshots to newly created DEV season records only, and make History/context honor the resolved rules. Existing saved records remain untouched. Remove obsolete domestic-only presentation gates and constants only after searches prove all generic callers migrated; retain legacy compatibility APIs used by unrelated Club features.
+- [x] Run `node --test tests/competition-season-rules.test.mjs tests/competition-history.test.mjs tests/club-competition-summary.test.mjs`; expect PASS and unchanged Club summaries. Commit `feat: preserve season-specific rules in shared competition history`.
 
 ## Task 8: Publication isolation, generated output and complete verification
 

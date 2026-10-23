@@ -18,6 +18,22 @@ const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
 const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
 const root="http://127.0.0.1:2000";
+test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs desktop and mobile bands prepared before publication',async()=>{
+ const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
+ current.rules.phases[0].rankOutcomes[0].to=2;current.rules.phases[0].rankOutcomes[1].from=3;
+ const r=await simulate({division:divisionsForTest('IT-1'),data});
+ const desktop=r.fields.get('app-standings-body').children;
+ desktop.forEach((row,index)=>{row.children[0].textContent=String(index+1);r.window.faStandingsOutcomes.decorate(row,index+1)});
+ r.window.faStandingsMobile.prepare(createPreviewStandings(divisionsForTest('IT-1'),15).rows)();
+ const mobile=r.fields.get('app-standings-compact-list').children;
+ assert.equal(desktop[1].dataset.standingOutcome,'champion');
+ assert.equal(mobile[1].dataset.standingOutcome,'champion');
+ const original=manifest.competitions.find(d=>d.id==='IT-1');
+ const payload={season:1,rulesVersion:original.rules.version,rulesSnapshot:original.rules,participants:divisionsForTest('IT-1').clubs,fixtures:null,results:[],statistics:null,status:'partial'};
+ assert.equal(r.window.faCompetitionContextApi.replaceSeasonData(payload,r.window.faCompetitionContext.revision),true);
+ assert.equal(desktop[1].dataset.standingOutcome,undefined);
+ assert.equal(mobile[1].dataset.standingOutcome,undefined);
+});
 
 test('CONFIG-BANDS: standings styling follows edited rank bands instead of route tier',async()=>{
  const data=structuredClone(manifest),d=data.competitions.find(d=>d.id==='IT-1');

@@ -2,11 +2,11 @@
 (() => {
   "use strict";
   const model=window.faCompetitionModel;
-  const rules=window.faCompetitionRules,definition=window.faCompetitionContext?.definition;
+  const rules=window.faCompetitionRules;let definition=window.faCompetitionContext?.definition;
   if(!definition||!rules)return;
-  const {capacity}=definition;
-  const league=definition.rules.phases.find(p=>p.rankOutcomes);
-  const {rounds:roundCount,matches:matchCount,matchesPerRound}=definition.metrics.phases[league.id];
+  let {capacity}=definition;
+  let league=definition.rules.phases.find(p=>p.rankOutcomes);
+  let {rounds:roundCount,matches:matchCount,matchesPerRound}=definition.metrics.phases[league.id];
   const division=window.faCompetitionDivision;
   const fields=Object.fromEntries(["toolbar","current","round","previous","next","list","empty","summary"]
     .map(key=>[key,document.getElementById("app-fixtures-"+key)]));
@@ -19,14 +19,14 @@
   const picker=document.getElementById("app-fixtures-picker");
   const number=document.getElementById("app-fixtures-round-number");
   if(!navigation||!picker||!number)return;
-  const choices=[...picker.querySelectorAll("[data-fixture-round-choice]")];
-  const configured=rules.fixtureChoices(definition),stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
-  const stageKey=stage==='playout'?'competitionTabPlayout':'competitionTabPlayoffs';
+  let choices=[...picker.querySelectorAll("[data-fixture-round-choice]")];
+  let configured=rules.fixtureChoices(definition),stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
+  let stageKey=stage==='playout'?'competitionTabPlayout':'competitionTabPlayoffs';
   const validRound=value=>Number.isInteger(value)&&value>=1&&value<=roundCount;
   const validChoice=value=>configured.some(c=>c.value===value);
-  const knockoutPhases=definition.rules.phases.filter(p=>p.type==='knockout');
-  const firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
-  const hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
+  let knockoutPhases=definition.rules.phases.filter(p=>p.type==='knockout');
+  let firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
+  let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
   let menuHasPostseason=false;
   // Preserve each club crest host (and its loaded image) when the matchday changes.
@@ -39,12 +39,30 @@
   const word=(key,text,cls="")=>{
     const item=element("span",cls,text);item.dataset.appI18n=key;return item;
   };
-  const postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
+  let postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
   if(stage&&!choices.includes(postChoice)){
   postChoice.id='app-fixtures-round-option-'+stage;postChoice.dataset.menuValue=stage;
   postChoice.dataset.fixtureRoundChoice=stage;postChoice.setAttribute('role','option');
   postChoice.append(word(stageKey,stage==='playout'?'Playout':'Playoffs'));
   postChoice.hidden=false;picker.append(postChoice);
+  }
+  function updateDefinition(next){
+    if(!next||next.id!==definition.id||JSON.stringify(next.rules)===JSON.stringify(definition.rules))return;
+    definition=next;capacity=next.capacity;league=next.rules.phases.find(p=>p.rankOutcomes);
+    ({rounds:roundCount,matches:matchCount,matchesPerRound}=next.metrics.phases[league.id]);
+    configured=rules.fixtureChoices(next);stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
+    stageKey=stage==='playout'?'competitionTabPlayout':'competitionTabPlayoffs';
+    knockoutPhases=next.rules.phases.filter(p=>p.type==='knockout');firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
+    hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
+    choices=configured.map(choice=>{
+      const option=element('div','language-option');option.id='app-fixtures-round-option-'+choice.value;
+      option.dataset.menuValue=String(choice.value);option.dataset.fixtureRoundChoice=String(choice.value);option.setAttribute('role','option');
+      if(typeof choice.value==='number')option.append(word('fixturesMatchday','Matchday'),element('span','',' '+choice.round));
+      else{const label=element('span','',window.faCompetitionRulesView?.phaseLabel(choice.labelKey,document.documentElement.lang)||choice.labelKey);label.dataset.competitionPhase=choice.labelKey;option.append(label);if(choice.round)option.append(element('span','',' · '+choice.round));}
+      return option;
+    });
+    picker.replaceChildren(...choices);postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
+    postChoice.hidden=!Boolean(rounds&&stage);menuHasPostseason=false;roundMenu.update(choices);
   }
   function validatePostseason(games){
     if(!Array.isArray(games))throw Error('Invalid post-season fixtures');
@@ -283,7 +301,8 @@
   fields.next.addEventListener("click",()=>{if(!fields.next.disabled)select(configured[configured.findIndex(c=>c.value===selected)+1].value)});
   // Validate before returning a commit function; rejected input leaves the view intact.
   window.faFixtures={
-    prepare(fixtures,{currentMatchday:current=null,postseason:games=[]}={}){
+    prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition}={}){
+      updateDefinition(applicable);
       const next=validate(fixtures);
       const post=international?next?.postseason||[]:validatePostseason(games);
       if(!next&&post.length)throw Error('Post-season requires a league schedule');
@@ -301,6 +320,7 @@
   new MutationObserver(()=>{if(rounds)render()}).observe(document.documentElement,
     {attributes:true,attributeFilter:["lang"]});
   function contextChanged(){
+    updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data)return; // The protected domestic adapter commits transactionally through prepare().
     if(!data){rounds=null;postseason=[];currentMatchday=null;render();return;}

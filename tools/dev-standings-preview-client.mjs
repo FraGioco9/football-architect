@@ -567,13 +567,15 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       throw Error("Invalid DEV manifest");
     }
     const legacyDivision = manifest.divisions.find(d => d.id === routeId);
-    const definition=competitionModel.competitionById(manifest,routeId);
-    const division=legacyDivision?{...legacyDivision,rules:definition.rules,metrics:definition.metrics}:null;
-    if (!division) throw Error("Unknown DEV division");
+    const currentDefinition=competitionModel.competitionById(manifest,routeId);
+    if (!legacyDivision||!currentDefinition) throw Error("Unknown DEV division");
     // Resolve the season only after the manifest is loaded, then capture it for both
     // standings and fixtures. Read router state first only when it agrees with the
     // current URL; URL remains canonical for direct navigation and browser refresh.
     const season=selectedSeason(),progress={season:debugSeason,matchdays};
+    const definition=season<debugSeason?competitionModel.resolveSeasonDefinition(currentDefinition,{season,formatId:'domestic-league-v1'}):currentDefinition;
+    if(!definition)throw Error('Unavailable historical DEV rules');
+    const division={...legacyDivision,rules:definition.rules,metrics:definition.metrics};
     const playedDays=previewSeasonMatchdays(season,progress);
     const { rows, clubs } = createPreviewStandings(division,playedDays,season);
     // Prepare the complete DEV calendar from the same deterministic season seed.
@@ -591,7 +593,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     const contextRevision=window.faCompetitionContext?.revision;
     const publishContext=()=>window.faCompetitionContextApi?.replaceSeasonData({
-      season,rulesVersion:window.faCompetitionContext.definition.rules.version,
+      season,rulesVersion:complete.rulesVersion,rulesSnapshot:complete.rulesSnapshot,
       participants:division.clubs,fixtures:fixtureData,
       results:fixtureData.filter(game=>game.homeGoals!==null&&game.awayGoals!==null),
       statistics:null,status:"partial"
@@ -620,9 +622,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     });
     if(postResults.final)postFixtures.push({round:33,kickoff:null,...postResults.final});
     const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures}):null;
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures,definition}):null;
     const restorePostseason=window.faPostseason?.snapshot();
-    const commitPostseason=window.faPostseason?.prepare(rows,postResults);
+    const commitPostseason=window.faPostseason?.prepare(rows,postResults,definition);
     // Fast path: reuse the mounted standings DOM, tooltip handlers and club crests.
     // The original preview cleanup remains active for eventual DEV disable/reset.
     if(restorePrevious?.refresh && restorePrevious.refresh(rows,commitFixtures,commitPostseason,

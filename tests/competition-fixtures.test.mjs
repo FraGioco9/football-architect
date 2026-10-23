@@ -106,6 +106,18 @@ test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded kno
   assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
  }
 });
+test('SEASON-FIXTURES: accepted historical seeds replace the definition captured at mount',()=>{
+ const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup),historical=structuredClone(cup);
+ // The current catalogue differs from the stored snapshot's seed pairing.
+ historical.rules.phases.find(p=>p.id==='playoffs').ties[0].participants[0].rank=6;
+ const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
+ const id=i=>rules.clubKey(participants[i]);
+ const game={phaseId:'playoffs',tieId:'p512',leg:1,homeId:id(11),awayId:id(5),homeGoals:1,awayGoals:0,kickoff:null};
+ r.window.faCompetitionContext={definition:rules.normalizeCompetition(historical),selectedSeason:1,seasonData:{participants,fixtures:[game],results:[],statistics:{standings:participants.map(club=>({club,played:6}))}}};
+ r.events['fa:competition-context-change']();r.route.set({matchday:'playoffs:1'});
+ assert.equal(r.fields.get('app-fixtures-toolbar').hidden,false);
+ assert.equal(r.fields.get('app-fixtures-list').children.length,1);
+});
 
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){

@@ -58,11 +58,13 @@
 
   // Presentation only: indicate the Rules bands without changing league ranking.
   function standingOutcome(position) {
-    if(!Number.isInteger(position)||position<1||!definition||position>definition.capacity)return '';
-    const phase=definition.rules.phases.find(p=>p.rankOutcomes);
-    return window.faCompetitionRules.outcomeStyle(window.faCompetitionRules.outcomeAt(definition,phase.id,position)?.kind);
+    const selected=window.faCompetitionContext?.definition||definition;
+    if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
+    const phase=selected.rules.phases.find(p=>p.rankOutcomes);
+    return window.faCompetitionRules.outcomeStyle(window.faCompetitionRules.outcomeAt(selected,phase.id,position)?.kind);
   }
   function decorateStanding(row, position) {
+    if(Number.isInteger(position))row.dataset.standingRank=String(position);else delete row.dataset.standingRank;
     const outcome = standingOutcome(position);
     // Debug Settings can reorder the same mounted rows. Always clear the previous
     // position band before applying the new one, or stale champion/gold highlights remain.
@@ -76,9 +78,30 @@
     }
   }
   window.faStandingsOutcomes = Object.freeze({decorate:decorateStanding});
+  function refreshSeasonPresentation(){
+    for(const id of ['app-standings-body','app-standings-compact-list'])for(const row of document.getElementById(id)?.children||[]){
+      if(row.dataset.standingRank!==undefined)decorateStanding(row,Number(row.dataset.standingRank));
+    }
+    const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
+    if(!selected||!list||!window.faCompetitionRulesView)return;
+    const phase=selected.rules.phases.find(p=>p.rankOutcomes),outcomes=phase.rankOutcomes.filter(outcome=>window.faCompetitionRules.outcomeStyle(outcome.kind));
+    host.hidden=!outcomes.length;
+    list.replaceChildren(...outcomes.map(outcome=>{
+      const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
+      const swatch=document.createElement('span');swatch.className='app-standings-legend-swatch';swatch.setAttribute('aria-hidden','true');
+      const label=document.createElement('span');label.id='standings-outcome-'+style;
+      const range=document.createElement('strong');range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
+      const separator=document.createElement('span');separator.textContent=' · ';
+      const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
+      text.textContent=window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
+      label.append(range,separator,text);li.append(swatch,label);return li;
+    }));
+  }
 
   function bindPostseasonTips() {
     let active=null,wasOpen=false,leaveTimer;
+    const releases=[],tips=[];
+    const listen=(target,type,callback,options)=>{target.addEventListener(type,callback,options);releases.push(()=>target.removeEventListener?.(type,callback,options))};
     function close(blur=false) {
       clearTimeout(leaveTimer);
       if(!active)return;
@@ -88,7 +111,7 @@
     for(const button of document.querySelectorAll("[data-postseason-help]")) {
       const tip=document.getElementById(button.dataset.postseasonHelp);
       if(!tip)continue;
-      document.body.appendChild(tip);
+      document.body.appendChild(tip);tips.push(tip);
       function open() {
         clearTimeout(leaveTimer);
         if(active?.button!==button)close();
@@ -99,30 +122,33 @@
         const above=box.top-height-8;
         tip.style.top=Math.max(8,Math.min(above>=8?above:box.bottom+8,viewportHeight-height-8))+"px";
       }
-      button.addEventListener("pointerenter",event=>{if(event.pointerType==="mouse"||event.pointerType==="pen")open()});
+      listen(button,"pointerenter",event=>{if(event.pointerType==="mouse"||event.pointerType==="pen")open()});
       const leave=()=>{if(document.activeElement!==button)leaveTimer=setTimeout(()=>close(),160)};
-      button.addEventListener("pointerleave",leave);
-      tip.addEventListener("pointerenter",open);
-      tip.addEventListener("pointerleave",leave);
-      button.addEventListener("focus",open);
-      button.addEventListener("blur",()=>{if(active?.button===button)close()});
-      button.addEventListener("pointerdown",()=>{wasOpen=active?.button===button});
-      button.addEventListener("click",()=>{if(wasOpen)close(true);else{button.focus();open()}wasOpen=false});
+      listen(button,"pointerleave",leave);
+      listen(tip,"pointerenter",open);
+      listen(tip,"pointerleave",leave);
+      listen(button,"focus",open);
+      listen(button,"blur",()=>{if(active?.button===button)close()});
+      listen(button,"pointerdown",()=>{wasOpen=active?.button===button});
+      listen(button,"click",()=>{if(wasOpen)close(true);else{button.focus();open()}wasOpen=false});
     }
-    document.addEventListener("keydown",event=>{if(event.key==="Escape"&&active){close();event.preventDefault();event.stopPropagation()}});
-    document.addEventListener("pointerdown",event=>{if(active&&event.target!==active.button&&!active.button.contains?.(event.target)&&!active.tip.contains(event.target))close(true)});
-    window.addEventListener("resize",()=>close());
-    window.addEventListener("scroll",()=>{if(active&&document.activeElement===active.button)active.open();else close()},{capture:true,passive:true});
+    listen(document,"keydown",event=>{if(event.key==="Escape"&&active){close();event.preventDefault();event.stopPropagation()}});
+    listen(document,"pointerdown",event=>{if(active&&event.target!==active.button&&!active.button.contains?.(event.target)&&!active.tip.contains(event.target))close(true)});
+    listen(window,"resize",()=>close());
+    listen(window,"scroll",()=>{if(active&&document.activeElement===active.button)active.open();else close()},{capture:true,passive:true});
+    close.destroy=()=>{close();for(const release of releases)release();for(const tip of tips)tip.remove?.()};
     return close;
   }
 
-  function createPostseason(division) {
+  function createPostseason(division,definition=window.faCompetitionContext?.definition) {
+    const releases=[];
     const rules=window.faCompetitionRules,league=definition.rules.phases.find(p=>p.rankOutcomes);
     const roundCount=definition.metrics.phases[league.id].rounds;
     const initialPhase=definition.rules.phases.find(p=>p.type==='knockout');
     const isPlayout=initialPhase.labelKey==='playout',finalPhase=initialPhase.ties.find(t=>t.legs===1);
     const bracket=document.getElementById("app-postseason-bracket");
     if(!bracket)return;
+    mountedPostseasonGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
     const slots=[...document.querySelectorAll("[data-postseason-position]")];
     const scores=[...document.querySelectorAll("[data-postseason-score]")];
     const finalists=[...document.querySelectorAll("[data-postseason-finalist]")];
@@ -153,6 +179,7 @@
         observer?.observe(left.querySelector(".app-postseason-group")||left);
         observer?.observe(result.querySelector(".app-postseason-group")||result);
         window.addEventListener("resize",align);
+        releases.push(()=>{observer?.disconnect();window.removeEventListener?.('resize',align)});
         if(typeof requestAnimationFrame==="function")requestAnimationFrame(align);
       }
     }
@@ -172,6 +199,7 @@
         const observer=typeof ResizeObserver==="function"?new ResizeObserver(alignLine):null;
         observer?.observe(semifinal.querySelector(".app-postseason-group")||semifinal);
         window.addEventListener("resize",alignLine);
+        releases.push(()=>{observer?.disconnect();window.removeEventListener?.('resize',alignLine)});
         if(typeof requestAnimationFrame==="function")requestAnimationFrame(alignLine);
       }
     }
@@ -286,7 +314,10 @@
       return data;
     }
     window.faPostseason=Object.freeze({
-      prepare(rows,results=null) {
+      prepare(rows,results=null,applicable=window.faCompetitionContext?.definition) {
+        if(applicable&&JSON.stringify(applicable.rules.phases.filter(p=>p.type==='knockout'))!==mountedPostseasonGraph){
+          replacePostseason(applicable);return window.faPostseason.prepare(rows,results,applicable);
+        }
         if(rows===null){if(results!==null)throw Error("Invalid postseason standings");return()=>render(null,null)}
         if(!Array.isArray(rows)||rows.length!==definition.capacity)throw Error("Invalid postseason standings");
         const seen=new Set();
@@ -298,9 +329,18 @@
         const prepared=validateResults(results,next);
         return()=>render(next,prepared);
       },
-      snapshot(){const previous=current;return()=>render(previous.rows,previous.results)}
+      snapshot(){const previous=current;return()=>render(previous.rows,previous.results)},
+      destroy(){closeTips.destroy();for(const release of releases)release();}
     });
     render(null,null);
+  }
+  function replacePostseason(selected){
+    const panel=document.getElementById('competition-panel-postseason');
+    if(!panel||!window.faCompetitionRulesView?.renderPostseason)throw Error('Unavailable knockout presentation');
+    window.faPostseason?.destroy?.();window.faPostseasonTips?.destroy?.();
+    panel.innerHTML=window.faCompetitionRulesView.renderPostseason(selected);
+    if(selected.category==='domestic')createPostseason(division,selected);else window.faPostseasonTips=bindPostseasonTips();
+    mountedPostseasonGraph=JSON.stringify(selected.rules.phases.filter(p=>p.type==='knockout'));
   }
 
   // Both presentations receive the same validated row model, never parsed table text.
@@ -507,9 +547,13 @@
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
-    const league=definition.rules.phases.find(p=>p.rankOutcomes),roundCount=definition.metrics.phases[league.id].rounds;
-    const slots=[...document.querySelectorAll('[data-postseason-config-slot]')],scores=[...document.querySelectorAll('[data-postseason-score]')];
-    const initialSlots=slots.map(slot=>slot.innerHTML);
+    let slots,scores,initialSlots,bracketEmpty,initialHomeLabels;
+    const capture=()=>{
+      slots=[...document.querySelectorAll('[data-postseason-config-slot]')];scores=[...document.querySelectorAll('[data-postseason-score]')];initialSlots=slots.map(slot=>slot.innerHTML);
+      bracketEmpty=document.querySelector('[data-configured-knockout-empty]');
+      initialHomeLabels=slots.map(slot=>{const label=slot.parentElement?.querySelector('.app-knockout-home');return label?{label,key:label.dataset.appI18n,text:label.textContent}:null});
+    };capture();
+    let graph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
     let suppliedOwned=false;
     const empty=()=>{
       if(definition.category==='domestic'){
@@ -520,11 +564,16 @@
       cell.className='app-competition-empty-row';cell.dataset.appI18n='competitionStandingsEmpty';cell.textContent='No standings available yet.';row.appendChild(cell);tbody.replaceChildren(row);
       document.getElementById('app-standings-compact-list')?.replaceChildren();
     };
-    const bracketEmpty=document.querySelector('[data-configured-knockout-empty]');
-    const initialHomeLabels=slots.map(slot=>{const label=slot.parentElement?.querySelector('.app-knockout-home');return label?{label,key:label.dataset.appI18n,text:label.textContent}:null});
     const resetBracket=()=>{slots.forEach((slot,i)=>{slot.innerHTML=initialSlots[i]});for(const home of initialHomeLabels)if(home){home.label.dataset.appI18n=home.key;home.label.textContent=home.text}if(definition.category==='international')scores.forEach(score=>score.textContent='—');if(bracketEmpty)bracketEmpty.hidden=false};
     function refresh(){
       const context=window.faCompetitionContext;if(!context)return;
+      const definition=context.definition,league=definition.rules.phases.find(p=>p.rankOutcomes),roundCount=definition.metrics.phases[league.id].rounds;
+      const nextGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
+      const panel=document.getElementById('competition-panel-postseason');
+      if(nextGraph!==graph&&panel&&window.faCompetitionRulesView?.renderPostseason){
+        if(nextGraph!==mountedPostseasonGraph)replacePostseason(definition);
+        graph=nextGraph;capture();
+      }
       const data=context.seasonData;
       if(definition.category==='domestic'&&!data?.statistics?.standings){if(suppliedOwned)empty();return;}
       if(!data){empty();resetBracket();return;}
@@ -746,11 +795,13 @@
     }
     return value;
   };
-  let definition,division,activeDebugSeason;
+  let definition,division,activeDebugSeason,mountedPostseasonGraph;
   function createContext(definition,selectedSeason,seasonData,revision){
     if(!Number.isSafeInteger(selectedSeason)||selectedSeason<1||!Number.isSafeInteger(revision)||revision<1)
       throw Error("Invalid competition context");
-    return freeze(JSON.parse(JSON.stringify({definition,selectedSeason,seasonData,revision})));
+    const applicable=seasonData?model.resolveSeasonDefinition(definition,seasonData):definition;
+    if(!applicable)throw Error('Unavailable season rules');
+    return freeze(JSON.parse(JSON.stringify({definition:applicable,currentDefinition:definition,selectedSeason,seasonData,revision})));
   }
   function publishCompetitionContext(context){
     window.faCompetitionContext=context;
@@ -778,7 +829,7 @@
   function replaceSeasonData(data,expectedRevision){
     const current=window.faCompetitionContext;
     if(!current||current.revision!==expectedRevision||activeDebugSeason===0||!data||
-      data.season!==current.selectedSeason||data.rulesVersion!==definition.rules.version||
+      data.season!==current.selectedSeason||!model.resolveSeasonRules(definition,data)||
       !["unavailable","partial","available"].includes(data.status)||!Array.isArray(data.participants)||
       data.participants.length!==definition.capacity||
       ![data.fixtures,data.results].every(x=>x===null||Array.isArray(x))||
@@ -881,7 +932,8 @@
       if(!standings)throw Error('Missing standings');
       standings.outerHTML=withMobileShell(standings.outerHTML);
       suppliedMobile=createMobileStandings();window.faStandingsMobile=suppliedMobile;
-      bindPostseasonTips();
+      window.faPostseasonTips=bindPostseasonTips();
+      mountedPostseasonGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
       const empty=document.createElement("tr"),cell=document.createElement("td");
       cell.colSpan=11;cell.className="app-competition-empty-row";
       cell.dataset.appI18n="competitionStandingsEmpty";
@@ -892,6 +944,8 @@
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
     for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
+    window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());
+    window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);refreshSeasonPresentation();
     const statsPanel=document.getElementById('competition-panel-stats');
     if(statsPanel&&window.faCompetitionStats){
       const stats=window.faCompetitionStats.mount(statsPanel,window.faCompetitionContext);

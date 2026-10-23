@@ -218,5 +218,71 @@ try {
   checks++;
  }
  assert.deepEqual(zeroErrors,[],"Season 0 JS errors");await page.close();
+ // A changed current catalogue must not reinterpret an explicitly supplied
+ // historical rules snapshot, scores or table. Interception is test-only.
+ for(const id of ['IT-1','sovereign-cup','federation-cup']){
+  const historyPage=await browser.newPage({viewport:{width:390,height:900}});
+  await historyPage.route('**/competitions/_shared/manifest.json',async route=>{
+   const response=await route.fetch(),json=await response.json();
+   const definition=json.competitions.find(definition=>definition.id===id);definition.rules.phases[0].points.win=2;
+   if(id==='IT-1'){definition.rules.phases[0].rankOutcomes[0].to=2;definition.rules.phases[0].rankOutcomes[1].from=3;}
+   else{
+    const phase=definition.rules.phases.find(p=>p.id==='playoffs');phase.id='current-playoffs';
+    phase.ties[0].participants[0].rank=6;phase.ties[1].participants[0].rank=5;
+    definition.rules.phases[0].rankOutcomes.find(o=>o.targetPhaseId==='playoffs').targetPhaseId=phase.id;
+    definition.metrics.phases[phase.id]=definition.metrics.phases.playoffs;delete definition.metrics.phases.playoffs;
+    definition.capabilities.phaseIds=definition.rules.phases.map(p=>p.id);
+   }
+   await route.fulfill({response,json});
+  });
+  await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:'networkidle'});
+  await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
+  const historical=await historyPage.evaluate(()=>{
+   const context=window.faCompetitionContext,definition=context.definition;
+   const snapshot=JSON.parse(JSON.stringify(definition.rules));snapshot.phases[0].points.win=3;
+   if(definition.category==='domestic'){snapshot.phases[0].rankOutcomes[0].to=1;snapshot.phases[0].rankOutcomes[1].from=2;}
+   else{const phase=snapshot.phases.find(p=>p.id==='current-playoffs');phase.id='playoffs';phase.ties[0].participants[0].rank=5;phase.ties[1].participants[0].rank=6;snapshot.phases[0].rankOutcomes.find(o=>o.targetPhaseId==='current-playoffs').targetPhaseId='playoffs';}
+   const participants=definition.category==='domestic'?window.faCompetitionDivision.clubs:Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES','DE','FR','PT','NL','BR'][Math.floor(i/3)],clubId:i%3+1,primaryName:'History Club '+i}));
+   const key=i=>participants[i].countryId+'-'+participants[i].clubId;
+   const data={season:1,rulesVersion:snapshot.version,rulesSnapshot:snapshot,participants,fixtures:definition.category==='international'?[{phaseId:'playoffs',tieId:'p512',leg:1,homeId:key(11),awayId:key(4),homeGoals:2,awayGoals:1,kickoff:null}]:null,results:[],statistics:definition.category==='international'?{standings:participants.map(club=>({club,played:6,won:0,drawn:6,lost:0,gf:0,ga:0,gd:0,pts:6,recent:[]}))}:null,status:'partial'};
+   if(!window.faCompetitionContextApi.replaceSeasonData(data,context.revision))throw Error('Historical snapshot rejected');
+   return JSON.stringify(data);
+  });
+  await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='3');
+  assert.equal(await historyPage.evaluate(()=>JSON.stringify(window.faCompetitionContext.seasonData)),historical);
+  await screenshot(historyPage,id.toLowerCase()+'-historical-rules.png');
+  if(id.includes('-cup')){
+   assert.equal(await historyPage.locator('[data-postseason-config-slot="p512:0"] [data-club-crest]').getAttribute('data-club-crest'),'ENG-2');
+   assert.equal(await historyPage.locator('[data-fixture-round-choice="playoffs:1"]').count(),1);
+   assert.equal(await historyPage.locator('[data-fixture-round-choice="current-playoffs:1"]').count(),0);
+   await historyPage.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:'playoffs:1'}));
+   assert.equal(await historyPage.locator('#app-fixtures-list [data-fixture-match]').count(),1);
+   assert.deepEqual(await historyPage.locator('#app-fixtures-list .app-fixture-goals').allTextContents(),['2','1']);
+   await historyPage.evaluate(()=>{
+    const context=window.faCompetitionContext,row=(playerId,playerName,countryId,goals)=>({playerId,playerName,countryId,clubId:1,goals,assists:0,appearances:1,cleanSheets:0});
+    window.faHistoryPlayerRecords.applyCanonicalHistory({source:'canonical',competitionId:context.definition.id,coverage:'complete',provenance:{approved:true},seasons:[{seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:context.definition.rules.version,rulesSnapshot:context.definition.rules,playerStats:[row('p1','First Player','IT',3),row('p1','First Player','ENG',3),row('p2','Second Player','ENG',6)]}]});
+    window.faCompetitionRoute.set({view:'history'});
+   });
+   await historyPage.locator('[data-history-player-record="seasonGoals"] [data-history-detail]').click();
+   await historyPage.waitForSelector('.app-history-player-dialog[open]');
+   assert.equal(await historyPage.locator('dialog a[href="/clubs/it/1/overview"]').count(),1);
+   assert.equal(await historyPage.locator('dialog a[href="/clubs/eng/1/overview"]').count(),2);
+   await screenshot(historyPage,id+'-historical-player-dialog.png');
+   await historyPage.keyboard.press('Escape');await historyPage.waitForSelector('.app-history-player-dialog[open]',{state:'detached'});
+  }
+  await historyPage.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
+  await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
+  assert.equal(await historyPage.evaluate(()=>window.faCompetitionContext.seasonData),null);
+  if(id==='IT-1'){
+   await historyPage.locator('.fa-dev-widget-button').click();
+   await historyPage.locator('[data-dev-control="season-number"]').fill('2');await historyPage.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+   await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionContext?.seasonData?.rulesSnapshot?.phases[0].points.win===3);
+   assert.notEqual(await historyPage.locator('#app-standings-body tr').nth(1).getAttribute('data-standing-outcome'),'champion');
+   assert.notEqual(await historyPage.locator('#app-standings-compact-list>li').nth(1).getAttribute('data-standing-outcome'),'champion');
+   await historyPage.evaluate(()=>window.faCompetitionRoute.set({view:'standings'}));
+   await screenshot(historyPage,'it-1-historical-dev-standings.png');checks++;
+  }
+  await historyPage.close();checks++;
+ }
  console.log("INT24 Chromium QA PASS: "+checks+" checks; "+screenshots+" screenshots");
 }finally{await browser.close()}
