@@ -15,8 +15,10 @@ test("INT-24: both cup routes resolve to public allowlisted HTML",()=>{
     const file=publicRequestFile(route);
     assert.equal(file,"competitions/"+slug+"/index.html");
     assert.ok(isAllowlistedPublicPath(file));
-    assert.ok(index.includes('href="'+route+'"'));
+    assert.ok(index.includes('href="'+route+'/standings"'));
     const html=read(file);
+    assert.match(html,/u\.searchParams\.delete\("view"\)/);
+    assert.match(html,/history\.replaceState\(null,"",u\.pathname\+u\.search\+u\.hash\)/);
     assert.ok(html.includes('<h1 class="app-page-title" id="divisions-title"'));
     assert.ok(html.includes('aria-labelledby="divisions-title"'));
     assert.ok(html.includes('class="app-competition-header"'));
@@ -29,7 +31,7 @@ test("INT-24: both cup routes resolve to public allowlisted HTML",()=>{
     }
   }
   assert.ok(isAllowlistedPublicPath("assets/international-cups.js"));
-  assert.equal((index.match(/class="app-division-card" href="\/competitions\/[a-z]{2,3}-[12]\/standings/g)||[]).length,16);
+  assert.equal((index.match(/class="app-division-card" href="\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/standings/g)||[]).length,16);
 });
 
 test("INT-24: five language dictionaries and empty states, no fabricated results",()=>{

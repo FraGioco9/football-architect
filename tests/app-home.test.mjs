@@ -298,7 +298,7 @@ test("SITE-HOST-URL: app-subdomain links preserve a bare origin, queries and fra
  assert.equal(resolve("/guide/?next=/clubs/#section/"),"https://football.example/guide?next=/clubs/#section/");
 });
 
-test("COMPETITION-LINK: DEV season metadata preserves a valid division path",()=>{
+test("COMPETITION-LINK: DEV season metadata preserves canonical division path",()=>{
  const hrefs={href:"/competitions/it-1?season=1&view=standings","data-dev-latest-season":"2"};
  const card={getAttribute:key=>hrefs[key],setAttribute:(key,value)=>{hrefs[key]=value;}};
  const code=["appHref","siteHref","rewriteAppLinks"].map(name=>{
@@ -309,5 +309,9 @@ test("COMPETITION-LINK: DEV season metadata preserves a valid division path",()=
   window:{location:{hostname:"localhost",protocol:"http:"}},links:{},
   document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}
  });
- assert.equal(hrefs.href,"/competitions/it-1?season=2&view=standings");
+ assert.equal(hrefs.href,"/competitions/it-1/standings?season=2");
+ const cup={href:"/competitions/int-1/standings","data-dev-latest-season":"4"};
+ card.getAttribute=key=>cup[key];card.setAttribute=(key,value)=>{cup[key]=value;};
+ runInNewContext(code+"\nrewriteAppLinks()",{window:{location:{hostname:"localhost",protocol:"http:"}},links:{},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
+ assert.equal(cup.href,"/competitions/int-1/standings?season=4");
 });

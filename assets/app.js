@@ -1254,10 +1254,10 @@
       link.setAttribute("href",appHref(routes.dashboard));
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
-      const slug = (link.getAttribute("href") || "").match(/(?:^|\/)([a-z]{2,3}-[12])\/?(?:\?.*)?$/i);
+      const slug = (link.getAttribute("href") || "").match(/\/competitions\/((?:[a-z]{2,3}-[12])|int-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards))?\/?(?:\?.*)?$/i);
       if (slug) {
-        const season = link.getAttribute("data-dev-latest-season") || "1";
-        link.setAttribute("href",appHref("/competitions/"+slug[1].toLowerCase()+"?season="+season+"&view=standings"));
+        const season = link.getAttribute("data-dev-latest-season") || String(activeSeason);
+        link.setAttribute("href",appHref("/competitions/"+slug[1].toLowerCase()+"/standings?season="+season));
       }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
