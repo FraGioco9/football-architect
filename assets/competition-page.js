@@ -844,7 +844,7 @@
     nextContext(current.selectedSeason,data);return true;
   }
   async function start() {
-    if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|sovereign-cup|federation-cup)$/.test(routeId)) throw Error("Invalid route identity");
+    if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-1|int-2)$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     const segments=path.split("/").filter(Boolean);
     const viewSegment=segments[2];

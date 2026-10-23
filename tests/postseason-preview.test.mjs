@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import * as data from '../tools/dev-standings-preview-data.mjs';
 import rules from '../assets/competition-rules.js';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
-const cup=loadCompetitionCatalogue().find(d=>d.id==='sovereign-cup');
+const cup=loadCompetitionCatalogue().find(d=>d.id==='int-1');
 
 test('CONFIG-TIES: cup quarterfinal seeds remain 1/4/2/3 and missing winners stay unresolved',()=>{
  assert.equal(typeof rules.tieParticipants,'function');

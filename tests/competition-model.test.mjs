@@ -30,7 +30,7 @@ test('all sixteen divisions share one immutable participant, capacity, format, p
  assert.equal(model.validManifest(data),true);
  assert.equal(data.schemaVersion,2);
  assert.equal(data.competitions.length,18);
- assert.equal(model.competitionById(data,"sovereign-cup")?.capacity,24);
+ assert.equal(model.competitionById(data,"int-1")?.capacity,24);
  assert.equal(model.competitionById(data,"unknown"),null);
  assert.equal(model.profile.capacity,16);
  assert.equal(model.profile.participants.status,'provisional');

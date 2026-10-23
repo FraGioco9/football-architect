@@ -44,7 +44,7 @@ if(Array.isArray(p.rankOutcomes))p.rankOutcomes.forEach((o,j)=>{if(o.targetPhase
 if(p.type==="knockout"&&Array.isArray(p.ties)){p.ties.forEach((t,j)=>{if(!isObject(t)||!Array.isArray(t.participants))return;t.participants.forEach((ref,k)=>{const rp=path+".ties["+j+"].participants["+k+"]";if(!isObject(ref)){err(rp,"Expected participant reference");return}if(typeof ref.tieId==="string"){const src=ties.get(ref.tieId);if(!src||src.phase>i||src.phase===i&&src.index>=j)err(rp,"Unknown, later or cyclic tie");}else if(typeof ref.phaseId==="string"){const phaseIndex=phases.get(ref.phaseId);const target=rules.phases[phaseIndex];if(phaseIndex===undefined||phaseIndex>=i||!target||!["roundRobin","leaguePhase"].includes(target.type)||!integer(ref.rank)||ref.rank<1||ref.rank>capacity)err(rp,"Invalid ranked participant reference")}else err(rp,"Unknown participant reference")})})}
 });
 if(category==="international"){
-  const expectedFinal=id==="sovereign-cup"?"SOVEREIGN-FINAL":id==="federation-cup"?"FEDERATION-FINAL":null;
+  const expectedFinal=id==="int-1"?"SOVEREIGN-FINAL":id==="int-2"?"FEDERATION-FINAL":null;
   if(!expectedFinal)err("id","Unsupported international competition identity");
   if(capacity!==24)err("capacity","INT-24 requires 24 participants");
   const finalPhase=rules.phases.find(p=>p&&p.id==="final");

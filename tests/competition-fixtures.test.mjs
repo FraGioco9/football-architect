@@ -13,7 +13,7 @@ const divisions=JSON.parse(read('competitions/_shared/manifest.json')).divisions
 
 test('CONFIG-CLOCK: current fixture choices use existing markers without extending the 56-day clock',()=>{
  assert.equal(typeof rules.currentFixtureChoice,'function');
- const calendar=calendarModel.createSeason(1),cup=definitions.find(d=>d.id==='sovereign-cup');
+ const calendar=calendarModel.createSeason(1),cup=definitions.find(d=>d.id==='int-1');
  for(const [day,want] of [[1,1],[16,2],[31,'playoffs:1'],[36,'playoffs:2'],[48,'final:1'],[54,null],[56,null]])assert.equal(rules.currentFixtureChoice(cup,calendar,{current:{season:1,day}}),want);
  assert.equal(rules.currentFixtureChoice(cup,calendar,null),null);
  assert.equal(rules.currentFixtureChoice(cup,calendar,{current:{season:2,day:1}}),null);
@@ -72,7 +72,7 @@ const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...
 const contents=n=>n.textContent+n.children.map(contents).join('');
 
 test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does not alter context',()=>{
- const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup);
+ const cup=definitions.find(d=>d.id==='int-1'),r=setup(cup);
  assert.equal(typeof r.view?.prepare,'function');
  const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
  const fixtures=Array.from({length:12},(_,i)=>({phaseId:'league',round:1,homeId:rules.clubKey(participants[i]),awayId:rules.clubKey(participants[i+12]),homeGoals:null,awayGoals:null,kickoff:null}));
@@ -89,7 +89,7 @@ test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does
  assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
 });
 test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded knockout fixtures fail closed',()=>{
- const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup);
+ const cup=definitions.find(d=>d.id==='int-1'),r=setup(cup);
  const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
  const id=i=>rules.clubKey(participants[i]);
  const standings=participants.map(club=>({club,played:6}));
@@ -107,7 +107,7 @@ test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded kno
  }
 });
 test('SEASON-FIXTURES: accepted historical seeds replace the definition captured at mount',()=>{
- const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup),historical=structuredClone(cup);
+ const cup=definitions.find(d=>d.id==='int-1'),r=setup(cup),historical=structuredClone(cup);
  // The current catalogue differs from the stored snapshot's seed pairing.
  historical.rules.phases.find(p=>p.id==='playoffs').ties[0].participants[0].rank=6;
  const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));

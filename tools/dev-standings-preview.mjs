@@ -36,7 +36,7 @@ const TYPES = {
   ".webp": "image/webp"
 };
 const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
-const CUP_DETAIL = /^\/competitions\/(sovereign-cup|federation-cup)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
+const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [

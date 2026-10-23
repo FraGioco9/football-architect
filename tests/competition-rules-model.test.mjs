@@ -10,7 +10,7 @@ test("18 competitions with approved derived totals",()=>{
  for(const d of items){assert.equal(Object.isFrozen(d.rules),true);if(d.category==="domestic"){assert.deepEqual(phaseMetrics(d,"league"),{rounds:30,matchesPerRound:8,matches:240});}else{assert.deepEqual(phaseMetrics(d,"league"),{rounds:6,matchesPerRound:12,matches:72});assert.equal(d.metrics.totalMatches,93);assert.equal(outcomeAt(d,"league",4).kind,"quarterfinals");assert.equal(outcomeAt(d,"league",12).kind,"knockouts");assert.equal(outcomeAt(d,"league",24).kind,"eliminated");}}
 });
 test("cup bracket follows approved original seeds",()=>{
- const cup=items.find(x=>x.id==="sovereign-cup");
+ const cup=items.find(x=>x.id==="int-1");
  const phases=cup.rules.phases;
  assert.deepEqual(phases[1].ties.map(x=>x.participants.map(p=>p.rank)),[[5,12],[6,11],[7,10],[8,9]]);
  assert.deepEqual(phases[2].ties.map(x=>x.participants[0].rank),[1,4,2,3]);
@@ -18,7 +18,7 @@ test("cup bracket follows approved original seeds",()=>{
  assert.equal(phases.at(-1).ties[0].homePolicy,"neutral");
 });
 test("reject invalid rank overlap, points, policies and cyclic ties",()=>{
- const input=items.find(x=>x.id==="sovereign-cup");
+ const input=items.find(x=>x.id==="int-1");
  const change=mutate=>{const copy=JSON.parse(JSON.stringify(input));mutate(copy);assert.equal(validateCompetition(copy).valid,false)};
  change(x=>x.rules.phases[0].points.win=-1);
  change(x=>x.rules.phases[0].rankOutcomes[1].from=4);
@@ -39,7 +39,7 @@ test("catalogue preserves country/tier and approved rule version identity",()=>{
      assert.equal(item.id,item.countryId+"-"+item.tier);
      assert.equal(item.rules.version,item.tier===1?"domestic-top-v1":"domestic-second-v1");
    }else{
-     assert.ok(["sovereign-cup","federation-cup"].includes(item.id));
+     assert.ok(["int-1","int-2"].includes(item.id));
      assert.equal(item.rules.version,"international-int24-v1");
    }
  }

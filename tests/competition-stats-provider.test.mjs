@@ -39,7 +39,7 @@ test('STATS-PROVIDER: late Season 1 aggregation cannot repopulate a newer season
 });
 test('STATS-PROVIDER: public cups, disabled DEV and unmatched progress never invoke domestic generation',async()=>{
  for(const mode of ['cup','disabled','progress']){
-  const r=fixture(mode==='cup'?'sovereign-cup':'IT-1');
+  const r=fixture(mode==='cup'?'int-1':'IT-1');
   if(mode==='disabled')r.stored.set('football-architect:standings-dev-preview','off');
   if(mode==='progress')r.stored.set('football-architect:standings-dev-matchdays','16');
   assert.equal(await r.provider.refresh(),false);assert.equal(r.publications(),0);

@@ -69,7 +69,7 @@ test('CONFIG-SUPPLIED-DOMESTIC: clearing supplied data resets table, mobile and 
  assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'false');
 });
 test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties and clear across seasons',async()=>{
- const cup=manifest.competitions.find(d=>d.id==='sovereign-cup');
+ const cup=manifest.competitions.find(d=>d.id==='int-1');
  const r=await simulate({division:cup});
  const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i,abbr:'C'+i}));
  const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
@@ -84,7 +84,7 @@ test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties a
  assert.equal(r.fields.get('app-standings-compact-list').children.length,0);
 });
 test('CONFIG-CUP-HELP: configured score help works with keyboard focus and Escape',async()=>{
- const r=await simulate({division:divisionsForTest('sovereign-cup')});
+ const r=await simulate({division:divisionsForTest('int-1')});
  const button=r.postseasonNodes.help[0],tip=r.fields.get(button.dataset.postseasonHelp);
  button.focus();assert.equal(tip.hidden,false);
  r.document.emit('keydown',{key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(tip.hidden,true);
@@ -166,7 +166,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   body,
   querySelector(selector){
    if(selector==='meta[name="fa-competition"]')return metadata===null?null:{content:metadata??selected};
-   if(selector==='meta[name="fa-division"]')return selected.includes("-cup")?null:{content:selected};
+   if(selector==='meta[name="fa-division"]')return division?.category==="international"?null:{content:selected};
    if(selector===".fa-shell-topbar")return topbar;
    if(selector===".app-world-standings")return standingsMarkup?standings:null;
    return null;

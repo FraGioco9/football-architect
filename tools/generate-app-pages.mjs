@@ -135,7 +135,7 @@ const competitionManifest = {
  })
 };
 if(!model.validManifest(competitionManifest))throw Error("Invalid shared competition manifest");
-const internationalIndexCards="          <section class=\"app-world-country\" aria-labelledby=\"international-cups-heading\">\n            <h2 id=\"international-cups-heading\">International Cups</h2>\n            <div class=\"app-world-grid\">\n              <a class=\"app-division-card\" href=\"/competitions/sovereign-cup\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Sovereign Cup</strong><small>24 clubs · 8 countries</small></span></a>\n              <a class=\"app-division-card\" href=\"/competitions/federation-cup\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Federation Cup</strong><small>24 clubs · 8 countries</small></span></a>\n            </div>\n          </section>\n";
+const internationalIndexCards="          <section class=\"app-world-country\" aria-labelledby=\"international-cups-heading\">\n            <h2 id=\"international-cups-heading\">International Cups</h2>\n            <div class=\"app-world-grid\">\n              <a class=\"app-division-card\" href=\"/competitions/int-1\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Sovereign Cup</strong><small>24 clubs · 8 countries</small></span></a>\n              <a class=\"app-division-card\" href=\"/competitions/int-2\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Federation Cup</strong><small>24 clubs · 8 countries</small></span></a>\n            </div>\n          </section>\n";
 const outputPages = [
  ...Object.entries(pages).map(([name,replacements])=>({
   name,path:name+"/index.html",

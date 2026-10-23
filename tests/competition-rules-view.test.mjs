@@ -56,8 +56,8 @@ test('RULES-CONFIG: unsafe identities are escaped, invalid rules and unknown tem
 test('RULES-CONFIG: award IDs retain existing honours and performance presentation explicitly',()=>{
  for(const d of catalogue){
   assert.ok(d.rules.awards.includes('champion'));assert.ok(d.rules.awards.includes('manager'));assert.ok(d.rules.awards.includes('xi'));
-  assert.equal(d.rules.awards.includes('promotion'),d.id.endsWith('-2'));
-  assert.equal(d.rules.awards.includes('playoff'),d.id.endsWith('-2'));
+  assert.equal(d.rules.awards.includes('promotion'),d.category==='domestic'&&d.tier===2);
+  assert.equal(d.rules.awards.includes('playoff'),d.category==='domestic'&&d.tier===2);
  }
 });
 
@@ -73,13 +73,13 @@ function awardsFixture(definition,seasonData=null){
  return {panel,window,events,nodes:()=>walk(panel),cards:()=>walk(panel).filter(n=>/^fa-awards-card fa-awards-card-/.test(n.className))};
 }
 test('AWARDS-CONFIG: configured order overrides route tier and retains only applicable award cards',()=>{
- const d=get('sovereign-cup');d.rules.awards=['boot','champion','assists'];
+ const d=get('int-1');d.rules.awards=['boot','champion','assists'];
  const r=awardsFixture(d);
  assert.deepEqual(r.cards().map(n=>n.className.split('fa-awards-card-')[1]),['boot','champion','assists']);
  assert.ok(r.nodes().filter(n=>n.className==='fa-awards-chip').every(n=>n.textContent==='PENDING'));
 });
 test('AWARDS-CONFIG: only supplied recipients appear and season changes clear stale winners',()=>{
- const d=get('sovereign-cup');d.rules.awards=['champion'];
+ const d=get('int-1');d.rules.awards=['champion'];
  const r=awardsFixture(d,{awards:{champion:{recipients:[{name:'A <script> & B'}]}}});
  assert.ok(r.nodes().some(n=>n.textContent==='A <script> & B'));
  r.window.faCompetitionContext={...r.window.faCompetitionContext,selectedSeason:2,revision:2,seasonData:null};
@@ -99,7 +99,7 @@ test('RULES-CONFIG: browser language refresh rebuilds changed parameters without
 });
 
 test('RULES-CONFIG: decisive tie outcomes remain explicit rather than inferred from tier',()=>{
- const top=get('IT-1'),second=get('IT-2'),cup=get('sovereign-cup');
+ const top=get('IT-1'),second=get('IT-2'),cup=get('int-1');
  assert.equal(top.rules.phases[1].ties[0].winnerOutcome,'remain');
  assert.equal(top.rules.phases[1].ties[0].loserOutcome,'relegated');
  assert.equal(second.rules.phases[1].ties.at(-1).winnerOutcome,'promoted');
@@ -127,7 +127,7 @@ test('RULES-CONFIG: the actual app language refresh uses configured rules withou
 });
 
 test('RULES-CONFIG: destinations follow configured phase references in every locale',()=>{
- const d=get('sovereign-cup');d.rules.phases[0].rankOutcomes[0].targetPhaseId='semifinals';
+ const d=get('int-1');d.rules.phases[0].rankOutcomes[0].targetPhaseId='semifinals';
  const labels={en:'Semi-finals',de:'Halbfinale',es:'Semifinales',fr:'Demi-finales',it:'Semifinali'};
  for(const [lang,label] of Object.entries(labels)){
   const html=view.renderRules(d,lang);

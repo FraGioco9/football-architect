@@ -53,7 +53,7 @@ test('SEASON-RULES: unknown/malformed/mismatched versions and missing cup histor
   assert.equal(model.resolveSeasonRules(d,{season:1,rulesVersion:'wrong',rulesSnapshot:d.rules}),null);
   assert.equal(model.resolveSeasonRules(d,{season:0,rulesVersion:d.rules.version,rulesSnapshot:d.rules}),null);
  }
- for(const id of ['sovereign-cup','federation-cup']){
+ for(const id of ['int-1','int-2']){
   const d=definition(id);assert.equal(model.resolveSeasonRules(d,{season:1}),null);
   assert.equal(model.resolveSeasonRules(d,{season:1,rulesVersion:d.rules.version,rulesSnapshot:copy(d.rules)}).version,d.rules.version);
  }
@@ -87,7 +87,7 @@ test('SEASON-DEV: only new records receive snapshots and History reuses saved sc
 test('SEASON-HISTORY: the public canonical History consumer validates each season and uses generic cup identity',()=>{
  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const start=source.indexOf('  const competitionId='),end=source.indexOf('  function element(',start);
- for(const id of ['IT-1','sovereign-cup','federation-cup']){
+ for(const id of ['IT-1','int-1','int-2']){
   const d=definition(id),window={faCompetitionContext:{definition:d},faCompetitionModel:model};
   const compute=runInNewContext(source.slice(start,end)+';compute',{window,document:{querySelector:()=>null,documentElement:{lang:'en'}}});
   const payload={source:'canonical',competitionId:id,coverage:'complete',provenance:{approved:true},seasons:[{seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:d.rules.version,rulesSnapshot:copy(d.rules),playerStats:[{playerId:'p1',playerName:'Player',countryId:'IT',clubId:1,goals:3,assists:1,appearances:2,cleanSheets:0}]}]};
@@ -110,7 +110,7 @@ test('SEASON-BANDS: historical standings use the selected snapshot instead of cu
 });
 test('SEASON-BRACKET: runtime and static knockout markup can render a historical graph and phase identity',()=>{
  assert.equal(typeof view.renderPostseason,'function');
- const d=copy(definition('sovereign-cup')),phase=d.rules.phases.find(p=>p.id==='playoffs');
+ const d=copy(definition('int-1')),phase=d.rules.phases.find(p=>p.id==='playoffs');
  phase.id='historic-playoffs';d.rules.phases[0].rankOutcomes.find(o=>o.targetPhaseId==='playoffs').targetPhaseId=phase.id;
  phase.ties[0].participants[0].rank=6;
  const html=view.renderPostseason(d);

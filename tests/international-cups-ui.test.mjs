@@ -6,7 +6,7 @@ import {publicRequestFile,isAllowlistedPublicPath} from "../tools/publication-gu
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const script=read("assets/international-cups.js");
 const index=read("competitions/index.html");
-const names=["sovereign-cup","federation-cup"];
+const names=["int-1","int-2"];
 const views=["standings","postseason","fixtures","stats","history","rules","awards"];
 
 test("INT-24: both cup routes resolve to public allowlisted HTML",()=>{

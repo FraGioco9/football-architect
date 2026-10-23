@@ -105,7 +105,7 @@
       const disclosure=document.createElement('details');disclosure.className='calendar-detail-disclosure';
       const label=document.createElement('summary');label.textContent=w.show;disclosure.append(label);
       const info=document.createElement('div');info.className='calendar-detail-more';
-      const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='sovereign-cup'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
+      const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='int-1'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
       for(const value of [w.fixtures,w.results,w.unknown]){const p=document.createElement('p');p.textContent=value;info.append(p)}
       disclosure.append(info);article.append(disclosure);
       if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href='/competitions/'+division+'/fixtures?season=1&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
@@ -173,8 +173,8 @@
   const validDivision=v=>/^(it|eng|es|de|fr|pt|nl|br)-[12]$/.test(v);
   let filter='all',division='';
   const matches=e=>filter==='all'||filter===e.family||
-    (filter==='sovereign'&&e.competitionIds.includes('sovereign-cup'))||
-    (filter==='federation'&&e.competitionIds.includes('federation-cup'));
+    (filter==='sovereign'&&e.competitionIds.includes('int-1'))||
+    (filter==='federation'&&e.competitionIds.includes('int-2'));
   const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
   const returnPath=()=>{
     const p=new URLSearchParams({season:String(window.faCalendarSelectedSeason?.()||1),calendarView:state.view});

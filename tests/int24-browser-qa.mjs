@@ -8,7 +8,7 @@ const out="int24-browser-artifacts";
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
 const widths=[1440,768,390,320];
-const cups=["sovereign-cup","federation-cup"];
+const cups=["int-1","int-2"];
 const views=["standings","postseason","fixtures","stats","history","rules","awards"];
 const languages={en:"Standings",de:"Tabelle",es:"Clasificación",fr:"Classement",it:"Classifica"};
 let checks=0;
@@ -47,7 +47,7 @@ try {
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
    assert.equal(await page.locator("#competition-panel-"+view).isVisible(),true);
    assert.equal(await page.locator(".app-competition-header").count(),1);
-   assert.equal(await page.locator("#division-detail-name").innerText(),cup==="sovereign-cup"?"Sovereign Cup":"Federation Cup");
+   assert.equal(await page.locator("#division-detail-name").innerText(),cup==="int-1"?"Sovereign Cup":"Federation Cup");
    assert.equal(await page.locator(".app-competition-tabs [role=tab]").count(),7);
    assert.equal(await page.locator("#app-competition-season").isVisible(),true);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
@@ -178,7 +178,7 @@ try {
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
  page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
- for(const route of ["/competitions/sovereign-cup/standings","/competitions/federation-cup/fixtures","/competitions/sovereign-cup/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
+ for(const route of ["/competitions/int-1/standings","/competitions/int-2/fixtures","/competitions/int-1/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
   await page.goto(base+route,{waitUntil:"networkidle"});
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
@@ -230,7 +230,7 @@ try {
   if(route.startsWith('/competitions/')){
    await page.waitForFunction(()=>document.querySelector('#app-competition-season')?.disabled===false);
    assert.equal(await page.evaluate(()=>window.faCompetitionContext?.selectedSeason),1);
-   if(route.includes('-cup/'))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
+   if(/\/competitions\/int-[12]\//.test(route))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
    else await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1);
   }
   checks++;
@@ -238,7 +238,7 @@ try {
  assert.deepEqual(zeroErrors,[],"Season 0 JS errors");await page.close();
  // A changed current catalogue must not reinterpret an explicitly supplied
  // historical rules snapshot, scores or table. Interception is test-only.
- for(const id of ['IT-1','sovereign-cup','federation-cup']){
+ for(const id of ['IT-1','int-1','int-2']){
   const historyPage=await browser.newPage({viewport:{width:390,height:900}});
   await historyPage.route('**/competitions/_shared/manifest.json',async route=>{
    const response=await route.fetch(),json=await response.json();

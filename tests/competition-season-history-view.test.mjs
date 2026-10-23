@@ -31,7 +31,7 @@ function fixture(id){
  return {window,document,panel,card,definition};
 }
 test('SEASON-CUP-DIALOG: actual History details retain country-qualified clubs and generic season links',()=>{
- for(const id of ['sovereign-cup','federation-cup']){
+ for(const id of ['int-1','int-2']){
   const r=fixture(id),row=(playerId,playerName,countryId,goals)=>({playerId,playerName,countryId,clubId:1,goals,assists:0,appearances:1,cleanSheets:0});
   const payload={source:'canonical',competitionId:id,coverage:'complete',provenance:{approved:true},seasons:[{seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:r.definition.rules.version,rulesSnapshot:r.definition.rules,playerStats:[row('p1','First Player','IT',3),row('p1','First Player','ENG',3),row('p2','Second Player','ENG',6)]}]};
   const before=JSON.stringify(payload);
