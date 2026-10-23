@@ -274,7 +274,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
     await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=first]').click()");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
-    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'First');
+    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
     await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
     // NAV-01C: keyboard operation of the sidebar disclosure and focus.
