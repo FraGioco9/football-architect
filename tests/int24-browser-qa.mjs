@@ -47,7 +47,11 @@ try {
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
    }
-   if(view==='postseason')assert.equal(await page.locator('[data-postseason-config-tie]').count(),11);
+   if(view==='postseason'){
+    assert.equal(await page.locator('[data-postseason-config-tie]').count(),11);
+    const brokenRanks=await page.locator('[data-postseason-position] strong').evaluateAll(nodes=>nodes.filter(node=>node.getBoundingClientRect().height>parseFloat(getComputedStyle(node).lineHeight)*1.2).map(node=>node.textContent));
+    assert.deepEqual(brokenRanks,[],'seed rank digits must stay on one line at '+width+'px');
+   }
    checks++;
   }
   await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
