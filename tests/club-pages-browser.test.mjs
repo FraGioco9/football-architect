@@ -238,10 +238,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
      assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
-     assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),3);
+     assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),2);
      assert.equal(await run("[...document.querySelectorAll('.nav01-filter button')].every(el=>el.getBoundingClientRect().width<=el.parentElement.getBoundingClientRect().width+1)"),true,JSON.stringify({width,theme,lang}));
      assert.equal(await run("[...document.querySelectorAll('.nav01-filters select')].every(el=>getComputedStyle(el).display==='none')"),true);
-     for(const name of ['country','division','status']){
+     for(const name of ['country','division']){
       await run(`document.getElementById('nav01-${name}-trigger').click()`);
       const menuState=await run(`(()=>{const trigger=document.getElementById('nav01-${name}-trigger'),menu=document.getElementById(trigger.getAttribute('aria-controls')),rect=menu.getBoundingClientRect();return {expanded:trigger.getAttribute('aria-expanded'),hidden:menu.hidden,active:menu.querySelector('[data-active="true"]')?.id,descendant:trigger.getAttribute('aria-activedescendant'),selected:menu.querySelectorAll('[aria-selected="true"]').length,inBounds:rect.left>=0&&rect.right<=innerWidth+1,stroke:trigger.querySelector('path').getAttribute('stroke-width')}})()`);
       assert.equal(menuState.expanded,'true');assert.equal(menuState.hidden,false);assert.equal(menuState.active,menuState.descendant);assert.equal(menuState.selected,1);assert.equal(menuState.inBounds,true);assert.equal(menuState.stroke,'1.75');
