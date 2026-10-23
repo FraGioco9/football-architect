@@ -334,6 +334,19 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
+    // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest')?.getAttribute('src')||null})()");
+    assert.equal(sourceCrest,'/assets/clubs/IT/1/crest.svg');
+    await run("document.querySelector('.nav01-card[href=\"/clubs/it/1/overview\"]').click()");
+    await wait("location.pathname==='/clubs/it/1/overview'&&document.querySelector('.club-header .app-club-crest-image')?.complete===true");
+    const destinationCrest=await run("(()=>{const image=document.querySelector('.club-header .app-club-crest-image');return {src:image?.getAttribute('src'),loaded:!!image?.naturalWidth,pending:!!document.querySelector('.club-header [data-club-crest-pending]')}})()");
+    assert.equal(destinationCrest.src,sourceCrest);
+    assert.equal(destinationCrest.loaded,true,'Club crest must be decoded after directory navigation');
+    assert.equal(destinationCrest.pending,false,'Loaded crest must not leave a pending placeholder');
+    console.log('CLUBS_QA02_DIRECTORY_TO_CLUB',JSON.stringify(destinationCrest));
+
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
     await run("window.__clubHeaderCrest=document.querySelector('.club-header .app-club-crest-image')");
     await run('document.querySelector(".club-tabs a[href$=\'/roster\']").click()');
