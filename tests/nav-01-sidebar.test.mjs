@@ -70,7 +70,7 @@ test('NAV-01 fragments are aligned before revealing the central pane',()=>{
 test('Site chevrons and Clubs filters are present in initial HTML',()=>{
  const html=readFileSync(new URL('../clubs/index.html',import.meta.url),'utf8');
  assert.match(html,/<button[^>]+class="nav01-expand"[^>]*><svg/);
- for(const name of ['country','division','status']){
+ for(const name of ['country','division']){
   assert.match(html,new RegExp('id="nav01-'+name+'-trigger"[^>]+role="combobox"'));
   assert.match(html,new RegExp('id="nav01-'+name+'-menu"[^>]+role="listbox"'));
  }

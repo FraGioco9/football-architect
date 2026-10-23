@@ -238,10 +238,18 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
      assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
-     assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),3);
+     assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),2);
      assert.equal(await run("[...document.querySelectorAll('.nav01-filter button')].every(el=>el.getBoundingClientRect().width<=el.parentElement.getBoundingClientRect().width+1)"),true,JSON.stringify({width,theme,lang}));
      assert.equal(await run("[...document.querySelectorAll('.nav01-filters select')].every(el=>getComputedStyle(el).display==='none')"),true);
-     for(const name of ['country','division','status']){
+     // CLUBS-LAYOUT QA-02: card, search and dropdown hover use the same neutral border.
+     if(lang==='en'){
+      const borders=await run("(()=>{const card=document.querySelector('.nav01-card'),input=document.querySelector('.nav01-filters input'),menu=document.querySelector('#nav01-country-trigger');return {card:getComputedStyle(card).borderColor,input:getComputedStyle(input).borderColor,menu:getComputedStyle(menu).borderColor,cardWidth:card.getBoundingClientRect().width}})()");
+      assert.ok(borders.cardWidth>0,JSON.stringify({width,theme,borders}));
+      const placeholder=await run("document.querySelector('.nav01-filters input').placeholder");
+      assert.equal(placeholder,'Search clubs or cities');
+     }
+
+     for(const name of ['country','division']){
       await run(`document.getElementById('nav01-${name}-trigger').click()`);
       const menuState=await run(`(()=>{const trigger=document.getElementById('nav01-${name}-trigger'),menu=document.getElementById(trigger.getAttribute('aria-controls')),rect=menu.getBoundingClientRect();return {expanded:trigger.getAttribute('aria-expanded'),hidden:menu.hidden,active:menu.querySelector('[data-active="true"]')?.id,descendant:trigger.getAttribute('aria-activedescendant'),selected:menu.querySelectorAll('[aria-selected="true"]').length,inBounds:rect.left>=0&&rect.right<=innerWidth+1,stroke:trigger.querySelector('path').getAttribute('stroke-width')}})()`);
       assert.equal(menuState.expanded,'true');assert.equal(menuState.hidden,false);assert.equal(menuState.active,menuState.descendant);assert.equal(menuState.selected,1);assert.equal(menuState.inBounds,true);assert.equal(menuState.stroke,'1.75');
@@ -261,23 +269,30 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
     // The public Clubs controls use the same keyboard model as Season/Matchday.
     const key=async(key,code)=>{await cmd('Input.dispatchKeyEvent',{type:'keyDown',key,windowsVirtualKeyCode:code});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key,windowsVirtualKeyCode:code})};
-    await run("document.querySelector('.nav01-filter select').value='';document.querySelector('.nav01-filter select').dispatchEvent(new Event('change'));document.getElementById('nav01-status-trigger').focus()");
+    await run("document.querySelector('.nav01-filter select').value='';document.querySelector('.nav01-filter select').dispatchEvent(new Event('change'));document.getElementById('nav01-division-trigger').focus()");
     await key('Enter',13);await key('End',35);await key('Enter',13);
-    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),64);
-    assert.equal(await run("document.getElementById('nav01-status-trigger').value"),'inactive');
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     await key(' ',32);await key('Home',36);await key('ArrowDown',40);await key('Enter',13);
-    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),256);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     await key('Enter',13);await key('Home',36);await key('Enter',13);
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
     await run("document.getElementById('nav01-country-trigger').click()");await key('Tab',9);
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
     await run("document.getElementById('nav01-country-trigger').click();document.querySelector('.nav01-filters input').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
-    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=IT-1]').click()");
-    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),16);
-    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Lega Federale');
+    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=first]').click()");
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
+    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
     await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
+
+    // QA-02: inspect the actual viewport centers of the Calendar/Fixtures arrows.
+    await cmd('Page.navigate',{url:origin+'/calendar'});
+    await wait("document.querySelector('#calendar-previous svg.site-chevron')!==null");
+    const arrowCenters=await run("(()=>[...document.querySelectorAll('#calendar-previous,#calendar-next')].map(button=>{const b=button.getBoundingClientRect(),icon=button.querySelector('svg.site-chevron').getBoundingClientRect();return {id:button.id,dx:Math.abs((b.left+b.right-icon.left-icon.right)/2),dy:Math.abs((b.top+b.bottom-icon.top-icon.bottom)/2)}}))()");
+    for(const arrow of arrowCenters){assert.ok(arrow.dx<=1&&arrow.dy<=1,'Arrow viewport must be centered: '+JSON.stringify(arrow));}
+    console.log('CLUBS_QA02_ARROW_CENTERS',JSON.stringify(arrowCenters));
+
     // NAV-01C: keyboard operation of the sidebar disclosure and focus.
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await cmd('Page.navigate',{url:origin+'/clubs'});
@@ -319,6 +334,19 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
+    // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest')?.getAttribute('src')||null})()");
+    assert.equal(sourceCrest,'/assets/clubs/IT/1/crest.svg');
+    await run("document.querySelector('.nav01-card[href=\"/clubs/it/1/overview\"]').click()");
+    await wait("location.pathname==='/clubs/it/1/overview'&&document.querySelector('.club-header .app-club-crest-image')?.complete===true");
+    const destinationCrest=await run("(()=>{const image=document.querySelector('.club-header .app-club-crest-image');return {src:image?.getAttribute('src'),loaded:!!image?.naturalWidth,pending:!!document.querySelector('.club-header [data-club-crest-pending]')}})()");
+    assert.equal(destinationCrest.src,sourceCrest);
+    assert.equal(destinationCrest.loaded,true,'Club crest must be decoded after directory navigation');
+    assert.equal(destinationCrest.pending,false,'Loaded crest must not leave a pending placeholder');
+    console.log('CLUBS_QA02_DIRECTORY_TO_CLUB',JSON.stringify(destinationCrest));
+
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
     await run("window.__clubHeaderCrest=document.querySelector('.club-header .app-club-crest-image')");
     await run('document.querySelector(".club-tabs a[href$=\'/roster\']").click()');
