@@ -26,7 +26,7 @@ ${cols}
                   </tr>
                 </thead>
                 <tbody id="app-standings-body">
-
+${d.category==="international"?'<tr><td colspan="11" class="app-competition-empty-row" data-app-i18n="competitionStandingsEmpty">No standings available yet.</td></tr>':""}
                 </tbody>
               </table>
             </div>
@@ -78,7 +78,7 @@ ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;
 function renderRules(d,neutral,attrs,key,label){
- const international=d.international;
+ const international=d.category==="international";
  const metric=(code,name,value,id="")=>`                <div class="app-rules-metric"><dt data-app-i18n="${code}">${name}</dt><dd${id?` id="${id}"`:""}>${value}</dd></div>`;
  const paragraph=(code,fallback)=>`              <p${code?` data-app-i18n="${code}"`:""}>${fallback}</p>`;
  const section=(id,titleKey,title,body)=>`            <section class="app-rules-section" aria-labelledby="${id}">\n              <h3 id="${id}" data-app-i18n="${titleKey}">${title}</h3>\n${body}\n            </section>`;
@@ -100,7 +100,7 @@ function renderRules(d,neutral,attrs,key,label){
  const playSection=neutral?"":d.tier===1
  ?section("rules-playout","rulesPlayoutTitle","Relegation play-out",paragraph("rulesPlayoutBody","The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. If aggregate scores are level after the second leg, extra time and then penalties decide the winner."))
  :section("rules-playoffs","rulesPlayoffsTitle","Promotion play-offs",paragraph("rulesPlayoffsBody","The semi-finals are 3rd vs 6th and 4th vs 5th, each played over two legs with the higher-ranked club at home in the return leg. The winners meet in a single-match final hosted by the finalist with the better regular-season ranking. The final winner earns promotion. No points-gap threshold applies. Tied aggregate semi-finals or a tied final go to extra time and then penalties if necessary."));
- return `          <section ${attrs}>\n            <div class="app-rules-content">\n${section("rules-format","rulesFormatTitle","Competition format",paragraph(international?"":"rulesFormatBody",international?"24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club":"Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.")+`\n              <dl class="app-rules-metrics">\n${[
+ return `          <section ${attrs}>\n            <div class="app-rules-content">\n${section("rules-format","rulesFormatTitle","Competition format",paragraph(international?"rulesCupFormat":"rulesFormatBody",international?"24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club":"Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.")+`\n              <dl class="app-rules-metrics">\n${[
  metric("rulesClubs","Clubs",international?"24":neutral?"—":"16","app-competition-capacity"),
  metric("rulesRounds","Matchdays",international?"6":neutral?"—":"30"),
  metric("rulesLegs","Legs",neutral?"—":"2"),
@@ -116,6 +116,7 @@ const postseasonContent = (d,neutral) => {
  const head=(single,id)=>`<div class="app-knockout-score-head${single?" app-knockout-single":""}" role="row"><span role="columnheader" class="sr-only" data-app-i18n="standingsClub">Club</span>${(single?[["postseasonSingleMatch","Single match","—"]]:[["postseasonFirstLeg","First leg","1"],["postseasonSecondLeg","Second leg","2"],["postseasonAggregate","Aggregate","Σ"]]).map(([key,label,symbol],index)=>`<span role="columnheader" class="app-knockout-column"><button type="button" class="app-knockout-help" data-postseason-help="${id}-tip-${index}" aria-describedby="${id}-tip-${index}" data-app-aria="${key}"><span aria-hidden="true">${symbol}</span></button><span id="${id}-tip-${index}" role="tooltip" class="app-knockout-tooltip" data-app-i18n="${key}" hidden>${label}</span></span>`).join("")}</div>`;
  const row=(team,homeKey,homeLabel,id,side,single=false)=>`<div class="app-knockout-team-row${single?" app-knockout-single":""}" role="row" data-postseason-row="${id}:${side}"><div class="app-knockout-identity" role="rowheader">${team}${homeKey?`<span class="app-knockout-home" data-app-i18n="${homeKey}">${homeLabel}</span>`:""}</div>${single?score("postseasonSingleMatch","Single match",id,side,"final"):score("postseasonFirstLeg","First leg",id,side,"first")+score("postseasonSecondLeg","Second leg",id,side,"second")+score("postseasonAggregate","Aggregate",id,side,"aggregate")}</div>`;
  const tie=(id,key,label,better,lower)=>`<section class="app-postseason-group" aria-labelledby="${id}" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="${id}" data-app-i18n="${key}">${label}</h3><div role="table" aria-labelledby="${id}">${head(false,id)}${row(seed(better),"postseasonHomeReturn","Home in return leg",id,better)}${row(seed(lower),"postseasonHomeFirst","Home in first leg",id,lower)}</div><p class="app-knockout-resolution" data-postseason-resolution="${id}" hidden></p></section>`;
+ if(d.category==="international")return `<p class="app-competition-status" data-app-i18n="cupKnockoutsEmpty">No knockout results available yet.</p>`;
  if(neutral)return `<p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>`;
  const winner=`<div class="app-knockout-round app-knockout-result"><section class="app-postseason-group app-postseason-winner" aria-labelledby="postseason-winner" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="postseason-winner" data-app-i18n="postseasonWinner">Winner</h3><strong id="app-postseason-winner" class="app-knockout-winner-name">—</strong></section></div>`;
  const final=`<div class="app-knockout-round app-knockout-final"><section class="app-postseason-group app-postseason-final" aria-labelledby="postseason-final" data-standing-outcome="playoff"><h3 id="postseason-final" data-app-i18n="postseasonFinal">Final</h3><div role="table" aria-labelledby="postseason-final">${head(true,"final")}${row(`<span class="app-postseason-team" data-postseason-finalist="home">${word("postseasonFinalHome","Better-ranked finalist")}</span>`,null,null,"final","home",true)}${row(`<span class="app-postseason-team" data-postseason-finalist="away">${word("postseasonFinalAway","Other finalist")}</span>`,null,null,"final","away",true)}</div><p class="app-knockout-resolution" data-postseason-resolution="final" hidden></p></section></div>`;
@@ -125,7 +126,7 @@ const postseasonContent = (d,neutral) => {
  return `<div id="app-postseason-bracket" class="app-postseason-grid${d.tier===1?" app-postseason-playout":""}">${bracket}</div>`;
 };
 const competitionTabs = function competitionTabs(d,standings,neutral) {
- const views=model.views.map(view=>view.id==="postseason"&&d.international
+ const views=model.views.map(view=>view.id==="postseason"&&d.category==="international"
   ?{...view,key:"competitionTabKnockouts",label:"Knockouts"}:view.id==="postseason"&&!neutral
   ?{...view,key:d.tier===1?"competitionTabPlayout":"competitionTabPlayoffs",label:d.tier===1?"Playout":"Playoffs"}:view);
  const nav=views.map(({id,key,label},i)=>
@@ -150,13 +151,13 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
 };
 const detailContent = function detailContent(d,neutral=false){
  const c=countryById[d.countryId];
- if(!c)throw Error("unknown detail "+d.id);
+ if(!c&&d.category!=="international")throw Error("unknown detail "+d.id);
  const level=d.tier===1?"divisionTier1":"divisionTier2";
  return '          <header class="app-competition-header">\n'+
  '            '+(neutral?'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>':renderLogo(d))+'\n'+
  '            <div class="app-competition-identity">\n'+
- '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+(d.international?encode(d.name):neutral?"Competition":encode(d.name))+'</span></h1>\n'+
- (d.international?'              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>\n':
+ '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+(d.category==="international"?encode(d.name):neutral?"Competition":encode(d.name))+'</span></h1>\n'+
+ (d.category==="international"?'              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>\n':
  '              <div class="app-world-detail-meta">'+inlineCountryFlag(c,"app-competition-flag")+' <span id="app-competition-country" data-world-country="'+(neutral?"":d.countryId)+'">'+(neutral?"Country":encode(c.name.en))+'</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n')+
  '            </div>\n'+
  '            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span>'+menuChevron+'</button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>\n'+

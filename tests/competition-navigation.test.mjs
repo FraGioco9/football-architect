@@ -6,7 +6,7 @@ import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
 function setup(path='/competitions/it-1/',devSeason=null){
- const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
+ const contextSeasons=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
  // Empty navigation panels still expose DOM queries used by History initialization.
@@ -27,12 +27,12 @@ function setup(path='/competitions/it-1/',devSeason=null){
  tabs.forEach((tab,i)=>tab.getBoundingClientRect=()=>({left:i*104-scroll,right:i*104+100-scroll}));
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
- const window={faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const window={faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
  runInNewContext(source,{document,window,URL,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
- return {window,tabs,fields,tablist,events,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
+ return {window,tabs,fields,tablist,events,contextSeasons,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('DEV season menu ends at current progress and moves an invalid viewed season to season 1',()=>{
  const s=setup('/competitions/it-1?season=3&view=fixtures&matchday=13',3);
@@ -231,4 +231,21 @@ test('Explicit invalid season values fall back to season 1 even when later DEV s
   assert.equal(s.window.faCompetitionRoute.get().season,'1');
   assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
  }
+});
+
+test('CONTEXT: router updates the shared season through selection, Back and inactive fallback',()=>{
+ const s=setup('/competitions/sovereign-cup/fixtures?season=2&matchday=4',3);
+ assert.equal(s.contextSeasons.at(-1),2);
+ s.window.faCompetitionRoute.set({season:'3'});assert.equal(s.contextSeasons.at(-1),3);
+ s.back();assert.equal(s.contextSeasons.at(-1),2);
+ s.window.faCompetitionRoute.setSeasonLimit(0);assert.equal(s.contextSeasons.at(-1),1);
+ assert.equal(views.filter(v=>!s.fields.get('competition-panel-'+v).hidden).length,1);
+});
+
+test('COMPETITION-URL: generic first paint preserves cup query views before hydration',()=>{
+ const html=readFileSync(new URL('../competitions/sovereign-cup/index.html',import.meta.url),'utf8');
+ const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
+ const document={documentElement:{dataset:{}}};
+ runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/sovereign-cup',search:'?view=stats&season=1'}});
+ assert.equal(document.documentElement.dataset.competitionView,'stats');
 });

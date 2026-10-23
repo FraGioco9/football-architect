@@ -116,10 +116,11 @@ const worldPageReplacements = (division = null, neutral = false) => {
 // Full generated routes keep the approved Compact SVG in the initial response.
 const competitionRoute = d=>{
  let html=template;
- for(const [token,value] of Object.entries(worldPageReplacements(d)))html=html.replace(token,value);
- html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-division" content="'+encode(d.id)+'">');
+ for(const [token,value] of Object.entries(worldPageReplacements(d,d.category==="international")))html=html.replace(token,value);
+ html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-competition" content="'+encode(d.id)+'">'+(d.category==="domestic"?'\n  <meta name="fa-division" content="'+encode(d.id)+'">':''));
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
- const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
+ html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
+ const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
  return html.replace('</head>','  <script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
@@ -135,18 +136,6 @@ const competitionManifest = {
 };
 if(!model.validManifest(competitionManifest))throw Error("Invalid shared competition manifest");
 const internationalIndexCards="          <section class=\"app-world-country\" aria-labelledby=\"international-cups-heading\">\n            <h2 id=\"international-cups-heading\">International Cups</h2>\n            <div class=\"app-world-grid\">\n              <a class=\"app-division-card\" href=\"/competitions/sovereign-cup\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Sovereign Cup</strong><small>24 clubs · 8 countries</small></span></a>\n              <a class=\"app-division-card\" href=\"/competitions/federation-cup\"><span aria-hidden=\"true\">🏆</span><span class=\"app-division-card-copy\"><strong>Federation Cup</strong><small>24 clubs · 8 countries</small></span></a>\n            </div>\n          </section>\n";
-// Reuse the division renderer and controls; cup sporting data is not simulated.
-const internationalRoute=name=>{
- const cup={...divisionData[0],name,international:true};
- let html=template;
- const replacements=worldPageReplacements();
- for(const [key,value] of Object.entries(replacements))html=html.replaceAll(key,key==="@@FA_WORLD_SECTION@@"?worldSection(detailContent(cup,true),true,cup):value);
- return html.replace("<title>Competitions — Football Architect</title>","<title>"+name+" — Football Architect</title>")
- .replace('<script src="/assets/landing.js"', '<script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"')
- .replace("</head>",'  <script>(()=>{const v=location.pathname.split("/").filter(Boolean).at(-1),q=new URLSearchParams(location.search).get("view");document.documentElement.dataset.competitionView='+JSON.stringify(model.views.map(view=>view.id))+'.includes(v)?v:'+JSON.stringify(model.views.map(view=>view.id))+'.includes(q)?q:"standings"})();</script>\n  <link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/international-cups.js" defer></script>\n</head>')
- .replace("</body>",'  <script src="/assets/competition-fixtures.js" defer></script>\n  <script src="/assets/competition-awards.js" defer></script>\n</body>');
-};
-
 const outputPages = [
  ...Object.entries(pages).map(([name,replacements])=>({
   name,path:name+"/index.html",
@@ -155,12 +144,11 @@ const outputPages = [
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
  {name:"competitions",path:"competitions/index.html",replacements:worldPageReplacements()},
- ...["Sovereign Cup","Federation Cup"].map(name=>({name:"international-"+name.toLowerCase().split(" ")[0],path:"competitions/"+name.toLowerCase().replaceAll(" ","-")+"/index.html",directContent:internationalRoute(name)})),
  {name:"competition-shared",path:"competitions/_shared/index.html",
   replacements:worldPageReplacements(divisionData.find(d=>d.id==="IT-1"),true)},
- ...divisionData.map(division=>({
-  name:division.id,path:"competitions/"+division.id.toLowerCase()+"/index.html",
-  directContent:competitionRoute(division)
+ ...competitionManifest.competitions.map(definition=>({
+  name:definition.id,path:"competitions/"+definition.slug+"/index.html",
+  directContent:competitionRoute(definition)
  }))
 ];
 if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==23)

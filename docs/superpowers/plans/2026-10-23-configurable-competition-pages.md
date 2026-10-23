@@ -81,11 +81,11 @@ Context contract: `faCompetitionContext = {definition, selectedSeason, seasonDat
 
 **Interfaces:** `createContext(definition, selectedSeason, seasonData, revision) -> frozen context`; `publishCompetitionContext(context) -> void` replaces the global and emits the context event. A shared `meta[name="fa-competition"]` contains the canonical ID. Keep `fa-division` and `faCompetitionDivision` only on domestic routes while legacy consumers remain.
 
-- [ ] Add failing tests for the same loader on all 18 routes, exactly one initialization per panel, early generic context with null datasets, invalid/unknown metadata, a rejected stale manifest, and no first-domestic-division data on cups. Assert Season 0 still displays selected season 1 and exactly one visible panel after refresh.
-- [ ] Run the three affected test files and confirm the new context/loader expectations fail.
-- [ ] Replace the separate `internationalRoute` generation path with `competitionRoute(definition)` and stop synthesizing cups from `divisionData[0]`. Initialize generic context before loading shared scripts. Limit `international-cups.js` to index/category translation until equivalent shared localization exists; it must not rewrite tables or Rules paragraphs after render.
-- [ ] Adapt DEV lifecycle to update context revision and drop stale data on route/season changes. Empty cup contexts never call domestic simulation. Preserve route canonicalization and tab scroll restoration.
-- [ ] Regenerate HTML, run generation check and the three tests; expect PASS for all 18 routes. Commit `refactor: initialize all competitions through one page context`.
+- [x] Add failing tests for the same loader on all 18 routes, exactly one initialization per panel, early generic context with null datasets, invalid/unknown metadata, a rejected stale manifest, and no first-domestic-division data on cups. Assert Season 0 still displays selected season 1 and exactly one visible panel after refresh.
+- [x] Run the three affected test files and confirm the new context/loader expectations fail.
+- [x] Replace the separate `internationalRoute` generation path with `competitionRoute(definition)` and stop synthesizing cups from `divisionData[0]`. Initialize generic context before loading shared scripts. Limit `international-cups.js` to index/category translation until equivalent shared localization exists; it must not rewrite tables or Rules paragraphs after render.
+- [x] Adapt DEV lifecycle to update context revision and drop stale data on route/season changes. Empty cup contexts never call domestic simulation. Preserve route canonicalization and tab scroll restoration.
+- [x] Regenerate HTML, run generation check and the three tests; expect PASS for all 18 routes. Commit `refactor: initialize all competitions through one page context`.
 
 ## Task 4: Rules presentation and applicable awards from configuration
 

@@ -143,6 +143,7 @@
     if(focus)tabs[index].focus({preventScroll:true});
     if(focus||!restoringTabScroll)revealSelectedTab();
     window.faAppRenderLanguage?.();
+    window.faCompetitionContextApi?.selectSeason(Number(state.season));
     for(const listener of listeners)listener({...state});
     // Notify DEV enhancements even when they initialize before this router.
     window.dispatchEvent(new CustomEvent("fa:competition-route-change",{detail:{...state}}));

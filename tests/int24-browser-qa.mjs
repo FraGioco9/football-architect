@@ -29,6 +29,8 @@ try {
    assert.equal(await page.locator("#app-competition-season").isVisible(),true);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
    assert.equal(overflow,false,"horizontal overflow "+cup+" "+width+" "+view);
+   const context=await page.evaluate(()=>({id:window.faCompetitionContext?.definition.id,season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData,domestic:!!window.faCompetitionDivision,frozen:Object.isFrozen(window.faCompetitionContext?.definition.rules)}));
+   assert.deepEqual(context,{id:cup,season:1,data:null,domestic:false,frozen:true});
    checks++;
   }
   await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
@@ -84,6 +86,7 @@ try {
    assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
    assert.equal(await page.locator('#competition-panel-'+(route.endsWith('/fixtures')?'fixtures':'standings')).isVisible(),true);
    assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
+   assert.deepEqual(await page.evaluate(()=>({season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData})),{season:1,data:null});
   }
   if(route==='/calendar'){
    assert.equal(await page.locator('#calendar-season-picker').isDisabled(),false);
@@ -113,6 +116,9 @@ try {
   assert.equal(await page.evaluate(()=>window.faDevWorldClockSnapshot?.current?.season),1);
   if(route.startsWith('/competitions/')){
    await page.waitForFunction(()=>document.querySelector('#app-competition-season')?.disabled===false);
+   assert.equal(await page.evaluate(()=>window.faCompetitionContext?.selectedSeason),1);
+   if(route.includes('-cup/'))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
+   else await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1);
   }
   checks++;
  }

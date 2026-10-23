@@ -5,6 +5,7 @@
   <style data-nav01-fragment-visibility>html[data-nav01-fragment="pending"] .fa-shell-content-scroll{visibility:hidden}</style>
   <meta charset="utf-8">
   <base href="/competitions/es-2/">
+  <meta name="fa-competition" content="ES-2">
   <meta name="fa-division" content="ES-2">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
@@ -16,7 +17,7 @@
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/landing.css">
   <link rel="stylesheet" href="/assets/app.css">
-  <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:"standings";document.documentElement.dataset.competitionSeasonUnavailable="false"})();</script>
+  <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:["standings","postseason","fixtures","stats","history","rules","awards"].includes(p.get("view"))?p.get("view"):"standings";document.documentElement.dataset.competitionSeasonUnavailable="false"})();</script>
   <script src="/assets/competition-model.js" defer></script>
   <script src="/assets/competition-page.js" defer></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">

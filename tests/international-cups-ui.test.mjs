@@ -21,7 +21,7 @@ test("INT-24: both cup routes resolve to public allowlisted HTML",()=>{
     assert.ok(html.includes('aria-labelledby="divisions-title"'));
     assert.ok(html.includes('class="app-competition-header"'));
     assert.ok(html.includes('id="app-competition-season"'));
-    assert.ok(html.includes('src="/assets/competition-tabs.js"'));
+    assert.ok(html.includes('src="/assets/competition-page.js"'));
     for(const view of views){
       assert.ok(html.includes('id="competition-tab-'+view+'"'),slug+" "+view);
       assert.ok(html.includes('id="competition-panel-'+view+'"'));
@@ -82,4 +82,33 @@ test('INT-24 DEV injects shared Debug controls on cup root and subpage routes',a
    assert.match(response.body,/dataset.faDevSeasons="1,2,3,4"/);
   }
  }finally{await new Promise(resolve=>server.close(resolve))}
+});
+
+test('INT-24: generated cup identity enters the same loader without a domestic identity',()=>{
+ for(const slug of names){
+  const html=read('competitions/'+slug+'/index.html');
+  assert.match(html,new RegExp('<meta name="fa-competition" content="'+slug+'">'));
+  assert.doesNotMatch(html,/<meta name="fa-division"/);
+  assert.equal((html.match(/src="\/assets\/competition-page.js"/g)||[]).length,1);
+  assert.doesNotMatch(html,/<script src="\/assets\/(?:app|competition-tabs|competition-history|competition-fixtures|competition-awards)\.js"/);
+ }
+});
+
+test('INT-24: Knockouts uses a localized cup empty state instead of domestic instructions',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const app=read('assets/app.js');
+ const dictionaries=app.slice(app.indexOf('  const copies ='),app.indexOf('  const worldCountryNames'));
+ const renderer=app.slice(app.indexOf('  function renderLanguage()'),app.indexOf('  function renderView()'));
+ for(const slug of names){
+  const html=read('competitions/'+slug+'/index.html');
+  const panel=html.split('id="competition-panel-postseason"')[1].split('id="competition-panel-fixtures"')[0];
+  assert.match(panel,/data-app-i18n="cupKnockoutsEmpty"/);
+  assert.doesNotMatch(panel,/postseasonNeutral|Select a division/);
+ }
+ for(const [lang,expected] of Object.entries({en:'No knockout results available yet.',de:'Noch keine Ergebnisse der K.-o.-Phase verfügbar.',es:'Todavía no hay resultados de las eliminatorias.',fr:'Aucun résultat des phases à élimination directe disponible.',it:'Nessun risultato della fase a eliminazione diretta ancora disponibile.'})){
+  const message={dataset:{appI18n:'cupKnockoutsEmpty'},textContent:'old domestic instruction'};
+  const format={dataset:{appI18n:'rulesCupFormat'},textContent:'untranslated'};
+  runInNewContext(dictionaries+renderer+'renderLanguage()',{language:()=>lang,words:()=>[message,format],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:()=>null,querySelectorAll:()=>[]}});
+  assert.equal(message.textContent,expected);assert.notEqual(format.textContent,'untranslated');
+ }
 });

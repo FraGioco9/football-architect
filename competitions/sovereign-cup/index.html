@@ -4,6 +4,8 @@
   <script data-nav01-fragment-state>history.scrollRestoration=location.hash?"manual":"auto";if(location.hash)document.documentElement.dataset.nav01Fragment="pending";</script>
   <style data-nav01-fragment-visibility>html[data-nav01-fragment="pending"] .fa-shell-content-scroll{visibility:hidden}</style>
   <meta charset="utf-8">
+  <base href="/competitions/sovereign-cup/">
+  <meta name="fa-competition" content="sovereign-cup">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
   <meta name="description" content="Football Architect — career workspace shell.">
@@ -14,13 +16,9 @@
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/landing.css">
   <link rel="stylesheet" href="/assets/app.css">
+  <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:["standings","postseason","fixtures","stats","history","rules","awards"].includes(p.get("view"))?p.get("view"):"standings";document.documentElement.dataset.competitionSeasonUnavailable="false"})();</script>
   <script src="/assets/competition-model.js" defer></script>
-  <script src="/assets/landing.js" defer></script>
-  <script src="/assets/app.js" defer></script>
-  <script src="/assets/app-search.js" defer></script>
-  <script>(()=>{const v=location.pathname.split("/").filter(Boolean).at(-1),q=new URLSearchParams(location.search).get("view");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:["standings","postseason","fixtures","stats","history","rules","awards"].includes(q)?q:"standings"})();</script>
-  <link rel="stylesheet" href="/assets/competition-awards.css">
-  <script src="/assets/international-cups.js" defer></script>
+  <script src="/assets/competition-page.js" defer></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">
   <script src="/assets/sidebar-evolution.js" defer></script>
 </head>
@@ -274,13 +272,13 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                   </tr>
                 </thead>
                 <tbody id="app-standings-body">
-
+<tr><td colspan="11" class="app-competition-empty-row" data-app-i18n="competitionStandingsEmpty">No standings available yet.</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
           </div>
-          <section id="competition-panel-postseason" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-postseason" tabindex="0" hidden><p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>
+          <section id="competition-panel-postseason" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-postseason" tabindex="0" hidden><p class="app-competition-status" data-app-i18n="cupKnockoutsEmpty">No knockout results available yet.</p>
           </section>
           <section id="competition-panel-fixtures" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-fixtures" tabindex="0" hidden>
             <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
@@ -382,7 +380,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             <div class="app-rules-content">
             <section class="app-rules-section" aria-labelledby="rules-format">
               <h3 id="rules-format" data-app-i18n="rulesFormatTitle">Competition format</h3>
-              <p>24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club</p>
+              <p data-app-i18n="rulesCupFormat">24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club</p>
               <dl class="app-rules-metrics">
                 <div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">24</dd></div>
                 <div class="app-rules-metric"><dt data-app-i18n="rulesRounds">Matchdays</dt><dd>6</dd></div>
@@ -411,8 +409,6 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </section>
           <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
           </section>
-          <script src="/assets/competition-tabs.js" defer></script>
-          <script src="/assets/competition-history.js" defer></script>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
@@ -436,8 +432,6 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
     </section>
   </dialog>
 
-  <script src="/assets/competition-fixtures.js" defer></script>
-  <script src="/assets/competition-awards.js" defer></script>
 <script data-nav01-fragment-align>window.faSidebarPaint?.();window.faSidebarAlignFragment?.();delete document.documentElement.dataset.nav01Fragment;</script>
 </body>
 </html>

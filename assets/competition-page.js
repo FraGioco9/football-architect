@@ -1,14 +1,17 @@
-/* One shared competition renderer for all sixteen static deep-link routes. */
+/* Shared competition initialization for domestic and international routes. */
 (() => {
   "use strict";
+  if(window.faCompetitionContextApi)return;
   const sourceUrl = document.currentScript?.src;
-  const routeId = document.querySelector('meta[name="fa-division"]')?.content;
+  const routeId = document.querySelector('meta[name="fa-competition"]')?.content;
   const root = new URL("../competitions/_shared/", sourceUrl);
   const status = document.getElementById("main-content");
 
   function fail() {
     if (!status || !document.body) return;
-    document.body.replaceChildren();
+    delete window.faCompetitionContext;
+    delete window.faCompetitionDivision;
+    delete window.faCompetitionContextApi;
     const main = document.createElement("main");
     main.className = "app-main";
     main.setAttribute("role", "alert");
@@ -17,7 +20,7 @@
     back.href = "../";
     back.textContent = "Back to Competitions";
     main.appendChild(back);
-    document.body.appendChild(main);
+    status.replaceChildren(main);
   }
   const model=window.faCompetitionModel;
   const formLabels = {
@@ -646,24 +649,97 @@
       document.head.appendChild(script);
     });
   }
+  const freeze=value=>{
+    if(value&&typeof value==="object"&&!Object.isFrozen(value)){
+      Object.values(value).forEach(freeze);Object.freeze(value);
+    }
+    return value;
+  };
+  let definition,division,activeDebugSeason;
+  function createContext(definition,selectedSeason,seasonData,revision){
+    if(!Number.isSafeInteger(selectedSeason)||selectedSeason<1||!Number.isSafeInteger(revision)||revision<1)
+      throw Error("Invalid competition context");
+    return freeze(JSON.parse(JSON.stringify({definition,selectedSeason,seasonData,revision})));
+  }
+  function publishCompetitionContext(context){
+    window.faCompetitionContext=context;
+    window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
+  }
+  function nextContext(season,data=null){
+    const current=window.faCompetitionContext;
+    publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
+  }
+  function selectSeason(season){
+    const current=window.faCompetitionContext;
+    if(!Number.isSafeInteger(season)||season<1||!current)return false;
+    if(current.selectedSeason!==season)nextContext(season);
+    return true;
+  }
+  function clearSeasonData(){
+    if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
+  }
+  function setDebugSeason(season){
+    if(!Number.isInteger(season)||season<0||season>4)return false;
+    if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
+    if(season===0)selectSeason(1);
+    return true;
+  }
+  function replaceSeasonData(data,expectedRevision){
+    const current=window.faCompetitionContext;
+    if(!current||current.revision!==expectedRevision||activeDebugSeason===0||!data||
+      data.season!==current.selectedSeason||data.rulesVersion!==definition.rules.version||
+      !["unavailable","partial","available"].includes(data.status)||!Array.isArray(data.participants)||
+      data.participants.length!==definition.capacity||
+      ![data.fixtures,data.results].every(x=>x===null||Array.isArray(x))||
+      !(data.statistics===null||data.statistics&&typeof data.statistics==="object"&&!Array.isArray(data.statistics)))return false;
+    const ids=new Set();
+    for(const club of data.participants){
+      if(!club||!model.countries.includes(club.countryId)||!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40)return false;
+      const id=club.countryId+"-"+club.clubId;
+      if(ids.has(id)||division&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId))return false;
+      ids.add(id);
+    }
+    nextContext(current.selectedSeason,data);return true;
+  }
   async function start() {
-    if (!sourceUrl || !/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(routeId)) throw Error("Invalid route identity");
+    if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|sovereign-cup|federation-cup)$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     const segments=path.split("/").filter(Boolean);
-    const divisionSegment=segments[1];
     const viewSegment=segments[2];
     const allowedViews=new Set(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
-    if(segments.length<2||segments.length>3||segments[0]!=="competitions"||divisionSegment!==routeId.toLowerCase()||(viewSegment&&!allowedViews.has(viewSegment)))throw Error("Route identity mismatch");
+    if(segments.length<2||segments.length>3||segments[0]!=="competitions"||segments[1]!==routeId.toLowerCase()||(viewSegment&&!allowedViews.has(viewSegment)))throw Error("Route identity mismatch");
     const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
     if(!dataResponse.ok)throw Error("Competition data unavailable");
     const manifest=await dataResponse.json();
     if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
-    const division=manifest.divisions.find(d=>d.id===routeId);
-    if(!division)throw Error("Unknown division");
-    const required=["app-divisions","app-competition-badge","app-competition-flag",
-      "app-competition-country","app-competition-tier","app-competition-capacity",
-      "app-competition-level","app-standings-body","app-standings-caption","app-search-dialog"];
+    definition=model.competitionById(manifest,routeId);
+    if(!definition)throw Error("Unknown competition");
+    division=definition.category==="domestic"?manifest.divisions.find(d=>d.id===routeId):null;
+    const legacyId=document.querySelector('meta[name="fa-division"]')?.content;
+    if(division?legacyId!==routeId:legacyId!==undefined)throw Error("Invalid domestic compatibility identity");
+    const required=["app-divisions","app-competition-badge","app-competition-capacity",
+      "app-standings-body","app-standings-caption","app-search-dialog","division-detail-name"];
+    if(division)required.push("app-competition-flag","app-competition-country","app-competition-tier","app-competition-level");
     if(required.some(id=>!document.getElementById(id)))throw Error("Incomplete generated page");
+    const dataset=document.documentElement?.dataset||{};
+    activeDebugSeason=dataset.faDevCurrentSeason===undefined?null:Number(dataset.faDevCurrentSeason);
+    const devSeasons=(dataset.faDevSeasons||"").split(",").map(Number).filter(n=>n>=1&&n<=4);
+    const seasons=devSeasons.length?devSeasons.filter(n=>activeDebugSeason===null||n<=activeDebugSeason):[1];
+    if(!seasons.includes(1))seasons.push(1);
+    const raw=new URL(window.location.href).searchParams.get("season");
+    const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
+    window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
+    nextContext(seasons.includes(requested)?requested:1);
+    window.addEventListener("fa:dev-progress-change",event=>{
+      setDebugSeason(event.detail?.season);
+    });
+    window.addEventListener("fa:fictional-standings-change",event=>{
+      if(event.detail?.enabled===false)clearSeasonData();
+    });
+    document.getElementById("division-detail-name").textContent=definition.name;
+    document.getElementById("app-competition-capacity").textContent=String(definition.capacity);
+    window.faClubCrests=manifest.clubCrests;
+    if(division){
     // Only standings are enhanced; the original inline logo DOM is never replaced.
     const standings=document.querySelector(".app-world-standings");
     if(!standings)throw Error("Missing standings");
@@ -697,8 +773,16 @@
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
     createPostseason(division);
+    }else{
+      delete window.faCompetitionDivision;
+      const empty=document.createElement("tr"),cell=document.createElement("td");
+      cell.colSpan=11;cell.className="app-competition-empty-row";
+      cell.dataset.appI18n="competitionStandingsEmpty";
+      cell.textContent="No standings available yet.";empty.appendChild(cell);
+      document.getElementById("app-standings-body").replaceChildren(empty);
+    }
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
-    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js"])
+    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
   }
   start().catch(fail);

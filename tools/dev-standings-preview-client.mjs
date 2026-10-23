@@ -60,6 +60,8 @@ function syncDebugControls(){
   }
 }
 async function refreshProgress(){
+ window.faCompetitionContextApi?.setDebugSeason(debugSeason);
+ window.faCompetitionContextApi?.clearSeasonData();
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(debugSeason===0){
   if(validPath&&!await setPreviewEnabled(false))return false;
@@ -436,6 +438,8 @@ if(validPath||indexPath||clubPath){
    if(next===renderedSeason)return seasonRefresh;
    const request=++seasonRequest;
    renderedSeason=next;
+   window.faCompetitionContextApi?.selectSeason(selectedSeason());
+   window.faCompetitionContextApi?.clearSeasonData();
    // Prevent even one frame of previous-season data while DEV hydration is pending.
    if(previewState!=="ON"){
     delete document.documentElement.dataset.faDevSeasonTransition;
@@ -575,6 +579,13 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     }));
     // Complete all asynchronous preparation before touching the visible table.
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
+    const contextRevision=window.faCompetitionContext?.revision;
+    const publishContext=()=>window.faCompetitionContextApi?.replaceSeasonData({
+      season,rulesVersion:window.faCompetitionContext.definition.rules.version,
+      participants:division.clubs,fixtures:fixtureData,
+      results:fixtureData.filter(game=>game.homeGoals!==null&&game.awayGoals!==null),
+      statistics:null,status:"partial"
+    },contextRevision);
     // Delayed manifest/Fixtures responses must not commit data for an obsolete season.
     if(!isCurrent()||selectedSeason()!==season||debugSeason!==progress.season||matchdays!==progress.matchdays)return;
     // Keep the active page, scroll position and focus stable during DEV data swaps.
@@ -605,7 +616,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // Fast path: reuse the mounted standings DOM, tooltip handlers and club crests.
     // The original preview cleanup remains active for eventual DEV disable/reset.
     if(restorePrevious?.refresh && restorePrevious.refresh(rows,commitFixtures,commitPostseason,
-      window.faStandingsMobile?.prepare(rows)))return restorePrevious;
+      window.faStandingsMobile?.prepare(rows))){publishContext();return restorePrevious;}
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
@@ -923,6 +934,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       translate();
       return true;
     };
+    publishContext();
     return restore;
     } catch(error){restore();throw error}
   } catch (error) {
