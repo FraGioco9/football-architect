@@ -18,6 +18,24 @@ const screenshot=async(page,name)=>{
  await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++;
 };
 try {
+ // Task 8: every canonical competition route initializes one shared, empty context.
+ const allRoutes=["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>country+"-"+tier)).concat(cups);
+ const routePage=await browser.newPage({viewport:{width:390,height:900}});
+ try{
+  for(const slug of allRoutes){
+   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"networkidle"});
+   assert.equal(response?.status(),200,"shared route "+slug);
+   await routePage.waitForSelector('#competition-tab-stats[aria-selected="true"]');
+   const actual=await routePage.evaluate(()=>({
+    id:window.faCompetitionContext?.definition?.id?.toLowerCase(),
+    season:window.faCompetitionContext?.selectedSeason,
+    tabs:document.querySelectorAll(".app-competition-tabs [role=tab]").length,
+    stats:document.querySelectorAll("#fa-dev-stats .fa-dev-stats-card").length
+   }));
+   assert.deepEqual(actual,{id:slug,season:1,tabs:7,stats:3},"shared route "+slug);
+   checks++;
+  }
+ }finally{await routePage.close()}
  for(const cup of cups)for(const width of widths){
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];

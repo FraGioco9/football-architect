@@ -7,9 +7,30 @@ The current `main` branch is an **asset and identity-catalogue repository**, not
 The game-world baseline is **8 countries, 16 fictional divisions of 16 clubs, and 320 documented fictional club identities**. The provisional UI lists **256 participants** (128 per tier); the other **64 clubs** remain asset-only, with all 640 future Primary/Compact crest PNGs preserved in scope. Actual sports gameplay, current club-to-league allocations, finalized division/club SVG crests, and app integration are not provided by this branch.
 
 
+### INT-24 shared competition contract (Draft / HOLD)
+
+The configurable competition migration defines **18 competition routes**: sixteen domestic
+divisions and the Sovereign Cup and Federation Cup. Edit the validated source catalogues
+`data/divisions.json` and `data/international-competitions.json` and their
+`tools/competition-catalogue.mjs` validation rather than editing generated competition HTML
+or `competitions/_shared/manifest.json` by hand. The generator resolves immutable
+definitions and derives Rules, Awards, phase selectors, and empty Stats interfaces.
+Public Stats accepts only supplied datasets; it does not run the protected fictional
+DEV provider. History uses validated stored season-rule snapshots (or an explicitly
+recognized legacy baseline), not mutable current rules.
+
+Run `node tools/generate-app-pages.mjs --check` to verify deterministic output and
+`node --test --test-concurrency=1 tests/*.test.mjs` for the site contracts.
+`tests/int24-browser-qa.mjs` additionally requires the existing local preview server
+and Playwright Chromium. Publication must stage the allowlisted public artifact separately
+from `protected_debug`; neither source catalogues nor protected generator modules are
+public runtime dependencies. The GitHub manual Preview workflow retains independent
+owner authorization and must never be triggered by this migration. This PR remains
+Draft/HOLD; no merge or deployment is implied.
+
 ### Maintain the generated app pages
 
-`templates/app-page.html` supplies the app shell; `tools/render-competition-page.mjs` supplies the common competition detail layout. `assets/competition-model.js` defines the shared participant, capacity, format, phase, rules and view contracts. After editing these sources or `tools/generate-app-pages.mjs`, regenerate the 21 checked-in pages and competition manifest from the repository root:
+`templates/app-page.html` supplies the app shell; `tools/render-competition-page.mjs` supplies the common competition detail layout. `assets/competition-model.js` defines the shared participant, capacity, format, phase, rules and view contracts. After editing these sources or `tools/generate-app-pages.mjs`, regenerate the checked-in app pages and competition manifest from the repository root:
 
 ```sh
 node tools/generate-app-pages.mjs

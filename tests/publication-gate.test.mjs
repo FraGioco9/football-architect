@@ -6,6 +6,29 @@ import {join} from "node:path";
 import {tmpdir} from "node:os";
 import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact} from "../tools/publication-guard.mjs";
 
+test("INT24-PUBLIC: shared rules and stats are self-contained public dependencies",()=>{
+ const publicFiles=planPublicFiles();
+ const assets=["competition-model.js","competition-rules.js","competition-rules-view.js","competition-stats.js","competition-history.js","competition-page.js"];
+ for(const name of assets){
+  const path="assets/"+name;
+  assert.ok(publicFiles.includes(path),"missing shared runtime "+path);
+  const source=readFileSync(join(repositoryRoot,path),"utf8");
+  assert.doesNotMatch(source,/\\/__fa_dev__\\/|(?:from\\s*|require\\s*\\()\\s*["'][^"']*(?:tools\\/dev-|dev-competition-stats|dev-standings-preview)/,"protected provider imported by "+path);
+ }
+ for(const path of ["tools/competition-catalogue.mjs","data/international-competitions.json","data/division-allocations.provisional.json","tools/dev-competition-stats-data.mjs"]){
+  assert.ok(!publicFiles.includes(path),"private source must not publish: "+path);
+ }
+ const root=mkdtempSync(join(tmpdir(),"int24-public-contract-"));
+ try{
+  const target=join(root,"public");
+  const staged=stagePublicArtifact(repositoryRoot,target);
+  assert.deepEqual(assertPublicArtifact(target),staged);
+  for(const name of assets)assert.ok(existsSync(join(target,"assets",name)));
+  assert.ok(!existsSync(join(target,"__fa_dev__")));
+  assert.ok(!existsSync(join(target,"tools")));
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
   const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));
