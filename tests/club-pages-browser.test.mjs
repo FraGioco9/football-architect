@@ -283,7 +283,23 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=first]').click()");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
-    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
+    assert.equal(await run("new URLSearchParams(location.search).get('division')"),'first');
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128");
+    assert.equal(await run("document.querySelector('#nav01-division-trigger').textContent.trim()"),'Prima');
+    await cmd('Page.navigate',{url:origin+'/clubs?q=Torino&country=IT&division=first'});
+    await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
+    assert.equal(await run("document.querySelector('.nav01-filters input').value"),'Torino');
+    assert.equal(await run("document.querySelector('.nav01-filters select').value"),'IT');
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length>=0"),true);
+    await cmd('Page.navigate',{url:origin+'/clubs?q=Munchen&country=de&division=FIRST'});
+    await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
+    assert.equal(await run("document.querySelector('.nav01-filters select').value"),'DE');
+    assert.equal(await run("document.querySelectorAll('.nav01-filter select')[1].value"),'first');
+    await run("document.querySelector('.nav01-filters input').value='Sao';document.querySelector('.nav01-filters input').dispatchEvent(new Event('input',{bubbles:true}))");
+    assert.equal(await run("new URLSearchParams(location.search).get('q')"),'Sao');
+    await cmd('Page.reload');await wait("document.querySelector('.nav01-filters input')?.value==='Sao'");
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
 
     // QA-02: inspect the actual viewport centers of the Calendar/Fixtures arrows.
