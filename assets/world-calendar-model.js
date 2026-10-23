@@ -17,7 +17,7 @@
   const internationalDays=[16,19,22,25,28,31,36,38,41,43,46,48];
   const divisions=["IT","ENG","ES","DE","FR","PT","NL","BR"].flatMap(country=>[country+"-1",country+"-2"]);
   // Calendar identity keys, not URL slugs or an implemented international catalogue.
-  const cups=["sovereign-cup","federation-cup"];
+  const cups=["int-1","int-2"];
   const validSeason=value=>Number.isSafeInteger(value)&&value>0;
   const object=value=>value!==null&&typeof value==="object"&&!Array.isArray(value);
   const keys=(value,allowed)=>object(value)&&Object.keys(value).every(key=>allowed.includes(key));
@@ -37,8 +37,8 @@
     // Insert international markers first: their label precedes the national label.
     internationalDays.forEach((day,i)=>add(day,"I"+number(i+1),"international",
       i<6?"league":i<8?"playoffs":i<10?"quarterfinals":"semifinals",i+1,cups));
-    add(53,"FEDERATION-FINAL","international","final",null,["federation-cup"]);
-    add(54,"SOVEREIGN-FINAL","international","final",null,["sovereign-cup"]);
+    add(53,"FEDERATION-FINAL","international","final",null,["int-2"]);
+    add(54,"SOVEREIGN-FINAL","international","final",null,["int-1"]);
     nationalDays.forEach((day,i)=>add(day,"N"+number(i+1),"national",i<30?"league":"postseason",i+1,divisions));
     for(const day of days)if(day.events.length===2)day.pairing=day.day>=53?"final":"double";
     return freeze({schemaVersion:1,model:"WORLD-TIME-QA-06",season,
