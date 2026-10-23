@@ -14,7 +14,7 @@ test("v2 carries distinct competition definitions and the legacy domestic projec
  assert.equal(new Set(data.competitions.map(x=>x.slug)).size,18);
  assert.equal(new Set(data.divisions.flatMap(d=>d.clubs.map(c=>c.countryId+":"+c.clubId))).size,256);
  assert.equal(model.validManifest(data),true);
- assert.equal(model.competitionById(data,"federation-cup")?.capacity,24);
+ assert.equal(model.competitionById(data,"int-2")?.capacity,24);
  assert.equal(model.competitionById(data,"unknown"),null);
 });
 test("v1, duplicate identity, mismatched metrics and forged projection fail closed",()=>{

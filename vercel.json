@@ -246,7 +246,7 @@
       "permanent": true
     },
     {
-      "source": "/competitions/:cup(sovereign-cup|federation-cup)/:view(standings|postseason|fixtures|stats|history|rules|awards)/",
+      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)/",
       "destination": "/competitions/:cup/:view",
       "permanent": true
     }
@@ -273,7 +273,7 @@
       "destination": "/competitions/:division/index.html"
     },
     {
-      "source": "/competitions/:cup(sovereign-cup|federation-cup)/:view(standings|postseason|fixtures|stats|history|rules|awards)",
+      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)",
       "destination": "/competitions/:cup/index.html"
     },
     {

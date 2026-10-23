@@ -1,7 +1,7 @@
 [
   {
-    "id": "sovereign-cup",
-    "slug": "sovereign-cup",
+    "id": "int-1",
+    "slug": "int-1",
     "name": "Sovereign Cup",
     "category": "international",
     "capacity": 24,
@@ -302,8 +302,8 @@
     }
   },
   {
-    "id": "federation-cup",
-    "slug": "federation-cup",
+    "id": "int-2",
+    "slug": "int-2",
     "name": "Federation Cup",
     "category": "international",
     "capacity": 24,
