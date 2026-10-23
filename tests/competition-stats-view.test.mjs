@@ -43,7 +43,7 @@ function supplied(id,count){
  return c;
 }
 test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/4 empty cards with no fake zero values',()=>{
- for(const id of ['IT-1','sovereign-cup','federation-cup']){
+ for(const id of ['IT-1','int-1','int-2']){
   const r=fixture();assert.equal(typeof r.api?.mount,'function');
   r.api.mount(r.panel,context(id));
   assert.equal(buttons(r).length,3);assert.equal(byClass(r,'fa-dev-stats-card').length,3);
@@ -55,7 +55,7 @@ test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/4 empty cards with
  }
 });
 test('STATS-SUPPLIED: averages retain two decimals and Show all uses actual 16/24 identities and tied ranks',()=>{
- for(const [id,count] of [['IT-1',16],['sovereign-cup',24]]){
+ for(const [id,count] of [['IT-1',16],['int-1',24]]){
   const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied(id,count);
   c.seasonData.statistics.teams.forEach(team=>team.gf=5);
   r.api.mount(r.panel,c);
@@ -72,7 +72,7 @@ test('STATS-SUPPLIED: averages retain two decimals and Show all uses actual 16/2
  }
 });
 test('STATS-LIFECYCLE: mount is idempotent, keyboard changes subviews, revisions reject stale data, updates close old dialogs',()=>{
- const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied('sovereign-cup',24);
+ const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied('int-1',24);
  const mounted=r.api.mount(r.panel,c);assert.equal(r.api.mount(r.panel,c),mounted);assert.equal(buttons(r).length,3);
  buttons(r)[0].emit('keydown',{key:'ArrowRight'});assert.equal(byClass(r,'fa-dev-stats-team-card').length,7);assert.equal(r.document.activeElement,buttons(r)[1]);
  byClass(r,'fa-dev-stats-expand')[0].emit('click');assert.equal(byClass(r,'fa-dev-stats-dialog').length,1);
@@ -82,13 +82,13 @@ test('STATS-LIFECYCLE: mount is idempotent, keyboard changes subviews, revisions
  mounted.destroy();assert.equal(r.panel.children.length,0);
 });
 test('STATS-VALIDATION: escaped names and malformed or foreign team records never manufacture rankings',()=>{
- const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied('sovereign-cup',24);
+ const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied('int-1',24);
  c.seasonData.statistics.teams[0].clubName='<img onerror=x>';
  const mounted=r.api.mount(r.panel,c);buttons(r)[1].emit('click');
  assert.equal(r.nodes().filter(n=>n.tagName==='img').length,0);assert.ok(contents(r.panel).includes('<img onerror=x>'));
  let revision=2;
  for(const change of [c=>c.seasonData.statistics.teams[0].clubKey='IT-99',c=>c.seasonData.statistics.teams[0].ppg=NaN,c=>c.seasonData.statistics.teams[1].clubKey=c.seasonData.statistics.teams[0].clubKey]){
-  const invalid=supplied('sovereign-cup',24);invalid.revision=revision++;change(invalid);mounted.update(invalid);assert.equal(byClass(r,'fa-dev-stats-expand').length,0);
+  const invalid=supplied('int-1',24);invalid.revision=revision++;change(invalid);mounted.update(invalid);assert.equal(byClass(r,'fa-dev-stats-expand').length,0);
  }
 });
 test('STATS-FIRST-PAINT: all 18 generated routes contain the full empty Overview interface',()=>{
@@ -101,15 +101,15 @@ test('STATS-FIRST-PAINT: all 18 generated routes contain the full empty Overview
  }
 });
 test('STATS-SEASON: mismatched season/rules and reused revision cannot restore old statistics',()=>{
- const r=fixture(),c=supplied('sovereign-cup',24),mounted=r.api.mount(r.panel,c);
+ const r=fixture(),c=supplied('int-1',24),mounted=r.api.mount(r.panel,c);
  mounted.update({...c,revision:2,selectedSeason:2,seasonData:null});
  mounted.update({...c,revision:2});assert.equal(byClass(r,'app-competition-stat-value').length,0);
  mounted.update({...c,revision:3,selectedSeason:2});assert.equal(byClass(r,'app-competition-stat-value').length,0);
- const changed=supplied('sovereign-cup',24);changed.revision=4;changed.seasonData.rulesVersion='unknown';mounted.update(changed);
+ const changed=supplied('int-1',24);changed.revision=4;changed.seasonData.rulesVersion='unknown';mounted.update(changed);
  assert.equal(byClass(r,'app-competition-stat-value').length,0);
 });
 test('STATS-PLAYERS: only supplied player records populate the four existing categories',()=>{
- const r=fixture(),c=supplied('sovereign-cup',24);
+ const r=fixture(),c=supplied('int-1',24);
  c.seasonData.statistics.players=[{playerId:'p1',name:'Supplied Player',clubKey:'IT-1',appearances:2,goals:0,assists:1,averageRating:7,cleanSheets:0}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
@@ -117,7 +117,7 @@ test('STATS-PLAYERS: only supplied player records populate the four existing cat
  assert.equal(r.nodes().filter(n=>n.tagName==='li').length,4);
 });
 test('STATS-PARTIAL: unplayed teams do not erase played statistics or enter rankings',()=>{
- const r=fixture(),c=supplied('sovereign-cup',24);
+ const r=fixture(),c=supplied('int-1',24);
  c.seasonData.statistics.teams.forEach((team,i)=>{team.mp=i<2?1:0;});
  r.api.mount(r.panel,c);
  assert.equal(byClass(r,'app-competition-stat-value').length,3);
@@ -128,7 +128,7 @@ test('STATS-PARTIAL: unplayed teams do not erase played statistics or enter rank
 });
 test('STATS-RECOVERY: malformed contexts clear totals and dialogs, expose an error, then recover',()=>{
  for(const invalid of [c=>delete c.definition,c=>c.definition={},c=>c.revision='bad']){
-  const r=fixture(),c=supplied('sovereign-cup',24),mounted=r.api.mount(r.panel,c);
+  const r=fixture(),c=supplied('int-1',24),mounted=r.api.mount(r.panel,c);
   buttons(r)[1].emit('click');byClass(r,'fa-dev-stats-expand')[0].emit('click');
   const next={...c,revision:2};invalid(next);
   assert.doesNotThrow(()=>mounted.update(next));
@@ -139,11 +139,11 @@ test('STATS-RECOVERY: malformed contexts clear totals and dialogs, expose an err
  }
  const r=fixture(),mounted=r.api.mount(r.panel,{revision:1,definition:{}});
  assert.equal(buttons(r).length,3);assert.ok(contents(r.panel).includes('Statistics are unavailable.'));
- mounted.update({...supplied('sovereign-cup',24),revision:2});
+ mounted.update({...supplied('int-1',24),revision:2});
  assert.equal(byClass(r,'app-competition-stat-value').length,3);
 });
 test('STATS-ERROR: invalid supplied records differ from an ordinary empty season',()=>{
- const r=fixture(),c=supplied('sovereign-cup',24);c.seasonData.statistics.teams[0].clubKey='IT-99';
+ const r=fixture(),c=supplied('int-1',24);c.seasonData.statistics.teams[0].clubKey='IT-99';
  r.api.mount(r.panel,c);
  assert.ok(r.nodes().some(node=>node.dataset.appI18n==='statsDevUnavailable'));
  assert.equal(byClass(r,'app-competition-stat-value').length,0);

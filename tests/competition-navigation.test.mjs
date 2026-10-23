@@ -39,7 +39,7 @@ function setup(path='/competitions/it-1/',devSeason=null){
  return {window,tabs,fields,tablist,events,contextSeasons,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('CONFIG-URL: cup routes reject domestic rounds and retain configured leg tokens through history',()=>{
- const s=setup('/competitions/sovereign-cup/fixtures?season=1&matchday=30');
+ const s=setup('/competitions/int-1/fixtures?season=1&matchday=30');
  assert.equal(s.window.faCompetitionRoute.get().matchday,1);
  s.window.faCompetitionRoute.set({matchday:'quarterfinals:2'});
  assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
@@ -192,7 +192,7 @@ test('ROUTE-02 History and Rules URLs omit season while other competition views 
 });
 
 test('All competition routes fall back to season 1 without hiding the requested view',()=>{
- for(const slug of ['sovereign-cup','federation-cup',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
+ for(const slug of ['int-1','int-2',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
   for(const dev of [null,3]){
    const s=setup('/competitions/'+slug+'/fixtures?season=99&matchday=4',dev);
    assert.equal(s.window.faCompetitionRoute.get().season,'1');
@@ -229,7 +229,7 @@ test('DEV season 0 keeps season 1 available without creating a season 0 URL',()=
 
 
 test('DEV season 0 survives direct loads and normalizes old season URLs to season 1',()=>{
- for(const slug of ['sovereign-cup','federation-cup',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
+ for(const slug of ['int-1','int-2',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
   const s=setup('/competitions/'+slug+'/fixtures?season=3',0);
   assert.equal(s.window.faCompetitionRoute.get().season,'1');
   assert.equal(s.fields.get('app-competition-season').disabled,false);
@@ -248,7 +248,7 @@ test('Explicit invalid season values fall back to season 1 even when later DEV s
 });
 
 test('CONTEXT: router updates the shared season through selection, Back and inactive fallback',()=>{
- const s=setup('/competitions/sovereign-cup/fixtures?season=2&matchday=4',3);
+ const s=setup('/competitions/int-1/fixtures?season=2&matchday=4',3);
  assert.equal(s.contextSeasons.at(-1),2);
  s.window.faCompetitionRoute.set({season:'3'});assert.equal(s.contextSeasons.at(-1),3);
  s.back();assert.equal(s.contextSeasons.at(-1),2);
@@ -257,9 +257,9 @@ test('CONTEXT: router updates the shared season through selection, Back and inac
 });
 
 test('COMPETITION-URL: generic first paint preserves cup query views before hydration',()=>{
- const html=readFileSync(new URL('../competitions/sovereign-cup/index.html',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../competitions/int-1/index.html',import.meta.url),'utf8');
  const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
  const document={documentElement:{dataset:{}}};
- runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/sovereign-cup',search:'?view=stats&season=1'}});
+ runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/int-1',search:'?view=stats&season=1'}});
  assert.equal(document.documentElement.dataset.competitionView,'stats');
 });

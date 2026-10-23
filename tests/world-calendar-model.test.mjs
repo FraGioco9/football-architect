@@ -43,9 +43,9 @@ test('QA-06 fixes every national and international placement, including separate
 test('round markers preserve distinct competition identities without creating club fixtures',()=>{
   const events=getModel().createSeason(1).days.flatMap(d=>d.events);
   assert.equal(events.find(e=>e.marker==='N01').competitionIds.length,16);
-  assert.deepEqual(events.find(e=>e.marker==='I01').competitionIds,['sovereign-cup','federation-cup']);
-  assert.deepEqual(events.find(e=>e.marker==='FEDERATION-FINAL').competitionIds,['federation-cup']);
-  assert.deepEqual(events.find(e=>e.marker==='SOVEREIGN-FINAL').competitionIds,['sovereign-cup']);
+  assert.deepEqual(events.find(e=>e.marker==='I01').competitionIds,['int-1','int-2']);
+  assert.deepEqual(events.find(e=>e.marker==='FEDERATION-FINAL').competitionIds,['int-2']);
+  assert.deepEqual(events.find(e=>e.marker==='SOVEREIGN-FINAL').competitionIds,['int-1']);
   assert.equal(events.find(e=>e.marker==='I07').phase,'playoffs');
   assert.equal(events.find(e=>e.marker==='I09').phase,'quarterfinals');
   assert.equal(events.find(e=>e.marker==='I11').phase,'semifinals');
@@ -72,8 +72,8 @@ test('default projection leaves time and lifecycle unknown instead of inventing 
 
 test('relative time is separate from lifecycle and each cup has its own supplied state',()=>{
   const m=getModel(),season=m.createSeason(1),eventId=season.days[15].events[0].id;
-  const states=[{eventId,competitionId:'sovereign-cup',status:'completed'},
-    {eventId,competitionId:'federation-cup',status:'scheduled'}];
+  const states=[{eventId,competitionId:'int-1',status:'completed'},
+    {eventId,competitionId:'int-2',status:'scheduled'}];
   const input={source:{kind:'dev',reference:'test snapshot'},current:{season:1,day:17},eventStates:states};
   const before=copy(input),out=m.projectSeason(1,input);
   assert.deepEqual(input,before);
@@ -109,12 +109,12 @@ test('invalid season, clock, provenance and event states fail closed without par
     {source:{kind:'unavailable',reference:'pretend'}},{current:{season:1,day:1}},
     {source,current:{season:1,day:0}},{source,current:{season:1,day:57}},
     {source,current:{season:'1',day:1}},{source,eventStates:null},{source,eventStates:[null]},
-    {source,eventStates:[{eventId:'missing',competitionId:'sovereign-cup',status:'live'}]},
+    {source,eventStates:[{eventId:'missing',competitionId:'int-1',status:'live'}]},
     {source,eventStates:[{eventId,competitionId:'unknown-cup',status:'live'}]},
-    {source,eventStates:[{eventId,competitionId:'sovereign-cup',status:'in_progress'}]},
-    {source,eventStates:[{eventId,competitionId:'sovereign-cup',status:'live',homeGoals:3}]},
-    {eventStates:[{eventId,competitionId:'sovereign-cup',status:'live'}]},
-    {source,eventStates:Array(2).fill({eventId,competitionId:'sovereign-cup',status:'live'})}];
+    {source,eventStates:[{eventId,competitionId:'int-1',status:'in_progress'}]},
+    {source,eventStates:[{eventId,competitionId:'int-1',status:'live',homeGoals:3}]},
+    {eventStates:[{eventId,competitionId:'int-1',status:'live'}]},
+    {source,eventStates:Array(2).fill({eventId,competitionId:'int-1',status:'live'})}];
   for(const input of invalid)assert.throws(()=>m.projectSeason(1,input),JSON.stringify(input));
 });
 
