@@ -1,3 +1,4 @@
+import '../assets/club-model.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {readFileSync} from 'node:fs';
 import {clubCrestAssets} from './club-crest-assets.mjs';
@@ -25,6 +26,20 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
  html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"').replace('data-app-view="divisions" aria-current="page"','data-app-view="divisions"');
  html=html.replace('</head>','  <link rel="stylesheet" href="/assets/club-page.css">\n  <script src="/assets/club-model.js" defer></script>\n  <script src="/assets/club-page.js" defer></script>\n</head>');
  html=html.replace('<body class="app-body">','<body class="app-body">\n  <a class="skip-link" href="#main-content">Skip to content</a>');
- return [{path:'clubs/_shared/index.html',content:html},
+ const outputs=[{path:'clubs/_shared/index.html',content:html},
   {path:'clubs/_shared/manifest.json',content:JSON.stringify(manifest,null,2)+'\n'}];
+ const anchor='<div id="club-page" aria-live="polite"></div>';
+ if(!html.includes(anchor))throw Error('Club static template anchor missing');
+ const model=globalThis.faClubModel;
+ if(!model)throw Error('Canonical Club model unavailable');
+ for(const club of manifest.clubs){
+  for(const view of model.views){
+   const country=club.countryId.toLowerCase(),base='/clubs/'+country+'/'+club.clubId;
+   const markup=model.render(manifest,{countryId:club.countryId,clubId:club.clubId,view,base},'en','',null);
+   const staticHtml=html.replace(anchor,'<div id="club-page" aria-live="polite" data-club-static="'+country+'-'+club.clubId+'-'+view+'">'+markup+'</div>');
+   outputs.push({path:'clubs/'+country+'/'+club.clubId+'/'+view+'/index.html',content:staticHtml});
+  }
+ }
+ if(outputs.length!==1602)throw Error('Incomplete static club pages');
+ return outputs;
 }
