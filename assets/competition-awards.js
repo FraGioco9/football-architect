@@ -3,23 +3,22 @@
 "use strict";
 const panel=document.getElementById("competition-panel-awards");
 if(!panel)return;
-const tier=window.faCompetitionDivision?.tier ?? (/(?:^|\/)\w+-2(?:\/|$)/i.test(location.pathname)?2:1);
 const definitions=[
- {id:"champion",title:"League Champion",key:"awardsChampion",section:"honours",tier:0},
- {id:"promotion",title:"Direct Promotion",key:"awardsPromotion",section:"honours",tier:2},
- {id:"playoff",title:"Playoff Winner",key:"awardsPlayoff",section:"honours",tier:2},
- {id:"manager",title:"Manager of the Season",key:"awardsManager",section:"excellence",tier:0},
- {id:"player",title:"Player of the Season",key:"awardsPlayer",section:"excellence",tier:0},
- {id:"young",title:"Young Player of the Season",key:"awardsYoung",section:"excellence",tier:0},
- {id:"boot",title:"Golden Boot",key:"awardsBoot",section:"performance",tier:0},
- {id:"assists",title:"Top Assists",key:"awardsAssists",section:"performance",tier:0},
- {id:"glove",title:"Golden Glove",key:"awardsGlove",section:"performance",tier:0},
- {id:"defender",title:"Defender of the Season",key:"awardsDefender",section:"performance",tier:0},
- {id:"midfielder",title:"Midfielder of the Season",key:"awardsMidfielder",section:"performance",tier:0},
- {id:"forward",title:"Forward of the Season",key:"awardsForward",section:"performance",tier:0},
- {id:"xi",title:"Team of the Season",key:"awardsXi",section:"xi",tier:0}
+ {id:"champion",title:"Champion",key:"awardsChampion",section:"honours"},
+ {id:"promotion",title:"Direct Promotion",key:"awardsPromotion",section:"honours"},
+ {id:"playoff",title:"Playoff Winner",key:"awardsPlayoff",section:"honours"},
+ {id:"manager",title:"Manager of the Season",key:"awardsManager",section:"excellence"},
+ {id:"player",title:"Player of the Season",key:"awardsPlayer",section:"excellence"},
+ {id:"young",title:"Young Player of the Season",key:"awardsYoung",section:"excellence"},
+ {id:"boot",title:"Golden Boot",key:"awardsBoot",section:"performance"},
+ {id:"assists",title:"Top Assists",key:"awardsAssists",section:"performance"},
+ {id:"glove",title:"Golden Glove",key:"awardsGlove",section:"performance"},
+ {id:"defender",title:"Defender of the Season",key:"awardsDefender",section:"performance"},
+ {id:"midfielder",title:"Midfielder of the Season",key:"awardsMidfielder",section:"performance"},
+ {id:"forward",title:"Forward of the Season",key:"awardsForward",section:"performance"},
+ {id:"xi",title:"Team of the Season",key:"awardsXi",section:"xi"}
 ];
-const visible=definitions.filter(item=>!item.tier||item.tier===tier);
+
 const el=(tag,cls,text,key)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;if(key)node.dataset.appI18n=key;return node};
 const svgNS="http://www.w3.org/2000/svg";
 const iconPaths={
@@ -42,32 +41,42 @@ const createIcon=id=>{
  for(const d of iconPaths[id]){const path=document.createElementNS(svgNS,"path");path.setAttribute("d",d);svg.append(path)}
  return svg;
 };
-const wrap=el("div","fa-awards");
-
-const sectionNames=[["honours",null,null],["excellence","Individual Excellence","awardsExcellence"],["performance","Performance & Position Awards","awardsPerformance"],["xi","Team of the Season","awardsXi"]];
-for(const [id,name,key] of sectionNames){
- const section=el("section","fa-awards-section fa-awards-"+id);section.setAttribute("aria-labelledby","fa-awards-title-"+id);
- if(name){const label=el("h3","fa-awards-section-title",name,key);label.id="fa-awards-title-"+id;section.append(label)}else section.removeAttribute("aria-labelledby");
- const grid=el("div","fa-awards-grid");
- for(const award of visible.filter(item=>item.section===id)){
-   const card=el("article","fa-awards-card fa-awards-card-"+award.id);
-   const medallion=el("span","fa-awards-medallion");medallion.setAttribute("aria-hidden","true");medallion.append(createIcon(award.id));
-   const title=el("h4","fa-awards-card-title",award.title,award.key);
-   const chip=el("span","fa-awards-chip","PENDING","awardsPending");
-   card.append(medallion,title,chip);
-   if(id==="xi"){
-     const pitch=el("div","fa-awards-pitch");pitch.setAttribute("aria-label","Team of the Season formation placeholder: no players have been selected");pitch.setAttribute("role","img");pitch.dataset.appAria="awardsPitchAria";
-     for(const count of [1,4,3,3]){
-       const line=el("div","fa-awards-pitch-line");
-       for(let i=0;i<count;i++){const spot=el("span","fa-awards-pitch-player");spot.setAttribute("aria-hidden","true");line.append(spot)}
-       pitch.append(line);
-     }
-     card.insertBefore(pitch,chip);
-   }
-   grid.append(card);
+function render(context){
+ if(!context?.definition){panel.replaceChildren();return;}
+ let ids;
+ try{ids=window.faCompetitionRulesView.awardIds(context.definition);}
+ catch{panel.replaceChildren(el("p","app-competition-status","No season awards are available.","competitionAwardsEmpty"));return;}
+ const byId=new Map(definitions.map(item=>[item.id,item]));
+ const visible=ids.map(id=>byId.get(id));
+ const wrap=el("div","fa-awards");
+ const sectionNames={honours:[null,null],excellence:["Individual Excellence","awardsExcellence"],performance:["Performance & Position Awards","awardsPerformance"],xi:["Team of the Season","awardsXi"]};
+ let lastSection=null,grid;
+ for(const [index,award] of visible.entries()){
+  const id=award.section;
+  if(id!==lastSection){
+   const section=el("section","fa-awards-section fa-awards-"+id);
+   const [name,key]=sectionNames[id];
+   if(name){const titleId="fa-awards-title-"+id+"-"+index;const label=el("h3","fa-awards-section-title",name,key);label.id=titleId;section.setAttribute("aria-labelledby",titleId);section.append(label);}
+   grid=el("div","fa-awards-grid");section.append(grid);wrap.append(section);lastSection=id;
+  }
+  const card=el("article","fa-awards-card fa-awards-card-"+award.id);card.dataset.awardId=award.id;
+  const medallion=el("span","fa-awards-medallion");medallion.setAttribute("aria-hidden","true");medallion.append(createIcon(award.id));
+  const title=el("h4","fa-awards-card-title",award.title,award.key);
+  const supplied=context.seasonData?.awards?.[award.id]?.recipients;
+  const recipients=Array.isArray(supplied)&&supplied.length&&supplied.every(item=>item&&typeof item.name==="string"&&item.name.trim())?supplied:null;
+  const chip=recipients?el("span","fa-awards-chip",recipients.map(item=>item.name).join(" · ")):el("span","fa-awards-chip","PENDING","awardsPending");
+  card.dataset.awardStatus=recipients?"available":"pending";
+  card.append(medallion,title,chip);
+  if(id==="xi"){
+   const pitch=el("div","fa-awards-pitch");pitch.setAttribute("aria-label","Team of the Season formation placeholder: no players have been selected");pitch.setAttribute("role","img");pitch.dataset.appAria="awardsPitchAria";
+   for(const count of [1,4,3,3]){const line=el("div","fa-awards-pitch-line");for(let i=0;i<count;i++){const spot=el("span","fa-awards-pitch-player");spot.setAttribute("aria-hidden","true");line.append(spot)}pitch.append(line);}
+   card.insertBefore(pitch,chip);
+  }
+  grid.append(card);
  }
- section.append(grid);wrap.append(section);
+ panel.replaceChildren(wrap);
+ window.faAppRenderLanguage?.();
 }
-panel.replaceChildren(wrap);
-window.faAppRenderLanguage?.();
+window.addEventListener("fa:competition-context-change",event=>render(event.detail));
+render(window.faCompetitionContext);
 })();

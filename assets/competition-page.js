@@ -782,7 +782,7 @@
       document.getElementById("app-standings-body").replaceChildren(empty);
     }
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
-    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
+    for (const script of ["competition-rules.js","competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
   }
   start().catch(fail);

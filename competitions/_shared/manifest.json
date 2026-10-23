@@ -153,13 +153,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -185,7 +197,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -300,7 +322,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -316,7 +339,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -330,14 +354,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -364,7 +401,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -483,13 +531,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -515,7 +575,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -630,7 +700,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -646,7 +717,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -660,14 +732,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -694,7 +779,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -813,13 +909,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -845,7 +953,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -960,7 +1078,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -976,7 +1095,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -990,14 +1110,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -1024,7 +1157,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -1143,13 +1287,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -1175,7 +1331,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -1290,7 +1456,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -1306,7 +1473,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -1320,14 +1488,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -1354,7 +1535,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -1473,13 +1665,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -1505,7 +1709,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -1620,7 +1834,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -1636,7 +1851,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -1650,14 +1866,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -1684,7 +1913,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -1803,13 +2043,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -1835,7 +2087,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -1950,7 +2212,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -1966,7 +2229,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -1980,14 +2244,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -2014,7 +2291,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -2133,13 +2421,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -2165,7 +2465,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -2280,7 +2590,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -2296,7 +2607,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -2310,14 +2622,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -2344,7 +2669,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -2463,13 +2799,25 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
               }
             ]
           }
         ],
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -2495,7 +2843,17 @@
           "playout"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -2610,7 +2968,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "semi45",
@@ -2626,7 +2985,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
               },
               {
                 "id": "final",
@@ -2640,14 +3000,27 @@
                 ],
                 "legs": 1,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
               }
             ]
           }
         ],
         "awards": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       },
       "category": "domestic",
@@ -2674,7 +3047,18 @@
         ],
         "awardIds": [
           "champion",
-          "promotion"
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -2689,7 +3073,17 @@
         "version": "international-int24-v1",
         "qualificationPolicyId": "int24ChampionAwareV1",
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ],
         "phases": [
           {
@@ -2769,7 +3163,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "p611",
@@ -2785,7 +3180,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "p710",
@@ -2801,7 +3197,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "p89",
@@ -2817,7 +3214,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               }
             ]
           },
@@ -2843,7 +3241,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "q2",
@@ -2858,7 +3257,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "q3",
@@ -2873,7 +3273,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "q4",
@@ -2888,7 +3289,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               }
             ]
           },
@@ -2913,7 +3315,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "s2",
@@ -2927,7 +3330,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               }
             ]
           },
@@ -2951,7 +3355,9 @@
                 ],
                 "legs": 1,
                 "homePolicy": "neutral",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "eliminated",
+                "winnerOutcome": "champion"
               }
             ]
           }
@@ -2996,7 +3402,17 @@
           "final"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     },
@@ -3011,7 +3427,17 @@
         "version": "international-int24-v1",
         "qualificationPolicyId": "int24ChampionAwareV1",
         "awards": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ],
         "phases": [
           {
@@ -3091,7 +3517,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "p611",
@@ -3107,7 +3534,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "p710",
@@ -3123,7 +3551,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "p89",
@@ -3139,7 +3568,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               }
             ]
           },
@@ -3165,7 +3595,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "q2",
@@ -3180,7 +3611,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "q3",
@@ -3195,7 +3627,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "q4",
@@ -3210,7 +3643,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               }
             ]
           },
@@ -3235,7 +3669,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               },
               {
                 "id": "s2",
@@ -3249,7 +3684,8 @@
                 ],
                 "legs": 2,
                 "homePolicy": "higherOriginalTableRank",
-                "resolution": "aggregateExtraTimePenalties"
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
               }
             ]
           },
@@ -3273,7 +3709,9 @@
                 ],
                 "legs": 1,
                 "homePolicy": "neutral",
-                "resolution": "singleExtraTimePenalties"
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "eliminated",
+                "winnerOutcome": "champion"
               }
             ]
           }
@@ -3318,7 +3756,17 @@
           "final"
         ],
         "awardIds": [
-          "champion"
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
         ]
       }
     }

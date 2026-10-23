@@ -1,5 +1,6 @@
 // One detail renderer for all competition routes and the neutral shell.
 import model from "../assets/competition-model.js";
+import rulesView from "../assets/competition-rules-view.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo}){
 const detailAppend = function detailAppend(d,neutral){
@@ -77,37 +78,9 @@ ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],
               </section>
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;
-function renderRules(d,neutral,attrs,key,label){
- const international=d.category==="international";
- const metric=(code,name,value,id="")=>`                <div class="app-rules-metric"><dt data-app-i18n="${code}">${name}</dt><dd${id?` id="${id}"`:""}>${value}</dd></div>`;
- const paragraph=(code,fallback)=>`              <p${code?` data-app-i18n="${code}"`:""}>${fallback}</p>`;
- const section=(id,titleKey,title,body)=>`            <section class="app-rules-section" aria-labelledby="${id}">\n              <h3 id="${id}" data-app-i18n="${titleKey}">${title}</h3>\n${body}\n            </section>`;
- const position=(range,code,fallback,kind)=>`                <div class="app-rules-outcome" data-outcome="${kind}"><strong class="app-rules-range">${range}</strong><span data-app-i18n="${code}">${fallback}</span></div>`;
- const outcomes=international?paragraph("rulesCupPending","International competition rules are not available yet."):neutral
- ?paragraph("rulesNeutralOutcomes","Select a division to view its promotion and relegation rules.")
- :d.tier===1
- ?`              <div class="app-rules-outcomes">\n${[
-  position("1","rulesTier1Champion","National champion","champion"),
-  position("2–12","rulesTier1Safe","Remain in First Division","stay"),
-  position("13–14","rulesTier1Playout","Relegation play-out","playout"),
-  position("15–16","rulesTier1Relegated","Direct relegation","relegated")
- ].join("\n")}\n              </div>`
- :`              <div class="app-rules-outcomes">\n${[
-  position("1–2","rulesTier2Promoted","Direct promotion","promoted"),
-  position("3–6","rulesTier2Playoffs","Promotion play-offs","playoff"),
-  position("7–16","rulesTier2Safe","Remain in Second Division","stay")
- ].join("\n")}\n              </div>\n${paragraph("rulesNoThirdTier","The Second Division is the lowest active national tier. Clubs do not drop to a Third Division.")}`;
- const playSection=neutral?"":d.tier===1
- ?section("rules-playout","rulesPlayoutTitle","Relegation play-out",paragraph("rulesPlayoutBody","The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. If aggregate scores are level after the second leg, extra time and then penalties decide the winner."))
- :section("rules-playoffs","rulesPlayoffsTitle","Promotion play-offs",paragraph("rulesPlayoffsBody","The semi-finals are 3rd vs 6th and 4th vs 5th, each played over two legs with the higher-ranked club at home in the return leg. The winners meet in a single-match final hosted by the finalist with the better regular-season ranking. The final winner earns promotion. No points-gap threshold applies. Tied aggregate semi-finals or a tied final go to extra time and then penalties if necessary."));
- return `          <section ${attrs}>\n            <div class="app-rules-content">\n${section("rules-format","rulesFormatTitle","Competition format",paragraph(international?"rulesCupFormat":"rulesFormatBody",international?"24 clubs · 8 countries · 3 clubs per country · 6 league-phase matches per club":"Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.")+`\n              <dl class="app-rules-metrics">\n${[
- metric("rulesClubs","Clubs",international?"24":neutral?"—":"16","app-competition-capacity"),
- metric("rulesRounds","Matchdays",international?"6":neutral?"—":"30"),
- metric("rulesLegs","Legs",neutral?"—":"2"),
- metric("rulesMatches","Matches",neutral?"—":"240")
- ].join("\n")}\n              </dl>`)}\n${section("rules-points","rulesPointsTitle","Points system",`              <dl class="app-rules-points">\n${[
- metric("rulesWin","Win","3"),metric("rulesDraw","Draw","1"),metric("rulesLoss","Loss","0")
- ].join("\n")}\n              </dl>`)}\n${section("rules-ranking","rulesRankingTitle","League ranking",paragraph(international?"rulesCupPending":"rulesRankingBody",international?"International competition rules are not available yet.":"Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw."))}\n${section("rules-outcomes","rulesOutcomesTitle","Sporting outcomes",outcomes)}${playSection?"\n"+playSection:""}\n              <strong id="app-competition-level" hidden>${neutral?"—":d.tier}</strong>\n            </div>\n          </section>`;
+function renderRules(d,neutral,attrs){
+ if(neutral&&d.category!=="international")return `<section ${attrs}><div class="app-rules-content"><p data-app-i18n="rulesNeutralOutcomes">Select a division to view its promotion and relegation rules.</p><dl class="app-rules-metrics"><div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">—</dd></div></dl><strong id="app-competition-level" hidden>—</strong></div></section>`;
+ return `<section ${attrs}>${rulesView.renderRules(d,"en")}</section>`;
 }
 const postseasonContent = (d,neutral) => {
  const word=(key,text)=>`<span data-app-i18n="${key}">${text}</span>`;

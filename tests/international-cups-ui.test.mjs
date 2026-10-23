@@ -107,8 +107,7 @@ test('INT-24: Knockouts uses a localized cup empty state instead of domestic ins
  }
  for(const [lang,expected] of Object.entries({en:'No knockout results available yet.',de:'Noch keine Ergebnisse der K.-o.-Phase verfügbar.',es:'Todavía no hay resultados de las eliminatorias.',fr:'Aucun résultat des phases à élimination directe disponible.',it:'Nessun risultato della fase a eliminazione diretta ancora disponibile.'})){
   const message={dataset:{appI18n:'cupKnockoutsEmpty'},textContent:'old domestic instruction'};
-  const format={dataset:{appI18n:'rulesCupFormat'},textContent:'untranslated'};
-  runInNewContext(dictionaries+renderer+'renderLanguage()',{language:()=>lang,words:()=>[message,format],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:()=>null,querySelectorAll:()=>[]}});
-  assert.equal(message.textContent,expected);assert.notEqual(format.textContent,'untranslated');
+  runInNewContext(dictionaries+renderer+'renderLanguage()',{language:()=>lang,words:()=>[message],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:()=>null,querySelectorAll:()=>[]}});
+  assert.equal(message.textContent,expected);
  }
 });

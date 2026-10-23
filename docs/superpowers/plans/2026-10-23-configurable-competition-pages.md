@@ -93,10 +93,10 @@ Context contract: `faCompetitionContext = {definition, selectedSeason, seasonDat
 
 **Interfaces:** `renderRules(definition, locale) -> escaped HTML string` is exposed by `faCompetitionRulesView` and CommonJS. Dynamic fragments carry rule-template IDs and scalar parameters so language changes rerender from the same definition. Awards uses `definition.rules.awards` ordered IDs and supplied recipients.
 
-- [ ] Write failing tests: domestic and cup metrics, exact rank outcomes, ordered tiebreakers, configured home advantage and match resolution; unsupported configuration never renders a plausible domestic fallback. Changing win points to 2 changes the displayed value in all five locales; changing a valid rank band updates its text and metadata together. Escape names and reject executable/HTML configuration.
-- [ ] Run `node --test tests/competition-rules-view.test.mjs tests/competition-rules.test.mjs`; confirm failures for the new contract.
-- [ ] Implement localized rule templates with parameters instead of independent fixed sporting paragraphs. Use Task 1 derived totals and explicit tie policies. Remove domestic relegation/promotions from cup Rules and remove award tier inference; use the existing champion/performance award presentation without inventing award recipients or extra competition-specific trophies.
-- [ ] Regenerate and rerun both tests; expect semantic domestic parity, five-locale coverage, no stale language strings after switching locale and correct cup 72/93 totals. Commit `feat: derive competition rules and awards from tournament configuration`.
+- [x] Write failing tests: domestic and cup metrics, exact rank outcomes, ordered tiebreakers, configured home advantage and match resolution; unsupported configuration never renders a plausible domestic fallback. Changing win points to 2 changes the displayed value in all five locales; changing a valid rank band updates its text and metadata together. Escape names and reject executable/HTML configuration.
+- [x] Run `node --test tests/competition-rules-view.test.mjs tests/competition-rules.test.mjs`; confirm failures for the new contract.
+- [x] Implement localized rule templates with parameters instead of independent fixed sporting paragraphs. Use Task 1 derived totals and explicit tie policies. Remove domestic relegation/promotions from cup Rules and remove award tier inference; use the existing champion/performance award presentation without inventing award recipients or extra competition-specific trophies.
+- [x] Regenerate and rerun both tests; expect semantic domestic parity, five-locale coverage, no stale language strings after switching locale and correct cup 72/93 totals. Commit `feat: derive competition rules and awards from tournament configuration`.
 
 ## Task 5: Standings, fixtures and knockout consumers
 

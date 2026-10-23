@@ -375,37 +375,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>
           </section>
-          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
-            <div class="app-rules-content">
-            <section class="app-rules-section" aria-labelledby="rules-format">
-              <h3 id="rules-format" data-app-i18n="rulesFormatTitle">Competition format</h3>
-              <p data-app-i18n="rulesFormatBody">Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.</p>
-              <dl class="app-rules-metrics">
-                <div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">—</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesRounds">Matchdays</dt><dd>—</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesLegs">Legs</dt><dd>—</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesMatches">Matches</dt><dd>—</dd></div>
-              </dl>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-points">
-              <h3 id="rules-points" data-app-i18n="rulesPointsTitle">Points system</h3>
-              <dl class="app-rules-points">
-                <div class="app-rules-metric"><dt data-app-i18n="rulesWin">Win</dt><dd>3</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesDraw">Draw</dt><dd>1</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesLoss">Loss</dt><dd>0</dd></div>
-              </dl>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-ranking">
-              <h3 id="rules-ranking" data-app-i18n="rulesRankingTitle">League ranking</h3>
-              <p data-app-i18n="rulesRankingBody">Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw.</p>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-outcomes">
-              <h3 id="rules-outcomes" data-app-i18n="rulesOutcomesTitle">Sporting outcomes</h3>
-              <p data-app-i18n="rulesNeutralOutcomes">Select a division to view its promotion and relegation rules.</p>
-            </section>
-              <strong id="app-competition-level" hidden>—</strong>
-            </div>
-          </section>
+<section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden><div class="app-rules-content"><p data-app-i18n="rulesNeutralOutcomes">Select a division to view its promotion and relegation rules.</p><dl class="app-rules-metrics"><div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">—</dd></div></dl><strong id="app-competition-level" hidden>—</strong></div></section>
           <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
           </section>
           <script src="/assets/competition-tabs.js" defer></script>

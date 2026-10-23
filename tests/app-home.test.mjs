@@ -170,7 +170,7 @@ function simulateApp(pathname,fragment="") {
     querySelectorAll(selector){return selector==="[data-app-i18n]"?translated:selector==="[data-app-aria]"?labeled:[];},
     getElementById(id){return nodes[id]??null;}
   };
-  const window = {location:{pathname,hash:fragment}};
+  const window = {location:{pathname,hash:fragment},addEventListener(){}};
   let changed;
   class MutationObserver {
     constructor(callback){changed=callback;}

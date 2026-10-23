@@ -14,7 +14,7 @@ const required=[
  "vercel.json","index.html","guide/index.html","dashboard/index.html",
  "calendar/index.html","settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
- "assets/international-cups.js","assets/club-crests.js","assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
+ "assets/competition-rules.js","assets/competition-rules-view.js","assets/international-cups.js","assets/club-crests.js","assets/competition-model.js","assets/competition-history.js","assets/competition-page.js","assets/competition-tabs.js","assets/competition-fixtures.js","assets/theme.js",
  "data/divisions.json","assets/world-calendar-model.js","assets/world-clock-adapter.js","assets/world-calendar.js"
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
@@ -25,7 +25,7 @@ const rootFiles=new Set(["competitions/sovereign-cup/index.html","competitions/f
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "data/divisions.json"]);
 const runtimeAssets=new Set(["world-calendar-model.js","world-clock-adapter.js","world-calendar.js","calendar-simplified.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
- "app-search.js","international-cups.js","sidebar-evolution.js","sidebar-evolution.css","clubs-directory.js","clubs-directory.css","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
+ "app-search.js","competition-rules.js","competition-rules-view.js","international-cups.js","sidebar-evolution.js","sidebar-evolution.css","clubs-directory.js","clubs-directory.css","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 
 // Only explicit canonical routes are allowed; no hosting, auth or build overrides.

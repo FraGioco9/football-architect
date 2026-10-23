@@ -31,12 +31,26 @@ try {
    assert.equal(overflow,false,"horizontal overflow "+cup+" "+width+" "+view);
    const context=await page.evaluate(()=>({id:window.faCompetitionContext?.definition.id,season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData,domestic:!!window.faCompetitionDivision,frozen:Object.isFrozen(window.faCompetitionContext?.definition.rules)}));
    assert.deepEqual(context,{id:cup,season:1,data:null,domestic:false,frozen:true});
+   if(view==="rules"){
+    assert.equal(await page.locator('[data-rule-metric="league.matches"]').innerText(),'72');
+    assert.equal(await page.locator('[data-rule-metric="totalMatches"]').innerText(),'93');
+    assert.equal(await page.locator('[data-rule-kind="relegated"]').count(),0);
+    assert.equal(await page.locator('[data-rule-kind="promoted"]').count(),0);
+   }
+   if(view==="awards"){
+    assert.equal(await page.locator('.fa-awards-card').count(),11);
+    assert.equal(await page.locator('.fa-awards-card-promotion,.fa-awards-card-playoff').count(),0);
+    assert.equal(await page.locator('[data-award-status="available"]').count(),0);
+   }
    checks++;
   }
   await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
   for(const [lang,label] of Object.entries(languages)){
    await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
    await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
+   const headings={en:"Competition format",de:"Wettbewerbsformat",es:"Formato de competición",fr:"Format de la compétition",it:"Formula della competizione"};
+   await page.waitForFunction(expected=>document.querySelector('#rules-format')?.textContent===expected,headings[lang]);
+   assert.equal(await page.locator('[data-rule-metric="league.matches"]').textContent(),'72');
    checks++;
   }
   for(const theme of ["dark","light"]){

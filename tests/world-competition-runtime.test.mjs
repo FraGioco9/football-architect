@@ -152,7 +152,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     "/competitions/_shared/manifest.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
-    "/assets/landing.js","/assets/app.js",
+    "/assets/competition-rules.js","/assets/competition-rules-view.js","/assets/landing.js","/assets/app.js",
     "/assets/app-search.js","/assets/club-crests.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js","/assets/competition-awards.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
@@ -532,7 +532,7 @@ test('POSTSEASON-TIPS: score help opens on hover, keyboard focus and tap and dis
 test('CONTEXT: all 18 routes publish their own immutable empty context before any panel script',async()=>{
  for(const definition of manifest.competitions){
   const r=await simulate({division:definition});
-  const count=definition.category==='international'?9:8;
+  const count=definition.category==='international'?11:10;
   assert.equal(r.loaded.length,count,definition.id);
   assert.equal(new Set(r.loaded).size,count,'one initialization per shared module');
   assert.ok(r.contexts.every(c=>c?.definition.id===definition.id),'context precedes consumers');
