@@ -104,7 +104,7 @@ test('COMPETITION-URL: keyboard navigation retains one active tab and does not d
 
 test('COMPETITION-URL: first paint keeps season 1 fallback available',()=>{
  const html=readFileSync(new URL('../competitions/it-1/index.html',import.meta.url),'utf8');
- const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
+ const bootstrap=[...html.matchAll(/<script>(\(\(\)=>[\s\S]*?)<\/script>/g)].slice(0,2).map(match=>match[1]).join('\n');
  for(const season of ['1','2','12','999999999']){
   const document={addEventListener(){},documentElement:{dataset:{}}};
   runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/it-1/fixtures',search:'?season='+season+'&matchday=12'}});
@@ -261,6 +261,6 @@ test('COMPETITION-URL: generic first paint preserves cup query views before hydr
  const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
  const document={documentElement:{dataset:{}}};
  const location={href:'https://example.test/competitions/int-1?view=stats&season=1',pathname:'/competitions/int-1',search:'?view=stats&season=1'};
- runInNewContext(bootstrap,{document,URL,URLSearchParams,history:{replaceState(_a,_b,url){const next=new URL(url,'https://example.test');location.pathname=next.pathname;location.search=next.search;}},location});
+ runInNewContext(bootstrap,{document,URL,URLSearchParams,history:{replaceState(_a,_b,url){const next=new URL(url,'https://example.test');location.href=next.href;location.pathname=next.pathname;location.search=next.search;}},location});
  assert.equal(document.documentElement.dataset.competitionView,'stats');
 });
