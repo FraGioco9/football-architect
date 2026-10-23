@@ -13,7 +13,10 @@ const views=["standings","postseason","fixtures","stats","history","rules","awar
 const languages={en:"Standings",de:"Tabelle",es:"Clasificación",fr:"Classement",it:"Classifica"};
 let checks=0;
 let screenshots=0;
-const screenshot=async(page,name)=>{await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++};
+const screenshot=async(page,name)=>{
+ await page.evaluate(async()=>{await Promise.all(document.getAnimations().filter(animation=>animation.effect?.getComputedTiming().iterations!==Infinity).map(animation=>animation.finished.catch(()=>{})))});
+ await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++;
+};
 try {
  for(const cup of cups)for(const width of widths){
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
