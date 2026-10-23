@@ -410,7 +410,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest')?.getAttribute('src')||null})()");
     assert.equal(sourceCrest,'/assets/clubs/IT/1/crest.svg');
     await run("document.querySelector('.nav01-card[href=\"/clubs/it/1/overview\"]').click()");
-    await wait("location.pathname==='/clubs/it/1/overview'&&document.querySelector('.club-header .app-club-crest-image')?.complete===true");
+    await wait("location.pathname==='/clubs/it/1/overview'&&document.querySelector('.club-header [data-club-crest-loaded]')!==null");
     const destinationCrest=await run("(()=>{const image=document.querySelector('.club-header .app-club-crest-image');return {src:image?.getAttribute('src'),loaded:!!image?.naturalWidth,pending:!!document.querySelector('.club-header [data-club-crest-pending]')}})()");
     assert.equal(destinationCrest.src,sourceCrest);
     assert.equal(destinationCrest.loaded,true,'Club crest must be decoded after directory navigation');

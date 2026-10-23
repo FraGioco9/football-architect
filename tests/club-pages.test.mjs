@@ -14,7 +14,7 @@ const clubs=JSON.parse(read('data/clubs.json'));
 test('CLUB-01 all 320 identities and 1600 subpages resolve to one public template',()=>{
  for(const c of clubs)for(const view of clubViews){
   const path=clubSubpage(c.countryId.toLowerCase(),String(c.clubId),view);
-  assert.equal(publicRequestFile(path),'clubs/_shared/index.html');
+  assert.equal(publicRequestFile(path),'clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/'+view+'/index.html');
   assert.ok(isAllowlistedPublicPath(publicRequestFile(path)));
  }
  for(const path of ['/clubs/xx/1/overview','/clubs/it/0/overview','/clubs/it/41/overview','/clubs/it/01/overview','/clubs/it/1/unknown','/app/clubs/it/1/overview'])
@@ -101,7 +101,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
 
 test('CLUB-01 public rewrites cover exactly the declared IDs and five subpages',()=>{
  const config=JSON.parse(read('vercel.json'));
- const rule=config.rewrites.find(r=>r.destination==='/clubs/_shared/index.html');
+ const rule=config.rewrites.find(r=>r.destination==='/clubs/:country/:club/:view/index.html');
  assert.ok(rule);
  const pattern=rule.source.replace(':country(it|eng|es|de|fr|pt|nl|br)','(?<country>it|eng|es|de|fr|pt|nl|br)')
   .replace(':club([1-9]|[1-3][0-9]|40)','(?<club>[1-9]|[1-3][0-9]|40)')

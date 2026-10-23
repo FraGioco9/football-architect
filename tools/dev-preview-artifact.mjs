@@ -46,7 +46,7 @@ function safeDebugBytes(root,path) {
 }
 
 function debugHtml(bytes,path) {
- if(path==='clubs/_shared/index.html'){
+ if(path==='clubs/_shared/index.html'||/^clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)\/index\.html$/.test(path)){
   const html=bytes.toString('utf8');
   if(html.split('</head>').length!==2||html.includes('/__fa_dev__/'))throw Error('Unsafe protected club HTML');
   return Buffer.from(html.replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
