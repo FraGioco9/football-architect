@@ -258,7 +258,7 @@ test('CONTEXT: router updates the shared season through selection, Back and inac
 
 test('COMPETITION-URL: generic first paint preserves cup query views before hydration',()=>{
  const html=readFileSync(new URL('../competitions/int-1/index.html',import.meta.url),'utf8');
- const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
+ const bootstrap=[...html.matchAll(/<script>(\(\(\)=>[\s\S]*?)<\/script>/g)].slice(0,2).map(match=>match[1]).join('\n');
  const document={documentElement:{dataset:{}}};
  const location={href:'https://example.test/competitions/int-1?view=stats&season=1',pathname:'/competitions/int-1',search:'?view=stats&season=1'};
  runInNewContext(bootstrap,{document,URL,URLSearchParams,history:{replaceState(_a,_b,url){const next=new URL(url,'https://example.test');location.href=next.href;location.pathname=next.pathname;location.search=next.search;}},location});
