@@ -13,7 +13,7 @@ test("INT24-PUBLIC: shared rules and stats are self-contained public dependencie
   const path="assets/"+name;
   assert.ok(publicFiles.includes(path),"missing shared runtime "+path);
   const source=readFileSync(join(repositoryRoot,path),"utf8");
-  assert.doesNotMatch(source,/\\/__fa_dev__\\/|(?:from\\s*|require\\s*\\()\\s*["'][^"']*(?:tools\\/dev-|dev-competition-stats|dev-standings-preview)/,"protected provider imported by "+path);
+  assert.doesNotMatch(source,/\/__fa_dev__\/|(?:from\s*|require\s*\()\s*["\x27][^"\x27]*(?:tools\/dev-|dev-competition-stats|dev-standings-preview)/,"protected provider imported by "+path);
  }
  for(const path of ["tools/competition-catalogue.mjs","data/international-competitions.json","data/division-allocations.provisional.json","tools/dev-competition-stats-data.mjs"]){
   assert.ok(!publicFiles.includes(path),"private source must not publish: "+path);
