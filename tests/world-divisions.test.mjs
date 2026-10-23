@@ -22,7 +22,7 @@ const views=model.views.map(view=>view.id);
 test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",()=>{
  assert.equal(countries.length,8);
  assert.equal(divisions.length,16);
- assert.equal((index.match(/class="app-division-card" href="\/competitions\/[a-z]{2,3}-[12]\/standings/g)||[]).length,16);
+ assert.equal((index.match(/class="app-division-card" href="\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/standings/g)||[]).length,16);
  assert.ok(index.includes('data-app-i18n="navCompetitions">Competitions'));
  assert.ok(index.includes("<title>Competitions — Football Architect</title>"));
  assert.ok(!index.includes("world/competitions/"));

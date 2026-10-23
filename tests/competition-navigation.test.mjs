@@ -260,6 +260,7 @@ test('COMPETITION-URL: generic first paint preserves cup query views before hydr
  const html=readFileSync(new URL('../competitions/int-1/index.html',import.meta.url),'utf8');
  const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1];
  const document={documentElement:{dataset:{}}};
- runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/int-1',search:'?view=stats&season=1'}});
+ const location={href:'https://example.test/competitions/int-1?view=stats&season=1',pathname:'/competitions/int-1',search:'?view=stats&season=1'};
+ runInNewContext(bootstrap,{document,URL,URLSearchParams,history:{replaceState(_a,_b,url){const next=new URL(url,'https://example.test');location.pathname=next.pathname;location.search=next.search;}},location});
  assert.equal(document.documentElement.dataset.competitionView,'stats');
 });

@@ -31,7 +31,7 @@ test("INT-24: both cup routes resolve to public allowlisted HTML",()=>{
     }
   }
   assert.ok(isAllowlistedPublicPath("assets/international-cups.js"));
-  assert.equal((index.match(/class="app-division-card" href="\/competitions\/[a-z]{2,3}-[12]\/standings/g)||[]).length,16);
+  assert.equal((index.match(/class="app-division-card" href="\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/standings/g)||[]).length,16);
 });
 
 test("INT-24: five language dictionaries and empty states, no fabricated results",()=>{
