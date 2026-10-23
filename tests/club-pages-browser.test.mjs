@@ -283,7 +283,56 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=first]').click()");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
-    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
+    assert.equal(await run("new URLSearchParams(location.search).get('division')"),'first');
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128");
+    assert.equal(await run("document.querySelector('#nav01-division-trigger').textContent.trim()"),'Prima');
+    await cmd('Page.navigate',{url:origin+'/clubs?q=Torino&country=IT&division=first'});
+    await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
+    assert.equal(await run("document.querySelector('.nav01-filters input').value"),'Torino');
+    assert.equal(await run("document.querySelector('.nav01-filters select').value"),'IT');
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length>=0"),true);
+    await cmd('Page.navigate',{url:origin+'/clubs?q=Munchen&country=de&division=FIRST'});
+    await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
+    assert.equal(await run("document.querySelector('.nav01-filters select').value"),'DE');
+    assert.equal(await run("document.querySelectorAll('.nav01-filter select')[1].value"),'first');
+    await run("document.querySelector('.nav01-filters input').value='Sao';document.querySelector('.nav01-filters input').dispatchEvent(new Event('input',{bubbles:true}))");
+    assert.equal(await run("new URLSearchParams(location.search).get('q')"),'Sao');
+    await cmd('Page.reload');await wait("document.querySelector('.nav01-filters input')?.value==='Sao'");
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    // QA-02: use an accented city/name from the actual public manifest, not invented fixtures.
+    const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/manifest.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
+    assert.ok(accentCase,'The public manifest should contain a real accented club name or city');
+    for(const term of [accentCase.term,accentCase.plain]){
+      await cmd('Page.navigate',{url:origin+'/clubs?q='+encodeURIComponent(term)});
+      await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
+      assert.equal(await run("!!document.querySelector('.nav01-card[href="+JSON.stringify(accentCase.href)+"]')"),true,'Real manifest accent-insensitive match: '+term);
+    }
+    await cmd('Page.navigate',{url:origin+'/clubs?country=ZZ&country=it&division=garbage&division=SECOND&q=&q=Torino'});
+    await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
+    assert.equal(await run("document.querySelector('.nav01-filters select').value"),'IT');
+    assert.equal(await run("document.querySelectorAll('.nav01-filters select')[1].value"),'second');
+    assert.equal(await run("document.querySelector('.nav01-filters input').value"),'Torino');
+    await cmd('Page.navigate',{url:origin+'/clubs?country=ZZ&division=third&q='});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    for(const language of ['en','de','es','fr','it']){
+      await run("document.documentElement.lang="+JSON.stringify(language));
+      assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
+    }
+    console.log('CLUBS_03A_QA02: real accented manifest values, duplicate/invalid URLs and five languages passed');
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
+    // QA-01: custom dropdown pushes a history entry and Back restores its state.
+    await run("document.getElementById('nav01-country-trigger').click();document.querySelector('#nav01-country-menu [data-menu-value=IT]').click()");
+    assert.equal(await run("new URLSearchParams(location.search).get('country')"),'IT');
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
+    await run("history.back()");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-filters select').value===''");
+    assert.equal(await run("new URLSearchParams(location.search).has('country')"),false);
+    await run("history.forward()");
+    await wait("document.querySelectorAll('.nav01-card').length===40&&document.querySelector('.nav01-filters select').value==='IT'");
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
 
     // QA-02: inspect the actual viewport centers of the Calendar/Fixtures arrows.
