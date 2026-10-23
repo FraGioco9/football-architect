@@ -694,7 +694,7 @@
     // Public statistics remain unknown in both presentations.
     // RENDER-01: keep verified build-time rows in place instead of rebuilding them.
     // Fall back to the canonical renderer for older or incomplete HTML.
-    const preRendered=[...tbody.rows];
+    const preRendered=[...(tbody.rows||tbody.children||[])];
     const expected=division.clubs.map(club=>club.countryId+"-"+club.clubId);
     const staticReady=preRendered.length===expected.length&&preRendered.every((row,index)=>
       row.dataset.worldClub===expected[index]&&row.cells.length===11&&
