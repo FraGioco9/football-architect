@@ -306,7 +306,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     for(const term of [accentCase.term,accentCase.plain]){
       await cmd('Page.navigate',{url:origin+'/clubs?q='+encodeURIComponent(term)});
       await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
-      assert.equal(await run("!!document.querySelector('.nav01-card[href='+JSON.stringify(accentCase.href)+']')"),true,'Real manifest accent-insensitive match: '+term);
+      assert.equal(await run("!!document.querySelector('.nav01-card[href="+JSON.stringify(accentCase.href)+"]')"),true,'Real manifest accent-insensitive match: '+term);
     }
     await cmd('Page.navigate',{url:origin+'/clubs?country=ZZ&country=it&division=garbage&division=SECOND&q=&q=Torino'});
     await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
