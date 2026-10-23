@@ -147,6 +147,20 @@ Task 5 provider boundary: ordered supplied table rows live in `statistics.standi
 - [ ] Run `node tools/generate-app-pages.mjs --check`, JavaScript syntax checks on changed runtimes, then `node --test --test-concurrency=1 tests/*.test.mjs` and `node tests/int24-browser-qa.mjs` with the existing server/browser dependencies. Report missing browser support as a blocker to local browser claims, then verify CI instead. All product checks must PASS on the final exact head; record actual counts rather than presuming baseline counts.
 - [ ] Inspect the final diff for unintended identity/assets/sidebar/calendar/deployment changes. Update README with configuration ownership, supported edits and derived Rules/Stats behavior. Commit `test: verify configurable competition pages and public stats isolation`, update PR title/body to final scope and coordinate overlap with #254/#255. Keep Draft/HOLD; request real-device iPhone Safari verification with local sync instructions. Do not merge or deploy.
 
+### Task 8 FINAL-CLOSEOUT-03 evidence (2026-10-23)
+
+**Implementation and CI on `33f65e0adcdd2c4b580e966110e4df79934405a8`:**
+- [x] Public Rules/Stats isolation and staging tested (`INT24-PUBLIC`, `PUBLIC-01/02/03`, protected Debug artifact tests); repository-root publication rejected and configured anti-deploy controls preserved.
+- [x] Eighteen competition route smoke cases added to INT-24 Chromium QA; exact-head [Chromium run 39973854098](https://github.com/FraGioco9/football-architect/actions/runs/39973854098) succeeded with **205 checks and 54 screenshots**. Exact-head [Site checks 39973853955](https://github.com/FraGioco9/football-architect/actions/runs/39973853955) succeeded with **443/443 tests**.
+- [x] Deterministic isolated generator verification via `tests/generator-windows.test.mjs` passed with **23/23** pages and unchanged approved SVG bytes; generator validation under CRLF input also passed.
+- [x] README configuration ownership, Stats and historical-rules contracts documented.
+- [x] **User-reported local evidence**: `node tools/generate-app-pages.mjs --check` printed `Static HTML matches checked-in pages: 23/23 (3 existing + 20 Competitions), 1 competition manifest, 1 club template and 1 club manifest`. This is distinct from a CI-run command. The local checkout SHA and clean working-tree status were not supplied alongside this output.
+- [x] **User-reported real-device QA**: iPhone Safari checklist **8/8 PASS**. This is owner-provided acceptance, not GitHub automated evidence.
+- [x] PR #255 overlap identified in `.github/workflows/manual-vercel-preview.yml`, `tools/publication-guard.mjs` and `vercel.json`; preserve INT-24 controls, then selectively incorporate GUIDE-02 additions after a separately authorized integration.
+- [ ] Integration of conflicting GUIDE-02 shared files, independent external hosting/provider configuration audit, and merge authorization remain deliberately **HOLD**. No deploy or database operation is approved.
+
+Original Task 8 execution checklist remains above as the historical implementation plan; this evidence checklist records completion status without asserting unobserved RED-phase tests or an independent root-checkout SHA.
+
 ## Self-review and handoff
 
 All spec sections map to tasks: rules/catalogues (1), manifest (2), one initialization (3), localized Rules/awards (4), configurable phases and existing sporting behavior (5), public/DEV Stats separation (6), season versioning (7), and routes/Debug/accessibility/publication verification (8). The five review-focus cases have explicit owning tests. Function and event names are consistent across tasks; no task silently adds cup simulation or changes the world clock.
