@@ -23,7 +23,8 @@
     const currentHeader=host.querySelector('.club-header');
     staging.querySelector('.club-header').replaceWith(currentHeader);
     host.replaceChildren(...staging.childNodes);
-   }else host.innerHTML=markup;
+   }else if(!(host.dataset.clubStatic===selected.countryId.toLowerCase()+'-'+selected.clubId+'-'+selected.view&&language()==='en'&&competitionSnapshot===null&&host.querySelector('#club-title')&&host.querySelector('.club-tabs [aria-current="page"]')))host.innerHTML=markup;
+   delete host.dataset.clubStatic;
    host.dataset.clubBase=selected.base;
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
@@ -79,6 +80,10 @@
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
+  if(host.querySelector('#club-title')&&host.querySelector('.club-tabs')){
+   document.documentElement.dataset.clubReady='static';
+   return;
+  }
   host.replaceChildren();const message=document.createElement('p');
   message.setAttribute('role','alert');message.textContent=model.copies[language()].error;host.append(message);
  }
