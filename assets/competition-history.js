@@ -39,7 +39,7 @@
   "use strict";
   const panel=document.getElementById("competition-panel-history");
   if(!panel)return;
-  const competitionId=document.querySelector('meta[name="fa-division"]')?.content;
+  const competitionId=window.faCompetitionContext?.definition.id||document.querySelector('meta[name="fa-competition"]')?.content;
   const fields={
     seasonGoals:["goals",true],seasonAssists:["assists",true],
     seasonCleanSheets:["cleanSheets",true],
@@ -61,6 +61,11 @@
   const locale=()=>translations[document.documentElement.lang]||translations.en;
   const key=id=>String(id);
   const safeInt=value=>Number.isSafeInteger(value)&&value>=0;
+  function clubKey(row,definition){
+    if(typeof row.clubId==='string'&&/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.test(row.clubId))return row.clubId;
+    const country=row.countryId||(definition?.category==='domestic'?definition.countryId:null);
+    return window.faCompetitionModel.countries.includes(country)&&Number.isSafeInteger(row.clubId)&&row.clubId>=1&&row.clubId<=40?country+'-'+row.clubId:null;
+  }
   const compare=(a,b)=>a.name.localeCompare(b.name,"en",{sensitivity:"base"})||
     key(a.id).localeCompare(key(b.id),"en");
   let results=null,dialog=null,returnFocus=null,lockedScroll=null,oldOverflow="";
@@ -75,15 +80,22 @@
         season.playerStatsComplete!==true||!Array.isArray(season.playerStats))
         throw Error("Invalid completed player season");
       seenSeasons.add(season.seasonId);
+      const definition=window.faCompetitionContext?.currentDefinition||window.faCompetitionContext?.definition;
+      // The pre-snapshot canonical player-history contract is a known domestic
+      // legacy format only after the provenance/completeness checks above.
+      const record=definition?.category==='domestic'&&!Object.hasOwn(season,'rulesSnapshot')&&season.rulesVersion===undefined
+        ?{...season,formatId:'domestic-league-v1'}:season;
+      if(!window.faCompetitionModel?.resolveSeasonRules(definition,record))throw Error('Unavailable historical rules');
       const seenRows=new Set();
       for(const row of season.playerStats){
+        const identity=clubKey(row,definition);
         if(!(typeof row.playerId==="string"&&row.playerId.trim()||
              Number.isSafeInteger(row.playerId))||
            typeof row.playerName!=="string"||!row.playerName.trim()||
-           !Number.isSafeInteger(row.clubId)||row.clubId<1||
+           !identity||
            Object.keys(fields).some(metric=>!safeInt(row[fields[metric][0]])))
           throw Error("Incomplete player statistics");
-        const rowId=JSON.stringify([row.playerId,row.clubId]);
+        const rowId=JSON.stringify([row.playerId,identity]);
         if(seenRows.has(rowId))throw Error("Duplicate player/club/season");
         seenRows.add(rowId);
         const personId=key(row.playerId),seasonKey=JSON.stringify([personId,season.seasonId]);
@@ -94,7 +106,7 @@
           if(entry.name!==row.playerName)throw Error("Conflicting player identity");
           for(const stat of ["goals","assists","appearances","cleanSheets"])
             entry[stat]+=row[stat];
-          entry.clubs.push({clubId:row.clubId,season:season.seasonId});
+          entry.clubs.push({clubId:identity,season:season.seasonId});
         };
         add(individual,seasonKey);add(totals,personId);
       }
@@ -115,7 +127,7 @@
         }
       }
       const holders=[...tied.values()].sort(compare);
-      for(const holder of holders)holder.clubs.sort((a,b)=>a.season-b.season||a.clubId-b.clubId);
+      for(const holder of holders)holder.clubs.sort((a,b)=>a.season-b.season||a.clubId.localeCompare(b.clubId));
       output[metric]={value,holders};
     }
     return output;
@@ -127,7 +139,9 @@
     return node;
   }
   function clubName(id){
-    return window.faCompetitionDivision?.clubs?.find(club=>club.clubId===id)?.primaryName||null;
+    const context=window.faCompetitionContext;
+    const clubs=context?.seasonData?.participants||(context?.definition.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
+    return clubs.find(club=>club.countryId+'-'+club.clubId===id)?.primaryName||null;
   }
   function details(holder){
     const label=locale(),ids=[...new Set(holder.clubs.map(item=>item.clubId))];
@@ -230,16 +244,16 @@
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
         const line=element("li","");
-        const name=clubName(clubId),division=window.faCompetitionDivision;
-        if(name&&division?.countryId){
+        const name=clubName(clubId),[country,number]=clubId.split('-');
+        if(name&&country&&number){
           const link=element("a","app-world-standing-club-link",name);
-          link.href="/clubs/"+division.countryId.toLowerCase()+"/"+clubId+"/overview";
+          link.href="/clubs/"+country.toLowerCase()+"/"+number+"/overview";
           line.append(link);
         }else line.append(element("span","",name||locale().unknown));
         for(const season of [...seasons].sort((a,b)=>a-b)){
           line.append(document.createTextNode(" · "));
           const link=element("a","app-world-standing-club-link",locale().season+" "+season);
-          link.href="/competitions/"+division.id.toLowerCase()+"/standings?season="+encodeURIComponent(season);
+          link.href="/competitions/"+competitionId.toLowerCase()+"/standings?season="+encodeURIComponent(season);
           line.append(link);
         }
         clubs.append(line);

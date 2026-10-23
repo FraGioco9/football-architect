@@ -2,9 +2,13 @@
 // This module is NOT on the publication-guard allowlist. Never use as sports data.
 import "../assets/competition-model.js";
 import "../assets/world-calendar-model.js";
+import "../assets/competition-rules.js";
+import domesticDefinitions from "../data/divisions.json" with {type:'json'};
+const configuredRules=globalThis.faCompetitionRules;
+const previewDefinition=division=>configuredRules.normalizeCompetition({...domesticDefinitions.find(d=>d.id===division.id),...(division.rules?{rules:division.rules}:{}),capacity:division.capacity});
 export const competitionModel=globalThis.faCompetitionModel;
 const {capacity}=competitionModel.profile;
-const {rounds,roundsPerLeg,matchesPerRound,matches,pairings:pairingCount}=competitionModel.schedule;
+const {rounds}=competitionModel.schedule;
 // Fictional scoring only. Official rules remain undefined in the shared profile.
 export const PREVIEW_RULES=Object.freeze({win:3,draw:1,loss:0});
 export const comparePreviewRows=(a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.clubId-b.club.clubId;
@@ -47,6 +51,9 @@ function randomSource(key) {
 export function createPreviewStandings(division, matchdays = 15, season = 1) {
   if (!Number.isInteger(season) || season < 1 || season > 4) throw Error("Invalid DEV season");
   assertDivision(division);
+  const definition=previewDefinition(division),phase=definition.rules.phases.find(p=>p.type==='roundRobin');
+  const {rounds,matchesPerRound,matches}=definition.metrics.phases[phase.id];
+  const capacity=definition.capacity,roundsPerLeg=capacity-1,pairingCount=capacity*(capacity-1)/2;
   if (!Number.isInteger(matchdays) || matchdays < 0 || matchdays > rounds) throw Error("Invalid DEV matchday count");
   const clubs = [...division.clubs].sort((a, b) => a.clubId - b.clubId);
   const random = randomSource("FA-STANDINGS-DEV-v" + PREVIEW_SCHEMA_VERSION + ":" +
@@ -92,7 +99,7 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
   }
   const rows = [...byId.values()].map(row => {
     row.gd = row.gf - row.ga;
-    row.pts = PREVIEW_RULES.win*row.won+PREVIEW_RULES.draw*row.drawn+PREVIEW_RULES.loss*row.lost;
+    row.pts = phase.points.win*row.won+phase.points.draw*row.drawn+phase.points.loss*row.lost;
     row.recent = row.recent.slice(-5).reverse();
     if (row.played !== matchdays || row.won + row.drawn + row.lost !== matchdays ||
         row.recent.length !== Math.min(5,matchdays)) throw Error("Incomplete DEV club results");
@@ -103,30 +110,43 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
       rows.reduce((n, x) => n + x.won, 0) !== rows.reduce((n, x) => n + x.lost, 0)) {
     throw Error("Unbalanced DEV fixture model");
   }
-  return { divisionId: division.id, season, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs };
+  return { divisionId: division.id, season, rows, fixtures:fixtures.filter(game=>game.round<=matchdays), clubs,
+    rulesVersion:definition.rules.version,rulesSnapshot:JSON.parse(JSON.stringify(definition.rules)) };
 }
 
 // The selected season/day is a progress boundary, never a catalogue of future results.
-export function createPreviewHistory(division, season, matchdays) {
+export function createPreviewHistory(division, season, matchdays, savedSeasons=[]) {
   const leagueDays=previewSeasonMatchdays(season,{season,matchdays});
-  const current=createPreviewStandings(division,leagueDays,season);
-  const completed=[];
-  for(let previous=1;previous<season;previous++)
-    completed.push(createPreviewStandings(division,rounds,previous));
-  const played=[...completed];
-  if(matchdays>0)played.push(current);
-  if(leagueDays===rounds)completed.push(current);
+  const definition=previewDefinition(division),saved=new Map();
+  if(!Array.isArray(savedSeasons))throw Error('Invalid saved season history');
+  for(const record of savedSeasons){
+    if(!Number.isSafeInteger(record?.season)||record.season<1||saved.has(record.season)||record.divisionId!==division.id||!Array.isArray(record.rows)||!Array.isArray(record.fixtures)||!competitionModel.resolveSeasonRules(definition,record))throw Error('Invalid saved season history');
+    saved.set(record.season,record);
+  }
+  const completed=[],played=[];
+  for(let year=1;year<=season;year++){
+    const archived=year<season;
+    const applicable=archived?competitionModel.resolveSeasonDefinition(definition,{season:year,formatId:'domestic-league-v1'}):definition;
+    if(!applicable)throw Error('Unavailable historical rules');
+    const phase=applicable.rules.phases.find(p=>p.type==='roundRobin'),total=applicable.metrics.phases[phase.id];
+    const record=saved.get(year)||createPreviewStandings({...division,rules:applicable.rules},archived?total.rounds:leagueDays,year);
+    const resolved=competitionModel.resolveSeasonDefinition(definition,record),league=resolved?.rules.phases.find(p=>p.type==='roundRobin');
+    if(!resolved||!league||record.rows.length!==resolved.capacity)throw Error('Invalid saved season history');
+    const metrics=resolved.metrics.phases[league.id];
+    if(record.fixtures.length)played.push(record);
+    if(record.fixtures.length===metrics.matches&&record.rows.every(row=>row.played===metrics.rounds))completed.push(record);
+  }
   return {completed,played};
 }
 
 export function readPreviewProgress(storage) {
   const read=(key,min,max,fallback)=>{
-    try{const raw=storage.getItem(key),value=raw===null?NaN:Number(raw);
+    try{const raw=storage.getItem(key),value=raw===null||raw.trim()===""?NaN:Number(raw);
       return Number.isInteger(value)&&value>=min&&value<=max?value:fallback;
     }catch{return fallback}
   };
-  return {season:read("football-architect:standings-dev-season",1,4,1),
-    matchdays:read("football-architect:standings-dev-matchdays",0,DEBUG_MAX_MATCHDAY,0)};
+  const season=read("football-architect:standings-dev-season",0,4,1);
+  return {season,matchdays:season===0?0:read("football-architect:standings-dev-matchdays",0,DEBUG_MAX_MATCHDAY,0)};
 }
 // A completed or not-yet-reached season has no upcoming matchday shortcut.
 // The league calendar still ends at 30; days 31–33 belong only to post-season brackets.
@@ -137,7 +157,7 @@ export function previewCurrentMatchday(season,progress) {
 
 export function previewSeasonProgress(season,progress) {
   if(!Number.isInteger(season)||season<1||season>4||
-    !Number.isInteger(progress?.season)||progress.season<1||progress.season>4||
+    !Number.isInteger(progress?.season)||progress.season<0||progress.season>4||
     !Number.isInteger(progress.matchdays)||progress.matchdays<0||progress.matchdays>DEBUG_MAX_MATCHDAY)
     throw Error("Invalid DEV progress");
   return season<progress.season?DEBUG_MAX_MATCHDAY:season===progress.season?progress.matchdays:0;
@@ -152,6 +172,7 @@ export function previewSeasonMatchdays(season,progress) {
 // Fictional post-season results are private, deterministic and revealed only at their played stage.
 export function createPreviewPostseason(division,matchday,season=1) {
   assertDivision(division);
+  const definition=previewDefinition(division),phase=definition.rules.phases.find(p=>p.type==='knockout');
   previewSeasonProgress(season,{season,matchdays:matchday});
   const result={divisionId:division.id,season,matchday,ties:[],final:null,winnerId:null};
   if(matchday<rounds)return result;
@@ -181,14 +202,20 @@ export function createPreviewPostseason(division,matchday,season=1) {
       aggregate:matchday>=32?aggregate:matchday>=31?[first.awayGoals,first.homeGoals]:null,
       winnerId:matchday>=32?winner:null};
   }
-  if(division.tier===1){
-    result.ties=[tie("playout",13,14)];
+  const legacyTieId=id=>({semi36:'semi-one',semi45:'semi-two'}[id]||id);
+  result.ties=phase.ties.filter(t=>t.participants.every(ref=>ref.rank)).map(t=>{
+    const homeFirst=configuredRules.homeOrder(definition,t.id,configuredRules.tieParticipants(definition,t.id,rows,[]),rows);
+    const positions=[...homeFirst].reverse().map(club=>rows.findIndex(row=>row.club.clubId===club.clubId)+1);
+    return tie(legacyTieId(t.id),...positions);
+  });
+  const finalConfig=phase.ties.find(t=>t.legs===1);
+  if(!finalConfig){
     result.winnerId=result.ties[0].winnerId;
     return result;
   }
-  result.ties=[tie("semi-one",3,6),tie("semi-two",4,5)];
   if(matchday>=32){
-    const finalists=result.ties.map(t=>t.winnerId).sort((a,b)=>rows.findIndex(r=>r.club.clubId===a)-rows.findIndex(r=>r.club.clubId===b));
+    const completed=result.ties.map(t=>({...t,id:phase.ties.find(config=>legacyTieId(config.id)===t.id).id}));
+    const finalists=configuredRules.homeOrder(definition,finalConfig.id,configuredRules.tieParticipants(definition,finalConfig.id,rows,completed),rows).map(club=>club.clubId);
     const rng=random("final"),final=game(finalists[0],finalists[1],rng);
     resolve(final,rng);
     const winner=final.homeGoals!==final.awayGoals?(final.homeGoals>final.awayGoals?final.homeId:final.awayId):
@@ -201,6 +228,7 @@ export function createPreviewPostseason(division,matchday,season=1) {
 
 // Read-only club projection: reuse league/post-season engines and expose no future scores.
 export function createPreviewClubSummary(division,clubId,progress){
+ if(progress?.season===0)return null;
  const played=previewSeasonMatchdays(progress.season,progress);
  const table=createPreviewStandings(division,played,progress.season);
  const position=table.rows.findIndex(row=>row.club.clubId===clubId);
@@ -224,6 +252,7 @@ export function createPreviewClubSummary(division,clubId,progress){
 }
 export function readPreviewClubProgress(storage){
  const progress=readPreviewProgress(storage);
+ if(progress.season===0)return progress;
  try{
   const day=Number(storage.getItem('football-architect:calendar-dev-world-day'));
   if(Number.isInteger(day)&&day>=1&&day<=56)

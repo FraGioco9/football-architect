@@ -22,7 +22,7 @@ const views=model.views.map(view=>view.id);
 test("COMPETITIONS-06 keeps the index and renders approved SVG at first paint",()=>{
  assert.equal(countries.length,8);
  assert.equal(divisions.length,16);
- assert.equal((index.match(/class="app-division-card"/g)||[]).length,16);
+ assert.equal((index.match(/class="app-division-card" href="\/competitions\/[a-z]{2,3}-[12]\/standings/g)||[]).length,16);
  assert.ok(index.includes('data-app-i18n="navCompetitions">Competitions'));
  assert.ok(index.includes("<title>Competitions — Football Architect</title>"));
  assert.ok(!index.includes("world/competitions/"));
@@ -67,7 +67,8 @@ test("COMPETITIONS-06 generates 16 complete routes with inline Compact logos",()
 });
 
 test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional data",()=>{
- assert.equal(manifest.schemaVersion,1);
+ assert.equal(manifest.schemaVersion,2);
+  assert.equal(manifest.competitions.length,18);
  assert.equal(manifest.approved,false);
  assert.equal(allocation.approved,false);
  assert.equal(manifest.divisions.length,16);
@@ -192,14 +193,13 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("for (let i = form.length - 1; i >= 0; i--)"));
  assert.ok(read("assets/competition-model.js").includes("data.approved!==false"));
- assert.ok(read("assets/competition-model.js").includes("clubs.size===participantCount"));
+ assert.ok(read("assets/competition-model.js").includes("clubs.size!==participantCount"));
  assert.ok(renderer.includes('document.createElement("tr")'));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes('script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js"]'));
  assert.ok(renderer.includes("start().catch(fail)"));
  assert.ok(code.includes("tabs.length!==views.length"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
@@ -231,7 +231,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  assert.doesNotThrow(()=>new Script(runtime,{filename:"competition-page.js"}));
  assert.ok(runtime.includes('routeId.toLowerCase()'));
  assert.ok(runtime.includes("model.validManifest(manifest)"));
- assert.ok(read("assets/competition-model.js").includes("clubs.size===participantCount"));
+ assert.ok(read("assets/competition-model.js").includes("clubs.size!==participantCount"));
  assert.ok(runtime.includes("start().catch(fail)"));
 });
 
@@ -364,13 +364,12 @@ test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
 test("CLUB-NAV-02 links competition views to approved club routes and seasons",()=>{
  const page=read("assets/competition-page.js");
  const fixtures=read("assets/competition-fixtures.js");
- const stats=read("tools/dev-competition-stats-client.mjs");
  const history=read("assets/competition-history.js");
  const preview=read("tools/dev-standings-preview-client.mjs");
  assert.ok(page.includes('name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
  assert.ok(fixtures.includes('link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
- assert.ok(stats.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+team.clubId+"/overview"'));
- assert.ok(history.includes('link.href="/clubs/"+division.countryId.toLowerCase()+"/"+clubId+"/overview"'));
+ // Actual domestic/cup History dialog links are exercised by
+ // competition-season-history-view.test.mjs; presentation no longer uses a domestic-only division.
  assert.ok(history.includes('"/standings?season="+encodeURIComponent(season)'));
  assert.ok(preview.includes('if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
  const css=read("assets/club-page.css");

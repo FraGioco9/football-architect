@@ -1,8 +1,60 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import * as data from '../tools/dev-standings-preview-data.mjs';
+import rules from '../assets/competition-rules.js';
+import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
+const cup=loadCompetitionCatalogue().find(d=>d.id==='sovereign-cup');
+
+test('CONFIG-TIES: cup quarterfinal seeds remain 1/4/2/3 and missing winners stay unresolved',()=>{
+ assert.equal(typeof rules.tieParticipants,'function');
+ const table=Array.from({length:24},(_,i)=>({club:{countryId:i%2?'IT':'ENG',clubId:i+1},played:6}));
+ const quarters=cup.rules.phases.find(p=>p.id==='quarterfinals').ties;
+ assert.deepEqual(quarters.map(t=>rules.tieParticipants(cup,t.id,table,[])[0]?.clubId),[1,4,2,3]);
+ assert.ok(quarters.every(t=>rules.tieParticipants(cup,t.id,table,[])[1]===null));
+ const playoff=cup.rules.phases.find(p=>p.id==='playoffs').ties.find(t=>t.participants[0].rank===8);
+ const results=[{id:playoff.id,winnerId:'ENG-9'}];
+ const clubs=rules.tieParticipants(cup,quarters[0].id,table,results);
+ assert.deepEqual(clubs.map(c=>c.clubId),[1,9]);
+ assert.deepEqual(rules.homeOrder(cup,quarters[0].id,clubs,table).map(c=>c.clubId),[9,1],'first leg hosts the lower original rank');
+ const final=cup.rules.phases.find(p=>p.id==='final').ties[0];
+ assert.deepEqual(rules.homeOrder(cup,final.id,[table[8].club,table[0].club],table).map(c=>c.clubId),[9,1],'neutral final does not assign rank-based home advantage');
+ assert.throws(()=>rules.tieParticipants(cup,quarters[0].id,table,[{id:playoff.id,winnerId:'IT-24'}]),/winner|participant/i);
+});
 const divisions=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url))).divisions;
+
+test('CONFIG-PARITY: canonical DEV scores, tables and brackets retain their pre-migration bytes',()=>{
+ // New rules metadata is tested separately; every pre-existing result field
+ // still has to match the original byte-for-byte sporting-data baseline.
+ const records=divisions.map(d=>{const {rulesVersion,rulesSnapshot,...sporting}=data.createPreviewStandings(d,30,1);return [sporting,data.createPreviewPostseason(d,33,1)]});
+ assert.equal(createHash('sha256').update(JSON.stringify(records)).digest('hex'),'a9acc31158aaca590f956a8d0c9c7cd5e1b40a21a77aaa918acb9b947a2353d6');
+});
+
+test('CONFIG-DEV: configured semifinal ranks drive participants without tier inference',()=>{
+ const d=structuredClone(divisions.find(d=>d.id==='IT-2'));
+ const definition=structuredClone(loadCompetitionCatalogue().find(x=>x.id===d.id));
+ definition.rules.phases[1].ties[0].participants[0].rank=4;
+ definition.rules.phases[1].ties[1].participants[0].rank=3;
+ const table=data.createPreviewStandings(d,30).rows;
+ const result=data.createPreviewPostseason({...d,rules:definition.rules},33);
+ assert.equal(result.ties[0].clubIds[0],table[3].club.clubId);
+ assert.equal(result.ties[1].clubIds[0],table[2].club.clubId);
+});
+test('CONFIG-DEV-POINTS: configured points change table totals while fictional match scores stay stable',()=>{
+ const d=divisions.find(d=>d.id==='IT-1'),definition=structuredClone(loadCompetitionCatalogue().find(x=>x.id===d.id));
+ definition.rules.phases[0].points.win=2;
+ const baseline=data.createPreviewStandings(d,15),changed=data.createPreviewStandings({...d,rules:definition.rules},15);
+ assert.deepEqual(changed.fixtures,baseline.fixtures);
+ for(const row of changed.rows)assert.equal(row.pts,2*row.won+row.drawn);
+});
+test('CONFIG-HOME: reversing participant references cannot transfer return-leg home advantage',()=>{
+ const d=divisions.find(d=>d.id==='IT-2'),definition=structuredClone(loadCompetitionCatalogue().find(x=>x.id===d.id));
+ definition.rules.phases[1].ties[0].participants.reverse();
+ const rows=data.createPreviewStandings(d,30).rows,result=data.createPreviewPostseason({...d,rules:definition.rules},33);
+ assert.equal(result.ties[0].legs[0].homeId,rows[5].club.clubId);
+ assert.equal(result.ties[0].legs[1].homeId,rows[2].club.clubId);
+});
 
 test('POSTSEASON-DATA: eight countries reveal each stage only on days 31, 32 and 33',()=>{
  assert.equal(typeof data.createPreviewPostseason,'function');

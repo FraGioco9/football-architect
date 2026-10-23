@@ -5,6 +5,7 @@
   <style data-nav01-fragment-visibility>html[data-nav01-fragment="pending"] .fa-shell-content-scroll{visibility:hidden}</style>
   <meta charset="utf-8">
   <base href="/competitions/fr-1/">
+  <meta name="fa-competition" content="FR-1">
   <meta name="fa-division" content="FR-1">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#101A1D">
@@ -16,7 +17,7 @@
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/landing.css">
   <link rel="stylesheet" href="/assets/app.css">
-  <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:"standings";document.documentElement.dataset.competitionSeasonUnavailable=String(/^[1-9]\d{0,8}$/.test(s||"")&&s!=="1")})();</script>
+  <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:["standings","postseason","fixtures","stats","history","rules","awards"].includes(p.get("view"))?p.get("view"):"standings";document.documentElement.dataset.competitionSeasonUnavailable="false"})();</script>
   <script src="/assets/competition-model.js" defer></script>
   <script src="/assets/competition-page.js" defer></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">
@@ -316,9 +317,9 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           <div class="app-standings-legend">
             <p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p>
             <ul aria-labelledby="standings-outcome-legend-title">
-              <li data-standing-outcome="champion"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-champion"><strong>1</strong> · <span data-app-i18n="rulesTier1Champion">National champion</span></span></li>
-              <li data-standing-outcome="playout"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-playout"><strong>13–14</strong> · <span data-app-i18n="rulesTier1Playout">Relegation play-out</span></span></li>
-              <li data-standing-outcome="relegated"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-relegated"><strong>15–16</strong> · <span data-app-i18n="rulesTier1Relegated">Direct relegation</span></span></li>
+              <li data-standing-outcome="champion"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-champion"><strong>1</strong> · <span data-competition-outcome="champion">Champion</span></span></li>
+              <li data-standing-outcome="playout"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-playout"><strong>13–14</strong> · <span data-competition-outcome="playout" data-competition-target="playout">Relegation play-out</span></span></li>
+              <li data-standing-outcome="relegated"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-relegated"><strong>15–16</strong> · <span data-competition-outcome="relegated">Direct relegation</span></span></li>
             </ul>
           </div>
           </div>
@@ -361,6 +362,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                   <div class="language-option" role="option" id="app-fixtures-round-option-28" data-menu-value="28" data-fixture-round-choice="28" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;28</div>
                   <div class="language-option" role="option" id="app-fixtures-round-option-29" data-menu-value="29" data-fixture-round-choice="29" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;29</div>
                   <div class="language-option" role="option" id="app-fixtures-round-option-30" data-menu-value="30" data-fixture-round-choice="30" aria-selected="false"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;30</div>
+                  <div class="language-option" role="option" id="app-fixtures-round-option-playout" data-menu-value="playout" data-fixture-round-choice="playout" aria-selected="false"><span data-competition-phase="playout">Relegation play-out</span></div>
                 </div>
                 </div>
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -371,9 +373,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
             <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>
           </section>
-          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden>
-            <h2 data-app-i18n="competitionTabStats">Stats</h2>
-            <p class="app-competition-status" data-app-i18n="competitionStatsEmpty">Competition statistics are not available before matches are played.</p>
+          <section id="competition-panel-stats" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-stats" tabindex="0" hidden><div id="fa-dev-stats"><div class="fa-dev-stats-nav" role="group" aria-label="Stats" data-app-aria="competitionTabStats"><button type="button" class="language-trigger" data-stats-view="overview" data-app-i18n="statsDevOverview" aria-pressed="true" tabindex="0">Overview</button><button type="button" class="language-trigger" data-stats-view="teams" data-app-i18n="statsDevTeams" aria-pressed="false" tabindex="-1">Teams</button><button type="button" class="language-trigger" data-stats-view="players" data-app-i18n="statsDevPlayers" aria-pressed="false" tabindex="-1">Players</button></div><div class="fa-dev-stats-content"><div class="app-competition-stat-grid fa-dev-stats-grid"><div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="statsDevMatchesPlayed">Matches played</span><p data-app-i18n="statsDevNoData" class="fa-dev-stats-empty">No statistics yet.</p></div><div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="statsDevTotalGoals">Total goals</span><p data-app-i18n="statsDevNoData" class="fa-dev-stats-empty">No statistics yet.</p></div><div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="statsDevGoalsPerMatch">Goals per match</span><p data-app-i18n="statsDevNoData" class="fa-dev-stats-empty">No statistics yet.</p></div></div></div></div>
           </section>
           <section id="competition-panel-history" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-history" tabindex="0" hidden>
             <div class="app-history-empty" data-history-empty>
@@ -420,46 +420,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>
           </section>
-          <section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden>
-            <div class="app-rules-content">
-            <section class="app-rules-section" aria-labelledby="rules-format">
-              <h3 id="rules-format" data-app-i18n="rulesFormatTitle">Competition format</h3>
-              <p data-app-i18n="rulesFormatBody">Each division has 16 clubs. Every club plays the other 15 twice, once at home and once away. The league consists of 30 matchdays and 240 matches.</p>
-              <dl class="app-rules-metrics">
-                <div class="app-rules-metric"><dt data-app-i18n="rulesClubs">Clubs</dt><dd id="app-competition-capacity">16</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesRounds">Matchdays</dt><dd>30</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesLegs">Legs</dt><dd>2</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesMatches">Matches</dt><dd>240</dd></div>
-              </dl>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-points">
-              <h3 id="rules-points" data-app-i18n="rulesPointsTitle">Points system</h3>
-              <dl class="app-rules-points">
-                <div class="app-rules-metric"><dt data-app-i18n="rulesWin">Win</dt><dd>3</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesDraw">Draw</dt><dd>1</dd></div>
-                <div class="app-rules-metric"><dt data-app-i18n="rulesLoss">Loss</dt><dd>0</dd></div>
-              </dl>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-ranking">
-              <h3 id="rules-ranking" data-app-i18n="rulesRankingTitle">League ranking</h3>
-              <p data-app-i18n="rulesRankingBody">Clubs are ranked by league points. Ties are resolved by a head-to-head mini-table using points, goal difference and goals scored; the criteria are reapplied to any subset still tied. If needed, overall goal difference, overall goals scored and total league wins follow. A remaining tie is decided by an auditable and reproducible draw.</p>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-outcomes">
-              <h3 id="rules-outcomes" data-app-i18n="rulesOutcomesTitle">Sporting outcomes</h3>
-              <div class="app-rules-outcomes">
-                <div class="app-rules-outcome" data-outcome="champion"><strong class="app-rules-range">1</strong><span data-app-i18n="rulesTier1Champion">National champion</span></div>
-                <div class="app-rules-outcome" data-outcome="stay"><strong class="app-rules-range">2–12</strong><span data-app-i18n="rulesTier1Safe">Remain in First Division</span></div>
-                <div class="app-rules-outcome" data-outcome="playout"><strong class="app-rules-range">13–14</strong><span data-app-i18n="rulesTier1Playout">Relegation play-out</span></div>
-                <div class="app-rules-outcome" data-outcome="relegated"><strong class="app-rules-range">15–16</strong><span data-app-i18n="rulesTier1Relegated">Direct relegation</span></div>
-              </div>
-            </section>
-            <section class="app-rules-section" aria-labelledby="rules-playout">
-              <h3 id="rules-playout" data-app-i18n="rulesPlayoutTitle">Relegation play-out</h3>
-              <p data-app-i18n="rulesPlayoutBody">The 13th- and 14th-placed clubs meet over two legs: the 14th-placed club hosts the first leg and the 13th-placed club hosts the return leg. The aggregate winner remains in the First Division and the loser is relegated. If aggregate scores are level after the second leg, extra time and then penalties decide the winner.</p>
-            </section>
-              <strong id="app-competition-level" hidden>1</strong>
-            </div>
-          </section>
+<section id="competition-panel-rules" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rules" tabindex="0" hidden><div class="app-rules-content" data-rule-definition="FR-1" aria-label="Ligue des Sociétés"><section class="app-rules-section" aria-labelledby="rules-format"><h3 id="rules-format">Competition format</h3><p data-rule-template="roundRobin" data-rule-params="{&quot;capacity&quot;:16,&quot;meetings&quot;:2,&quot;rounds&quot;:30,&quot;matches&quot;:240}">16 clubs. Each pair meets 2 times: 30 matchdays and 240 league matches.</p><dl class="app-rules-metrics"><div class="app-rules-metric"><dt>Clubs</dt><dd data-rule-metric="capacity" id="app-competition-capacity">16</dd></div><div class="app-rules-metric"><dt>Matchdays</dt><dd data-rule-metric="league.rounds">30</dd></div><div class="app-rules-metric"><dt>Legs</dt><dd data-rule-metric="meetingsPerPair">2</dd></div><div class="app-rules-metric"><dt>Matches</dt><dd data-rule-metric="league.matches">240</dd></div></dl></section><section class="app-rules-section" aria-labelledby="rules-points"><h3 id="rules-points">Points system</h3><dl class="app-rules-points"><div class="app-rules-metric"><dt>Win</dt><dd data-rule-metric="points.win">3</dd></div><div class="app-rules-metric"><dt>Draw</dt><dd data-rule-metric="points.draw">1</dd></div><div class="app-rules-metric"><dt>Loss</dt><dd data-rule-metric="points.loss">0</dd></div></dl></section><section class="app-rules-section" aria-labelledby="rules-ranking"><h3 id="rules-ranking">League ranking</h3><ol><li data-rule-criterion="points">Points</li><li data-rule-criterion="headToHeadPointsReapply">Head-to-head points (reapplied)</li><li data-rule-criterion="headToHeadGoalDifferenceReapply">Head-to-head goal difference (reapplied)</li><li data-rule-criterion="headToHeadGoalsForReapply">Head-to-head goals scored (reapplied)</li><li data-rule-criterion="goalDifference">Goal difference</li><li data-rule-criterion="goalsFor">Goals scored</li><li data-rule-criterion="wins">Wins</li><li data-rule-criterion="reproducibleDraw">Reproducible draw</li></ol><p data-rule-template="reapply" data-rule-params="{}">Head-to-head mini-table criteria are reapplied to any subgroup still tied.</p></section><section class="app-rules-section" aria-labelledby="rules-outcomes"><h3 id="rules-outcomes">Sporting outcomes</h3><div class="app-rules-outcomes"><div class="app-rules-outcome" data-outcome="champion" data-rule-kind="champion" data-rule-from="1" data-rule-to="1"><strong class="app-rules-range">1</strong><span>Champion</span></div><div class="app-rules-outcome" data-outcome="stay" data-rule-kind="remain" data-rule-from="2" data-rule-to="12"><strong class="app-rules-range">2–12</strong><span>Remain in this division</span></div><div class="app-rules-outcome" data-outcome="playout" data-rule-kind="playout" data-rule-from="13" data-rule-to="14" data-rule-target="playout"><strong class="app-rules-range">13–14</strong><span>Relegation play-out</span></div><div class="app-rules-outcome" data-outcome="relegated" data-rule-kind="relegated" data-rule-from="15" data-rule-to="16"><strong class="app-rules-range">15–16</strong><span>Direct relegation</span></div></div></section><section class="app-rules-section" aria-labelledby="rules-playout"><h3 id="rules-playout">Relegation play-out</h3><div data-rule-tie="playout" data-rule-home="higherOriginalTableRank" data-rule-resolution="aggregateExtraTimePenalties"><p data-rule-template="tie" data-rule-params="{&quot;a&quot;:&quot;League phase, rank 13&quot;,&quot;b&quot;:&quot;League phase, rank 14&quot;,&quot;legs&quot;:2,&quot;home&quot;:&quot;The club with the better original table rank hosts the return leg; the other club hosts first. A tie winner keeps its own original rank.&quot;,&quot;resolution&quot;:&quot;Aggregate score; no away-goals rule. If level after the return leg, extra time and then penalties decide the winner.&quot;}">League phase, rank 13 vs League phase, rank 14. 2 leg(s). The club with the better original table rank hosts the return leg; the other club hosts first. A tie winner keeps its own original rank. Aggregate score; no away-goals rule. If level after the return leg, extra time and then penalties decide the winner.</p><div data-rule-winner="remain"><p data-rule-template="winnerOutcome" data-rule-params="{&quot;outcome&quot;:&quot;Remain in this division&quot;}">Winner: Remain in this division.</p></div><div data-rule-loser="relegated"><p data-rule-template="loserOutcome" data-rule-params="{&quot;outcome&quot;:&quot;Relegated&quot;}">Loser: Relegated.</p></div></div></section><p data-rule-template="noGap" data-rule-params="{}">No points-gap threshold applies to the configured knockout ties.</p><strong id="app-competition-level" hidden>1</strong></div></section>
           <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
           </section>
         </section>

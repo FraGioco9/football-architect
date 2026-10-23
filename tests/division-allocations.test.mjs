@@ -38,7 +38,8 @@ test("REGISTRY-01: CSV and JSON use the same flat division fields and records",(
   const headers=lines[0].split(",");
   assert.equal(divisions.length,16);
   assert.equal(lines.length,17);
-  assert.deepEqual(Object.keys(divisions[0]),headers);
+  assert.deepEqual(Object.keys(divisions[0]).filter(key=>key!=="rules"),headers);
+  assert.ok(divisions.every(d=>d.rules?.schemaVersion===1),"Each division declares versioned rules");
   assert.equal(new Set(divisions.map(d=>d.id)).size,16);
   assert.equal(new Set(divisions.map(d=>d.countryId)).size,8);
   assert.equal(new Set(divisions.map(d=>d.primaryHex)).size,16);

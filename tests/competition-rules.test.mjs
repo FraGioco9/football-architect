@@ -1,57 +1,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-
+import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
+import rulesView from '../assets/competition-rules-view.js';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const divisions=['it-1','it-2','eng-1','eng-2','es-1','es-2','de-1','de-2','fr-1','fr-2','pt-1','pt-2','nl-1','nl-2','br-1','br-2'];
-const rulesPanel=html=>html.slice(html.indexOf('id="competition-panel-rules"'),html.indexOf('id="competition-panel-awards"'));
-const keys=html=>[...new Set([...html.matchAll(/data-app-i18n="(rules[A-Za-z0-9]+)"/g)].map(m=>m[1]))];
-
-test('RULES-04: all 16 division pages have correct shared and tier-specific regulations',()=>{
- for(const id of divisions){
-  const html=read('competitions/'+id+'/index.html'),rules=rulesPanel(html),tier=id.endsWith('-1')?1:2;
-  assert.ok(rules.startsWith('id="competition-panel-rules"'),id);
-  for(const key of ['rulesClubs','rulesRounds','rulesLegs','rulesMatches','rulesFormatBody','rulesRankingBody'])
-   assert.ok(rules.includes('data-app-i18n="'+key+'"'),id+' missing '+key);
-  assert.equal((html.match(/id="app-competition-capacity"/g)||[]).length,1,id);
-  assert.equal((html.match(/id="app-competition-level"/g)||[]).length,1,id);
-  assert.ok(rules.includes('id="app-competition-level" hidden>'+tier+'</strong>'),id);
-  assert.doesNotMatch(rules,/<h2|rulesTier"|rulesSeason|rules-season|The tie takes place|Away goals carry/i,id);
-  assert.ok(rules.indexOf('rulesFormatBody')<rules.indexOf('app-rules-metrics'),id+' format must precede boxes');
-  assert.equal(rules.includes('data-app-i18n="rulesPlayoutBody"'),tier===1,id);
-  assert.equal(rules.includes('data-app-i18n="rulesPlayoffsBody"'),tier===2,id);
-  assert.equal(rules.includes('data-app-i18n="rulesTier1Champion"'),tier===1,id);
-  assert.equal(rules.includes('data-app-i18n="rulesTier2Promoted"'),tier===2,id);
-  assert.equal(rules.includes('data-app-i18n="rulesNoThirdTier"'),tier===2,id);
-  assert.doesNotMatch(rules,/approved|postpon|reschedul|neutral venue|pending approval/i,id);
+const panel=html=>html.slice(html.indexOf('id="competition-panel-rules"'),html.indexOf('id="competition-panel-awards"'));
+const value=(html,key)=>html.match(new RegExp('<dd[^>]*data-rule-metric="'+key+'"[^>]*>([^<]*)</dd>'))?.[1];
+test('RULES-04: generated domestic pages retain approved league and decisive tie outcomes',()=>{
+ for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(const tier of [1,2]){
+  const html=read('competitions/'+country+'-'+tier+'/index.html'),rules=panel(html);
+  assert.equal(value(rules,'capacity'),'16');assert.equal(value(rules,'league.rounds'),'30');assert.equal(value(rules,'league.matches'),'240');
+  assert.equal(value(rules,'points.win'),'3');assert.equal(value(rules,'points.draw'),'1');assert.equal(value(rules,'points.loss'),'0');
+  assert.equal((html.match(/id="app-competition-capacity"/g)||[]).length,1);
+  assert.equal((html.match(/id="app-competition-level"/g)||[]).length,1);
+  assert.match(rules,new RegExp('id="app-competition-level" hidden>'+tier+'</strong>'));
+  if(tier===1){assert.match(rules,/data-rule-kind="playout" data-rule-from="13" data-rule-to="14"/);assert.match(rules,/data-rule-loser="relegated"/);assert.match(rules,/data-rule-winner="remain"/);}
+  else {assert.match(rules,/data-rule-kind="promoted" data-rule-from="1" data-rule-to="2"/);assert.match(rules,/data-rule-kind="promotionPlayoffs" data-rule-from="3" data-rule-to="6"/);assert.match(rules,/data-rule-winner="promoted"/);assert.doesNotMatch(rules,/data-rule-(?:kind|loser)="relegated"/);}
+  assert.match(rules,/data-rule-home="higherOriginalTableRank"/);assert.match(rules,/data-rule-resolution="aggregateExtraTimePenalties"/);
+  assert.doesNotMatch(rules,/postpon|reschedul|pending approval/i);
  }
 });
-
-test('RULES-04: neutral shared document is not assigned tier-specific sporting outcomes',()=>{
- const html=read('competitions/_shared/index.html'),rules=rulesPanel(html);
- assert.match(rules,/data-app-i18n="rulesNeutralOutcomes"/);
- assert.doesNotMatch(rules,/data-app-i18n="rulesPlayoutBody"|data-app-i18n="rulesPlayoffsBody"/);
+test('RULES-04: neutral shell has no assigned sporting outcomes',()=>{
+ const html=read('competitions/_shared/index.html'),rules=panel(html);
+ assert.match(rules,/data-app-i18n="rulesNeutralOutcomes"/);assert.doesNotMatch(rules,/data-rule-kind=/);
  assert.equal((html.match(/id="app-competition-capacity"/g)||[]).length,1);
- assert.equal((html.match(/id="app-competition-level"/g)||[]).length,1);
 });
-
-test('RULES-04: every displayed rule has translations in all five locales',()=>{
- const dictionary=read('assets/app.js');
- const sample=['it-1','it-2','_shared'].map(id=>read('competitions/'+id+'/index.html'));
- const all=new Set(sample.flatMap(x=>keys(rulesPanel(x))));
- assert.ok(all.size>=23,'Expected complete regulations vocabulary');
- for(const key of all){
-  const matches=dictionary.match(new RegExp('^      '+key+':','gm'))||[];
-  assert.equal(matches.length,5,key+' requires exactly five locale entries');
+test('RULES-04: every supported locale renders its own complete rules vocabulary',()=>{
+ const headings={en:'Competition format',de:'Wettbewerbsformat',es:'Formato de competición',fr:'Format de la compétition',it:'Formula della competizione'};
+ for(const d of loadCompetitionCatalogue())for(const [lang,heading] of Object.entries(headings)){
+  const html=rulesView.renderRules(d,lang);assert.ok(html.includes(heading));assert.doesNotMatch(html,/undefined|\[object Object\]/);
+  if(lang!=='en')assert.doesNotMatch(html,/>Competition format</);
  }
- assert.doesNotMatch(read('tools/render-competition-page.mjs'),/competitionRulesEmpty/);
 });
-
-test('RULES-04: non-Rules runtime and provisional manifest contracts are unchanged',()=>{
- const model=read('assets/competition-model.js');
- assert.match(model,/rules:\{status:"undefined",points:null,tiebreakers:null,promotion:null,relegation:null\}/);
+test('RULES-04: domestic compatibility profile and provisional memberships stay unchanged',()=>{
  const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
- assert.equal(manifest.approved,false);
- assert.equal(manifest.profile.rules.status,'undefined');
- assert.equal(manifest.divisions.length,16);
+ assert.equal(manifest.approved,false);assert.equal(manifest.profile.rules.status,'undefined');assert.equal(manifest.divisions.length,16);
 });

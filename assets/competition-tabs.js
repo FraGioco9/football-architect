@@ -104,22 +104,23 @@
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
   let availableSeasons=[...new Set(["1",...devSeasons])];
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
-  if(devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=1)
-    availableSeasons=availableSeasons.filter(id=>Number(id)<=initialLimit);
+  if(devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
+    availableSeasons=availableSeasons.filter(id=>Number(id)<=Math.max(1,initialLimit));
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
-  const validFixtureRound=value=>model.validRound(value)||value==="playoffs"||value==="playout";
+  const configuredChoices=()=>window.faCompetitionContext&&window.faCompetitionRules?.fixtureChoices(window.faCompetitionContext.definition);
+  const validFixtureRound=value=>{const choices=configuredChoices();return choices?choices.some(c=>c.value===value):model.validRound(value)||value==="playoffs"||value==="playout"};
   function read(){
     const params=new URL(window.location.href).searchParams;
     const id=params.get("season"),round=params.get("matchday");
-    const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:latestSeason;
-    return {season:devSeasons.length&&!availableSeasons.includes(requested)?latestSeason:requested,
+    const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
+    return {season:availableSeasons.includes(requested)?requested:"1",
       view:views.includes(window.location.pathname.split("/").filter(Boolean).at(-1))?window.location.pathname.split("/").filter(Boolean).at(-1):views.includes(params.get("view"))?params.get("view"):"standings",
-      matchday:round==="playoffs"||round==="playout"?round:/^[1-9]\d*$/.test(round||"")&&model.validRound(Number(round))?Number(round):1};
+      matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
-    if(devSeasons.length&&!availableSeasons.includes(state.season))state.season=latestSeason;
+    if(!availableSeasons.includes(state.season))state.season="1";
     const url=new URL(window.location.href);
     url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/?$/,"").replace(/\/+$/,"")+"/"+state.view;
     url.search="";url.hash="";
@@ -128,6 +129,7 @@
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
+    season.disabled=false;
     document.documentElement.dataset.competitionView=state.view;
     document.documentElement.dataset.competitionSeasonUnavailable=String(!available);
     seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available;
@@ -141,6 +143,8 @@
     }
     if(focus)tabs[index].focus({preventScroll:true});
     if(focus||!restoringTabScroll)revealSelectedTab();
+    window.faAppRenderLanguage?.();
+    window.faCompetitionContextApi?.selectSeason(Number(state.season));
     for(const listener of listeners)listener({...state});
     // Notify DEV enhancements even when they initialize before this router.
     window.dispatchEvent(new CustomEvent("fa:competition-route-change",{detail:{...state}}));
@@ -188,12 +192,14 @@
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
   window.faCompetitionRoute.setSeasonLimit=limit=>{
-    if(!devSeasons.includes(String(limit)))return false;
-    const next=[...new Set(["1",...devSeasons])].filter(id=>Number(id)<=limit);
-    if(next.length===availableSeasons.length&&next.every(id=>availableSeasons.includes(id)))return true;
+    if(limit!==0&&!devSeasons.includes(String(limit)))return false;
+    const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);
+    document.documentElement.dataset.faDevCurrentSeason=String(limit);
+    const next=[...new Set(["1",...devSeasons])].filter(id=>Number(id)<=Math.max(1,limit));
+    if(!inactiveChanged&&next.length===availableSeasons.length&&next.every(id=>availableSeasons.includes(id)))return true;
     availableSeasons=next;latestSeason=next.reduce((a,b)=>Number(a)>Number(b)?a:b);
     seasonPicker.update(seasonOptions());
-    apply({...state,season:availableSeasons.includes(state.season)?state.season:latestSeason},{replace:true});
+    apply({...state,season:availableSeasons.includes(state.season)?state.season:"1"},{replace:true});
     return true;
   };
   window.addEventListener("popstate",()=>{

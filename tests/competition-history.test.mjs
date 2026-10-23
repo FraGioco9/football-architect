@@ -254,7 +254,6 @@ test('History scope does not retain the previous grid height and preserves avail
 });
 test('Stats and History use a shared card with uniform bold labels and empty messages',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
- const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
  assert.match(css,/\.app-competition-stat-card\{[^}]*display:grid;grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) auto/);
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-size:\.875rem;font-weight:700/);
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
@@ -266,14 +265,11 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
  assert.match(css,/@media\(max-width:650px\)\{[\s\S]*--fa-record-heading:56px/);
  assert.match(css,/\.app-history-player-card\[data-history-filled="true"\]\{[^}]*min-height:160px/);
  assert.doesNotMatch(css,/\.app-history-player-card\{[^}]*overflow:hidden/);
- assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
- assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
- assert.match(dev,/app-competition-stat-label fa-dev-stats-leader-title/);
- assert.doesNotMatch(dev,/\.fa-dev-stats-leader-card\{[^}]*height:/);
+ assert.doesNotMatch(css,/\.fa-dev-stats-leader-card\{[^}]*height:/);
 });
 test('Stats and History align label slots while their filled cards grow',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
- const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ const dev=css;
  assert.match(css,/\.app-competition-stat-card--compact\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) minmax\(0,1fr\);height:auto;min-height:108px;max-height:none/);
  assert.match(css,/\.app-competition-stat-card--fluid\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\) auto;[^}]*height:auto;min-height:108px;max-height:none/);
  assert.match(dev,/\.fa-dev-stats-card\.app-competition-stat-card--compact\{[^}]*grid-template-rows:minmax\(var\(--fa-record-heading\),max-content\)/);
@@ -281,9 +277,6 @@ test('Stats and History align label slots while their filled cards grow',()=>{
  assert.doesNotMatch(dev,/\.fa-dev-stats-leader-title\{/);
  assert.doesNotMatch(dev,/\.fa-dev-stats-card span\.app-competition-stat-label\{/);
  assert.match(css,/\.app-competition-stat-card>\.app-competition-stat-label\{align-self:start;justify-self:stretch\}/);
- assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card/);
- assert.match(dev,/app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-leader-card/);
- assert.match(dev,/app-competition-stat-card app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
 });
 test('History improved layout preserves archive navigation, confirmed records and single empty statuses',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
@@ -313,22 +306,18 @@ test('History improved layout preserves archive navigation, confirmed records an
  }
 });
 test('Stats Teams rows align rank, crest, wrapping name and numeric value without fixed card height',()=>{
- const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(source,/\.fa-dev-stats-top li\{[^}]*grid-template-columns:24px minmax\(0,1fr\) minmax\(3\.5ch,auto\)/);
  assert.match(source,/\.fa-dev-stats-top li>strong\{[^}]*justify-self:end;[^}]*text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums/);
  assert.match(source,/\.fa-dev-stats-top \.fa-dev-stats-team-name\{[^}]*white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere/);
- assert.match(source,/const link=create\("a",team\.clubName,"fa-dev-stats-team-name app-world-standing-club-link"\)/);
- assert.match(source,/link\.href="\/clubs\/"\+division\.countryId\.toLowerCase\(\)\+"\/"\+team\.clubId\+"\/overview"/);
- assert.match(source,/identity\.append\(crest,link\)/);
  assert.match(source,/\.fa-dev-stats-top \.app-world-club-identity\{[^}]*align-items:center;min-width:0/);
  assert.match(source,/\.fa-dev-stats-top \.app-world-club-crest-placeholder\{flex-shrink:0\}/);
- assert.match(source,/app-competition-stat-card--fluid fa-dev-stats-leader-card fa-dev-stats-team-card/);
  assert.doesNotMatch(source,/\.fa-dev-stats-top \.app-world-club-identity>span:last-child\{overflow:hidden/);
  assert.doesNotMatch(source,/\.fa-dev-stats-top\{[^}]*overflow-y:auto/);
 });
 test('DEV Stats labels and messages use the five-language app dictionary',()=>{
  const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
- const dev=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
+ const dev=readFileSync(new URL('../assets/competition-stats.js',import.meta.url),'utf8');
  const names=['en','de','es','fr','it'];
  const keys=['statsDevOverview','statsDevTeams','statsDevPlayers','statsDevGoals',
  'statsDevAssists','statsDevAverageRating','statsDevCleanSheets','statsDevMatchesPlayed',
@@ -341,11 +330,10 @@ test('DEV Stats labels and messages use the five-language app dictionary',()=>{
   const segment=app.slice(start,end);
   for(const key of keys)assert.equal((segment.match(new RegExp('\\b'+key+':','g'))||[]).length,1,lang+' '+key);
  }
- assert.match(dev,/const localized = \(tag, key, english, className\) =>/);
- assert.match(dev,/el\.dataset\.appI18n = key/);
+ assert.match(dev,/node\.dataset\.appI18n=key/);
  assert.match(dev,/window\.faAppRenderLanguage\?\.\(\)/);
- assert.match(dev,/close\.dataset\.appAria="statsDevClose"/);
- assert.match(dev,/dialog\.setAttribute\("aria-labelledby",title\.id\)/);
+ assert.match(dev,/close\.dataset\.appAria='statsDevClose'/);
+ assert.match(dev,/current\.setAttribute\('aria-labelledby',title\.id\)/);
  assert.doesNotMatch(dev,/aria-label",label\+" leaderboard"/);
 });
 test('Stats DEV switches language through the shared live translation renderer',()=>{
@@ -437,15 +425,6 @@ test('DEV selected season preserves deep links and router selections for seasons
   assert.equal(runInNewContext(client.slice(start,end)+';selectedSeason()',context),season);
   context.routeSeasonOverride=season;context.window.location.href='http://app.localhost:2000/competitions/it-1?season=1';
   assert.equal(runInNewContext(client.slice(start,end)+';selectedSeason()',context),season);
- }
-});
-test('DEV Stats reads seasons 3 and 4 consistently with History and Standings',()=>{
- const source=readFileSync(new URL('../tools/dev-competition-stats-client.mjs',import.meta.url),'utf8');
- const start=source.indexOf('  function selectedSeason()'),end=source.indexOf('  function selectedMatchdays()',start);
- for(const season of [1,2,3,4]){
-  assert.equal(runInNewContext(source.slice(start,end)+';selectedSeason()',{
-   document:{documentElement:{dataset:{faDevSeasons:'1,2,3,4'}}},URLSearchParams,location:{search:'?season='+season}
-  }),season);
  }
 });
 test('History discards a pending render after debug is disabled and restores the localized empty state',async()=>{

@@ -1,9 +1,10 @@
 // DEV-only statistics derived from the same fictional match results as standings.
 // Not publication-allowlisted. Never substitute for canonical match/player events.
-import {createPreviewStandings,PREVIEW_RULES,comparePreviewRows} from "./dev-standings-preview-data.mjs";
+import {createPreviewStandings,comparePreviewRows} from "./dev-standings-preview-data.mjs";
 
 export function aggregatePreviewStats(division, matchdays=15, season=1) {
   const preview=createPreviewStandings(division,matchdays,season);
+  const points=new Map(preview.rows.map(row=>[row.club.clubId,row.pts]));
   const matches=preview.fixtures;
   const byId=new Map(preview.clubs.map(club=>[club.clubId,{
     clubId:club.clubId,clubName:club.primaryName,mp:0,w:0,d:0,l:0,
@@ -38,7 +39,7 @@ export function aggregatePreviewStats(division, matchdays=15, season=1) {
   }
   const teams=[...byId.values()].map(row=>{
     row.unbeatenStreak=unbeaten.get(row.clubId);
-    row.gd=row.gf-row.ga;row.points=PREVIEW_RULES.win*row.w+PREVIEW_RULES.draw*row.d+PREVIEW_RULES.loss*row.l;
+    row.gd=row.gf-row.ga;row.points=points.get(row.clubId);
     row.ppg=row.mp?row.points/row.mp:0;
     row.homeWinPct=row.homePlayed?100*row.homeWins/row.homePlayed:0;
     row.awayWinPct=row.awayPlayed?100*row.awayWins/row.awayPlayed:0;

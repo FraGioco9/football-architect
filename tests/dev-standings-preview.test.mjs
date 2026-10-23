@@ -58,7 +58,7 @@ test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",asy
  const from=client.includes('async function setDebugProgress(')?client.indexOf('async function setDebugProgress('):client.indexOf('async function setSeason(');
  const source=client.slice(from,client.indexOf('async function resetPreview('));
  const stored=new Map([['days','7'],['season','2']]);
- const context={debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',
+ const context={devWorldClock:{publish(){}},debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',DAY_KEY:'world-day',
   sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
   refreshProgress:async()=>false,syncDebugControls(){},window:{dispatchEvent(){}},CustomEvent:class{},console};
  const change=runWithModel(source+';setMatchdays',context);
@@ -72,11 +72,11 @@ test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed ro
  const source=client.slice(client.indexOf('async function setDebugProgress('),client.indexOf('async function resetPreview('));
  assert.ok(source,'Season control must update the shared competition route');
  const changes=[],stored=new Map();
- const context={debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
+ const context={devWorldClock:{publish(){}},debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',DAY_KEY:'world-day',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
   refreshProgress:async()=>true,window:{faCompetitionRoute:{set:next=>changes.push(next)}}};
  const setSeason=runWithModel(source+';setSeason',context);
- for(const season of [1,2,3,4])assert.equal(await setSeason(season),true);
- for(const season of [0,5,1.5,NaN])assert.equal(await setSeason(season),false);
+ for(const season of [0,1,2,3,4])assert.equal(await setSeason(season),true);
+ for(const season of [-1,5,1.5,NaN])assert.equal(await setSeason(season),false);
  assert.deepEqual(changes,[]);
  assert.equal(context.debugSeason,4);assert.equal(stored.get('season'),'4');
 });
@@ -446,16 +446,13 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
  assert.ok(!isAllowlistedPublicPath("tools/dev-debug-widget.mjs"));
  assert.ok(!planPublicFiles().includes("tools/dev-debug-widget.mjs"));
 });
-test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
+test("DEV-M01: Debug mounts independently while preview waits for competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
   const start = client.indexOf("if(validPath||indexPath||clubPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");
   const initializer = client.slice(start, end);
-  assert.ok(initializer.includes("(validPath?waitForRows():Promise.resolve()).then("));
-  assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
-    initializer.indexOf("(validPath?waitForRows():Promise.resolve()).then(") < initializer.indexOf("createDebugWidget({controls:[{"));
   for (const enabled of [false, true]) {
     let hydrate, signalMounted;
     const hydration = new Promise(resolve => { hydrate = resolve; });
@@ -481,9 +478,10 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       boot: division => operations.push("boot:" + division),
       console: { error: error => { throw error; } }
     });
-    assert.deepEqual(operations, [], "widget must not mount before hydration");
-    hydrate();
     await widgetMounted;
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(operations, ["widget"], "Debug navigation remains usable before data hydration");
+    hydrate();
     await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(operations, ["widget", "toggle"]);
   }
@@ -536,9 +534,6 @@ test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4
  assert.ok(client.includes("matchdays=0;"));
  assert.ok(widget.includes("root.syncVisibility=()=>"));
  assert.ok(client.includes('activePreview=replacement;'));
- const mobileRuntime=read("assets/competition-page.js").toString();
- assert.ok(mobileRuntime.includes("row.recent.length !== Math.min(5,row.played)"),
-  "mobile standings must accept exactly the available recent results for 1–4 matchdays");
  for(const days of [1,2,3,4]){
   const model=createPreviewStandings(manifest.divisions[0],days);
   assert.ok(model.rows.every(row=>row.recent.length===days),

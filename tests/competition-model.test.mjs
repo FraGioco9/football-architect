@@ -28,6 +28,10 @@ test('all sixteen divisions share one immutable participant, capacity, format, p
  const model=getModel(),data=manifest();
  assert.deepEqual(data.profile,model.profile);
  assert.equal(model.validManifest(data),true);
+ assert.equal(data.schemaVersion,2);
+ assert.equal(data.competitions.length,18);
+ assert.equal(model.competitionById(data,"sovereign-cup")?.capacity,24);
+ assert.equal(model.competitionById(data,"unknown"),null);
  assert.equal(model.profile.capacity,16);
  assert.equal(model.profile.participants.status,'provisional');
  assert.equal(model.profile.participants.approved,false);
@@ -74,6 +78,7 @@ test('one view catalogue drives all generated detail documents and their first p
   const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.indexOf('/assets/competition-model.js')<html.indexOf('/assets/competition-page.js'));
   for(const view of model.views)assert.ok(html.includes('id="competition-panel-'+view.id+'"'));
-  assert.equal((html.match(/data-fixture-round-choice=/g)||[]).length,model.schedule.rounds);
+  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,30);
+  assert.ok(html.includes('data-fixture-round-choice="'+(d.tier===1?'playout':'playoffs')+'"'));
  }
 });

@@ -192,7 +192,7 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
-test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1â€“4",()=>{
+test("DEBUG-SEASONS-02: standings route resolver preserves Seasons 1â€“4 for the shared context",()=>{
  function sourceFunction(source,name){
   const from=source.indexOf("function "+name+"()");
   assert.ok(from>=0,name+" must exist");
@@ -204,9 +204,7 @@ test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1â€
   throw Error("Incomplete resolver "+name);
  }
  const standings=readFileSync(join(repositoryRoot,"tools","dev-standings-preview-client.mjs"),"utf8");
- const stats=readFileSync(join(repositoryRoot,"tools","dev-competition-stats-client.mjs"),"utf8");
  const standingFunctions=sourceFunction(standings,"availablePreviewSeasons")+"\n"+sourceFunction(standings,"selectedSeason");
- const statsFunction=sourceFunction(stats,"selectedSeason");
  const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
   const url=new URL("https://example.test/competitions/it-1?season="+season);
   return runInNewContext("let routeSeasonOverride="+JSON.stringify(override)+";\n"+script+"\nselectedSeason()",{
@@ -217,13 +215,10 @@ test("DEBUG-SEASONS-02: standings and Stats route resolvers agree on Seasons 1â€
  };
  for(const season of [1,2,3,4]){
   assert.equal(resolve(standingFunctions,season,1),season);
-  assert.equal(resolve(statsFunction,season,1),season);
   assert.equal(resolve(standingFunctions,season,season,season),season);
  }
  assert.equal(resolve(standingFunctions,99,4),4);
- assert.equal(resolve(statsFunction,99,4),4);
  assert.equal(resolve(standingFunctions,99,99,null,""),1);
- assert.equal(resolve(statsFunction,99,99,null,""),1);
 });
 
 

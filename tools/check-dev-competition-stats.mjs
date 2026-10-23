@@ -2,6 +2,8 @@
 import assert from "node:assert/strict";
 import {aggregatePreviewStats} from "./dev-competition-stats-data.mjs";
 import {createPreviewStandings} from "./dev-standings-preview-data.mjs";
+import {loadCompetitionCatalogue} from "./competition-catalogue.mjs";
+import statsView from "../assets/competition-stats.js";
 
 for (const tier of [1,2]) {
   const clubs=Array.from({length:16},(_,i)=>({
@@ -42,3 +44,11 @@ for (const tier of [1,2]) {
   }
 }
 console.log("DEV competition Stats consistency: 16 scenarios PASS");
+for(const definition of loadCompetitionCatalogue()){
+ assert.equal(typeof statsView.mount,'function');
+ const html=statsView.renderEmpty();
+ assert.equal((html.match(/data-stats-view=/g)||[]).length,3,definition.id);
+ assert.equal((html.match(/fa-dev-stats-card"/g)||[]).length,3,definition.id);
+ assert.ok(!html.includes('app-competition-stat-value'),definition.id+' has no fabricated initial totals');
+}
+console.log('Public Stats initial interface: 18 competition definitions PASS');

@@ -11,7 +11,7 @@ const git=(cwd,...args)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ig
 test('CRLF flag sources generate the same checked-in competition HTML without rewriting artwork',()=>{
  const fixture=mkdtempSync(join(tmpdir(),'fa-crlf-flags-'));
  try{
-  for(const path of ['clubs','tools','data','dashboard','calendar','settings','competitions','templates','assets/flags','assets/divisions','assets/clubs','assets/competition-model.js','assets/world-calendar-model.js','assets/sidebar-evolution.js','assets/sidebar-first-paint.js']){
+  for(const path of ['clubs','tools','data','dashboard','calendar','settings','competitions','templates','assets/flags','assets/divisions','assets/clubs','assets/competition-model.js','assets/competition-rules.js','assets/competition-rules-view.js','assets/competition-stats.js','assets/world-calendar-model.js','assets/sidebar-evolution.js','assets/sidebar-first-paint.js']){
    const destination=join(fixture,path);mkdirSync(join(destination,'..'),{recursive:true});
    cpSync(join(root,path),destination,{recursive:true});
   }
@@ -21,7 +21,7 @@ test('CRLF flag sources generate the same checked-in competition HTML without re
   }
   const flag=join(fixture,'assets/flags/gb-eng.svg'),before=readFileSync(flag);
   const output=execFileSync(process.execPath,['tools/generate-app-pages.mjs','--check'],{cwd:fixture,encoding:'utf8',stdio:['ignore','pipe','pipe']});
-  assert.match(output,/21\/21/);
+  assert.match(output,/23\/23/);
   assert.deepEqual(readFileSync(flag),before,'Generation must not modify source SVG bytes');
  }finally{rmSync(fixture,{recursive:true,force:true})}
 });

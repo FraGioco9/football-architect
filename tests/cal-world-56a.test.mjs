@@ -18,7 +18,7 @@ test('W56-03 rejects invalid writes and corrupt storage',()=>{
  const {s,clock}=make({[SEASON_KEY]:'',[DAY_KEY]:'0'});
  assert.deepEqual(clock.read(),{season:1,day:1});
  for(const day of [-1,0,57,2.5,NaN,Infinity])assert.equal(clock.setDay(day),false);
- for(const season of [0,5,1.5,NaN])assert.equal(clock.setSeason(season),false);
+ for(const season of [-1,5,1.5,NaN])assert.equal(clock.setSeason(season),false);
  assert.deepEqual(clock.read(),{season:1,day:1});
 });
 test('W56-04 56-day mapping matches the frozen calendar model including N31–N33',()=>{
@@ -73,4 +73,57 @@ test('W56-15 Calendar sidebar season regression retained',()=>{
 test('W56-16 calendar model and publication guard remain outside patch scope',()=>{
  const source=readFileSync(new URL('../tools/dev-preview-artifact.mjs',import.meta.url),'utf8');
  assert.match(source,/planPublicFiles/);assert.match(source,/protected_debug/);
+});
+
+test('W56-17 season 0 has no clock snapshot or national progress and rejects Day changes',()=>{
+ const {s,clock,events}=make({[SEASON_KEY]:'3',[DAY_KEY]:'54'});
+ assert.equal(clock.setSeason(0),true);
+ assert.equal(clock.read().season,0);
+ assert.equal(clock.snapshot(),null);
+ assert.equal(clock.nationalProgress(),0);
+ assert.equal(clock.setDay(20),false);
+ assert.equal(events.find(e=>e.name==='fa:world-clock-snapshot').detail,null);
+ clock.publish();assert.equal(events.at(-1).detail.matchdays,0);
+ const reloaded=createDevWorldClock(s);assert.equal(reloaded.read().season,0);
+ assert.equal(reloaded.setSeason(1),true);assert.equal(reloaded.setDay(13),true);
+ assert.deepEqual(reloaded.read(),{season:1,day:13});
+});
+
+test('W56-18 season 0 clears legacy progress and provides no club summary',async()=>{
+ const {readPreviewProgress,previewSeasonMatchdays,readPreviewClubProgress,createPreviewClubSummary}=await import('../tools/dev-standings-preview-data.mjs');
+ const s=storage({[SEASON_KEY]:'0',[DAY_KEY]:'54',[ROUNDS_KEY]:'33'});
+ assert.deepEqual(readPreviewProgress(s),{season:0,matchdays:0});
+ assert.deepEqual(readPreviewClubProgress(s),{season:0,matchdays:0});
+ assert.equal(previewSeasonMatchdays(1,readPreviewProgress(s)),0);
+ const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+ assert.equal(createPreviewClubSummary(manifest.divisions[0],1,readPreviewProgress(s)),null);
+});
+
+test('W56-19 resuming from season 0 cannot reuse completed legacy matchdays',async()=>{
+ const {readPreviewProgress}=await import('../tools/dev-standings-preview-data.mjs');
+ const {s,clock}=make({[SEASON_KEY]:'3',[DAY_KEY]:'54',[ROUNDS_KEY]:'33'});
+ assert.equal(clock.setSeason(0),true);assert.equal(clock.setSeason(1),true);
+ assert.deepEqual(readPreviewProgress(s),{season:1,matchdays:0});
+ assert.equal(clock.nationalProgress(),0);
+});
+
+
+test('W56-20 a persisted inactive season ignores a stale Day and clears legacy rounds on resume',async()=>{
+ const {readPreviewProgress}=await import('../tools/dev-standings-preview-data.mjs');
+ const {s,clock}=make({[SEASON_KEY]:'0',[DAY_KEY]:'54',[ROUNDS_KEY]:'33'});
+ assert.deepEqual(clock.read(),{season:0,day:1});
+ assert.equal(clock.setSeason(1),true);
+ assert.deepEqual(clock.read(),{season:1,day:1});
+ assert.deepEqual(readPreviewProgress(s),{season:1,matchdays:0});
+});
+
+test('W56-21 first-paint Debug bootstrap distinguishes an explicit 0 from absent or blank storage',async()=>{
+ const {DEBUG_SEASON_BOOTSTRAP}=await import('../tools/dev-preview-artifact.mjs');
+ const {runInNewContext}=await import('node:vm');
+ const source=DEBUG_SEASON_BOOTSTRAP.slice('<script>'.length,-'</script>'.length);
+ for(const raw of [null,'','bad','0','1','3']){
+  const document={documentElement:{dataset:{}}};
+  runInNewContext(source,{document,sessionStorage:{getItem:()=>raw}});
+  assert.equal(document.documentElement.dataset.faDevCurrentSeason,raw==='0'?'0':raw==='3'?'3':'1');
+ }
 });

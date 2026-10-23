@@ -4,8 +4,35 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {createPreviewStandings,createPreviewPostseason} from '../tools/dev-standings-preview-data.mjs';
+import rules from '../assets/competition-rules.js';
+import calendarModel from '../assets/world-calendar-model.js';
+import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
+const definitions=loadCompetitionCatalogue();
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const divisions=JSON.parse(read('competitions/_shared/manifest.json')).divisions;
+
+test('CONFIG-CLOCK: current fixture choices use existing markers without extending the 56-day clock',()=>{
+ assert.equal(typeof rules.currentFixtureChoice,'function');
+ const calendar=calendarModel.createSeason(1),cup=definitions.find(d=>d.id==='sovereign-cup');
+ for(const [day,want] of [[1,1],[16,2],[31,'playoffs:1'],[36,'playoffs:2'],[48,'final:1'],[54,null],[56,null]])assert.equal(rules.currentFixtureChoice(cup,calendar,{current:{season:1,day}}),want);
+ assert.equal(rules.currentFixtureChoice(cup,calendar,null),null);
+ assert.equal(rules.currentFixtureChoice(cup,calendar,{current:{season:2,day:1}}),null);
+});
+
+test('CONFIG-PHASES: fixture choices derive domestic and international phase lengths',()=>{
+ assert.equal(typeof rules.fixtureChoices,'function');
+ assert.deepEqual(rules.fixtureChoices(definitions.find(d=>d.id==='IT-1')).map(c=>c.value),[...Array.from({length:30},(_,i)=>i+1),'playout']);
+ assert.equal(rules.fixtureChoices(definitions.find(d=>d.id==='IT-2')).at(-1).value,'playoffs');
+ for(const d of definitions.filter(d=>d.category==='international')){
+  const choices=rules.fixtureChoices(d);
+  assert.deepEqual(choices.map(c=>c.value),[1,2,3,4,5,6,'playoffs:1','playoffs:2','quarterfinals:1','quarterfinals:2','semifinals:1','semifinals:2','final:1']);
+  const html=read('competitions/'+d.slug+'/index.html');
+  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,6);
+  assert.ok(html.includes('data-fixture-round-choice="final:1"'));
+  assert.equal((html.match(/data-postseason-config-tie=/g)||[]).length,11);
+  assert.ok(!html.includes('data-standing-outcome="promoted"'));
+ }
+});
 
 test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an honest empty state',()=>{
  for(const d of divisions){
@@ -28,20 +55,69 @@ function node(tag='div'){
  return n;
 }
 function setup(d=divisions[0]){
+ const definition=definitions.find(item=>item.id===d.id),configured=rules.fixtureChoices(definition);
  const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
- const choices=Array.from({length:30},(_,i)=>({...node('button'),id:"app-fixtures-round-option-"+(i+1),dataset:{fixtureRoundChoice:String(i+1),menuValue:String(i+1)}}));
+ const choices=configured.map(c=>({...node('button'),id:"app-fixtures-round-option-"+c.value,dataset:{fixtureRoundChoice:String(c.value),menuValue:String(c.value)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
- const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&patch.matchday!=='playoffs'&&patch.matchday!=='playout'&&(!Number.isInteger(patch.matchday)||patch.matchday<1||patch.matchday>30))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
- const window={faCompetitionModel:competitionModel,faCompetitionDivision:d,faCompetitionRoute:route,faAppRenderLanguage(){}};
+ const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&!configured.some(c=>c.value===patch.matchday))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
+ const events={};const window={faCompetitionRules:rules,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
- return {view:window.faFixtures,fields,route,choices};
+ return {view:window.faFixtures,fields,route,choices,window,events};
 }
 const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...f,kickoff:null,
  homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
 const contents=n=>n.textContent+n.children.map(contents).join('');
+
+test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does not alter context',()=>{
+ const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup);
+ assert.equal(typeof r.view?.prepare,'function');
+ const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
+ const fixtures=Array.from({length:12},(_,i)=>({phaseId:'league',round:1,homeId:rules.clubKey(participants[i]),awayId:rules.clubKey(participants[i+12]),homeGoals:null,awayGoals:null,kickoff:null}));
+ const context={definition:cup,selectedSeason:1,revision:2,seasonData:{participants,fixtures,results:null,statistics:null,status:'partial'}};
+ r.window.faCompetitionContext=context;r.events['fa:competition-context-change']();
+ assert.equal(r.fields.get('app-fixtures-list').children.length,12);
+ assert.ok(contents(r.fields.get('app-fixtures-list')).includes('Club 0'));
+ r.route.set({matchday:'quarterfinals:2'});
+ assert.equal(r.window.faCompetitionContext,context);
+ assert.equal(r.fields.get('app-fixtures-list').children.length,0,'unavailable later fixtures stay empty');
+ assert.equal(r.fields.get('app-fixtures-empty').hidden,false,'selected unsupplied choice explains its empty state');
+ r.window.faCompetitionContext={...context,selectedSeason:2,seasonData:null};r.events['fa:competition-context-change']();
+ assert.equal(r.fields.get('app-fixtures-list').children.length,0);
+ assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
+});
+test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded knockout fixtures fail closed',()=>{
+ const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup);
+ const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
+ const id=i=>rules.clubKey(participants[i]);
+ const standings=participants.map(club=>({club,played:6}));
+ const game={phaseId:'quarterfinals',tieId:'q1',leg:1,homeId:id(8),awayId:id(0),homeGoals:null,awayGoals:null,kickoff:null};
+ const result={id:'p89',winnerId:id(8)};
+ const cases=[{fixtures:[game,{...game,homeId:id(9)}],statistics:{standings},results:[result]},
+  {fixtures:[game,{...game,round:99}],statistics:{standings},results:[result]},
+  {fixtures:[game],statistics:null,results:[]},
+  {fixtures:[{...game,homeId:id(0),awayId:id(8)}],statistics:{standings},results:[result]}];
+ for(const variant of cases){
+  r.window.faCompetitionContext={definition:cup,selectedSeason:1,seasonData:{participants,...variant}};
+  r.events['fa:competition-context-change']();r.route.set({matchday:'quarterfinals:1'});
+  assert.equal(r.fields.get('app-fixtures-list').children.length,0);
+  assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
+ }
+});
+test('SEASON-FIXTURES: accepted historical seeds replace the definition captured at mount',()=>{
+ const cup=definitions.find(d=>d.id==='sovereign-cup'),r=setup(cup),historical=structuredClone(cup);
+ // The current catalogue differs from the stored snapshot's seed pairing.
+ historical.rules.phases.find(p=>p.id==='playoffs').ties[0].participants[0].rank=6;
+ const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
+ const id=i=>rules.clubKey(participants[i]);
+ const game={phaseId:'playoffs',tieId:'p512',leg:1,homeId:id(11),awayId:id(5),homeGoals:1,awayGoals:0,kickoff:null};
+ r.window.faCompetitionContext={definition:rules.normalizeCompetition(historical),selectedSeason:1,seasonData:{participants,fixtures:[game],results:[],statistics:{standings:participants.map(club=>({club,played:6}))}}};
+ r.events['fa:competition-context-change']();r.route.set({matchday:'playoffs:1'});
+ assert.equal(r.fields.get('app-fixtures-toolbar').hidden,false);
+ assert.equal(r.fields.get('app-fixtures-list').children.length,1);
+});
 
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){

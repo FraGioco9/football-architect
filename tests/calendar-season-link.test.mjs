@@ -53,3 +53,26 @@ test('CAL-SEASON-LINK-01 preview server sets DEV marker before page scripts',()=
  const server=readFileSync(new URL('../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  assert.ok(server.includes('window.faDevPreviewMode=true'));
 });
+
+
+test('Calendar season 0 keeps season 1 selectable without an inactive-season message',()=>{
+ const calendar=readFileSync(new URL('../assets/calendar-simplified.js',import.meta.url),'utf8');
+ const snippet=calendar.slice(calendar.indexOf(' const readDebugSeason='),calendar.indexOf(" window.addEventListener('fa:dev-progress-change',updateSeason)"));
+ for(const requested of ['0','1','3']){
+  let href='https://example.test/calendar?season='+requested;
+  const menu={children:[],replaceChildren(){this.children=[]},append(option){this.children.push(option)}};
+  const value={textContent:'',dataset:{}};
+  const trigger={disabled:false};
+  const root={dataset:{}};
+  const document={documentElement:{dataset:{}},getElementById:()=>null,createElement:()=>({dataset:{},setAttribute(){},addEventListener(){}})};
+  const window={};
+  const history={replaceState(state,title,url){href=String(url)}};
+  const location={get href(){return href},pathname:'/calendar',get search(){return new URL(href).search}};
+  runInNewContext(snippet+';updateSeason();',{document,window,history,location,URL,URLSearchParams,sessionStorage:{getItem:()=> '0'},seasonKey:'season',dev:true,menu,value,trigger,root,selector:{querySelector:()=>({})},t:()=>({season:'Season'}),closeMenu(){},chooseSeason(){}});
+  assert.equal(window.faCalendarSelectedSeason(),1);
+  assert.equal(value.textContent,'1');
+  assert.equal(trigger.disabled,false);
+  assert.deepEqual(menu.children.map(option=>option.dataset.menuValue),['1']);
+  assert.equal(new URL(href).searchParams.get('season'),'1');
+ }
+});

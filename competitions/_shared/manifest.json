@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "approved": false,
   "profile": {
     "id": "domestic-league-v1",
@@ -38,6 +38,3740 @@
     "IT-2": "assets/clubs/IT/2/crest.svg",
     "PT-1": "assets/clubs/PT/1/crest.svg"
   },
+  "competitions": [
+    {
+      "id": "BR-1",
+      "countryId": "BR",
+      "countryName": "Brazil",
+      "tier": 1,
+      "name": "Liga das Associações",
+      "capacity": 16,
+      "primaryHex": "#225B4C",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "br-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "BR-2",
+      "countryId": "BR",
+      "countryName": "Brazil",
+      "tier": 2,
+      "name": "Liga das Regiões",
+      "capacity": 16,
+      "primaryHex": "#4B7651",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "br-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "DE-1",
+      "countryId": "DE",
+      "countryName": "Germany",
+      "tier": 1,
+      "name": "Meisterliga",
+      "capacity": 16,
+      "primaryHex": "#4A5063",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "de-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "DE-2",
+      "countryId": "DE",
+      "countryName": "Germany",
+      "tier": 2,
+      "name": "Vereinsliga",
+      "capacity": 16,
+      "primaryHex": "#6A6571",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "de-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "ENG-1",
+      "countryId": "ENG",
+      "countryName": "England",
+      "tier": 1,
+      "name": "Crown League",
+      "capacity": 16,
+      "primaryHex": "#214D75",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "eng-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "ENG-2",
+      "countryId": "ENG",
+      "countryName": "England",
+      "tier": 2,
+      "name": "Shield League",
+      "capacity": 16,
+      "primaryHex": "#4A6480",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "eng-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "ES-1",
+      "countryId": "ES",
+      "countryName": "Spain",
+      "tier": 1,
+      "name": "Liga de la Unión",
+      "capacity": 16,
+      "primaryHex": "#913D48",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "es-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "ES-2",
+      "countryId": "ES",
+      "countryName": "Spain",
+      "tier": 2,
+      "name": "Liga de las Regiones",
+      "capacity": 16,
+      "primaryHex": "#9C594A",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "es-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "FR-1",
+      "countryId": "FR",
+      "countryName": "France",
+      "tier": 1,
+      "name": "Ligue des Sociétés",
+      "capacity": 16,
+      "primaryHex": "#414E87",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "fr-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "FR-2",
+      "countryId": "FR",
+      "countryName": "France",
+      "tier": 2,
+      "name": "Ligue des Régions",
+      "capacity": 16,
+      "primaryHex": "#66628D",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "fr-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "IT-1",
+      "countryId": "IT",
+      "countryName": "Italy",
+      "tier": 1,
+      "name": "Lega Federale",
+      "capacity": 16,
+      "primaryHex": "#155F50",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "it-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "IT-2",
+      "countryId": "IT",
+      "countryName": "Italy",
+      "tier": 2,
+      "name": "Lega delle Città",
+      "capacity": 16,
+      "primaryHex": "#41746A",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "it-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "NL-1",
+      "countryId": "NL",
+      "countryName": "Netherlands",
+      "tier": 1,
+      "name": "Oranjeliga",
+      "capacity": 16,
+      "primaryHex": "#8B5129",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "nl-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "NL-2",
+      "countryId": "NL",
+      "countryName": "Netherlands",
+      "tier": 2,
+      "name": "Bondsklasse",
+      "capacity": 16,
+      "primaryHex": "#88683C",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "nl-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "PT-1",
+      "countryId": "PT",
+      "countryName": "Portugal",
+      "tier": 1,
+      "name": "Liga Lusitana",
+      "capacity": 16,
+      "primaryHex": "#745064",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-top-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 1,
+                "kind": "champion"
+              },
+              {
+                "from": 2,
+                "to": 12,
+                "kind": "remain"
+              },
+              {
+                "from": 13,
+                "to": 14,
+                "kind": "playout",
+                "targetPhaseId": "playout"
+              },
+              {
+                "from": 15,
+                "to": 16,
+                "kind": "relegated"
+              }
+            ]
+          },
+          {
+            "id": "playout",
+            "type": "knockout",
+            "labelKey": "playout",
+            "calendarEvents": [
+              "N31",
+              "N32"
+            ],
+            "ties": [
+              {
+                "id": "playout",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 13
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 14
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "winnerOutcome": "remain",
+                "loserOutcome": "relegated"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "pt-1",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "playout": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 2
+          }
+        },
+        "totalMatches": 242
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playout"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "PT-2",
+      "countryId": "PT",
+      "countryName": "Portugal",
+      "tier": 2,
+      "name": "Liga Atlântica",
+      "capacity": 16,
+      "primaryHex": "#675F7D",
+      "secondaryHex": "#243039",
+      "ivoryHex": "#F5F1E8",
+      "clubIds": [],
+      "rules": {
+        "schemaVersion": 1,
+        "version": "domestic-second-v1",
+        "qualificationPolicyId": "none",
+        "phases": [
+          {
+            "id": "league",
+            "type": "roundRobin",
+            "labelKey": "league",
+            "calendarEvents": [
+              "N01",
+              "N02",
+              "N03",
+              "N04",
+              "N05",
+              "N06",
+              "N07",
+              "N08",
+              "N09",
+              "N10",
+              "N11",
+              "N12",
+              "N13",
+              "N14",
+              "N15",
+              "N16",
+              "N17",
+              "N18",
+              "N19",
+              "N20",
+              "N21",
+              "N22",
+              "N23",
+              "N24",
+              "N25",
+              "N26",
+              "N27",
+              "N28",
+              "N29",
+              "N30"
+            ],
+            "meetingsPerPair": 2,
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "headToHeadPointsReapply",
+              "headToHeadGoalDifferenceReapply",
+              "headToHeadGoalsForReapply",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "reproducibleDraw"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 2,
+                "kind": "promoted"
+              },
+              {
+                "from": 3,
+                "to": 6,
+                "kind": "promotionPlayoffs",
+                "targetPhaseId": "promotionPlayoffs"
+              },
+              {
+                "from": 7,
+                "to": 16,
+                "kind": "remain"
+              }
+            ]
+          },
+          {
+            "id": "promotionPlayoffs",
+            "type": "knockout",
+            "labelKey": "promotionPlayoffs",
+            "calendarEvents": [
+              "N31",
+              "N32",
+              "N33"
+            ],
+            "ties": [
+              {
+                "id": "semi36",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "semi45",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "remain"
+              },
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "semi36"
+                  },
+                  {
+                    "tieId": "semi45"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "remain",
+                "winnerOutcome": "promoted"
+              }
+            ]
+          }
+        ],
+        "awards": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      },
+      "category": "domestic",
+      "slug": "pt-2",
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 30,
+            "matchesPerRound": 8,
+            "matches": 240
+          },
+          "promotionPlayoffs": {
+            "rounds": 3,
+            "matchesPerRound": null,
+            "matches": 5
+          }
+        },
+        "totalMatches": 245
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "promotionPlayoffs"
+        ],
+        "awardIds": [
+          "champion",
+          "promotion",
+          "playoff",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "sovereign-cup",
+      "slug": "sovereign-cup",
+      "name": "Sovereign Cup",
+      "category": "international",
+      "capacity": 24,
+      "rules": {
+        "schemaVersion": 1,
+        "version": "international-int24-v1",
+        "qualificationPolicyId": "int24ChampionAwareV1",
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ],
+        "phases": [
+          {
+            "id": "league",
+            "type": "leaguePhase",
+            "labelKey": "league",
+            "calendarEvents": [
+              "I01",
+              "I02",
+              "I03",
+              "I04",
+              "I05",
+              "I06"
+            ],
+            "rounds": 6,
+            "matchesPerClub": 6,
+            "homeMatchesPerClub": 3,
+            "awayMatchesPerClub": 3,
+            "drawPolicyId": "int24SixOpponentsV1",
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "awayGoals",
+              "awayWins",
+              "opponentsPoints",
+              "opponentsGoalDifference",
+              "opponentsGoalsFor",
+              "compositeClubId"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 4,
+                "kind": "quarterfinals",
+                "targetPhaseId": "quarterfinals"
+              },
+              {
+                "from": 5,
+                "to": 12,
+                "kind": "knockouts",
+                "targetPhaseId": "playoffs"
+              },
+              {
+                "from": 13,
+                "to": 24,
+                "kind": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "playoffs",
+            "type": "knockout",
+            "labelKey": "knockouts",
+            "calendarEvents": [
+              "I07",
+              "I08"
+            ],
+            "ties": [
+              {
+                "id": "p512",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 12
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "p611",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 11
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "p710",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 7
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 10
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "p89",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 8
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 9
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "quarterfinals",
+            "type": "knockout",
+            "labelKey": "quarterfinals",
+            "calendarEvents": [
+              "I09",
+              "I10"
+            ],
+            "ties": [
+              {
+                "id": "q1",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 1
+                  },
+                  {
+                    "tieId": "p89"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "q2",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "tieId": "p512"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "q3",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 2
+                  },
+                  {
+                    "tieId": "p710"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "q4",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "tieId": "p611"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "semifinals",
+            "type": "knockout",
+            "labelKey": "semifinals",
+            "calendarEvents": [
+              "I11",
+              "I12"
+            ],
+            "ties": [
+              {
+                "id": "s1",
+                "participants": [
+                  {
+                    "tieId": "q1"
+                  },
+                  {
+                    "tieId": "q2"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "s2",
+                "participants": [
+                  {
+                    "tieId": "q3"
+                  },
+                  {
+                    "tieId": "q4"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "final",
+            "type": "knockout",
+            "labelKey": "final",
+            "calendarEvents": [
+              "SOVEREIGN-FINAL"
+            ],
+            "ties": [
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "s1"
+                  },
+                  {
+                    "tieId": "s2"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "neutral",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "eliminated",
+                "winnerOutcome": "champion"
+              }
+            ]
+          }
+        ]
+      },
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 6,
+            "matchesPerRound": 12,
+            "matches": 72
+          },
+          "playoffs": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 8
+          },
+          "quarterfinals": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 8
+          },
+          "semifinals": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 4
+          },
+          "final": {
+            "rounds": 1,
+            "matchesPerRound": null,
+            "matches": 1
+          }
+        },
+        "totalMatches": 93
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playoffs",
+          "quarterfinals",
+          "semifinals",
+          "final"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    },
+    {
+      "id": "federation-cup",
+      "slug": "federation-cup",
+      "name": "Federation Cup",
+      "category": "international",
+      "capacity": 24,
+      "rules": {
+        "schemaVersion": 1,
+        "version": "international-int24-v1",
+        "qualificationPolicyId": "int24ChampionAwareV1",
+        "awards": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ],
+        "phases": [
+          {
+            "id": "league",
+            "type": "leaguePhase",
+            "labelKey": "league",
+            "calendarEvents": [
+              "I01",
+              "I02",
+              "I03",
+              "I04",
+              "I05",
+              "I06"
+            ],
+            "rounds": 6,
+            "matchesPerClub": 6,
+            "homeMatchesPerClub": 3,
+            "awayMatchesPerClub": 3,
+            "drawPolicyId": "int24SixOpponentsV1",
+            "points": {
+              "win": 3,
+              "draw": 1,
+              "loss": 0
+            },
+            "tiebreakers": [
+              "points",
+              "goalDifference",
+              "goalsFor",
+              "wins",
+              "awayGoals",
+              "awayWins",
+              "opponentsPoints",
+              "opponentsGoalDifference",
+              "opponentsGoalsFor",
+              "compositeClubId"
+            ],
+            "rankOutcomes": [
+              {
+                "from": 1,
+                "to": 4,
+                "kind": "quarterfinals",
+                "targetPhaseId": "quarterfinals"
+              },
+              {
+                "from": 5,
+                "to": 12,
+                "kind": "knockouts",
+                "targetPhaseId": "playoffs"
+              },
+              {
+                "from": 13,
+                "to": 24,
+                "kind": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "playoffs",
+            "type": "knockout",
+            "labelKey": "knockouts",
+            "calendarEvents": [
+              "I07",
+              "I08"
+            ],
+            "ties": [
+              {
+                "id": "p512",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 5
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 12
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "p611",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 6
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 11
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "p710",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 7
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 10
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "p89",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 8
+                  },
+                  {
+                    "phaseId": "league",
+                    "rank": 9
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "quarterfinals",
+            "type": "knockout",
+            "labelKey": "quarterfinals",
+            "calendarEvents": [
+              "I09",
+              "I10"
+            ],
+            "ties": [
+              {
+                "id": "q1",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 1
+                  },
+                  {
+                    "tieId": "p89"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "q2",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 4
+                  },
+                  {
+                    "tieId": "p512"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "q3",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 2
+                  },
+                  {
+                    "tieId": "p710"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "q4",
+                "participants": [
+                  {
+                    "phaseId": "league",
+                    "rank": 3
+                  },
+                  {
+                    "tieId": "p611"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "semifinals",
+            "type": "knockout",
+            "labelKey": "semifinals",
+            "calendarEvents": [
+              "I11",
+              "I12"
+            ],
+            "ties": [
+              {
+                "id": "s1",
+                "participants": [
+                  {
+                    "tieId": "q1"
+                  },
+                  {
+                    "tieId": "q2"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              },
+              {
+                "id": "s2",
+                "participants": [
+                  {
+                    "tieId": "q3"
+                  },
+                  {
+                    "tieId": "q4"
+                  }
+                ],
+                "legs": 2,
+                "homePolicy": "higherOriginalTableRank",
+                "resolution": "aggregateExtraTimePenalties",
+                "loserOutcome": "eliminated"
+              }
+            ]
+          },
+          {
+            "id": "final",
+            "type": "knockout",
+            "labelKey": "final",
+            "calendarEvents": [
+              "FEDERATION-FINAL"
+            ],
+            "ties": [
+              {
+                "id": "final",
+                "participants": [
+                  {
+                    "tieId": "s1"
+                  },
+                  {
+                    "tieId": "s2"
+                  }
+                ],
+                "legs": 1,
+                "homePolicy": "neutral",
+                "resolution": "singleExtraTimePenalties",
+                "loserOutcome": "eliminated",
+                "winnerOutcome": "champion"
+              }
+            ]
+          }
+        ]
+      },
+      "metrics": {
+        "phases": {
+          "league": {
+            "rounds": 6,
+            "matchesPerRound": 12,
+            "matches": 72
+          },
+          "playoffs": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 8
+          },
+          "quarterfinals": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 8
+          },
+          "semifinals": {
+            "rounds": 2,
+            "matchesPerRound": null,
+            "matches": 4
+          },
+          "final": {
+            "rounds": 1,
+            "matchesPerRound": null,
+            "matches": 1
+          }
+        },
+        "totalMatches": 93
+      },
+      "capabilities": {
+        "phaseIds": [
+          "league",
+          "playoffs",
+          "quarterfinals",
+          "semifinals",
+          "final"
+        ],
+        "awardIds": [
+          "champion",
+          "manager",
+          "player",
+          "young",
+          "boot",
+          "assists",
+          "glove",
+          "defender",
+          "midfielder",
+          "forward",
+          "xi"
+        ]
+      }
+    }
+  ],
   "divisions": [
     {
       "id": "IT-1",

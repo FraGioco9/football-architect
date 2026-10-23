@@ -1,0 +1,306 @@
+import {chromium} from "playwright";
+import {mkdirSync} from "node:fs";
+import assert from "node:assert/strict";
+
+// Match the canonical app origin used by generated <base> URLs and DEV modules.
+const base="http://app.localhost:2000";
+const out="int24-browser-artifacts";
+mkdirSync(out,{recursive:true});
+const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
+const widths=[1440,768,390,320];
+const cups=["sovereign-cup","federation-cup"];
+const views=["standings","postseason","fixtures","stats","history","rules","awards"];
+const languages={en:"Standings",de:"Tabelle",es:"Clasificación",fr:"Classement",it:"Classifica"};
+let checks=0;
+let screenshots=0;
+const screenshot=async(page,name)=>{
+ await page.evaluate(async()=>{await Promise.all(document.getAnimations().filter(animation=>animation.effect?.getComputedTiming().iterations!==Infinity).map(animation=>animation.finished.catch(()=>{})))});
+ await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++;
+};
+try {
+ // Task 8: every canonical competition route initializes one shared, empty context.
+ const allRoutes=["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>country+"-"+tier)).concat(cups);
+ const routePage=await browser.newPage({viewport:{width:390,height:900}});
+ try{
+  for(const slug of allRoutes){
+   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"networkidle"});
+   assert.equal(response?.status(),200,"shared route "+slug);
+   await routePage.waitForSelector('#competition-tab-stats[aria-selected="true"]');
+   const actual=await routePage.evaluate(()=>({
+    id:window.faCompetitionContext?.definition?.id?.toLowerCase(),
+    season:window.faCompetitionContext?.selectedSeason,
+    tabs:document.querySelectorAll(".app-competition-tabs [role=tab]").length,
+    stats:document.querySelectorAll("#fa-dev-stats .fa-dev-stats-card").length
+   }));
+   assert.deepEqual(actual,{id:slug,season:1,tabs:7,stats:3},"shared route "+slug);
+   checks++;
+  }
+ }finally{await routePage.close()}
+ for(const cup of cups)for(const width of widths){
+  const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
+  const errors=[];
+  page.on("pageerror",e=>errors.push(e.message));
+  for(const view of views){
+   const url=base+"/competitions/"+cup+"/"+view;
+   const response=await page.goto(url,{waitUntil:"networkidle"});
+   assert.equal(response?.status(),200,url);
+   await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
+   assert.equal(await page.locator("#competition-panel-"+view).isVisible(),true);
+   assert.equal(await page.locator(".app-competition-header").count(),1);
+   assert.equal(await page.locator("#division-detail-name").innerText(),cup==="sovereign-cup"?"Sovereign Cup":"Federation Cup");
+   assert.equal(await page.locator(".app-competition-tabs [role=tab]").count(),7);
+   assert.equal(await page.locator("#app-competition-season").isVisible(),true);
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
+   assert.equal(overflow,false,"horizontal overflow "+cup+" "+width+" "+view);
+   const context=await page.evaluate(()=>({id:window.faCompetitionContext?.definition.id,season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData,domestic:!!window.faCompetitionDivision,frozen:Object.isFrozen(window.faCompetitionContext?.definition.rules)}));
+   assert.deepEqual(context,{id:cup,season:1,data:null,domestic:false,frozen:true});
+   if(view==="rules"){
+    assert.equal(await page.locator('[data-rule-metric="league.matches"]').innerText(),'72');
+    assert.equal(await page.locator('[data-rule-metric="totalMatches"]').innerText(),'93');
+    assert.equal(await page.locator('[data-rule-kind="relegated"]').count(),0);
+    assert.equal(await page.locator('[data-rule-kind="promoted"]').count(),0);
+   }
+   if(view==="awards"){
+    assert.equal(await page.locator('.fa-awards-card').count(),11);
+    assert.equal(await page.locator('.fa-awards-card-promotion,.fa-awards-card-playoff').count(),0);
+    assert.equal(await page.locator('[data-award-status="available"]').count(),0);
+   }
+   if(view==='fixtures'){
+    assert.equal(await page.locator('[data-fixture-round-choice]').count(),13);
+    assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
+    assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
+   }
+   if(view==='postseason'){
+    assert.equal(await page.locator('[data-postseason-config-tie]').count(),11);
+    const brokenRanks=await page.locator('[data-postseason-position] strong').evaluateAll(nodes=>nodes.filter(node=>node.getBoundingClientRect().height>parseFloat(getComputedStyle(node).lineHeight)*1.2).map(node=>node.textContent));
+    assert.deepEqual(brokenRanks,[],'seed rank digits must stay on one line at '+width+'px');
+   }
+   if(view==='stats'){
+    await page.waitForFunction(()=>Boolean(window.faCompetitionStats));
+    assert.equal(await page.locator('#fa-dev-stats .fa-dev-stats-card').count(),3);
+    assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0);
+    await page.locator('[data-stats-view="teams"]').click();
+    assert.equal(await page.locator('.fa-dev-stats-team-card').count(),7);
+    assert.equal(await page.locator('.fa-dev-stats-expand').count(),0);
+    await page.locator('[data-stats-view="players"]').click();
+    assert.equal(await page.locator('.fa-dev-stats-leader-card').count(),4);
+    await screenshot(page,cup+'-'+width+'-empty-stats.png');
+    await page.locator('[data-stats-view="players"]').focus();await page.keyboard.press('Home');
+    assert.equal(await page.locator('[data-stats-view="overview"]').evaluate(el=>document.activeElement===el),true);
+    assert.equal(await page.locator('.fa-dev-stats-card').count(),3);
+    checks++;
+   }
+   checks++;
+  }
+  await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
+  for(const [lang,label] of Object.entries(languages)){
+   await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
+   await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
+   const headings={en:"Competition format",de:"Wettbewerbsformat",es:"Formato de competición",fr:"Format de la compétition",it:"Formula della competizione"};
+   await page.waitForFunction(expected=>document.querySelector('#rules-format')?.textContent===expected,headings[lang]);
+   assert.equal(await page.locator('[data-rule-metric="league.matches"]').textContent(),'72');
+   const statsLabels={en:['Overview','Teams','Players'],de:['Übersicht','Teams','Spieler'],es:['Resumen','Equipos','Jugadores'],fr:['Vue d’ensemble','Équipes','Joueurs'],it:['Panoramica','Squadre','Giocatori']};
+   assert.deepEqual(await page.locator('#fa-dev-stats [data-stats-view]').allTextContents(),statsLabels[lang]);
+   checks++;
+  }
+  for(const theme of ["dark","light"]){
+   await page.evaluate(value=>localStorage.setItem("football-architect:theme",value),theme);
+   await page.reload({waitUntil:"networkidle"});
+   assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
+   await page.locator('#competition-tab-postseason').click();
+   await screenshot(page,cup+"-"+width+"-"+theme+".png");
+   checks++;
+  }
+  // Only this test supplies fictional cup data; the public/runtime code never generates it.
+  await page.evaluate(()=>{
+   const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+   const participants=Array.from({length:24},(_,i)=>({countryId:countries[Math.floor(i/3)],clubId:i%3+1,primaryName:'QA Club '+(i+1),abbr:'Q'+(i+1)}));
+   const id=i=>participants[i].countryId+'-'+participants[i].clubId;
+   const fixtures=Array.from({length:12},(_,i)=>({phaseId:'league',round:1,homeId:id(i),awayId:id(i+12),homeGoals:null,awayGoals:null,kickoff:null}));
+   const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
+   const teams=participants.map(club=>({clubKey:club.countryId+'-'+club.clubId,clubName:club.primaryName,mp:6,gf:5,ga:5,w:2,cs:1,ppg:8/6,gd:0,unbeatenStreak:2}));
+   const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0}]}],statistics:{standings,overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]},status:'partial'};
+   if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))throw Error('QA supplied data rejected');
+  });
+  assert.equal(await page.locator('#app-standings-body tr').count(),24);
+  assert.equal(await page.locator('[data-postseason-config-slot="q1:0"]').innerText(),'QA Club 1');
+  assert.equal(await page.locator('[data-postseason-config-slot="q1:1"]').innerText(),'QA Club 9');
+  assert.equal(await page.locator('[data-postseason-score="q1:0:aggregate"]').innerText(),'2');
+  await screenshot(page,cup+'-'+width+'-supplied-knockouts.png');
+  await page.locator('#competition-tab-stats').click();
+  await page.locator('[data-stats-view="overview"]').click();
+  assert.deepEqual(await page.locator('.app-competition-stat-value').allTextContents(),['12','36','3.00']);
+  await page.locator('[data-stats-view="overview"]').focus();await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('.fa-dev-stats-team-card').count(),7);
+  assert.equal(await page.locator('.fa-dev-stats-expand').count(),7);
+  await screenshot(page,cup+'-'+width+'-supplied-stats-teams.png');
+  const expand=page.locator('.fa-dev-stats-expand').first();
+  await expand.focus();await page.keyboard.press('Enter');
+  await page.waitForSelector('dialog.fa-dev-stats-dialog[open]');
+  assert.equal(await page.locator('dialog .fa-dev-stats-top>li').count(),24);
+  assert.equal(await page.locator('dialog .fa-dev-stats-rank').evaluateAll(nodes=>nodes.every(node=>node.textContent==='1')),true);
+  await screenshot(page,cup+'-'+width+'-stats-dialog.png');
+  await page.keyboard.press('Escape');await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
+  assert.equal(await expand.evaluate(el=>document.activeElement===el),true);
+  await expand.click();await page.waitForSelector('dialog[open]');await page.mouse.click(2,2);
+  await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
+  await expand.click();await page.locator('.fa-dev-stats-dialog-close').click();
+  await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
+  checks+=3;
+  await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:1}));
+  assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),12);
+  const revision=await page.evaluate(()=>window.faCompetitionContext.revision);
+  await page.evaluate(()=>window.faCompetitionRoute.set({matchday:'quarterfinals:2'}));
+  assert.equal(await page.evaluate(()=>window.faCompetitionContext.revision),revision,'fixture browsing must not change simulation/data progress');
+  assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),0);
+  await page.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
+  assert.equal(await page.locator('#app-standings-body tr').count(),1);
+  assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
+  checks+=3;
+  const tabs=page.locator(".app-competition-tabs [role=tab]");
+  await tabs.first().focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForURL("**/postseason?season=1");
+  assert.equal(await tabs.nth(1).evaluate(el=>document.activeElement===el),true);
+  await page.keyboard.press("End");
+  await page.waitForURL("**/awards?season=1");
+  await page.reload({waitUntil:"networkidle"});
+  assert.equal(await page.locator("#competition-panel-awards").isVisible(),true);
+  await page.goBack({waitUntil:"networkidle"});
+  assert.equal(await page.locator("#competition-panel-postseason").isVisible(),true);
+  checks++;
+  assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
+  await page.close();
+ }
+ // Season 0 is a DEV-only inactive state shared by cups, domestic divisions,
+ // Calendar and Club; it never creates a simulated season 0.
+ const page=await browser.newPage({viewport:{width:390,height:900}});
+ const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
+ page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
+ page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
+ for(const route of ["/competitions/sovereign-cup/standings","/competitions/federation-cup/fixtures","/competitions/sovereign-cup/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
+  console.log("Season 0 QA route: "+route);
+  await page.goto(base+route,{waitUntil:"networkidle"});
+  try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
+  await page.locator('.fa-dev-widget-button').click();
+  const season=page.locator('[data-dev-control="season-number"]');
+  assert.equal(await season.getAttribute('min'),'0');
+  await season.fill('0');await season.dispatchEvent('change');
+  await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===true);
+  assert.equal(await page.locator('[data-dev-control="world-day-number"]').isDisabled(),true);
+  assert.equal(await page.locator('[data-dev-control-row="world-day"] button:disabled').count(),2);
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-season')),'0');
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:standings-dev-matchdays')),'0');
+  if(route.startsWith('/competitions/')){
+   assert.equal(await page.locator('#app-competition-season').isDisabled(),false);
+   assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
+   assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
+   assert.equal(await page.locator('#competition-panel-'+route.split('/').at(-1)).isVisible(),true);
+   assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
+   assert.deepEqual(await page.evaluate(()=>({season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData})),{season:1,data:null});
+   if(route.endsWith('/stats')){assert.equal(await page.locator('#fa-dev-stats .fa-dev-stats-card').count(),3);assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0)}
+  }
+  if(route==='/calendar'){
+   assert.equal(await page.locator('#calendar-season-picker').isDisabled(),false);
+   assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
+  }
+  await page.reload({waitUntil:'networkidle'});
+  await page.waitForSelector('.fa-dev-widget-button');
+  assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
+  if(route.startsWith('/competitions/')){
+   assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
+   assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
+   assert.equal(await page.locator('#competition-panel-'+route.split('/').at(-1)).isVisible(),true);
+   if(route.endsWith('/stats'))assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0);
+   await page.locator('#app-competition-season').click();
+   assert.deepEqual(await page.locator('#app-competition-season-menu [role=option]').allTextContents(),['1']);
+   await page.locator('#app-competition-season').click();
+  }
+  if(route==='/calendar'){
+   assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
+   await page.locator('#calendar-season-picker').click();
+   assert.deepEqual(await page.locator('#calendar-season-menu [role=option]').allTextContents(),['1']);
+   await page.locator('#calendar-season-picker').click();
+  }
+  await page.locator('.fa-dev-widget-button').click();
+  await page.locator('[data-dev-control="season-number"]').fill('1');
+  await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+  await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===false&&window.faDevWorldClockSnapshot?.current?.season===1);
+  assert.equal(await page.evaluate(()=>window.faDevWorldClockSnapshot?.current?.season),1);
+  if(route.startsWith('/competitions/')){
+   await page.waitForFunction(()=>document.querySelector('#app-competition-season')?.disabled===false);
+   assert.equal(await page.evaluate(()=>window.faCompetitionContext?.selectedSeason),1);
+   if(route.includes('-cup/'))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
+   else await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1);
+  }
+  checks++;
+ }
+ assert.deepEqual(zeroErrors,[],"Season 0 JS errors");await page.close();
+ // A changed current catalogue must not reinterpret an explicitly supplied
+ // historical rules snapshot, scores or table. Interception is test-only.
+ for(const id of ['IT-1','sovereign-cup','federation-cup']){
+  const historyPage=await browser.newPage({viewport:{width:390,height:900}});
+  await historyPage.route('**/competitions/_shared/manifest.json',async route=>{
+   const response=await route.fetch(),json=await response.json();
+   const definition=json.competitions.find(definition=>definition.id===id);definition.rules.phases[0].points.win=2;
+   if(id==='IT-1'){definition.rules.phases[0].rankOutcomes[0].to=2;definition.rules.phases[0].rankOutcomes[1].from=3;}
+   else{
+    const phase=definition.rules.phases.find(p=>p.id==='playoffs');phase.id='current-playoffs';
+    phase.ties[0].participants[0].rank=6;phase.ties[1].participants[0].rank=5;
+    definition.rules.phases[0].rankOutcomes.find(o=>o.targetPhaseId==='playoffs').targetPhaseId=phase.id;
+    definition.metrics.phases[phase.id]=definition.metrics.phases.playoffs;delete definition.metrics.phases.playoffs;
+    definition.capabilities.phaseIds=definition.rules.phases.map(p=>p.id);
+   }
+   await route.fulfill({response,json});
+  });
+  await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:'networkidle'});
+  await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
+  const historical=await historyPage.evaluate(()=>{
+   const context=window.faCompetitionContext,definition=context.definition;
+   const snapshot=JSON.parse(JSON.stringify(definition.rules));snapshot.phases[0].points.win=3;
+   if(definition.category==='domestic'){snapshot.phases[0].rankOutcomes[0].to=1;snapshot.phases[0].rankOutcomes[1].from=2;}
+   else{const phase=snapshot.phases.find(p=>p.id==='current-playoffs');phase.id='playoffs';phase.ties[0].participants[0].rank=5;phase.ties[1].participants[0].rank=6;snapshot.phases[0].rankOutcomes.find(o=>o.targetPhaseId==='current-playoffs').targetPhaseId='playoffs';}
+   const participants=definition.category==='domestic'?window.faCompetitionDivision.clubs:Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES','DE','FR','PT','NL','BR'][Math.floor(i/3)],clubId:i%3+1,primaryName:'History Club '+i}));
+   const key=i=>participants[i].countryId+'-'+participants[i].clubId;
+   const data={season:1,rulesVersion:snapshot.version,rulesSnapshot:snapshot,participants,fixtures:definition.category==='international'?[{phaseId:'playoffs',tieId:'p512',leg:1,homeId:key(11),awayId:key(4),homeGoals:2,awayGoals:1,kickoff:null}]:null,results:[],statistics:definition.category==='international'?{standings:participants.map(club=>({club,played:6,won:0,drawn:6,lost:0,gf:0,ga:0,gd:0,pts:6,recent:[]}))}:null,status:'partial'};
+   if(!window.faCompetitionContextApi.replaceSeasonData(data,context.revision))throw Error('Historical snapshot rejected');
+   return JSON.stringify(data);
+  });
+  await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='3');
+  assert.equal(await historyPage.evaluate(()=>JSON.stringify(window.faCompetitionContext.seasonData)),historical);
+  await screenshot(historyPage,id.toLowerCase()+'-historical-rules.png');
+  if(id.includes('-cup')){
+   assert.equal(await historyPage.locator('[data-postseason-config-slot="p512:0"] [data-club-crest]').getAttribute('data-club-crest'),'ENG-2');
+   assert.equal(await historyPage.locator('[data-fixture-round-choice="playoffs:1"]').count(),1);
+   assert.equal(await historyPage.locator('[data-fixture-round-choice="current-playoffs:1"]').count(),0);
+   await historyPage.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:'playoffs:1'}));
+   assert.equal(await historyPage.locator('#app-fixtures-list [data-fixture-match]').count(),1);
+   assert.deepEqual(await historyPage.locator('#app-fixtures-list .app-fixture-goals').allTextContents(),['2','1']);
+   await historyPage.evaluate(()=>{
+    const context=window.faCompetitionContext,row=(playerId,playerName,countryId,goals)=>({playerId,playerName,countryId,clubId:1,goals,assists:0,appearances:1,cleanSheets:0});
+    window.faHistoryPlayerRecords.applyCanonicalHistory({source:'canonical',competitionId:context.definition.id,coverage:'complete',provenance:{approved:true},seasons:[{seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:context.definition.rules.version,rulesSnapshot:context.definition.rules,playerStats:[row('p1','First Player','IT',3),row('p1','First Player','ENG',3),row('p2','Second Player','ENG',6)]}]});
+    window.faCompetitionRoute.set({view:'history'});
+   });
+   await historyPage.locator('[data-history-player-record="seasonGoals"] [data-history-detail]').click();
+   await historyPage.waitForSelector('.app-history-player-dialog[open]');
+   assert.equal(await historyPage.locator('dialog a[href="/clubs/it/1/overview"]').count(),1);
+   assert.equal(await historyPage.locator('dialog a[href="/clubs/eng/1/overview"]').count(),2);
+   await screenshot(historyPage,id+'-historical-player-dialog.png');
+   await historyPage.keyboard.press('Escape');await historyPage.waitForSelector('.app-history-player-dialog[open]',{state:'detached'});
+  }
+  await historyPage.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
+  await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
+  assert.equal(await historyPage.evaluate(()=>window.faCompetitionContext.seasonData),null);
+  if(id==='IT-1'){
+   await historyPage.locator('.fa-dev-widget-button').click();
+   await historyPage.locator('[data-dev-control="season-number"]').fill('2');await historyPage.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+   await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionContext?.seasonData?.rulesSnapshot?.phases[0].points.win===3);
+   assert.notEqual(await historyPage.locator('#app-standings-body tr').nth(1).getAttribute('data-standing-outcome'),'champion');
+   assert.notEqual(await historyPage.locator('#app-standings-compact-list>li').nth(1).getAttribute('data-standing-outcome'),'champion');
+   await historyPage.evaluate(()=>window.faCompetitionRoute.set({view:'standings'}));
+   await screenshot(historyPage,'it-1-historical-dev-standings.png');checks++;
+  }
+  await historyPage.close();checks++;
+ }
+ console.log("INT24 Chromium QA PASS: "+checks+" checks; "+screenshots+" screenshots");
+}finally{await browser.close()}
