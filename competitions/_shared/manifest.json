@@ -32,11 +32,11 @@
     "BR-1": "assets/clubs/BR/1/crest.svg",
     "DE-1": "assets/clubs/DE/1/crest.svg",
     "DE-2": "assets/clubs/DE/2/crest.svg",
+    "ENG-3": "assets/clubs/ENG/3/crest.svg",
     "FR-2": "assets/clubs/FR/2/crest.svg",
     "IT-1": "assets/clubs/IT/1/crest.svg",
     "IT-2": "assets/clubs/IT/2/crest.svg",
-    "PT-1": "assets/clubs/PT/1/crest.svg",
-    "ENG-3": "assets/clubs/ENG/3/crest.svg"
+    "PT-1": "assets/clubs/PT/1/crest.svg"
   },
   "competitions": [
     {

@@ -890,8 +890,14 @@
     }
     bindSuppliedPanels(suppliedMobile);
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
-    for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
+    for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
+    const statsPanel=document.getElementById('competition-panel-stats');
+    if(statsPanel&&window.faCompetitionStats){
+      const stats=window.faCompetitionStats.mount(statsPanel,window.faCompetitionContext);
+      window.addEventListener('fa:competition-context-change',event=>stats.update(event.detail));
+      window.addEventListener('fa:competition-route-change',()=>stats.update(window.faCompetitionContext));
+    }
   }
   start().catch(fail);
 })();

@@ -446,16 +446,13 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
  assert.ok(!isAllowlistedPublicPath("tools/dev-debug-widget.mjs"));
  assert.ok(!planPublicFiles().includes("tools/dev-debug-widget.mjs"));
 });
-test("DEV-M01: mount the Debug widget only after competition hydration", { timeout: 10000 }, async () => {
+test("DEV-M01: Debug mounts independently while preview waits for competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
   const start = client.indexOf("if(validPath||indexPath||clubPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");
   const initializer = client.slice(start, end);
-  assert.ok(initializer.includes("(validPath?waitForRows():Promise.resolve()).then("));
-  assert.ok(!initializer.includes("createDebugWidget({controls:[{") ||
-    initializer.indexOf("(validPath?waitForRows():Promise.resolve()).then(") < initializer.indexOf("createDebugWidget({controls:[{"));
   for (const enabled of [false, true]) {
     let hydrate, signalMounted;
     const hydration = new Promise(resolve => { hydrate = resolve; });
@@ -481,9 +478,10 @@ test("DEV-M01: mount the Debug widget only after competition hydration", { timeo
       boot: division => operations.push("boot:" + division),
       console: { error: error => { throw error; } }
     });
-    assert.deepEqual(operations, [], "widget must not mount before hydration");
-    hydrate();
     await widgetMounted;
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(operations, ["widget"], "Debug navigation remains usable before data hydration");
+    hydrate();
     await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(operations, ["widget", "toggle"]);
   }

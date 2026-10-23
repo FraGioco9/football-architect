@@ -7,11 +7,13 @@ const base="http://app.localhost:2000";
 const out="int24-browser-artifacts";
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
-const widths=[1440,390,320];
+const widths=[1440,768,390,320];
 const cups=["sovereign-cup","federation-cup"];
 const views=["standings","postseason","fixtures","stats","history","rules","awards"];
 const languages={en:"Standings",de:"Tabelle",es:"Clasificación",fr:"Classement",it:"Classifica"};
 let checks=0;
+let screenshots=0;
+const screenshot=async(page,name)=>{await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++};
 try {
  for(const cup of cups)for(const width of widths){
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
@@ -52,6 +54,21 @@ try {
     const brokenRanks=await page.locator('[data-postseason-position] strong').evaluateAll(nodes=>nodes.filter(node=>node.getBoundingClientRect().height>parseFloat(getComputedStyle(node).lineHeight)*1.2).map(node=>node.textContent));
     assert.deepEqual(brokenRanks,[],'seed rank digits must stay on one line at '+width+'px');
    }
+   if(view==='stats'){
+    await page.waitForFunction(()=>Boolean(window.faCompetitionStats));
+    assert.equal(await page.locator('#fa-dev-stats .fa-dev-stats-card').count(),3);
+    assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0);
+    await page.locator('[data-stats-view="teams"]').click();
+    assert.equal(await page.locator('.fa-dev-stats-team-card').count(),7);
+    assert.equal(await page.locator('.fa-dev-stats-expand').count(),0);
+    await page.locator('[data-stats-view="players"]').click();
+    assert.equal(await page.locator('.fa-dev-stats-leader-card').count(),4);
+    await screenshot(page,cup+'-'+width+'-empty-stats.png');
+    await page.locator('[data-stats-view="players"]').focus();await page.keyboard.press('Home');
+    assert.equal(await page.locator('[data-stats-view="overview"]').evaluate(el=>document.activeElement===el),true);
+    assert.equal(await page.locator('.fa-dev-stats-card').count(),3);
+    checks++;
+   }
    checks++;
   }
   await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
@@ -61,6 +78,8 @@ try {
    const headings={en:"Competition format",de:"Wettbewerbsformat",es:"Formato de competición",fr:"Format de la compétition",it:"Formula della competizione"};
    await page.waitForFunction(expected=>document.querySelector('#rules-format')?.textContent===expected,headings[lang]);
    assert.equal(await page.locator('[data-rule-metric="league.matches"]').textContent(),'72');
+   const statsLabels={en:['Overview','Teams','Players'],de:['Übersicht','Teams','Spieler'],es:['Resumen','Equipos','Jugadores'],fr:['Vue d’ensemble','Équipes','Joueurs'],it:['Panoramica','Squadre','Giocatori']};
+   assert.deepEqual(await page.locator('#fa-dev-stats [data-stats-view]').allTextContents(),statsLabels[lang]);
    checks++;
   }
   for(const theme of ["dark","light"]){
@@ -68,7 +87,7 @@ try {
    await page.reload({waitUntil:"networkidle"});
    assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
    await page.locator('#competition-tab-postseason').click();
-   await page.screenshot({path:out+"/"+cup+"-"+width+"-"+theme+".png",fullPage:true});
+   await screenshot(page,cup+"-"+width+"-"+theme+".png");
    checks++;
   }
   // Only this test supplies fictional cup data; the public/runtime code never generates it.
@@ -78,14 +97,35 @@ try {
    const id=i=>participants[i].countryId+'-'+participants[i].clubId;
    const fixtures=Array.from({length:12},(_,i)=>({phaseId:'league',round:1,homeId:id(i),awayId:id(i+12),homeGoals:null,awayGoals:null,kickoff:null}));
    const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
-   const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0}]}],statistics:{standings},status:'partial'};
+   const teams=participants.map(club=>({clubKey:club.countryId+'-'+club.clubId,clubName:club.primaryName,mp:6,gf:5,ga:5,w:2,cs:1,ppg:8/6,gd:0,unbeatenStreak:2}));
+   const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0}]}],statistics:{standings,overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]},status:'partial'};
    if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))throw Error('QA supplied data rejected');
   });
   assert.equal(await page.locator('#app-standings-body tr').count(),24);
   assert.equal(await page.locator('[data-postseason-config-slot="q1:0"]').innerText(),'QA Club 1');
   assert.equal(await page.locator('[data-postseason-config-slot="q1:1"]').innerText(),'QA Club 9');
   assert.equal(await page.locator('[data-postseason-score="q1:0:aggregate"]').innerText(),'2');
-  await page.screenshot({path:out+'/'+cup+'-'+width+'-supplied-knockouts.png',fullPage:true});
+  await screenshot(page,cup+'-'+width+'-supplied-knockouts.png');
+  await page.locator('#competition-tab-stats').click();
+  await page.locator('[data-stats-view="overview"]').click();
+  assert.deepEqual(await page.locator('.app-competition-stat-value').allTextContents(),['12','36','3.00']);
+  await page.locator('[data-stats-view="overview"]').focus();await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('.fa-dev-stats-team-card').count(),7);
+  assert.equal(await page.locator('.fa-dev-stats-expand').count(),7);
+  await screenshot(page,cup+'-'+width+'-supplied-stats-teams.png');
+  const expand=page.locator('.fa-dev-stats-expand').first();
+  await expand.focus();await page.keyboard.press('Enter');
+  await page.waitForSelector('dialog.fa-dev-stats-dialog[open]');
+  assert.equal(await page.locator('dialog .fa-dev-stats-top>li').count(),24);
+  assert.equal(await page.locator('dialog .fa-dev-stats-rank').evaluateAll(nodes=>nodes.every(node=>node.textContent==='1')),true);
+  await screenshot(page,cup+'-'+width+'-stats-dialog.png');
+  await page.keyboard.press('Escape');await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
+  assert.equal(await expand.evaluate(el=>document.activeElement===el),true);
+  await expand.click();await page.waitForSelector('dialog[open]');await page.mouse.click(2,2);
+  await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
+  await expand.click();await page.locator('.fa-dev-stats-dialog-close').click();
+  await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
+  checks+=3;
   await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:1}));
   assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),12);
   const revision=await page.evaluate(()=>window.faCompetitionContext.revision);
@@ -117,7 +157,7 @@ try {
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
  page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
- for(const route of ["/competitions/sovereign-cup/standings","/competitions/federation-cup/fixtures","/competitions/it-1/standings","/calendar","/clubs/it/1/overview"]){
+ for(const route of ["/competitions/sovereign-cup/standings","/competitions/federation-cup/fixtures","/competitions/sovereign-cup/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
   await page.goto(base+route,{waitUntil:"networkidle"});
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
@@ -134,9 +174,10 @@ try {
    assert.equal(await page.locator('#app-competition-season').isDisabled(),false);
    assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
    assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
-   assert.equal(await page.locator('#competition-panel-'+(route.endsWith('/fixtures')?'fixtures':'standings')).isVisible(),true);
+   assert.equal(await page.locator('#competition-panel-'+route.split('/').at(-1)).isVisible(),true);
    assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
    assert.deepEqual(await page.evaluate(()=>({season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData})),{season:1,data:null});
+   if(route.endsWith('/stats')){assert.equal(await page.locator('#fa-dev-stats .fa-dev-stats-card').count(),3);assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0)}
   }
   if(route==='/calendar'){
    assert.equal(await page.locator('#calendar-season-picker').isDisabled(),false);
@@ -148,7 +189,8 @@ try {
   if(route.startsWith('/competitions/')){
    assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
    assert.equal(await page.locator('#app-competition-season-unavailable').isVisible(),false);
-   assert.equal(await page.locator('#competition-panel-'+(route.endsWith('/fixtures')?'fixtures':'standings')).isVisible(),true);
+   assert.equal(await page.locator('#competition-panel-'+route.split('/').at(-1)).isVisible(),true);
+   if(route.endsWith('/stats'))assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0);
    await page.locator('#app-competition-season').click();
    assert.deepEqual(await page.locator('#app-competition-season-menu [role=option]').allTextContents(),['1']);
    await page.locator('#app-competition-season').click();
@@ -173,5 +215,5 @@ try {
   checks++;
  }
  assert.deepEqual(zeroErrors,[],"Season 0 JS errors");await page.close();
- console.log("INT24 Chromium QA PASS: "+checks+" checks; 18 screenshots");
+ console.log("INT24 Chromium QA PASS: "+checks+" checks; "+screenshots+" screenshots");
 }finally{await browser.close()}

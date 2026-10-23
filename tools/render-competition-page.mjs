@@ -2,6 +2,7 @@
 import model from "../assets/competition-model.js";
 import rulesView from "../assets/competition-rules-view.js";
 import rules from "../assets/competition-rules.js";
+import statsView from "../assets/competition-stats.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo,clubsByDivision,crestCatalog}){
 const detailAppend = function detailAppend(d,neutral){
@@ -135,6 +136,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);
+  if(id==="stats")return `          <section ${attrs}>${statsView.renderEmpty()}\n          </section>`;
   if(id==="awards")return `          <section ${attrs}>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
