@@ -320,6 +320,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
     }
     console.log('CLUBS_03A_QA02: real accented manifest values, duplicate/invalid URLs and five languages passed');
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
     // QA-01: custom dropdown pushes a history entry and Back restores its state.
     await run("document.getElementById('nav01-country-trigger').click();document.querySelector('#nav01-country-menu [data-menu-value=IT]').click()");
     assert.equal(await run("new URLSearchParams(location.search).get('country')"),'IT');
