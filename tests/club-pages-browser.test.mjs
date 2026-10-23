@@ -261,21 +261,20 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
     // The public Clubs controls use the same keyboard model as Season/Matchday.
     const key=async(key,code)=>{await cmd('Input.dispatchKeyEvent',{type:'keyDown',key,windowsVirtualKeyCode:code});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key,windowsVirtualKeyCode:code})};
-    await run("document.querySelector('.nav01-filter select').value='';document.querySelector('.nav01-filter select').dispatchEvent(new Event('change'));document.getElementById('nav01-status-trigger').focus()");
+    await run("document.querySelector('.nav01-filter select').value='';document.querySelector('.nav01-filter select').dispatchEvent(new Event('change'));document.getElementById('nav01-division-trigger').focus()");
     await key('Enter',13);await key('End',35);await key('Enter',13);
-    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),64);
-    assert.equal(await run("document.getElementById('nav01-status-trigger').value"),'inactive');
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     await key(' ',32);await key('Home',36);await key('ArrowDown',40);await key('Enter',13);
-    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),256);
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     await key('Enter',13);await key('Home',36);await key('Enter',13);
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
     await run("document.getElementById('nav01-country-trigger').click()");await key('Tab',9);
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
     await run("document.getElementById('nav01-country-trigger').click();document.querySelector('.nav01-filters input').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
     assert.equal(await run("document.getElementById('nav01-country-menu').hidden"),true);
-    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=IT-1]').click()");
-    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),16);
-    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Lega Federale');
+    await run("document.getElementById('nav01-division-trigger').click();document.querySelector('#nav01-division-menu [data-menu-value=first]').click()");
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
+    assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'First');
     await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
     // NAV-01C: keyboard operation of the sidebar disclosure and focus.
