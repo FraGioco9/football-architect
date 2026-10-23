@@ -104,7 +104,7 @@ test('COMPETITION-URL: keyboard navigation retains one active tab and does not d
 
 test('COMPETITION-URL: first paint keeps season 1 fallback available',()=>{
  const html=readFileSync(new URL('../competitions/it-1/index.html',import.meta.url),'utf8');
- const bootstrap=[...html.matchAll(/<script>(\(\(\)=>[\s\S]*?)<\/script>/g)].slice(0,2).map(match=>match[1]).join('\n');
+ const bootstrap=html.match(/<script>(\(\(\)=>[\s\S]*?)<\/script>/)[1]
  for(const season of ['1','2','12','999999999']){
   const document={addEventListener(){},documentElement:{dataset:{}}};
   runInNewContext(bootstrap,{document,URLSearchParams,location:{pathname:'/competitions/it-1/fixtures',search:'?season='+season+'&matchday=12'}});
