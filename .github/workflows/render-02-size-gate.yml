@@ -24,6 +24,11 @@ jobs:
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+      - name: Capture clean checkout baseline
+        run: |
+          git status --short
+          git diff --binary > "$RUNNER_TEMP/render02-before.patch"
+          sha256sum "$RUNNER_TEMP/render02-before.patch"
       - name: Run isolated build, write and compression measurements
         run: |
           node --check tools/benchmark-render-02-size-gate.mjs
@@ -31,8 +36,9 @@ jobs:
       - name: Assert no tracked files changed
         run: |
           git status --short
-          git diff --name-only
-          git diff --exit-code
+          git diff --binary > "$RUNNER_TEMP/render02-after.patch"
+          sha256sum "$RUNNER_TEMP/render02-after.patch"
+          cmp "$RUNNER_TEMP/render02-before.patch" "$RUNNER_TEMP/render02-after.patch"
           git diff --cached --exit-code
       - name: Upload measurement JSON
         if: always()
