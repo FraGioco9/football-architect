@@ -45,8 +45,15 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-widget-option select,.fa-dev-widget-reset{cursor:pointer;background:#244c45;color:inherit;border:1px solid #568378;border-radius:6px;padding:5px}",
   "html[data-theme=\"light\"] .fa-dev-widget-option select,html[data-theme=\"light\"] .fa-dev-widget-reset{background:#e5f4ee;color:#174a40}",
   ".fa-dev-widget-reset{width:100%;margin-top:12px}",
+  ".fa-dev-select{position:relative;display:inline-flex;align-items:center;min-width:0}",
+  ".fa-dev-select select{appearance:none;-webkit-appearance:none;padding-right:28px}",
+  ".fa-dev-select>svg{position:absolute;right:7px;pointer-events:none}",
   ".fa-dev-widget-section{margin:8px 0;border-top:1px solid #568378;padding-top:8px}",
-  ".fa-dev-widget-section summary{cursor:pointer;font-weight:600;padding:5px 0}",
+  ".fa-dev-widget-section summary{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;padding:5px 0;list-style:none}",
+  ".fa-dev-widget-section summary::-webkit-details-marker{display:none}",
+  ".fa-dev-disclosure-chevron{flex:none;transition:transform 120ms ease;transform:rotate(0deg)}",
+  ".fa-dev-widget-section[open]>summary .fa-dev-disclosure-chevron{transform:rotate(180deg)}",
+  "@media(prefers-reduced-motion:reduce){.fa-dev-disclosure-chevron{transition:none}}",
   ".fa-dev-widget-close{display:none;cursor:pointer}",
   ".fa-dev-widget-backdrop{display:none;position:fixed;inset:0;z-index:2147483000}",
   ".fa-dev-widget-panel[hidden]{display:none!important}",
@@ -86,7 +93,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-number-wrap input[type=number]:focus{outline:none;box-shadow:none}",
   ".fa-dev-number-spin{position:relative;flex:0 0 21px;width:21px;min-width:21px;height:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;border-left:1px solid var(--border,#568378);padding:2px;gap:1px;background:var(--surface,#17302f)}",
   ".fa-dev-number-arrow{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:1 1 50%;min-height:0;width:100%;margin:0;padding:0;border:0;border-radius:4px;background:transparent;color:var(--text,#f3f8f5);cursor:pointer;touch-action:manipulation;outline:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .12s ease,color .12s ease}",
-  ".fa-dev-number-arrow svg{display:block;flex:none;width:10px;height:7px;overflow:visible;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}",
+  ".fa-dev-number-arrow svg{display:block;flex:none;width:10px;height:10px;overflow:visible;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round}",
   ".fa-dev-number-arrow:hover{background:var(--surface-hover,#315d53);color:var(--primary,#47b58d)}",
   ".fa-dev-number-arrow:active{background:var(--surface-raised,#244c45);color:var(--primary,#47b58d)}",
   ".fa-dev-number-arrow:focus{outline:none}",
@@ -117,7 +124,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  const sections=new Map();
  for(const [id,label] of [["general","All settings"]]){
   const details=element("details","fa-dev-widget-section");details.dataset.section=id;
-  details.append(element("summary","",label));details.open=true;
+  const summary=element("summary");summary.innerHTML='<svg class="fa-dev-disclosure-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';summary.append(document.createTextNode(label));details.append(summary);details.open=true;
   try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");if(typeof saved[id]==="boolean")details.open=saved[id]}catch{}
   details.addEventListener("toggle",()=>{try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");saved[id]=details.open;sessionStorage.setItem(SECTIONS_KEY,JSON.stringify(saved))}catch{}});
   sections.set(id,details);
@@ -151,7 +158,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
    const spin=element("span","fa-dev-number-spin");
    for(const [direction,label] of [[1,"Increase "+control.label.toLowerCase()],[-1,"Decrease "+control.label.toLowerCase()]]){
     const arrow=element("button","fa-dev-number-arrow");arrow.type="button";arrow.dataset.step=String(direction);arrow.setAttribute("aria-label",label);
-    arrow.innerHTML=direction===1?'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 6 4-4 4 4"/></svg>':'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="m2 2 4 4 4-4"/></svg>';
+    arrow.innerHTML='<svg class="site-chevron'+(direction===1?' site-chevron-up':'')+'" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     arrow.addEventListener("pointerdown",event=>{event.preventDefault();event.stopPropagation()});
     arrow.addEventListener("click",event=>{
      event.preventDefault();event.stopPropagation();
@@ -221,7 +228,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
     catch(error){select.value=previous;console.error("DEV Debug matchday change failed:",error)}
     finally{select.disabled=false}
    });
-   row.append(select);target.append(row);continue;
+   const selectWrap=element("span","fa-dev-select");selectWrap.innerHTML='<svg class="site-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';selectWrap.prepend(select);row.append(selectWrap);target.append(row);continue;
   }
   const row=element("label","fa-dev-widget-option");
   row.dataset.devControlRow=control.id;

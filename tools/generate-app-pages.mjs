@@ -1,5 +1,6 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
+import {renderSidebar} from "./render-sidebar.mjs";
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {clubOutputs} from "./generate-club-pages.mjs";
 import model from "../assets/competition-model.js";
@@ -93,7 +94,7 @@ const indexContent = function indexContent(){
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
  '              <div class="app-world-grid">\n'+links+'\n              </div>\n            </section>';
  }).join("\n");
- return internationalIndexCards + '          <div class="app-world-countries">\n'+cards+'\n          </div>';
+ return '          <section id="domestic" class="nav01-competition-section" aria-labelledby="domestic-heading"><h2 id="domestic-heading" data-nav01-section="1">Domestic</h2>\n          <div class="app-world-countries">\n'+cards+'\n          </div></section>\n          <section id="international" class="nav01-competition-section" aria-labelledby="international-heading"><h2 id="international-heading" data-nav01-section="2">International</h2>'+internationalIndexCards+'</section>';
 };
 const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,
  renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});
@@ -177,6 +178,8 @@ const normalizeRouteLinks=(html,path)=>{
  });
 };
 const writeOutput=(path,content)=>{
+ if(path.endsWith(".html")&&!content.includes("/assets/sidebar-evolution.js"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
+ if(path.endsWith('.html'))content=renderSidebar(content);
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
@@ -207,5 +210,18 @@ for(const page of outputPages){
 }
 for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments,countryFlags:Object.fromEntries(Object.values(countryById).map(country=>[country.id,inlineCountryFlag(country)]))}))
  writeOutput(output.path,output.path.endsWith(".html")?normalizeRouteLinks(output.content,output.path):output.content);
+// NAV-01B: produce directory from the same canonical generated competitions shell.
+{
+ const file=new URL("../competitions/index.html",import.meta.url);
+ const source=readFileSync(file,"utf8").replace(/\\r\\n/g,"\\n");
+ const begin=source.indexOf('<section id="app-divisions"');
+ const finish=source.indexOf("\n      </main>",begin);
+ if(begin<0||finish<0)throw Error("Clubs source shell missing");
+ const content="<section id=\"app-divisions\" class=\"app-view nav01-directory\" aria-labelledby=\"nav01-title\"><div id=\"nav01-clubs\"><h1 id=\"nav01-title\" class=\"app-page-title\">Clubs</h1><div class=\"nav01-filters\"><input type=\"search\" aria-label=\"Search clubs\" placeholder=\"Search clubs or cities\"><script data-nav01-search-first-paint>(()=>{const input=document.currentScript.previousElementSibling;const placeholders={en:\"Search clubs or cities\",de:\"Vereine oder Städte suchen\",es:\"Buscar clubes o ciudades\",fr:\"Rechercher clubs ou villes\",it:\"Cerca club o città\"};const value=placeholders[document.documentElement.lang]||placeholders.en;input.placeholder=value;input.setAttribute(\"aria-label\",value)})();</script><div class=\"language-control nav01-filter\"><select hidden aria-label=\"Country\"><option value=\"\">All countries</option></select><button type=\"button\" id=\"nav01-country-trigger\" class=\"language-trigger\" role=\"combobox\" aria-label=\"Country\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"nav01-country-menu\" disabled><span class=\"nav01-filter-value\">All countries</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"nav01-country-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"nav01-country-trigger\" hidden></div></div><div class=\"language-control nav01-filter\"><select hidden aria-label=\"Division\"><option value=\"\">All divisions</option></select><button type=\"button\" id=\"nav01-division-trigger\" class=\"language-trigger\" role=\"combobox\" aria-label=\"Division\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"nav01-division-menu\" disabled><span class=\"nav01-filter-value\">All divisions</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"nav01-division-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"nav01-division-trigger\" hidden></div></div></div><p class=\"nav01-count\" aria-live=\"polite\"></p><div class=\"nav01-grid\"></div></div></section>";
+ let html=source.slice(0,begin)+content+source.slice(finish);
+ html=html.replace("<title>Competitions — Football Architect</title>","<title>Clubs — Football Architect</title>");
+ html=html.replace('  <link rel="stylesheet" href="/assets/sidebar-evolution.css">', "  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/competition-tabs.js\" defer></script>\n  <script src=\"/assets/clubs-directory.js\" defer></script>\n  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">");
+ writeOutput("clubs/index.html",html);
+}
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 20 Competitions), 1 competition manifest, 1 club template and 1 club manifest");

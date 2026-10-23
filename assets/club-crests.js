@@ -9,6 +9,14 @@
   const asset=Object.hasOwn(catalog,id)?catalog[id]:null;
   if(rendered.has(host)&&rendered.get(host)===asset)return;
   rendered.set(host,asset);
+  const existing=host.querySelector?.('.app-club-crest-image');
+  if(existing&&typeof asset==='string'&&existing.getAttribute('src')==='/'+asset){
+   const loaded=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestFallback;host.dataset.clubCrestLoaded='true'}};
+   const failed=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestLoaded;if(host.classList?.contains('club-crest'))host.dataset.clubCrestFallback='true';existing.remove()}};
+   if(existing.complete){if(existing.naturalWidth>0)loaded();else failed();}
+   else{host.dataset.clubCrestPending='true';existing.addEventListener('load',loaded,{once:true});existing.addEventListener('error',failed,{once:true});}
+   return;
+  }
   for(const image of host.querySelectorAll('.app-club-crest-image'))image.remove();
   delete host.dataset.clubCrestLoaded;
   delete host.dataset.clubCrestPending;

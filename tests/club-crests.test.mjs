@@ -122,7 +122,7 @@ test('FR-2 club pages suppress first-paint placeholder and label the real crest 
  for(const view of clubModel.views){
   for(const lang of ['en','de','es','fr','it']){
    const html=clubModel.render(base,{countryId:'FR',clubId:2,view,base:'/clubs/fr/2'},lang);
-   const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest"[^>]*><\/span>/g)].map(x=>x[0]);
+   const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest"[^>]*>(?:<img[^>]*>)?<\/span>/g)].map(x=>x[0]);
    assert.equal(hosts.length,1,view+' '+lang+' retains the single header crest');
    for(const crest of hosts){
     assert.match(crest,/data-club-crest="FR-2"/);

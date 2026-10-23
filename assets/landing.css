@@ -93,3 +93,9 @@ html[data-theme="light"] .language-option[data-active="true"],
 html[data-theme="light"] .language-option:hover{background:#E4F1E9}
 html[data-theme="light"] .cta-primary:hover{background:var(--primary-hover)}
 html[data-theme="light"] .cta-secondary:hover{background:#EAF1ED;border-color:#7C9B8D}
+
+/* One chevron geometry; direction is presentation, never a font glyph. */
+.site-chevron{display:block;flex:none;transform-origin:center}
+/* Center the visible stroke vertically, independent of directional rotation. */
+.site-chevron,.language-chevron{translate:none}.site-chevron-left{transform:rotate(90deg)}.site-chevron-right{transform:rotate(-90deg)}.site-chevron-up{transform:rotate(180deg)}
+@media(prefers-reduced-motion:reduce){.language-chevron{transition:none}}
