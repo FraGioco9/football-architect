@@ -110,7 +110,7 @@ export function stagePublicArtifact(sourceRoot,destination) {
 export function publicRequestFile(pathname) {
   if(pathname==="/clubs"||pathname==="/clubs/")return "clubs/index.html";
   const club=resolveSubpage(pathname);
-  if(club?.kind==="club"&&!club.redirect)return `clubs/${club.countryId.toLowerCase()}/${club.clubId}/${club.view}/index.html`;
+  if(club?.kind==="club"&&!club.redirect)return `clubs/${club.base.slice(7)}/${club.view}/index.html`;
   const detail=pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)\/?$/);
   if(detail)return "competitions/"+detail[1]+"/index.html";
   return (pathname.endsWith("/") ? pathname + "index.html"
