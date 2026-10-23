@@ -15,7 +15,7 @@ test("INT-24: both cup routes resolve to public allowlisted HTML",()=>{
     const file=publicRequestFile(route);
     assert.equal(file,"competitions/"+slug+"/index.html");
     assert.ok(isAllowlistedPublicPath(file));
-    assert.ok(index.includes('href="'+route+'/standings?season=1"'));
+    assert.ok(index.includes('href="'+route+'/standings"'));
     const html=read(file);
     assert.match(html,/u\.searchParams\.delete\("view"\)/);
     assert.match(html,/history\.replaceState\(null,"",u\.pathname\+u\.search\+u\.hash\)/);
