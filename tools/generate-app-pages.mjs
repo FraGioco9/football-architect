@@ -95,7 +95,7 @@ const indexContent = function indexContent(){
  }).join("\n");
  return '          <section id="domestic" class="nav01-competition-section" aria-labelledby="domestic-heading"><h2 id="domestic-heading" data-nav01-section="1">Domestic</h2>\n          <div class="app-world-countries">\n'+cards+'\n          </div></section>\n          <section id="international" class="nav01-competition-section" aria-labelledby="international-heading"><h2 id="international-heading" data-nav01-section="2">International</h2><div class="app-panel"><p data-nav01-pending>International competition pages are being prepared.</p></div></section>';
 };
-const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,clubsByDivision:provisionalClubs,
+const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,clubsByDivision:provisionalClubs,crestCatalog:clubCrestAssets().catalog,
  renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});
 const worldPageReplacements = (division = null, neutral = false) => {
   const title = division ? (neutral?"Competition":division.name) : "Competitions";
