@@ -409,7 +409,7 @@ if(validPath||indexPath||clubPath){
  if(debugSeason===0){try{sessionStorage.removeItem(FLAG)}catch{}}
  if(clubPath&&debugSeason>0){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
  syncCompetitionLinks();
- (validPath?waitForRows():Promise.resolve()).then(() => {
+ Promise.resolve().then(() => {
 
   registerDebugControls("general",[{
    type:"range",id:"season",label:"Season",min:0,max:4,step:1,scope:"general",
@@ -425,7 +425,7 @@ if(validPath||indexPath||clubPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(validPath)setPreviewEnabled(debugSeason>0).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  if(validPath)waitForRows().then(()=>setPreviewEnabled(debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   else reveal();
   let renderedSeason=renderKey();
   let seasonRefresh=Promise.resolve(true);
@@ -534,7 +534,16 @@ function waitForRows() {
       }
     };
     const observer = new MutationObserver(table);
-    const timer = setTimeout(() => finish(Error("Standings hydration timeout")), 7000);
+    const timer = setTimeout(() => {
+       const tbody = document.getElementById("app-standings-body");
+       console.error("DEV standings hydration diagnostics:", {
+         rows:tbody?.rows.length??null, expectedRows:competitionModel.profile.capacity,
+         tablePresent:!!document.querySelector(".app-world-standing-table"),
+         routeReady:typeof window.faCompetitionRoute?.get==="function",
+         fixturesReady:typeof window.faFixtures?.prepare==="function"
+       });
+       finish(Error("Standings hydration timeout"));
+     }, 7000);
     function finish(error, body) {
       if (done) return;
       done = true;
