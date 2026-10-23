@@ -78,6 +78,7 @@ test('one view catalogue drives all generated detail documents and their first p
   const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.indexOf('/assets/competition-model.js')<html.indexOf('/assets/competition-page.js'));
   for(const view of model.views)assert.ok(html.includes('id="competition-panel-'+view.id+'"'));
-  assert.equal((html.match(/data-fixture-round-choice=/g)||[]).length,model.schedule.rounds);
+  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,30);
+  assert.ok(html.includes('data-fixture-round-choice="'+(d.tier===1?'playout':'playoffs')+'"'));
  }
 });

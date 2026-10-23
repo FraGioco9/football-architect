@@ -3,6 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import rules from '../assets/competition-rules.js';
+import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
+const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
 function setup(path='/competitions/it-1/',devSeason=null){
@@ -27,13 +30,24 @@ function setup(path='/competitions/it-1/',devSeason=null){
  tabs.forEach((tab,i)=>tab.getBoundingClientRect=()=>({left:i*104-scroll,right:i*104+100-scroll}));
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
- const window={faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const definition=definitions.find(d=>path.includes('/'+d.slug+'/')||path.includes('/'+d.slug+'?'));
+ const window={faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
  runInNewContext(source,{document,window,URL,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,tablist,events,contextSeasons,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
+test('CONFIG-URL: cup routes reject domestic rounds and retain configured leg tokens through history',()=>{
+ const s=setup('/competitions/sovereign-cup/fixtures?season=1&matchday=30');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,1);
+ s.window.faCompetitionRoute.set({matchday:'quarterfinals:2'});
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+ s.window.faCompetitionRoute.set({matchday:'final:1'});s.back();
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+ s.window.faCompetitionRoute.set({matchday:'playout'});
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+});
 test('DEV season menu ends at current progress and moves an invalid viewed season to season 1',()=>{
  const s=setup('/competitions/it-1?season=3&view=fixtures&matchday=13',3);
  const menu=s.fields.get('app-competition-season-menu');
@@ -152,7 +166,7 @@ test('POSTSEASON-URL: direct load, keyboard selection and browser history restor
 
 test('FIXTURES-POSTSEASON-URL: named rounds preserve deep links, tabs and browser history without extending league rounds',()=>{
  for(const stage of ['playoffs','playout']){
-  const s=setup('/competitions/it-2?season=1&matchday='+stage);
+  const s=setup('/competitions/'+(stage==='playout'?'it-1':'it-2')+'?season=1&matchday='+stage);
   assert.equal(s.window.faCompetitionRoute.get().matchday,stage);
   s.tabs[0].events.click();assert.equal(s.window.location.search,'?season=1');
   s.tabs[2].events.click();assert.equal(s.window.faCompetitionRoute.get().matchday,stage);

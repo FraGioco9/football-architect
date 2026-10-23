@@ -1,19 +1,18 @@
 // One detail renderer for all competition routes and the neutral shell.
 import model from "../assets/competition-model.js";
 import rulesView from "../assets/competition-rules-view.js";
+import rules from "../assets/competition-rules.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo}){
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
- const bands=neutral?[]:d.tier===1
-  ?[["1","champion","rulesTier1Champion","National champion"],["13–14","playout","rulesTier1Playout","Relegation play-out"],["15–16","relegated","rulesTier1Relegated","Direct relegation"]]
-  :[["1–2","promoted","rulesTier2Promoted","Direct promotion"],["3–6","playoff","rulesTier2Playoffs","Promotion play-offs"]];
+ const bands=neutral&&d.category!=='international'?[]:d.rules.phases.find(p=>p.rankOutcomes).rankOutcomes.filter(o=>rules.outcomeStyle(o.kind)).map(o=>[o.from===o.to?String(o.from):o.from+'–'+o.to,rules.outcomeStyle(o.kind),o.kind,rulesView.outcomeLabel(d,o),o]);
  const legend=bands.length?`
           <div class="app-standings-legend">
             <p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p>
             <ul aria-labelledby="standings-outcome-legend-title">
-${bands.map(([range,outcome,key,label])=>`              <li data-standing-outcome="${outcome}"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-${outcome}"><strong>${range}</strong> · <span data-app-i18n="${key}">${label}</span></span></li>`).join("\n")}
+${bands.map(([range,outcome,key,label,o])=>`              <li data-standing-outcome="${outcome}"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-${outcome}"><strong>${range}</strong> · <span data-competition-outcome="${key}"${o.targetPhaseId?' data-competition-target="'+encode(o.targetPhaseId)+'"':''}>${encode(label)}</span></span></li>`).join("\n")}
             </ul>
           </div>`:"";
  return `
@@ -34,14 +33,15 @@ ${d.category==="international"?'<tr><td colspan="11" class="app-competition-empt
           </div>${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const fixturesContent = ()=>`
+const fixtureOption=c=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'">'+(typeof c.value==='number'?'<span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+c.round:'<span data-competition-phase="'+c.labelKey+'">'+rulesView.phaseLabel(c.labelKey)+'</span>'+(c.round?' · '+c.round:''))+'</div>';
+const fixturesContent = (d)=>`
             <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
               <div class="app-fixtures-navigation">
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 <div class="language-control app-fixtures-select">
                 <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span>${menuChevron}</button>
                 <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
-${Array.from({length:model.schedule.rounds},(_,i)=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+(i+1)+'" data-menu-value="'+(i+1)+'" data-fixture-round-choice="'+(i+1)+'" aria-selected="'+(i===0)+'"><span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+(i+1)+'</div>').join("\n")}
+${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
                 </div>
                 </div>
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -89,19 +89,36 @@ const postseasonContent = (d,neutral) => {
  const head=(single,id)=>`<div class="app-knockout-score-head${single?" app-knockout-single":""}" role="row"><span role="columnheader" class="sr-only" data-app-i18n="standingsClub">Club</span>${(single?[["postseasonSingleMatch","Single match","—"]]:[["postseasonFirstLeg","First leg","1"],["postseasonSecondLeg","Second leg","2"],["postseasonAggregate","Aggregate","Σ"]]).map(([key,label,symbol],index)=>`<span role="columnheader" class="app-knockout-column"><button type="button" class="app-knockout-help" data-postseason-help="${id}-tip-${index}" aria-describedby="${id}-tip-${index}" data-app-aria="${key}"><span aria-hidden="true">${symbol}</span></button><span id="${id}-tip-${index}" role="tooltip" class="app-knockout-tooltip" data-app-i18n="${key}" hidden>${label}</span></span>`).join("")}</div>`;
  const row=(team,homeKey,homeLabel,id,side,single=false)=>`<div class="app-knockout-team-row${single?" app-knockout-single":""}" role="row" data-postseason-row="${id}:${side}"><div class="app-knockout-identity" role="rowheader">${team}${homeKey?`<span class="app-knockout-home" data-app-i18n="${homeKey}">${homeLabel}</span>`:""}</div>${single?score("postseasonSingleMatch","Single match",id,side,"final"):score("postseasonFirstLeg","First leg",id,side,"first")+score("postseasonSecondLeg","Second leg",id,side,"second")+score("postseasonAggregate","Aggregate",id,side,"aggregate")}</div>`;
  const tie=(id,key,label,better,lower)=>`<section class="app-postseason-group" aria-labelledby="${id}" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="${id}" data-app-i18n="${key}">${label}</h3><div role="table" aria-labelledby="${id}">${head(false,id)}${row(seed(better),"postseasonHomeReturn","Home in return leg",id,better)}${row(seed(lower),"postseasonHomeFirst","Home in first leg",id,lower)}</div><p class="app-knockout-resolution" data-postseason-resolution="${id}" hidden></p></section>`;
- if(d.category==="international")return `<p class="app-competition-status" data-app-i18n="cupKnockoutsEmpty">No knockout results available yet.</p>`;
+ if(d.category==="international"){
+  const reference=ref=>{
+   if(ref.rank)return seed(ref.rank);
+   const source=d.rules.phases.find(p=>p.ties?.some(t=>t.id===ref.tieId));
+   const index=source.ties.findIndex(t=>t.id===ref.tieId)+1;
+   return word('postseasonWinner','Winner')+' · <span data-competition-phase="'+encode(source.labelKey)+'">'+rulesView.phaseLabel(source.labelKey)+'</span> '+index;
+  };
+  const rounds=d.rules.phases.filter(p=>p.type==='knockout').map(p=>{
+   const ties=p.ties.map((t,index)=>{
+    const homeKey=t.homePolicy==='neutral'?'postseasonNeutralVenue':t.legs===1?'postseasonHomeSingle':'postseasonHigherReturn';
+    const homeText=t.homePolicy==='neutral'?'Neutral venue':t.legs===1?'Home match':'Better original rank hosts the return leg';
+    const teams=t.participants.map((ref,i)=>row('<span class="app-postseason-team" data-postseason-config-slot="'+encode(t.id)+':'+i+'">'+reference(ref)+'</span>',homeKey,homeText,t.id,i,t.legs===1)).join('');
+    return '<section class="app-postseason-group" data-postseason-config-tie="'+encode(t.id)+'"><div role="table" aria-label="'+encode(rulesView.phaseLabel(p.labelKey)+' '+(index+1))+'">'+head(t.legs===1,t.id)+teams+'</div></section>';
+   }).join('');
+   return '<div class="app-configured-knockout-round"><h3 data-competition-phase="'+encode(p.labelKey)+'">'+rulesView.phaseLabel(p.labelKey)+'</h3>'+ties+'</div>';
+  }).join('');
+  return '<p class="app-competition-status" data-configured-knockout-empty data-app-i18n="cupKnockoutsEmpty">No knockout results available yet.</p><div id="app-postseason-bracket" class="app-configured-knockouts">'+rounds+'</div>';
+ }
  if(neutral)return `<p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>`;
  const winner=`<div class="app-knockout-round app-knockout-result"><section class="app-postseason-group app-postseason-winner" aria-labelledby="postseason-winner" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="postseason-winner" data-app-i18n="postseasonWinner">Winner</h3><strong id="app-postseason-winner" class="app-knockout-winner-name">—</strong></section></div>`;
  const final=`<div class="app-knockout-round app-knockout-final"><section class="app-postseason-group app-postseason-final" aria-labelledby="postseason-final" data-standing-outcome="playoff"><h3 id="postseason-final" data-app-i18n="postseasonFinal">Final</h3><div role="table" aria-labelledby="postseason-final">${head(true,"final")}${row(`<span class="app-postseason-team" data-postseason-finalist="home">${word("postseasonFinalHome","Better-ranked finalist")}</span>`,null,null,"final","home",true)}${row(`<span class="app-postseason-team" data-postseason-finalist="away">${word("postseasonFinalAway","Other finalist")}</span>`,null,null,"final","away",true)}</div><p class="app-knockout-resolution" data-postseason-resolution="final" hidden></p></section></div>`;
- const bracket=d.tier===1
-  ?`<div class="app-knockout-round app-knockout-left">${tie("postseason-playout","rulesPlayoutTitle","Relegation play-out",13,14)}</div>${winner}`
-  :`<div class="app-knockout-round app-knockout-left">${tie("postseason-semi-one","postseasonSemiOne","Semi-final 1",3,6)}</div><div class="app-knockout-round app-knockout-right">${tie("postseason-semi-two","postseasonSemiTwo","Semi-final 2",4,5)}</div>${final}${winner}`;
- return `<div id="app-postseason-bracket" class="app-postseason-grid${d.tier===1?" app-postseason-playout":""}">${bracket}</div>`;
+ const first=d.rules.phases.find(p=>p.type==='knockout'),isPlayout=first.labelKey==='playout';
+ const legacyTieId=id=>({semi36:'semi-one',semi45:'semi-two'}[id]||id);
+ const bracket=first.ties.filter(t=>t.participants.every(ref=>ref.rank)).map((t,i)=>`<div class="app-knockout-round ${i===0?'app-knockout-left':'app-knockout-right'}">${tie('postseason-'+legacyTieId(t.id),isPlayout?'rulesPlayoutTitle':i===0?'postseasonSemiOne':'postseasonSemiTwo',isPlayout?'Relegation play-out':'Semi-final '+(i+1),...t.participants.map(ref=>ref.rank).sort((a,b)=>a-b))}</div>`).join('')+(first.ties.some(t=>t.legs===1)?final:'')+winner;
+ return `<div id="app-postseason-bracket" class="app-postseason-grid${isPlayout?" app-postseason-playout":""}">${bracket}</div>`;
 };
 const competitionTabs = function competitionTabs(d,standings,neutral) {
  const views=model.views.map(view=>view.id==="postseason"&&d.category==="international"
   ?{...view,key:"competitionTabKnockouts",label:"Knockouts"}:view.id==="postseason"&&!neutral
-  ?{...view,key:d.tier===1?"competitionTabPlayout":"competitionTabPlayoffs",label:d.tier===1?"Playout":"Playoffs"}:view);
+  ?{...view,key:d.rules.phases.some(p=>p.labelKey==='playout')?"competitionTabPlayout":"competitionTabPlayoffs",label:d.rules.phases.some(p=>p.labelKey==='playout')?"Playout":"Playoffs"}:view);
  const nav=views.map(({id,key,label},i)=>
   `            <button type="button" role="tab" class="app-competition-tab${i===0?" is-active":""}" id="competition-tab-${id}" aria-controls="competition-panel-${id}" aria-selected="${i===0?"true":"false"}" tabindex="${i===0?"0":"-1"}" data-app-i18n="${key}">${label}</button>`
  ).join("\n");
@@ -115,7 +132,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
   if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
-  if(id==="fixtures")return `          <section ${attrs}>${fixturesContent()}\n          </section>`;
+  if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);
   if(id==="awards")return `          <section ${attrs}>\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;

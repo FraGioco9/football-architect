@@ -89,5 +89,7 @@
   try{const html=renderRules(input,locale);panel.innerHTML=html;rendered.set(panel,signature);}
   catch(error){rendered.delete(panel);throw error;}
  }
- return Object.freeze({renderRules,awardIds,update});
+ const phaseLabel=(key,locale='en')=>(copy[locale]||copy.en).phases[key]||'';
+ const outcomeLabel=(definition,outcome,locale='en')=>outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
+ return Object.freeze({renderRules,awardIds,update,phaseLabel,outcomeLabel});
 });

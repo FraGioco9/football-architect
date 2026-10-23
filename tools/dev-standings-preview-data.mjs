@@ -2,6 +2,10 @@
 // This module is NOT on the publication-guard allowlist. Never use as sports data.
 import "../assets/competition-model.js";
 import "../assets/world-calendar-model.js";
+import "../assets/competition-rules.js";
+import domesticDefinitions from "../data/divisions.json" with {type:'json'};
+const configuredRules=globalThis.faCompetitionRules;
+const previewDefinition=division=>configuredRules.normalizeCompetition({...domesticDefinitions.find(d=>d.id===division.id),...(division.rules?{rules:division.rules}:{}),capacity:division.capacity});
 export const competitionModel=globalThis.faCompetitionModel;
 const {capacity}=competitionModel.profile;
 const {rounds,roundsPerLeg,matchesPerRound,matches,pairings:pairingCount}=competitionModel.schedule;
@@ -47,6 +51,9 @@ function randomSource(key) {
 export function createPreviewStandings(division, matchdays = 15, season = 1) {
   if (!Number.isInteger(season) || season < 1 || season > 4) throw Error("Invalid DEV season");
   assertDivision(division);
+  const definition=previewDefinition(division),phase=definition.rules.phases.find(p=>p.type==='roundRobin');
+  const {rounds,matchesPerRound,matches}=definition.metrics.phases[phase.id];
+  const capacity=definition.capacity,roundsPerLeg=capacity-1,pairingCount=capacity*(capacity-1)/2;
   if (!Number.isInteger(matchdays) || matchdays < 0 || matchdays > rounds) throw Error("Invalid DEV matchday count");
   const clubs = [...division.clubs].sort((a, b) => a.clubId - b.clubId);
   const random = randomSource("FA-STANDINGS-DEV-v" + PREVIEW_SCHEMA_VERSION + ":" +
@@ -92,7 +99,7 @@ export function createPreviewStandings(division, matchdays = 15, season = 1) {
   }
   const rows = [...byId.values()].map(row => {
     row.gd = row.gf - row.ga;
-    row.pts = PREVIEW_RULES.win*row.won+PREVIEW_RULES.draw*row.drawn+PREVIEW_RULES.loss*row.lost;
+    row.pts = phase.points.win*row.won+phase.points.draw*row.drawn+phase.points.loss*row.lost;
     row.recent = row.recent.slice(-5).reverse();
     if (row.played !== matchdays || row.won + row.drawn + row.lost !== matchdays ||
         row.recent.length !== Math.min(5,matchdays)) throw Error("Incomplete DEV club results");
@@ -152,6 +159,7 @@ export function previewSeasonMatchdays(season,progress) {
 // Fictional post-season results are private, deterministic and revealed only at their played stage.
 export function createPreviewPostseason(division,matchday,season=1) {
   assertDivision(division);
+  const definition=previewDefinition(division),phase=definition.rules.phases.find(p=>p.type==='knockout');
   previewSeasonProgress(season,{season,matchdays:matchday});
   const result={divisionId:division.id,season,matchday,ties:[],final:null,winnerId:null};
   if(matchday<rounds)return result;
@@ -181,14 +189,20 @@ export function createPreviewPostseason(division,matchday,season=1) {
       aggregate:matchday>=32?aggregate:matchday>=31?[first.awayGoals,first.homeGoals]:null,
       winnerId:matchday>=32?winner:null};
   }
-  if(division.tier===1){
-    result.ties=[tie("playout",13,14)];
+  const legacyTieId=id=>({semi36:'semi-one',semi45:'semi-two'}[id]||id);
+  result.ties=phase.ties.filter(t=>t.participants.every(ref=>ref.rank)).map(t=>{
+    const homeFirst=configuredRules.homeOrder(definition,t.id,configuredRules.tieParticipants(definition,t.id,rows,[]),rows);
+    const positions=[...homeFirst].reverse().map(club=>rows.findIndex(row=>row.club.clubId===club.clubId)+1);
+    return tie(legacyTieId(t.id),...positions);
+  });
+  const finalConfig=phase.ties.find(t=>t.legs===1);
+  if(!finalConfig){
     result.winnerId=result.ties[0].winnerId;
     return result;
   }
-  result.ties=[tie("semi-one",3,6),tie("semi-two",4,5)];
   if(matchday>=32){
-    const finalists=result.ties.map(t=>t.winnerId).sort((a,b)=>rows.findIndex(r=>r.club.clubId===a)-rows.findIndex(r=>r.club.clubId===b));
+    const completed=result.ties.map(t=>({...t,id:phase.ties.find(config=>legacyTieId(config.id)===t.id).id}));
+    const finalists=configuredRules.homeOrder(definition,finalConfig.id,configuredRules.tieParticipants(definition,finalConfig.id,rows,completed),rows).map(club=>club.clubId);
     const rng=random("final"),final=game(finalists[0],finalists[1],rng);
     resolve(final,rng);
     const winner=final.homeGoals!==final.awayGoals?(final.homeGoals>final.awayGoals?final.homeId:final.awayId):

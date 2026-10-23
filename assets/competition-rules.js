@@ -58,5 +58,56 @@ return {valid:errors.length===0,errors};
 function phaseMetrics(definition,phaseId){const p=definition.rules.phases.find(p=>p.id===phaseId);if(!p)return null;const n=definition.capacity;if(p.type==="roundRobin"){const rounds=(n-1)*p.meetingsPerPair;return freeze({rounds,matchesPerRound:n/2,matches:rounds*n/2})}if(p.type==="leaguePhase")return freeze({rounds:p.rounds,matchesPerRound:n/2,matches:n*p.matchesPerClub/2});return freeze({rounds:p.calendarEvents.length,matchesPerRound:null,matches:p.ties.reduce((a,t)=>a+t.legs,0)})}
 function normalizeCompetition(record){const check=validateCompetition(record);if(!check.valid)throw new TypeError(check.errors.map(x=>x.path+": "+x.message).join("; "));const value=clone(record);value.category=value.category||(value.countryId?"domestic":"international");value.slug=value.slug||String(value.id).toLowerCase();const phaseTotals={};let totalMatches=0;for(const p of value.rules.phases){const m=phaseMetrics(value,p.id);phaseTotals[p.id]=m;totalMatches+=m.matches}value.metrics={phases:phaseTotals,totalMatches};value.capabilities={phaseIds:value.rules.phases.map(p=>p.id),awardIds:[...value.rules.awards]};return freeze(value)}
 function outcomeAt(definition,phaseId,rank){const phase=definition.rules.phases.find(p=>p.id===phaseId);return phase&&Array.isArray(phase.rankOutcomes)?phase.rankOutcomes.find(x=>rank>=x.from&&rank<=x.to)||null:null}
-return freeze({validateCompetition,normalizeCompetition,phaseMetrics,outcomeAt});
+const clubKey=club=>club&&typeof club.countryId==='string'&&Number.isInteger(club.clubId)?club.countryId+'-'+club.clubId:null;
+const tableClub=row=>row?.club||row;
+function fixtureChoices(definition){
+ const choices=[];
+ for(const phase of definition.rules.phases){
+  if(phase.type!=='knockout'){
+   for(let round=1;round<=phaseMetrics(definition,phase.id).rounds;round++)choices.push({value:round,phaseId:phase.id,round,labelKey:'fixturesMatchday',labelParams:{round}});
+  }else if(definition.category==='domestic'){
+   if(!choices.some(c=>typeof c.value==='string'))choices.push({value:phase.labelKey==='playout'?'playout':'playoffs',phaseId:phase.id,round:null,labelKey:phase.labelKey,labelParams:{}});
+  }else for(let leg=1;leg<=Math.max(...phase.ties.map(t=>t.legs));leg++)choices.push({value:phase.id+':'+leg,phaseId:phase.id,round:leg,labelKey:phase.labelKey,labelParams:{leg}});
+ }
+ return freeze(choices);
+}
+function findTie(definition,id){const tie=definition.rules.phases.flatMap(p=>p.ties||[]).find(t=>t.id===id);if(!tie)throw Error('Unknown configured tie');return tie}
+function tieParticipants(definition,tieId,table,completedTies=[]){
+ if(!Array.isArray(table)||!Array.isArray(completedTies))throw Error('Invalid tie participants');
+ const tie=findTie(definition,tieId),lookup=new Map(table.map(row=>[clubKey(tableClub(row)),tableClub(row)]));
+ if(lookup.has(null)||lookup.size!==table.length)throw Error('Invalid participant identity');
+ return tie.participants.map(ref=>{
+  if(!ref.tieId)return tableClub(table[ref.rank-1])||null;
+  const records=completedTies.filter(t=>(t.id||t.tieId)===ref.tieId);
+  if(records.length>1)throw Error('Duplicate completed tie');
+  const result=records[0];if(result?.winnerId==null)return null;
+  const source=tieParticipants(definition,ref.tieId,table,completedTies);
+  const winner=source.find(club=>club&&(clubKey(club)===result.winnerId||definition.category==='domestic'&&club.clubId===result.winnerId));
+  if(!winner||!lookup.has(clubKey(winner)))throw Error('Invalid completed tie winner participant');
+  return winner;
+ });
+}
+// Return home/away order for the first leg. Return legs reverse it; ranks never transfer after an upset.
+function homeOrder(definition,tieId,clubs,originalTable){
+ const tie=findTie(definition,tieId);
+ if(!Array.isArray(clubs)||clubs.length!==2)throw Error('Invalid tie clubs');
+ if(tie.homePolicy==='neutral'||clubs.some(c=>c===null))return [...clubs];
+ const rank=club=>originalTable.findIndex(row=>clubKey(tableClub(row))===clubKey(club));
+ if(clubs.some(club=>rank(club)<0))throw Error('Unknown original participant rank');
+ const ordered=[...clubs].sort((a,b)=>rank(a)-rank(b));return tie.legs===2?ordered.reverse():ordered;
+}
+const outcomeStyle=kind=>kind==='promotionPlayoffs'||kind==='knockouts'?'playoff':kind==='remain'||kind==='eliminated'?'':kind||'';
+function currentFixtureChoice(definition,calendar,snapshot){
+ const current=snapshot?.current;
+ if(!current||current.season!==calendar.season||!Number.isInteger(current.day)||current.day<1||current.day>56)return null;
+ for(const day of calendar.days.filter(day=>day.day>current.day))for(const event of day.events){
+  if(!event.competitionIds.includes(definition.id))continue;
+  const phase=definition.rules.phases.find(p=>p.calendarEvents.includes(event.marker));if(!phase)continue;
+  if(phase.type!=='knockout')return phase.calendarEvents.indexOf(event.marker)+1;
+  if(definition.category==='domestic')return fixtureChoices(definition).find(c=>typeof c.value==='string')?.value||null;
+  return phase.id+':'+(phase.calendarEvents.indexOf(event.marker)+1);
+ }
+ return null;
+}
+return freeze({validateCompetition,normalizeCompetition,phaseMetrics,outcomeAt,fixtureChoices,tieParticipants,homeOrder,clubKey,outcomeStyle,currentFixtureChoice});
 });

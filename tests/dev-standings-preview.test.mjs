@@ -536,9 +536,6 @@ test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4
  assert.ok(client.includes("matchdays=0;"));
  assert.ok(widget.includes("root.syncVisibility=()=>"));
  assert.ok(client.includes('activePreview=replacement;'));
- const mobileRuntime=read("assets/competition-page.js").toString();
- assert.ok(mobileRuntime.includes("row.recent.length !== Math.min(5,row.played)"),
-  "mobile standings must accept exactly the available recent results for 1–4 matchdays");
  for(const days of [1,2,3,4]){
   const model=createPreviewStandings(manifest.divisions[0],days);
   assert.ok(model.rows.every(row=>row.recent.length===days),

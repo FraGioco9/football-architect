@@ -557,7 +557,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     if (!competitionModel.validManifest(manifest)) {
       throw Error("Invalid DEV manifest");
     }
-    const division = manifest.divisions.find(d => d.id === routeId);
+    const legacyDivision = manifest.divisions.find(d => d.id === routeId);
+    const definition=competitionModel.competitionById(manifest,routeId);
+    const division=legacyDivision?{...legacyDivision,rules:definition.rules,metrics:definition.metrics}:null;
     if (!division) throw Error("Unknown DEV division");
     // Resolve the season only after the manifest is loaded, then capture it for both
     // standings and fixtures. Read router state first only when it agrees with the
@@ -599,8 +601,8 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // the selected round from URL/state, including completed-season archives.
     const regularRound=previewCurrentMatchday(season,progress);
      // Once the post-season starts, the current-round shortcut targets its named fixture stage.
-     const currentRound=progress.matchdays>=30
-       ?(division.tier===1?'playout':'playoffs'):regularRound;
+     const currentRound=progress.matchdays>=definition.metrics.phases.league.rounds
+       ?window.faCompetitionRules.fixtureChoices(definition).find(choice=>typeof choice.value==='string').value:regularRound;
     const postResults=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
     const postFixtures=[];
     for(const tie of postResults.ties)for(const leg of [0,1])postFixtures.push({

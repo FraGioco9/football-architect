@@ -78,6 +78,9 @@
       postseasonExtraTime:"After extra time",
       postseasonPenalties:"Penalties",
       postseasonHomeFirst:"Home in first leg",
+      postseasonHigherReturn:"Better original rank hosts the return leg",
+      postseasonNeutralVenue:"Neutral venue",
+      postseasonHomeSingle:"Home match",
       postseasonHomeReturn:"Home in return leg",
       postseasonPosition:"League position",
       postseasonFirstLeg:"First leg",
@@ -312,6 +315,9 @@
       postseasonExtraTime:"Nach Verlängerung",
       postseasonPenalties:"Elfmeterschießen",
       postseasonHomeFirst:"Heimrecht im Hinspiel",
+      postseasonHigherReturn:"Besserer ursprünglicher Rang hat im Rückspiel Heimrecht",
+      postseasonNeutralVenue:"Neutraler Spielort",
+      postseasonHomeSingle:"Heimspiel",
       postseasonHomeReturn:"Heimrecht im Rückspiel",
       postseasonPosition:"Tabellenplatz",
       postseasonFirstLeg:"Hinspiel",
@@ -546,6 +552,9 @@
       postseasonExtraTime:"Tras la prórroga",
       postseasonPenalties:"Penaltis",
       postseasonHomeFirst:"Local en la ida",
+      postseasonHigherReturn:"El mejor puesto original juega la vuelta en casa",
+      postseasonNeutralVenue:"Sede neutral",
+      postseasonHomeSingle:"Partido en casa",
       postseasonHomeReturn:"Local en la vuelta",
       postseasonPosition:"Posición en la liga",
       postseasonFirstLeg:"Ida",
@@ -780,6 +789,9 @@
       postseasonExtraTime:"Après prolongation",
       postseasonPenalties:"Tirs au but",
       postseasonHomeFirst:"À domicile à l’aller",
+      postseasonHigherReturn:"Le meilleur rang initial reçoit au retour",
+      postseasonNeutralVenue:"Terrain neutre",
+      postseasonHomeSingle:"Match à domicile",
       postseasonHomeReturn:"À domicile au retour",
       postseasonPosition:"Place en championnat",
       postseasonFirstLeg:"Aller",
@@ -1014,6 +1026,9 @@
       postseasonExtraTime:"Dopo i supplementari",
       postseasonPenalties:"Rigori",
       postseasonHomeFirst:"In casa all’andata",
+      postseasonHigherReturn:"Il miglior rango originale ospita il ritorno",
+      postseasonNeutralVenue:"Campo neutro",
+      postseasonHomeSingle:"Gara in casa",
       postseasonHomeReturn:"In casa al ritorno",
       postseasonPosition:"Posizione in campionato",
       postseasonFirstLeg:"Andata",
@@ -1279,6 +1294,10 @@
     if(rulesPanel&&definition&&runtime.faCompetitionRulesView){
       try{runtime.faCompetitionRulesView.update(rulesPanel,definition,language());}
       catch{rulesPanel.textContent=strings.rulesUnavailable;}
+    }
+    if(runtime?.faCompetitionRulesView){
+      for(const node of document.querySelectorAll('[data-competition-phase]'))node.textContent=runtime.faCompetitionRulesView.phaseLabel(node.dataset.competitionPhase,language());
+      if(definition)for(const node of document.querySelectorAll('[data-competition-outcome]'))node.textContent=runtime.faCompetitionRulesView.outcomeLabel(definition,{kind:node.dataset.competitionOutcome,targetPhaseId:node.dataset.competitionTarget},language());
     }
     for (const node of words()) {
       if (Object.hasOwn(strings, node.dataset.appI18n)) node.textContent = strings[node.dataset.appI18n];

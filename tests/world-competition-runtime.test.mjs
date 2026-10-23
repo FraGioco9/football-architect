@@ -1,4 +1,5 @@
 import competitionModel from "../assets/competition-model.js";
+import competitionRules from "../assets/competition-rules.js";
 // LOCAL-SHARED-PAGE-QA-01: exercise the real static renderer with isolated DOM stubs.
 // This is deterministic runtime-contract QA, NOT a substitute for visual browser QA.
 import test from "node:test";
@@ -17,6 +18,47 @@ const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
 const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
 const root="http://127.0.0.1:2000";
+
+test('CONFIG-BANDS: standings styling follows edited rank bands instead of route tier',async()=>{
+ const data=structuredClone(manifest),d=data.competitions.find(d=>d.id==='IT-1');
+ d.rules.phases[0].rankOutcomes[0].to=2;d.rules.phases[0].rankOutcomes[1].from=3;
+ const r=await simulate({division:divisionsForTest('IT-1'),data});
+ const row=node('tr');r.window.faStandingsOutcomes.decorate(row,2);
+ assert.equal(row.dataset.standingOutcome,'champion');
+});
+function divisionsForTest(id){return manifest.divisions.find(d=>d.id===id)||manifest.competitions.find(d=>d.id===id)}
+test('CONFIG-SUPPLIED-DOMESTIC: clearing supplied data resets table, mobile and qualified bracket',async()=>{
+ const division=divisionsForTest('IT-1'),r=await simulate({division});
+ const rows=createPreviewStandings(division,30).rows;
+ const payload={season:1,rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants:division.clubs,fixtures:null,results:[],statistics:{standings:rows},status:'partial'};
+ const api=r.window.faCompetitionContextApi;
+ assert.equal(api.replaceSeasonData(payload,r.window.faCompetitionContext.revision),true);
+ assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'true');
+ api.clearSeasonData();api.selectSeason(2);
+ assert.equal(r.fields.get('app-standings-body').children[0].children[9].textContent,'—');
+ assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'false');
+});
+test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties and clear across seasons',async()=>{
+ const cup=manifest.competitions.find(d=>d.id==='sovereign-cup');
+ const r=await simulate({division:cup});
+ const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i,abbr:'C'+i}));
+ const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
+ const payload={season:1,rulesVersion:cup.rules.version,participants,fixtures:null,results:[],statistics:{standings},status:'partial'};
+ const api=r.window.faCompetitionContextApi;
+ assert.equal(api.replaceSeasonData(payload,r.window.faCompetitionContext.revision),true);
+ const rows=r.fields.get('app-standings-body').children;
+ assert.equal(rows.length,24);assert.equal(rows[0].dataset.worldClub,'IT-1');assert.equal(rows[8].dataset.worldClub,'ENG-1');
+ assert.equal(rows[0].dataset.standingOutcome,'quarterfinals');assert.equal(rows[4].dataset.standingOutcome,'playoff');
+ api.selectSeason(2);
+ assert.equal(r.fields.get('app-standings-body').children.length,1,'new season cannot retain old participants');
+ assert.equal(r.fields.get('app-standings-compact-list').children.length,0);
+});
+test('CONFIG-CUP-HELP: configured score help works with keyboard focus and Escape',async()=>{
+ const r=await simulate({division:divisionsForTest('sovereign-cup')});
+ const button=r.postseasonNodes.help[0],tip=r.fields.get(button.dataset.postseasonHelp);
+ button.focus();assert.equal(tip.hidden,false);
+ r.document.emit('keydown',{key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(tip.hidden,true);
+});
 const ids=["app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
@@ -46,8 +88,8 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  shell??=read("competitions/"+selected.toLowerCase()+"/index.html");
  const postseasonSlots=[...shell.matchAll(/data-postseason-position="(\d+)"/g)].map(match=>{const item=node("span");item.dataset.postseasonPosition=match[1];return item});
  const postseasonNodes={};
- for(const kind of ['score','row','finalist','resolution','help']){
-  const datasetKey='postseason'+kind[0].toUpperCase()+kind.slice(1);
+ for(const kind of ['score','row','finalist','resolution','help','config-slot']){
+  const datasetKey='postseason'+kind.split('-').map(part=>part[0].toUpperCase()+part.slice(1)).join('');
   postseasonNodes[kind]=[...shell.matchAll(new RegExp('data-postseason-'+kind+'="([^"<>]+)"','g'))].map(match=>{const item=node(kind==='help'?'button':'span');item.dataset[datasetKey]=match[1];return item});
  }
  const path="/competitions/"+selected.toLowerCase()+ending;
@@ -101,7 +143,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   },
   querySelectorAll(selector){
    if(selector==="[data-postseason-position]")return postseasonSlots;
-   const kind=selector.match(/^\[data-postseason-(score|row|finalist|resolution|help)\]$/)?.[1];
+   const kind=selector.match(/^\[data-postseason-(score|row|finalist|resolution|help|config-slot)\]$/)?.[1];
    return kind?postseasonNodes[kind]:[];
   },
   getElementById(id){return fields.get(id)??null},
@@ -120,7 +162,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- const window={faCompetitionModel:competitionModel,location,innerWidth:390,innerHeight:600,events:{},
+ const window={faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
