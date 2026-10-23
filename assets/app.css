@@ -769,6 +769,7 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-knockout-identity{min-width:0}
 .app-postseason-team{display:flex;align-items:center;gap:8px;min-width:0;min-height:40px;text-align:start;color:var(--text);font-size:13px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
 .app-postseason-team>span:last-child{min-width:0;overflow-wrap:anywhere}
+.app-postseason-team>strong,.app-postseason-team>[data-app-i18n="postseasonWinner"]{flex-shrink:0;white-space:nowrap}
 .app-postseason-team .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px;box-sizing:border-box}
 .app-knockout-home{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.4;overflow-wrap:anywhere}
 .app-knockout-score{display:block;text-align:center;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums}
