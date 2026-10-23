@@ -300,6 +300,17 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Page.reload');await wait("document.querySelector('.nav01-filters input')?.value==='Sao'");
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320");
+    // QA-01: custom dropdown pushes a history entry and Back restores its state.
+    await run("document.getElementById('nav01-country-trigger').click();document.querySelector('#nav01-country-menu [data-menu-value=IT]').click()");
+    assert.equal(await run("new URLSearchParams(location.search).get('country')"),'IT');
+    assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
+    await run("history.back()");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-filters select').value===''");
+    assert.equal(await run("new URLSearchParams(location.search).has('country')"),false);
+    await run("history.forward()");
+    await wait("document.querySelectorAll('.nav01-card').length===40&&document.querySelector('.nav01-filters select').value==='IT'");
+    await cmd('Page.navigate',{url:origin+'/clubs'});
+    await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
 
     // QA-02: inspect the actual viewport centers of the Calendar/Fixtures arrows.
