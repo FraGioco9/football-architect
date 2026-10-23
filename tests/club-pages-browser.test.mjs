@@ -285,6 +285,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
     await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===320");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
+
+    // QA-02: inspect the actual viewport centers of the Calendar/Fixtures arrows.
+    await cmd('Page.navigate',{url:origin+'/calendar'});
+    await wait("document.querySelector('#calendar-previous svg.site-chevron')!==null");
+    const arrowCenters=await run("(()=>[...document.querySelectorAll('#calendar-previous,#calendar-next')].map(button=>{const b=button.getBoundingClientRect(),icon=button.querySelector('svg.site-chevron').getBoundingClientRect();return {id:button.id,dx:Math.abs((b.left+b.right-icon.left-icon.right)/2),dy:Math.abs((b.top+b.bottom-icon.top-icon.bottom)/2)}}))()");
+    for(const arrow of arrowCenters){assert.ok(arrow.dx<=1&&arrow.dy<=1,'Arrow viewport must be centered: '+JSON.stringify(arrow));}
+    console.log('CLUBS_QA02_ARROW_CENTERS',JSON.stringify(arrowCenters));
+
     // NAV-01C: keyboard operation of the sidebar disclosure and focus.
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await cmd('Page.navigate',{url:origin+'/clubs'});
