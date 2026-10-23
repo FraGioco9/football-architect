@@ -207,7 +207,7 @@ try {
   await page.locator('.fa-dev-widget-button').click();
   await page.locator('[data-dev-control="season-number"]').fill('1');
   await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
-  await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===false);
+  await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===false&&window.faDevWorldClockSnapshot?.current?.season===1);
   assert.equal(await page.evaluate(()=>window.faDevWorldClockSnapshot?.current?.season),1);
   if(route.startsWith('/competitions/')){
    await page.waitForFunction(()=>document.querySelector('#app-competition-season')?.disabled===false);

@@ -34,6 +34,20 @@ test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs deskto
  assert.equal(desktop[1].dataset.standingOutcome,undefined);
  assert.equal(mobile[1].dataset.standingOutcome,undefined);
 });
+test('SEASON-EARLY-PROVIDER: historical bands repair before later shared scripts finish loading',async()=>{
+ const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
+ current.rules.phases[0].rankOutcomes[0].to=2;current.rules.phases[0].rankOutcomes[1].from=3;
+ let observed='not reached';
+ await simulate({division:divisionsForTest('IT-1'),data,onLoad(window,asset,fields){
+  if(!asset.src.endsWith('/competition-fixtures.js'))return;
+  window.faStandingsMobile.prepare(createPreviewStandings(divisionsForTest('IT-1'),15).rows)();
+  const original=manifest.competitions.find(d=>d.id==='IT-1');
+  const payload={season:1,rulesVersion:original.rules.version,rulesSnapshot:original.rules,participants:divisionsForTest('IT-1').clubs,fixtures:null,results:[],statistics:null,status:'partial'};
+  window.faCompetitionContextApi.replaceSeasonData(payload,window.faCompetitionContext.revision);
+  observed=fields.get('app-standings-compact-list').children[1].dataset.standingOutcome;
+ }});
+ assert.equal(observed,undefined);
+});
 
 test('CONFIG-BANDS: standings styling follows edited rank bands instead of route tier',async()=>{
  const data=structuredClone(manifest),d=data.competitions.find(d=>d.id==='IT-1');
@@ -144,7 +158,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    appendChild(asset){
     if(asset.tagName==="link")return; // Stylesheets are not executable script loads.
     loaded.push(new URL(asset.src).pathname);
-    contexts.push(window.faCompetitionContext);onLoad?.(window,asset);
+    contexts.push(window.faCompetitionContext);onLoad?.(window,asset,fields);
     // A loaded script is recorded here; it is not executed in this DOM stub.
     asset.onload?.();
    }

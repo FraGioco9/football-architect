@@ -873,6 +873,7 @@
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
     nextContext(seasons.includes(requested)?requested:1);
     await loadScript('competition-rules.js');
+    window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);
     window.addEventListener("fa:dev-progress-change",event=>{
       setDebugSeason(event.detail?.season);
     });
@@ -945,7 +946,7 @@
     for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
     window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());
-    window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);refreshSeasonPresentation();
+    refreshSeasonPresentation();
     const statsPanel=document.getElementById('competition-panel-stats');
     if(statsPanel&&window.faCompetitionStats){
       const stats=window.faCompetitionStats.mount(statsPanel,window.faCompetitionContext);
