@@ -575,3 +575,18 @@ test('CONTEXT: a changed season invalidates pending provider revisions and clear
  assert.ok(r.window.faCompetitionContext.revision>revision);
  assert.equal(api.replaceSeasonData(payload,r.window.faCompetitionContext.revision),false,'inactive simulation rejects late data');
 });
+
+test('CONTEXT: a world-day change with unchanged domestic progress retains supplied season data',async()=>{
+ const r=await simulate({division:manifest.divisions[0],devSeason:1,ending:'/?season=1'});
+ const api=r.window.faCompetitionContextApi;
+ const data={season:1,rulesVersion:'domestic-top-v1',participants:structuredClone(manifest.divisions[0].clubs),fixtures:[],results:[],statistics:null,status:'partial'};
+ assert.equal(api.replaceSeasonData(data,r.window.faCompetitionContext.revision),true);
+ const before=r.window.faCompetitionContext;
+ const client=read('tools/dev-standings-preview-client.mjs');
+ const refresh=client.slice(client.indexOf('async function refreshProgress()'),client.indexOf('async function setDebugProgress('));
+ r.window.faCompetitionRoute={setSeasonLimit(){}};
+ const run=runInNewContext(refresh+';refreshProgress',{window:r.window,debugSeason:1,matchdays:0,validPath:true,clubPath:false,setPreviewEnabled:async()=>true,refreshSeason:async()=>true,syncHistoryPreview(){},syncDebugControls(){},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ await run();
+ assert.equal(r.window.faCompetitionContext,before,'no new domestic data or season means no invalidation');
+ assert.equal(r.window.faCompetitionContext.seasonData.season,1);
+});

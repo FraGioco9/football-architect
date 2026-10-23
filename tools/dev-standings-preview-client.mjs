@@ -61,7 +61,6 @@ function syncDebugControls(){
 }
 async function refreshProgress(){
  window.faCompetitionContextApi?.setDebugSeason(debugSeason);
- window.faCompetitionContextApi?.clearSeasonData();
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(debugSeason===0){
   if(validPath&&!await setPreviewEnabled(false))return false;
