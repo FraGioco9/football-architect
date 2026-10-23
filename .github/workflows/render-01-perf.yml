@@ -1,0 +1,58 @@
+name: RENDER-01 Standings Performance QA
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/benchmark-standings-first-paint.mjs'
+      - '.github/workflows/render-01-perf.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium-benchmark:
+    if: github.event_name == 'pull_request' && github.event.pull_request.number == 263
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout fixed baseline
+        uses: actions/checkout@v4
+        with:
+          ref: fdb9dc53b8e4bf0a5159ff549f25cd2d98f785cf
+          path: baseline
+          persist-credentials: false
+      - name: Checkout PR exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify exact revision identities
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git -C baseline rev-parse HEAD)" = "fdb9dc53b8e4bf0a5159ff549f25cd2d98f785cf"
+          test "$(git -C candidate rev-parse HEAD)" = "$EXPECTED_HEAD"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+      - name: Run cold/warm desktop/mobile benchmark
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          BASELINE_SHA: fdb9dc53b8e4bf0a5159ff549f25cd2d98f785cf
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node --check candidate/tools/benchmark-standings-first-paint.mjs
+          node candidate/tools/benchmark-standings-first-paint.mjs baseline candidate standings-perf.json
+      - name: Upload read-only metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-01-standings-perf
+          path: standings-perf.json
+          if-no-files-found: warn
+          retention-days: 14

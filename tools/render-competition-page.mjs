@@ -1,10 +1,11 @@
 // One detail renderer for all competition routes and the neutral shell.
 import model from "../assets/competition-model.js";
 
-export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo}){
+export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo,clubsByDivision,crestCatalog}){
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
+ const preRenderedRows=neutral?"":clubsByDivision.get(d.id).map(club=>`                  <tr data-world-club="${encode(club.countryId)}-${club.clubId}"><td class="app-world-stat-unknown">—</td><th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" data-club-crest="${encode(club.countryId)}-${club.clubId}"${Object.hasOwn(crestCatalog,club.countryId+"-"+club.clubId)?' data-club-crest-pending="true"':""} aria-hidden="true"></span><span class="app-world-club-name">${encode(club.primaryName||club.abbr)}</span></span></th>${Array(9).fill('<td class="app-world-stat-unknown">—</td>').join("")}</tr>`).join("\n");
  const bands=neutral?[]:d.tier===1
   ?[["1","champion","rulesTier1Champion","National champion"],["13–14","playout","rulesTier1Playout","Relegation play-out"],["15–16","relegated","rulesTier1Relegated","Direct relegation"]]
   :[["1–2","promoted","rulesTier2Promoted","Direct promotion"],["3–6","playoff","rulesTier2Playoffs","Promotion play-offs"]];
@@ -26,7 +27,7 @@ ${cols}
                   </tr>
                 </thead>
                 <tbody id="app-standings-body">
-
+${preRenderedRows}
                 </tbody>
               </table>
             </div>

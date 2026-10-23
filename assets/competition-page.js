@@ -692,7 +692,15 @@
     }));
     const commitMobile = mobile.prepare(provisional);
     // Public statistics remain unknown in both presentations.
-    tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
+    // RENDER-01: keep verified build-time rows in place instead of rebuilding them.
+    // Fall back to the canonical renderer for older or incomplete HTML.
+    const preRendered=[...(tbody.rows||tbody.children||[])];
+    const expected=division.clubs.map(club=>club.countryId+"-"+club.clubId);
+    const staticReady=preRendered.length===expected.length&&preRendered.every((row,index)=>
+      row.dataset.worldClub===expected[index]&&row.cells.length===11&&
+      row.querySelector(".app-world-club-name")?.textContent===(division.clubs[index].primaryName||division.clubs[index].abbr)&&
+      row.querySelector("[data-club-crest]")?.dataset.clubCrest===expected[index]);
+    if(!staticReady)tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
