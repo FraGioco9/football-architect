@@ -56,8 +56,8 @@ test('RULES-CONFIG: unsafe identities are escaped, invalid rules and unknown tem
 test('RULES-CONFIG: award IDs retain existing honours and performance presentation explicitly',()=>{
  for(const d of catalogue){
   assert.ok(d.rules.awards.includes('champion'));assert.ok(d.rules.awards.includes('manager'));assert.ok(d.rules.awards.includes('xi'));
-  assert.equal(d.rules.awards.includes('promotion'),d.id.endsWith('-2'));
-  assert.equal(d.rules.awards.includes('playoff'),d.id.endsWith('-2'));
+  assert.equal(d.rules.awards.includes('promotion'),d.category==='domestic'&&d.tier===2);
+  assert.equal(d.rules.awards.includes('playoff'),d.category==='domestic'&&d.tier===2);
  }
 });
 

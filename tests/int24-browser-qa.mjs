@@ -230,7 +230,7 @@ try {
   if(route.startsWith('/competitions/')){
    await page.waitForFunction(()=>document.querySelector('#app-competition-season')?.disabled===false);
    assert.equal(await page.evaluate(()=>window.faCompetitionContext?.selectedSeason),1);
-   if(route.includes('-cup/'))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
+   if(/\/competitions\/int-[12]\//.test(route))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
    else await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1);
   }
   checks++;

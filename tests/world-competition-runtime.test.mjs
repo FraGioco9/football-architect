@@ -166,7 +166,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   body,
   querySelector(selector){
    if(selector==='meta[name="fa-competition"]')return metadata===null?null:{content:metadata??selected};
-   if(selector==='meta[name="fa-division"]')return selected.includes("-cup")?null:{content:selected};
+   if(selector==='meta[name="fa-division"]')return division?.category==="international"?null:{content:selected};
    if(selector===".fa-shell-topbar")return topbar;
    if(selector===".app-world-standings")return standingsMarkup?standings:null;
    return null;
