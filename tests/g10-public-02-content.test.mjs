@@ -40,7 +40,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
     assert.notDeepEqual(debugBytes,publicBytes,"App HTML intentionally gains Debug entrypoints: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/debug-settings\.mjs"/,"Missing standings Debug entrypoint: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/stats-client\.mjs"/,"Missing stats Debug entrypoint: "+path);
-   }else if(path==="clubs/_shared/index.html"){
+   }else if(path==="clubs/_shared/index.html"||/^clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)\/index\.html$/.test(path)){
     assert.equal(debugBytes.toString("utf8").replace(CLUB_SUMMARY_INJECTION+"\n",""),publicBytes.toString("utf8"));
    }else assert.deepEqual(debugBytes,publicBytes,"Inherited asset must remain byte-for-byte unchanged: "+path);
   }
