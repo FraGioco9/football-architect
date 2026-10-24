@@ -76,7 +76,8 @@ test('Club card renders rank, points and next fixture only from its own current 
  assert.ok(ended.includes('No upcoming match.'));
 });
 
-test('A01-10 repeated rendering keeps identical competition snapshot output',()=>{
+test('A01-10 repeated rendering keeps identical competition snapshot output',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
  const clubs=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8'));
  const division=manifest.divisions.find(d=>d.id==='IT-1'),selected=model.route('/clubs/it/1/overview');
  const snap=preview.createPreviewClubSummary(division,1,{season:3,matchdays:15});

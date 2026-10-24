@@ -276,7 +276,8 @@ test('A03-04E: all 1600 strict club routes retain canonical caller shapes',async
  assert.throws(()=>model.route(null),TypeError);
 });
 
-test('A01-10 memoized renderer retains all 320 club identities and per-manifest isolation',()=>{
+test('A01-10 memoized renderer retains all 320 club identities and per-manifest isolation',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  for(const club of manifest.clubs){const selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');const html=model.render(manifest,selected,'en');assert.equal(model.render(manifest,selected,'en'),html);assert.ok(html.includes('data-club-crest="'+club.countryId+'-'+club.clubId+'"'));}
  const club=manifest.clubs[0],selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
