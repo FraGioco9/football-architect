@@ -5,7 +5,7 @@ import {createHash} from "node:crypto";
 import {resolveSubpage,competitionSubpage,clubSubpage} from "../assets/subpage-routes.mjs";
 import {countries,competitionViews,clubViews} from "../assets/routes-registry.mjs";
 const raw=readFileSync(new URL("../vercel.json",import.meta.url));
-const blobHash=buf=>createHash("sha1").update(Buffer.from("blob "+buf.length+"\\0")).update(buf).digest("hex");
+const blobHash=buf=>createHash("sha1").update(Buffer.from("blob "+buf.length+"\0")).update(buf).digest("hex");
 test("A03-01: exact hosting bytes and complete ordered rule fixture (29 redirects, 7 rewrites)",()=>{
  assert.equal(blobHash(raw),"b8afd0babb019680223c39be48e659f92aae39a5");
  const config=JSON.parse(raw);
