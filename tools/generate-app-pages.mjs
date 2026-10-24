@@ -3,6 +3,7 @@ import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs
 import {renderSidebar} from "./render-sidebar.mjs";
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {clubOutputs} from "./generate-club-pages.mjs";
+import {loadWorldCatalog} from "./load-world-catalog.mjs";
 import model from "../assets/competition-model.js";
 import {loadCompetitionCatalogue} from "./competition-catalogue.mjs";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
@@ -47,8 +48,9 @@ const pages = {
 };
 
 const finalLogos=validateDivisionAssets().divisions;
-const divisionData = JSON.parse(readFileSync(new URL("../data/divisions.json", import.meta.url), "utf8"));
-const clubData = JSON.parse(readFileSync(new URL("../data/clubs.json", import.meta.url), "utf8"));
+const worldCatalog = loadWorldCatalog();
+const divisionData = worldCatalog.divisions;
+const clubData = worldCatalog.clubs;
 if (!Array.isArray(clubData) || clubData.length !== 320) throw new Error("Expected 320 canonical club identities");
 const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division-allocations.provisional.json", import.meta.url), "utf8"));
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
