@@ -247,13 +247,14 @@
         const name=clubName(clubId),[country,number]=clubId.split('-');
         if(name&&country&&number){
           const link=element("a","app-world-standing-club-link",name);
-          link.href="/clubs/"+country.toLowerCase()+"/"+number+"/overview";
+          link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
           line.append(link);
         }else line.append(element("span","",name||locale().unknown));
         for(const season of [...seasons].sort((a,b)=>a-b)){
           line.append(document.createTextNode(" · "));
           const link=element("a","app-world-standing-club-link",locale().season+" "+season);
-          link.href="/competitions/"+competitionId.toLowerCase()+"/standings?season="+encodeURIComponent(season);
+          const id=competitionId.toLowerCase(),identity=window.faRoutesRegistry.parseRoute("/competitions/"+id+"/standings");
+          link.href=window.faRoutesRegistry.buildRoute({kind:identity.kind,id,view:"standings"})+"?season="+encodeURIComponent(season);
           line.append(link);
         }
         clubs.append(line);

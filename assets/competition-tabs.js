@@ -62,6 +62,14 @@
   const seasonValue=document.getElementById("app-competition-season-value");
   const unavailable=document.getElementById("app-competition-season-unavailable");
   if(tabs.length!==views.length||panels.some(panel=>!panel)||!season||!unavailable||!seasonMenu||!seasonValue)return;
+  const routes=window.faRoutesRegistry;
+  const routePath=()=>{
+    const path=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
+    // Cup roots are a legacy UI entry; the core intentionally accepts explicit cup views only.
+    const parsed=routes.parseRoute(path)||routes.parseRoute(path+"/standings");
+    if(!parsed||!['competition','cup'].includes(parsed.kind))throw new TypeError('Unknown competition route');
+    return parsed;
+  };
   const listeners=new Set();let state;
   function syncTabOverflow(){
     const maximum=Math.max(0,tablist.scrollWidth-tablist.clientWidth);
@@ -112,17 +120,19 @@
   const validFixtureRound=value=>{const choices=configuredChoices();return choices?choices.some(c=>c.value===value):model.validRound(value)||value==="playoffs"||value==="playout"};
   function read(){
     const params=new URL(window.location.href).searchParams;
-    const id=params.get("season"),round=params.get("matchday");
+    const id=params.get("season"),round=params.get("matchday"),parsed=routePath();
+    const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
     return {season:availableSeasons.includes(requested)?requested:"1",
-      view:views.includes(window.location.pathname.split("/").filter(Boolean).at(-1))?window.location.pathname.split("/").filter(Boolean).at(-1):views.includes(params.get("view"))?params.get("view"):"standings",
+      view:views.includes(explicit)?explicit:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
     if(!availableSeasons.includes(state.season))state.season="1";
     const url=new URL(window.location.href);
-    url.pathname=url.pathname.replace(/\/index\.html$/,"").replace(/\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/?$/,"").replace(/\/+$/,"")+"/"+state.view;
+    const identity=routePath();
+    url.pathname=routes.buildRoute({kind:identity.kind,id:identity.base.slice("/competitions/".length),view:state.view});
     url.search="";url.hash="";
     if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
     if(state.view!=="history"&&state.view!=="rules")url.searchParams.set("season",state.season);

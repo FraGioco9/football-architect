@@ -560,6 +560,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("window.faRoutesRegistry.canonicalizeRoute('/clubs/it/1/')"),'/clubs/it/1/overview');
     }
     console.log('A03-04D BROWSER PASS: immutable staged registry available before deferred consumers on competition, club, directory and calendar pages');
+    // A03-04E: follow canonical links produced by migrated browser renderers.
+    await cmd('Page.navigate',{url:origin+'/competitions/it-1/standings?season=1'});
+    await wait("document.readyState==='complete'&&!!document.querySelector('.app-world-standing-club-link[href=\"/clubs/it/1/overview\"]')");
+    const clubDestinations=await run("[...new Set([...document.querySelectorAll('.app-world-standing-club-link[href^=\"/clubs/it/\"]')].map(a=>a.getAttribute('href')))].sort()");
+    assert.deepEqual(clubDestinations,Array.from({length:16},(_,i)=>'/clubs/it/'+(i+1)+'/overview').sort());
+    await run("document.querySelector('.app-world-standing-club-link[href=\"/clubs/it/1/overview\"]').click()");
+    await wait("location.pathname==='/clubs/it/1/overview'&&document.documentElement.dataset.clubReady==='true'");
+    await run('history.back()');await wait("location.pathname==='/competitions/it-1/standings'&&!!window.faCompetitionRoute");
+    assert.equal(await currentUrl(),'/competitions/it-1/standings?season=1');
+    console.log('A03-04E BROWSER PASS: migrated router/club/directory/standings links preserve canonical destinations, temporal query and history; legacy calendar links and cup historical links covered by executable VM fixtures');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{
     socket?.close();proc.kill('SIGTERM');

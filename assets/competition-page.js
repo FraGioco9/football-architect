@@ -219,7 +219,7 @@
           if(name&&name.textContent!==club.primaryName)name.textContent=club.primaryName;
           return;
         }
-        const name=document.createElement("a");name.className="app-world-standing-club-link";name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";name.textContent=club.primaryName;
+        const name=document.createElement("a");name.className="app-world-standing-club-link";name.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});name.textContent=club.primaryName;
         slot.replaceChildren(createCrestHost(id),name);
       }
       else slot.replaceChildren(word(key,label));
@@ -401,7 +401,7 @@
         const name = element("span","app-world-mobile-name");
         const crest = createCrestHost(id);
         const clubLink = element("a","app-world-standing-club-link app-world-mobile-club-name",club.primaryName || club.abbr);
-        clubLink.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview";
+        clubLink.href = window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});
         clubLink.addEventListener("click",event=>event.stopPropagation());
         clubLink.addEventListener("keydown",event=>event.stopPropagation());
         name.append(crest,clubLink);
@@ -508,7 +508,7 @@
     const crest = createCrestHost(tr.dataset.worldClub);
     const name = document.createElement("a");
     name.className = "app-world-club-name app-world-standing-club-link";
-    name.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview";
+    name.href = window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});
     name.textContent = club.primaryName || club.abbr;
     identity.append(crest, name);
     th.appendChild(identity);
@@ -623,7 +623,7 @@
         tbody.replaceChildren(...desktop);commitMobile();commitDomestic?.();suppliedOwned=true;resetBracket();
         if(bracketEmpty)bracketEmpty.hidden=completed.some(t=>t.legs?.some(Boolean));
         for(const {slot,club} of updates)if(club){
-          const name=document.createElement('a');name.className='app-world-standing-club-link';name.href='/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview';name.textContent=club.primaryName;
+          const name=document.createElement('a');name.className='app-world-standing-club-link';name.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});name.textContent=club.primaryName;
           slot.replaceChildren(createCrestHost(rules.clubKey(club)),name);
           const [id]=slot.dataset.postseasonConfigSlot.split(':'),tie=definition.rules.phases.flatMap(p=>p.ties||[]).find(t=>t.id===id);
           const label=slot.parentElement?.querySelector('.app-knockout-home');

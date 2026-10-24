@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import competitionModel from "../assets/competition-model.js";
 import competitionRules from "../assets/competition-rules.js";
 // LOCAL-SHARED-PAGE-QA-01: exercise the real static renderer with isolated DOM stubs.
@@ -192,7 +193,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- const window={faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,location,innerWidth:390,innerHeight:600,events:{},
+ const window={faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};

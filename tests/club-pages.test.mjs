@@ -163,7 +163,7 @@ test('CLUB-ID-01 CSV/JSON identities and rivalry references use unpadded canonic
 
 test('CLUB-OVERVIEW-02: all 320 clubs expose original descriptions, translations, rivalries and kits reserve',()=>{
  const {runInNewContext}=requireVm();
- const sandbox={module:{exports:{}},URLSearchParams};
+ const sandbox={faRoutesRegistry:routeRegistry,module:{exports:{}},URLSearchParams};
  runInNewContext(read('assets/club-model.js'),sandbox);
  const model=sandbox.module.exports;
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
@@ -245,4 +245,33 @@ test('A03-04C: active and inactive club tabs transfer only temporal context to F
   if(path.includes('/40/'))assert.doesNotMatch(html,/href="\/competitions\//,'Unallocated club cannot invent a competition link');
   else assert.ok(html.includes('href="/competitions/it-1/overview"'));
  }
+});
+
+import routeRegistry from '../assets/routes-registry.js';
+test('A03-04E: club parser and rendered links delegate to the real shared registry',()=>{
+ const calls=[];
+ const registry=Object.freeze({...routeRegistry,
+  parseRoute(path){calls.push(['parse',path]);return routeRegistry.parseRoute(path)},
+  buildRoute(identity){calls.push(['build',identity.kind]);return routeRegistry.buildRoute(identity)}});
+ const sandbox={faRoutesRegistry:registry,module:{exports:{}},URLSearchParams};
+ vmRunInNewContext(read('assets/club-model.js'),sandbox);
+ const model=sandbox.module.exports,selected=model.route('/clubs/it/1/overview');
+ assert.equal(model.route('/clubs/it/1'),null,'Registry redirect candidates remain rejected by the club caller');
+ assert.equal(model.route('/clubs/it/1/overview/'),null);
+ const html=model.render(JSON.parse(read('clubs/_shared/manifest.json')),selected,'en','?season=3&matchday=7');
+ assert.ok(html.includes('href="/clubs/it/1/fixtures?season=3&matchday=7"'));
+ assert.ok(html.includes('href="/competitions/it-1/overview"'));
+ assert.ok(calls.some(([kind,path])=>kind==='parse'&&path==='/clubs/it/1/overview'));
+ assert.ok(calls.some(([kind,family])=>kind==='build'&&family==='club'));
+ assert.ok(calls.some(([kind,family])=>kind==='build'&&family==='competition'));
+});
+
+test('A03-04E: all 1600 strict club routes retain canonical caller shapes',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(let id=1;id<=40;id++)for(const view of ['overview','roster','fixtures','stats','history']){
+  const base='/clubs/'+country+'/'+id,path=base+'/'+view;
+  assert.deepEqual(model.route(path),{countryId:country.toUpperCase(),clubId:id,view,base});
+  assert.equal(model.route(path+'/'),null,'Caller must not accept a redirect candidate: '+path);
+ }
+ assert.throws(()=>model.route(null),TypeError);
 });

@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
@@ -13,7 +14,7 @@ function element(){
   const n={dataset:{},attrs:{},children:[],events:{},textContent:'',hidden:false,disabled:false,tabIndex:0,
     setAttribute(k,v){this.attrs[k]=String(v)},getAttribute(k){return this.attrs[k]},
     addEventListener(k,fn){this.events[k]=fn},emit(k,extra={}){this.events[k]?.({target:this,preventDefault(){},...extra})},
-    focus(){this.focused=true},classList:{toggle(){}}};
+    focus(){this.focused=true},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},classList:{toggle(){}}};
   return n;
 }
 function boot({mobile=false,saved=null,blocked=false}={}){
@@ -30,6 +31,7 @@ function boot({mobile=false,saved=null,blocked=false}={}){
 function setup(options={}){
   const root=boot(options);root.lang='en';let observer;
   const names=['world-calendar','calendar-season','calendar-week','calendar-previous','calendar-next','calendar-week-label','calendar-selected','calendar-plan-label','calendar-note','calendar-key','calendar-controls','calendar-days'];
+  if(options.details)names.push('calendar-details','calendar-details-heading','calendar-details-content','calendar-filter','calendar-division');
   const fields=new Map(names.map(id=>[id,element()]));
   fields.get('calendar-note').textContent='Season structure only. No live fixtures or results are available.';
   const rows=Array.from({length:8},(_,i)=>({...element(),dataset:{week:String(i+1)}}));
@@ -40,8 +42,8 @@ function setup(options={}){
   });
   fields.get('world-calendar').querySelectorAll=s=>s==='[data-calendar-day]'?days:rows;
   let saved;
-  const window={faWorldCalendarModel:model};
-  const document={documentElement:root,getElementById:id=>fields.get(id)};
+  const window={faRoutesRegistry:routeRegistry,faWorldCalendarModel:model};
+  const document={documentElement:root,getElementById:id=>fields.get(id),createElement:tag=>({...element(),tagName:tag})};
   runInNewContext(runtime(),{URL,URLSearchParams,location:{href:'http://localhost/calendar?season=1&calendarView=season',pathname:'/calendar',search:'?season=1&calendarView=season'},history:{state:null,replaceState(){},pushState(){}},window,document,sessionStorage:{setItem(k,v){if(options.blocked)throw Error('blocked');saved={k,v}}},
     MutationObserver:class{constructor(fn){observer=fn}observe(){}}});
   return {window,root,fields,days,rows,language(lang){root.lang=lang;observer()},saved:()=>saved};
@@ -134,4 +136,16 @@ test('CAL-IMP-02 boundary navigation moves focus from a disabled arrow to the se
   assert.equal(window.faWorldCalendar.getSelection().day,1);
   assert.equal(fields.get('calendar-previous').disabled,true);
   assert.equal(days[0].focused,true);
+});
+
+test('A03-04E: calendar detail links preserve exact domestic Fixtures query and existing return encoding',()=>{
+ const r=setup({details:true}),walk=node=>[node,...node.children.flatMap(walk)];
+ r.days[12].emit('click');
+ for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(const tier of [1,2]){
+  const division=country+'-'+tier,control=r.fields.get('calendar-division');
+  control.value=division;control.emit('change');
+  const links=walk(r.fields.get('calendar-details-content')).filter(node=>node.tagName==='a');
+  assert.equal(links.length,1);
+  assert.equal(links[0].href,'/competitions/'+division+'/fixtures?season=1&matchday=1&calendarReturn=%2Fcalendar%3Fseason%3D1%26calendarView%3Dseason');
+ }
 });
