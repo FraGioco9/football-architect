@@ -1254,10 +1254,14 @@
       link.setAttribute("href",appHref(routes.dashboard));
     }
     for (const link of document.querySelectorAll("a.app-division-card")) {
-      const slug = (link.getAttribute("href") || "").match(/\/competitions\/((?:[a-z]{2,3}-[12])|int-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards))?\/?(?:\?.*)?$/i);
-      if (slug) {
+      const registry = window.faRoutesRegistry;
+      const rawHref = link.getAttribute("href") || "";
+      const pathname = new URL(rawHref, window.location.href).pathname;
+      const route = registry?.parseRoute(pathname) || registry?.parseRoute(pathname.replace(/\/$/, "")+"/standings");
+      if (route && (route.kind === "competition" || route.kind === "cup")) {
+        const id = route.base.slice("/competitions/".length);
         const season = link.getAttribute("data-dev-latest-season") || String(activeSeason);
-        link.setAttribute("href",appHref("/competitions/"+slug[1].toLowerCase()+"/standings?season="+season));
+        link.setAttribute("href", appHref(registry.buildRoute({kind:route.kind,id,view:"standings"})+"?season="+season));
       }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
