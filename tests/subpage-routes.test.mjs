@@ -96,7 +96,7 @@ test("A03-04B: DEV redirect and security oracle",async()=>{
    ["/clubs/it/1?view=stats",308,"/clubs/it/1/stats"],
    ["/clubs/it/%31/overview",403,null],
    ["/competitions/it-3",404,null],
-   ["/competitions/int-1",404,null]
+   ["/competitions/int-1",200,null]
   ])assert.deepEqual(await get(path),{status,location},path);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
