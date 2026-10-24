@@ -1,5 +1,6 @@
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
+import {buildRoute} from "../assets/routes-registry.mjs";
 import {renderSidebar} from "./render-sidebar.mjs";
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {clubOutputs} from "./generate-club-pages.mjs";
@@ -90,7 +91,7 @@ const indexContent = function indexContent(){
  const displayCountryOrder=["IT","ENG","ES","DE","FR","PT","NL","BR"];
  const cards=displayCountryOrder.map(id=>countryById[id]).map(c=>{
   const links=divisionData.filter(d=>d.countryId===c.id).map(d=>
- '                <a class="app-division-card" href="/competitions/'+d.id.toLowerCase()+'/standings?season=1">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
+ '                <a class="app-division-card" href="'+buildRoute({kind:"competition",id:d.id.toLowerCase(),view:"standings"})+'?season=1">'+renderDivisionLogo(d.id,"compact",finalLogos)+'<span class="app-division-card-copy"><strong>'+encode(d.name)+'</strong><small data-app-i18n="'+(d.tier===1?'divisionTier1':'divisionTier2')+'">'+(d.tier===1?'First division':'Second division')+'</small></span></a>'
  ).join("\n");
  return '            <section class="app-world-country" aria-labelledby="world-country-'+c.id.toLowerCase()+'">\n'+
  '              <h2 id="world-country-'+c.id.toLowerCase()+'">'+inlineCountryFlag(c)+' <span data-world-country="'+c.id+'">'+encode(c.name.en)+'</span></h2>\n'+
