@@ -64,7 +64,7 @@
    const identityNode=create('span',undefined,'app-world-club-identity'),crest=create('span',undefined,'app-world-club-crest-placeholder');
    crest.dataset.clubCrest=record.clubKey;crest.setAttribute('aria-hidden','true');
    const match=record.clubKey.match(identity),name=create(player?'span':'a',player?record.name:record.clubName,'fa-dev-stats-team-name'+(player?'':' app-world-standing-club-link'));
-   if(!player)name.href='/clubs/'+match[1].toLowerCase()+'/'+match[2]+'/overview';
+   if(!player)name.href=window.faRoutesRegistry.buildRoute({kind:'club',country:match[1].toLowerCase(),id:match[2],view:'overview'});
    identityNode.append(crest,name);li.append(create('span',rank,'fa-dev-stats-rank'),identityNode,create('strong',format(key,record[key])));return li;
   }
   function showAll(button,records,key,labelKey,label,player){

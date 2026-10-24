@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -5,7 +6,7 @@ import {runInNewContext} from 'node:vm';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const walk=node=>[node,...node.children.flatMap(walk)];
-function fixture(){
+function fixture(registry=routeRegistry){
  const document={activeElement:null};
  function element(tag='div'){
   const node={tagName:tag,children:[],dataset:{},attrs:{},events:{},className:'',textContent:'',style:{},open:false,hidden:false,
@@ -26,7 +27,7 @@ function fixture(){
  }
  document.createElement=element;document.body=element('body');document.documentElement={lang:'en'};
  const panel=element('section');document.body.append(panel);
- const window={faAppRenderLanguage(){},matchMedia:()=>({matches:true}),dispatchEvent(){},requestAnimationFrame:fn=>fn()};
+ const window={faRoutesRegistry:registry,faAppRenderLanguage(){},matchMedia:()=>({matches:true}),dispatchEvent(){},requestAnimationFrame:fn=>fn()};
  let source='';try{source=readFileSync(new URL('../assets/competition-stats.js',import.meta.url),'utf8')}catch{}
  runInNewContext(source,{window,document,setTimeout,clearTimeout,requestAnimationFrame:fn=>fn(),Event:class{constructor(type){this.type=type}}});
  return {api:window.faCompetitionStats,document,panel,window,nodes:()=>walk(document.body)};
@@ -148,4 +149,17 @@ test('STATS-ERROR: invalid supplied records differ from an ordinary empty season
  assert.ok(r.nodes().some(node=>node.dataset.appI18n==='statsDevUnavailable'));
  assert.equal(byClass(r,'app-competition-stat-value').length,0);
  buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+});
+
+test('A03-04E2: supplied domestic and cup team links use the real registry without linking player labels',()=>{
+ for(const [id,count] of [['IT-1',16],['int-1',24],['int-2',24]]){
+  const calls=[],registry=Object.freeze({...routeRegistry,buildRoute(identity){calls.push(identity);return routeRegistry.buildRoute(identity)}});
+  const r=fixture(registry),c=supplied(id,count);
+  c.seasonData.statistics.players=[{playerId:'p1',name:'Supplied Player',clubKey:'IT-1',appearances:2,goals:0,assists:1,averageRating:7,cleanSheets:0}];
+  r.api.mount(r.panel,c);buttons(r)[1].emit('click');byClass(r,'fa-dev-stats-expand')[0].emit('click');
+  const links=walk(byClass(r,'fa-dev-stats-dialog')[0]).filter(n=>n.tagName==='a').map(n=>n.href).sort();
+  const expected=c.seasonData.participants.map(club=>'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview').sort();
+  assert.deepEqual(links,expected,id);assert.ok(calls.length>=count);
+  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a').length,0,'Player names remain plain labels');
+ }
 });

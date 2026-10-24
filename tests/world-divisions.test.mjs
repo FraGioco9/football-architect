@@ -1,3 +1,6 @@
+import {runInNewContext} from 'node:vm';
+import routeRegistry from '../assets/routes-registry.js';
+import ruleEngine from '../assets/competition-rules.js';
 import model from "../assets/competition-model.js";
 import { publicRequestFile } from "../tools/publication-guard.mjs";
 import test from "node:test";
@@ -349,28 +352,46 @@ test("COMPETITION-MOBILE-RETURN-01: all-competitions back link is desktop-only",
  assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions"'));
 });
 
+
+function renderedClubIdentity(club,fixture=false){
+ const element=(tag,className='',textContent='')=>({tagName:tag,className,textContent,children:[],dataset:{},append(...nodes){this.children.push(...nodes)},appendChild(node){this.children.push(node);return node},setAttribute(){}});
+ const walk=node=>[node,...node.children.flatMap(walk)];
+ const source=read(fixture?'assets/competition-fixtures.js':'assets/competition-page.js');
+ const name=fixture?'identity':'createStandingsRow';
+ const start=source.indexOf('  function '+name+'('),end=source.indexOf(fixture?'  function matchRow(':'  function bindSuppliedPanels(',start);
+ assert.ok(start>=0&&end>start);
+ const key=ruleEngine.clubKey(club);
+ const render=runInNewContext(source.slice(start,end)+';'+name,{
+  document:{createElement:element},window:{faRoutesRegistry:routeRegistry},
+  decorateStanding(){},createCrestHost:()=>element('span'),element,word:()=>element('span'),rules:ruleEngine,clubs:new Map([[key,club]])
+ });
+ return walk(fixture?render(key,true):render(club)).filter(node=>node.tagName==='a');
+}
+
 test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
  const css=read("assets/app.css");
- const page=read("assets/competition-page.js");
  assert.ok(css.includes(".app-world-standing-table tr>*{padding:3px 4px"));
  assert.ok(!css.includes(".app-world-standing-table tr>*{padding:5px 6px}"));
  assert.ok(css.includes(".app-world-standing-club-link:hover"));
- assert.ok(page.includes('name.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
- assert.ok(page.includes('clubLink.href = "/clubs/" + club.countryId.toLowerCase() + "/" + club.clubId + "/overview"'));
+ for(const club of clubs){
+  const links=renderedClubIdentity(club);
+  assert.equal(links.length,1);assert.equal(links[0].href,'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
+  assert.equal(links[0].textContent,club.primaryName||club.abbr);
+ }
+ // Actual compact/mobile hydration is additionally exercised in world-competition-runtime.test.mjs.
  const dev=read("tools/dev-standings-preview-client.mjs");
  assert.ok(dev.includes('clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview"'));
 });
 
 test("CLUB-NAV-02 links competition views to approved club routes and seasons",()=>{
- const page=read("assets/competition-page.js");
- const fixtures=read("assets/competition-fixtures.js");
- const history=read("assets/competition-history.js");
  const preview=read("tools/dev-standings-preview-client.mjs");
- assert.ok(page.includes('name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
- assert.ok(fixtures.includes('link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
- // Actual domestic/cup History dialog links are exercised by
- // competition-season-history-view.test.mjs; presentation no longer uses a domestic-only division.
- assert.ok(history.includes('"/standings?season="+encodeURIComponent(season)'));
+ for(const club of clubs){
+  const links=renderedClubIdentity(club,true);
+  assert.equal(links.length,1);assert.equal(links[0].href,'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
+  assert.equal(publicRequestFile(links[0].href),'clubs/_shared/index.html');
+ }
+ // Actual domestic/cup History dialog season links and query encoding are covered by
+ // competition-season-history-view.test.mjs; this test retains Fixtures and DEV identity checks.
  assert.ok(preview.includes('if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
  const css=read("assets/club-page.css");
  assert.ok(css.includes("column-gap:16px;row-gap:8px"));

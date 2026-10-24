@@ -1,3 +1,5 @@
+import {runInNewContext} from 'node:vm';
+import routeRegistry from '../assets/routes-registry.js';
 // NAV-01: canonical navigation regressions.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,12 +9,24 @@ import {publicRequestFile} from '../tools/publication-guard.mjs';
 const directory=readFileSync(new URL('../assets/clubs-directory.js',import.meta.url),'utf8');
 const sidebar=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
 test('NAV-01B directory links use canonical country/id/overview paths',()=>{
- assert.ok(directory.includes("+'/'+c.clubId+'/overview"));
- assert.ok(!directory.includes('href="/clubs/\'+c.countryId.toLowerCase()+\'-\'+c.clubId'));
- for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(const id of [1,16,17,32,40]){
-  const r=resolveSubpage('/clubs/'+country+'/'+id+'/overview');
-  assert.equal(r?.kind,'club');assert.equal(r?.redirect,false);
- }
+ const m=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8'));
+ const start=directory.indexOf('function paint(){'),end=directory.indexOf('// Warm the same crest URL',start);
+ assert.ok(start>=0&&end>start,'Actual directory paint function must be available');
+ const header={},out={innerHTML:'',querySelectorAll:()=>[]},input={value:'',setAttribute(){}},count={};
+ const select=options=>({value:'',options,get selectedOptions(){return [options[0]]},setAttribute(k,v){this[k]=v},getAttribute(k){return this[k]}});
+ const selects=[select([{textContent:''}]),select([{textContent:''},{textContent:''},{textContent:''}])];
+ const filters=selects.map(select=>({trigger:{setAttribute(){}},value:{},options:select.options.map(()=>({})),binding:{sync(){}}}));
+ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ runInNewContext(directory.slice(start,end)+';paint()',{
+  m,input,selects,out,count,filters,safe,indexed:new Map(),dm:new Map(m.divisions.map(d=>[d.id,d])),
+  tr:()=>['Search','All countries','All divisions','','','','Clubs','clubs','No clubs found'],
+  filterLabels:{en:['Country','Division']},countryNames:{en:[]},codes:[],tierNames:{en:['First','Second']},normalizeSearch:v=>v,
+  root:{querySelector:()=>header},document:{documentElement:{lang:'en'}},window:{faRoutesRegistry:routeRegistry}
+ });
+ const hrefs=[...out.innerHTML.matchAll(/class="nav01-card" href="([^"]+)"/g)].map(m=>m[1]);
+ assert.equal(hrefs.length,320);
+ assert.deepEqual([...hrefs].sort(),m.clubs.map(c=>'/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview').sort());
+ for(const href of hrefs){const route=resolveSubpage(href);assert.equal(route?.kind,'club');assert.equal(route?.redirect,false);assert.equal(publicRequestFile(href),'clubs/_shared/index.html');}
 });
 test('NAV-01A sidebar keeps five language keys and accessible expansion',()=>{
  for(const code of ['en','de','es','fr','it'])assert.ok(sidebar.includes(code+':['));

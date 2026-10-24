@@ -87,3 +87,14 @@ The club/router integration tests first failed against the old independent imple
 A wider inventory also identified still-unmigrated club links in `assets/competition-fixtures.js` and `assets/competition-stats.js`, neither in the six-consumer approved runtime list. They remain unchanged and A03-08 must stay open. To finish that broader migration, the proposed extension is exactly these two runtime files, the two test files above and `tests/competition-stats-view.test.mjs` for actual registry dependency/behavior assertions. The existing authorized Fixtures/runtime test files already cover its companion dependency work. No additional module, generated, hosting or publication-policy path is proposed.
 
 This is a reviewable partial PR within the original allowlist, **Draft/HOLD**, until that five-path extension is decided. Browser CI and independent review remain verification gates. No merge/deploy/DB.
+
+
+### PR-04E five-path extension authorized
+
+The user authorized the five additional named paths recorded in issue #268 comment 6389043137. Fixtures and Stats now use the same real registry for canonical club/team links; no validation, scoring, metrics or provider behavior is changed. Their VM fixtures receive the actual core. Call-through integration tests first failed on the old independent link construction and now pass with literal emitted URL expectations. Player labels remain unlinked; 16-team domestic and both 24-team cup contexts are covered.
+
+The three obsolete source-form assertions have been replaced by executable consumer coverage. The directory test executes the real paint function and checks all 320 emitted canonical card destinations against literal country/id paths and publication routing. Standings/Fixtures tests execute their real renderer functions for all canonical clubs. A separate runtime fixture verifies the complete desktop and compact link sets for all sixteen divisions. Existing CSS/DEV checks remain; actual domestic/cup History dialog season links continue to be checked by the dedicated existing history-view tests.
+
+The named allowlist is now 23 possible paths. The expected actual PR diff is **19 paths**, because the already-authorized `tests/competition-fixtures.test.mjs` also needs its real registry dependency and integration test in addition to the original thirteen changes and five newly approved paths. All other approved but unnecessary test paths remain unchanged. No registry, canonical data, generated artifact, generator, hosting, guard or workflow changes are introduced.
+
+Extension-focused tests: **77/77 PASS**. Full local/CI and final fresh generated parity are being rerun on the updated commit. This supersedes the earlier scope HOLD once those gates are conclusively green; it does not authorize merge/deploy/DB.
