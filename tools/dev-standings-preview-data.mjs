@@ -4,8 +4,15 @@ import "../assets/competition-model.js";
 import "../assets/world-calendar-model.js";
 import "../assets/competition-rules.js";
 import domesticDefinitions from "../data/divisions.json" with {type:'json'};
+import internationalDefinitions from "../data/international-competitions.json" with {type:'json'};
+import registryModule from "../assets/rules-registry.js";
 const configuredRules=globalThis.faCompetitionRules;
-const previewDefinition=division=>configuredRules.normalizeCompetition({...domesticDefinitions.find(d=>d.id===division.id),...(division.rules?{rules:division.rules}:{}),capacity:division.capacity});
+const registry=registryModule.createRulesRegistry([...domesticDefinitions,...internationalDefinitions],configuredRules);
+const previewDefinition=division=>{
+ const canonical=registry.getCompetition(division.id);
+ if(!canonical||canonical.category!=='domestic')throw Error('Unknown DEV competition');
+ return configuredRules.normalizeCompetition({...canonical,...(division.rules?{rules:division.rules}:{}),capacity:division.capacity});
+};
 export const competitionModel=globalThis.faCompetitionModel;
 const {capacity}=competitionModel.profile;
 const {rounds}=competitionModel.schedule;

@@ -130,3 +130,12 @@ test('SEASON-HISTORY-VERSIONS: mixed archives use the stable catalogue while any
   assert.equal(compute(payload).totalGoals.value,6);
  }
 });
+
+test('A02-10 preview preserves historical snapshot precedence after registry lookup',()=>{
+ const current=definition('IT-1');
+ const archived={season:1,rulesVersion:current.rules.version,rulesSnapshot:copy(current.rules)};
+ assert.deepEqual(model.resolveSeasonRules(current,archived),current.rules);
+ const next=createPreviewStandings(division,30,2);
+ assert.equal(next.rulesVersion,current.rules.version);
+ assert.deepEqual(next.rulesSnapshot,current.rules);
+});
