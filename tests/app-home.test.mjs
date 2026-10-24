@@ -301,17 +301,18 @@ test("SITE-HOST-URL: app-subdomain links preserve a bare origin, queries and fra
 test("COMPETITION-LINK: DEV season metadata preserves canonical division path",()=>{
  const hrefs={href:"/competitions/it-1?season=1&view=standings","data-dev-latest-season":"2"};
  const card={getAttribute:key=>hrefs[key],setAttribute:(key,value)=>{hrefs[key]=value;}};
+ const registryCode=read("assets/routes-registry.js");
  const code=["appHref","siteHref","rewriteAppLinks"].map(name=>{
   const match=js.match(new RegExp("  function "+name+"\\([^)]*\\) \\{[\\s\\S]*?\\n  \\}"));
   assert.ok(match,name);return match[0];
  }).join("\n");
- runInNewContext(code+"\nrewriteAppLinks()",{
-  window:{location:{hostname:"localhost",protocol:"http:"}},links:{},
+ runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{
+  window:{location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},
   document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}
  });
  assert.equal(hrefs.href,"/competitions/it-1/standings?season=2");
  const cup={href:"/competitions/int-1/standings","data-dev-latest-season":"4"};
  card.getAttribute=key=>cup[key];card.setAttribute=(key,value)=>{cup[key]=value;};
- runInNewContext(code+"\nrewriteAppLinks()",{window:{location:{hostname:"localhost",protocol:"http:"}},links:{},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
+ runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{window:{location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
  assert.equal(cup.href,"/competitions/int-1/standings?season=4");
 });
