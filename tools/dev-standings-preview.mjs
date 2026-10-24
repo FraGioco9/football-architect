@@ -1,5 +1,6 @@
 // Loopback-only static DEV server. Never stage this module in a public artifact.
 import {resolveSubpage,clubViews} from "../assets/subpage-routes.mjs";
+import {parseRoute,buildRoute} from "../assets/routes-registry.mjs";
 import { createServer } from "node:http";
 import { readFile, realpath, lstat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
@@ -127,7 +128,9 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           res.writeHead(308,{"Location":target,"Cache-Control":"no-store"});res.end();return;
         }
       }
-      const rootDivision = raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/?$/);
+      const parsedDivision=parseRoute(raw);
+      const rootDivision=parsedDivision?.kind==="competition"&&raw.replace(/\/$/,"")===parsedDivision.base
+        ? [raw,parsedDivision.base.slice("/competitions/".length)] : null;
       if(rootDivision){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
         const legacy=new URLSearchParams(query);
@@ -136,12 +139,14 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         legacy.delete("view");
         if(next==="history"||next==="rules"){legacy.delete("season");legacy.delete("matchday");}
         const suffix=legacy.toString();
-        res.writeHead(308,{"Location":"/competitions/"+rootDivision[1]+"/"+next+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
+        res.writeHead(308,{"Location":buildRoute({kind:"competition",id:rootDivision[1],view:next})+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
-      const viewSlash=raw.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\/$/);
+      const parsedView=parseRoute(raw);
+      const viewSlash=parsedView?.kind==="competition"&&parsedView.redirect&&raw.endsWith("/")&&raw!==parsedView.base+"/"
+        ? parsedView : null;
       if(viewSlash){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
-        res.writeHead(308,{"Location":"/competitions/"+viewSlash[1]+"/"+viewSlash[2]+query,"Cache-Control":"no-store"});
+        res.writeHead(308,{"Location":viewSlash.canonical+query,"Cache-Control":"no-store"});
         res.end();return;
       }
       const virtual = VIRTUAL[raw];

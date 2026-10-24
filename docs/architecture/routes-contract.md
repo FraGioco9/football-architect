@@ -8,3 +8,11 @@ Only `assets/routes-registry.mjs`, `assets/subpage-routes.mjs`, `tests/routes-re
 DEV HTTP status/Location and browser popstate/refresh/query tests must be captured against this baseline before any consumer migration. Existing DEV and browser behaviors can intentionally differ from hosting (e.g. legacy `view`, temporal query stripping, INT-24 root). Do not normalize them centrally until the data are measured and approved.
 ## Gates
 Full Node suite, generator --check, generated artifacts equivalence, exact-head CI, Chromium, publication guard unchanged, source hosting blob unchanged. File scope extension requires HOLD and renewed permission.
+
+## PR-04B DEV and generator integration
+Base `0ea77fbe50f152f5387cd0dbe3a03f81ae954963`; Draft/HOLD. Only six authorized file paths.
+- DEV uses A03 `parseRoute`/`buildRoute` for domestic root and slash canonicalization while preserving existing query logic and status codes.
+- Generator uses `buildRoute` for domestic card links; cup first-paint scripts and browser stay unchanged.
+- CRLF isolated fixture copies `assets/routes-registry.mjs` because generator imports it.
+- Tests pin DEV HTTP status/Location, generated card hrefs, and existing byte-identical hosting fixture.
+- Require direct generator 23/23 and SHA-256 27/27 baseline parity, G328, full Node, Chromium, exact-head CI before merge authorization. Hosting and publication guard remain untouched.

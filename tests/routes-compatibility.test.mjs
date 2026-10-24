@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createHash} from "node:crypto";
 import {resolveSubpage,competitionSubpage,clubSubpage} from "../assets/subpage-routes.mjs";
-import {countries,competitionViews,clubViews} from "../assets/routes-registry.mjs";
+import * as routes from "../assets/routes-registry.mjs";
+const {countries,competitionViews,clubViews}=routes;
 const raw=readFileSync(new URL("../vercel.json",import.meta.url));
 const blobHash=buf=>createHash("sha1").update(Buffer.from("blob "+buf.length+"\0")).update(buf).digest("hex");
 test("A03-01: exact hosting bytes and complete ordered rule fixture (29 redirects, 7 rewrites)",()=>{
@@ -23,5 +24,13 @@ test("A03-02: legacy ROUTE-02 API and identity coverage unchanged",()=>{
  const path="/clubs/"+c+"/"+n+"/"+view;
  assert.deepEqual(resolveSubpage(path),{kind:"club",base:"/clubs/"+c+"/"+n,view,canonical:path,redirect:false});
  assert.equal(clubSubpage(c,String(n),view),path);
+ }
+});
+
+test("A03-04B: generated domestic cards retain canonical hrefs",()=>{
+ const source=readFileSync(new URL("../competitions/index.html",import.meta.url),"utf8");
+ for(const c of countries)for(const tier of [1,2]){
+  const id=c+"-"+tier;
+  assert.ok(source.includes('href="'+routes.buildRoute({kind:"competition",id,view:"standings"})+'?season=1"'),id);
  }
 });
