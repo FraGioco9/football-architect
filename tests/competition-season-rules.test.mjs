@@ -131,7 +131,7 @@ test('SEASON-HISTORY-VERSIONS: mixed archives use the stable catalogue while any
  }
 });
 
-test('A02-10 preview preserves historical snapshot precedence after registry lookup',()=>{
+test('A02-10 recovery: preview keeps historical snapshot precedence',()=>{
  const current=definition('IT-1');
  const archived={season:1,rulesVersion:current.rules.version,rulesSnapshot:copy(current.rules)};
  assert.deepEqual(model.resolveSeasonRules(current,archived),current.rules);

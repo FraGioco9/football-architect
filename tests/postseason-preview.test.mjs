@@ -119,7 +119,7 @@ test('POSTSEASON-PROGRESS: Debug extends to 33 while league/history stay bounded
  for(const day of [-1,34,1.5])assert.throws(()=>data.createPreviewPostseason(divisions[0],day,1),/Invalid/);
 });
 
-test('A02-10 preview resolves all domestic rules through immutable registry bindings',()=>{
+test('A02-10 recovery: all domestic catalogue baselines remain valid',()=>{
  const defs=loadCompetitionCatalogue().filter(d=>d.category==='domestic');
  assert.equal(defs.length,16);
  for(const d of defs){assert.ok(d.rules.version.startsWith('domestic-'));assert.equal(d.rules.phases[0].calendarEvents.length,30);}
