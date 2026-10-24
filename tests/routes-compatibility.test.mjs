@@ -34,3 +34,16 @@ test("A03-04B: generated domestic cards retain canonical hrefs",()=>{
   assert.ok(source.includes('href="'+routes.buildRoute({kind:"competition",id,view:"standings"})+'?season=1"'),id);
  }
 });
+
+import {readdirSync} from 'node:fs';
+test('A03-04D: generated route bootstrap loads once before every deferred consumer',()=>{
+ const expected=['calendar/index.html','clubs/index.html','clubs/_shared/index.html','competitions/index.html','competitions/_shared/index.html',...readdirSync(new URL('../competitions/',import.meta.url)).filter(p=>/^(?:(?:it|eng|es|de|fr|pt|nl|br)-[12]|int-[12])$/.test(p)).map(p=>'competitions/'+p+'/index.html')];
+ assert.equal(expected.length,23);
+ for(const path of expected){
+  const html=readFileSync(new URL('../'+path,import.meta.url),'utf8');
+  const deferred=[...html.matchAll(/<script\b[^>]*\bdefer\b[^>]*>/g)].map(m=>m[0]);
+  assert.equal(deferred[0],'<script src="/assets/routes-registry.js" defer>',path);
+  assert.equal(html.split('src="/assets/routes-registry.js"').length-1,1,path);
+ }
+ for(const path of ['dashboard/index.html','settings/index.html'])assert.ok(!readFileSync(new URL('../'+path,import.meta.url),'utf8').includes('/assets/routes-registry.js'),path);
+});

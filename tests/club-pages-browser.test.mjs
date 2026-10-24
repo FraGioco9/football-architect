@@ -85,6 +85,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
     });
     await cmd('Page.enable');
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'faRoutesRegistry',{configurable:true,set(api){window.__faRoutesBootstrap={clubModel:!!window.faClubModel,competitionRoute:!!window.faCompetitionRoute};Object.defineProperty(window,'faRoutesRegistry',{value:api,writable:true,configurable:true});}});`});
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
     const run=async expression=>{
@@ -514,6 +515,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      for(const row of baseline.competitionBrowser){
       await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
       assert.equal(await currentUrl(),row.expected,'A03-04C direct '+width+' '+row.input);
+      assert.deepEqual(await run('window.__faRoutesBootstrap'),{clubModel:false,competitionRoute:false},'Core precedes deferred consumers');
+      assert.equal(await run('Object.isFrozen(window.faRoutesRegistry)&&Object.isFrozen(window.faRoutesRegistry.countries)'),true);
+      assert.equal(await run("window.faRoutesRegistry.buildRoute({kind:'club',country:'br',id:40,view:'history'})"),'/clubs/br/40/history');
+
       assert.equal(await run('window.faCompetitionRoute.get().view'),row.view);
       assert.equal(await run('window.faCompetitionRoute.get().matchday'),row.matchday);
       assert.equal(await run("document.querySelectorAll('.app-competition-tabs [role=tab][aria-selected=true]').length"),1);
@@ -547,6 +552,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await currentUrl(),'/competitions/it-1/fixtures?season=1&matchday=1','Refresh drops the in-memory round '+lang);
     }
     console.log('A03-04C BROWSER PASS: 25 direct routes at 1440/390; club cleanup/refresh and temporal navigation at 320/390/768/1440, Dark/Light, EN/DE/ES/FR/IT');
+    for(const path of ['/calendar','/clubs','/competitions','/clubs/it/1/overview']){
+     await cmd('Page.navigate',{url:origin+path});
+     await wait("document.readyState==='complete'&&!!window.faRoutesRegistry");
+     assert.deepEqual(await run('window.__faRoutesBootstrap'),{clubModel:false,competitionRoute:false},path);
+     assert.equal(await run("window.faRoutesRegistry.parseRoute('/clubs/it/01/overview')"),null);
+     assert.equal(await run("window.faRoutesRegistry.canonicalizeRoute('/clubs/it/1/')"),'/clubs/it/1/overview');
+    }
+    console.log('A03-04D BROWSER PASS: immutable staged registry available before deferred consumers on competition, club, directory and calendar pages');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{
     socket?.close();proc.kill('SIGTERM');

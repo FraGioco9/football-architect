@@ -170,6 +170,11 @@ const normalizeRouteLinks=(html,path)=>{
  });
 };
 const writeOutput=(path,content)=>{
+ const routeTag='  <script src="/assets/routes-registry.js" defer></script>\n';
+ if(path.endsWith('.html')&&/^(calendar|clubs|competitions)\//.test(path)&&!content.includes(routeTag)){
+  if(!content.includes('<head>\n'))throw Error('Route bootstrap head missing: '+path);
+  content=content.replace('<head>\n','<head>\n'+routeTag);
+ }
  if(path.endsWith(".html")&&!content.includes("/assets/sidebar-evolution.js"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
  if(path.endsWith('.html'))content=renderSidebar(content);
  const file=new URL("../"+path,import.meta.url);

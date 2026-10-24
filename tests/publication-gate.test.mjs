@@ -162,3 +162,17 @@ test("PUBLIC-03: provider checks reject Production, wrong project and alias iden
  for(const wrong of [{projectId:"other"},{alias:"other.vercel.app"},{deploymentId:"old"}])
   assert.equal(accepts(alias,{...correct,...wrong}),false);
 });
+
+test('A03-04D: public staging includes only the pure classic route core, never its Node facade',()=>{
+ const root=mkdtempSync(join(tmpdir(),'fa-routes-public-'));
+ try{
+  const target=join(root,'public'),files=stagePublicArtifact(repositoryRoot,target);
+  assert.ok(files.includes('assets/routes-registry.js'));
+  for(const path of ['assets/routes-registry.mjs','assets/subpage-routes.mjs','tools/dev-standings-preview.mjs'])assert.ok(!files.includes(path),path);
+  assert.deepEqual(assertPublicArtifact(target),files);
+  const core=join(target,'assets/routes-registry.js');
+  assert.deepEqual(readFileSync(core),readFileSync(join(repositoryRoot,'assets/routes-registry.js')));
+  unlinkSync(core);
+  assert.throws(()=>assertPublicArtifact(target),/manifest|missing/i);
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
