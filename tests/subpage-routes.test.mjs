@@ -80,3 +80,23 @@ test("ROUTE-02 DEV routes redirect base and serve explicit views",async()=>{
   assert.equal((await get("/competitions/it-1/not-a-view")).status,404);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test("A03-04B: DEV redirect and security oracle",async()=>{
+ const {once}=await import("node:events");
+ const {request}=await import("node:http");
+ const {createPreviewServer}=await import("../tools/dev-standings-preview.mjs");
+ const server=createPreviewServer();server.listen(0,"127.0.0.1");await once(server,"listening");
+ const get=path=>new Promise((resolve,reject)=>{const req=request({host:"127.0.0.1",port:server.address().port,path,headers:{host:"127.0.0.1:2000"}},res=>{res.resume();res.on("end",()=>resolve({status:res.statusCode,location:res.headers.location??null}));});req.on("error",reject);req.end();});
+ try{
+  for(const [path,status,location] of [
+   ["/competitions/it-1",308,"/competitions/it-1/overview"],
+   ["/competitions/it-1?season=2&view=fixtures&matchday=7",308,"/competitions/it-1/fixtures?season=2&matchday=7"],
+   ["/competitions/it-1?season=4&view=history&matchday=9",308,"/competitions/it-1/history"],
+   ["/competitions/it-1/fixtures/?season=2",308,"/competitions/it-1/fixtures?season=2"],
+   ["/clubs/it/1?view=stats",308,"/clubs/it/1/stats"],
+   ["/clubs/it/%31/overview",403,null],
+   ["/competitions/it-3",404,null],
+   ["/competitions/int-1",404,null]
+  ])assert.deepEqual(await get(path),{status,location},path);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
