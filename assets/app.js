@@ -1256,7 +1256,8 @@
     for (const link of document.querySelectorAll("a.app-division-card")) {
       const registry = window.faRoutesRegistry;
       const rawHref = link.getAttribute("href") || "";
-      const route = registry?.parseRoute(new URL(rawHref, window.location.href).pathname);
+      const pathname = new URL(rawHref, window.location.href).pathname;
+      const route = registry?.parseRoute(pathname) || registry?.parseRoute(pathname.replace(/\/$/, "")+"/standings");
       if (route && (route.kind === "competition" || route.kind === "cup")) {
         const id = route.base.slice("/competitions/".length);
         const season = link.getAttribute("data-dev-latest-season") || String(activeSeason);
