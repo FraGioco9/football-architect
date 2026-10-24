@@ -226,3 +226,23 @@ test('CLUB-COMPETITION-02: active cards show localized metrics and inactive card
   }
  }
 });
+
+const a03Baseline=JSON.parse(read('tests/fixtures/a03-browser-routes.json'));
+test('A03-04C: club parser retains strict canonical acceptance and caller-facing shape',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ for(const row of a03Baseline.clubParser)assert.deepEqual(model.route(row.input),row.expected,row.input);
+});
+test('A03-04C: active and inactive club tabs transfer only temporal context to Fixtures and Stats',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ for(const path of ['/clubs/it/1/overview','/clubs/br/40/overview']){
+  const selected=model.route(path);
+  const html=model.render(manifest,selected,'en','?view=history&season=3&matchday=7&x=1');
+  const nav=html.match(/<nav class="app-competition-tabs club-tabs"[^>]*>(.*?)<\/nav>/)[1];
+  const hrefs=[...nav.matchAll(/href="([^"]+)"/g)].map(m=>m[1].replaceAll('&amp;','&'));
+  assert.deepEqual(hrefs,[selected.base+'/overview',selected.base+'/roster',selected.base+'/fixtures?season=3&matchday=7',selected.base+'/stats?season=3&matchday=7',selected.base+'/history']);
+  assert.equal((nav.match(/aria-current="page"/g)||[]).length,1);
+  if(path.includes('/40/'))assert.doesNotMatch(html,/href="\/competitions\//,'Unallocated club cannot invent a competition link');
+  else assert.ok(html.includes('href="/competitions/it-1/overview"'));
+ }
+});
