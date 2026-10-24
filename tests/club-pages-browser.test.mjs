@@ -32,7 +32,7 @@ function measureBaselines(selectors){
   node.prepend(probe);const baseline=probe.getBoundingClientRect().top;probe.remove();return baseline;
  });
 }
-test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh and crest fallback',{timeout:180000},async()=>{
+test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh and crest fallback',{timeout:300000},async()=>{
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
@@ -505,6 +505,48 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelector('.fa-dev-widget')"),null,'Public club pages never load Debug Settings');
     await cmd('Page.navigate',{url:origin+'/competitions/it-1/overview'});
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
+    // A03-04C: execute frozen URLs through the real public artifact, not registry helpers.
+    const baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes.json',import.meta.url),'utf8'));
+    const currentUrl=()=>run('location.pathname+location.search+location.hash');
+    const competitionReady="document.readyState==='complete'&&!!window.faCompetitionRoute";
+    for(const width of [1440,390]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     for(const row of baseline.competitionBrowser){
+      await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
+      assert.equal(await currentUrl(),row.expected,'A03-04C direct '+width+' '+row.input);
+      assert.equal(await run('window.faCompetitionRoute.get().view'),row.view);
+      assert.equal(await run('window.faCompetitionRoute.get().matchday'),row.matchday);
+      assert.equal(await run("document.querySelectorAll('.app-competition-tabs [role=tab][aria-selected=true]').length"),1);
+     }
+    }
+    for(const [index,lang] of ['en','de','es','fr','it'].entries()){
+     const width=[320,390,768,1440,390][index],theme=index%2?'light':'dark';
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
+     for(const row of baseline.clubInitial){
+      await visit(row.input);assert.equal(await currentUrl(),row.expected,'A03-04C club cleanup '+lang);
+      assert.equal(await run('document.documentElement.lang'),lang);
+      await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
+      assert.equal(await currentUrl(),row.expected,'A03-04C club refresh '+lang);
+     }
+     await visit('/clubs/it/1/stats?season=3&matchday=7');
+     await run("document.querySelector('.club-tabs a[href*=\"/fixtures?\"]').click()");
+     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3&matchday=7');
+     await run('history.back()');await wait("location.pathname==='/clubs/it/1/stats'");
+     assert.equal(await currentUrl(),'/clubs/it/1/stats?season=3&matchday=7');
+     await run('history.forward()');await wait("location.pathname==='/clubs/it/1/fixtures'");
+     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3&matchday=7');
+     await cmd('Page.navigate',{url:origin+'/competitions/it-1/fixtures?season=1&matchday=12'});await wait(competitionReady);
+     await run("document.getElementById('competition-tab-stats').click()");
+     assert.equal(await currentUrl(),'/competitions/it-1/stats?season=1');
+     await run('history.back()');await wait("location.pathname==='/competitions/it-1/fixtures'");
+     assert.equal(await run('window.faCompetitionRoute.get().matchday'),12);
+     await run('history.forward()');await wait("location.pathname==='/competitions/it-1/stats'");
+     await cmd('Page.reload');await wait(competitionReady);
+     await run("document.getElementById('competition-tab-fixtures').click()");
+     assert.equal(await currentUrl(),'/competitions/it-1/fixtures?season=1&matchday=1','Refresh drops the in-memory round '+lang);
+    }
+    console.log('A03-04C BROWSER PASS: 25 direct routes at 1440/390; club cleanup/refresh and temporal navigation at 320/390/768/1440, Dark/Light, EN/DE/ES/FR/IT');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{
     socket?.close();proc.kill('SIGTERM');

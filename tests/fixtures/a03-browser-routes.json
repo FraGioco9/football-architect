@@ -1,0 +1,242 @@
+{
+  "baseline": "15d320845ba1e1cb9b657d06a2d0b38a26363afd",
+  "competitionBrowser": [
+    {
+      "input": "/competitions/it-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/it-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/it-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/it-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/eng-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/eng-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/eng-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/eng-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/es-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/es-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/es-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/es-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/de-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/de-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/de-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/de-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/fr-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/fr-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/fr-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/fr-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/pt-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/pt-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/pt-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/pt-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/nl-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/nl-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/nl-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/nl-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/br-1/fixtures?season=1&matchday=7",
+      "expected": "/competitions/br-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/br-2/fixtures?season=1&matchday=7",
+      "expected": "/competitions/br-2/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/it-1?season=1&view=fixtures&matchday=7&x=1#anchor",
+      "expected": "/competitions/it-1/fixtures?season=1&matchday=7",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 7
+    },
+    {
+      "input": "/competitions/it-1/fixtures?season=1&view=stats&matchday=12",
+      "expected": "/competitions/it-1/fixtures?season=1&matchday=12",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 12
+    },
+    {
+      "input": "/competitions/it-1/history?season=4&matchday=9&x=1#anchor",
+      "expected": "/competitions/it-1/history",
+      "view": "history",
+      "season": "1",
+      "matchday": 9
+    },
+    {
+      "input": "/competitions/it-1/rules?season=4&matchday=9",
+      "expected": "/competitions/it-1/rules",
+      "view": "rules",
+      "season": "1",
+      "matchday": 9
+    },
+    {
+      "input": "/competitions/it-1/index.html?view=fixtures&season=1&matchday=3",
+      "expected": "/competitions/it-1/fixtures?season=1&matchday=3",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 3
+    },
+    {
+      "input": "/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2",
+      "expected": "/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": "quarterfinals:2"
+    },
+    {
+      "input": "/competitions/int-1/fixtures?season=1&matchday=30",
+      "expected": "/competitions/int-1/fixtures?season=1&matchday=1",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 1
+    },
+    {
+      "input": "/competitions/int-2/fixtures?season=1&matchday=quarterfinals%3A2",
+      "expected": "/competitions/int-2/fixtures?season=1&matchday=quarterfinals%3A2",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": "quarterfinals:2"
+    },
+    {
+      "input": "/competitions/int-2/fixtures?season=1&matchday=30",
+      "expected": "/competitions/int-2/fixtures?season=1&matchday=1",
+      "view": "fixtures",
+      "season": "1",
+      "matchday": 1
+    }
+  ],
+  "clubParser": [
+    {
+      "input": "/clubs/it/1/overview",
+      "expected": {
+        "countryId": "IT",
+        "clubId": 1,
+        "view": "overview",
+        "base": "/clubs/it/1"
+      }
+    },
+    {
+      "input": "/clubs/br/40/history",
+      "expected": {
+        "countryId": "BR",
+        "clubId": 40,
+        "view": "history",
+        "base": "/clubs/br/40"
+      }
+    },
+    {
+      "input": "/clubs/it/1",
+      "expected": null
+    },
+    {
+      "input": "/clubs/it/1/overview/",
+      "expected": null
+    },
+    {
+      "input": "/clubs/it/01/overview",
+      "expected": null
+    },
+    {
+      "input": "/clubs/IT/1/overview",
+      "expected": null
+    },
+    {
+      "input": "/clubs/it/41/overview",
+      "expected": null
+    },
+    {
+      "input": "/clubs/xx/1/overview",
+      "expected": null
+    },
+    {
+      "input": "/clubs/it/%31/overview",
+      "expected": null
+    }
+  ],
+  "clubInitial": [
+    {
+      "input": "/clubs/it/1/overview?view=stats&season=3&matchday=7&x=1#anchor",
+      "expected": "/clubs/it/1/overview?x=1#anchor"
+    },
+    {
+      "input": "/clubs/br/40/history?view=fixtures&season=3&matchday=7&x=1#anchor",
+      "expected": "/clubs/br/40/history?x=1#anchor"
+    },
+    {
+      "input": "/clubs/it/1/stats?view=history&season=3&matchday=7&x=1#anchor",
+      "expected": "/clubs/it/1/stats?season=3&matchday=7&x=1#anchor"
+    }
+  ]
+}

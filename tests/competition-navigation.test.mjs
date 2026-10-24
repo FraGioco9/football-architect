@@ -264,3 +264,21 @@ test('COMPETITION-URL: generic first paint preserves cup query views before hydr
  runInNewContext(bootstrap,{document,URL,URLSearchParams,history:{replaceState(_a,_b,url){const next=new URL(url,'https://example.test');location.href=next.href;location.pathname=next.pathname;location.search=next.search;}},location});
  assert.equal(document.documentElement.dataset.competitionView,'stats');
 });
+
+// Characterization: catches path/query precedence drift without consulting the registry.
+const a03Baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes.json',import.meta.url),'utf8'));
+test('A03-04C: browser URL normalization preserves the frozen domestic and cup oracle',()=>{
+ for(const row of a03Baseline.competitionBrowser){
+  const s=setup(row.input);
+  assert.equal(s.window.location.pathname+s.window.location.search+s.window.location.hash,row.expected,row.input);
+  assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:row.season,view:row.view,matchday:row.matchday},row.input);
+  assert.equal(s.count(),1,'Initial canonicalization replaces rather than pushes: '+row.input);
+ }
+});
+test('A03-04C: only validated calendar return context survives Fixtures normalization',()=>{
+ const valid='/calendar?season=1&day=13&calendarView=week&competition=national&division=it-1';
+ for(const value of [valid,'https://outside.test'+valid,'/calendar?season=1&day=57&calendarView=week&competition=national']){
+  const s=setup('/competitions/it-1/fixtures?season=1&matchday=7&calendarReturn='+encodeURIComponent(value));
+  assert.equal(s.window.location.search,'?'+(value===valid?'calendarReturn='+encodeURIComponent(valid)+'&':'')+'season=1&matchday=7');
+ }
+});
