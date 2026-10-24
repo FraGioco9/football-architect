@@ -65,3 +65,36 @@ The generator inserts exactly one deferred script tag immediately after `<head>`
 Initial red checks confirmed the missing classic core, generated loading and public-asset eligibility. After implementation: **17/17 targeted tests PASS**, including G328 isolated CRLF, cross-runtime equivalence, immutability, script ordering and staged exclusion. Direct generator **23/23 PASS**. Independent regeneration against main `15456a257e37af6cc3339cc328ab2e2a02d83b89` accounts for all 27 artifacts: **23 exact one-tag HTML changes; four unchanged SHA-256 artifacts; 27/27 byte-identical after removing only that exact tag**. The four unchanged artifacts are Dashboard, Settings and the two shared manifests. This is normalized parity under the approved exception, not raw 27/27 hash equality.
 
 The existing browser harness additionally checks actual staged API behavior, frozen API/arrays and availability before the deferred club model/competition router initialize. It checks competition routes and Calendar/Clubs directory/club pages. Actual Chromium/full Node 22/exact-head results remain CI gates; local Chrome remains unavailable. No consumer migration, hosting-rule change or additional public module is included.
+
+
+## PR-04E implementation plan — browser consumer migration
+Approved against main `aa052b9471ea62638e41ba021c3e7b83d1e61861`, issue #268 design comment 6388936019. Maximum 18-path scope: six runtime consumers, eleven existing test files and this document. No registry, loading, generator, canonical-data, hosting or publication-policy change.
+
+- [x] Pin club/router delegation using the real registry with call-through instrumentation and literal output expectations before runtime edits.
+- [x] Adapt strict club parsing and link builders, then competition path handling and rendered club/history/calendar/directory links.
+- [x] Supply the actual registry to existing VM test environments; retain negative/query/history assertions and the frozen fixture unchanged.
+- [ ] Extend actual-browser link-flow checks; run full Node, Chromium, independent review and exact-head CI.
+- [ ] Verify direct generator 23/23 and fresh raw regenerated SHA-256 parity 27/27 before readiness. Consumer migration does not implement A01 lookups, A02 rules, new Providers or World Context.
+
+### PR-04E implementation and scope HOLD
+
+The six approved runtime consumers now call the shared core. Club parsing is a strict adapter that rejects registry redirect candidates and retains its caller-facing object shape. Query normalization, viewed seasons, clock state, focus/history and data logic stay local. Existing legacy tab-scroll storage keys are preserved verbatim and explicitly tested; canonicalizing those keys would incorrectly merge root/index storage identities.
+
+The club/router integration tests first failed against the old independent implementation, then passed using call-through instrumentation of the actual core. Existing VM environments receive the real registry in the three fixtures that require it. Literal strict-route coverage includes all 1600 club routes and trailing-slash rejection. Fresh comparison against the exact baseline verified **8000/8000 identical rendered club HTML combinations** (320 clubs × five languages × five views). Calendar detail links retain the existing exact query order and returnPath encoding for all 16 divisions; no calendar behavior correction is included. The hidden legacy calendar return producer remains as-is; its output is distinct from the stricter competition calendarReturn acceptance contract.
+
+**Scope blocker identified by full-suite validation:** three tests outside the approved path list assert the old concatenation source text: NAV-01B in `tests/nav-01-sidebar.test.mjs`, STANDINGS-LINK-01 and CLUB-NAV-02 in `tests/world-divisions.test.mjs`. The migration intentionally removes those source forms while preserving runtime destinations. These files have not been edited. Do not add dead source strings or weaken assertions to bypass them; any update must test actual consumer output and needs explicit path authorization.
+
+A wider inventory also identified still-unmigrated club links in `assets/competition-fixtures.js` and `assets/competition-stats.js`, neither in the six-consumer approved runtime list. They remain unchanged and A03-08 must stay open. To finish that broader migration, the proposed extension is exactly these two runtime files, the two test files above and `tests/competition-stats-view.test.mjs` for actual registry dependency/behavior assertions. The existing authorized Fixtures/runtime test files already cover its companion dependency work. No additional module, generated, hosting or publication-policy path is proposed.
+
+This is a reviewable partial PR within the original allowlist, **Draft/HOLD**, until that five-path extension is decided. Browser CI and independent review remain verification gates. No merge/deploy/DB.
+
+
+### PR-04E five-path extension authorized
+
+The user authorized the five additional named paths recorded in issue #268 comment 6389043137. Fixtures and Stats now use the same real registry for canonical club/team links; no validation, scoring, metrics or provider behavior is changed. Their VM fixtures receive the actual core. Call-through integration tests first failed on the old independent link construction and now pass with literal emitted URL expectations. Player labels remain unlinked; 16-team domestic and both 24-team cup contexts are covered.
+
+The three obsolete source-form assertions have been replaced by executable consumer coverage. The directory test executes the real paint function and checks all 320 emitted canonical card destinations against literal country/id paths and publication routing. Standings/Fixtures tests execute their real renderer functions for all canonical clubs. A separate runtime fixture verifies the complete desktop and compact link sets for all sixteen divisions. Existing CSS/DEV checks remain; actual domestic/cup History dialog season links continue to be checked by the dedicated existing history-view tests.
+
+The named allowlist is now 23 possible paths. The expected actual PR diff is **19 paths**, because the already-authorized `tests/competition-fixtures.test.mjs` also needs its real registry dependency and integration test in addition to the original thirteen changes and five newly approved paths. All other approved but unnecessary test paths remain unchanged. No registry, canonical data, generated artifact, generator, hosting, guard or workflow changes are introduced.
+
+Extension-focused tests: **77/77 PASS**. Full local/CI and final fresh generated parity are being rerun on the updated commit. This supersedes the earlier scope HOLD once those gates are conclusively green; it does not authorize merge/deploy/DB.

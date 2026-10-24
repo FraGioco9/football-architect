@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -26,7 +27,7 @@ function fixture(id){
  const panel=node('section'),card=node('article');card.dataset.historyPlayerRecord='seasonGoals';card.dataset.historyScope='season';
  card.append(node('h5','Goals'));panel.append(card);document.body.append(panel);
  document.getElementById=id=>id==='competition-panel-history'?panel:null;document.querySelector=()=>null;
- const window={faCompetitionModel:model,faCompetitionContext:{definition,currentDefinition:definition,seasonData:{participants:[{countryId:'IT',clubId:1,primaryName:'Italian Club'},{countryId:'ENG',clubId:1,primaryName:'English Club'}]}},addEventListener(){}};
+ const window={faRoutesRegistry:routeRegistry,faCompetitionModel:model,faCompetitionContext:{definition,currentDefinition:definition,seasonData:{participants:[{countryId:'IT',clubId:1,primaryName:'Italian Club'},{countryId:'ENG',clubId:1,primaryName:'English Club'}]}},addEventListener(){}};
  runInNewContext(readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8'),{window,document});
  return {window,document,panel,card,definition};
 }

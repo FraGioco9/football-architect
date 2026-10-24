@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import competitionModel from "../assets/competition-model.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,8 +9,8 @@ import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
-function setup(path='/competitions/it-1/',devSeason=null){
- const contextSeasons=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
+function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry){
+ const contextSeasons=[],scrollKeys=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
  // Empty navigation panels still expose DOM queries used by History initialization.
@@ -31,12 +32,12 @@ function setup(path='/competitions/it-1/',devSeason=null){
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
  const definition=definitions.find(d=>path.includes('/'+d.slug+'/')||path.includes('/'+d.slug+'?'));
- const window={faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
- runInNewContext(source,{document,window,URL,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
- return {window,tabs,fields,tablist,events,contextSeasons,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
+ runInNewContext(source,{document,window,URL,sessionStorage:{getItem(key){scrollKeys.push(key);return null},setItem(){}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ return {window,tabs,fields,tablist,events,contextSeasons,scrollKeys,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('CONFIG-URL: cup routes reject domestic rounds and retain configured leg tokens through history',()=>{
  const s=setup('/competitions/int-1/fixtures?season=1&matchday=30');
@@ -281,4 +282,26 @@ test('A03-04C: only validated calendar return context survives Fixtures normaliz
   const s=setup('/competitions/it-1/fixtures?season=1&matchday=7&calendarReturn='+encodeURIComponent(value));
   assert.equal(s.window.location.search,'?'+(value===valid?'calendarReturn='+encodeURIComponent(valid)+'&':'')+'season=1&matchday=7');
  }
+});
+
+test('A03-04E: competition navigation uses the real registry while preserving caller query policy',()=>{
+ const calls=[];
+ const registry=Object.freeze({...routeRegistry,
+  parseRoute(path){calls.push('parse');return routeRegistry.parseRoute(path)},
+  buildRoute(identity){calls.push('build');return routeRegistry.buildRoute(identity)}});
+ const s=setup('/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2',null,registry);
+ s.window.faCompetitionRoute.set({view:'history'});
+ assert.equal(s.window.location.pathname+s.window.location.search,'/competitions/int-1/history');
+ s.back();assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals%3A2');
+ assert.ok(calls.includes('parse'));assert.ok(calls.includes('build'));
+});
+
+test('A03-04E: legacy tab-scroll storage keys remain distinct from canonical path identity',()=>{
+ for(const [path,key] of [
+  ['/competitions/it-1/fixtures','/competitions/it-1'],
+  ['/competitions/it-1/fixtures/','/competitions/it-1'],
+  ['/competitions/it-1/','/competitions/it-1/'],
+  ['/competitions/it-1/index.html','/competitions/it-1/index.html'],
+  ['/competitions/int-1/fixtures','/competitions/int-1']
+ ])assert.equal(setup(path).scrollKeys[0],'football-architect:competition-tabs-scroll:'+key,path);
 });

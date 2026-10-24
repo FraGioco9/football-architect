@@ -172,7 +172,7 @@
     const crest=element("span","app-world-club-crest-placeholder");
     crest.dataset.clubCrest=rules.clubKey(club);crest.setAttribute("aria-hidden","true");
     item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),crest,
-      (()=>{const link=element("a","app-fixture-name app-world-standing-club-link",club.primaryName||club.abbr);link.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview";return link})());
+      (()=>{const link=element("a","app-fixture-name app-world-standing-club-link",club.primaryName||club.abbr);link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});return link})());
     return item;
   }
   function matchRow(game){

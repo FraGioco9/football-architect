@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import competitionModel from "../assets/competition-model.js";
 import competitionRules from "../assets/competition-rules.js";
 // LOCAL-SHARED-PAGE-QA-01: exercise the real static renderer with isolated DOM stubs.
@@ -192,7 +193,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- const window={faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,location,innerWidth:390,innerHeight:600,events:{},
+ const window={faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
@@ -661,4 +662,16 @@ test('CONTEXT: a world-day change with unchanged domestic progress retains suppl
  await run();
  assert.equal(r.window.faCompetitionContext,before,'no new domestic data or season means no invalidation');
  assert.equal(r.window.faCompetitionContext.seasonData.season,1);
+});
+
+test('A03-04E2: desktop and compact public standings emit the same complete canonical club link set',async()=>{
+ const walk=node=>[node,...node.children.flatMap(walk)];
+ for(const division of manifest.divisions){
+  const r=await simulate({division});
+  const expected=division.clubs.map(club=>'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview').sort();
+  for(const id of ['app-standings-body','app-standings-compact-list']){
+   const links=walk(r.fields.get(id)).filter(n=>n.tagName==='a'&&n.className.includes('app-world-standing-club-link')).map(n=>n.href).sort();
+   assert.deepEqual(links,expected,division.id+' '+id);
+  }
+ }
 });

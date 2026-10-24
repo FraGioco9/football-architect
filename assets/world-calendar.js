@@ -108,7 +108,7 @@
       const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='int-1'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
       for(const value of [w.fixtures,w.results,w.unknown]){const p=document.createElement('p');p.textContent=value;info.append(p)}
       disclosure.append(info);article.append(disclosure);
-      if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href='/competitions/'+division+'/fixtures?season=1&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
+      if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href=window.faRoutesRegistry.buildRoute({kind:'competition',id:division,view:'fixtures'})+'?season=1&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
       content.append(article);
     }
   }

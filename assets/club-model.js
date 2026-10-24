@@ -1,8 +1,9 @@
 /* CLUB-01: pure presentation shared by generation tests and the browser. */
 ((root,factory)=>{
- const model=factory();root.faClubModel=model;
+ const routes=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./routes-registry.js'):root.faRoutesRegistry;
+ const model=factory(routes);root.faClubModel=model;
  if(typeof module!=='undefined'&&module.exports)module.exports=model;
-})(typeof window!=='undefined'?window:globalThis,()=>{
+})(typeof window!=='undefined'?window:globalThis,(routes)=>{
  'use strict';
  const views=['overview','roster','fixtures','stats','history'];
  const keys=['overview','roster','fixtures','stats','history','identity','profile','competition','primaryName','fullName','compactName','abbr','nickname','city','country','primaryColor','secondaryColor','stadium','division','provisional','outside','emptyRoster','emptyFixtures','emptyStats','emptyHistory','navigation','crest','error','skip'];
@@ -28,8 +29,11 @@
  const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function route(path){
-  const m=path.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)$/);
-  return m?{countryId:m[1].toUpperCase(),clubId:Number(m[2]),view:m[3],base:'/clubs/'+m[1]+'/'+m[2]}:null;
+  if(typeof path!=='string')throw new TypeError('Club path must be a string');
+  const parsed=routes.parseRoute(path);
+  if(parsed?.kind!=='club'||parsed.redirect)return null;
+  const [, ,country,id]=parsed.base.split('/');
+  return {countryId:country.toUpperCase(),clubId:Number(id),view:parsed.view,base:parsed.base};
  }
  function render(manifest,selected,language='en',search='',snapshot=null){
   const lang=Object.hasOwn(copies,language)?language:'en',t=copies[lang];
@@ -43,7 +47,7 @@
    .replace(/id="([^"]+)"/g,(_,id)=>'id="club-'+placement+'-'+id+'"')
    .replace(/url\(#([^)]+)\)/g,(_,id)=>'url(#club-'+placement+'-'+id+')')
    .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
-  const link=division?'/competitions/'+division.id.toLowerCase()+'/overview':null;
+  const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'overview'}):null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
   const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
@@ -56,7 +60,7 @@
   const home=next&&manifest.clubs.find(other=>other.countryId===c.countryId&&other.clubId===next.homeId&&other.divisionId===c.divisionId);
   const away=next&&manifest.clubs.find(other=>other.countryId===c.countryId&&other.clubId===next.awayId&&other.divisionId===c.divisionId);
   const validNext=home&&away&&home.clubId!==away.clubId&&[home.clubId,away.clubId].includes(c.clubId)&&Number.isInteger(next.round)&&next.round>=1&&next.round<=33;
-  const fixtureLink=validNext?'/competitions/'+division.id.toLowerCase()+'/fixtures?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
+  const fixtureLink=validNext?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'fixtures'})+'?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
   const rank=summary?.position===null||!summary?'—':String(summary.position);
   const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'">'+escape(home.primaryName+' – '+away.primaryName)+'</a><small>'+escape(next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+'</small>':
    '<span class="club-competition-next-empty">'+escape(summary?t.noUpcomingMatch:t.noScheduledMatch)+'</span>';
@@ -74,7 +78,7 @@
   for(const key of ['season','matchday'])if(params.has(key))temporal.set(key,params.get(key));
   const tabs='<nav class="app-competition-tabs club-tabs" aria-label="'+escape(t.navigation)+'">'+views.map(view=>{
    const suffix=['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
-   return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+selected.base+'/'+view+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
+   return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+routes.buildRoute({kind:'club',country:selected.countryId.toLowerCase(),id:selected.clubId,view})+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
   }).join('')+'</nav>';
   const swatch=key=>{
    if(!/^#[0-9A-F]{6}$/.test(c[key]))throw Error('Invalid canonical color');
@@ -93,7 +97,7 @@
     const target=manifest.clubs.find(other=>other.countryId+'-'+other.clubId===opponent);
     if(!target)return '';
     const derby=escape(r.derbyName);
-    return '<li><a class="app-link" href="/clubs/'+target.countryId.toLowerCase()+'/'+target.clubId+'/overview">'+escape(target.primaryName)+'</a><span>'+derby+'</span></li>';
+    return '<li><a class="app-link" href="'+routes.buildRoute({kind:'club',country:target.countryId.toLowerCase(),id:target.clubId,view:'overview'})+'">'+escape(target.primaryName)+'</a><span>'+derby+'</span></li>';
    }).join('');
    content='<div class="club-overview-layout"><div class="club-overview-main">'+
     '<section class="app-panel club-identity" aria-labelledby="club-identity-title"><h2 id="club-identity-title">'+escape(t.identity)+'</h2>'+

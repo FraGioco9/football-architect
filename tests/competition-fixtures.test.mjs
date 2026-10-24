@@ -1,3 +1,4 @@
+import routeRegistry from '../assets/routes-registry.js';
 import competitionModel from "../assets/competition-model.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -54,14 +55,14 @@ function node(tag='div'){
   focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
  return n;
 }
-function setup(d=divisions[0]){
+function setup(d=divisions[0],registry=routeRegistry){
  const definition=definitions.find(item=>item.id===d.id),configured=rules.fixtureChoices(definition);
  const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
  const choices=configured.map(c=>({...node('button'),id:"app-fixtures-round-option-"+c.value,dataset:{fixtureRoundChoice:String(c.value),menuValue:String(c.value)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&!configured.some(c=>c.value===patch.matchday))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
- const events={};const window={faCompetitionRules:rules,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
+ const events={};const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
@@ -300,4 +301,13 @@ test("STANDINGS-DEBUG-OUTCOME-01 clears stale winner and position bands",()=>{
  assert.match(page,/if \(row\.dataset\.standingOutcome\) delete row\.dataset\.standingOutcome;/);
  assert.match(page,/row\.getAttribute\?\.\("aria-describedby"\)\?\.startsWith\("standings-outcome-"\)/);
  assert.match(page,/if \(outcome\) \{\s*row\.dataset\.standingOutcome = outcome;/);
+});
+
+test('A03-04E2: fixture identities delegate to the real registry with canonical home/away links',()=>{
+ const calls=[],registry=Object.freeze({...routeRegistry,buildRoute(identity){calls.push(identity);return routeRegistry.buildRoute(identity)}});
+ const d=divisions[0],r=setup(d,registry),walk=node=>[node,...node.children.flatMap(walk)];
+ r.view.prepare(schedule(d))();
+ const links=walk(r.fields.get('app-fixtures-list')).filter(n=>n.tagName==='a').map(n=>n.href).sort();
+ assert.deepEqual(links,d.clubs.map(club=>'/clubs/it/'+club.clubId+'/overview').sort());
+ assert.equal(calls.filter(c=>c.kind==='club').length,16);
 });
