@@ -25,7 +25,7 @@ const rootFiles=new Set(["competitions/int-1/index.html","competitions/int-2/ind
  "settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "data/divisions.json"]);
-const runtimeAssets=new Set(["world-calendar-model.js","world-clock-adapter.js","world-calendar.js","calendar-simplified.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
+const runtimeAssets=new Set(["routes-registry.js","world-calendar-model.js","world-clock-adapter.js","world-calendar.js","calendar-simplified.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
  "app-search.js","competition-stats.js","competition-rules.js","competition-rules-view.js","international-cups.js","sidebar-evolution.js","sidebar-evolution.css","clubs-directory.js","clubs-directory.css","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 

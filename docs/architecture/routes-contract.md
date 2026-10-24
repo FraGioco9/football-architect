@@ -45,3 +45,23 @@ The registry is ESM while these browser consumers are classic scripts. `assets/r
 ### Local verification before CI
 
 Targeted six-suite run: **51/51 PASS**, no skipped tests (Node v24.22.1). Direct generator check: **23/23 PASS**. Local Chromium unavailable: the previously available binary crashes on version inspection and a clean Playwright installation receives truncated download archives. Actual Chromium and the authoritative Node 22 full-suite result remain required CI gates; no local browser PASS is claimed.
+
+
+## PR-04D implementation plan — browser bootstrap
+Approved against main `15456a257e37af6cc3339cc328ab2e2a02d83b89`, issue #268 proposal 6388665606. Maximum scope: ten sources/tests/docs and 23 generated HTML documents. Consumer migration remains deferred.
+
+- [x] Test classic/CommonJS/ESM parity, immutability, generated script ordering and staged-asset isolation before changing runtime.
+- [x] Move the pure implementation to `routes-registry.js`; retain the `.mjs` named API as a thin Node facade.
+- [x] Add the exact classic asset to runtimeAssets; inject its deferred tag once into Calendar, Clubs and competition HTML before existing deferred consumers.
+- [x] Extend the existing browser harness to execute the staged immutable API and observe availability before deferred consumers run.
+- [ ] Verify all 27 artifacts: exactly 23 one-tag HTML deltas, four exact matches; full Node/Chromium and exact-head gates before review.
+
+### PR-04D approved bootstrap and generated exceptions
+
+`assets/routes-registry.js` is now the sole pure implementation, using the established classic/CommonJS wrapper and an immutable API object. The Node-only `.mjs` facade preserves all nine named exports. Browser consumers are unchanged; they do not yet call the registry.
+
+The generator inserts exactly one deferred script tag immediately after `<head>` in the 23 approved Calendar/Clubs/competition HTML outputs, before any other deferred scripts. The Clubs directory inherits the tag from the competition shell; insertion is idempotent. Inline first-paint scripts, styles, page content and all other bytes remain untouched. Publication policy changes only by adding `routes-registry.js` to runtimeAssets; the `.mjs` facade remains excluded.
+
+Initial red checks confirmed the missing classic core, generated loading and public-asset eligibility. After implementation: **17/17 targeted tests PASS**, including G328 isolated CRLF, cross-runtime equivalence, immutability, script ordering and staged exclusion. Direct generator **23/23 PASS**. Independent regeneration against main `15456a257e37af6cc3339cc328ab2e2a02d83b89` accounts for all 27 artifacts: **23 exact one-tag HTML changes; four unchanged SHA-256 artifacts; 27/27 byte-identical after removing only that exact tag**. The four unchanged artifacts are Dashboard, Settings and the two shared manifests. This is normalized parity under the approved exception, not raw 27/27 hash equality.
+
+The existing browser harness additionally checks actual staged API behavior, frozen API/arrays and availability before the deferred club model/competition router initialize. It checks competition routes and Calendar/Clubs directory/club pages. Actual Chromium/full Node 22/exact-head results remain CI gates; local Chrome remains unavailable. No consumer migration, hosting-rule change or additional public module is included.
