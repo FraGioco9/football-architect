@@ -67,3 +67,64 @@ test('pure contract stays outside public staging and protected dependencies',asy
  const source=readFileSync(new URL('../assets/provider-contract.mjs',import.meta.url),'utf8');
  assert.doesNotMatch(source,/\b(?:import|require|fetch|document|sessionStorage|localStorage)\s*[.(]/);
 });
+test('read validates before source work and snapshots configuration and request across awaits',async()=>{
+ assert.equal(typeof api.createProvider,'function');
+ let calls=0,release;
+ const config={id:'static',getCompetition:lookup,load:async r=>{calls++;await new Promise(resolve=>release=resolve);return {...empty(),...r}}};
+ const provider=api.createProvider(config),input=request();
+ assert.ok(Object.isFrozen(provider));assert.equal(provider.id,'static');
+ await assert.rejects(provider.read({...input,selectedSeason:0}),TypeError);assert.equal(calls,0);
+ const pending=provider.read(input);input.selectedSeason=2;config.id='dev-fictional';config.load=()=>{throw Error('changed')};
+ release();const result=await pending;assert.equal(result.selectedSeason,1);assert.equal(result.providerId,'static');assert.ok(Object.isFrozen(result));
+});
+test('read preserves valid domain data and rejects corrupt historical snapshots without repair',async()=>{
+ assert.equal(typeof api.createProvider,'function');
+ const model=require('../assets/competition-model.js'),definition=lookup('IT-1');
+ const record=supplied();Object.assign(record.data,{rulesVersion:definition.rules.version,rulesSnapshot:structuredClone(definition.rules)});
+ const provider=api.createProvider({id:'dev-fictional',getCompetition:lookup,load:async()=>record,validateData:data=>Boolean(model.resolveSeasonRules(definition,data))});
+ assert.deepEqual((await provider.read(request())).data,record.data);
+ record.data.rulesSnapshot.phases[0].points.win=-1;
+ const result=await provider.read(request());assert.equal(result.status,'unavailable');assert.equal(result.reason,'invalid-data');assert.equal(result.data,null);
+});
+test('read maps only declared source failures; unexpected source and validator errors propagate',async()=>{
+ assert.equal(typeof api.ProviderSourceError,'function');
+ const make=extra=>api.createProvider({id:'static',getCompetition:lookup,load:async()=>empty(),...extra});
+ const result=await make({load:async()=>{throw new api.ProviderSourceError('private details')}}).read(request());
+ assert.equal(result.reason,'source-unavailable');assert.equal(JSON.stringify(result).includes('private details'),false);
+ const bug=Error('programming failure');await assert.rejects(make({load:async()=>{throw bug}}).read(request()),e=>e===bug);
+ const validatorError=new api.ProviderSourceError('validator programming error');
+ await assert.rejects(api.createProvider({id:'dev-fictional',getCompetition:lookup,load:async()=>supplied(),validateData:()=>{throw validatorError}}).read(request()),e=>e===validatorError);
+});
+test('read requires a configured verified source and rejects forged source approval',async()=>{
+ let calls=0;const r={...supplied(),providerId:'verified-historical',provenance:{kind:'verified',sourceRef:'archive',approved:true,coverage:'complete'}};
+ const config={id:'verified-historical',getCompetition:lookup,load:async()=>{calls++;return r},validateData:()=>true};
+ assert.equal((await api.createProvider(config).read(request())).reason,'source-unavailable');assert.equal(calls,0);
+ const trusted=api.createProvider({...config,approved:true,sourceRef:'archive'});
+ assert.equal((await trusted.read(request())).status,'partial');
+ r.provenance.sourceRef='forged';assert.equal((await trusted.read(request())).reason,'unapproved-source');
+});
+test('read returns coherent failures for wrong envelopes, preserves empty/error outcomes and performs no fallback',async()=>{
+ let calls=0;
+ for(const change of [{},{status:'unavailable',reason:'unsupported'},{requestId:'other'},{schemaVersion:9}]){
+  const provider=api.createProvider({id:'static',getCompetition:lookup,load:async()=>{calls++;return {...empty(),...change}}});
+  const result=await provider.read(request());assert.ok(api.validateResponse(result,request(),{providerId:'static'}));
+  assert.equal(result.reason,Object.hasOwn(change,'requestId')||change.schemaVersion===9?'invalid-data':change.reason||'no-results');
+ }
+ assert.equal(calls,4);
+});
+test('delayed reads retain their original lease so old success and error cannot replace a newer result',async()=>{
+ for(const fail of [false,true]){
+  let release;
+  const provider=api.createProvider({id:'static',getCompetition:lookup,load:async r=>{
+   if(r.requestId==='a'){await new Promise(resolve=>release=resolve);if(fail)throw new api.ProviderSourceError('offline')}
+   return {...empty(),...r};
+  }});
+  const a={...request(),providerId:'static',owner:'page',slot:'season',generation:1};
+  let current={...a};const lease=api.captureLease(a),commits=[];
+  const old=provider.read(a).then(response=>{if(api.isCurrentLease(lease,current))commits.push(response.requestId);return response});
+  current={...a,requestId:'b',generation:2};
+  const b=await provider.read(current);assert.equal(b.requestId,'b');
+  assert.equal(api.isCurrentLease(api.captureLease(current),current),true);commits.push(b.requestId);
+  release();const late=await old;assert.equal(late.requestId,'a');assert.equal(late.reason,fail?'source-unavailable':'no-results');assert.deepEqual(commits,['b']);
+ }
+});
