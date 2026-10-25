@@ -128,3 +128,22 @@ This adapter is not publicly staged or loaded by the live History consumer.
 Existing canonical History checks remain unchanged; migration and selectors
 are separate checkpoints (A04-10–12). A focused negative/positive suite checks
 the boundary without generating a golden results corpus.
+
+## A04-10 pure selector foundation (Draft/HOLD)
+
+`assets/provider-selectors.mjs` exposes read-only provider state,
+season data, statistics, fixtures, and verified history selectors. All
+selection is keyed to the requested competition, selected season, scope,
+status and provenance; absent sources return `null`, never invented
+statistics, fixtures or historical completion. Genuine supplied zero metrics
+and empty fixture arrays remain distinguishable from absence. History data
+requires approved, complete verified provenance. There is no automatic
+fallback between DEV, Static or verified sources.
+
+This change deliberately does **not** modify existing Club or Competition
+browser consumers or add the pure selector module to public staging. The
+consumer switch-over and any publication exception require a later bounded
+integration, including browser baseline verification; therefore this is
+only the A04-10 selector foundation and not a claim of completed consumer
+unification. The new tests cover the supported positive/negative selection
+boundaries without a combinatorial golden corpus.
