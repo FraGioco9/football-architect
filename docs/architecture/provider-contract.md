@@ -27,9 +27,18 @@ provider adapters, consumer integration, public asset or publication exception.
   writer, not a global cancellation namespace. Callers must invalidate tokens
   before async transitions and check immediately before their owned mutation.
 
-The module performs no I/O, publication or mutation of caller input. It does
-not implement `provider.read`: Static/DEV/historical adapters and their
-failure-to-envelope mapping belong to subsequent integration lots. Empty and
+`createProvider({id,getCompetition,load,validateData,sourceRef,approved})`
+returns an immutable `{id,read}` adapter shell. `read(request)` validates and
+snapshots the request before invoking the injected source, then validates the
+returned envelope. Expected source failures must explicitly throw
+`ProviderSourceError`; they become unavailable/source-unavailable. Unexpected
+source or validator errors propagate. Invalid source payloads return
+unavailable/invalid-data (or unapproved-source for forged verified provenance).
+An unconfigured verified source is unavailable without invoking the loader.
+
+The module performs no built-in I/O, publication or mutation of caller input.
+Source-specific Static/DEV/historical adapters and consumer migration still
+belong to subsequent integration lots. Empty and
 unavailable require null data; partial and available require validated data.
 There is no loading response. Static currently has no approved result source;
 usable Static sports data is therefore not enabled by this foundation.
@@ -42,7 +51,12 @@ historical-rule rejection, source trust versus fictional flags, detached
 snapshots, malformed/stale leases and public staging exclusion. Existing
 `a04-provider-baseline-evidence.test.mjs` remains unchanged and covers the
 accepted real consumer/DEV baseline. Pure lease tests do not claim new
-end-to-end asynchronous consumer integration.
+end-to-end asynchronous consumer integration. Additional read tests exercise
+held source promises, request/configuration snapshotting, actual historical
+rule rejection, declared versus unexpected failures, unconfigured/forged
+verified sources, and delayed success/error paired with the lease predicates.
+The read operation does not choose the current request or publish by itself:
+callers must enforce their current lease immediately before mutation.
 
 The module is not in the public allowlist or any HTML script list. No
 generated files, workflows, hosting rules, simulation or canonical data change.
