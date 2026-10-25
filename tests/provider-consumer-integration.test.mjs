@@ -7,10 +7,11 @@ const source=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('A04-10 public consumer boundary loads only pure selector module',()=>{
  const publicFiles=planPublicFiles();
  assert.ok(publicFiles.includes('assets/provider-selectors.mjs'));
+ assert.ok(publicFiles.includes('assets/provider-selectors-bootstrap.mjs'));
  for(const path of ['assets/provider-contract.mjs','assets/static-provider.mjs','assets/verified-history-provider.mjs','tools/dev-fictional-provider.mjs'])
   assert.equal(publicFiles.includes(path),false);
  for(const path of ['assets/competition-page.js','assets/club-page.js'])
-  assert.match(source(path),/import\('\/assets\/provider-selectors\.mjs'\)/);
+  assert.match(source(path),/provider-selectors-bootstrap\.mjs/);
  assert.match(source('assets/competition-stats.js'),/selectors\.selectSeasonData/);
  assert.match(source('assets/club-page.js'),/selectors\.selectHistoryData/);
 });
