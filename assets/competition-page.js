@@ -844,9 +844,10 @@
     nextContext(current.selectedSeason,data);return true;
   }
   async function start() {
-    // Public, source-free A04 selectors; load before exposing context to consumers.
-    const selectors=await import('/assets/provider-selectors.mjs');
-    window.faProviderSelectors=selectors;
+    // The module bootstrap does not delay legacy shared-page initialization.
+    const selectorScript=document.createElement('script');
+    selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
+    document.head.append(selectorScript);
     if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-1|int-2)$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     const segments=path.split("/").filter(Boolean);
