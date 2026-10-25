@@ -151,7 +151,7 @@ boundaries without a combinatorial golden corpus.
 ## A04-10 browser consumer integration (Draft/HOLD)
 
 The pure selectors are now explicitly public as `assets/provider-selectors.mjs`
-and loaded by both Club and Competition controllers. Competition Stats reads
+and loaded via a non-blocking module bootstrap in Club and Competition controllers. Competition Stats reads
 the selected season payload through the shared selector; legacy data remains
 subject to existing domain validation and historical-rule checks. The Club
 controller selects versioned provider envelopes before accepting a supplied
