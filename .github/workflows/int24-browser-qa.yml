@@ -1,5 +1,7 @@
 name: INT-24 Chromium QA
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
