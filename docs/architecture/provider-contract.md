@@ -166,3 +166,22 @@ already supplied and domain validated. This is a bounded consumer wiring
 step, not a new provider source, player/club data migration or proof of
 complete end-to-end provider adoption. Exact-head full CI and Chromium
 regression are mandatory for this public change.
+
+## A04-11 DEV isolation, calendar authorization and publication verification
+
+The A04-11 regression test checks the current publication plan rather than
+assuming repository files are public. Only the stateless selector and its
+bootstrap may cross the public asset boundary. The Static, DEV Fictional and
+Verified Historical adapters, contract implementation and DEV clock/runtime
+remain protected. The browser selector bootstrap cannot fetch DEV endpoints
+or access local/session storage.
+
+The world-clock normalization contract forbids injected event lifecycle
+states, including completed and scheduled international matches. Season 0
+disables DEV clock progress and publishes a null clock snapshot; this cannot
+authorize a history/result record. These checks reuse existing production
+clock and publication APIs without changing simulation semantics, assets,
+routing, authorization or deployment settings.
+
+A04-11 is a verification checkpoint only. A04-12 remains responsible for
+generator checks and final Node/Chromium/exact-head completion.
