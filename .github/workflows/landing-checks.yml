@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Assert integration checked-out SHA
         env:
@@ -51,11 +52,21 @@ jobs:
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-      - name: Site contracts
+      - name: Classify fast-safe changes
+        id: scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
+      - name: Site contracts (full)
+        if: steps.scope.outputs.mode != 'fast'
         env:
           CHROME_BIN: ${{ steps.nav01-chrome.outputs.chrome-path }}
           FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && format('{0}/nav01-screenshots', runner.temp) || '' }}
         run: node --test --test-concurrency=1 tests/*.test.mjs
+      - name: Site contracts (fast-safe provider scope)
+        if: steps.scope.outputs.mode == 'fast'
+        run: |
+          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
       - name: Upload NAV-01 Chromium screenshots
         if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
         uses: actions/upload-artifact@v4
