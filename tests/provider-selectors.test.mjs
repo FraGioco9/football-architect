@@ -34,6 +34,8 @@ test('A04-10: never cross season, competition, scope or source',()=>{
   assert.equal(selectHistoryData({...history,...change},'IT-1',2),null);
  }
 });
-test('A04-10: pure selectors do not change public publication by themselves',()=>{
- assert.equal(planPublicFiles().includes('assets/provider-selectors.mjs'),false);
+test('A04-10: public selectors are explicitly allowlisted, adapters stay protected',()=>{
+ assert.equal(planPublicFiles().includes('assets/provider-selectors.mjs'),true);
+ for(const path of ['assets/provider-contract.mjs','assets/static-provider.mjs','assets/verified-history-provider.mjs'])
+  assert.equal(planPublicFiles().includes(path),false);
 });
