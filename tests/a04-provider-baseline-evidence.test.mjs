@@ -16,7 +16,7 @@ import {aggregatePreviewStats} from '../tools/dev-competition-stats-data.mjs';
 import model from '../assets/competition-model.js';
 import rules from '../assets/competition-rules.js';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
-import {createPreviewStandings,createPreviewHistory} from '../tools/dev-standings-preview-data.mjs';
+import {createPreviewStandings,createPreviewHistory,createPreviewPostseason,previewSeasonProgress,previewSeasonMatchdays,previewCurrentMatchday} from '../tools/dev-standings-preview-data.mjs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const manifest=JSON.parse(read('../competitions/_shared/manifest.json'));
 const catalogue=loadCompetitionCatalogue();
@@ -164,6 +164,53 @@ test('A04-E4-History: pending manifest renders only the latest route and never a
    const list=descendants(archive).find(n=>n.className==='app-history-dev-archive');
    assert.ok(list);assert.equal(list.children.length,1,'Season 2 MD15 archives exactly the completed Season 1');
   }else{assert.equal(appends,0,mode);assert.equal(created,0,mode+' must abort before constructing stale DOM')}
+ }
+});
+
+// Delay the real boot() at its async readiness boundary. The DOM adapters are
+// observed commit boundaries; model, generation, season/rules and guards are real.
+test('A04-E4-boot: superseded DEV preparation cannot commit fixtures, postseason or context',async()=>{
+ const client=read('../tools/dev-standings-preview-client.mjs');
+ const start=client.indexOf('async function boot('),end=client.indexOf('/* CAL-SIMPLE-01:',start);
+ const page=read('../assets/competition-page.js'),cs=page.indexOf('  const freeze=value=>'),ce=page.indexOf('  async function start()',cs);
+ assert.ok(start>=0&&end>start&&cs>=0&&ce>cs);
+ for(const mode of ['season','off','superseded']){
+  const input=catalogue.find(d=>d.id==='IT-1'),projection=manifest.divisions.find(d=>d.id==='IT-1');
+  const gates=[],commits=[],errors=[],visible={fixtures:null,postseason:null,rows:null},window={dispatchEvent(){}};
+  const api=runInNewContext(page.slice(cs,ce)+';definition=input;division=projection;activeDebugSeason=2;({replaceSeasonData,selectSeason,setDebugSeason,createContext})',{
+   model,window,input,projection,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
+  });
+  window.faCompetitionContext=api.createContext(input,1,null,1);window.faCompetitionContextApi=api;
+  window.faCompetitionRules=rules;
+  window.faPostseason={snapshot:()=>null,prepare(rows,results){return ()=>{commits.push('postseason');visible.postseason=copy(results)}}};
+  const fixtures={snapshot:()=>null,prepare(data){return ()=>{commits.push('fixtures');visible.fixtures=copy(data)}}};
+  let viewed=1,current=true;
+  const context={window,competitionModel:model,createPreviewStandings,createPreviewPostseason,previewSeasonProgress,previewSeasonMatchdays,previewCurrentMatchday,
+   selectedSeason:()=>viewed,debugSeason:2,matchdays:15,
+   fetch:async()=>({ok:true,json:async()=>manifest}),
+   waitForRows:async()=>({}),waitForFixturesApi:()=>new Promise(resolve=>gates.push(()=>resolve(fixtures))),
+   document:{scrollingElement:null,activeElement:null,querySelector:()=>null},console:{error(...args){errors.push(args.map(String).join(' '))}}};
+  const boot=runInNewContext(client.slice(start,end)+';boot',context);
+  const previous={refresh(rows,commitFixtures,commitPostseason){
+   commits.push('rows');visible.rows=copy(rows);commitFixtures();commitPostseason();return true;
+  }};
+  const flush=()=>new Promise(resolve=>setImmediate(resolve));
+  const a=boot('IT-1',previous,()=>current);await flush();assert.equal(gates.length,1,'A is held after real manifest/rules preparation');
+  let b;
+  if(mode==='season'){
+   viewed=2;api.selectSeason(2);b=boot('IT-1',previous);await flush();assert.equal(gates.length,2);
+   gates[1]();assert.equal(await b,previous);
+   assert.deepEqual(commits,['rows','fixtures','postseason'],'positive B must actually commit every adapter');
+   assert.equal(window.faCompetitionContext.seasonData.season,2);
+   assert.equal(window.faCompetitionContext.seasonData.results.length,120);
+   assert.equal(visible.fixtures.length,240);
+   assert.ok(visible.fixtures.every(game=>game.round<=15?Number.isSafeInteger(game.homeGoals):game.homeGoals===null&&game.awayGoals===null));
+  }else if(mode==='off'){context.debugSeason=0;api.setDebugSeason(0)}
+  else current=false;
+  const before=JSON.stringify({visible,context:window.faCompetitionContext,commits});
+  gates[0]();assert.equal(await a,undefined,'obsolete A returns without a cleanup/commit handle');
+  assert.equal(JSON.stringify({visible,context:window.faCompetitionContext,commits}),before,mode+' must not mutate a consumer before context publication');
+  assert.deepEqual(errors,[],mode+' must reject stale work without an unrelated exception');
  }
 });
 
