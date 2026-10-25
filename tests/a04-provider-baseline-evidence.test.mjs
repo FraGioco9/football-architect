@@ -16,7 +16,7 @@ import {aggregatePreviewStats} from '../tools/dev-competition-stats-data.mjs';
 import model from '../assets/competition-model.js';
 import rules from '../assets/competition-rules.js';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
-import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
+import {createPreviewStandings,createPreviewHistory} from '../tools/dev-standings-preview-data.mjs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const manifest=JSON.parse(read('../competitions/_shared/manifest.json'));
 const catalogue=loadCompetitionCatalogue();
@@ -125,6 +125,48 @@ test('A04-E6: actual public artifact manifest excludes all protected DEV files',
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
+// A positive render control prevents missing dependencies in the VM harness from
+// masquerading as stale-response rejection. Execute the actual DEV History code.
+test('A04-E4-History: pending manifest renders only the latest route and never after Debug OFF',async()=>{
+ const client=read('../tools/dev-standings-preview-client.mjs');
+ const start=client.indexOf('let historyRenderVersion=0;'),end=client.indexOf('\nlet transition=',start);
+ assert.ok(start>=0&&end>start);
+ for(const mode of ['latest','off','route','progress']){
+  let release,appends=0,created=0;
+  function element(tag='div'){
+   const node={tag,children:[],dataset:{},attrs:{},className:'',textContent:'',hidden:false,
+    append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
+    setAttribute(k,v){this.attrs[k]=String(v)},getAttribute(k){return this.attrs[k]},addEventListener(){},
+    cloneNode(){return element(tag)},remove(){if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this)}};
+   return node;
+  }
+  const status=element(),error=element(),controls=element(),players=element(),roots=[];
+  const panel={dataset:{},querySelector(selector){return {'[data-history-empty]':status,'[data-history-error]':error,'[data-history-record-controls]':controls,'[data-history-player-records]':players,'.app-history-dev':roots.at(-1)}[selector]},append(root){roots.push(root);appends++}};
+  const route={view:'history',season:'1'},errors=[];
+  const context={enabled:true,debugSeason:1,matchdays:15,validPath:['','it-1'],competitionModel:model,createPreviewHistory,
+   isPreviewEnabled:()=>context.enabled,
+   window:{faCompetitionRoute:{get:()=>({...route})},faAppRenderLanguage(){}},
+   document:{documentElement:{dataset:{}},getElementById:()=>panel,createElement(tag){created++;return element(tag)},createTextNode(text){return {...element('#text'),textContent:text}}},
+   fetch:()=>new Promise(resolve=>release=resolve),console:{error(...args){errors.push(args.map(String).join(' '))}}};
+  const api=runInNewContext(client.slice(start,end)+';({renderHistoryPreview,clearHistoryPreview})',context);
+  const a=api.renderHistoryPreview();assert.equal(status.hidden,true,'loading suppresses the empty message');
+  let b;
+  if(mode==='latest'){route.season='2';context.debugSeason=2;b=api.renderHistoryPreview()}
+  if(mode==='off'){context.enabled=false;api.clearHistoryPreview();assert.equal(status.hidden,false)}
+  if(mode==='route')route.view='stats';
+  if(mode==='progress')context.matchdays=30;
+  release({ok:true,json:async()=>manifest});await Promise.all([a,b]);
+  assert.deepEqual(errors,[],mode+' must not pass because of a missing VM dependency');
+  if(mode==='latest'){
+   assert.equal(appends,1,'A and B share a delayed response; only B commits');assert.ok(created>0);
+   const archive=roots[0].children.find(n=>n.id==='app-history-archive');
+   const descendants=n=>[n,...n.children.flatMap(descendants)];
+   const list=descendants(archive).find(n=>n.className==='app-history-dev-archive');
+   assert.ok(list);assert.equal(list.children.length,1,'Season 2 MD15 archives exactly the completed Season 1');
+  }else{assert.equal(appends,0,mode);assert.equal(created,0,mode+' must abort before constructing stale DOM')}
+ }
+});
+
 function chromeBinary(){
  const windows=process.platform==='win32'?[process.env.ProgramFiles,process.env['PROGRAMFILES(X86)'],process.env.LOCALAPPDATA].filter(Boolean).map(p=>join(p,'Google','Chrome','Application','chrome.exe')):[];
  for(const bin of [process.env.CHROME_BIN,...windows,'google-chrome','google-chrome-stable','chromium','chromium-browser'].filter(Boolean))
@@ -162,10 +204,11 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   const run=async expression=>{const result=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(result.exceptionDetails)throw Error(result.exceptionDetails.exception?.description||result.exceptionDetails.text);return result.result.value};
   const wait=async expression=>{for(let i=0;i<150;i++){if(await run(expression))return;await delay(50)}throw Error('A04 wait: '+expression+'; '+JSON.stringify(await run('({url:location.href,context:window.faCompetitionContext,errors:window.__a04Errors})')))};
   await cmd('Page.enable');await cmd('Runtime.enable');
-  await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__a04Errors=[];addEventListener('error',e=>window.__a04Errors.push(e.message));addEventListener('unhandledrejection',e=>window.__a04Errors.push(String(e.reason)));"});
+  await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__a04DocumentToken=String(Date.now())+Math.random();window.__a04Errors=[];addEventListener('error',e=>window.__a04Errors.push(e.message));addEventListener('unhandledrejection',e=>window.__a04Errors.push(String(e.reason)));"});
   async function visit(base,id,view='stats',season=1){
-   await cmd('Page.navigate',{url:base+'/competitions/'+id.toLowerCase()+'/'+view+'?season='+season});
-   await wait("document.readyState==='complete'&&window.faCompetitionContext?.definition.id==="+JSON.stringify(id)+"&&!!window.faFixtures&&!!window.faCompetitionStats&&!!window.faHistoryPlayerRecords");
+   const previous=await run('window.__a04DocumentToken'),path='/competitions/'+id.toLowerCase()+'/'+view+'?season='+season;
+   await cmd('Page.navigate',{url:base+path});
+   await wait("window.__a04DocumentToken!=="+JSON.stringify(previous??null)+"&&location.href==="+JSON.stringify(base+path)+"&&window.faCompetitionContext?.selectedSeason==="+season+"&&document.readyState==='complete'&&window.faCompetitionContext?.definition.id==="+JSON.stringify(id)+"&&!!window.faFixtures&&!!window.faCompetitionStats&&!!window.faHistoryPlayerRecords");
   }
   const snapshot=()=>run(`(()=>{const c=window.faCompetitionContext;return {id:c.definition.id,season:c.selectedSeason,data:c.seasonData,stats:[...document.querySelectorAll('#competition-panel-stats .app-competition-stat-value')].map(n=>n.textContent),fixtures:[...document.querySelectorAll('[data-fixture-match]')].map(n=>[n.dataset.fixtureMatch,n.querySelector('.app-fixture-score')?.textContent]),qualified:document.getElementById('app-postseason-bracket')?.dataset.postseasonQualified||null,history:[...document.querySelectorAll('[data-history-filled="true"]')].map(n=>n.dataset.historyPlayerRecord)}})()`);
   await t.test('E1: all 18 Static contexts expose empty Stats/Fixtures/History without protected requests',async()=>{
@@ -209,24 +252,30 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    await wait("document.documentElement.dataset.faDevCurrentSeason==='0'&&!document.documentElement.dataset.faDevStandingsPending");
    assert.equal((await snapshot()).data,null);assert.deepEqual((await snapshot()).stats,[]);
    assert.equal(await run("sessionStorage.getItem('football-architect:standings-dev-preview')"),null);
-   await cmd('Page.reload');await wait("window.faCompetitionContext?.selectedSeason===1&&document.documentElement.dataset.faDevCurrentSeason==='0'&&!document.documentElement.dataset.faDevStandingsPending");
+   const previous=await run('window.__a04DocumentToken');await cmd('Page.reload');await wait("window.__a04DocumentToken!=="+JSON.stringify(previous)+"&&window.faCompetitionContext?.selectedSeason===1&&document.documentElement.dataset.faDevCurrentSeason==='0'&&!document.documentElement.dataset.faDevStandingsPending");
    assert.equal((await snapshot()).data,null,'Season 0 survives reload without inventing season zero records');
   });
   await t.test('E4: controlled A/B promises cannot restore Fixtures/Stats/Postseason after newer season or Debug OFF',async()=>{
-   await visit(origin,'IT-1','fixtures');
-   const a=seasonData(1),b=seasonData(2,15);
-   await run(`window.__a04Publications=0;addEventListener('fa:competition-context-change',e=>{if(e.detail.seasonData)window.__a04Publications++});`);
-   // Capture the lease BEFORE the async boundary, just as a provider must.
-   await run(`window.__a04Lease=window.faCompetitionContext.revision;window.__a04Pending=new Promise(resolve=>window.__a04Release=resolve).then(data=>window.faCompetitionContextApi.replaceSeasonData(data,window.__a04Lease));window.faCompetitionContextApi.selectSeason(2);`);
-   assert.equal(await put(b),true);
-   const before=await snapshot(),publications=await run('window.__a04Publications');
-   assert.equal(before.data.season,2);assert.equal(before.fixtures.length,8);assert.equal(before.stats[0],'120');
+   await visit(devOrigin,'IT-1');
+   await run("sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day')");
+   await visit(devOrigin,'IT-1','fixtures',1);
+   await wait('window.faCompetitionContext.seasonData?.season===1&&window.faCompetitionContext.seasonData?.statistics?.overview?.matchesPlayed===240&&!document.documentElement.dataset.faDevStandingsPending');
+   const a=(await snapshot()).data;
+   assert.equal((await snapshot()).fixtures.length,8);
+   assert.equal((await snapshot()).qualified,'true','completed prior season actually populated Postseason');
+   const bracket=()=>run("document.getElementById('app-postseason-bracket').innerHTML");
+   assert.ok(await run("document.querySelectorAll('#app-postseason-bracket [data-club-crest]').length>0"));
+   await run(`window.__a04Publications=0;addEventListener('fa:competition-context-change',e=>{if(e.detail.seasonData)window.__a04Publications++});window.__a04Lease=window.faCompetitionContext.revision;window.__a04Pending=new Promise(resolve=>window.__a04Release=resolve).then(data=>window.faCompetitionContextApi.replaceSeasonData(data,window.__a04Lease));window.faCompetitionRoute.set({season:'2'});`);
+   await wait('window.faCompetitionContext.seasonData?.season===2&&window.faCompetitionContext.seasonData?.statistics?.overview?.matchesPlayed===120');
+   const before=await snapshot(),beforeBracket=await bracket(),publications=await run('window.__a04Publications'),b=before.data;
+   assert.equal(before.fixtures.length,8);assert.equal(before.stats[0],'120');assert.equal(before.qualified,'false');
    await run('window.__a04Release('+JSON.stringify(a)+')');assert.equal(await run('window.__a04Pending'),false);
-   assert.deepEqual(await snapshot(),before);assert.equal(await run('window.__a04Publications'),publications);
-   await run(`window.__a04Lease=window.faCompetitionContext.revision;window.__a04Pending=new Promise(resolve=>window.__a04Release=resolve).then(data=>window.faCompetitionContextApi.replaceSeasonData(data,window.__a04Lease));window.faCompetitionContextApi.setDebugSeason(0)`);
-   const empty=await snapshot();assert.equal(empty.data,null);assert.deepEqual(empty.fixtures,[]);assert.deepEqual(empty.stats,[]);assert.equal(empty.qualified,'false');
+   assert.deepEqual(await snapshot(),before);assert.equal(await bracket(),beforeBracket);assert.equal(await run('window.__a04Publications'),publications);
+   await run(`window.__a04Lease=window.faCompetitionContext.revision;window.__a04Pending=new Promise(resolve=>window.__a04Release=resolve).then(data=>window.faCompetitionContextApi.replaceSeasonData(data,window.__a04Lease));const control=document.querySelector('[data-dev-control="season-number"]');control.value='0';control.dispatchEvent(new Event('change',{bubbles:true}));`);
+   await wait("document.documentElement.dataset.faDevCurrentSeason==='0'&&window.faCompetitionContext.seasonData===null");
+   const empty=await snapshot(),emptyBracket=await bracket();assert.equal(empty.data,null);assert.deepEqual(empty.fixtures,[]);assert.deepEqual(empty.stats,[]);assert.equal(empty.qualified,'false');
    await run('window.__a04Release('+JSON.stringify(b)+')');assert.equal(await run('window.__a04Pending'),false);
-   assert.deepEqual(await snapshot(),empty);assert.equal(await run('window.__a04Publications'),publications);
+   assert.deepEqual(await snapshot(),empty);assert.equal(await bracket(),emptyBracket);assert.equal(await run('window.__a04Publications'),publications);
   });
   await t.test('E5: absent/zero/partial/invalid/recovered Stats in five locales, ARIA and mobile widths',async()=>{
    await visit(origin,'IT-1');
@@ -247,8 +296,8 @@ test('A04 browser baseline: public routes, provider states, delayed publications
        assert.equal(state.values[0],String(data.statistics.overview.matchesPlayed));
        await run("document.querySelector('[data-stats-view=teams]').click();document.querySelector('.fa-dev-stats-expand').click()");
        assert.equal(await run("document.querySelector('.fa-dev-stats-dialog-close').getAttribute('aria-label')"),close);
-       assert.equal(await run("document.querySelector('dialog').getAttribute('aria-labelledby')"),'fa-dev-stats-dialog-title');
-       await run("document.querySelector('dialog').close()");
+       assert.equal(await run("document.querySelector('.fa-dev-stats-dialog').getAttribute('aria-labelledby')"),'fa-dev-stats-dialog-title');
+       await run("document.querySelector('.fa-dev-stats-dialog').close()");
       }
      }
     }
@@ -268,7 +317,6 @@ test('A04 browser baseline: public routes, provider states, delayed publications
     await run('window.faHistoryPlayerRecords.clear()');assert.deepEqual((await snapshot()).history,[]);
    }
   });
-  console.log('A04_BASELINE_BROWSER_PASS|18 Static; DEV 0/15/30; Season0 reload; A/B context; 5 locales x 3 widths; History provenance');
  }finally{
   try{socket?.close()}catch{}
   proc.kill('SIGTERM');for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);if(proc.exitCode===null)proc.kill('SIGKILL');
