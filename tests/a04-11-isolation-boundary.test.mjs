@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {planPublicFiles,isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
 import {createDevWorldClock} from '../tools/dev-world-clock.mjs';
+import '../assets/world-calendar-model.js';
 import '../assets/world-clock-adapter.js';
 
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
