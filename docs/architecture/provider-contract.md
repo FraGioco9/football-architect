@@ -61,3 +61,26 @@ callers must enforce their current lease immediately before mutation.
 The module is not in the public allowlist or any HTML script list. No
 generated files, workflows, hosting rules, simulation or canonical data change.
 Node/Chrome CI must run on the final PR SHA. Draft/HOLD; no merge/deploy/DB.
+
+## A04-07 Static adapter (Draft/HOLD)
+
+`assets/static-provider.mjs` introduces `createStaticProvider({catalog,rulesRegistry})`.
+The host injects the canonical A01 World Catalog and A02 Rules Registry,
+rather than a duplicate source of IDs or sports rules. Construction checks
+all 18 competition IDs, capacity, canonical rules version and registry binding,
+including the cup-specific final event, and fails closed on mismatches.
+Requests use the existing A04 read/request validation. Every valid Static
+season/history request currently returns immutable `empty/no-results` with
+null data and none/unapproved provenance: there is no approved Static results
+source. Empty does not mean a played zero, a completed season, or an approved
+historical snapshot. The adapter does not mutate world time, historical rules,
+membership, simulation, rendering or routes.
+
+This is a Node-side first integration boundary, **not a consumer migration**.
+The new adapter and the existing contract module remain outside the public
+allowlist, HTML scripts, and generated pages; no publication exception is
+requested. `tests/static-provider.test.mjs` covers all 18 identities for
+both scopes, strict absence, invalid requests, rule drift, and staging
+exclusion. Existing browser baselines remain the separate public-behavior
+oracle. A04-08–12 (DEV, historical sources, selectors and consumer migration,
+publication decisions and end-to-end CI) are not completed by this lot.
