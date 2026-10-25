@@ -105,3 +105,26 @@ at commit time. The new file stays outside public staging. The narrow suite
 out-of-range, historical isolation, actual rules rejection, producer failures
 and publication exclusion. A04-09–12 remain open; no full-browser consumer
 integration is claimed by these tests.
+
+## A04-09 Verified historical source boundary (Draft/HOLD)
+
+`assets/verified-history-provider.mjs` adds an optional
+`createVerifiedHistoryProvider` adapter. The caller must inject a canonical
+competition lookup, an approved source identity, the historical loader,
+`resolveSeasonRules`, and a domain history validator. No archive, HTTP
+endpoint or source dataset is added. Without a trusted approved source,
+`read` fails closed before loading. Missing records remain `empty/no-results`,
+never zeros, fictional completions or extrapolated history.
+
+The `history` scope requires canonical/approved/complete provenance,
+completed uniquely numbered seasons within the selected season, applicable
+snapshot/historical-rule resolution and successful caller domain validation.
+Malformed or incomplete archives are unavailable/invalid-data; known source
+failures become unavailable/source-unavailable. Unsupported `season` scope
+returns unavailable/unsupported. No snapshot is repaired or re-simulated.
+The underlying A04 lease contract remains consumer-owned.
+
+This adapter is not publicly staged or loaded by the live History consumer.
+Existing canonical History checks remain unchanged; migration and selectors
+are separate checkpoints (A04-10–12). A focused negative/positive suite checks
+the boundary without generating a golden results corpus.
