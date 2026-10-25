@@ -780,10 +780,11 @@
     document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
     document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
   }
-  function loadScript(url) {
+  function loadScript(url,asModule=false) {
     return new Promise((resolve,reject) => {
       const script = document.createElement("script");
       script.src = new URL(url,sourceUrl).href;
+      if(asModule)script.type="module";
       script.onload = resolve;
       script.onerror = () => reject(new Error("Missing shared app script"));
       document.head.appendChild(script);
@@ -943,6 +944,9 @@
     }
     bindSuppliedPanels(suppliedMobile);
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
+    // The module bootstrap does not delay legacy shared-page initialization.
+    // Selector module is optional to boot: never stall existing public consumers.
+    void loadScript('provider-selectors-bootstrap.mjs',true).catch(()=>{});
     for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
     window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());

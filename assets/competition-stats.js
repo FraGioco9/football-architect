@@ -17,7 +17,14 @@
   return '<div id="fa-dev-stats"><div class="fa-dev-stats-nav" role="group" aria-label="Stats" data-app-aria="competitionTabStats">'+views.map(([id,key,label],i)=>'<button type="button" class="language-trigger" data-stats-view="'+id+'" data-app-i18n="'+key+'" aria-pressed="'+(i===0)+'" tabindex="'+(i===0?'0':'-1')+'">'+label+'</button>').join('')+'</div><div class="fa-dev-stats-content"><div class="app-competition-stat-grid fa-dev-stats-grid">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span>'+emptyHtml+'</div>').join('')+'</div></div></div>';
  }
  function normalize(context){
-  const data=context?.seasonData,statistics=data?.statistics;
+  const current=context?.seasonData;
+  const selectors=typeof window!=='undefined'?window.faProviderSelectors:null;
+  const data=selectors&&current?selectors.selectSeasonData({
+   schemaVersion:1,providerId:'dev-fictional',competitionId:context.currentDefinition?.id||context.definition?.id,
+   selectedSeason:context.selectedSeason,scope:'season',status:current.status,
+   provenance:{kind:'fictional',approved:false,coverage:'partial',sourceRef:'dev-competition-context'},data:current
+  },context.currentDefinition?.id||context.definition?.id,context.selectedSeason):current;
+  const statistics=data?.statistics;
   if(!statistics||!statistics.overview)return null;
   if(data.season!==context.selectedSeason||data.rulesVersion!==context.definition.rules.version)throw Error('Statistics season/rules mismatch');
   const o=statistics.overview;

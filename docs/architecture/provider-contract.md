@@ -147,3 +147,22 @@ integration, including browser baseline verification; therefore this is
 only the A04-10 selector foundation and not a claim of completed consumer
 unification. The new tests cover the supported positive/negative selection
 boundaries without a combinatorial golden corpus.
+
+## A04-10 browser consumer integration (Draft/HOLD)
+
+The pure selectors are now explicitly public as `assets/provider-selectors.mjs`
+and loaded via a non-blocking module bootstrap in Club and Competition controllers. Competition Stats reads
+the selected season payload through the shared selector; legacy data remains
+subject to existing domain validation and historical-rule checks. The Club
+controller selects versioned provider envelopes before accepting a supplied
+summary, while preserving the existing non-envelope event compatibility path.
+The public selector asset performs no fetches or simulations.
+
+The publication allowlist admits **only** this pure selector module, not the
+provider contract, adapters or DEV tools. CI-FAST stops treating the newly
+published module as a protected fast-safe path. Browser/static behavior,
+club summary events and any historical records remain unchanged unless
+already supplied and domain validated. This is a bounded consumer wiring
+step, not a new provider source, player/club data migration or proof of
+complete end-to-end provider adoption. Exact-head full CI and Chromium
+regression are mandatory for this public change.

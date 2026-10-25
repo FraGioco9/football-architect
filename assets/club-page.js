@@ -11,6 +11,9 @@
   if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
   const query=params.size?'?'+params:'';
   if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
+  const selectorScript=document.createElement('script');
+  selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
+  document.head.append(selectorScript);
   const response=await fetch('/clubs/_shared/manifest.json',{credentials:'same-origin'});
   if(!response.ok)throw Error('Club manifest unavailable');
   const manifest=await response.json();
@@ -60,7 +63,18 @@
    document.documentElement.dataset.clubReady='true';
   };
   window.addEventListener('fa:club-competition-summary',event=>{
-   competitionSnapshot=event.detail;
+   // Provider envelopes are selected explicitly; legacy summary payloads keep
+   // their established rendering path until the producer migrates.
+   const incoming=event.detail;
+   if(incoming?.schemaVersion===1){
+    const selectors=window.faProviderSelectors;
+    if(!selectors)return;
+    const chosen=incoming.scope==='history'
+      ?selectors.selectHistoryData(incoming,incoming.competitionId,incoming.selectedSeason)
+      :selectors.selectSeasonData(incoming,incoming.competitionId,incoming.selectedSeason);
+    if(!chosen)return;
+    competitionSnapshot=chosen;
+   }else competitionSnapshot=incoming;
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
