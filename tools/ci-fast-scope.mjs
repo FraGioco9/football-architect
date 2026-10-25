@@ -2,7 +2,7 @@
 import {execFileSync} from 'node:child_process';
 const allowed=new Set([
  'assets/provider-contract.mjs','assets/static-provider.mjs',
- 'assets/verified-history-provider.mjs','assets/provider-selectors.mjs',
+ 'assets/verified-history-provider.mjs',
  'tools/dev-fictional-provider.mjs',
  'tests/provider-contract.test.mjs','tests/static-provider.test.mjs',
  'tests/dev-fictional-provider.test.mjs','tests/verified-history-provider.test.mjs',
