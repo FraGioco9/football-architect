@@ -1,4 +1,4 @@
-// A04 pure contract primitives. No provider I/O, DOM, storage or publication.
+// A04 contract primitives. Source access is injected; no built-in I/O or publication.
 const providers=['static','dev-fictional','verified-historical'];
 const echo=['competitionId','selectedSeason','scope','requestId','contextRevision'];
 const text=x=>typeof x==='string'&&x.trim().length>0;
@@ -51,4 +51,34 @@ export function isCurrentLease(lease,current){
  if(!object(lease)||!object(current)||current.disposed||leaseKeys.some(key=>lease[key]!==current[key]))return false;
  if(lease.providerId==='dev-fictional'&&(!current.enabled||current.debugSeason===0||['enabled','progressGeneration','debugSeason','matchdays'].some(key=>lease[key]!==current[key])))return false;
  return lease.view===current.view&&lease.routeBinding===current.routeBinding;
+}
+
+// Adapters explicitly classify expected transport/source failures. Validator or
+// programming errors are never silently converted into empty sports data.
+export class ProviderSourceError extends Error {}
+
+export function createProvider({id,getCompetition,load,validateData,sourceRef=null,approved=false}){
+ if(!providers.includes(id)||typeof getCompetition!=='function'||typeof load!=='function')throw TypeError('Invalid provider configuration');
+ const options=Object.freeze({providerId:id,sourceRef,approved,validateData});
+ const unavailable=(request,reason)=>snapshot({
+  ...Object.fromEntries(echo.map(key=>[key,request[key]])),schemaVersion:1,providerId:id,
+  status:'unavailable',data:null,reason,
+  provenance:{kind:id==='dev-fictional'?'fictional':'none',sourceRef:null,approved:false,coverage:'none'}
+ });
+ return Object.freeze({id,async read(input){
+  const request=validateRequest(input,getCompetition);
+  if(id==='verified-historical'&&(!text(sourceRef)||approved!==true))return unavailable(request,'source-unavailable');
+  let response;
+  try{response=await load(request)}catch(error){
+   if(error instanceof ProviderSourceError)return unavailable(request,'source-unavailable');
+   throw error;
+  }
+  // Keep domain validation outside the source-error catch: a validator throwing
+  // even ProviderSourceError is still an unexpected validator failure.
+  const accepted=validateResponse(response,request,options);
+  if(accepted)return accepted;
+  const unapproved=id==='verified-historical'&&response?.data!=null&&
+   (response.provenance?.kind!=='verified'||response.provenance?.approved!==true||response.provenance?.sourceRef!==sourceRef);
+  return unavailable(request,unapproved?'unapproved-source':'invalid-data');
+ }});
 }
