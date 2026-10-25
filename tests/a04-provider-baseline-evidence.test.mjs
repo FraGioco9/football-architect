@@ -84,7 +84,8 @@ test('A04-E6: actual public artifact manifest excludes all protected DEV files',
  assert.ok(files.includes('assets/competition-history.js'));
  assert.equal(files.filter(path=>path.startsWith('tools/dev-')).length,0);
  assert.equal(files.filter(path=>path.startsWith('tests/')).length,0);
- assert.equal(files.filter(path=>path.startsWith('data/')).length,0);
+ assert.ok(files.includes('data/divisions.json'));
+ assert.ok(!files.includes('data/international-competitions.json'),'protected international source must not be published');
  const preview=read('../tools/dev-standings-preview-data.mjs');
  assert.doesNotMatch(preview,/from ["']\\.\\.\\/data\\/international-competitions\\.json/);
 });
