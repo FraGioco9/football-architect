@@ -84,3 +84,24 @@ both scopes, strict absence, invalid requests, rule drift, and staging
 exclusion. Existing browser baselines remain the separate public-behavior
 oracle. A04-08–12 (DEV, historical sources, selectors and consumer migration,
 publication decisions and end-to-end CI) are not completed by this lot.
+
+## A04-08 DEV fictional adapter (Draft/HOLD)
+
+`tools/dev-fictional-provider.mjs` composes the existing A04 `createProvider`
+with injected canonical competition lookup, current DEV eligibility/progress,
+the existing season producer and historical-rule/domain validators. It introduces
+no simulated results, seed, score, matchday or new source. Usable data has only
+fictional/unapproved provenance; canonical validation rejects corrupt snapshots.
+Season 0/Debug OFF return disabled/empty; a future viewed season is empty
+(no invented results). Historical archive retrieval is explicitly unsupported
+here and remains A04-09. Expected producer failures require the established
+`ProviderSourceError` classification; unanticipated errors propagate.
+
+This is a protected DEV-side composition boundary, not an HTML or consumer
+migration: legacy DEV boot/render logic and its established race guards remain
+unchanged. Producer-local leases are still the responsibility of the consumer
+at commit time. The new file stays outside public staging. The narrow suite
+`tests/dev-fictional-provider.test.mjs` checks provenance, disabled/Season 0,
+out-of-range, historical isolation, actual rules rejection, producer failures
+and publication exclusion. A04-09–12 remain open; no full-browser consumer
+integration is claimed by these tests.
