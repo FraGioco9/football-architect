@@ -11,7 +11,9 @@
   if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
   const query=params.size?'?'+params:'';
   if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
-  window.faProviderSelectors=await import('/assets/provider-selectors.mjs');
+  const selectorScript=document.createElement('script');
+  selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
+  document.head.append(selectorScript);
   const response=await fetch('/clubs/_shared/manifest.json',{credentials:'same-origin'});
   if(!response.ok)throw Error('Club manifest unavailable');
   const manifest=await response.json();
