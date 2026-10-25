@@ -844,10 +844,6 @@
     nextContext(current.selectedSeason,data);return true;
   }
   async function start() {
-    // The module bootstrap does not delay legacy shared-page initialization.
-    const selectorScript=document.createElement('script');
-    selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
-    document.head.append(selectorScript);
     if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-1|int-2)$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     const segments=path.split("/").filter(Boolean);
@@ -947,6 +943,10 @@
     }
     bindSuppliedPanels(suppliedMobile);
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
+    // The module bootstrap does not delay legacy shared-page initialization.
+    const selectorScript=document.createElement('script');
+    selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
+    document.head.append(selectorScript);
     for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
     window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());
