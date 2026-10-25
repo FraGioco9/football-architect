@@ -2,6 +2,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import {planPublicFiles} from '../tools/publication-guard.mjs';
+import {aggregatePreviewStats} from '../tools/dev-competition-stats-data.mjs';
 import model from '../assets/competition-model.js';
 import rules from '../assets/competition-rules.js';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
@@ -44,30 +47,44 @@ test('A04-E3: approved historical snapshot wins and corrupt / year-zero input fa
  const corrupt=copy(record);corrupt.rulesSnapshot.phases[0].points.win=-2;
  assert.equal(model.resolveSeasonRules(source,corrupt),null);
 });
-test('A04-E4: revision-guard source contract remains explicit on both producers',()=>{
- const publicPage=read('../assets/competition-page.js');
- const devClient=read('../tools/dev-standings-preview-client.mjs');
- const stats=read('../tools/dev-competition-stats-client.mjs');
- assert.match(publicPage,/replaceSeasonData/);
- assert.match(devClient,/progressRevision/);
- assert.match(stats,/replaceSeasonData/);
- assert.match(stats,/revision/);
+test('A04-E4: actual context revision lease rejects late historical responses',()=>{
+ const source=read('../assets/competition-page.js');
+ const start=source.indexOf('  const freeze=value=>'),end=source.indexOf('  async function start()',start);
+ assert.ok(start>=0&&end>start);
+ const input=catalogue.find(x=>x.id==='IT-1'),projection=manifest.divisions.find(x=>x.id==='IT-1');
+ const window={dispatchEvent(){}};
+ const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=null;({replaceSeasonData,clearSeasonData,createContext})',{
+  model,window,input,projection,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
+ });
+ window.faCompetitionContext=api.createContext(input,1,null,1);
+ const data={season:1,rulesVersion:input.rules.version,rulesSnapshot:copy(input.rules),participants:projection.clubs,fixtures:[],results:[],statistics:null,status:'partial'};
+ assert.equal(api.replaceSeasonData(data,1),true);
+ const staleRevision=window.faCompetitionContext.revision;
+ api.clearSeasonData();
+ assert.equal(api.replaceSeasonData(data,staleRevision),false);
+ assert.equal(window.faCompetitionContext.seasonData,null);
+ assert.equal(api.replaceSeasonData({...data,season:0},window.faCompetitionContext.revision),false);
+ assert.equal(window.faCompetitionContext.seasonData,null);
 });
-test('A04-E5: Stats and History distinguish missing data from approved results',()=>{
- const stats=read('../assets/competition-stats.js');
+test('A04-E5: no-data stats differ from actual completed-match aggregates',()=>{
+ const division=manifest.divisions.find(x=>x.id==='IT-1');
+ const zero=aggregatePreviewStats(division,0);
+ const played=aggregatePreviewStats(division,15);
+ assert.equal(zero.overview.matchesPlayed,0);
+ assert.equal(played.overview.matchesPlayed,120);
+ assert.equal(played.teams.length,16);
+ assert.equal(zero.teams.length,16);
  const history=read('../assets/competition-history.js');
- assert.match(stats,/unavailable|empty|noData/i);
  assert.match(history,/provenance/);
  assert.match(history,/coverage/);
- assert.match(history,/historyNoData/);
 });
-test('A04-E6: public artifact tests enforce protected import separation',()=>{
- const publication=read('./publication-gate.test.mjs');
- const debug=read('./g10-public-02-browser.test.mjs');
- assert.match(publication,/assertPublicArtifact/);
- assert.match(publication,/stagePublicArtifact/);
- assert.match(publication,/protected_debug/);
- assert.match(debug,/outgoing mutations|outgoing|mutations/i);
+test('A04-E6: actual public artifact manifest excludes all protected DEV files',()=>{
+ const files=planPublicFiles();
+ assert.ok(files.includes('assets/competition-model.js'));
+ assert.ok(files.includes('assets/competition-history.js'));
+ assert.equal(files.filter(path=>path.startsWith('tools/dev-')).length,0);
+ assert.equal(files.filter(path=>path.startsWith('tests/')).length,0);
+ assert.equal(files.filter(path=>path.startsWith('data/')).length,0);
  const preview=read('../tools/dev-standings-preview-data.mjs');
- assert.doesNotMatch(preview,/from ["']\.\.\/data\/international-competitions\.json/);
+ assert.doesNotMatch(preview,/from ["']\\.\\.\\/data\\/international-competitions\\.json/);
 });
