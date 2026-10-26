@@ -60,7 +60,7 @@
   function standingOutcome(position) {
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
-    if(selected.category==='domestic'&&selected.tier===1){if(position===1)return 'champion';if(position>=2&&position<=3)return 'sovereign';if(position>=4&&position<=6)return 'federation'}
+    // The canonical rank-outcome configuration owns row styling; international qualification is legend-only.
     const phase=selected.rules.phases.find(p=>p.rankOutcomes);
     return window.faCompetitionRules.outcomeStyle(window.faCompetitionRules.outcomeAt(selected,phase.id,position)?.kind);
   }
