@@ -15,9 +15,10 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
   let revision=0;
   const read=()=>{const season=stored(storage,SEASON_KEY,0,4,1);return Object.freeze({season,day:season===0?1:stored(storage,DAY_KEY,1,56,1)})};
   const snapshot=s=>s.season===0?null:({source:{kind:'dev',reference:'fictional DEV clock'},current:{season:s.season,day:s.day}});
+  const progress=s=>s.season===0?0:nationalProgress(s.day);
   const emit=(s,previous)=>{
     dispatch('fa:world-clock-snapshot',snapshot(s));
-    dispatch('fa:dev-progress-change',{season:s.season,worldDay:s.day,matchdays:s.season===0?0:nationalProgress(s.day)});
+    dispatch('fa:dev-progress-change',{season:s.season,worldDay:s.day,matchdays:progress(s)});
     if(s.day!==previous.day)dispatch('fa:dev-world-day-change',{season:s.season,day:s.day});
   };
   const commit=(next)=>{
@@ -44,5 +45,5 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
     try{storage.removeItem(SEASON_KEY);storage.removeItem(DAY_KEY);storage.removeItem(ROUNDS_KEY)}catch{return false}
     revision++;emit(read(),before);return true;
   };
-  return Object.freeze({read,revision:()=>revision,commit,setSeason:n=>commit({...read(),season:n}),setDay:n=>read().season===0?false:commit({...read(),day:n}),reset,nationalProgress:()=>read().season===0?0:nationalProgress(read().day),snapshot:()=>snapshot(read()),publish:()=>{const s=read();dispatch('fa:world-clock-snapshot',snapshot(s));dispatch('fa:dev-progress-change',{season:s.season,worldDay:s.day,matchdays:s.season===0?0:nationalProgress(s.day)})}});
+  return Object.freeze({read,revision:()=>revision,commit,setSeason:n=>commit({...read(),season:n}),setDay:n=>read().season===0?false:commit({...read(),day:n}),reset,nationalProgress:()=>read().season===0?0:nationalProgress(read().day),snapshot:()=>snapshot(read()),publish:()=>{const s=read();dispatch('fa:world-clock-snapshot',snapshot(s));dispatch('fa:dev-progress-change',{season:s.season,worldDay:s.day,matchdays:progress(s)})}});
 }
