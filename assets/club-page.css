@@ -134,3 +134,8 @@
 .club-identity .club-facts>div:has(.club-colors) dd{align-self:end}
 .club-identity .club-colors{align-items:flex-end}
 .club-identity .club-colors>.club-color{vertical-align:bottom}
+
+/* Normalize single-line identity content to a 23px line box. */
+.club-identity .club-facts>div:not(.club-fact-description) dt,
+.club-identity .club-facts>div:not(.club-fact-description) dd{line-height:23px}
+.club-identity .club-country-value{line-height:23px}
