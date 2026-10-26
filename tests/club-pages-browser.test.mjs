@@ -444,15 +444,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     const division=JSON.parse(readFileSync(join(artifact,'competitions/_shared/manifest.json'),'utf8')).divisions.find(d=>d.id==='IT-1');
     const current=createPreviewStandings(division,15,2),index=current.rows.findIndex(r=>r.club.clubId===1);
     const upcoming=createPreviewStandings(division,30,2).fixtures.find(f=>f.round===16&&(f.homeId===1||f.awayId===1));
+    const englishOrdinal=n=>String(n)+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
     for(const width of [1440,390,320]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      devManifestDelay=150;
      await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
      await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
-     await wait("document.querySelector('[data-club-position]')?.textContent==="+JSON.stringify(String(index+1)));
+     await wait("document.querySelector('[data-club-position]')?.textContent==="+JSON.stringify(englishOrdinal(index+1)));
      devManifestDelay=0;
      assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
-     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(index+1));
+     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),englishOrdinal(index+1));
      assert.equal(await run("getComputedStyle(document.querySelector('[data-club-position]')).fontSize"),'20px','Status value uses 20px');
      assert.equal(await run("document.querySelector('[data-club-position] a,[data-club-position] [tabindex]')"),null,'Status is plain text without navigation');
      assert.equal(await run("document.querySelector('[data-club-points]')"),null,'Points are not shown');
@@ -493,10 +494,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("(()=>{const control=document.querySelector('[data-dev-control=world-day-number]');control.value='28';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
     const advanced=createPreviewStandings(division,16,3),advancedIndex=advanced.rows.findIndex(r=>r.club.clubId===1);
     await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?season=3&matchday=17'");
-    assert.equal(await run("document.querySelector('[data-club-position]').textContent"),String(advancedIndex+1));
+    assert.equal(await run("document.querySelector('[data-club-position]').textContent"),englishOrdinal(advancedIndex+1));
     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=3&matchday=17');
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
-    await wait("document.querySelector('[data-club-position]')?.textContent==='—'&&document.querySelector('.club-competition-next a')?.getAttribute('href').includes('season=1&matchday=1')");
+    await wait("document.querySelector('[data-club-position]')?.textContent==='—'&&document.querySelector('.club-competition-next a')===null");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),'—');
     await visit('/clubs/br/40/history',devOrigin);
     await wait("document.querySelector('.fa-dev-widget')!==null");

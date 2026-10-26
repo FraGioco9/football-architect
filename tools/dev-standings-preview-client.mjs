@@ -110,10 +110,9 @@ async function setMatchdays(value){
 async function resetPreview(){
  if(validPath&&previewState!=="OFF" && !await setPreviewEnabled(false))return false;
  try{sessionStorage.removeItem(SEASON_KEY);sessionStorage.removeItem(ROUNDS_KEY);sessionStorage.removeItem('football-architect:calendar-dev-world-day')}catch{return false}
- progressRevision++;debugSeason=1;matchdays=0;
- await refreshSeason();
+ progressRevision++;debugSeason=0;matchdays=0;
  const ok=await refreshProgress();
- window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:1,season:1}}));
+ window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:1,season:0}}));
  return ok;
 }
 const DETAIL = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
