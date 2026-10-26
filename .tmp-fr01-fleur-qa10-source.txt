@@ -25,4 +25,31 @@
 		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Eiffel-Inner">
 			<path d="m0 14h1024v1024h-375v-176c-28-50-79-76-138-76-59 0-110 26-138 76v176h-373z"/>
 		</clipPath>
-		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Base-
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Base-Curve-Outer">
+			<path d="m512 89c45 52.2 108.9 90 208.8 117 42.3 11.7 81 21.6 109.8 27.9v293.4c0 172.8-73.8 247.5-189.9 314.1-60.3 33.3-102.6 60.3-128.7 93.6-26.1-33.3-68.4-60.3-128.7-93.6-116.1-66.6-190.8-141.3-190.8-314.1v-293.4c28.8-6.3 67.5-16.2 109.8-27.9 99.9-27 164.7-64.8 209.7-117z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Base-Curve-Inner">
+			<path d="m0 0h1024v1024h-375v-175c-28-50-79-76-138-76-59 0-110 26-138 76v175h-373z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Lower-Ivory-Arch">
+			<path d="m512 77.25c46.25 53.65 111.92 92.5 214.6 120.25 43.48 12.02 83.25 22.2 112.85 28.67v301.56c0 177.6-75.85 254.37-195.18 322.82-61.97 34.23-105.44 61.98-132.27 96.2-26.82-34.22-70.3-61.97-132.28-96.2-119.32-68.45-196.09-145.22-196.09-322.82v-301.56c29.6-6.47 69.37-16.65 112.84-28.67 102.68-27.75 169.28-66.6 215.53-120.25z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Lower-Gold-Arch">
+			<path d="m512 89c45 52.2 108.9 90 208.8 117 42.3 11.7 81 21.6 109.8 27.9v293.4c0 172.8-73.8 247.5-189.9 314.1-60.3 33.3-102.6 60.3-128.7 93.6-26.1-33.3-68.4-60.3-128.7-93.6-116.1-66.6-190.8-141.3-190.8-314.1v-293.4c28.8-6.3 67.5-16.2 109.8-27.9 99.9-27 164.7-64.8 209.7-117z"/>
+		</clipPath>
+	<clipPath id="clip-L10-Above-L13" clipPathUnits="userSpaceOnUse"><path d="M 0,0 H 1024 V 802 H 719 Q 512,782 305,802 H 0 Z" fill="#ffffff"/></clipPath></defs>
+	<style>
+		.s0 { fill: #c7a65a } 
+		.s1 { fill: #a84a62 } 
+		.s2 { fill: #f2ede4 } 
+		.s3 { fill: #f2ede4;stroke: #f2ede4;stroke-linejoin: round;stroke-width: 2.5 } 
+		.s4 { fill: none;stroke: #c7a65a;stroke-width: 15 } 
+		.s5 { fill: none;stroke: #f2ede4;stroke-linejoin: round;stroke-width: 15 } 
+	</style>
+	<g id="L01-Shield-Outer-Gold">
+		<path class="s0" d="m513 42c50 58 121 100 232 130 47 13 90 24 122 31v326c0 192-82 275-211 349-67 37-114 67-143 104-29-37-76-67-143-104-129-74-212-157-212-349v-326c32-7 75-18 122-31 111-30 183-72 233-130z"/>
+	</g>
+	<g id="L02-Shield-Burgundy">
+		<path class="s1" d="m512 64.09c47.65 55.27 115.31 95.3 221.1 123.89 44.79 12.39 85.77 22.87 116.26 29.54v310.68c0 182.98-78.14 262.08-201.08 332.6-63.85 35.26-108.64 63.85-136.28 99.11-27.64-35.26-72.43-63.85-136.28-99.11-122.94-70.52-202.03-149.62-202.03-332.6v-310.68c30.49-6.67 71.47-17.15 116.26-29.54 105.78-28.59 174.4-68.62 222.05-123.89z"/>
+	</g>
+	<g id="Group-FR01-B03-mask
