@@ -106,19 +106,31 @@
 .club-competition-metrics dd,.club-competition-next-content{align-self:first baseline}
 @media(max-width:760px){.club-competition-logo{width:56px;height:56px;flex-basis:56px}.club-competition-summary{align-self:stretch}}
 
-/* Align club color swatches with the bottom of their fact row. */
-.club-facts>div:has(.club-colors){align-items:end}
-.club-colors{align-items:flex-end;align-self:end}
-.club-colors>.club-color{vertical-align:bottom}
-/* Club Identity fact-box flag only; header and other flags remain 25x20. */
-.club-identity .club-country-value svg.club-country-flag{width:20px;height:16px;min-width:20px;max-width:20px;min-height:16px;max-height:16px;aspect-ratio:5/4;object-fit:contain;flex:none}
-
-
-/* Country uses the same minimum row height as other identity facts; flag centered. */
-.club-identity .club-facts>div{min-height:46px;box-sizing:border-box;align-items:center}
-.club-identity .club-facts>div:has(.club-country-value) dd{display:flex;align-items:center;min-height:0}
-.club-identity .club-country-value{align-items:center;line-height:normal}
-.club-identity .club-country-value svg.club-country-flag{align-self:center;vertical-align:middle}
-
-/* Keep ordinary identity rows (including Name and Country) at one exact height. */
-.club-identity .club-facts>div:not(.club-fact-description):not(.club-fact-rivalries){height:46px;min-height:46px;padding-top:0;padding-bottom:0}
+/* Club Identity: a single row-sizing model. Short facts share one height;
+   long content (rivalries, description, wrapping values) grows naturally. */
+.club-identity .club-facts>div{
+  box-sizing:border-box;
+  min-height:46px;
+  height:auto;
+  padding:10px 0;
+  align-items:center;
+  grid-auto-rows:auto;
+}
+.club-identity .club-facts>div dt,
+.club-identity .club-facts>div dd{min-width:0;align-self:center;line-height:1.45}
+.club-identity .club-facts>.club-fact-description{
+  align-items:start;
+  grid-template-columns:minmax(0,1fr);
+}
+.club-identity .club-facts>.club-fact-description dt,
+.club-identity .club-facts>.club-fact-description dd{align-self:start}
+.club-identity .club-country-value{display:inline-flex;align-items:center;gap:7px;line-height:1.45}
+.club-identity .club-country-value svg.club-country-flag{
+  display:block;width:20px;height:16px;min-width:20px;max-width:20px;
+  min-height:16px;max-height:16px;aspect-ratio:5/4;flex:none;
+  align-self:center;vertical-align:middle;
+}
+.club-identity .club-facts>div:has(.club-colors) dt,
+.club-identity .club-facts>div:has(.club-colors) dd{align-self:end}
+.club-identity .club-colors{align-items:flex-end}
+.club-identity .club-colors>.club-color{vertical-align:bottom}
