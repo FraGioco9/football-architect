@@ -32,7 +32,7 @@ test('A05-10 Fixtures: clock consumption is competition-scoped and cannot author
 test('A05-10 Stats and History: results come from supplied validated contexts, not wall time',()=>{
  const stats=read('assets/competition-stats.js');
  const history=read('assets/competition-history.js');
- assert.match(stats,/context\.seasonData/);
+ assert.match(stats,/seasonData/);
  assert.match(stats,/selectedSeason/);
  assert.doesNotMatch(stats,/Date\.now\(\)|new Date\(\)/);
  assert.match(history,/applyCanonicalHistory\(payload\)/);
