@@ -139,3 +139,7 @@
 .club-identity .club-facts>div:not(.club-fact-description) dt,
 .club-identity .club-facts>div:not(.club-fact-description) dd{line-height:23px}
 .club-identity .club-country-value{line-height:23px}
+
+/* Prevent inline-flex baseline space from making Country taller than 23px. */
+.club-identity .club-facts>div:has(.club-country-value) dd{display:flex;align-items:center;min-height:0}
+.club-identity .club-country-value{display:flex;align-items:center;line-height:23px;min-height:23px}
