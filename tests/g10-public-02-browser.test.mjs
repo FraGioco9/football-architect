@@ -132,7 +132,7 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   assert.equal(await run("document.querySelectorAll('#app-standings-body tr').length"),16);
   await run("document.querySelector('[data-dev-control=reset-global]').click()");
   await until("sessionStorage.getItem('football-architect:calendar-dev-world-day')===null&&document.querySelector('[data-dev-control=world-day]').value==='1'");
-  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
+  assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"0");
   await cmd("Page.navigate",{url:origin+"/calendar?season=1&calendarView=week"});
   await until("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");
   assert.equal(await run("document.querySelectorAll('.calendar-day[data-calendar-day]').length"),56);
