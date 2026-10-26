@@ -185,3 +185,21 @@
 .club-competition-identity{justify-content:flex-start;text-align:left}
 .club-competition-copy{align-items:flex-start;text-align:left}
 .club-competition-name,.club-competition-tier{text-align:left}
+
+/* Explicitly place the three competition blocks left-to-right across the full row. */
+.club-competition-layout{
+ grid-template-columns:minmax(0,1.35fr) minmax(95px,.55fr) minmax(0,1.15fr);
+ justify-content:stretch;
+}
+.club-competition-identity{grid-column:1;grid-row:1;justify-self:start;width:100%}
+.club-competition-metrics{grid-column:2;grid-row:1;justify-self:center}
+.club-competition-next{grid-column:3;grid-row:1;justify-self:start;width:100%}
+@media(max-width:760px){
+ .club-competition-layout{grid-template-columns:minmax(0,1.2fr) minmax(70px,.5fr) minmax(0,1fr)}
+}
+@media(max-width:480px){
+ .club-competition-layout{grid-template-columns:minmax(0,1fr) auto}
+ .club-competition-identity{grid-column:1;grid-row:1}
+ .club-competition-metrics{grid-column:2;grid-row:1;justify-self:end}
+ .club-competition-next{grid-column:1/-1;grid-row:2}
+}
