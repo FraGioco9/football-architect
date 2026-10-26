@@ -180,3 +180,8 @@
  .club-competition-next{grid-column:1/-1;border-top:1px solid var(--line);padding-top:9px}
  .club-competition-metrics{justify-self:end}
 }
+
+/* Keep the league name and tier left-aligned beside the division crest. */
+.club-competition-identity{justify-content:flex-start;text-align:left}
+.club-competition-copy{align-items:flex-start;text-align:left}
+.club-competition-name,.club-competition-tier{text-align:left}
