@@ -288,32 +288,26 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   panel.style.bottom="auto";
   panel.style.width="min(320px, calc(100vw - 24px))";
   panel.style.maxWidth="min(320px, calc(100vw - 24px))";
-  const rect=root.getBoundingClientRect();
-  const panelRect=panel.getBoundingClientRect();
-  const panelWidth=panelRect.width||Math.min(320,viewportRight-EDGE*2);
-  const panelHeight=panelRect.height;
+  // Anchor to the button's stored coordinates, not its animated panel geometry.
+  const buttonLeft=x,buttonTop=y,buttonRight=x+SIZE,buttonBottom=y+SIZE;
+  const panelWidth=Math.min(320,Math.max(0,viewportRight-viewportLeft-EDGE*2));
   const minLeft=viewportLeft+EDGE;
   const maxLeft=Math.max(minLeft,viewportRight-panelWidth-EDGE);
-  // If the button is too close to the right edge, align the popup's right edge
-  // to the button instead of letting it occupy the scrollbar gutter.
-  const preferredLeft=rect.right+panelWidth>viewportRight-EDGE?rect.right-panelWidth:rect.left;
+  const preferredLeft=buttonRight+panelWidth>viewportRight-EDGE?buttonRight-panelWidth:buttonLeft;
   const left=clamp(preferredLeft,minLeft,maxLeft);
   const gap=10;
-  const spaceAbove=Math.max(0,rect.top-viewportTop-EDGE-gap);
-  const spaceBelow=Math.max(0,viewportHeight-EDGE-rect.bottom-gap);
-  // Choose the side based on available space, not the current section height.
-  // Keeping top (below) or bottom (above) fixed anchors the panel during
-  // native <details> expansion and collapse without repositioning on toggle.
+  const spaceAbove=Math.max(0,buttonTop-viewportTop-EDGE-gap);
+  const spaceBelow=Math.max(0,viewportHeight-EDGE-buttonBottom-gap);
   const openAbove=spaceAbove>=spaceBelow;
   const availableHeight=Math.max(0,openAbove?spaceAbove:spaceBelow);
   panel.style.maxHeight=availableHeight+"px";
   panel.style.left=left+"px";
   if(openAbove){
    panel.style.top="auto";
-   panel.style.bottom=Math.max(0,innerHeight-rect.top+gap)+"px";
+   panel.style.bottom=Math.max(0,innerHeight-buttonTop+gap)+"px";
   }else{
    panel.style.bottom="auto";
-   panel.style.top=rect.bottom+gap+"px";
+   panel.style.top=buttonBottom+gap+"px";
   }
  }
   function move(left,top){
@@ -355,7 +349,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   panel.addEventListener("animationend",finish,{once:true});
   setTimeout(finish,180);
  }
- root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}for(const section of sections.values())section.open=true;move(innerWidth-SIZE-16,innerHeight-SIZE-16);placePanel();return true};
+ root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}for(const section of sections.values())section.open=true;move(innerWidth-SIZE-16,innerHeight-SIZE-16);panel.scrollTop=0;placePanel();return true};
  closeButton.addEventListener("click",()=>setOpen(false));
  backdrop.addEventListener("click",()=>setOpen(false));
  let touchStart=null;
