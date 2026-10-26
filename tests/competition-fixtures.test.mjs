@@ -72,6 +72,54 @@ const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...
  homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
 const contents=n=>n.textContent+n.children.map(contents).join('');
 
+// Catches a missing clock listener, wrong cup projection/season, or clock-derived scores.
+test('A06-12 X04: actual Fixtures clock events scope navigation without changing supplied outcomes',()=>{
+ for(const [id,finalAvailable] of [['int-1',true],['int-2',false]]){
+  const cup=definitions.find(d=>d.id===id),r=setup(cup);
+  r.window.faWorldCalendarModel=calendarModel;
+  const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i}));
+  const fixtures=[1,2].flatMap(round=>Array.from({length:12},(_,i)=>({phaseId:'league',round,
+   homeId:rules.clubKey(participants[i]),awayId:rules.clubKey(participants[round===1?i+12:12+Math.floor(i/4)*4+(i+1)%4]),
+   homeGoals:i===0?0:null,awayGoals:i===0?0:null,kickoff:null})));
+  const data={participants,fixtures,results:[],statistics:null,status:'partial'};
+  r.window.faCompetitionContext={definition:cup,selectedSeason:1,revision:2,seasonData:data};
+  r.events['fa:competition-context-change']();
+  const supplied=JSON.stringify(data),rendered=contents(r.fields.get('app-fixtures-list'));
+  const current=r.fields.get('app-fixtures-current');
+  const emit=(season,day)=>r.events['fa:world-clock-snapshot']({detail:season===null?null:{source:{kind:'dev',reference:'A06-12'},current:{season,day}}});
+  assert.equal(r.fields.get('app-fixtures-list').children.length,12);
+  assert.ok(rendered.includes('0 – 0'),'positive supplied score must actually render');
+  assert.equal(current.hidden,true);
+  emit(1,16);
+  assert.equal(current.hidden,false,id+' exposes the next league round');
+  assert.equal(r.route.get().matchday,1,'clock events do not override explicit browsing');
+  assert.equal(contents(r.fields.get('app-fixtures-list')),rendered);
+  current.emit('click');
+  assert.equal(r.route.get().matchday,2,'current-round action uses the actual event');
+  r.route.set({matchday:1});
+  emit(1,52);assert.equal(current.hidden,false,id+' exposes its own upcoming final');
+  current.emit('click');assert.equal(r.route.get().matchday,'final:1');
+  r.route.set({matchday:1});
+  emit(1,53);
+  assert.equal(current.hidden,!finalAvailable,id+' owns its distinct final day');
+  if(finalAvailable){current.emit('click');assert.equal(r.route.get().matchday,'final:1');}
+  r.route.set({matchday:1});
+  for(const [season,day] of [[null,null],[1,57],[2,16]]){
+   emit(1,16);assert.equal(current.hidden,false,'positive control before rejection');
+   emit(season,day);assert.equal(current.hidden,true,'unavailable/invalid/wrong-season clock has no current action');
+   current.emit('click');assert.equal(r.route.get().matchday,1);
+  }
+  r.route.set({season:'2'});
+  r.window.faCompetitionContext={...r.window.faCompetitionContext,selectedSeason:2,revision:3};
+  r.events['fa:competition-context-change']();
+  emit(1,16);assert.equal(current.hidden,true,'late previous-season event cannot select current navigation');
+  emit(2,16);assert.equal(current.hidden,false,'matching new season recovers');
+  assert.equal(r.route.get().season,'2');
+  assert.equal(JSON.stringify(data),supplied,'clock events never write provider data');
+  assert.equal(contents(r.fields.get('app-fixtures-list')),rendered,'scores remain supplied rather than inferred');
+ }
+});
+
 test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does not alter context',()=>{
  const cup=definitions.find(d=>d.id==='int-1'),r=setup(cup);
  assert.equal(typeof r.view?.prepare,'function');

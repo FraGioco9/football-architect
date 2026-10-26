@@ -225,9 +225,11 @@ function chromeBinary(){
 test('A04 browser baseline: public routes, provider states, delayed publications and locales',{timeout:240000},async t=>{
  const binary=chromeBinary(),dir=mkdtempSync(join(tmpdir(),'fa-a04-browser-'));
  const staged=join(dir,'public'),allowed=new Set(stagePublicArtifact(repositoryRoot,staged));
+ const delayedSources=new Map();
  const requests=[],mime={'.html':'text/html','.js':'application/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
  const server=createServer((req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;requests.push(path);
+  if(delayedSources.has(path)){delayedSources.get(path)(res);return}
   const file=publicRequestFile(path);
   if(!allowed.has(file)){res.writeHead(404);res.end();return}
   res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(readFileSync(join(staged,file)));
@@ -323,6 +325,61 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    const empty=await snapshot(),emptyBracket=await bracket();assert.equal(empty.data,null);assert.deepEqual(empty.fixtures,[]);assert.deepEqual(empty.stats,[]);assert.equal(empty.qualified,'false');
    await run('window.__a04Release('+JSON.stringify(b)+')');assert.equal(await run('window.__a04Pending'),false);
    assert.deepEqual(await snapshot(),empty);assert.equal(await bracket(),emptyBracket);assert.equal(await run('window.__a04Publications'),publications);
+  });
+  // Catches a removed revision guard or a clock/navigation update that replaces historical records.
+  await t.test('A06-12 X07/X09: historical navigation and clock advance reject obsolete provider publications',async()=>{
+   const records=()=>run("[...document.querySelectorAll('[data-history-filled=\"true\"]')].map(n=>[n.dataset.historyPlayerRecord,n.textContent])");
+   const history={source:'canonical',competitionId:'IT-1',coverage:'complete',provenance:{approved:true},seasons:[{
+    seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,
+    playerStats:[{playerId:'a06-player',playerName:'A06 Historical Player',countryId:'IT',clubId:1,goals:3,assists:1,appearances:2,cleanSheets:0}]}]};
+   for(const sourceFailure of [false,true]){
+    await visit(origin,'IT-1','fixtures',1);
+    const previous=await run('window.__a04DocumentToken');await cmd('Page.reload');
+    await wait('window.__a04DocumentToken!=='+JSON.stringify(previous)+"&&window.faCompetitionContext?.selectedSeason===1&&!!window.faHistoryPlayerRecords&&document.readyState==='complete'");
+    const initial=seasonData(1,15);assert.equal(await put(initial),true);
+    await run('window.faHistoryPlayerRecords.applyCanonicalHistory('+JSON.stringify(history)+')');
+    const approved=await records();assert.ok(approved.length>0);assert.ok(JSON.stringify(approved).includes('A06 Historical Player'));
+    const historicalUrl=await run('location.href');
+    assert.equal(new URL(historicalUrl).searchParams.get('season'),'1');
+    await run(`window.__a06Lease=window.faCompetitionContext.revision;window.__a06Publications=0;
+     addEventListener('fa:competition-context-change',()=>window.__a06Publications++);
+     window.__a06Pending=new Promise(resolve=>window.__a06Release=resolve).then(data=>window.faCompetitionContextApi.replaceSeasonData(data,window.__a06Lease));true`);
+    const beforeClock=await snapshot(),revision=await run('window.faCompetitionContext.revision');
+    for(const day of [31,32])await run(`window.faWorldClockSnapshot={source:{kind:'dev',reference:'A06-12'},current:{season:3,day:${day}}};dispatchEvent(new CustomEvent('fa:world-clock-snapshot',{detail:window.faWorldClockSnapshot}))`);
+    assert.deepEqual(await snapshot(),beforeClock,'world time cannot change historical season data');
+    assert.deepEqual(await records(),approved,'world time cannot rewrite canonical History');
+    assert.equal(await run('location.href'),historicalUrl);assert.equal(await run('window.faCompetitionContext.revision'),revision);
+    // Same-document browser history plus an actual provider revision change creates an ABA lease.
+    await run("window.faCompetitionRoute.set({view:'stats'});window.faCompetitionContextApi.clearSeasonData()");
+    assert.equal(await put(seasonData(1,30)),true);
+    await run('history.back()');await wait("window.faCompetitionRoute.get().view==='fixtures'");
+    assert.equal(await run('location.href'),historicalUrl);
+    await run('history.forward()');await wait("window.faCompetitionRoute.get().view==='stats'");
+    await run('history.back()');await wait("window.faCompetitionRoute.get().view==='fixtures'");
+    assert.ok(await run('window.faCompetitionContext.revision>window.__a06Lease'));
+    const current=await snapshot(),currentRecords=await records(),publications=await run('window.__a06Publications');
+    assert.equal(current.data.statistics.overview.matchesPlayed,240,'newer provider data actually committed');
+    const obsolete=sourceFailure?{...initial,status:'unavailable',fixtures:null,results:null,statistics:null}:initial;
+    await run('window.__a06Release('+JSON.stringify(obsolete)+')');assert.equal(await run('window.__a06Pending'),false,'obsolete success/unavailable publication must be rejected');
+    assert.deepEqual(await snapshot(),current);assert.deepEqual(await records(),currentRecords);assert.deepEqual(currentRecords,approved);
+    assert.equal(await run('window.__a06Publications'),publications);assert.equal(await run('location.href'),historicalUrl);
+    // Keep a real source response pending while navigating into a different competition/document.
+    const path='/a06-12-delayed-'+Number(sourceFailure)+'.json';let release;
+    const requested=new Promise(resolve=>delayedSources.set(path,res=>{
+     const settled=new Promise(done=>res.once('close',()=>done(res.writableFinished?'delivered':'aborted')));
+     release=async()=>{if(!res.destroyed){res.writeHead(sourceFailure?503:200,{'Content-Type':'application/json'});res.end(JSON.stringify(obsolete))}return settled};resolve();
+    }));
+    await run(`window.__a06OldRevision=window.faCompetitionContext.revision;
+     fetch(${JSON.stringify(path)}).then(async response=>response.ok?response.json():${JSON.stringify(obsolete)})
+      .then(data=>window.faCompetitionContextApi.replaceSeasonData(data,window.__a06OldRevision)).catch(()=>{});true`);
+    await Promise.race([requested,delay(5000).then(()=>{throw Error('A06-12 delayed source was not requested')})]);
+    await visit(origin,'ENG-1','fixtures',1);
+    const next=await snapshot();assert.equal(next.id,'ENG-1');assert.equal(next.data,null);
+    const settled=await Promise.race([release(),delay(5000).then(()=>{throw Error('A06-12 old source did not settle')})]);
+    assert.ok(['delivered','aborted'].includes(settled));delayedSources.delete(path);
+    assert.deepEqual(await snapshot(),next,'old-document source settlement/abort leaves the new competition isolated');
+    assert.deepEqual(await records(),[]);assert.deepEqual(await run('window.__a04Errors'),[]);
+   }
   });
   await t.test('E5: absent/zero/partial/invalid/recovered Stats in five locales, ARIA and mobile widths',async()=>{
    await visit(origin,'IT-1');
