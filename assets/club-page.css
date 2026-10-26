@@ -115,7 +115,10 @@
 
 
 /* Country uses the same minimum row height as other identity facts; flag centered. */
-.club-identity .club-facts>div{min-height:42px;box-sizing:border-box;align-items:center}
+.club-identity .club-facts>div{min-height:46px;box-sizing:border-box;align-items:center}
 .club-identity .club-facts>div:has(.club-country-value) dd{display:flex;align-items:center;min-height:0}
 .club-identity .club-country-value{align-items:center;line-height:normal}
 .club-identity .club-country-value svg.club-country-flag{align-self:center;vertical-align:middle}
+
+/* Keep ordinary identity rows (including Name and Country) at one exact height. */
+.club-identity .club-facts>div:not(.club-fact-description):not(.club-fact-rivalries){height:46px;min-height:46px;padding-top:0;padding-bottom:0}
