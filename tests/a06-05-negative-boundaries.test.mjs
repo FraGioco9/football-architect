@@ -24,9 +24,15 @@ test('A06-05 stale, disabled and disposed leases never authorize commit',()=>{
   const current={...request,providerId:'static',owner:'competition-page',slot:'fixtures',generation:1,enabled:true,progressGeneration:1,debugSeason:1,matchdays:0};
   const lease=provider.captureLease(current);
   assert.equal(provider.isCurrentLease(lease,current),true);
-  // Static leases intentionally ignore DEV-only progress fields; only identity,\n  // generation, ownership, disposal and revision invalidate static publication.\n  for(const patch of [{generation:2},{owner:'new-page'},{slot:'history'},{disposed:true},{contextRevision:2}])
+  // Static leases intentionally ignore DEV-only progress fields; only identity,
+  // generation, ownership, disposal and revision invalidate static publication.
+  for(const patch of [{generation:2},{owner:'new-page'},{slot:'history'},{disposed:true},{contextRevision:2}])
     assert.equal(provider.isCurrentLease(lease,{...current,...patch}),false);
-  const dev={...current,providerId:'dev-fictional'};\n  const devLease=provider.captureLease(dev);\n  for(const patch of [{enabled:false},{progressGeneration:2},{debugSeason:0},{matchdays:1}])\n    assert.equal(provider.isCurrentLease(devLease,{...dev,...patch}),false);\n});
+  const dev={...current,providerId:'dev-fictional'};
+  const devLease=provider.captureLease(dev);
+  for(const patch of [{enabled:false},{progressGeneration:2},{debugSeason:0},{matchdays:1}])
+    assert.equal(provider.isCurrentLease(devLease,{...dev,...patch}),false);
+});
 
 test('A06-05 untrusted clock lifecycle cannot become verified results',()=>{
   for(const value of [
