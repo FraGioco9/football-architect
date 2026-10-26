@@ -1,4 +1,4 @@
-:root{--fa-flag-width:30px;--fa-flag-height:24px}
+:root{--fa-flag-width:25px;--fa-flag-height:20px}
 /* HOME-01: historical UX-SHELL proportions, adapted to the Graphite & Petrol site. */
 html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
 .app-body{height:100vh;height:100svh;height:100dvh;overflow:hidden;--fa-shell-border:#294a49;--fa-shell-accent:#64cba9;--app-page-pad-inline:clamp(16px,2vw,28px);--app-page-pad-top:clamp(16px,2vw,28px);--app-page-pad-bottom:40px;--app-page-section-gap:28px;--app-page-title-size:clamp(28px,3vw,40px);min-width:0}
@@ -1111,5 +1111,5 @@ svg.site-chevron>path{translate:0 .5px}
 .app-rules-outcome{padding:7px 10px;border-radius:5px}
 .app-rules-metric{padding:9px 12px}
 .app-rules-metric dd{font-size:19px}
-.app-world-flag-frame{width:30px;height:24px;aspect-ratio:5/4}
+.app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}
 .app-world-flag{width:100%;height:100%;object-fit:contain}
