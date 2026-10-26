@@ -384,7 +384,7 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 .app-competition-facts dt{color:var(--muted);font-size:11px}
 .app-competition-facts dd{margin:5px 0 0;font-weight:700;font-size:14px}
 /* RULES-04: shared responsive regulations, separate from competition navigation. */
-.app-rules-content{display:grid;gap:20px;max-width:1000px;min-width:0}
+.app-rules-content{display:grid;gap:20px;width:100%;max-width:none;min-width:0}
 .app-rules-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
 .app-rules-metric{min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel,transparent)}
 .app-rules-metric dt{color:var(--muted);font-size:12px;line-height:1.4}
