@@ -39,6 +39,13 @@
   return rules.normalizeCompetition(value);
  }
  function awardIds(input){return [...definition(input).rules.awards]}
+ const internationalQualificationNotes={
+  en:'International qualification (next season): normally domestic places 1–3 enter the Sovereign Cup and places 4–6 the Federation Cup. The defending Sovereign champion retains a Sovereign place; the defending Federation champion moves to Sovereign. Both use one of their country’s three Sovereign places, with remaining places filled by the highest-ranked eligible clubs. A relegated defending champion remains eligible.',
+  de:'Internationale Qualifikation (nächste Saison): Üblicherweise qualifizieren sich die Ligaplätze 1–3 für den Sovereign Cup und 4–6 für den Federation Cup. Der Sovereign-Titelverteidiger behält einen Sovereign-Platz; der Federation-Titelverteidiger steigt in den Sovereign Cup auf. Beide zählen zu den drei Sovereign-Plätzen ihres Landes. Übrige Plätze gehen an die bestplatzierten berechtigten Vereine. Auch ein abgestiegener Titelverteidiger bleibt berechtigt.',
+  es:'Clasificación internacional (temporada siguiente): normalmente los puestos 1–3 acceden a la Sovereign Cup y los puestos 4–6 a la Federation Cup. El vigente campeón de la Sovereign conserva su plaza; el campeón de la Federation pasa a la Sovereign. Ambos ocupan una de las tres plazas Sovereign de su país. Las restantes se asignan a los clubes elegibles mejor clasificados. Un campeón vigente descendido mantiene su derecho.',
+  fr:'Qualification internationale (saison suivante) : normalement, les places 1 à 3 accèdent à la Sovereign Cup et les places 4 à 6 à la Federation Cup. Le tenant de la Sovereign conserve sa place ; le tenant de la Federation rejoint la Sovereign. Chacun occupe l’une des trois places Sovereign de son pays. Les places restantes reviennent aux clubs éligibles les mieux classés. Un tenant relégué reste éligible.',
+  it:'Qualificazione internazionale (stagione successiva): normalmente le posizioni 1–3 accedono alla Sovereign Cup e le posizioni 4–6 alla Federation Cup. Il campione in carica della Sovereign mantiene un posto Sovereign; quello della Federation passa alla Sovereign. Entrambi occupano uno dei tre posti Sovereign del proprio Paese. I posti rimanenti vanno ai club idonei meglio classificati. Un campione in carica retrocesso resta idoneo.'
+ };
  function renderRules(input,locale="en"){
   const d=definition(input),t=Object.hasOwn(copy,locale)?copy[locale]:copy.en;
   const paragraph=(key,params={})=>'<p data-rule-template="'+escape(key)+'" data-rule-params="'+escape(JSON.stringify(params))+'">'+escape(format(t[key],params))+'</p>';
@@ -70,6 +77,7 @@
      return '<div class="app-rules-outcome" data-outcome="'+escape(color)+'" data-rule-kind="'+escape(o.kind)+'" data-rule-from="'+o.from+'" data-rule-to="'+o.to+'"'+(o.targetPhaseId?' data-rule-target="'+escape(o.targetPhaseId)+'"':'')+'><strong class="app-rules-range">'+range+'</strong><span>'+escape(label)+'</span></div>';
     }).join('');
     html+=section('rules-outcomes'+suffix,t.outcomes,'<div class="app-rules-outcomes">'+outcomeHtml+'</div>');
+    if(d.category==='domestic'&&d.tier===1)html+='<p data-rule-international-qualification="true">'+escape(internationalQualificationNotes[locale]||internationalQualificationNotes.en)+'</p>';
    }else{
     const ties=phase.ties.map(tie=>{
      const home=tie.homePolicy==='neutral'?t.neutral:tie.legs===1?t.higherSingle:t.higherDouble;
