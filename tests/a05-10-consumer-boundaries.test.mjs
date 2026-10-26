@@ -22,7 +22,7 @@ test('A05-10 Calendar: viewed seasons do not mutate world time or create complet
 test('A05-10 Fixtures: clock consumption is competition-scoped and cannot authorize match outcomes',()=>{
  const fixtures=read('assets/competition-fixtures.js');
  const rules=read('assets/competition-rules.js');
- assert.match(fixtures,/faWorldCalendarModel\?\.createSeason/);
+ assert.match(fixtures,/faWorldCalendarModel\?\.projectCompetition/);
  assert.match(fixtures,/rules\.currentFixtureChoice\(definition,calendar/);
  assert.match(fixtures,/fa:world-clock-snapshot/);
  assert.match(rules,/event\.competitionIds\.includes\(definition\.id\)/);

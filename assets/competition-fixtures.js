@@ -328,7 +328,7 @@
     try{
       clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
       if(clubs.size!==capacity)throw Error('Invalid cup participants');
-      const calendar=window.faWorldCalendarModel?.createSeason(window.faCompetitionContext.selectedSeason);
+      const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
       const current=calendar?rules.currentFixtureChoice(definition,calendar,window.faDevWorldClockSnapshot||window.faWorldClockSnapshot):null;
       window.faFixtures.prepare(data.fixtures,{currentMatchday:current})();
     }catch{clubs=previous;rounds=null;postseason=[];currentMatchday=null;render();}
@@ -336,7 +336,7 @@
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international)return;
-    const calendar=window.faWorldCalendarModel?.createSeason(window.faCompetitionContext.selectedSeason);
+    const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
     currentMatchday=calendar?rules.currentFixtureChoice(definition,calendar,event.detail):null;render();
   });
   contextChanged();
