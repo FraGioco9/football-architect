@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 1024 1024" width="1024" height="1024">
+	<title>FC Parisien</title><desc>Native vector crest; L10 Eiffel Tower clipped to upper side of L13 base curve.</desc><defs>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Shield-Inner-Boundary">
+			<path d="m0 0h1024v297.43h-183.63c-3.5-1.15-7.87-2.59-11.37-3.74-121.03-39.7-225.75-65.73-317-67.69-91.25 1.96-195.97 27.99-317 67.69-3.5 1.15-7.88 2.59-11.38 3.74h-183.62zm1024 427.42v596.58h-1024v-596.58h183.63c3.5-1.15 7.87-2.58 11.37-3.73 121.03-39.7 225.75-65.73 317-67.69 93 2 200 29 317 67.69 3.5 1.15 7.88 2.58 11.38 3.73z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Central-Panel-Outer">
+			<path d="m195 423.69c121.03-39.7 225.75-65.73 317-67.69 91.25 1.96 195.97 27.99 317 67.69v600.31h-634z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Central-Panel-Lower">
+			<path d="m0 0h1024v809.5h-305q-207-20-414 0h-305z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Central-Panel-Inner">
+			<path d="m0 0h1024v1024h-375v-176c-28-50-79-76-138-76-59 0-110 26-138 76v176h-373z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Banner-Shield">
+			<path d="m512 77.25c46.25 53.65 111.92 92.5 214.6 120.25 43.48 12.02 83.25 22.2 112.85 28.67v301.56c0 177.6-75.85 254.37-195.18 322.82-61.97 34.23-105.44 61.98-132.27 96.2-26.82-34.22-70.3-61.97-132.28-96.2-119.32-68.45-196.09-145.22-196.09-322.82v-301.56c29.6-6.47 69.37-16.65 112.84-28.67 102.68-27.75 169.28-66.6 215.53-120.25z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Banner-Upper-Edge">
+			<path d="m0 0h1024v1024h-1024zm577 184c0-17.24-6.85-33.77-19.04-45.96-12.19-12.19-28.72-19.04-45.96-19.04-17.24 0-33.77 6.85-45.96 19.04-12.19 12.19-19.04 28.72-19.04 45.96 0 17.24 6.85 33.77 19.04 45.96 12.19 12.19 28.72 19.04 45.96 19.04 17.24 0 33.77-6.85 45.96-19.04 12.19-12.19 19.04-28.72 19.04-45.96z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Eiffel-Outer">
+			<path d="m0 14h1024v809.5h-305q-207-20-414 0h-305z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Eiffel-Inner">
+			<path d="m0 14h1024v1024h-375v-176c-28-50-79-76-138-76-59 0-110 26-138 76v176h-373z"/>
+		</clipPath>
+		<clipPath clipPathUnits="userSpaceOnUse" id="clip-Base-
