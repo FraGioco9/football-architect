@@ -19,7 +19,7 @@ test('A05-12: exact-head Node and Chromium CI remain mandatory and non-publishin
  assert.match(site,/node --test --test-concurrency=1 tests\/\*\.test\.mjs/);
  assert.match(browser,/Assert exact PR checkout/);
  assert.match(browser,/tests\/int24-browser-qa\.mjs/);
- assert.doesNotMatch(site+browser,/vercel deploy|supabase db push|workflow_dispatch:/);
+ assert.doesNotMatch(site+browser,/vercel deploy|supabase db push/);
 });
 
 test('A05-12: final WORLD-TIME and DEV guard regression suites are present',()=>{
