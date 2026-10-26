@@ -78,5 +78,16 @@
           competitionId,status:states.get(event.id+"/"+competitionId)??null
         }))}))}))});
   }
-  return freeze({createSeason,projectSeason});
+  function projectCompetition(season,competitionId,options={}){
+    assert(typeof competitionId==="string"&&competitionId.length>0,"Invalid competition identity");
+    assert(divisions.includes(competitionId)||cups.includes(competitionId),"Unknown competition identity");
+    const projected=projectSeason(season,options);
+    return freeze({schemaVersion:projected.schemaVersion,model:projected.model,
+      season:projected.season,competitionId,source:projected.source,
+      days:projected.days.map(day=>({...day,
+        events:day.events.filter(event=>event.competitionIds.includes(competitionId)).map(event=>({
+          ...event,competitions:event.competitions.filter(item=>item.competitionId===competitionId)
+        }))}))});
+  }
+  return freeze({createSeason,projectSeason,projectCompetition});
 });
