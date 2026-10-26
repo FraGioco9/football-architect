@@ -105,3 +105,10 @@
 .club-competition-summary{align-self:center;align-content:center}
 .club-competition-metrics dd,.club-competition-next-content{align-self:first baseline}
 @media(max-width:760px){.club-competition-logo{width:56px;height:56px;flex-basis:56px}.club-competition-summary{align-self:stretch}}
+
+/* Align club color swatches with the bottom of their fact row. */
+.club-facts>div:has(.club-colors){align-items:end}
+.club-colors{align-items:flex-end;align-self:end}
+.club-colors>.club-color{vertical-align:bottom}
+/* Club identity uses a smaller 5:4 flag; other flags remain 25x20. */
+.club-header .club-country-flag{width:20px;height:16px;aspect-ratio:5/4}
