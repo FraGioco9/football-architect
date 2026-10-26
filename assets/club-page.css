@@ -110,5 +110,5 @@
 .club-facts>div:has(.club-colors){align-items:end}
 .club-colors{align-items:flex-end;align-self:end}
 .club-colors>.club-color{vertical-align:bottom}
-/* Club identity uses a smaller 5:4 flag; other flags remain 25x20. */
-.club-header .club-country-flag{width:20px;height:16px;aspect-ratio:5/4}
+/* Club Identity fact-box flag only; header and other flags remain 25x20. */
+.club-facts .club-country-value img{width:20px;height:16px;aspect-ratio:5/4;object-fit:contain}
