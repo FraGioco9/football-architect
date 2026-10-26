@@ -60,6 +60,7 @@
   function standingOutcome(position) {
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
+    if(selected.category==='domestic'&&selected.tier===1){if(position>=1&&position<=3)return 'sovereign';if(position>=4&&position<=6)return 'federation'}
     const phase=selected.rules.phases.find(p=>p.rankOutcomes);
     return window.faCompetitionRules.outcomeStyle(window.faCompetitionRules.outcomeAt(selected,phase.id,position)?.kind);
   }
@@ -86,14 +87,16 @@
     if(!selected||!list||!window.faCompetitionRulesView)return;
     const phase=selected.rules.phases.find(p=>p.rankOutcomes),outcomes=phase.rankOutcomes.filter(outcome=>window.faCompetitionRules.outcomeStyle(outcome.kind));
     host.hidden=!outcomes.length;
-    list.replaceChildren(...outcomes.map(outcome=>{
-      const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
+    const international=selected.category==='domestic'&&selected.tier===1?[{from:1,to:3,kind:'sovereign'},{from:4,to:6,kind:'federation'}]:[];
+    const visibleOutcomes=outcomes.filter(o=>!international.some(q=>o.from>=q.from&&o.to<=q.to));
+    list.replaceChildren(...[...international,...visibleOutcomes].map(outcome=>{
+      const style=outcome.kind==='sovereign'||outcome.kind==='federation'?outcome.kind:window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
       const swatch=document.createElement('span');swatch.className='app-standings-legend-swatch';swatch.setAttribute('aria-hidden','true');
       const label=document.createElement('span');label.id='standings-outcome-'+style;
       const range=document.createElement('strong');range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
       const separator=document.createElement('span');separator.textContent=' · ';
       const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
-      text.textContent=window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
+      text.textContent=outcome.kind==='sovereign'?'Sovereign Cup':outcome.kind==='federation'?'Federation Cup':window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
       label.append(range,separator,text);li.append(swatch,label);return li;
     }));
   }
