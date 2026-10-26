@@ -21,5 +21,10 @@
   const valid=normalize(snapshot);
   return model.projectSeason(season,valid);
  }
- return Object.freeze({normalize,unavailable,project});
+ function projectCompetition(season,competitionId,snapshot){
+  const valid=normalize(snapshot);
+  if(!model||typeof model.projectCompetition!=='function')throw TypeError('Competition projection unavailable');
+  return model.projectCompetition(season,competitionId,valid);
+ }
+ return Object.freeze({normalize,unavailable,project,projectCompetition});
 });
