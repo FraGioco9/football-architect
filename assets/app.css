@@ -1,4 +1,4 @@
-:root{--fa-flag-width:25px;--fa-flag-height:20px}
+:root{--fa-flag-width:30px;--fa-flag-height:24px}
 /* HOME-01: historical UX-SHELL proportions, adapted to the Graphite & Petrol site. */
 html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
 .app-body{height:100vh;height:100svh;height:100dvh;overflow:hidden;--fa-shell-border:#294a49;--fa-shell-accent:#64cba9;--app-page-pad-inline:clamp(16px,2vw,28px);--app-page-pad-top:clamp(16px,2vw,28px);--app-page-pad-bottom:40px;--app-page-section-gap:28px;--app-page-title-size:clamp(28px,3vw,40px);min-width:0}
@@ -1100,3 +1100,16 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
 .fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
 @media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
+
+/* UI refinement: compact Rules and international standings qualification. */
+[data-standing-outcome="sovereign"],.app-rules-outcome[data-rule-cup="sovereign"]{--standing-outcome-color:#8B73D6}
+[data-standing-outcome="federation"],.app-rules-outcome[data-rule-cup="federation"]{--standing-outcome-color:#2F9DAB}
+.app-rules-content{width:100%;max-width:none;justify-self:stretch}
+.app-rules-section{padding-top:12px}
+.app-rules-section p{line-height:1.5}
+.app-rules-outcomes{gap:4px}
+.app-rules-outcome{padding:7px 10px;border-radius:5px}
+.app-rules-metric{padding:9px 12px}
+.app-rules-metric dd{font-size:19px}
+.app-world-flag-frame{width:30px;height:24px;aspect-ratio:5/4}
+.app-world-flag{width:100%;height:100%;object-fit:contain}
