@@ -113,8 +113,9 @@
 /* Club Identity fact-box flag only; header and other flags remain 25x20. */
 .club-identity .club-country-value svg.club-country-flag{width:20px;height:16px;min-width:20px;max-width:20px;min-height:16px;max-height:16px;aspect-ratio:5/4;object-fit:contain;flex:none}
 
-/* Keep Country at the standard fact-row height and bottom-align its inline SVG. */
-.club-identity .club-facts>div:has(.club-country-value){align-items:stretch}
-.club-identity .club-facts>div:has(.club-country-value) dd{display:flex;align-items:flex-end;min-height:20px}
-.club-identity .club-country-value{align-items:flex-end;line-height:20px}
-.club-identity .club-country-value svg.club-country-flag{align-self:flex-end;vertical-align:bottom}
+
+/* Country uses the same minimum row height as other identity facts; flag centered. */
+.club-identity .club-facts>div{min-height:42px;box-sizing:border-box;align-items:center}
+.club-identity .club-facts>div:has(.club-country-value) dd{display:flex;align-items:center;min-height:0}
+.club-identity .club-country-value{align-items:center;line-height:normal}
+.club-identity .club-country-value svg.club-country-flag{align-self:center;vertical-align:middle}
