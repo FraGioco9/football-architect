@@ -109,7 +109,7 @@ async function setMatchdays(value){
 }
 async function resetPreview(){
  if(validPath&&previewState!=="OFF" && !await setPreviewEnabled(false))return false;
- try{sessionStorage.removeItem(SEASON_KEY);sessionStorage.removeItem(ROUNDS_KEY);sessionStorage.removeItem('football-architect:calendar-dev-world-day')}catch{return false}
+ try{sessionStorage.setItem(SEASON_KEY,'0');sessionStorage.setItem(ROUNDS_KEY,'0');sessionStorage.setItem('football-architect:calendar-dev-world-day','1')}catch{return false}
  progressRevision++;debugSeason=0;matchdays=0;
  const ok=await refreshProgress();
  window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:1,season:0}}));
