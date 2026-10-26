@@ -355,7 +355,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   panel.addEventListener("animationend",finish,{once:true});
   setTimeout(finish,180);
  }
- root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}move(innerWidth-SIZE-16,innerHeight-SIZE-16);for(const section of sections.values())section.open=true;return true};
+ root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}for(const section of sections.values())section.open=true;move(innerWidth-SIZE-16,innerHeight-SIZE-16);placePanel();return true};
  closeButton.addEventListener("click",()=>setOpen(false));
  backdrop.addEventListener("click",()=>setOpen(false));
  let touchStart=null;
