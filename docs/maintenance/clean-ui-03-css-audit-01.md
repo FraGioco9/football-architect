@@ -90,3 +90,19 @@ Added two focused tests for scoped counts and nonmutation of the input CSS strin
 The auditor now offers `formatCssAuditSummary`, a deterministic, nonmutating summary ranking the 12 densest containing media scopes, plus separate counts of truly identical scoped-rule groups and cross-context selector reuse. These two categories cannot be conflated. Two new tests cover ordering and the distinction. The underlying source remains unchanged and no automatic CSS rewrite is performed.
 
 Issue #322's body checklist is updated directly at each implementation batch. Only narrowly completed **subtasks** are checked; major P1 consolidation, render equivalence and CI remain uncompleted. Test scheduling follows owner's final-PR-only requirement.
+
+## Checkpoint 11 — shared control and page asset baseline (read-only)
+
+The canonical `templates/app-page.html` currently loads, in order, `/assets/theme.js`, `/assets/landing.css`, `/assets/app.css`, `/assets/landing.js`, `/assets/app.js`, and `/assets/app-search.js`. The template's scripts and styles are deliberately preserved until dependency tracing demonstrates safe page-specific removal. The app-page generator also conditionally assembles Calendar, competition and navigation assets; selective loading must evaluate those branches and the generated outputs, not the source template alone.
+
+Control ownership reference (source-token inventory, **not** rendered component count):
+
+| Component | CSS token occurrences | Generator token occurrences |
+|---|---:|---:|
+| Calendar week | 7 | 0 |
+| Calendar arrows | 9 | 0 |
+| Fixtures | 17 | 0 |
+| History | 12 | 0 |
+| Dialog | 36 | 0 |
+
+Interaction contracts to retain before shared extraction: Calendar week buttons and current-week reset; Fixtures matchday navigation and disabled states; History archive season controls; event dialogs and Escape/focus return; touch/coarse-pointer tooltip suppression; reduced-motion animations; light/dark event palettes. CSS class reuse alone does not prove equivalent keyboard or layout behavior. No template/JS/CSS behavior change in this batch.
