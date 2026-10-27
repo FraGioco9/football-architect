@@ -50,12 +50,6 @@ jobs:
           node --check assets/competition-page.js
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
-      - name: Install Chrome for NAV-01 visual QA
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
-        id: nav01-chrome
-        uses: browser-actions/setup-chrome@v2
-        with:
-          chrome-version: stable
       - name: Classify fast-safe changes
         id: scope
         env:
@@ -69,9 +63,6 @@ jobs:
           fi
       - name: Site contracts (full)
         if: steps.scope.outputs.mode == 'full'
-        env:
-          CHROME_BIN: ${{ steps.nav01-chrome.outputs.chrome-path }}
-          FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && format('{0}/nav01-screenshots', runner.temp) || '' }}
         run: node --test --test-concurrency=1 tests/*.test.mjs
       - name: Site essential contracts (FAST and TARGETED)
         if: steps.scope.outputs.mode != 'full'
@@ -85,11 +76,3 @@ jobs:
           test -n "$TARGETED_TESTS"
           read -ra TEST_FILES <<< "$TARGETED_TESTS"
           node --test --test-concurrency=1 "${TEST_FILES[@]}"
-      - name: Upload NAV-01 Chromium screenshots
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: nav01-chromium-screenshots
-          path: ${{ runner.temp }}/nav01-screenshots/nav01-*.png
-          if-no-files-found: error
-          retention-days: 7

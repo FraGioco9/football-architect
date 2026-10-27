@@ -94,3 +94,7 @@ The following signals were verified in actual test source, not inferred solely f
 | guide.test.mjs | none of the searched process/network/file-write signals observed |
 
 This sample supports retaining `--test-concurrency=1` pending a complete 91-file audit, port allocation analysis and repeated isolated/sharded runs. Do not equate absence of these text patterns with a proof of independence. The user explicitly requested postponement of FULL testing; no concurrency acceleration should be made without that evidence.
+
+## Historical workflow decision
+
+PR #254 (NAV-01) and PR #263 (RENDER-01) were confirmed closed and merged. The Site checks branch which installed Chrome and uploaded NAV-01-only screenshots when the current PR number equaled 254 is now unreachable for new pull requests; removed its conditional setup, associated obsolete environment variables and screenshot upload. Keep `render-01-perf.yml` untouched as a historical opt-in benchmark tied to PR #263: avoiding an unproven deletion is safer than removing an archive without a replacement. No browser tests or application sources were removed.
