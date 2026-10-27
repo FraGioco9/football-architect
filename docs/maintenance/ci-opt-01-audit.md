@@ -98,3 +98,14 @@ This sample supports retaining `--test-concurrency=1` pending a complete 91-file
 ## Historical workflow decision
 
 PR #254 (NAV-01) and PR #263 (RENDER-01) were confirmed closed and merged. The Site checks branch which installed Chrome and uploaded NAV-01-only screenshots when the current PR number equaled 254 is now unreachable for new pull requests; removed its conditional setup, associated obsolete environment variables and screenshot upload. Keep `render-01-perf.yml` untouched as a historical opt-in benchmark tied to PR #263: avoiding an unproven deletion is safer than removing an archive without a replacement. No browser tests or application sources were removed.
+
+## Full Node inventory — 91/91 source files screened
+
+All 91 existing `tests/*.test.mjs` modules on the 2026-10-27 main baseline were read and screened for explicit network/server use (`listen`, `createServer`, localhost), temporary filesystem mutation (`mkdtemp`, writes, deletes), subprocesses (`spawn`, `execFileSync`) and global/process state (`process.env`, `globalThis`, `chdir`). Screening is a **static text-signal heuristic**: indirect imports, helper calls and generated side effects can remain hidden. This is not a concurrency-safe certification.
+
+**Isolation candidates, pending controlled trial**:
+- Potentially self-contained domain assertions with no detected resource signals, e.g. `competition-model.test.mjs`, `routes-registry.test.mjs`, `rules-registry.test.mjs`, `world-calendar-model.test.mjs`, `guide.test.mjs`.
+- Shared-resource-sensitive suite group: `dev-standings-preview.test.mjs`, `club-pages-browser.test.mjs`, `g10-public-02-browser.test.mjs`, `theme-browser.test.mjs`, `world-calendar-browser.test.mjs`, `world-calendar-history-browser.test.mjs`, `generator-windows.test.mjs`, `publication-gate.test.mjs` and others with network/process/filesystem signals.
+- Ambiguous modules with `process.env` or `globalThis` references, indirect helper dependencies or loopback URL literals must remain conservative until their imported dependencies are inspected.
+
+**Decision**: retain `--test-concurrency=1` across FULL for now. A parallel lane cannot be declared safe until repeated bounded CI trials demonstrate no shared writes, collisions, flaky browser launches or assertion changes. The work is recorded under P1-01/P1-02, not marked as completed performance gains.
