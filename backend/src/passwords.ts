@@ -2,6 +2,26 @@ import setupWasm from 'argon2id/lib/setup.js';
 import simdModule from 'argon2id/dist/simd.wasm';
 import nonSimdModule from 'argon2id/dist/no-simd.wasm';
 
+// One WASM instance owns mutable linear memory; never run two hashes against it at once.
+// Bound the waiting queue so concurrent login bursts fail closed rather than grow without limit.
+let queueTail: Promise<void> = Promise.resolve();
+let pending = 0;
+const MAX_PENDING = 4;
+async function exclusiveHash<T>(work: () => Promise<T>): Promise<T> {
+  if (pending >= MAX_PENDING) throw new Error('password_hash_busy');
+  pending++;
+  const previous = queueTail;
+  let release!: () => void;
+  queueTail = new Promise<void>(resolve => { release = resolve; });
+  try {
+    await previous;
+    return await work();
+  } finally {
+    pending--;
+    release();
+  }
+}
+
 const wasmHash = setupWasm(
   (imports: WebAssembly.Imports) => WebAssembly.instantiate(simdModule, imports).then(instance => ({instance, module:simdModule})),
   (imports: WebAssembly.Imports) => WebAssembly.instantiate(nonSimdModule, imports).then(instance => ({instance, module:nonSimdModule})),
@@ -42,9 +62,11 @@ export async function hashPassword(password: string): Promise<string> {
   if (!allowedPassword(password) || COMMON.has(password.toLowerCase()))
     throw new TypeError('invalid_password');
   const salt=crypto.getRandomValues(new Uint8Array(SALT_BYTES));
-  const compute = await wasmHash;
-  const tag=compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
-    parallelism:PARALLELISM,memorySize:MEMORY_KIB,tagLength:HASH_BYTES});
+  const tag=await exclusiveHash(async () => {
+    const compute = await wasmHash;
+    return compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
+      parallelism:PARALLELISM,memorySize:MEMORY_KIB,tagLength:HASH_BYTES});
+  });
   const encoded=PREFIX+encode(salt)+'$'+encode(tag);
   tag.fill(0);
   salt.fill(0);
@@ -58,9 +80,11 @@ export async function verifyPassword(password: string, encoded: string): Promise
   if (parts.length!==2) return false;
   const salt=decode(parts[0],SALT_BYTES), expected=decode(parts[1],HASH_BYTES);
   if (!salt || !expected) return false;
-  const compute = await wasmHash;
-  const actual=compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
-    parallelism:PARALLELISM,memorySize:MEMORY_KIB,tagLength:HASH_BYTES});
+  const actual=await exclusiveHash(async () => {
+    const compute = await wasmHash;
+    return compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
+      parallelism:PARALLELISM,memorySize:MEMORY_KIB,tagLength:HASH_BYTES});
+  });
   let difference=0;
   for(let i=0;i<HASH_BYTES;i++) difference|=actual[i]^expected[i];
   actual.fill(0);
