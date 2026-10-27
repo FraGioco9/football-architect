@@ -30,3 +30,7 @@ jobs:
         run: node --experimental-strip-types --test backend/tests/password-policy.test.ts backend/tests/world-contract.test.ts backend/tests/world-repository.test.ts backend/tests/http-public.test.ts backend/tests/command-contract.test.ts backend/tests/origin-policy.test.ts backend/tests/email-identity.test.ts backend/tests/session-tokens.test.ts
       - name: Verify D1-compatible SQLite migration locally
         run: python3 -m unittest discover -s backend/tests -p 'test_world_migration.py' -v
+      - name: Resolve pinned local Worker dependencies without deployment
+        run: |
+          npm --prefix backend install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e "const fs=require('node:fs'); const p='backend/package-lock.json'; console.log('FA316_LOCK_BEGIN'+JSON.stringify(JSON.parse(fs.readFileSync(p,'utf8')))+'FA316_LOCK_END')"
