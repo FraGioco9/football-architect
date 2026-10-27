@@ -1,4 +1,11 @@
-import { argon2id } from 'hash-wasm';
+import setupWasm from 'argon2id/lib/setup.js';
+import simdModule from 'argon2id/dist/simd.wasm';
+import nonSimdModule from 'argon2id/dist/no-simd.wasm';
+
+const wasmHash = setupWasm(
+  (imports: WebAssembly.Imports) => WebAssembly.instantiate(simdModule, imports),
+  (imports: WebAssembly.Imports) => WebAssembly.instantiate(nonSimdModule, imports),
+);
 import { validatePasswordShape } from './password-policy.ts';
 
 const MEMORY_KIB = 19456; // 19 MiB, Argon2id minimum for this application
@@ -35,8 +42,9 @@ export async function hashPassword(password: string): Promise<string> {
   if (!allowedPassword(password) || COMMON.has(password.toLowerCase()))
     throw new TypeError('invalid_password');
   const salt=crypto.getRandomValues(new Uint8Array(SALT_BYTES));
-  const tag=await argon2id({password,salt,iterations:ITERATIONS,parallelism:PARALLELISM,
-    hashLength:HASH_BYTES,memorySize:MEMORY_KIB,outputType:'binary'});
+  const compute = await wasmHash;
+  const tag=compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
+    parallelism:PARALLELISM,memorySize:MEMORY_KIB,hashLength:HASH_BYTES});
   const encoded=PREFIX+encode(salt)+'$'+encode(tag);
   tag.fill(0);
   salt.fill(0);
@@ -50,8 +58,9 @@ export async function verifyPassword(password: string, encoded: string): Promise
   if (parts.length!==2) return false;
   const salt=decode(parts[0],SALT_BYTES), expected=decode(parts[1],HASH_BYTES);
   if (!salt || !expected) return false;
-  const actual=await argon2id({password,salt,iterations:ITERATIONS,parallelism:PARALLELISM,
-    hashLength:HASH_BYTES,memorySize:MEMORY_KIB,outputType:'binary'});
+  const compute = await wasmHash;
+  const actual=compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
+    parallelism:PARALLELISM,memorySize:MEMORY_KIB,hashLength:HASH_BYTES});
   let difference=0;
   for(let i=0;i<HASH_BYTES;i++) difference|=actual[i]^expected[i];
   actual.fill(0);
