@@ -1,0 +1,8 @@
+# Local-only development configuration. No remote database ID, deploy script or secret.
+name = "fa-admin-world-local"
+main = "src/index.ts"
+compatibility_date = "2026-10-27"
+
+[dev]
+ip = "127.0.0.1"
+port = 8787
