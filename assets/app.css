@@ -513,7 +513,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 @media (min-width:1160px) {
   .app-world-standing-table{min-width:852px}
   .app-world-standing-table tr>*{padding:3px 4px}
-  .app-world-standing-table tbody tr>*{height:68px}
+  
   .app-world-standing-table tr>*:first-child{width:44px;min-width:44px;max-width:44px}
   .app-world-standing-table tr>*:nth-child(2){left:44px;min-width:210px}
   .app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+6){width:54px;min-width:54px;max-width:54px}
@@ -816,7 +816,7 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
  .app-knockout-left::after,.app-knockout-right::before{display:none}
  .app-knockout-final::after,.app-postseason-playout .app-knockout-left::after{display:block;inset:auto;top:100%;inset-inline-start:50%;height:24px;width:0;border:0;border-inline-start:1px solid var(--muted)}
  .app-postseason-grid:not(.app-postseason-playout) .app-knockout-right::after{display:none}
- .app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}
+ 
  .app-knockout-result{display:block}
  .app-postseason-playout .app-knockout-result{margin-top:0;transform:none}
 }

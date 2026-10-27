@@ -83,3 +83,10 @@ test("CLEAN-UI-03: protected Calendar event palette retains four types and light
     assert.ok(css.includes('html[data-theme="light"] '+marker+"{"),"missing light palette: "+type);
   }
 });
+
+// Nested context duplicates must not reappear after consolidation.
+test("identical standings/postseason declarations are not duplicated in nested contexts",()=>{
+ const css=readFileSync(new URL("../assets/app.css",import.meta.url),"utf8");
+ assert.equal(css.split(".app-world-standing-table tbody tr>*{height:68px}").length-1,1);
+ assert.equal(css.split(".app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}").length-1,1);
+});
