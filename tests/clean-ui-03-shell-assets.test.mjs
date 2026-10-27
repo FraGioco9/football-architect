@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {shellAssetInventory,classifyAssetReferences} from "../tools/audit-shell-assets.mjs";
+import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory} from "../tools/audit-shell-assets.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("shell asset inventory preserves ordering and duplicates without changes",()=>{
@@ -26,4 +26,24 @@ test("asset presence is distinct from reachability or dead-code classification",
 test("head parser does not include asset markup from body",()=>{
   const html='<head><script src="/assets/app.js"></script></head><body><script src="/assets/late.js"></script></body>';
   assert.deepEqual(shellAssetInventory(html).map(x=>x.url),["/assets/app.js"]);
+});
+
+test("asset presence correctly strips leading URL slash",()=>{
+  const [item]=classifyAssetReferences(["/assets/app.css"],["assets/app.css"]);
+  assert.equal(item.classification,"present");
+  assert.equal(item.path,"assets/app.css");
+});
+test("page dependency comparison distinguishes common and route-specific scripts",()=>{
+  const report=comparePageAssetInventory([
+    {route:"/calendar",html:'<head><script src="/assets/app.js"></script><script src="/assets/calendar.js"></script></head>'},
+    {route:"/fixtures",html:'<head><script src="/assets/app.js"></script><script src="/assets/fixtures.js"></script></head>'}
+  ]);
+  assert.deepEqual(report.shared.map(x=>x.url),["/assets/app.js"]);
+  assert.deepEqual(report.routeSpecific.map(x=>x.url),["/assets/calendar.js","/assets/fixtures.js"]);
+  assert.equal(report.pages.length,2);
+});
+test("page asset inventory does not label missing direct links as unused",()=>{
+  const report=comparePageAssetInventory([{route:"/",html:"<head></head>"}]);
+  assert.equal(report.shared.length,0);
+  assert.equal(report.routeSpecific.length,0);
 });

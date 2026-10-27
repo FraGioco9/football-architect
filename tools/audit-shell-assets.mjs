@@ -11,6 +11,22 @@ export function classifyAssetReferences(assetUrls,knownPaths){
   });
 }
 
+export function comparePageAssetInventory(pages){
+  const inventories=pages.map(({route,html})=>({route,assets:shellAssetInventory(html)}));
+  const occurrences=new Map();
+  for(const page of inventories){
+    for(const asset of page.assets){
+      const key=asset.kind+":"+asset.url;
+      const hit=occurrences.get(key)||{...asset,routes:[]};
+      if(!hit.routes.includes(page.route))hit.routes.push(page.route);
+      occurrences.set(key,hit);
+    }
+  }
+  const shared=[...occurrences.values()].filter(x=>x.routes.length===pages.length);
+  const routeSpecific=[...occurrences.values()].filter(x=>x.routes.length!==pages.length);
+  return {pages:inventories,shared,routeSpecific};
+}
+
 export function shellAssetInventory(template){
   const head=template.split("</head>")[0];
   const matches=[...head.matchAll(/<(?:script|link)\b[^>]*?(?:src|href)="([^"]+)"[^>]*>/g)];
