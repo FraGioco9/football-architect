@@ -1,0 +1,24 @@
+// CI-OPT-01: deterministic impact routing. Unknown/shared changes are FULL.
+const groups=Object.freeze({
+ calendar:{patterns:[/^calendar\//,/^assets\/.*calendar[^/]*\.(?:js|mjs|css)$/,/^tests\/(?:cal-|calendar-|world-calendar-)/],tests:["tests/cal-world-56a.test.mjs","tests/cal-week-init-01.test.mjs","tests/calendar-season-link.test.mjs","tests/world-calendar-navigation.test.mjs","tests/world-calendar-ui.test.mjs"]},
+ clubs:{patterns:[/^clubs\//,/^assets\/club-[^/]*\.(?:js|mjs|css)$/,/^tests\/club-/],tests:["tests/club-pages.test.mjs","tests/club-competition-summary.test.mjs","tests/club-crests.test.mjs"]},
+ competitions:{patterns:[/^competitions\//,/^assets\/competition-[^/]*\.(?:js|mjs|css)$/,/^tests\/competition-/],tests:["tests/competition-model.test.mjs","tests/competition-fixtures.test.mjs","tests/competition-navigation.test.mjs","tests/competition-history.test.mjs"]},
+ guide:{patterns:[/^guide\//,/^assets\/guide-[^/]*\.(?:js|mjs|css)$/,/^tests\/guide\.test\.mjs$/],tests:["tests/guide.test.mjs"]}
+});
+const safeDocs=/^(?:docs\/|README\.md$|\.github\/ISSUE_TEMPLATE\/)/;
+const infra=/^(?:\.github\/workflows\/|tools\/ci-(?:fast-scope|opt-01-impact)\.mjs$|tests\/ci-(?:fast-scope|opt-01-impact)\.test\.mjs$)/;
+export function classifyImpact(changed){
+ if(!Array.isArray(changed)||!changed.length||changed.some(p=>typeof p!=="string"||!p||p.startsWith("/")||p.includes("..")))return {mode:"full",area:null,tests:[]};
+ const relevant=changed.filter(p=>!safeDocs.test(p));
+ if(!relevant.length)return {mode:"fast",area:null,tests:[]};
+ if(relevant.every(p=>infra.test(p)))return {mode:"fast",area:null,tests:[]}; // CI-only draft changes: final gate still FULL.
+ const areas=new Set();
+ for(const path of relevant){
+  const matches=Object.entries(groups).filter(([,group])=>group.patterns.some(pattern=>pattern.test(path)));
+  if(matches.length!==1)return {mode:"full",area:null,tests:[]};
+  areas.add(matches[0][0]);
+ }
+ if(areas.size!==1)return {mode:"full",area:null,tests:[]};
+ const area=[...areas][0];
+ return {mode:"targeted",area,tests:groups[area].tests};
+}
