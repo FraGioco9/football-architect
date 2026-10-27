@@ -125,4 +125,4 @@ FAST feedback reached the 30–60-second target for Site checks in one observed 
 
 ## Browser cache policy
 
-The Playwright version remains pinned at 1.58.2. Browser installation can reuse `actions/cache@v4` at `~/.cache/ms-playwright` on non-FAST runs with a version- and platform-specific key; it does not cache generated browser outputs or alter source dependencies. Both Chromium and WebKit remain installed for FULL; cache hits and duration effects are unproven until measured in non-FAST workflow runs. No remote deploy triggered.
+The Playwright version remains pinned at 1.58.2. Browser installation can reuse `actions/cache@v4` at `~/.cache/ms-playwright` on non-FAST runs with a version-, platform- and mode-specific key (TARGETED Chromium-only versus FULL Chromium+WebKit); it does not cache generated browser outputs or alter source dependencies. Both Chromium and WebKit remain installed for FULL; cache hits and duration effects are unproven until measured in non-FAST workflow runs. No remote deploy triggered.
