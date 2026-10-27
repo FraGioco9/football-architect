@@ -17,6 +17,6 @@
     "wrangler": "4.153.0"
   },
   "dependencies": {
-    "hash-wasm": "4.12.0"
+    "argon2id": "1.0.1"
   }
 }
