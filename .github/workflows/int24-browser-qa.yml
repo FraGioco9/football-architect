@@ -36,7 +36,8 @@ jobs:
             echo "mode=fast" >> "$GITHUB_OUTPUT"
             echo "Draft PR: quick safety and contracts only. FULL required on ready_for_review."
           else
-            echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "Final review or main: mandatory full regression suite."
           fi
       - name: Defer full browser checks on draft or provider-only PR
         if: steps.scope.outputs.mode == 'fast'
