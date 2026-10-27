@@ -735,6 +735,8 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 
 /* Standings bands mirror the Rules palette and retain the existing points column. */
 [data-standing-outcome="champion"],.app-rules-outcome[data-outcome="champion"]{--standing-outcome-color:#D4AF37}
+[data-standing-outcome="sovereign"]{--standing-outcome-color:#6B8FE3}
+[data-standing-outcome="federation"]{--standing-outcome-color:#8D72C8}
 [data-standing-outcome="promoted"],.app-rules-outcome[data-outcome="promoted"]{--standing-outcome-color:#31966B}
 [data-standing-outcome="quarterfinals"],.app-rules-outcome[data-outcome="quarterfinals"]{--standing-outcome-color:#31966B}
 [data-standing-outcome="playoff"],.app-rules-outcome[data-outcome="playoff"]{--standing-outcome-color:#4A8FD8}
