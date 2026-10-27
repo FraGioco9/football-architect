@@ -3,8 +3,8 @@ import simdModule from 'argon2id/dist/simd.wasm';
 import nonSimdModule from 'argon2id/dist/no-simd.wasm';
 
 const wasmHash = setupWasm(
-  (imports: WebAssembly.Imports) => WebAssembly.instantiate(simdModule, imports),
-  (imports: WebAssembly.Imports) => WebAssembly.instantiate(nonSimdModule, imports),
+  (imports: WebAssembly.Imports) => WebAssembly.instantiate(simdModule, imports).then(instance => ({instance, module:simdModule})),
+  (imports: WebAssembly.Imports) => WebAssembly.instantiate(nonSimdModule, imports).then(instance => ({instance, module:nonSimdModule})),
 );
 import { validatePasswordShape } from './password-policy.ts';
 
