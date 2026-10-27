@@ -67,3 +67,9 @@ The workflow `concurrency` grouping is isolated by workflow name and PR number. 
 ## Manual workflows and artifacts
 
 `manual-debug-manifest-hash.yml`, `manual-public-debug-audit.yml` and `manual-vercel-preview.yml` stay `workflow_dispatch`-only; this refactor adds no automatic invocation. `render-01-perf.yml` remains unchanged pending legacy review. Browser screenshot/log upload now runs on **failure** for the full/targeted runner instead of unconditional upload, conserving runner minutes and storage while preserving diagnostics. Never schedule a Vercel deployment or remote DB step as part of CI optimization.
+
+## Node test isolation risk inventory (static conservative screen)
+
+Before changing `--test-concurrency=1`, isolate high-risk suites rather than blindly parallelizing 91 files. Tests with explicit browser, preview, generator, world runtime, security, publication and integration names demand dependency inspection (ports, temporary files, subprocesses, environment, snapshot and generated-asset writes). Initial high-risk examples: `dev-standings-preview.test.mjs`, `app-subdomain-preview.test.mjs`, `generator-windows.test.mjs`, `club-pages-browser.test.mjs`, `g10-public-02-browser.test.mjs`, `world-calendar-browser.test.mjs`, `world-calendar-history-browser.test.mjs`, `theme-browser.test.mjs`, `publication-gate.test.mjs`, and `arch-clean-02-security.test.mjs`. This is a **candidate list, not a confirmed interference analysis**. Leave concurrency at 1 until a verified isolation report and repeated tests justify a change.
+
+Network footprint baseline is diagnostic and does not validate app behavior; run on manual browser workflow dispatch only, with no automatic release/deploy. Normal FULL still runs Chromium, WebKit and PR-conditional CSS parity. This avoids recurring seven-route network profiling on every main push.

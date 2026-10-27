@@ -75,7 +75,11 @@ jobs:
           else
             echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
           fi
-          node tests/clean-ui-03-network-baseline.mjs
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node tests/clean-ui-03-network-baseline.mjs
+          else
+            echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
+          fi
           node tests/clean-ui-03-webkit-iphone.mjs
       - name: Upload screenshots and server log
         if: failure() && steps.scope.outputs.mode != 'fast'
