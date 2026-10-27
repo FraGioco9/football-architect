@@ -93,3 +93,22 @@ The initial local full attempt found transient npm symlinks inside the source di
 5. Keep #325 Draft/HOLD until implementation and final acceptance are reviewed. Before any authorized merge, mark ready and require fresh exact-HEAD FULL success; then obtain explicit merge authorization.
 6. After an authorized merge, verify push FULL on the resulting main SHA without deployment. This cannot be certified before merging.
 7. Roll back the CI-OPT changes via the single PR/integration commit after authorization, retaining application code and original tests. No automatic deploy or DB action is part of rollback.
+
+## Hosted FULL evidence — 28 October 2026 Europe/Rome
+
+Both automatic workflows passed on two distinct source HEADs without cancellation of the earlier FULL jobs:
+
+| Source HEAD | Site workflow | Browser workflow | Results |
+| --- | --- | --- | --- |
+| `0757e78` | #40601722370, 315s | #40601722346, 359s | 661 Node tests; all four Node/TARGETED browser scenarios; legacy Chromium/WebKit PASS |
+| `2060dc0` | #40601831739, 316s | #40601831644, 317s | **662 Node tests** (23+639), all95 files; TARGETED Node50/29/74/7; Chromium245 checks/52 screenshots plus80 area cases; WebKit80 area cases plus4 legacy routes PASS |
+
+For `2060dc0`, Site also verified integration SHA `e6b3412a03aa43e0dfb9eed8ff3bd85c27630128`. Node22 paired trials were serial371/343/350ms versus concurrency2 271/239/217ms,23 passing tests in every trial. This confirms a small lane gain, not a meaningful FULL-suite acceleration. All source files uploaded were byte-compared with the remote commit.
+
+Final Site job wall times were7+303s and browser jobs6+304s, approximately620s total (10.33 unrounded runner-minutes, not billed usage). Workflow critical path was317s. The baseline314s/279s had less browser coverage: the new full run includes160 additional area cases. The2–4min FULL target is not met; do not advertise a whole-pipeline speedup. TARGETED Chromium area scenarios took14.9/15.0/17.6/13.3s excluding setup, WebKit and queue. These are scenario timings, not measured area-only workflow durations.
+
+Both browser caches were cold because the FULL runs overlapped. The first saved `Linux-playwright-browsers-1.58.2-full-v2`; the second finished successfully but lost the same-key reservation race, without weakening any checks. Browser dependency installation took53s and44s respectively. A subsequent automatic FULL run from this documentation update verifies restoring the saved cache; record its actual outcome on #324/#325 rather than asserting a cache benefit in advance.
+
+Independent read-only review found three issues, all corrected: preview home links use the actual localhost home origin; the20-case browser matrix now covers every pair of width/locale/theme; discovering zero Node test files fails closed. Dedicated matrix/empty-suite tests were observed failing before their fixes and passing after. The final focused set has16 passing contracts. Local whole-suite execution still had six Chrome-dependent failures solely because system Chrome was unavailable; hosted FULL results above supply the actual browser acceptance evidence.
+
+Nine classifier CLI fixtures used actual temporary Git histories: docsFAST; four bounded areasTARGETED; mixed/unknown/CSS/workflowFULL. Invalid base fell back toFULL in every case. These plus live FULL CI do not replace a live area-only PR event, review-ready lifecycle event, or post-merge main run. Those lifecycle limits and warm-cache measurements remain explicitly tracked in the unchanged19-item issue checklist. #325 stays Draft/HOLD; no manual workflow, merge, deploy or DB action occurred.
