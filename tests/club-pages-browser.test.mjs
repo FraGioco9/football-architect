@@ -476,7 +476,22 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      }
 
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).fontSize"),width>760?'14px':'13px','Next match uses the approved compact responsive size');
-     assert.equal(await run("(()=>{const name=document.querySelector('.club-competition-match-name'),link=name.closest('a'),style=getComputedStyle(name);return style.textDecorationLine==='underline'&&style.textUnderlineOffset==='3px'&&getComputedStyle(link).textDecorationLine==='none'})()"),true,'Fixture underline follows the match text with the approved offset');
+     await run("document.querySelector('.club-competition-next a').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('.club-competition-next a').blur()");
+     await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
+     const fixtureDecoration="getComputedStyle(document.querySelector('.club-competition-match-name')).textDecorationLine";
+     assert.equal(await run(fixtureDecoration),'none','Fixture has no underline before hover');
+     const fixtureTarget=await run("(()=>{const r=document.querySelector('.club-competition-next a').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
+     await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',...fixtureTarget});
+     assert.equal(await run(fixtureDecoration),'underline','Actual pointer hover underlines the fixture text');
+     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-match-name')).textUnderlineOffset"),'3px');
+     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).textDecorationLine"),'none','Underline belongs to match text rather than the link box');
+     await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
+     assert.equal(await run(fixtureDecoration),'none','Pointer leave clears the underline');
+     await key('Tab',9);await run("document.querySelector('.club-competition-next a').focus()");
+     assert.equal(await run("document.querySelector('.club-competition-next a').matches(':focus-visible')"),true);
+     assert.equal(await run(fixtureDecoration),'underline','Keyboard focus underlines the fixture text');
+     await run("document.querySelector('.club-competition-next a').blur()");
+     assert.equal(await run(fixtureDecoration),'none','Blur clears the keyboard underline');
      const fixtureText=await run("document.querySelector('.club-competition-next a').textContent");
      for(const id of [upcoming.homeId,upcoming.awayId])assert.ok(fixtureText.includes(division.clubs.find(c=>c.clubId===id).primaryName));
      assert.equal(await run("(()=>{const root=document.querySelector('.fa-shell-content-scroll');return root.scrollWidth<=root.clientWidth+1})()"),true,'Live Competition summary fits at '+width);
