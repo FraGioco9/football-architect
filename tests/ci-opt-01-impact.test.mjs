@@ -43,3 +43,13 @@ test("workflow gates preserve final FULL and main browser safety",async()=>{
  assert.match(browser,/github\.event_name.*workflow_dispatch/);
  assert.match(browser,/PR_BASE_SHA=.*node tests\/clean-ui-03-css-parity\.mjs/);
 });
+
+test("every bounded TARGETED area selects existing nonempty test files",async()=>{
+ const {existsSync}=await import("node:fs");
+ for(const path of ["calendar/index.html","clubs/index.html","competitions/it-1/standings/index.html","guide/index.html"]){
+  const selected=classifyImpact([path]);
+  assert.equal(selected.mode,"targeted");
+  assert.ok(selected.tests.length>0);
+  for(const testFile of selected.tests)assert.ok(existsSync(new URL("../"+testFile,import.meta.url)),testFile);
+ }
+});
