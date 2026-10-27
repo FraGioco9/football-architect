@@ -1,126 +1,145 @@
-# Football Architect — Division and club identity catalogues
+# Football Architect
 
-## Current repository status
+Football Architect currently provides a **static football-world catalogue and application preview**, with separate fictional DEV tools. It is not yet a playable management game or an authoritative shared-world backend. There are no active careers, saves, player accounts or production simulation in this branch.
 
-The current `main` branch is an **asset and identity-catalogue repository**, not a playable football-management game. It does not contain the former game runtime, app server, career saves, active scheduling/simulation, npm application commands, or a deployment workflow. Earlier application versions remain accessible in Git history and historical pull requests, but must **not** be presented as part of the current mainline.
+## Current scope
 
-The game-world baseline is **8 countries, 16 fictional divisions of 16 clubs, and 320 documented fictional club identities**. The provisional UI lists **256 participants** (128 per tier); the other **64 clubs** remain asset-only, with all 640 future Primary/Compact crest PNGs preserved in scope. Actual sports gameplay, current club-to-league allocations, finalized division/club SVG crests, and app integration are not provided by this branch.
+- **8 countries, 16 domestic divisions and 2 international cups**: Sovereign Cup and Federation Cup.
+- **320 documented club identities**, with **256 provisional domestic participants** (16 per division) and **64 asset-only clubs**. Provisional allocations are not official season membership or historical results.
+- Landing, Guide, Dashboard, Calendar, Settings, Competitions and Clubs pages, plus competition and club subpages.
+- English by default, with Deutsch, Español, Français and Italiano; dark/light themes. Browser preferences are stored per origin, so the site and app subdomains have separate storage.
+- A 56-day Calendar projection and protected fictional DEV season/day controls. Public pages do not run the DEV simulation or fabricate approved results.
 
+ARCH-CLEAN-02 [#268](https://github.com/FraGioco9/football-architect/issues/268) is complete within its recorded scopes and accepted exceptions. The remaining shared-world/admin work is tracked by [#315](https://github.com/FraGioco9/football-architect/issues/315); this preview does not implement that backend.
 
-### INT-24 shared competition contract (Draft / HOLD)
+## Local preview
 
-The configurable competition migration defines **18 competition routes**: sixteen domestic
-divisions and the Sovereign Cup and Federation Cup. Edit the validated source catalogues
-`data/divisions.json` and `data/international-competitions.json` and their
-`tools/competition-catalogue.mjs` validation rather than editing generated competition HTML
-or `competitions/_shared/manifest.json` by hand. The generator resolves immutable
-definitions and derives Rules, Awards, phase selectors, and empty Stats interfaces.
-Public Stats accepts only supplied datasets; it does not run the protected fictional
-DEV provider. History uses validated stored season-rule snapshots (or an explicitly
-recognized legacy baseline), not mutable current rules.
-
-Run `node tools/generate-app-pages.mjs --check` to verify deterministic output and
-`node --test --test-concurrency=1 tests/*.test.mjs` for the site contracts.
-`tests/int24-browser-qa.mjs` additionally requires the existing local preview server
-and Playwright Chromium. Publication must stage the allowlisted public artifact separately
-from `protected_debug`; neither source catalogues nor protected generator modules are
-public runtime dependencies. The GitHub manual Preview workflow retains independent
-owner authorization and must never be triggered by this migration. This PR remains
-Draft/HOLD; no merge or deployment is implied.
-
-### Maintain the generated app pages
-
-`templates/app-page.html` supplies the app shell; `tools/render-competition-page.mjs` supplies the common competition detail layout. `assets/competition-model.js` defines the shared participant, capacity, format, phase, rules and view contracts. After editing these sources or `tools/generate-app-pages.mjs`, regenerate the checked-in app pages and competition manifest from the repository root:
+Use **Node.js 22**. From the repository root, run:
 
 ```sh
-node tools/generate-app-pages.mjs
-```
-
-Generation **writes** Dashboard, Calendar, Settings, the Competitions index, the neutral shared shell, all 16 competition routes and the shared manifest. Edit their source modules rather than the generated HTML. To verify the outputs **without writing files**, run:
-
-```sh
-node tools/generate-app-pages.mjs --check
-node --test --test-concurrency=1 tests/*.test.mjs
-```
-
-The generator enforces byte-identical UTF-8 HTML in `--check` mode, which the Node.js 22 site-contract suite also tests. Review any generated HTML changes before committing. This is static generation only: it does not require npm, a build step, a backend, a deploy or a database, and existing direct app URLs remain unchanged.
-
-## Local landing page
-
-The repository also provides a standalone static Landing page (`index.html`) and a short World Guide (`guide/index.html`) explaining Divisions and Clubs, styled in Graphite & Petrol. It is not a playable game. The current `main` branch also includes static application-shell previews at `/dashboard`, `/calendar`, and `/settings`, without an active career runtime.
-
-For the canonical local preview on Windows, run `node tools/dev-app-preview.mjs` from the repository root. Use `http://localhost:2000/` for the Landing and Guide, and `http://app.localhost:2000/` for the app and competition pages. No npm, Docker, or build step is needed. Run `node --test tests/*.test.mjs` for all site contract checks.
-
-English is the default language, with Deutsch, Español, Français, and Italiano selectable through a custom accessible dropdown. The language preference is persisted locally.
-
-The **Explore app preview** CTA is a native, five-language link to `/dashboard`, opening the **static Dashboard preview**, not a playable football-management game. It works without JavaScript and preserves normal browser back/new-tab navigation and keyboard focus. The **Guide** button still navigates to `/guide/`. The obsolete unavailable-app notice and its timer/animation code have been removed. The Landing remains responsive, reserves a scrollbar gutter, and prevents text selection.
-
-These static informational pages do not enable gameplay or deployment.
-
-### Reproducible local DEV (ENV-02)
-
-Use Windows PowerShell in the repository root (the directory containing `README.md`, `index.html`, `assets/`, and `tests/`). The canonical local preview uses two loopback-only origins to match the intended site/app URL split. Node.js 22 is required; no Docker, npm install, build, backend, or database is needed.
-
-**Setup and start (terminal 1):**
-
-```powershell
-git rev-parse --show-toplevel
-node --version
 node tools/dev-app-preview.mjs
 ```
 
-Keep terminal 1 open. The launcher prints the canonical URLs:
-- Site (Landing and Guide): `http://localhost:2000/`
-- App: `http://app.localhost:2000/dashboard`
-- Competitions: `http://app.localhost:2000/competitions`
-- Local DEV History preview: `http://app.localhost:2000/competitions/it-1?season=4&view=history`
+No npm install, Docker, application build or database is required. The launcher binds to loopback only and prints the site/app URLs. Stop it with **Ctrl+C**.
 
-Debug opens at Season 1 / Matchday 0 with no played matches or historical statistics. Season and Matchdays define progress: earlier seasons are complete, the current season includes only the selected matchdays, and later seasons contribute no results. History titles, podiums and seasonal records require a completed season; cumulative records also include played matches from the current season. Use Season (1–4) and Matchdays (0–30) in Debug Settings on Competitions or a competition detail page. Debug progress persists for the browser session. The top season dropdown only browses seasons and never changes Debug: prior seasons show 30 matchdays, the current one shows the configured count, and future seasons are hidden. Available seasons appear newest first. Reducing Debug below the viewed season switches to the latest available season; Reset restores Season 1 / Matchday 0 and shows Season 1. DEV History uses fictional standings; it is not canonical historical data. Stop the server with **Ctrl+C**. Do not bind this launcher to `0.0.0.0`; it is intended for this PC only.
+| Page | Canonical local URL |
+| --- | --- |
+| Landing | `http://localhost:2000/` |
+| Guide | `http://localhost:2000/guide/` |
+| Dashboard | `http://app.localhost:2000/dashboard` |
+| Calendar | `http://app.localhost:2000/calendar` |
+| Settings | `http://app.localhost:2000/settings` |
+| Competitions | `http://app.localhost:2000/competitions` |
+| Domestic overview | `http://app.localhost:2000/competitions/it-1/overview` |
+| Domestic fixtures | `http://app.localhost:2000/competitions/it-1/fixtures?season=2` |
+| Domestic history | `http://app.localhost:2000/competitions/it-1/history` |
+| International standings | `http://app.localhost:2000/competitions/int-1/standings` |
+| Clubs | `http://app.localhost:2000/clubs` |
+| Club overview | `http://app.localhost:2000/clubs/it/1/overview` |
 
-**Static checks (terminal 2, same repository root; server not required):**
+Open and refresh the relevant URLs. Site links should use `localhost:2000`, while app links retain `app.localhost:2000`. A plain static file server may not reproduce canonical routing. The launcher still prints a historical query-based History example; use the explicit History route above for current navigation.
 
-```powershell
-node --check assets/landing.js
-node --check assets/app.js
-node --check assets/app-search.js
-node --test (Get-ChildItem .\tests\*.test.mjs | Select-Object -ExpandProperty FullName)
-```
+**Troubleshooting:** check Node.js 22 and the repository working directory. If port 2000 is occupied, stop only the preview process you own. Check path case for a 404. Do not bind the canonical launcher to `0.0.0.0`. For an explicitly requested LAN/iPhone preview, use the separate `node tools/dev-standings-preview.mjs` launcher and the PC's private IPv4 address; `app.localhost` refers to the same device, not a remote PC.
 
-All `tests/*.test.mjs` modules use Node's built-in test runner. A CI result does not replace the local browser smoke test.
+### Fictional DEV controls and reset
 
-**HTTP smoke test (terminal 2, while terminal 1 is running):**
+A fresh DEV session defaults to **Season 1 / Day 1**, before official matches. The General debug controls select **Season 0–4** and **Day 1–56**; Day is disabled in Season 0. National matchday progress is derived from the world day, including domestic postseason events. The competition season selector browses available seasons without changing the active DEV world.
 
-```powershell
-$routes = @(
-  @{ Origin = 'http://localhost:2000'; Path = '/' },
-  @{ Origin = 'http://localhost:2000'; Path = '/guide/' },
-  @{ Origin = 'http://app.localhost:2000'; Path = '/dashboard' },
-  @{ Origin = 'http://app.localhost:2000'; Path = '/calendar' },
-  @{ Origin = 'http://app.localhost:2000'; Path = '/settings' },
-  @{ Origin = 'http://app.localhost:2000'; Path = '/competitions' },
-  @{ Origin = 'http://app.localhost:2000'; Path = '/competitions/it-1?season=4&view=history' }
-)
-foreach ($route in $routes) {
-  $response = Invoke-WebRequest -Uri ($route.Origin + $route.Path) -UseBasicParsing -ErrorAction Stop
-  if ($response.StatusCode -ne 200) { throw "Unexpected HTTP status: $($route.Origin)$($route.Path)" }
-  Write-Output ('{0}{1}: HTTP {2}' -f $route.Origin, $route.Path, $response.StatusCode)
-}
-```
+On competition and club pages, **Reset all** returns the fictional preview to **Season 0 / Day 1**, clears matchday progress and disables fictional standings. Season 0 is the unstarted state; it does not supply completed seasons or historical records. The Calendar's **Reset** uses the lower-level world-clock reset, which clears its storage keys and falls back to **Season 1 / Day 1**. These are different existing actions, not production-world reset commands.
 
-Open and refresh each URL in the browser. Confirm site links navigate to `localhost`, app and competition links navigate to `app.localhost`, and the History preview is labelled as fictional DEV data when the local preview setting is active.
+DEV progress is session-local. Earlier seasons may be projected as complete and the current season includes only reached events, but **reaching an event is not proof of a verified result**. History titles and records require the relevant completed dataset. Fictional DEV output must never be copied into canonical History or presented as an official shared world. See [the world-clock boundary](docs/architecture/a05-01-world-time-freeze.md) and [historical source issue #177](https://github.com/FraGioco9/football-architect/issues/177).
 
-**Optional LAN preview:** use `node tools/dev-standings-preview.mjs` only when specifically testing LAN access from another device. That mode is separate from the canonical loopback-only site/app preview; do not use its IP-based URL as the standard same-PC app URL.
-
-**Reset only the DEV language preference:** in the browser developer console at `http://localhost:2000/`, run:
+To clear only the language preference for the current origin, run this in the browser console:
 
 ```javascript
 localStorage.removeItem('football-architect:language');
 location.reload();
 ```
 
-This removes only the language preference for the site origin. Since `localhost` and `app.localhost` are different origins, each origin has separate browser storage.
+## Source layout and generation
 
-**Errors and fixtures:** if Node.js is not recognized, check the Node.js 22 installation and PATH. If port 2000 is occupied, stop the preview process you own before retrying; do not kill unrelated processes or silently use another port. If a page or asset returns 404, run the launcher from the repository root and check the exact case-sensitive path. No separate fixture folder, generated historical dataset, or database reset is required.
+| Responsibility | Source |
+| --- | --- |
+| App shell | `templates/app-page.html` |
+| App generation | `tools/generate-app-pages.mjs` |
+| Competition layout | `tools/render-competition-page.mjs` |
+| Club generation | `tools/generate-club-pages.mjs` |
+| Canonical catalogue lookups | `assets/world-catalog.mjs` |
+| Competition definitions and rules | `tools/competition-catalogue.mjs`, `assets/rules-registry.js` |
+| Route identities | `assets/routes-registry.js` |
+| Independent hosting/publication policy | `vercel.json`, `tools/publication-guard.mjs` |
+| Calendar model and presentation | `assets/world-calendar-model.js`, `assets/world-calendar.js`, `assets/calendar-simplified.js` |
+| Shared appearance and language | `assets/landing.css`, `assets/landing.js`, `assets/app.css`, `assets/app.js` |
+
+Edit the source templates/renderers/catalogues, then regenerate:
+
+```sh
+node tools/generate-app-pages.mjs
+```
+
+The current generator checks **23 HTML pages** (Dashboard, Calendar, Settings, Competitions index, shared shell and 18 competition routes), the competition manifest, the club template and the club manifest. Do not hand-edit generated HTML or manifests. The same generator drives club output through the club generation module.
+
+To check without rewriting files:
+
+```sh
+node tools/generate-app-pages.mjs --check
+```
+
+Generation must remain deterministic, including UTF-8 and canonical line endings. Preserve approved CSV and SVG bytes; avoid checkout-only normalization in commits. Shared app pages depend on `landing.css` tokens and the `landing.js` Settings language selector, so those files are not landing-only dependencies.
+
+## Checks
+
+Run the existing contracts using Node.js 22; browser suites require Chrome/Chromium. Set `CHROME_BIN` to an executable if automatic discovery cannot find it.
+
+```sh
+node --check assets/landing.js
+node --check assets/app.js
+node --check assets/app-search.js
+node tools/generate-app-pages.mjs --check
+node --test --test-concurrency=1 tests/*.test.mjs
+```
+
+In Windows PowerShell, the test command is:
+
+```powershell
+node --test --test-concurrency=1 (Get-ChildItem .\tests\*.test.mjs | Select-Object -ExpandProperty FullName)
+```
+
+`tests/int24-browser-qa.mjs` additionally uses Playwright Chromium and the running canonical local preview. Its results are separate from the Node contract suite. Browser QA should cover the affected routes, EN/DE/ES/FR/IT, dark/light, desktop and 390/320px layouts. Desktop emulation does not certify real iPhone Safari. Report failed, skipped and unavailable checks honestly; a generic green CI status does not establish that a browser job ran.
+
+## Navigation and visible features
+
+App page routes omit trailing slashes. Domestic detail URLs use `/competitions/<id>/<view>`; club detail URLs use `/clubs/<country>/<clubId>/<view>`. Domestic and club roots normalize to Overview. International cup links use an explicit supported view, such as `/competitions/int-1/standings`; do not invent a cup Overview route. History and Rules omit the season query; other competition views can retain an explicit season. Use the route registry and existing hosting compatibility rules rather than inventing aliases. Removed `/app/...` routes are not current entry points.
+
+The sidebar links Dashboard, Calendar, Settings, Competitions and Clubs. Competition pages share generated layouts, localized tabs, standings/fixtures/statistics/history/rules/awards and the appropriate domestic/cup views. Rules come from validated versioned definitions; historical rules resolve from stored snapshots or an explicitly recognized legacy baseline. Current catalogue rules must not silently rewrite past seasons.
+
+Calendar shows the current simplified Season/Week interface, event markers and dialogs for the approved **56-day cycle**. Days 1–55 are active-season days; day 56 is transition. It is a read-only projection: navigation cannot advance a production world or manufacture results. See [Calendar tracking #236](https://github.com/FraGioco9/football-architect/issues/236) for delivered static/DEV work and outstanding real-world integration.
+
+The top-bar Search is local navigation over available pages/sections and catalogued domestic divisions. It is not a player search, saved-career search or backend query. Settings provides language/theme choices and honest unavailable career/data states. The Guide currently explains Divisions and Clubs; its expanded handbook remains separate work in [#255](https://github.com/FraGioco9/football-architect/pull/255).
+
+The shell retains its historical disabled Continue control, without an active career runtime. There is no shared app Skip to content link in the current template; the known bypass-block accessibility limitation remains unresolved. The semantic main landmark and page headings remain available. This cleanup does not change those behaviors.
+
+## Canonical data and artwork
+
+| Resource | Canonical source | Scope |
+| --- | --- | --- |
+| Domestic divisions | [data/divisions.json](data/divisions.json) | 16 divisions, two tiers per country, 16 provisional places each |
+| International cups | [data/international-competitions.json](data/international-competitions.json) | Sovereign and Federation definitions |
+| Club identities | [data/clubs.json](data/clubs.json) | 320 identities; stable `(countryId, clubId)`, IDs 1–40 per country |
+| Approved identity source | [data/clubs-registry.csv](data/clubs-registry.csv) | Twelve canonical fields, including names, original description, colours and stadium |
+| Provisional participants | [data/division-allocations.provisional.json](data/division-allocations.provisional.json) | IDs 1–16 in tier 1, 17–32 in tier 2; 33–40 retained as asset-only |
+| Identity documentation | [docs/clubs/README.md](docs/clubs/README.md) | Schema, source provenance and integration rules |
+| National flags | [assets/flags/](assets/flags/) | Currently tracked national-flag SVG assets |
+| Division artwork | [assets/divisions/](assets/divisions/) | Primary/compact SVGs for all 16 domestic divisions; preserve source artwork |
+| Available club crests | [assets/clubs/](assets/clubs/) | Existing catalogued SVGs; the complete 320-club asset programme remains unfinished |
+
+Identity is independent of current division membership. Do not rename, renumber or regenerate clubs as part of maintenance. The twelve CSV fields do not themselves supply translated descriptions, rivalries, crests or kits; other approved catalogues/assets provide the implemented additions. See [CLUB-IDENTITY #163](https://github.com/FraGioco9/football-architect/issues/163) for outstanding identity work. Earlier art approval/production snapshots remain in their dated GitHub records, not as claims about current file coverage.
+
+Club crests are discovered at `assets/clubs/<countryId>/<clubId>/crest.svg`. Regenerate after adding/removing an SVG so manifests and publication paths agree. `assets/club-crests.js` enhances the relevant static/dynamic hosts; known crests reserve blank loading space, and absent/failed images use neutral placeholders. Passive image loading preserves source SVGs and colours. Public/protected staging includes exactly catalogued paths and rejects stale manifests.
+
+## Publication boundary
+
+Stage only the fail-closed allowlisted public artifact. Hosting the repository root is not an approved publication path. Public division search intentionally fetches the allowlisted `data/divisions.json`; this is not permission to publish arbitrary source data. Protected source-only catalogues, generators and fictional DEV provider/clock code stay outside public runtime dependencies; keep `protected_debug` separate. Neither ordinary public Stats nor History promotes DEV data to approved records. The manual Preview workflow requires its independent owner authorization and is not part of the local development commands.
 
 ## Pull request workflow (PR-ONLY)
 
@@ -150,91 +169,6 @@ The tracked GitHub Actions workflow is test-only, requests read-only repository 
 
 **External integration / anti-deploy risk: UNKNOWN.** Review available safeguards immediately before repository operations and document unresolved risk. The absence of a deployment job in the tracked workflow does **not** guarantee that unrelated integrations cannot deploy. Stop if required controls fail or the owner has not explicitly accepted residual UNKNOWN risk for the specific operation. A passing CI run or completed merge never grants deployment authorization.
 
-## Global application search (HOME-02 SEARCH-01)
+## Maintenance record
 
-Dashboard, Calendar and Settings now share a single top-bar search trigger. On desktop it resembles a compact search field; on narrow screens it becomes a magnifier button without adding tooltips, shortcuts or secondary filters. It opens a native modal with a short Graphite & Petrol entrance/exit animation (disabled with reduced-motion), keyboard focus management, Escape, arrow navigation, Enter selection and a clear empty state.
-
-The search covers **only currently available in-app pages and sections**, using their existing localized labels: `/dashboard`, `/calendar`, `/settings` and real heading anchors. It matches case- and accent-insensitively, suggests the three pages for an empty query, and follows all five existing language choices (English default). There is no saved query history, backend call or invented search result for unimplemented player, club, fixture or career screens. New destinations require an explicit catalog entry and an existing route. This feature is tracked by [HOME-02 SEARCH-01 issue #76](https://github.com/FraGioco9/football-architect/issues/76).
-
-## App shell preview (HOME-01)
-
-Open `http://app.localhost:2000/dashboard` after starting `node tools/dev-app-preview.mjs`. This standalone application Home is an early **visual shell**, restored from the historical UX-SHELL PR #59 and its pre-reset design reference PR #32. The sidebar uses the original Home category, Dashboard and Calendar icons, desktop/tablet widths of 210/180 px and mobile rails of 58/52 px. The top bar keeps club, career date/phase and the Continue control, with explicit unavailable/disabled states while no career runtime exists. A standalone **Settings** page at `/settings` (static `settings/index.html`) restores the historical Settings and saves layout. Its single Settings entry is pinned to the bottom of the sidebar, with no category heading. Direct links and refresh work without client-side route fallback. The five-language selector appears **only inside Settings**, not in the app top bar; the existing site preference remains shared with Landing and Guide on the same browser/device. Career, save management and data operations are shown as unavailable until their runtime exists.
-
-Calendar is a directly loadable static page at `/calendar` (`calendar/index.html`), and Settings opens `/settings`. Both work after refresh, without hash routes or legacy redirects. Dashboard, Calendar and Settings share a single app-wide page-title and spacing system: one top-left title, no page pretitle or subtitle, and consistent content gutters. Calendar displays an honest empty state, not invented fixtures. HOME-01 no longer interprets `#calendar` or `#settings` as page routes; the real section anchors used by Global Search remain available. The app-only Skip to content link and `#main-content` target are present on Dashboard, Calendar and Settings; each page also retains the semantic `<main>` landmark. The app uses the shared language preference and the approved branding. The Landing **Explore app preview** link now opens `/dashboard` directly. It remains a non-playable static preview, without functional careers, match simulation or saves. The known WCAG 2.4.1 Bypass Blocks risk from HOME-03 skip-link removal remains unresolved.
-
-No career data, IndexedDB writes, scheduling, simulation, automatic redirects, deployment or remote database work is added. Check the page's shell contracts with `node --test tests/app-home.test.mjs` (or all site tests with `node --test tests/*.test.mjs`).
-
-## Guide
-
-The [Guide](guide/index.html) currently explains only **Divisions** (country competitions with first/second tiers of 16 planned places) and **Clubs** (teams with persistent identities independent of their competition). A left sidebar navigates between the two explanations and highlights the selected entry. At 320/390px it becomes compact horizontal navigation above the text. The same English-default five-language selector and saved language preference are shared with the Landing. This is **not** an asset directory or club catalogue. See [roadmap #67](https://github.com/FraGioco9/football-architect/issues/67).
-
-## Current resources
-
-| Resource | Canonical source | Preserved facts |
-|---|---|---|
-| Division catalogue | [data/divisions.json](data/divisions.json) | 8 countries × 2 tiers = **16 divisions**, stable IDs and original-language names, indicative capacity of 16 clubs per tier, `implementedGame: false` |
-| Club catalogue | [data/clubs.json](data/clubs.json) | **320** approved identities, 40 per country, all 12 canonical fields and **320 globally unique three-letter abbreviations** |
-| National flags | [assets/flags/](assets/flags/) | **271 SVG flags** from [lipis/flag-icons](https://github.com/lipis/flag-icons), in 4:3 format, including the flags used by the eight football countries |
-| Flag pack license | [assets/flags/LICENSE](assets/flags/LICENSE) | Existing **MIT license**, retained verbatim |
-| Club name and identity documentation | [docs/clubs/README.md](docs/clubs/README.md) | Canonical twelve-field schema, approved CSV provenance and integration rules |
-| Division art direction | [docs/divisions/design-direction.md](docs/divisions/design-direction.md) | Approved modern football heraldry; first- and second-tier symbols in eight related national visual families |
-
-The approved source is [data/clubs-registry.csv](data/clubs-registry.csv). The flat JSON array preserves every CSV field and value; only `clubId` is represented as an integer. Both files are sorted by country code and national club ID. Names, cities, stadiums, nicknames and original-language descriptions are copied verbatim from the approved file. Older identity catalogues and parallel naming references have been removed.
-
-## Graphic identity design status
-
-- [DIV-ASSET #60](https://github.com/FraGioco9/football-architect/issues/60): as of **2026-10-10**, **16/16 primary artistic identities approved (100% art approval)** across eight countries. Artistic approval is distinct from production: **no final SVG division badges have been produced or integrated**. See the issue for the current canonical approval register and dated historical references.
-- [CLUB-ASSET #61](https://github.com/FraGioco9/football-architect/issues/61): as of **2026-10-10**, **5/8 roadmap gates approved (62.5%)**, **320/320 crest concepts approved (100%)**, and **0/640 final accepted PNGs (0%)**. The eight-club Primary-only pilot is in progress, not artistically accepted as final imagery. Concept approval is distinct from accepted production assets.
-- [Historical DIV-ASSET reference PR #69](https://github.com/FraGioco9/football-architect/pull/69): **closed without merge**. It remains a historical documentation reference, not a live independent branch or a source of final repository assets; see [#60](https://github.com/FraGioco9/football-architect/issues/60) for canonical visual approvals and provenance.
-- Do not invent final team/league badges or imply that this repository provides a complete game.
-
-## Club identity integration
-
-The club catalogue is independent of division membership. The stable key is `(countryId, clubId)`, with IDs 1–40 in each of eight countries. The canonical fields are `countryId`, `clubId`, `city`, `primaryName`, `fullName`, `compactName`, `abbr`, `nickname`, `description`, `primaryColor`, `secondaryColor` and `stadiumName`. The generator reads primary names directly from this catalogue, with no inferred names or legacy fallback. Club crests, kits, rivals and translated descriptions are not supplied by this CSV.
-
-The migration replaces obsolete club identities in data, generated pages and documentation. Previous versions remain available in Git history. All new GitHub-facing prose is English; canonical club text keeps its original language.
-
-Canonical navigation URLs omit trailing slashes: `/dashboard`, `/calendar`, `/settings`, `/competitions` and `/competitions/<division-id>`. The obsolete prefixed entry points and directory have been removed; only the canonical routes are available. The DEV server resolves these URLs directly without a directory redirect and retains trailing-slash and `index.html` compatibility. The internal root path is `/`; links back from the app subdomain use the bare site origin without an explicit trailing slash. Technical `<base>` URLs retain directory semantics for relative assets. Other static hosts may still perform directory redirects; this change does not alter hosting configuration.
-
-## Competitions directory (UI-WORLD #91)
-
-The 16 competition URLs require the canonical app route mapping described below. Each route is a complete generated HTML document with its own title, inline badge and flag at first paint. All routes and the neutral shell at `competitions/_shared/index.html` use the same detail renderer. The common runtime consists of `assets/competition-model.js` (immutable contract and manifest validation), `competition-page.js` (standings and initialization), `competition-tabs.js` (URL/view navigation), `competition-history.js` (historical records) and `competition-fixtures.js` (calendar presentation). The source generator is `tools/generate-app-pages.mjs`; avoid copying layout or league data into per-competition files. The shared manifest includes the competition profile once, with division and participant identities derived from the canonical division, club and provisional allocation catalogues. All 16 divisions share 16 places, a preview double round-robin format and one league phase; official scoring, promotion, relegation and tie-break rules remain undefined. Fictional preview scoring stays DEV-only. See [the shared contract](docs/competitions/shared-model.en.md). Primary-name display comes directly from the approved twelve-field club catalogue. All 320 identities are available in canonical data; the existing provisional allocation selects 256 participants for the competition pages. The **Competitions** sidebar item opens `/competitions`. The index is a compact country-grouped list linking to 16 detail pages at `/competitions/<division-id-lowercase>`. These replace the old `/app/world/divisions/` preview URLs without a legacy redirect. Each detail presents its competition name, temporary badge, country and tier directly below the shared top bar, a back-to-Competitions action, and six same-page views: **Standings, Fixtures, Stats, History, Rules and Awards**. Standings presents the 16 provisional club identities in an 11-column table (position, club, played, won, drawn, lost, goals for, goals against, goal difference, highlighted points and form). Every compact club row reserves a neutral crest placeholder (48×48 px desktop; 40×40 px mobile) next to its documented primary name; the placeholder is decorative and can later be replaced with an approved logo without adding per-competition HTML files. other views show unavailable data, except Rules, which also displays known tier and planned capacity. No sibling-division link is shown. Tabs support keyboard navigation, horizontal mobile scrolling and all five interface languages.
-
-Allocations are strictly **provisional**, read from [the unapproved 256-participant allocation file](data/division-allocations.provisional.json), derived from [the canonical 320-identity club catalogue](data/clubs.json) (IDs 1–16 per country in tier 1, IDs 17–32 in tier 2, and IDs 33–40 retained as 64 asset-only identities). Club order is the registry order, not ranking; position, played matches and points have no values until gameplay exists. No fixtures or results are invented in ordinary competition pages, including IT-1. All 16 synthetic IT-1 records are isolated in `tests/fixtures/it-1-demo.mjs`, exercised only through a Node VM with temporary test-only hooks; no browser flag, query parameter or public branch enables the demo. Public artifacts must use the fail-closed allowlist in `tools/publication-guard.mjs`; hosting the repository root is not an approved publication path. Country flags and all five languages are retained. The canonical club catalogue `data/clubs.json` contains all 320 approved identities; `data/divisions.json` was updated from 20 to 16 places per division.
-
-The shared generator produces 21 checked-in app pages. Run `node tools/generate-app-pages.mjs --check` to verify byte-identical HTML.
-
-### Club crest display
-
-Club crests are discovered from `assets/clubs/<countryId>/<clubId>/crest.svg`
-using canonical identities from `data/clubs.json`. Run
-`node tools/generate-app-pages.mjs` after adding or removing an SVG: the shared
-competition manifest records available files without probing absent assets.
-`assets/club-crests.js` enhances every `data-club-crest` host, including mobile
-standings, fixtures, Stats, History and dynamically opened detail dialogs.
-Known crests reserve a blank slot while their SVG loads to avoid fallback flashes.
-The neutral placeholder is used for absent crests and on
-missing or failed images. Club images load through passive `<img>` elements;
-source SVGs and their colors are preserved. Public and protected artifacts
-include exactly the catalogued SVG paths. A stale catalogue fails staging.
-
-### Canonical app routes (PR #161)
-
-App navigation uses `/dashboard`, `/calendar`, `/settings`, `/competitions` and `/competitions/<division-id>` without an `/app` prefix or trailing slash. Generated documents live directly in `dashboard/`, `calendar/`, `settings/` and `competitions/`, matching their canonical routes. Use `node tools/dev-app-preview.mjs` for canonical local routing: site pages use `http://localhost:2000`, while app and competition pages use `http://app.localhost:2000`. The server rejects the removed prefixed routes. A plain Python static server may add directory redirects instead of serving slashless routes directly.
-
-App assets use absolute `/assets/...` paths; the competition manifest is requested from `/competitions/_shared/manifest.json`. Future public `app.` hosting must map these canonical requests to the allowlisted app files and retain shared assets. This source change does not configure hosting or deploy it.
-
-### Separate local subdomain preview
-
-From the repository root in PowerShell, stop the existing preview with Ctrl+C, then run:
-
-```powershell
-node tools/dev-app-preview.mjs
-```
-
-- Site: `http://localhost:2000`
-- App: `http://app.localhost:2000/dashboard` (the app host root also opens Dashboard)
-- Competitions: `http://app.localhost:2000/competitions`
-- Fixtures: `http://app.localhost:2000/competitions/it-1?season=2&view=fixtures`
-
-This is the canonical loopback-only launcher for same-PC development. It preserves port 2000 across site/app links and does not change DNS, public hosting, deployment or databases. Use the separate standings launcher only for an explicit LAN preview. `app.localhost` is for the same PC; on iPhone use the LAN preview with the PC private IPv4 address instead. Browser preferences are stored per origin, so site and app localStorage are separate, as with public subdomains.
+The [conservative cleanup design](docs/superpowers/specs/2026-10-27-conservative-cleanup-design.md) and [branch inventory](docs/maintenance/2026-10-27-branch-inventory.json) record the 2026-10-27 audit. The inventory is a dated snapshot, not a live branch registry or proof of deletion. Re-fetch branch heads and open PRs before removal, retain exact SHA recovery references, and preserve unmerged work. Issue and PR closure must be justified by actual completed or superseded scope, not age alone.

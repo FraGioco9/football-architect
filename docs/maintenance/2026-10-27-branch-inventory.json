@@ -1,0 +1,1484 @@
+{
+  "repository": "FraGioco9/football-architect",
+  "audited_at": "2026-10-27",
+  "base_sha": "c40710cc2ccfcacb785d06aa51594e2ed07968de",
+  "status": "Inventory only. No branches deleted. Re-fetch all refs and open PRs before any deletion; compare expected head SHA. New branches created after this snapshot are out of scope.",
+  "branches": [
+    {
+      "branch": "arch-clean-02-a01-10-club-renderer-index",
+      "head_sha": "2768100af7ed89236e4c19a6794dded250a158cd",
+      "merged_prs": [
+        279
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a02-10-preview-rules-registry",
+      "head_sha": "bcf4b03d7b24c19dceca23feca3a4ed96e6c357a",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "keep-unmerged-residual"
+    },
+    {
+      "branch": "arch-clean-02-a03-pr04f-card-routes",
+      "head_sha": "61eb4d19d6fc2efb6bd17d98f5c9508cefe2999b",
+      "merged_prs": [
+        277
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a03-pr04g-legacy-baseline",
+      "head_sha": "a27e839c1c12f89bf76a3151daafdb5353c15671",
+      "merged_prs": [
+        278
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-01-evidence",
+      "head_sha": "20bb16fbeb0b7135948fa296c8d183aa736e5a01",
+      "merged_prs": [
+        281
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-07-static",
+      "head_sha": "f7364805fb3ef63e9d4a1e1448baeec18bbca010",
+      "merged_prs": [
+        284
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-08-dev",
+      "head_sha": "b0e716cb538ec979c5eba9ae6d56617eb1b56a58",
+      "merged_prs": [
+        285
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-09-history",
+      "head_sha": "f1b93a7f3e5049f01acc386fc94da8961ff8ed8f",
+      "merged_prs": [
+        286
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-10-consumers",
+      "head_sha": "ef0f6114fced00f81e1f6d6910bd116539301019",
+      "merged_prs": [
+        289
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-10-selectors",
+      "head_sha": "09fae19cd0d8e484c106e38335f2070c5b689983",
+      "merged_prs": [
+        287
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-11-isolation-qa",
+      "head_sha": "c174fdf5f48056db3efb057772fca90fb96c5be8",
+      "merged_prs": [
+        290
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-12-final-evidence",
+      "head_sha": "64a49a8aa4638ddc84be1caad27f622f3d29cdc1",
+      "merged_prs": [
+        291
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-contract",
+      "head_sha": "7ed3c5aeeacacb07d311768c0594f814436b2db2",
+      "merged_prs": [
+        282
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a04-read",
+      "head_sha": "75a230afb52ca773524175b1c3923289a730b726",
+      "merged_prs": [
+        283
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-01-world-time-freeze",
+      "head_sha": "1ca63be91e8b33333563411f9bc30b94bdd40bd8",
+      "merged_prs": [
+        292
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-02-slot-mapping",
+      "head_sha": "c51c134b4b077ea64154d70456de5ac83fa471ec",
+      "merged_prs": [
+        293
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-03-context-separation",
+      "head_sha": "764ab24088c270fa238790f0ab89465d1b17a2f3",
+      "merged_prs": [
+        294
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-04-progress-projections",
+      "head_sha": "56ee1da100541747a6c3c21e59eff36ab65ec33c",
+      "merged_prs": [
+        295
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-05-event-verification-boundary",
+      "head_sha": "fce046793ee41042afe2cc5904ca4aa246619ff2",
+      "merged_prs": [
+        296
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-06-atomic-revisions",
+      "head_sha": "7c2ec4269659b896dda5aa4f9a61aad0d4a8fa1b",
+      "merged_prs": [
+        297
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-07-equivalence",
+      "head_sha": "0d52a284a0a9471582209791f0d34609efb218a2",
+      "merged_prs": [
+        298
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-08-dev-clock-integration",
+      "head_sha": "dd84164182e0b15a7d11691493a5e86223ed7cf0",
+      "merged_prs": [
+        299
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-09-temporal-dedup",
+      "head_sha": "d716b0c997e9b1f0eb01b332e2a3e67579cbcf54",
+      "merged_prs": [
+        300
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-10-adapter-projection",
+      "head_sha": "8feb4d9bb9985ef61f0c68eb486083cbdba6fa2c",
+      "merged_prs": [
+        304
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-10-competition-projection",
+      "head_sha": "330cd9a2cc070c70f36f608be95d1186c846372b",
+      "merged_prs": [
+        302
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-10-consumer-boundaries",
+      "head_sha": "3711cdaef615fefcc6bc42d08ea2cb521f347d5c",
+      "merged_prs": [
+        301
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-10-final-consumer-evidence",
+      "head_sha": "ce485b2cc87c7fc462bca30833d4342e97beefb9",
+      "merged_prs": [
+        305
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-10-fixtures-wiring",
+      "head_sha": "5761188f21eb61c8d143bec46d59bf6941f4e67c",
+      "merged_prs": [
+        303
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-11-isolation-publication",
+      "head_sha": "858becf58dddbfd02027614d990b56f33a113061",
+      "merged_prs": [
+        306
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a05-12-final-generator-ci",
+      "head_sha": "49c51cebfced43bac26b88b799576362c0e6a6b4",
+      "merged_prs": [
+        307
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a06-02-consumer-dependency-map",
+      "head_sha": "ffe712f42b2a28d336a6a834ef6458a03e034bee",
+      "merged_prs": [
+        308
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a06-03-test-suite-map",
+      "head_sha": "8ab02d95930ca099fb76c74346a85953724e5d70",
+      "merged_prs": [
+        309
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a06-04-cross-contract-matrix",
+      "head_sha": "3cc54fff56db08cd19dc36e63adc6cb36a49d787",
+      "merged_prs": [
+        310
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a06-05-fail-closed-scenarios",
+      "head_sha": "6a6ebcae84ce3195f598d95afe1a257872d62a91",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "keep-unmerged-residual"
+    },
+    {
+      "branch": "arch-clean-02-a06-05-negative-cases",
+      "head_sha": "1a6bbdca60e77a4d6159bf7010894dda80d1b421",
+      "merged_prs": [
+        312
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a06-08-integration-qa",
+      "head_sha": "308988016bc110eb13baf680321e457d3e1a37ca",
+      "merged_prs": [
+        313
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-a06-12-behavioral-evidence",
+      "head_sha": "a39d8d9ee953aee066c490cc26f87d9d663d1e99",
+      "merged_prs": [
+        314
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr01-baseline-contract-tests",
+      "head_sha": "85c7028825adcfbe58bbd53036e225407acd8314",
+      "merged_prs": [
+        269
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr02-canonical-world-catalog",
+      "head_sha": "3ac9e2d22133ce3bab3602affacf447995668ffd",
+      "merged_prs": [
+        270
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr03-rules-registry",
+      "head_sha": "6350312909efd2971f5cf1cc82cb7f6d048884bf",
+      "merged_prs": [
+        271
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr04a-routes-freeze",
+      "head_sha": "5f52c3b7a83c76994c996710b26708dd32dbd77e",
+      "merged_prs": [
+        272
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr04b-dev-generator",
+      "head_sha": "7bf7b56c59a814c18a3352e0d19a8e0ad0af29f3",
+      "merged_prs": [
+        273
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr04c-browser-baseline",
+      "head_sha": "9678e38661b6ce1080cb00fd3058ef72bfa9744f",
+      "merged_prs": [
+        274
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr04d-browser-bootstrap",
+      "head_sha": "2cdd7da94fa7fee5191d3405fa00df375530e97e",
+      "merged_prs": [
+        275
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "arch-clean-02-pr04e-browser-consumers",
+      "head_sha": "006249bbc3b60451d5a5d125e570e0188436221b",
+      "merged_prs": [
+        276
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "asset/de-02-sv-reinickendorf-crest",
+      "head_sha": "476bf05ecf1b86309d6683eebac75a47ba3aa03c",
+      "merged_prs": [
+        222
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "asset/eng-03-mersey-albion-crest",
+      "head_sha": "c55c85aa9310f7fe735a0315bd64b1fc6f8b98ec",
+      "merged_prs": [
+        261
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "asset/fr-02-fc-massalia-integration-01",
+      "head_sha": "cc7cca55037c2a2396b10f1d0f76f551492edbb9",
+      "merged_prs": [
+        249
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "asset/it02-us-capitolina-final-fix01",
+      "head_sha": "9d8f7fbcb481cf39c70265cba3bf02ae977802a8",
+      "merged_prs": [
+        319
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "asset/it-01-ac-meneghina-frozen",
+      "head_sha": "6344e4e19a0d14ea91d8b18985069342bec6e247",
+      "merged_prs": [
+        248
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "asset/pt-01-fc-belem-g08-14",
+      "head_sha": "c1c07b2ad3ded25c61ea1b8812959da26c7ba6de",
+      "merged_prs": [
+        245
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "assets/br1-ec-bixiga-approved-crest",
+      "head_sha": "9d248e882f05c4035c43bda489bac13fbe6aeaa1",
+      "merged_prs": [
+        186
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "assets/br-1-crest-semantic-e9c0b3f7",
+      "head_sha": "fe334446897b9c3c00aff5e82ace45d1275d1e8a",
+      "merged_prs": [
+        207
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "assets/de-1-official-crest-v1-5",
+      "head_sha": "ffb51597ffd84df2dbdd58db7e9f3b9c7e1e03b3",
+      "merged_prs": [
+        205
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "assets/fr-1-fc-parisien-crest",
+      "head_sha": "cb0c31f6e9a5d8f80448a8c2155336519b6d8464",
+      "merged_prs": [
+        320
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "assets/us-capitolina-it2-crest-v16-draft-20261019",
+      "head_sha": "53abc43b27c4e898cb4000f883d16bc8f312fa7b",
+      "merged_prs": [
+        213
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "audit/g10-public-02-offline-artifact-scanner",
+      "head_sha": "11533762d50b7ce399ec376ecf33c3a2e5e0f364",
+      "merged_prs": [
+        196
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "backup/fixtures-mobile-p1-before-sync-563a53c2",
+      "head_sha": "563a53c2dd2d66ec4c74fa5f245d08bc69d542d0",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "backup/history-175-before-sync-02-c6812b40",
+      "head_sha": "c6812b40643f276369e43c1e8e3328497f2ef9fa",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "chore/club-nicknames-palette-alignment",
+      "head_sha": "5a2390a97ee9cd17338b28c6bc350ad76006f231",
+      "merged_prs": [
+        223
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "chore/de-01-canonical-colors-111111-f1faee",
+      "head_sha": "b00c3a41aa8560a23e5851bc95a6aff3c59d11b2",
+      "merged_prs": [
+        221
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "chore/manual-debug-manifest-hash",
+      "head_sha": "33ce86f8ecc739a490c058f5dffd722493a5d6ca",
+      "merged_prs": [
+        224
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "ci/ci-opt-01-landing-dedup",
+      "head_sha": "9e05cb26a5e85b09a79967e73eade04f1aece0a4",
+      "merged_prs": [
+        250
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "ci/g10-public-02-manual-offline-audit",
+      "head_sha": "8b1b2c35f66970a672737db5130892040f6416c4",
+      "merged_prs": [
+        197
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "ci-fast-01-scoped-checks",
+      "head_sha": "b64ac9b751562adb7780b703ca150df836fab2e6",
+      "merged_prs": [
+        288
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "city-color-320-palettes-20261019",
+      "head_sha": "2db093aa0a9e2fddc1231976035ec05293434801",
+      "merged_prs": [
+        219
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "competition-fixtures-01",
+      "head_sha": "c2265556119d07232bfbf426c038ae3ef440f7c2",
+      "merged_prs": [
+        148
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "competition-stats-01",
+      "head_sha": "b6a26d7eb31710b844dadc111237de56a51b5e05",
+      "merged_prs": [
+        168
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "crest/pt-1-fc-belem-v15",
+      "head_sha": "19dbe4e905e052ca8bb46a759502b42264c71e2a",
+      "merged_prs": [
+        206
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "data/club-descriptions-i18n",
+      "head_sha": "fa11b3bc8e773e8228d39901a3506ede28692b3d",
+      "merged_prs": [
+        174
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "data/final14-club-descriptions-20261018",
+      "head_sha": "67fb998d38cf2697e9ff1dd9e99cf3dc36d64dc4",
+      "merged_prs": [
+        188
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "data/pt-01-colors-match-g08-14",
+      "head_sha": "0a0a71299cd50d919c7efab0f9e5326d9501db6d",
+      "merged_prs": [
+        247
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "data/replace-club-registry-20261017",
+      "head_sha": "a8cc1f095bcd4c1cf4d207bf0e8f584c95650b56",
+      "merged_prs": [
+        185
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "data/rivalries-01-qa-02",
+      "head_sha": "df0ef61207748a946e3c10457539ec2983ccccca",
+      "merged_prs": [
+        227
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-access-04-final-gate-review",
+      "head_sha": "350fa81145fef9cd9bad51c997dc8fa00f7349d1",
+      "merged_prs": [
+        191
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-access-05-protected-architecture",
+      "head_sha": "38c157f1a1cf85ecbdead521e9b7d81443e7819b",
+      "merged_prs": [
+        192
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-access-07-authorization-matrix",
+      "head_sha": "68405a4ea0fb7cc289fbe1c185537d1e941eb462",
+      "merged_prs": [
+        193
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-access-collaborator-security-gate",
+      "head_sha": "0b2f8804a414b26fbf2c0e07e085b65b50fb0272",
+      "merged_prs": [
+        189
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-public-01-requirements",
+      "head_sha": "de26023f8b0bec315921b2ccff9b3f993229efd7",
+      "merged_prs": [
+        194
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-public-02-exposure-audit",
+      "head_sha": "ed7aed059606c2fdfc4fb341320e113ffba14429",
+      "merged_prs": [
+        195
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-public-02-final-reconciliation",
+      "head_sha": "9a848108a333a074fb9575fc94b4c781da33f184",
+      "merged_prs": [
+        203
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "docs/g10-public-02-runtime-review",
+      "head_sha": "70d508001801109b3d9718489340b7ec75d2ef31",
+      "merged_prs": [
+        200
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/admin-world-01-foundation",
+      "head_sha": "9b1bda41b0febe627c11be94d520a9d27e18f961",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": 316,
+      "disposition": "keep-active-pr"
+    },
+    {
+      "branch": "feat/awards-02-static-ceremony",
+      "head_sha": "61ecde1241dacc5707f6b97033c6301053a7dd45",
+      "merged_prs": [
+        225
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-imp-01-world-time",
+      "head_sha": "eae0da2f551a2cafc063fb2e4cb615205ab33aaf",
+      "merged_prs": [
+        237
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-imp-02-season-week",
+      "head_sha": "1c1ed5bb903ae06dd501fea8385717f65b3ef138",
+      "merged_prs": [
+        239
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-imp-03-inline-details",
+      "head_sha": "621324c62b7e8863f15ce9c1d9f9e3bedca23ef3",
+      "merged_prs": [
+        241
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-imp-04-filters-navigation",
+      "head_sha": "0715ccb3fae2a0fca454ea63e2cd38c4c621bc28",
+      "merged_prs": [
+        243
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-imp-05a-clock-adapter-dev",
+      "head_sha": "87a52d5edab809526dbbd844f3f968cdb40c7a45",
+      "merged_prs": [
+        244
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-week-init-01",
+      "head_sha": "17fbb7b4e5b1b04069381c5773292b7f53171fde",
+      "merged_prs": [
+        257
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/cal-world-56a-dev-clock",
+      "head_sha": "0a68a2a3bd1daba8e57d8424083182bfd083b3cc",
+      "merged_prs": [
+        256
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/calendar-simplified-dev-56",
+      "head_sha": "8246b03b5e72fb8e3e4c74ba1aa3553ddd17ff7d",
+      "merged_prs": [
+        246
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/club-01-foundation-overview",
+      "head_sha": "6de1832af892268540d5e18ab0a0dbf691cf0002",
+      "merged_prs": [
+        238
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/club-crests-site",
+      "head_sha": "32e9004c7b3cc402e6e97b713da16cd1648b4e96",
+      "merged_prs": [],
+      "closed_unmerged_prs": [
+        211
+      ],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "feat/clubs-directory-layout-02",
+      "head_sha": "9de9f70532837c6fbb3645faaee5e0303b535c31",
+      "merged_prs": [
+        259
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/clubs-page-03a-search-url",
+      "head_sha": "85f69f1ad639c88632e51a939dbf983796b309b6",
+      "merged_prs": [
+        260
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/clubs-page-03b-progressive-loading",
+      "head_sha": "f309f8b153daf67d5e734ce15bb0c4335fe5650a",
+      "merged_prs": [
+        262
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/competition-history-175-main-clean",
+      "head_sha": "649d858e07e2bd74d66a112844726f683482c701",
+      "merged_prs": [
+        208
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/competition-history-data-foundation",
+      "head_sha": "87c3d6fbbef7acd4e3e936c042a798e682d961bf",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "feat/competition-postseason-tab",
+      "head_sha": "f5820c09106b643be5cedee29f03c4968b177274",
+      "merged_prs": [
+        220
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/dev-standings-seasons-3-4",
+      "head_sha": "4d2f30512466027821af2ab442b1e7456fd1109d",
+      "merged_prs": [
+        176
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/fixtures-mobile-p1-css-99a03d67",
+      "head_sha": "a733f154bfa179adcabda78b4448c2429ea8c8e1",
+      "merged_prs": [
+        209
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/fr-01-fleur-qa10-crest-20261026",
+      "head_sha": "63949c8ff4516e7f402d0feb99cb27c8892203df",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "feat/g10-public-03-verified-preview",
+      "head_sha": "f6e0121fec38b1ec94f3eaf9afc94ed23941481c",
+      "merged_prs": [
+        204
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/int24-competition-ids",
+      "head_sha": "8d9342940da3e57c860a203df7712016b9196aa8",
+      "merged_prs": [
+        266
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/int-24-ui-01-international-cups",
+      "head_sha": "7807a9ad9d443da7055d9950b79d8570bbcd59c0",
+      "merged_prs": [
+        253
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/nav-01-sidebar-evolution",
+      "head_sha": "8892dc47aefb8fc821ba1fec735cbadf5ef68562",
+      "merged_prs": [
+        254
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/render-01-standings-static-first",
+      "head_sha": "38ae62e5c705cfb832ce73b1a646c579c21a75c4",
+      "merged_prs": [
+        263
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/render-02-club-static-first",
+      "head_sha": "0ca3d23c269c1dcb38cfe3dc5b91411acd446e1d",
+      "merged_prs": [],
+      "closed_unmerged_prs": [
+        265
+      ],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "feat/route-02-explicit-subpages",
+      "head_sha": "8513b471086a3929ecbe99f1f69d19c73c82edd6",
+      "merged_prs": [
+        235
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/rules-04-shared-competition-regulations",
+      "head_sha": "29742aab48c70d9f9aa620b0d820b84f57737d6f",
+      "merged_prs": [
+        217
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feat/standings-outcome-highlights",
+      "head_sha": "3a9e1275206dbd6120734b9485adeaa206eba1cc",
+      "merged_prs": [
+        218
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "feature/guide-02-world-handbook",
+      "head_sha": "0fffb36d5003b27027f1168c050fa490b58d2cc4",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": 255,
+      "disposition": "keep-active-pr"
+    },
+    {
+      "branch": "fix/cal-mobile-markers-no-tooltip",
+      "head_sha": "c8efe81d2805d98def2af19cf674db03538ca5a8",
+      "merged_prs": [
+        258
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/cal-season-link-01",
+      "head_sha": "ae033055b0ccea1151078e3e65f8e2b4c286df5d",
+      "merged_prs": [
+        252
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/ci-chrome-startup-01-serial-tests",
+      "head_sha": "2e5a5412484d3e4a78b20598d5ee22736bb3dc3c",
+      "merged_prs": [
+        210
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/club-crest-display",
+      "head_sha": "ebe79fd5c7f7b2eb0a0556310efe6467203d6377",
+      "merged_prs": [
+        214
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/club-crest-public-svg-titles",
+      "head_sha": "c1884cf6d0dad86c6e114cc30c80f44ace093a29",
+      "merged_prs": [
+        216
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/club-next-match-reset-rules-outcomes-20261026",
+      "head_sha": "4bec4b03b15729e2a4b8feb92e6d409fc988585d",
+      "merged_prs": [
+        318
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/club-overview-crest-refresh-size",
+      "head_sha": "5098602f5e15ee13e555ba99ad2ad08ff1e9dc0d",
+      "merged_prs": [
+        240
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/club-overview-debug-reset-rules-20261026",
+      "head_sha": "20be4aedc8c60d5be055c6a19231e1a1beb9b691",
+      "merged_prs": [
+        317
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/de01-remove-outer-white-border",
+      "head_sha": "96ffaaacb31114a70f67191a9684523b16079850",
+      "merged_prs": [
+        230
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/de01-svg-clip-seam-preview",
+      "head_sha": "8b74ab6734f7da418da871a3fa772e5e486a3719",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "fix/debug-manifest-temporary-destination-01",
+      "head_sha": "b87e92cc0c82b586b863ebf9e0bf0125004de999",
+      "merged_prs": [
+        226
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/fixtures-crest-preserve-matchday",
+      "head_sha": "479b57b57c12374e2458370b4e3086c3254326d7",
+      "merged_prs": [
+        231
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/fr-02-site-first-paint-a11y-tests",
+      "head_sha": "5f3b8ad9991f2ad4f72fb702c699af4dbda390af",
+      "merged_prs": [
+        251
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/g10-debug-seasons-1-4",
+      "head_sha": "a04da5c8ba5e6862f7a53491cae37471ee65bb95",
+      "merged_prs": [
+        202
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/g10-public-02-audit-failure-summary",
+      "head_sha": "67acebda60a6e6f87096fbe18ca8376fbd8f9a6c",
+      "merged_prs": [
+        198
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/g10-public-02-read-only-fetch-classification",
+      "head_sha": "144d387a97b395280ad450065b35080507dbce2e",
+      "merged_prs": [
+        199
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/history-safari-season-first-paint-175",
+      "head_sha": "b3f5b70feb0bb9febdaf4251820e9b7f65926bd6",
+      "merged_prs": [
+        215
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/manual-preview-main-recheck",
+      "head_sha": "9e7f53667a4d5d53fd685041deffc5a47c899c05",
+      "merged_prs": [
+        181
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/manual-preview-main-source",
+      "head_sha": "f577770772db14561018e0af956f8e6900159244",
+      "merged_prs": [
+        180
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/manual-preview-merged-pr",
+      "head_sha": "b254ac1b15283679d335f2e894cdab2450896368",
+      "merged_prs": [
+        178
+      ],
+      "closed_unmerged_prs": [
+        179
+      ],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "fix/preview-main-deploy-metadata",
+      "head_sha": "80b9fbc78524720846f65027fc2810411550029d",
+      "merged_prs": [
+        183
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/preview-vercel-routing-guard",
+      "head_sha": "cc1d4457749ce6c256dd250bd7e88c14f5d04d18",
+      "merged_prs": [
+        182
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/protected-debug-module-closure",
+      "head_sha": "e51327e03d357ea604ac0a50f37d6ec823d5c1ca",
+      "merged_prs": [
+        187
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/remove-skip-to-main-content",
+      "head_sha": "66eebb594a773424dd1c113193aabe90fa260cf4",
+      "merged_prs": [
+        229
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/route-int-01-canonical-cup-links",
+      "head_sha": "9c03f2ff8134d3a8a85d9056c33f442140857598",
+      "merged_prs": [
+        267
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "fix/unified-local-dev-urls",
+      "head_sha": "8ced293891dd1ff053e7cc4561b1c05018c46e12",
+      "merged_prs": [
+        184
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "integration/int24-nav01-qa-20261022",
+      "head_sha": "cccb703b63318f7b231746245189f8a37b85ae68",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "main",
+      "head_sha": "c40710cc2ccfcacb785d06aa51594e2ed07968de",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "keep-default"
+    },
+    {
+      "branch": "qa/g10-public-02-artifact-browser-acceptance",
+      "head_sha": "bc2e2855813f8aec557eaeb0cdea650eff1b22a9",
+      "merged_prs": [
+        201
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "qa/render-02-size-gate-03",
+      "head_sha": "9a6c84fe7c56d15bb9d1ad5c554a97233ca991d4",
+      "merged_prs": [],
+      "closed_unmerged_prs": [
+        264
+      ],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "reconcile/history-175-main-72495007",
+      "head_sha": "87c3d6fbbef7acd4e3e936c042a798e682d961bf",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "reconcile/int-24-ui-01-main-252",
+      "head_sha": "b85d305c59d14d3733d55ae4f46ac8731479762f",
+      "merged_prs": [],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "review-preserve"
+    },
+    {
+      "branch": "refactor/club-ids-unpadded",
+      "head_sha": "4cd42ad553c7f8e59b0fbed1f66d0c4026323b2b",
+      "merged_prs": [
+        242
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "refactor/remove-app-paths",
+      "head_sha": "ebce9d36e9ae02f2cc089cc88dd2217548b108b5",
+      "merged_prs": [
+        233
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "refactor/shared-competition-model",
+      "head_sha": "ef86b4d113079015f05689cee81b4986ad03bb0b",
+      "merged_prs": [
+        212
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "test/g10-access-03-offline-guards",
+      "head_sha": "93c66e2a64dbc57651dda07272b3c83ee0a05e0f",
+      "merged_prs": [
+        190
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    },
+    {
+      "branch": "test/ui-theme-diag-01",
+      "head_sha": "ef2af6c69bf01723c274f2a0b94cca28751d8b03",
+      "merged_prs": [
+        228
+      ],
+      "closed_unmerged_prs": [],
+      "open_pr": null,
+      "disposition": "eligible-merged-head-unchanged"
+    }
+  ]
+}
