@@ -1,0 +1,30 @@
+name: Admin World foundation checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/admin-world-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  password-policy:
+    name: Admin password policy (Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test password shape (no credentials or remote services)
+        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts
