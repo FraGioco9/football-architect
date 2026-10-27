@@ -78,3 +78,9 @@ The owner has requested **one CI acceptance run at the end of the PR**. Changes 
 
 ## Checkpoint 08 — cross-context CSS candidate triage
 The read-only audit now also emits `crossContextCandidates`, listing selectors repeated across distinct at-rule contexts with their original context, source line, and normalized declaration text. These are **review-only** entries, not redundant rules eligible for deletion; computed rendering and specificity must still be checked. Added tests for cross-breakpoint same-selector cases, differing declarations, and ordered `vh`/`svh`/`dvh` fallback declarations, which are intentionally repeated and must not be removed. No stylesheet changes in this checkpoint. CI remains a final acceptance gate only.
+
+## Checkpoint 09 — responsive ownership summary
+
+The read-only CSS inventory now reports `scopedRuleCounts` keyed by the first containing `@media` condition (or `(unscoped)`). This makes dense Calendar / Fixtures / History responsive regions easier to prioritize without treating identical selectors across different breakpoints as safe deletion candidates. The new summary is deliberately **diagnostic only**; it is not a CSS cascade rewrite, an equivalence certificate or a percentage of redundant declarations.
+
+Added two focused tests for scoped counts and nonmutation of the input CSS string. Changes batched on the existing Draft PR, with no manual CI dispatch or interim CI polling as requested. The final exact-head CI and rendered parity gate remain outstanding.

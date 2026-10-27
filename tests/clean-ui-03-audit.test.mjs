@@ -66,3 +66,20 @@ test("viewport height fallback declarations remain ordered and untouched",()=>{
     assert.ok(block.indexOf("height:100dvh")>block.indexOf("height:100svh"));
   }
 });
+
+test("audit summarizes media ownership without moving or changing declarations",()=>{
+  const css=".x{color:red}@media(max-width:620px){.x{color:blue}.y{display:none}}"+
+    "@media(min-width:621px){.z{display:flex}}";
+  const report=inventoryCss(css);
+  assert.equal(report.leafRules,4);
+  assert.equal(report.scopedRuleCounts["(unscoped)"],1);
+  assert.equal(report.scopedRuleCounts["@media(max-width:620px)"],2);
+  assert.equal(report.scopedRuleCounts["@media(min-width:621px)"],1);
+  assert.equal(report.identicalContextGroups.length,0);
+});
+test("read-only auditor does not mutate CSS input",()=>{
+  const css="@media(max-width:620px){.x{display:none}}";
+  const saved=css;
+  inventoryCss(css);
+  assert.equal(css,saved);
+});
