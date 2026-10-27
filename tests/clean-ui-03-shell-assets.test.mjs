@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets,inspectStaticScriptReferences} from "../tools/audit-shell-assets.mjs";
+import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets,inspectStaticScriptReferences,traceLiteralPageImports} from "../tools/audit-shell-assets.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("shell asset inventory preserves ordering and duplicates without changes",()=>{
@@ -89,4 +89,25 @@ test("static script scanner reports literal imports without claiming dynamic res
 });
 test("scanner excludes computed dynamic imports from proven dependency list",()=>{
   assert.deepEqual(inspectStaticScriptReferences('import("./"+name+".js")'),[]);
+});
+
+test("page import traversal resolves literal relative JS dependencies transitively",()=>{
+  const report=comparePageAssetInventory([{route:"/dashboard",html:'<head><script src="/assets/app.js"></script></head>'}]);
+  const result=traceLiteralPageImports(report,{
+    "/assets/app.js":'import "./shared.js";',
+    "/assets/shared.js":'import "./leaf.js";',
+    "/assets/leaf.js":"export const ok=true;"
+  });
+  assert.deepEqual(result[0].visited,["/assets/app.js","/assets/shared.js","/assets/leaf.js"]);
+  assert.deepEqual(result[0].unresolved,[]);
+});
+test("unavailable and package-style imports are explicitly unresolved",()=>{
+  const report=comparePageAssetInventory([{route:"/x",html:'<head><script src="/assets/app.js"></script></head>'}]);
+  const result=traceLiteralPageImports(report,{"/assets/app.js":'import "pkg"; import "./missing.js";'});
+  assert.deepEqual(result[0].unresolved.map(x=>x.reason),["non-relative-import","source-unavailable"]);
+});
+test("import cycles do not cause infinite traversal",()=>{
+  const report=comparePageAssetInventory([{route:"/x",html:'<head><script src="/assets/a.js"></script></head>'}]);
+  const result=traceLiteralPageImports(report,{"/assets/a.js":'import "./b.js";',"/assets/b.js":'import "./a.js";'});
+  assert.deepEqual(result[0].visited,["/assets/a.js","/assets/b.js"]);
 });

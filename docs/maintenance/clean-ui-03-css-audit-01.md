@@ -130,3 +130,7 @@ No CI runs manually dispatched or polled mid-PR; no merge/deploy/DB operations.
 ## Checkpoint 16 — static script-reference evidence
 
 Added a read-only `inspectStaticScriptReferences(source)` helper reporting only literal ESM imports, literal dynamic imports and literal CommonJS `require` specifiers. Computed dynamic imports are intentionally **unknown**, not absent dependencies. The helper is conservative, not a JavaScript parser and does not inspect runtime-created DOM script elements. Two regression tests cover literal and computed cases. This improves candidate discovery without authorizing removal of landing scripts or changing any runtime file. No intermediate CI polling/dispatch; final PR gate unchanged.
+
+## Checkpoint 17 — conservative transitive literal-import linkage
+
+Added `traceLiteralPageImports(report,sourceByUrl)` to connect each page's direct HTML script roots to literal relative ESM imports in supplied source text, following only local relative specifiers with deterministic visited ordering. Missing sources and package-style specifiers are **explicitly unresolved**, not classified as safe to remove. Cycles are bounded. Three tests cover nested imports, unresolved dependencies and cycles. This is an in-memory advisory; computed dynamic imports, classic script globals, DOM-injected scripts and browser timing remain unknown, and no runtime loading has changed. It is not evidence that Landing assets may be removed.

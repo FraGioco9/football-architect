@@ -17,6 +17,30 @@ export function inspectStaticScriptReferences(source){
   return references;
 }
 
+
+export function traceLiteralPageImports(report,sourceByUrl){
+  return report.pages.map(page=>{
+    const roots=page.assets.filter(asset=>asset.kind==="script").map(asset=>asset.url);
+    const visited=new Set(),pending=[...roots],unresolved=[];
+    while(pending.length){
+      const url=pending.shift();
+      if(visited.has(url))continue;
+      visited.add(url);
+      const source=sourceByUrl[url];
+      if(typeof source!=="string"){unresolved.push({url,reason:"source-unavailable"});continue;}
+      for(const ref of inspectStaticScriptReferences(source)){
+        if(!ref.specifier.startsWith(".")){
+          unresolved.push({url,specifier:ref.specifier,reason:"non-relative-import"});
+          continue;
+        }
+        const resolved=new URL(ref.specifier,"https://local.invalid"+url).pathname;
+        if(!visited.has(resolved)&&!pending.includes(resolved))pending.push(resolved);
+      }
+    }
+    return {route:page.route,roots,visited:[...visited],unresolved};
+  });
+}
+
 export function classifyAssetReferences(assetUrls,knownPaths){
   const known=new Set(knownPaths);
   return assetUrls.map(url=>{
