@@ -59,3 +59,7 @@ These are **source contracts**, not replacement for browser CSSOM/visual parity.
 ## Checkpoint 04 — exact-head CI and test hardening
 
 The pre-hardening HEAD `782069ca61c1a90c53ea2442cd91707c9bf1d040` completed all 3 checks successfully: `landing`, `head-exact`, `chromium`. The source-contract tests originally used multi-line regex spans that could inadvertently cross outside the intended `@media` block; follow-up commit `6e5b40e0d313f5237cc1acba1802ef61295c3d76` replaces these checks with balanced-brace `mediaBlocks`/ `mediaHas` assertions and retains exact declaration counts. This helper is intentionally narrow and only validates the three known declarations; it is **not** a full CSS parser or computed-style proof. Recheck CI on the newer HEAD.
+
+## Checkpoint 05 — navigation, focus, touch and palette contract expansion
+
+After confirming that the previous HEAD has passed `head-exact` while `landing` and `chromium` were still running, expanded `tests/clean-ui-03-css-contract.test.mjs` with **four** targeted protections (Calendar/Fixtures arrow and selector hover state, Calendar reduced-motion and touch overrides, History breakpoint scopes, four Calendar event types in dark/light palettes). This stage adds **no CSS edits**; the checks safeguard the most sensitive shared-controls styles in preparation for later consolidation. These regex and media-block source assertions are necessary guardrails, not full browser appearance/accessibility evidence. Exact-head CI must be checked after the final commit.
