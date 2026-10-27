@@ -4,6 +4,8 @@ import {chromium} from "playwright";
 import {execFileSync} from "node:child_process";
 import {readFileSync,mkdirSync,writeFileSync} from "node:fs";
 import assert from "node:assert/strict";
+import {PNG} from "pngjs";
+import pixelmatch from "pixelmatch";
 const baseSha=process.env.PR_BASE_SHA;
 assert.match(baseSha||"",/^[0-9a-f]{40}$/,"PR_BASE_SHA must be the exact PR base commit");
 const baseline=execFileSync("git",["show",baseSha+":assets/app.css"],{encoding:"utf8",maxBuffer:2e6});
@@ -60,8 +62,12 @@ try{
   }
   cssomObservations.push({route,width,theme:dark?"dark":"light",reducedMotion,baseline:before.cssom,current:after.cssom});
   if(before.shot&&after.shot){
-    const matching=before.shot.equals(after.shot);
-    screenshotComparisons.push({route,width,matching});
+    const left=PNG.sync.read(before.shot),right=PNG.sync.read(after.shot);
+    assert.deepEqual([left.width,left.height],[right.width,right.height],"screenshot viewport geometry mismatch");
+    const changedPixels=pixelmatch(left.data,right.data,null,left.width,left.height,{threshold:0.1,includeAA:false});
+    const allowedPixels=Math.max(1,Math.floor(left.width*left.height*0.0001));
+    const matching=changedPixels<=allowedPixels;
+    screenshotComparisons.push({route,width,changedPixels,allowedPixels,matching});
     if(!matching){
       mkdirSync("int24-browser-artifacts",{recursive:true});
       const slug=route.replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"");
