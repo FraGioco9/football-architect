@@ -43,3 +43,9 @@ PR #321 reconciled README and added navigation comments to CSS, with ordered CSS
 - `@keyframes from`/`to` duplicates cannot be deduplicated across named animations.
 - Selector reuse across History record layouts and Calendar/Fixtures controls is intentional until responsive and keyboard/touch behaviors are mapped.
 - Only exact same-condition responsive assignments with an earlier preserved source have been targeted in this batch. Full visual/browser parity for the newest HEAD remains an acceptance gate.
+
+## Adjacent workstream reconnaissance (P3/P4, no implementation yet)
+
+On the current `main`, `tools/generate-app-pages.mjs` (25,717 source characters) already inserts route-specific scripts and template dependencies. It contains separate `landing.js`, `competition-page.js`, `international-cups.js`, and Calendar bootstrap/model references; these are **not** proof that landing scripts are dead on non-Landing pages because runtime language/state initialization may depend on them. Current `assets/app.js` is approximately 73,130 characters and `assets/landing.js` approximately 12,049 characters. A removal/split requires ordered script-dependency traces in actual generated HTML and a five-language/theme/bootstrap regression first.
+
+P3 controls must similarly distinguish Calendar current-week navigation, Fixtures matchday selectors, History season selector, native dialog focus handling and touch/mobile behavior before sharing a primitive. **No shared-controls or asset-loading change is made in this PR.**
