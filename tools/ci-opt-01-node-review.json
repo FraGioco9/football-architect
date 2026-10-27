@@ -1,0 +1,20 @@
+{
+  "tests": [
+    "tests/competition-model.test.mjs",
+    "tests/routes-registry.test.mjs",
+    "tests/world-calendar-model.test.mjs",
+    "tests/guide.test.mjs"
+  ],
+  "fingerprints": {
+    "tests/competition-model.test.mjs": "86d53e797b3d0ecc091a4bb2472fc020210fe0e794eaa0007ef63d14342cfe8c",
+    "tests/routes-registry.test.mjs": "0d53b150e86953d37b6f04f4cc70fa70f78de20c77a53596d5c13f644f781884",
+    "tests/world-calendar-model.test.mjs": "98f8618a5542bcee5b74cb28d540db0915f7b4b04eccf37dd693a9e7f082299c",
+    "tests/guide.test.mjs": "191bf82a20f77c5632dffd74fab5e329982297c0e2a34b495423dc9520069e31",
+    "assets/competition-model.js": "a461968bf645fa3c08576acf397f178eb28d1cb53ec87f2aa50853b7abb9573d",
+    "assets/competition-rules.js": "f9d7d24e1726ae266bb8e1fbebb890f21365074394489633df457910dd8b4162",
+    "assets/routes-registry.mjs": "1f398bfe678e26f2c80b3fdbbb8dfe3c521bbb3fad35078d5f143e4453cab7ff",
+    "assets/routes-registry.js": "b0db14de371b02d8cb7a05cd360c27ee675c395df630c0a5e4ef383afa6b7253",
+    "assets/world-calendar-model.js": "946fbc3825cdd3c00d957fd582c0d47d8af5c97124ff963f14dec6c47c44d7eb",
+    "assets/landing.js": "e19d13a1e74602891e053130f8efae940b7c6468dca182377ceded0ff31ae10d"
+  }
+}

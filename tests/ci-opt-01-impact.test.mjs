@@ -9,9 +9,9 @@ test("impact groups permit only one bounded area",()=>{
 test("mixed areas, shared assets and unknown paths require full",()=>{
  for(const xs of [["calendar/index.html","clubs/index.html"],["assets/app.css"],["assets/routes-registry.mjs"],["unexpected/new.mjs"],["calendar/index.html","assets/app.js"],[],["../bad"]])assert.equal(classifyImpact(xs).mode,"full");
 });
-test("docs and CI-only changes remain fast during drafts",()=>{
+test("docs stay FAST but changes to CI orchestration require FULL",()=>{
  assert.equal(classifyImpact(["docs/architecture/example.md"]).mode,"fast");
- assert.equal(classifyImpact([".github/workflows/int24-browser-qa.yml","tools/ci-opt-01-impact.mjs"]).mode,"fast");
+ assert.equal(classifyImpact([".github/workflows/int24-browser-qa.yml","tools/ci-opt-01-impact.mjs"]).mode,"full");
 });
 
 test("source files do not bypass scoped validation",()=>{
@@ -37,7 +37,7 @@ test("workflow gates preserve final FULL and main browser safety",async()=>{
  }
  assert.match(node,/tests\/publication-gate\.test\.mjs/);
  assert.match(node,/tests\/arch-clean-02-security\.test\.mjs/);
- assert.match(node,/node --test --test-concurrency=1 tests\/\*\.test\.mjs/);
+ assert.match(node,/node tools\/ci-opt-01-node-runner\.mjs/);
  assert.match(browser,/node tests\/int24-browser-qa\.mjs/);
  assert.match(browser,/node tests\/clean-ui-03-webkit-iphone\.mjs/);
  assert.match(browser,/github\.event_name.*workflow_dispatch/);
@@ -60,4 +60,22 @@ test("TARGETED browser installs only Playwright; FULL preserves image parity dep
  assert.match(workflow,/mode \}\}" = "targeted" ]; then\n            npm install --no-save --no-package-lock playwright@1\.58\.2/);
  assert.match(workflow,/pixelmatch@7\.1\.0 pngjs@7\.0\.0/);
  assert.match(workflow,/node tests\/clean-ui-03-webkit-iphone\.mjs/);
+});
+
+// A bounded area change must not omit its edited regression test.
+test("TARGETED includes each changed area test as well as baseline contracts",()=>{
+ for(const file of ["tests/world-calendar-model.test.mjs","tests/club-pages.test.mjs","tests/competition-rules-model.test.mjs"]){
+  assert.ok(classifyImpact([file]).tests.includes(file),file);
+ }
+ for(const file of ["assets/world-calendar-model.js","assets/competition-model.js","assets/club-model.js"]){
+  assert.equal(classifyImpact([file]).mode,"full",file+" is shared code");
+ }
+});
+
+test("only obsolete FAST/TARGETED jobs can be cancelled, FULL is protected",async()=>{
+ const {readFileSync}=await import('node:fs');
+ for(const file of ['landing-checks.yml','int24-browser-qa.yml']){
+  const source=readFileSync(new URL('../.github/workflows/'+file,import.meta.url),'utf8');
+  assert.match(source,/cancel-in-progress:.*outputs.mode != 'full'/);
+ }
 });

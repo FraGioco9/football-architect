@@ -5,29 +5,25 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('main-{0}', github.run_id) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 permissions:
   contents: read
 jobs:
-  chromium:
+  scope:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    outputs:
+      mode: ${{ steps.scope.outputs.mode }}
+      area: ${{ steps.scope.outputs.area }}
+      tests: ${{ steps.scope.outputs.tests }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Assert exact PR checkout
+      - name: Assert exact classification checkout
         env:
-          EXPECTED: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ -n "$EXPECTED" ]; then
-            test "$(git rev-parse HEAD)" = "$EXPECTED"
-          fi
+          EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -42,36 +38,63 @@ jobs:
             echo "mode=full" >> "$GITHUB_OUTPUT"
             echo "Final review or main: mandatory full regression suite."
           fi
+  chromium:
+    needs: scope
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' && format('pr-{0}-{1}', github.event.pull_request.number, needs.scope.outputs.mode) || format('main-{0}', github.run_id) }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assert exact PR checkout
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -n "$EXPECTED" ]; then
+            test "$(git rev-parse HEAD)" = "$EXPECTED"
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Defer full browser checks on draft or provider-only PR
-        if: steps.scope.outputs.mode == 'fast'
+        if: needs.scope.outputs.mode == 'fast'
         run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
       - name: Restore pinned Playwright browser cache
-        if: steps.scope.outputs.mode != 'fast'
+        if: needs.scope.outputs.mode != 'fast'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ steps.scope.outputs.mode }}-v1
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ needs.scope.outputs.mode }}-v2
       - name: Install isolated browser test dependency
-        if: steps.scope.outputs.mode != 'fast'
+        if: needs.scope.outputs.mode != 'fast'
         run: |
-          if [ "${{ steps.scope.outputs.mode }}" = "targeted" ]; then
+          if [ "${{ needs.scope.outputs.mode }}" = "targeted" ]; then
             npm install --no-save --no-package-lock playwright@1.58.2
           else
             npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
           fi
           npx playwright install chromium
-          if [ "${{ steps.scope.outputs.mode }}" = "full" ]; then npx playwright install --with-deps webkit; fi
+          npx playwright install --with-deps webkit
       - name: Run loopback preview and browser checks
-        if: steps.scope.outputs.mode != 'fast'
+        if: needs.scope.outputs.mode != 'fast'
         run: |
           node tools/dev-standings-preview.mjs > /tmp/int24-preview.log 2>&1 &
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:2000/competitions >/dev/null; then break; fi
             sleep 1
           done
-          if [ "${{ steps.scope.outputs.mode }}" = "targeted" ]; then
-            FA_TARGET_AREA="${{ steps.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
+          if [ "${{ needs.scope.outputs.mode }}" = "targeted" ]; then
+            FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
+            FA_BROWSER_ENGINE=webkit FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
             exit 0
+          fi
+          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
+            node tools/ci-opt-01-scenarios.mjs --browser
           fi
           node tests/int24-browser-qa.mjs
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -92,7 +115,7 @@ jobs:
           fi
           node tests/clean-ui-03-webkit-iphone.mjs
       - name: Upload screenshots and server log
-        if: failure() && steps.scope.outputs.mode != 'fast'
+        if: failure() && needs.scope.outputs.mode != 'fast'
         uses: actions/upload-artifact@v4
         with:
           name: int24-chromium-screenshots
@@ -100,3 +123,4 @@ jobs:
             int24-browser-artifacts/
             /tmp/int24-preview.log
           if-no-files-found: warn
+          retention-days: 7

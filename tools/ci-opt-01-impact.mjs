@@ -11,7 +11,8 @@ export function classifyImpact(changed){
  if(!Array.isArray(changed)||!changed.length||changed.some(p=>typeof p!=="string"||!p||p.startsWith("/")||p.includes("..")))return {mode:"full",area:null,tests:[]};
  const relevant=changed.filter(p=>!safeDocs.test(p));
  if(!relevant.length)return {mode:"fast",area:null,tests:[]};
- if(relevant.every(p=>infra.test(p)))return {mode:"fast",area:null,tests:[]}; // CI-only draft changes: final gate still FULL.
+ if(relevant.some(p=>infra.test(p)))return {mode:"full",area:null,tests:[]}; // Never validate CI orchestration by skipping its execution.
+ if(relevant.some(p=>/^assets\/.*(?:model|provider|registry|runtime|context)[^/]*\.(?:js|mjs)$/.test(p)))return {mode:"full",area:null,tests:[]};
  const areas=new Set();
  for(const path of relevant){
   const matches=Object.entries(groups).filter(([,group])=>group.patterns.some(pattern=>pattern.test(path)));
@@ -20,7 +21,7 @@ export function classifyImpact(changed){
  }
  if(areas.size!==1)return {mode:"full",area:null,tests:[]};
  const area=[...areas][0];
- return {mode:"targeted",area,tests:groups[area].tests};
+ return {mode:"targeted",area,tests:[...new Set([...groups[area].tests,...changed.filter(p=>p.startsWith("tests/")&&p.endsWith(".test.mjs"))])].sort()};
 }
 
 if(process.argv[1]&&import.meta.url===new URL("file://"+process.argv[1]).href){
