@@ -36,6 +36,20 @@ describe('official local D1 binding, no remote services', () => {
     await expect(bindings.DB.prepare("UPDATE world_state SET phase='active' WHERE id=1").run()).rejects.toThrow();
     expect((await readWorld(bindings.DB)).phase).toBe('unstarted');
   });
+  it('rolls back an entire D1 batch after a failed integrity guard', async () => {
+    const generation=(await readWorld(bindings.DB)).generation;
+    const before=await readWorld(bindings.DB);
+    const db=bindings.DB as unknown as {
+      prepare(sql:string): {bind(...values:unknown[]):unknown};
+      batch(statements:unknown[]):Promise<unknown>;
+    };
+    const first=db.prepare(
+      "UPDATE world_state SET revision=revision+1, season_number=1, phase='preparing' WHERE id=1 AND generation=? AND revision=0"
+    ).bind(generation);
+    const reject=db.prepare("INSERT INTO world_state (id,generation) VALUES (2,'impossible')");
+    await expect(db.batch([first,reject])).rejects.toThrow();
+    expect(await readWorld(bindings.DB)).toEqual(before);
+  });
   it('does not enable unauthenticated season preparation', async () => {
     const response = await worker.fetch(new Request('https://local.invalid/api/admin/prepare', {method:'POST'}), bindings);
     expect(response.status).toBe(404);
