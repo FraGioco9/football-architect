@@ -11,6 +11,13 @@ describe('Worker Argon2id password runtime',()=>{
     expect(await verifyPassword(password,one)).toBe(true);
     expect(await verifyPassword('wrong-password-long-2026',one)).toBe(false);
   },90000);
+  it('serializes concurrent hashes using one mutable precompiled WASM instance',async()=>{
+    const passwords=['concurrency-credential-01','concurrency-credential-02'];
+    const encoded=await Promise.all(passwords.map(hashPassword));
+    expect(encoded).toHaveLength(2);
+    expect(await Promise.all(encoded.map((value,i)=>verifyPassword(passwords[i],value)))).toEqual([true,true]);
+    expect(await verifyPassword(passwords[0],encoded[1])).toBe(false);
+  },90000);
   it('rejects malformed and understrength encodings without hashing',async()=>{
     const pwd='synthetic-long-passphrase-26';
     for(const encoded of ['','plaintext','$argon2id$v=19$m=4096,t=2,p=1$a$b',
