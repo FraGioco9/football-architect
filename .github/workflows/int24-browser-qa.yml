@@ -54,7 +54,11 @@ jobs:
       - name: Install isolated browser test dependency
         if: steps.scope.outputs.mode != 'fast'
         run: |
-          npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
+          if [ "${{ steps.scope.outputs.mode }}" = "targeted" ]; then
+            npm install --no-save --no-package-lock playwright@1.58.2
+          else
+            npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
+          fi
           npx playwright install chromium
           if [ "${{ steps.scope.outputs.mode }}" = "full" ]; then npx playwright install --with-deps webkit; fi
       - name: Run loopback preview and browser checks

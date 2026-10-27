@@ -53,3 +53,11 @@ test("every bounded TARGETED area selects existing nonempty test files",async()=
   for(const testFile of selected.tests)assert.ok(existsSync(new URL("../"+testFile,import.meta.url)),testFile);
  }
 });
+
+test("TARGETED browser installs only Playwright; FULL preserves image parity dependencies",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const workflow=readFileSync(new URL("../.github/workflows/int24-browser-qa.yml",import.meta.url),"utf8");
+ assert.match(workflow,/mode \}\}" = "targeted" ]; then\n            npm install --no-save --no-package-lock playwright@1\.58\.2/);
+ assert.match(workflow,/pixelmatch@7\.1\.0 pngjs@7\.0\.0/);
+ assert.match(workflow,/node tests\/clean-ui-03-webkit-iphone\.mjs/);
+});
