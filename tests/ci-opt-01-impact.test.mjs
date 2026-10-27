@@ -15,7 +15,7 @@ test("docs stay FAST but changes to CI orchestration require FULL",()=>{
 });
 
 test("source files do not bypass scoped validation",()=>{
- const examples=["assets/app.css","assets/app.js","assets/routes-registry.mjs","assets/landing.js","tools/dev-standings-preview.mjs","tests/world-catalog.test.mjs"];
+ const examples=["assets/app.css","assets/app.js","assets/routes-registry.mjs","assets/landing.js","tools/dev-standings-preview.mjs","tests/world-catalog.test.mjs","assets/club-crests.js","assets/competition-tabs.js","assets/competition-rules.js"];
  for(const file of examples)assert.equal(classifyImpact([file]).mode,"full",file);
 });
 test("impact combinations fail closed and targeted test paths are deterministic",()=>{
