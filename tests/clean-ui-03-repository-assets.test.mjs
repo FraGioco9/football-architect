@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {inventoryAssetReferences} from "../tools/audit-repository-assets.mjs";
+import {inventoryAssetReferences,planAssetRemoval} from "../tools/audit-repository-assets.mjs";
 function fake(files){
  return {
   readdirSync(dir){const prefix=dir==="."?"":dir+"/";const items=new Map();
@@ -36,4 +36,20 @@ test("dynamic classification includes specific provenance and no deletion author
  const report=inventoryAssetReferences(".",fake({"assets/flags/gb-eng.svg":"<svg/>","assets/clubs/FR/1/crest.svg":"<svg/>","assets/divisions/it-1.svg":"<svg/>"}));
  assert.equal(report.provenUnused.length,0);
  for(const entry of report.classification){assert.equal(entry.status,"dynamic-or-catalogue");assert.ok(entry.evidence[0].startsWith("tools/"));}
+});
+
+test("P5 deletion gate rejects every unresolved or dynamic asset",()=>{
+ const result=planAssetRemoval({classification:[
+  {path:"assets/flag.svg",status:"dynamic-or-catalogue",evidence:[]},
+  {path:"assets/unknown.svg",status:"unresolved",evidence:[]},
+  {path:"assets/proven.svg",status:"proven-unused",evidence:["generator-check-pass"]}
+ ]});
+ assert.equal(result.decision,"retain-all");
+ assert.deepEqual(result.allowed,[]);
+ assert.equal(result.blocked.length,3);
+});
+test("P5 deletion gate still requires separate approval after every proof",()=>{
+ const result=planAssetRemoval({classification:[{path:"assets/test.svg",status:"proven-unused",evidence:["generator-check-pass","publication-boundary-pass","runtime-reference-pass"]}]});
+ assert.deepEqual(result.allowed,["assets/test.svg"]);
+ assert.equal(result.decision,"requires-explicit-removal-approval");
 });

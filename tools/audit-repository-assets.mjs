@@ -3,6 +3,14 @@ import {readdirSync,readFileSync} from "node:fs";
 import {join,extname} from "node:path";
 import {pathToFileURL} from "node:url";
 const textExt=new Set([".html",".js",".mjs",".css",".json",".md",".csv",".yml",".yaml",".svg"]);
+// Fail-closed deletion decision: uncertain source reachability never authorizes deletion.
+export function planAssetRemoval(inventory){
+  const candidates=inventory.classification||[];
+  const allowed=candidates.filter(item=>item.status==="proven-unused" && Array.isArray(item.evidence) && item.evidence.some(x=>x==="generator-check-pass") && item.evidence.some(x=>x==="publication-boundary-pass") && item.evidence.some(x=>x==="runtime-reference-pass"));
+  const blocked=candidates.filter(item=>!allowed.includes(item));
+  return {allowed:allowed.map(x=>x.path),blocked:blocked.map(x=>({path:x.path,reason:x.status||"unknown"})),decision:allowed.length?"requires-explicit-removal-approval":"retain-all"};
+}
+
 export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync}){
   const paths=[];
   function walk(dir){
@@ -42,6 +50,7 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
   return {
     classification,
     provenUnused:[],
+    removalDecision:planAssetRemoval({classification}),
     totalFiles:paths.length,totalAssets:assets.length,sourceFilesScanned:sourceText.size,
     explicitlyReferenced:assets.filter(p=>mentions.get(p).length).length,
     unresolved:assets.filter(p=>!mentions.get(p).length).map(path=>({
