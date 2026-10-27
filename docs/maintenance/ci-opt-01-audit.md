@@ -73,3 +73,24 @@ The workflow `concurrency` grouping is isolated by workflow name and PR number. 
 Before changing `--test-concurrency=1`, isolate high-risk suites rather than blindly parallelizing 91 files. Tests with explicit browser, preview, generator, world runtime, security, publication and integration names demand dependency inspection (ports, temporary files, subprocesses, environment, snapshot and generated-asset writes). Initial high-risk examples: `dev-standings-preview.test.mjs`, `app-subdomain-preview.test.mjs`, `generator-windows.test.mjs`, `club-pages-browser.test.mjs`, `g10-public-02-browser.test.mjs`, `world-calendar-browser.test.mjs`, `world-calendar-history-browser.test.mjs`, `theme-browser.test.mjs`, `publication-gate.test.mjs`, and `arch-clean-02-security.test.mjs`. This is a **candidate list, not a confirmed interference analysis**. Leave concurrency at 1 until a verified isolation report and repeated tests justify a change.
 
 Network footprint baseline is diagnostic and does not validate app behavior; run on manual browser workflow dispatch only, with no automatic release/deploy. Normal FULL still runs Chromium, WebKit and PR-conditional CSS parity. This avoids recurring seven-route network profiling on every main push.
+
+## Node isolation audit — source-inspected sample (12/91 test modules)
+
+The following signals were verified in actual test source, not inferred solely from filenames. This is an initial conservative dependency audit, not proof of safe parallel execution.
+
+| Test file | Source-detected shared-resource / isolation signals |
+| --- | --- |
+| dev-standings-preview.test.mjs | loopback listeners, temporary directories, async writes, environment use |
+| app-subdomain-preview.test.mjs | local TCP listener, localhost |
+| generator-windows.test.mjs | subprocess invocation, temp directory and sync file writes |
+| club-pages-browser.test.mjs | HTTP server, subprocesses, temp files and environment |
+| g10-public-02-browser.test.mjs | HTTP server, subprocesses, temp files and environment |
+| world-calendar-browser.test.mjs | HTTP server, subprocesses, temp files and environment |
+| world-calendar-history-browser.test.mjs | HTTP server, subprocesses, temp files and environment |
+| theme-browser.test.mjs | HTTP server, subprocesses, temp files and environment |
+| publication-gate.test.mjs | temporary paths and synchronous file writes/deletion |
+| arch-clean-02-security.test.mjs | globalThis usage |
+| calendar-season-link.test.mjs | localhost URL references; no listener observed in quick source scan |
+| guide.test.mjs | none of the searched process/network/file-write signals observed |
+
+This sample supports retaining `--test-concurrency=1` pending a complete 91-file audit, port allocation analysis and repeated isolated/sharded runs. Do not equate absence of these text patterns with a proof of independence. The user explicitly requested postponement of FULL testing; no concurrency acceleration should be made without that evidence.
