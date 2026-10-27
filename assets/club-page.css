@@ -235,8 +235,8 @@
 .club-competition-metrics dd,.club-competition-next-content{grid-row:2;align-self:start}
 .club-competition-next-content>a.app-link{display:inline-block;width:fit-content;max-width:100%;-webkit-line-clamp:unset;text-decoration:none}
 .club-competition-next-content>a.app-link:is(:hover,:focus-visible){text-decoration:none}
-.club-competition-match-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-decoration:none;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
-.club-competition-next-content>a.app-link:is(:hover,:focus-visible) .club-competition-match-name{text-decoration-line:underline}
+.club-competition-match-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-decoration:none;text-underline-offset:1px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
+.club-competition-match-name:hover,.club-competition-next-content>a.app-link:focus-visible .club-competition-match-name{text-decoration-line:underline}
 @media(max-width:480px){
  .club-competition-layout{grid-template-columns:minmax(60px,.6fr) minmax(0,1.4fr);grid-template-rows:auto auto minmax(54px,auto)}
  .club-competition-identity{grid-column:1/-1;grid-row:1;margin-bottom:4px}

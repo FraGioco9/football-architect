@@ -480,10 +480,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
      const fixtureDecoration="getComputedStyle(document.querySelector('.club-competition-match-name')).textDecorationLine";
      assert.equal(await run(fixtureDecoration),'none','Fixture has no underline before hover');
-     const fixtureTarget=await run("(()=>{const r=document.querySelector('.club-competition-next a').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
+     const fixtureTarget=await run("(()=>{const r=document.querySelector('.club-competition-match-name').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
      await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',...fixtureTarget});
      assert.equal(await run(fixtureDecoration),'underline','Actual pointer hover underlines the fixture text');
-     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-match-name')).textUnderlineOffset"),'3px');
+     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-match-name')).textUnderlineOffset"),'1px','Underline stays inside the clipped line box');
      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-next a')).textDecorationLine"),'none','Underline belongs to match text rather than the link box');
      await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
      assert.equal(await run(fixtureDecoration),'none','Pointer leave clears the underline');
@@ -502,6 +502,20 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelector('.club-competition-next a')"),null,'Disabling DEV removes future fixtures');
      assert.ok(Math.abs(await run("document.querySelector('.club-competition').getBoundingClientRect().height")-fixtureHeight)<2,'Next Match preserves panel height when fixtures appear or disappear at '+width);
      assert.equal(await run("document.activeElement.classList.contains('club-competition')"),true,'Removing a focused summary link retains focus in its panel');
+    }
+    // FR-1 regression: hover the exact match-name node on the reported route.
+    for(const width of [1440,768,390,320]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await visit('/clubs/fr/1/overview',devOrigin);
+     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','1');sessionStorage.setItem('football-architect:standings-dev-matchdays','0');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
+     await wait("document.querySelector('.club-competition-match-name')!==null");
+     await run("document.querySelector('.club-competition-match-name').scrollIntoView({block:'center',behavior:'instant'})");
+     await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
+     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-match-name')).textDecorationLine"),'none');
+     const target=await run("(()=>{const el=document.querySelector('.club-competition-match-name'),range=document.createRange();range.selectNodeContents(el);const r=range.getClientRects()[0];return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
+     await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',...target});
+     assert.equal(await run("document.querySelector('.club-competition-match-name').matches(':hover')&&getComputedStyle(document.querySelector('.club-competition-match-name')).textDecorationLine==='underline'"),true,'FR-1 match-name hover at '+width);
+     await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
     }
     // Drive the actual shared widget rather than changing storage directly.
     await visit('/clubs/it/1/overview',devOrigin);
