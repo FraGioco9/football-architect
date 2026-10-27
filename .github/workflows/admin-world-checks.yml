@@ -32,5 +32,7 @@ jobs:
         run: python3 -m unittest discover -s backend/tests -p 'test_world_migration.py' -v
       - name: Resolve pinned local Worker dependencies without deployment
         run: |
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --version
           npm --prefix backend install --package-lock-only --ignore-scripts --no-audit --no-fund
           node -e "const fs=require('node:fs'); const p='backend/package-lock.json'; console.log('FA316_LOCK_BEGIN'+JSON.stringify(JSON.parse(fs.readFileSync(p,'utf8')))+'FA316_LOCK_END')"
