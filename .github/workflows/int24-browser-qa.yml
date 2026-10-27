@@ -40,6 +40,7 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
           npx playwright install chromium
+          npx playwright install --with-deps webkit
       - name: Run loopback preview and browser checks
         if: steps.scope.outputs.mode != 'fast'
         run: |
@@ -51,6 +52,7 @@ jobs:
           node tests/int24-browser-qa.mjs
           PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tests/clean-ui-03-css-parity.mjs
           node tests/clean-ui-03-network-baseline.mjs
+          node tests/clean-ui-03-webkit-iphone.mjs
       - name: Upload screenshots and server log
         if: always() && steps.scope.outputs.mode != 'fast'
         uses: actions/upload-artifact@v4
