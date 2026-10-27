@@ -1104,8 +1104,8 @@ svg.site-chevron>path{translate:0 .5px}
 @media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
 
 /* UI refinement: compact Rules and international standings qualification. */
-[data-standing-outcome="sovereign"],.app-rules-outcome[data-rule-cup="sovereign"]{--standing-outcome-color:#8B73D6}
-[data-standing-outcome="federation"],.app-rules-outcome[data-rule-cup="federation"]{--standing-outcome-color:#2F9DAB}
+.app-rules-outcome[data-rule-cup="sovereign"]{--standing-outcome-color:#6B8FE3}
+.app-rules-outcome[data-rule-cup="federation"]{--standing-outcome-color:#8D72C8}
 .app-rules-content{width:100%;max-width:none;justify-self:stretch}
 .app-rules-section{padding-top:12px}
 .app-rules-section p{line-height:1.5}

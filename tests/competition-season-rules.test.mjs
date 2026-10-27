@@ -105,7 +105,7 @@ test('SEASON-BANDS: historical standings use the selected snapshot instead of cu
  const source=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
  const start=source.indexOf('  function standingOutcome('),end=source.indexOf('  function decorateStanding',start);
  const current=copy(definition('IT-1'));current.rules.phases[0].rankOutcomes[0].to=2;current.rules.phases[0].rankOutcomes[1].from=3;
- const outcome=runInNewContext(source.slice(start,end)+';standingOutcome',{definition:current,window:{faCompetitionRules:rules,faCompetitionContext:{definition:definition('IT-1')}}});
+ const outcome=runInNewContext(source.slice(start,end)+';standingOutcome',{definition:current,window:{faCompetitionRules:rules,faCompetitionRulesView:view,faCompetitionContext:{definition:definition('IT-1')}}});
  assert.equal(outcome(1),'champion');assert.equal(outcome(2),'sovereign');assert.equal(outcome(3),'sovereign');assert.equal(outcome(4),'federation');assert.equal(outcome(6),'federation');assert.equal(outcome(7),'');
 });
 test('SEASON-BRACKET: runtime and static knockout markup can render a historical graph and phase identity',()=>{

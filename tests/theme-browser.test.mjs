@@ -482,6 +482,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd("Page.reload",{ignoreCache:true});await expectSeason(2,1);
       await run("window.__faObserveEmpty=false");assert.deepEqual(await run("window.__faEmptyFrames"),[],"mobile refresh has no empty frame");
       await cmd("Page.removeScriptToEvaluateOnNewDocument",{identifier:frameObserver.identifier});
+      await wait("!document.getElementById('app-fixtures-current').hidden");
       await tap('#app-fixtures-current');await expectSeason(2,8);
       await tap('#app-fixtures-round');await tap('#app-fixtures-round-option-30');await expectSeason(2,30);
       assert.equal(await run("document.getElementById('app-fixtures-next').disabled"),false);

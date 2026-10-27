@@ -38,7 +38,8 @@
 .club-overview-layout .app-panel{min-width:0;overflow-wrap:anywhere}
 .club-overview-layout h2{margin-top:0}
 .club-colors{display:flex;flex-wrap:wrap;column-gap:16px;row-gap:8px}
-.club-colors>.club-color{margin-right:-8px}
+.club-color-value{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.club-color-value>.club-color{flex:none;margin:0}
 .club-facts>.club-fact-description{grid-template-columns:minmax(0,1fr);gap:8px}
 .club-fact-description dd{min-width:0}
 .club-fact-description .club-description{margin:0;line-height:1.65;white-space:normal}
@@ -133,7 +134,7 @@
 .club-identity .club-facts>div:has(.club-colors) dt,
 .club-identity .club-facts>div:has(.club-colors) dd{align-self:center}
 .club-identity .club-colors{align-items:center}
-.club-identity .club-colors>.club-color{vertical-align:middle}
+.club-identity .club-color-value>.club-color{vertical-align:middle}
 
 /* Normalize single-line identity content to a 23px line box. */
 .club-identity .club-facts>div:not(.club-fact-description) dt,
@@ -203,3 +204,6 @@
  .club-competition-metrics{grid-column:2;grid-row:1;justify-self:end}
  .club-competition-next{grid-column:1/-1;grid-row:2}
 }
+
+/* Reserve the two-line fixture and matchday slot when Next Match is empty. */
+.club-competition-next-content{min-height:64px}

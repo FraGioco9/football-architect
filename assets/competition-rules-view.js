@@ -137,6 +137,22 @@
  const bracket=first.ties.filter(t=>t.participants.every(ref=>ref.rank)).map((t,i)=>`<div class="app-knockout-round ${i===0?'app-knockout-left':'app-knockout-right'}">${tie('postseason-'+legacyTieId(t.id),isPlayout?'rulesPlayoutTitle':i===0?'postseasonSemiOne':'postseasonSemiTwo',isPlayout?'Relegation play-out':'Semi-final '+(i+1),...t.participants.map(ref=>ref.rank).sort((a,b)=>a-b))}</div>`).join('')+(first.ties.some(t=>t.legs===1)?final:'')+winner;
  return `<div id="app-postseason-bracket" class="app-postseason-grid${isPlayout?" app-postseason-playout":""}">${bracket}</div>`;
 }
- const outcomeLabel=(definition,outcome,locale='en')=>outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
- return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel});
+ // Qualification colors decorate neutral league places; configured sporting outcomes always win.
+ function standingsOutcomes(d){
+  const phase=d.rules.phases.find(p=>p.rankOutcomes),bands=[];
+  for(let rank=1;rank<=d.capacity;rank++){
+   const outcome=rules.outcomeAt(d,phase.id,rank);
+   let kind=outcome?.kind;
+   if(d.category==='domestic'&&d.tier===1&&kind==='remain'&&rank<=6)kind=rank<=3?'sovereign':'federation';
+   if(!rules.outcomeStyle(kind))continue;
+   const previous=bands.at(-1);
+   if(previous&&previous.to===rank-1&&previous.kind===kind&&previous.targetPhaseId===outcome?.targetPhaseId)previous.to=rank;
+   else bands.push({...outcome,from:rank,to:rank,kind});
+  }
+  return bands;
+ }
+ const outcomeLabel=(definition,outcome,locale='en')=>outcome.kind==='sovereign'||outcome.kind==='federation'
+  ?(internationalOutcomeLabels[locale]||internationalOutcomeLabels.en)[outcome.kind==='sovereign'?0:1]
+  :outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
+ return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes});
 });

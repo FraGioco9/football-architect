@@ -60,14 +60,8 @@
   function standingOutcome(position) {
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
-    // The approved international qualification bands take precedence in top domestic divisions.
-    if(selected.category==='domestic'&&selected.tier===1){
-      if(position===1)return 'champion';
-      if(position>=2&&position<=3)return 'sovereign';
-      if(position>=4&&position<=6)return 'federation';
-    }
-    const phase=selected.rules.phases.find(p=>p.rankOutcomes);
-    return window.faCompetitionRules.outcomeStyle(window.faCompetitionRules.outcomeAt(selected,phase.id,position)?.kind);
+    const outcome=window.faCompetitionRulesView.standingsOutcomes(selected).find(o=>position>=o.from&&position<=o.to);
+    return window.faCompetitionRules.outcomeStyle(outcome?.kind);
   }
   function decorateStanding(row, position) {
     if(Number.isInteger(position))row.dataset.standingRank=String(position);else delete row.dataset.standingRank;
@@ -90,18 +84,16 @@
     }
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
-    const phase=selected.rules.phases.find(p=>p.rankOutcomes),outcomes=phase.rankOutcomes.filter(outcome=>window.faCompetitionRules.outcomeStyle(outcome.kind));
+    const outcomes=window.faCompetitionRulesView.standingsOutcomes(selected);
     host.hidden=!outcomes.length;
-    const international=selected.category==='domestic'&&selected.tier===1?[{from:1,to:1,kind:'champion',internationalCup:'sovereign'},{from:2,to:3,kind:'sovereign'},{from:4,to:6,kind:'federation'}]:[];
-    const visibleOutcomes=outcomes.filter(o=>!international.some(q=>o.from>=q.from&&o.to<=q.to));
-    list.replaceChildren(...[...international,...visibleOutcomes].map(outcome=>{
-      const style=outcome.kind==='sovereign'||outcome.kind==='federation'?outcome.kind:window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
+    list.replaceChildren(...outcomes.map(outcome=>{
+      const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
       const swatch=document.createElement('span');swatch.className='app-standings-legend-swatch';swatch.setAttribute('aria-hidden','true');
       const label=document.createElement('span');label.id='standings-outcome-'+style;
       const range=document.createElement('strong');range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
       const separator=document.createElement('span');separator.textContent=' · ';
-      const text=document.createElement('span');if(!international.includes(outcome))text.dataset.competitionOutcome=outcome.kind;if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
-      text.textContent=outcome.internationalCup==='sovereign'?'Champion · Sovereign Cup':outcome.kind==='sovereign'?'Sovereign Cup qualification':outcome.kind==='federation'?'Federation Cup qualification':window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
+      const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
+      text.textContent=window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
       label.append(range,separator,text);li.append(swatch,label);return li;
     }));
   }
@@ -882,6 +874,7 @@
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
     nextContext(seasons.includes(requested)?requested:1);
     await loadScript('competition-rules.js');
+    await loadScript('competition-rules-view.js');
     window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);
     window.addEventListener("fa:dev-progress-change",event=>{
       setDebugSeason(event.detail?.season);
@@ -955,7 +948,7 @@
     // The module bootstrap does not delay legacy shared-page initialization.
     // Selector module is optional to boot: never stall existing public consumers.
     void loadScript('provider-selectors-bootstrap.mjs',true).catch(()=>{});
-    for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
+    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
     window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());
     refreshSeasonPresentation();

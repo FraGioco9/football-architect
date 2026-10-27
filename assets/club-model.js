@@ -106,7 +106,7 @@
   }).join('')+'</nav>';
   const swatch=key=>{
    if(!/^#[0-9A-F]{6}$/.test(c[key]))throw Error('Invalid canonical color');
-   return '<span class="club-color" style="--club-color:'+c[key]+'" aria-hidden="true"></span><span>'+c[key]+'</span>';
+   return '<span class="club-color-value"><span class="club-color" style="--club-color:'+c[key]+'" aria-hidden="true"></span><span>'+c[key]+'</span></span>';
   };
   let content;
   if(selected.view==='overview'){
