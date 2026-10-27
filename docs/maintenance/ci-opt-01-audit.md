@@ -126,3 +126,9 @@ FAST feedback reached the 30–60-second target for Site checks in one observed 
 ## Browser cache policy
 
 The Playwright version remains pinned at 1.58.2. Browser installation can reuse `actions/cache@v4` at `~/.cache/ms-playwright` on non-FAST runs with a version-, platform- and mode-specific key (TARGETED Chromium-only versus FULL Chromium+WebKit); it does not cache generated browser outputs or alter source dependencies. Both Chromium and WebKit remain installed for FULL; cache hits and duration effects are unproven until measured in non-FAST workflow runs. No remote deploy triggered.
+
+## Reproducible Node inventory and TARGETED assertions
+
+`node tools/ci-opt-01-node-inventory.mjs --json` generates a read-only report of all current `tests/*.test.mjs` and four source-level signals (network, filesystem, subprocess and global state), with review-required or candidate-only classification. `candidate-only` must **never** be interpreted as parallel-safe: imported modules and other stateful effects are not exhaustively analyzed. The inventory has a Node contract test in Draft essential checks; it must not create persistent artifacts or require additional packages.
+
+The impact-classifier contracts additionally assert that every test path selected for Calendar, Clubs, Competitions and Guide actually exists. These checks guard against silent false-greens from stale targeted test names. Final validation still requires actual TARGETED scenario execution, then exact-head FULL before merge.
