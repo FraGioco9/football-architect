@@ -109,3 +109,20 @@ All 91 existing `tests/*.test.mjs` modules on the 2026-10-27 main baseline were 
 - Ambiguous modules with `process.env` or `globalThis` references, indirect helper dependencies or loopback URL literals must remain conservative until their imported dependencies are inspected.
 
 **Decision**: retain `--test-concurrency=1` across FULL for now. A parallel lane cannot be declared safe until repeated bounded CI trials demonstrate no shared writes, collisions, flaky browser launches or assertion changes. The work is recorded under P1-01/P1-02, not marked as completed performance gains.
+
+## Draft FAST measured wall-time comparison
+
+From GitHub Actions run timestamps on the same date:
+
+| Mode | GitHub run | Wall time | Notes |
+| --- | --- | --- | --- |
+| Before, FULL Site checks PR #323 | #40589046819 | ~314 seconds | 645/645 contracts |
+| Before, FULL Chromium PR #323 | #40589046815 | ~279 seconds | full browser and WebKit |
+| After, Draft FAST Site checks PR #325 | #40598106213 | ~28 seconds | essential contracts and scope checks; **not** the full suite |
+| After, Draft FAST Browser PR #325 | #40598106060 | ~9 seconds | browser intentionally deferred; **not** browser PASS |
+
+FAST feedback reached the 30–60-second target for Site checks in one observed PR run. This is **not an apples-to-apples performance acceleration of FULL**; coverage intentionally differs. The TARGETED and FULL-after-change timings, failure rate, cache effectiveness and runner-minute comparisons must be collected before claiming the overall targets are met. Do not green-light a merge from Draft FAST runs alone.
+
+## Browser cache policy
+
+The Playwright version remains pinned at 1.58.2. Browser installation can reuse `actions/cache@v4` at `~/.cache/ms-playwright` on non-FAST runs with a version- and platform-specific key; it does not cache generated browser outputs or alter source dependencies. Both Chromium and WebKit remain installed for FULL; cache hits and duration effects are unproven until measured in non-FAST workflow runs. No remote deploy triggered.
