@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   password-policy:
-    name: Admin password policy (Node 22)
+    name: Admin foundation contracts (Node 22)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout exact pull request head
@@ -26,5 +26,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test password shape (no credentials or remote services)
-        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts
+      - name: Test password and world contracts (no remote services)
+        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts backend/tests/world-contract.test.ts
