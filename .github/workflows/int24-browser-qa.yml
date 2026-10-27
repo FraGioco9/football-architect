@@ -1,9 +1,9 @@
-name: INT-24 Chromium QA
+name: Football Architect Browser QA
 on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,10 +31,16 @@ jobs:
         id: scope
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
-      - name: Skip browser work only for unpublished provider scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            echo "mode=fast" >> "$GITHUB_OUTPUT"
+            echo "Draft PR: quick safety and contracts only. FULL required on ready_for_review."
+          else
+            echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Defer full browser checks on draft or provider-only PR
         if: steps.scope.outputs.mode == 'fast'
-        run: echo 'Browser suite deferred to main/full CI; provider scope is unpublished.'
+        run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
       - name: Install isolated browser test dependency
         if: steps.scope.outputs.mode != 'fast'
         run: |

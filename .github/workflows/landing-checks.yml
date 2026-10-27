@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
 permissions:
   contents: read
@@ -56,7 +56,13 @@ jobs:
         id: scope
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            echo "mode=fast" >> "$GITHUB_OUTPUT"
+            echo "Draft PR: quick safety and contracts only. FULL required on ready_for_review."
+          else
+            echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
+          fi
       - name: Site contracts (full)
         if: steps.scope.outputs.mode != 'fast'
         env:
