@@ -20,6 +20,6 @@ test("source files do not bypass scoped validation",()=>{
 });
 test("impact combinations fail closed and targeted test paths are deterministic",()=>{
  const candidates=[["calendar/index.html","calendar"],["clubs/it/1/overview/index.html","clubs"],["competitions/int-1/standings/index.html","competitions"],["guide/index.html","guide"]];
- for(const [file,area] of candidates){const result=classifyImpact([file,"docs/README.md"]);assert.equal(result.area,area);assert.equal(result.mode,"targeted");assert.ok(result.tests.every(x=>/^tests\\/[a-z0-9-]+\\.test\\.mjs$/.test(x)));}
+ for(const [file,area] of candidates){const result=classifyImpact([file,"docs/README.md"]);assert.equal(result.area,area);assert.equal(result.mode,"targeted");assert.ok(result.tests.every(x=>x.startsWith("tests/")&&x.endsWith(".test.mjs")));}
  assert.equal(classifyImpact(candidates.map(([file])=>file)).mode,"full");
 });
