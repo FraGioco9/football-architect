@@ -51,7 +51,7 @@ export function inventoryCss(source) {
     .filter(group=>new Set(group.occurrences.map(x=>JSON.stringify(x.context))).size>1);
   const scopedRuleCounts={};
   for(const block of blocks){
-    const scope=block.context.find(context=>/^@media\\b/.test(context))||"(unscoped)";
+    const scope=block.context.find(context=>/^@media\b/.test(context))||"(unscoped)";
     scopedRuleCounts[scope]=(scopedRuleCounts[scope]||0)+1;
   }
   return {leafRules:blocks.length,scopedRuleCounts,crossContextCandidates,identicalContextGroups:[...groups.values()]
