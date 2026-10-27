@@ -134,3 +134,7 @@ Added a read-only `inspectStaticScriptReferences(source)` helper reporting only 
 ## Checkpoint 17 — conservative transitive literal-import linkage
 
 Added `traceLiteralPageImports(report,sourceByUrl)` to connect each page's direct HTML script roots to literal relative ESM imports in supplied source text, following only local relative specifiers with deterministic visited ordering. Missing sources and package-style specifiers are **explicitly unresolved**, not classified as safe to remove. Cycles are bounded. Three tests cover nested imports, unresolved dependencies and cycles. This is an in-memory advisory; computed dynamic imports, classic script globals, DOM-injected scripts and browser timing remain unknown, and no runtime loading has changed. It is not evidence that Landing assets may be removed.
+
+## Checkpoint 18 — import graph completeness classification
+
+Added `summarizeImportReachability(traces)`, reporting HTML script roots, visited literal import modules, unresolved references and status `partial` / `literal-only-complete`. The latter deliberately **does not** mean full runtime reachability: scripts may rely on globals, calculated dynamic imports or DOM injection. Two tests guard missing-module counts and this distinction. There is no app behavior change, asset removal or optimization claim. Final exact-head CI remains deferred by owner request.

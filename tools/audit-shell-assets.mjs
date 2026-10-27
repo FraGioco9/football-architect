@@ -18,6 +18,16 @@ export function inspectStaticScriptReferences(source){
 }
 
 
+export function summarizeImportReachability(traces){
+  return traces.map(trace=>({
+    route:trace.route,
+    rootCount:trace.roots.length,
+    literalVisitedCount:trace.visited.length,
+    unresolvedCount:trace.unresolved.length,
+    status:trace.unresolved.length?"partial":"literal-only-complete"
+  }));
+}
+
 export function traceLiteralPageImports(report,sourceByUrl){
   return report.pages.map(page=>{
     const roots=page.assets.filter(asset=>asset.kind==="script").map(asset=>asset.url);

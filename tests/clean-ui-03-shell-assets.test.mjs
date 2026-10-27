@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets,inspectStaticScriptReferences,traceLiteralPageImports} from "../tools/audit-shell-assets.mjs";
+import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets,inspectStaticScriptReferences,traceLiteralPageImports,summarizeImportReachability} from "../tools/audit-shell-assets.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("shell asset inventory preserves ordering and duplicates without changes",()=>{
@@ -110,4 +110,17 @@ test("import cycles do not cause infinite traversal",()=>{
   const report=comparePageAssetInventory([{route:"/x",html:'<head><script src="/assets/a.js"></script></head>'}]);
   const result=traceLiteralPageImports(report,{"/assets/a.js":'import "./b.js";',"/assets/b.js":'import "./a.js";'});
   assert.deepEqual(result[0].visited,["/assets/a.js","/assets/b.js"]);
+});
+
+test("reachability summary remains partial if any source is missing",()=>{
+  const report=comparePageAssetInventory([{route:"/app",html:'<head><script src="/assets/start.js"></script></head>'}]);
+  const traces=traceLiteralPageImports(report,{"/assets/start.js":'import "./missing.js";'});
+  assert.deepEqual(summarizeImportReachability(traces),[{
+    route:"/app",rootCount:1,literalVisitedCount:2,unresolvedCount:1,status:"partial"
+  }]);
+});
+test("all known literal modules do not imply full runtime proof",()=>{
+  const report=comparePageAssetInventory([{route:"/app",html:'<head><script src="/assets/start.js"></script></head>'}]);
+  const traces=traceLiteralPageImports(report,{"/assets/start.js":"window.inject?.()"});
+  assert.equal(summarizeImportReachability(traces)[0].status,"literal-only-complete");
 });
