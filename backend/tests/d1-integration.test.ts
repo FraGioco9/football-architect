@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { env, applyD1Migrations } from 'cloudflare:test';
+import { env } from 'cloudflare:workers';
+import { applyD1Migrations } from 'cloudflare:test';
 import worker from '../src/index.ts';
 import { readWorld } from '../src/world-repository.ts';
 
