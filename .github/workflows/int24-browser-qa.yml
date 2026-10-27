@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers-1.58.2-chromium-webkit-v1
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ steps.scope.outputs.mode }}-v1
       - name: Install isolated browser test dependency
         if: steps.scope.outputs.mode != 'fast'
         run: |
