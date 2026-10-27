@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {inventoryCss} from "../tools/audit-css-cascade.mjs";
+import {inventoryCss,formatCssAuditSummary} from "../tools/audit-css-cascade.mjs";
 import {readFileSync} from "node:fs";
 
 test("same selector and declaration in same media scope is a candidate",()=>{
@@ -82,4 +82,19 @@ test("read-only auditor does not mutate CSS input",()=>{
   const saved=css;
   inventoryCss(css);
   assert.equal(css,saved);
+});
+
+test("CSS audit summary sorts highest-ownership media contexts first",()=>{
+  const css=".base{color:red}@media(max-width:620px){.a{color:blue}.b{color:red}}@media(min-width:621px){.c{display:grid}}";
+  const report=formatCssAuditSummary(inventoryCss(css));
+  assert.equal(report.totalLeafRules,4);
+  assert.equal(report.topScopes[0].context,"@media(max-width:620px)");
+  assert.equal(report.topScopes[0].count,2);
+  assert.equal(report.exactDuplicateGroups,0);
+});
+test("candidate summary does not mark different media contexts as duplicate",()=>{
+  const css="@media(max-width:620px){.x{color:red}}@media(min-width:621px){.x{color:red}}";
+  const report=formatCssAuditSummary(inventoryCss(css));
+  assert.equal(report.exactDuplicateGroups,0);
+  assert.equal(report.crossContextSelectorGroups,1);
 });

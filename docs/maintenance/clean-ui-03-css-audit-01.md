@@ -84,3 +84,9 @@ The read-only audit now also emits `crossContextCandidates`, listing selectors r
 The read-only CSS inventory now reports `scopedRuleCounts` keyed by the first containing `@media` condition (or `(unscoped)`). This makes dense Calendar / Fixtures / History responsive regions easier to prioritize without treating identical selectors across different breakpoints as safe deletion candidates. The new summary is deliberately **diagnostic only**; it is not a CSS cascade rewrite, an equivalence certificate or a percentage of redundant declarations.
 
 Added two focused tests for scoped counts and nonmutation of the input CSS string. Changes batched on the existing Draft PR, with no manual CI dispatch or interim CI polling as requested. The final exact-head CI and rendered parity gate remain outstanding.
+
+## Checkpoint 10 — actionable CSS audit summary
+
+The auditor now offers `formatCssAuditSummary`, a deterministic, nonmutating summary ranking the 12 densest containing media scopes, plus separate counts of truly identical scoped-rule groups and cross-context selector reuse. These two categories cannot be conflated. Two new tests cover ordering and the distinction. The underlying source remains unchanged and no automatic CSS rewrite is performed.
+
+Issue #322's body checklist is updated directly at each implementation batch. Only narrowly completed **subtasks** are checked; major P1 consolidation, render equivalence and CI remain uncompleted. Test scheduling follows owner's final-PR-only requirement.

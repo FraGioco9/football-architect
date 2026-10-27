@@ -58,7 +58,18 @@ export function inventoryCss(source) {
     .filter(group=>group.length>1)
     .map(group=>({selector:group[0].selector,context:group[0].context,lines:group.map(x=>x.line)}))};
 }
+
+export function formatCssAuditSummary(report) {
+  const scopes=Object.entries(report.scopedRuleCounts)
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
+    .map(([context,count])=>({context,count}));
+  return {totalLeafRules:report.leafRules,topScopes:scopes.slice(0,12),
+    exactDuplicateGroups:report.identicalContextGroups.length,
+    crossContextSelectorGroups:report.crossContextCandidates.length};
+}
+
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   const path=process.argv[2]||"assets/app.css";
-  console.log(JSON.stringify({file:path,...inventoryCss(readFileSync(path,"utf8"))},null,2));
+  const report=inventoryCss(readFileSync(path,"utf8"));
+  console.log(JSON.stringify({file:path,summary:formatCssAuditSummary(report),...report},null,2));
 }
