@@ -302,5 +302,36 @@ try {
   }
   await historyPage.close();checks++;
  }
+ // PR 318: shared domestic qualification bands, localized legends and centered form letters.
+ const formPage=await browser.newPage({viewport:{width:1440,height:900}});
+ await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:'networkidle'});
+ await formPage.evaluate(()=>{
+  sessionStorage.setItem('football-architect:standings-dev-preview','on');
+  sessionStorage.setItem('football-architect:standings-dev-season','2');
+  sessionStorage.setItem('football-architect:standings-dev-matchdays','15');
+  sessionStorage.removeItem('football-architect:calendar-dev-world-day');
+  window.dispatchEvent(new Event('fa:fictional-standings-change'));
+ });
+ await formPage.reload({waitUntil:'networkidle'});
+ await formPage.waitForSelector('.app-world-form-glyph');
+ for(const width of [1440,390,320])for(const theme of ['dark','light'])for(const lang of Object.keys(languages)){
+  await formPage.setViewportSize({width,height:900});
+  await formPage.evaluate(({theme,lang})=>{document.documentElement.dataset.theme=theme;document.documentElement.lang=lang},{theme,lang});
+  await formPage.waitForFunction(label=>document.querySelector('#competition-tab-standings')?.textContent===label,languages[lang]);
+  const actual=await formPage.evaluate(()=>{
+   const glyphs=[...document.querySelectorAll('.app-world-form-dot')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.querySelector('.app-world-form-glyph')||el);
+   return {
+    bands:[...document.querySelectorAll('#app-standings-body tr')].slice(0,7).map(el=>el.dataset.standingOutcome||''),
+    centered:glyphs.length>0&&glyphs.every(el=>{const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),box=el.getBoundingClientRect();return Math.abs((text.left+text.right)-(box.left+box.right))<=2&&Math.abs((text.top+text.bottom)-(box.top+box.bottom))<=3}),
+    labels:['sovereign','federation'].every(kind=>document.querySelector('#standings-outcome-'+kind+' [data-competition-outcome]').textContent===window.faCompetitionRulesView.outcomeLabel(window.faCompetitionContext.definition,{kind},document.documentElement.lang)),
+    colors:['sovereign','federation'].map(kind=>getComputedStyle(document.querySelector('[data-standing-outcome="'+kind+'"]')).getPropertyValue('--standing-outcome-color').trim())
+   };
+  });
+  assert.deepEqual(actual.bands,['champion','sovereign','sovereign','federation','federation','federation','']);
+  assert.equal(actual.centered,true,'Form letter centering '+JSON.stringify({width,theme,lang}));
+  assert.equal(actual.labels,true,'Localized qualification legend '+lang);
+  assert.deepEqual(actual.colors,['#6B8FE3','#8D72C8']);checks++;
+ }
+ await formPage.close();
  console.log("INT24 Chromium QA PASS: "+checks+" checks; "+screenshots+" screenshots");
 }finally{await browser.close()}

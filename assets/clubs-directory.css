@@ -34,7 +34,7 @@
 .nav01-card strong{font-size:16px}
 .nav01-card small{font-size:12px;margin-top:9px}
 .nav01-crest{width:82px;height:88px;padding:0;border:0;border-radius:0;background:transparent;object-fit:contain}
-.nav01-country-flag{display:inline-block;vertical-align:-2px;width:17px;height:13px;object-fit:cover;margin-inline:4px 1px;border-radius:2px}
+.nav01-country-flag{display:inline-block;vertical-align:-3px;width:20px;height:16px;min-width:20px;max-width:20px;min-height:16px;max-height:16px;aspect-ratio:5/4;object-fit:contain;margin-inline:4px 1px;border-radius:0}
 @media(max-width:720px){.nav01-grid{gap:12px}.nav01-card{min-height:124px;padding:18px;gap:17px}.nav01-crest{width:68px;height:74px}.nav01-card strong{font-size:14px}.nav01-card small{font-size:11px}}
 @media(max-width:500px){.nav01-card{min-height:114px;padding:17px}.nav01-crest{width:64px;height:70px}}
 

@@ -145,3 +145,23 @@ test('RULES-CONFIG: unsupported nested keys and non-JSON values fail closed befo
   d=>d.rules.phases[0].points.toJSON=()=>({win:3,draw:1,loss:0})
  ]){const d=get('IT-1');change(d);assert.throws(()=>view.renderRules(d));}
 });
+
+test('STANDINGS-QUALIFICATION: shared bands preserve configured sporting outcomes and localize cup labels',()=>{
+ for(const d of catalogue){
+  const bands=view.standingsOutcomes(d);
+  for(let rank=1;rank<=d.capacity;rank++){
+   const original=d.rules.phases[0].rankOutcomes.find(o=>rank>=o.from&&rank<=o.to);
+   const actual=bands.find(o=>rank>=o.from&&rank<=o.to)?.kind||'';
+   const qualifying=d.category==='domestic'&&d.tier===1&&original.kind==='remain';
+   const expected=qualifying&&rank<=6?(rank<=3?'sovereign':'federation'):original.kind==='remain'||original.kind==='eliminated'?'':original.kind;
+   assert.equal(actual,expected,d.id+' rank '+rank);
+  }
+ }
+ const d=get('IT-1');d.rules.phases[0].rankOutcomes[0].to=2;d.rules.phases[0].rankOutcomes[1].from=3;
+ assert.equal(view.standingsOutcomes(d).find(o=>o.from<=2&&o.to>=2).kind,'champion');
+ for(const lang of ['en','de','es','fr','it'])for(const kind of ['sovereign','federation']){
+  const label=view.outcomeLabel(d,{kind},lang);
+  assert.ok(label.includes(kind==='sovereign'?'Sovereign Cup':'Federation Cup'));
+  if(lang!=='en')assert.notEqual(label,view.outcomeLabel(d,{kind},'en'));
+ }
+});
