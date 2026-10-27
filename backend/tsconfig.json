@@ -12,6 +12,7 @@
     "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "types": [
+      "@cloudflare/vitest-plugin/types",
       "node",
       "vitest/globals"
     ]
