@@ -1,6 +1,6 @@
 // Conservative repository asset reference inventory. No writes or deletion recommendations.
 import {readdirSync,readFileSync} from "node:fs";
-import {join,relative,extname} from "node:path";
+import {join,extname} from "node:path";
 import {pathToFileURL} from "node:url";
 const textExt=new Set([".html",".js",".mjs",".css",".json",".md",".csv",".yml",".yaml",".svg"]);
 export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync}){
@@ -13,6 +13,7 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
     }
   }
   walk(".");
+  paths.sort();
   const assets=paths.filter(p=>p.startsWith("assets/"));
   const sources=paths.filter(p=>textExt.has(extname(p).toLowerCase()));
   const mentions=new Map(assets.map(p=>[p,[]]));
@@ -30,7 +31,17 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
       if(pathsToFind.some(p=>text.includes(p)))mentions.get(asset).push(source);
     }
   }
+  const classification=assets.map(path=>{
+    const references=mentions.get(path);
+    if(references.length)return {path,status:"literal-reference",evidence:references.slice(0,6)};
+    if(path.startsWith("assets/flags/"))return {path,status:"dynamic-or-catalogue",evidence:["country flag lookup and source license review required"]};
+    if(path.startsWith("assets/clubs/"))return {path,status:"dynamic-or-catalogue",evidence:["club crest manifest/generated path"]};
+    if(path.startsWith("assets/divisions/"))return {path,status:"dynamic-or-catalogue",evidence:["division artwork generated catalogue"]};
+    return {path,status:"unresolved",evidence:["no literal path reference: not proof of nonuse"]};
+  });
   return {
+    classification,
+    provenUnused:[],
     totalFiles:paths.length,totalAssets:assets.length,sourceFilesScanned:sourceText.size,
     explicitlyReferenced:assets.filter(p=>mentions.get(p).length).length,
     unresolved:assets.filter(p=>!mentions.get(p).length).map(path=>({

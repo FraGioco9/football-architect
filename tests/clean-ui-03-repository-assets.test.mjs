@@ -24,3 +24,10 @@ test("repo asset inventory is read only and tolerates files with no references",
  assert.equal(report.unresolved[0].reason,"requires-dynamic-and-publication-review");
  assert.equal(JSON.stringify(files),before);
 });
+
+test("classification never marks unreferenced asset safe to remove",()=>{
+ const files={"assets/legacy.bin":"x","assets/flags/it.svg":"<svg/>","index.html":"text"};
+ const report=inventoryAssetReferences(".",fake(files));
+ assert.deepEqual(report.classification.map(x=>x.status),["dynamic-or-catalogue","unresolved"]);
+ assert.deepEqual(report.provenUnused,[]);
+});
