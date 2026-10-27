@@ -81,7 +81,7 @@ function expand(state,animate=false){
 }
 button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!=='true',true));
 button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();expand(button.getAttribute('aria-expanded')!=='true',true);}});
-expand(onCompetition||opened);
+expand(opened);
 const brand=document.querySelector('.fa-shell-sidebar .app-brand-symbol');if(brand){const source=brand.getAttribute('src');if(source)brand.setAttribute('src',source.replace(/-(?:dark|light)\.svg$/,'-'+(document.documentElement.dataset.theme==='light'?'light':'dark')+'.svg'));}
 // Fragment targets live in the central scroll pane, not in the document viewport.
 let fragmentFrame=0;

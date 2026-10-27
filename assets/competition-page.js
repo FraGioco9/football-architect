@@ -60,8 +60,8 @@
   function standingOutcome(position) {
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
-    const phase=selected.rules.phases.find(p=>p.rankOutcomes);
-    return window.faCompetitionRules.outcomeStyle(window.faCompetitionRules.outcomeAt(selected,phase.id,position)?.kind);
+    const outcome=window.faCompetitionRulesView.standingsOutcomes(selected).find(o=>position>=o.from&&position<=o.to);
+    return window.faCompetitionRules.outcomeStyle(outcome?.kind);
   }
   function decorateStanding(row, position) {
     if(Number.isInteger(position))row.dataset.standingRank=String(position);else delete row.dataset.standingRank;
@@ -84,7 +84,7 @@
     }
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
-    const phase=selected.rules.phases.find(p=>p.rankOutcomes),outcomes=phase.rankOutcomes.filter(outcome=>window.faCompetitionRules.outcomeStyle(outcome.kind));
+    const outcomes=window.faCompetitionRulesView.standingsOutcomes(selected);
     host.hidden=!outcomes.length;
     list.replaceChildren(...outcomes.map(outcome=>{
       const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
@@ -874,6 +874,7 @@
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
     nextContext(seasons.includes(requested)?requested:1);
     await loadScript('competition-rules.js');
+    await loadScript('competition-rules-view.js');
     window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);
     window.addEventListener("fa:dev-progress-change",event=>{
       setDebugSeason(event.detail?.season);
@@ -947,7 +948,7 @@
     // The module bootstrap does not delay legacy shared-page initialization.
     // Selector module is optional to boot: never stall existing public consumers.
     void loadScript('provider-selectors-bootstrap.mjs',true).catch(()=>{});
-    for (const script of ["competition-rules-view.js","landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
+    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
     window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());
     refreshSeasonPresentation();

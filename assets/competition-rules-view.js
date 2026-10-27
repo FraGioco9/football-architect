@@ -46,6 +46,8 @@
   fr:'Qualification internationale (saison suivante) : normalement, les places 1 à 3 accèdent à la Sovereign Cup et les places 4 à 6 à la Federation Cup. Le tenant de la Sovereign conserve sa place ; le tenant de la Federation rejoint la Sovereign. Chacun occupe l’une des trois places Sovereign de son pays. Les places restantes reviennent aux clubs éligibles les mieux classés. Un tenant relégué reste éligible.',
   it:'Qualificazione internazionale (stagione successiva): normalmente le posizioni 1–3 accedono alla Sovereign Cup e le posizioni 4–6 alla Federation Cup. Il campione in carica della Sovereign mantiene un posto Sovereign; quello della Federation passa alla Sovereign. Entrambi occupano uno dei tre posti Sovereign del proprio Paese. I posti rimanenti vanno ai club idonei meglio classificati. Un campione in carica retrocesso resta idoneo.'
  };
+ const internationalSectionTitles={en:'International sporting outcomes',de:'Internationale sportliche Ergebnisse',es:'Resultados deportivos internacionales',fr:'Résultats sportifs internationaux',it:'Esiti sportivi internazionali'};
+ const internationalOutcomeLabels={"en":["Sovereign Cup qualification (subject to titleholder allocation)","Federation Cup qualification (subject to titleholder allocation)"],"de":["Qualifikation zum Sovereign Cup (Titelverteidiger-Regel vorbehalten)","Qualifikation zum Federation Cup (Titelverteidiger-Regel vorbehalten)"],"es":["Clasificación a la Sovereign Cup (sujeta a plazas de campeones)","Clasificación a la Federation Cup (sujeta a plazas de campeones)"],"fr":["Qualification pour la Sovereign Cup (sous réserve des tenants du titre)","Qualification pour la Federation Cup (sous réserve des tenants du titre)"],"it":["Qualificazione alla Sovereign Cup (salvo posti ai campioni in carica)","Qualificazione alla Federation Cup (salvo posti ai campioni in carica)"]};
  function renderRules(input,locale="en"){
   const d=definition(input),t=Object.hasOwn(copy,locale)?copy[locale]:copy.en;
   const paragraph=(key,params={})=>'<p data-rule-template="'+escape(key)+'" data-rule-params="'+escape(JSON.stringify(params))+'">'+escape(format(t[key],params))+'</p>';
@@ -77,7 +79,11 @@
      return '<div class="app-rules-outcome" data-outcome="'+escape(color)+'" data-rule-kind="'+escape(o.kind)+'" data-rule-from="'+o.from+'" data-rule-to="'+o.to+'"'+(o.targetPhaseId?' data-rule-target="'+escape(o.targetPhaseId)+'"':'')+'><strong class="app-rules-range">'+range+'</strong><span>'+escape(label)+'</span></div>';
     }).join('');
     html+=section('rules-outcomes'+suffix,t.outcomes,'<div class="app-rules-outcomes">'+outcomeHtml+'</div>');
-    if(d.category==='domestic'&&d.tier===1)html+='<p data-rule-international-qualification="true">'+escape(internationalQualificationNotes[locale]||internationalQualificationNotes.en)+'</p>';
+    if(d.category==='domestic'&&d.tier===1&&phase.id===league.id){
+     const labels=internationalOutcomeLabels[locale]||internationalOutcomeLabels.en;
+     const rows=[[1,3,labels[0],'sovereign'],[4,6,labels[1],'federation']].map(([from,to,label,cup])=>'<div class="app-rules-outcome" data-outcome="international" data-rule-kind="internationalQualification" data-rule-cup="'+cup+'" data-rule-from="'+from+'" data-rule-to="'+to+'"><strong class="app-rules-range">'+from+'–'+to+'</strong><span>'+escape(label)+'</span></div>').join('');
+     html+=section('rules-international-qualification',internationalSectionTitles[locale]||internationalSectionTitles.en,'<div class="app-rules-outcomes">'+rows+'</div><p data-rule-international-qualification="true">'+escape(internationalQualificationNotes[locale]||internationalQualificationNotes.en)+'</p>');
+    }
    }else{
     const ties=phase.ties.map(tie=>{
      const home=tie.homePolicy==='neutral'?t.neutral:tie.legs===1?t.higherSingle:t.higherDouble;
@@ -87,7 +93,6 @@
     html+=section('rules-'+phase.id,t.phases[phase.labelKey],ties);
    }
   }
-  if(d.category==='domestic'&&d.rules.phases.some(p=>p.type==='knockout'))html+=paragraph('noGap');
   return '<div class="app-rules-content" data-rule-definition="'+escape(d.id)+'" aria-label="'+escape(d.name)+'">'+html+'<strong id="app-competition-level" hidden>'+escape(d.tier??'—')+'</strong></div>';
  }
  const rendered=new WeakMap();
@@ -132,6 +137,22 @@
  const bracket=first.ties.filter(t=>t.participants.every(ref=>ref.rank)).map((t,i)=>`<div class="app-knockout-round ${i===0?'app-knockout-left':'app-knockout-right'}">${tie('postseason-'+legacyTieId(t.id),isPlayout?'rulesPlayoutTitle':i===0?'postseasonSemiOne':'postseasonSemiTwo',isPlayout?'Relegation play-out':'Semi-final '+(i+1),...t.participants.map(ref=>ref.rank).sort((a,b)=>a-b))}</div>`).join('')+(first.ties.some(t=>t.legs===1)?final:'')+winner;
  return `<div id="app-postseason-bracket" class="app-postseason-grid${isPlayout?" app-postseason-playout":""}">${bracket}</div>`;
 }
- const outcomeLabel=(definition,outcome,locale='en')=>outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
- return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel});
+ // Qualification colors decorate neutral league places; configured sporting outcomes always win.
+ function standingsOutcomes(d){
+  const phase=d.rules.phases.find(p=>p.rankOutcomes),bands=[];
+  for(let rank=1;rank<=d.capacity;rank++){
+   const outcome=rules.outcomeAt(d,phase.id,rank);
+   let kind=outcome?.kind;
+   if(d.category==='domestic'&&d.tier===1&&kind==='remain'&&rank<=6)kind=rank<=3?'sovereign':'federation';
+   if(!rules.outcomeStyle(kind))continue;
+   const previous=bands.at(-1);
+   if(previous&&previous.to===rank-1&&previous.kind===kind&&previous.targetPhaseId===outcome?.targetPhaseId)previous.to=rank;
+   else bands.push({...outcome,from:rank,to:rank,kind});
+  }
+  return bands;
+ }
+ const outcomeLabel=(definition,outcome,locale='en')=>outcome.kind==='sovereign'||outcome.kind==='federation'
+  ?(internationalOutcomeLabels[locale]||internationalOutcomeLabels.en)[outcome.kind==='sovereign'?0:1]
+  :outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
+ return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes});
 });

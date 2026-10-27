@@ -86,7 +86,7 @@
   const validNext=home&&away&&home.clubId!==away.clubId&&[home.clubId,away.clubId].includes(c.clubId)&&Number.isInteger(next.round)&&next.round>=1&&next.round<=33;
   const fixtureLink=validNext?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'fixtures'})+'?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
   const rank=summary?.position===null||!summary?'—':ordinal(summary.position,lang);
-  const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'">'+escape(home.primaryName+' – '+away.primaryName)+'</a><small>'+escape(next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+'</small>':
+  const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'"><span class="club-competition-match-name">'+escape(home.primaryName+' – '+away.primaryName)+'</span></a><small>'+escape(next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+'</small>':
    '<span class="club-competition-next-empty">'+escape(summary?t.noUpcomingMatch:t.noScheduledMatch)+'</span>';
   const competitionCard=division?'<div class="club-competition-layout"><div class="club-competition-identity">'+
    '<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">'+
@@ -106,7 +106,7 @@
   }).join('')+'</nav>';
   const swatch=key=>{
    if(!/^#[0-9A-F]{6}$/.test(c[key]))throw Error('Invalid canonical color');
-   return '<span class="club-color" style="--club-color:'+c[key]+'" aria-hidden="true"></span><span>'+c[key]+'</span>';
+   return '<span class="club-color-value"><span class="club-color" style="--club-color:'+c[key]+'" aria-hidden="true"></span><span>'+c[key]+'</span></span>';
   };
   let content;
   if(selected.view==='overview'){

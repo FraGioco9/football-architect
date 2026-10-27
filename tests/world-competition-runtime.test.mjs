@@ -1,6 +1,7 @@
 import routeRegistry from '../assets/routes-registry.js';
 import competitionModel from "../assets/competition-model.js";
 import competitionRules from "../assets/competition-rules.js";
+import competitionRulesView from "../assets/competition-rules-view.js";
 // LOCAL-SHARED-PAGE-QA-01: exercise the real static renderer with isolated DOM stubs.
 // This is deterministic runtime-contract QA, NOT a substitute for visual browser QA.
 import test from "node:test";
@@ -32,8 +33,8 @@ test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs deskto
  const original=manifest.competitions.find(d=>d.id==='IT-1');
  const payload={season:1,rulesVersion:original.rules.version,rulesSnapshot:original.rules,participants:divisionsForTest('IT-1').clubs,fixtures:null,results:[],statistics:null,status:'partial'};
  assert.equal(r.window.faCompetitionContextApi.replaceSeasonData(payload,r.window.faCompetitionContext.revision),true);
- assert.equal(desktop[1].dataset.standingOutcome,undefined);
- assert.equal(mobile[1].dataset.standingOutcome,undefined);
+ assert.equal(desktop[1].dataset.standingOutcome,'sovereign');
+ assert.equal(mobile[1].dataset.standingOutcome,'sovereign');
 });
 test('SEASON-EARLY-PROVIDER: historical bands repair before later shared scripts finish loading',async()=>{
  const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
@@ -47,7 +48,7 @@ test('SEASON-EARLY-PROVIDER: historical bands repair before later shared scripts
   window.faCompetitionContextApi.replaceSeasonData(payload,window.faCompetitionContext.revision);
   observed=fields.get('app-standings-compact-list').children[1].dataset.standingOutcome;
  }});
- assert.equal(observed,undefined);
+ assert.equal(observed,'sovereign');
 });
 
 test('CONFIG-BANDS: standings styling follows edited rank bands instead of route tier',async()=>{
@@ -193,7 +194,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- const window={faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,location,innerWidth:390,innerHeight:600,events:{},
+ const window={faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,faCompetitionRulesView:competitionRulesView,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
@@ -225,7 +226,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     "/competitions/_shared/manifest.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
-    "/assets/competition-rules.js","/assets/provider-selectors-bootstrap.mjs","/assets/competition-rules-view.js","/assets/landing.js","/assets/app.js",
+    "/assets/competition-rules.js","/assets/competition-rules-view.js","/assets/provider-selectors-bootstrap.mjs","/assets/landing.js","/assets/app.js",
     "/assets/app-search.js","/assets/club-crests.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js","/assets/competition-stats.js","/assets/competition-awards.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
@@ -485,7 +486,7 @@ test("STANDINGS-OUTCOMES: all divisions share rank bands across desktop and mobi
  for(const division of manifest.divisions){
   const r=await simulate({division,testHooks:true});
   const expected=division.tier===1
-   ?['champion',...Array(11).fill(''),...Array(2).fill('playout'),...Array(2).fill('relegated')]
+   ?['champion','sovereign','sovereign','federation','federation','federation',...Array(6).fill(''),...Array(2).fill('playout'),...Array(2).fill('relegated')]
    :[...Array(2).fill('promoted'),...Array(4).fill('playoff'),...Array(10).fill('')];
   const desktop=r.fields.get('app-standings-body').children;
   const mobile=r.fields.get('app-standings-compact-list').children;

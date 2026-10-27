@@ -280,7 +280,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-form-strip .app-world-form-control{width:18px;height:18px;border-radius:5px}
 .app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:-4px}
 .app-world-form-control:hover{background:var(--surface-raised)}
-.app-world-form-control .app-world-form-glyph{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:9px;font-weight:850;line-height:1;color:#f7fbf8}
+.app-world-form-control .app-world-form-glyph{display:grid;place-items:center;text-align:center;width:15px;height:15px;border-radius:4px;font-size:9px;font-weight:850;line-height:1;color:#f7fbf8}
 .app-world-form-control.app-world-form-w .app-world-form-glyph{background:#237c59}
 .app-world-form-control.app-world-form-d .app-world-form-glyph{background:#667b82}
 .app-world-form-control.app-world-form-l .app-world-form-glyph{background:#98504d}
@@ -384,7 +384,7 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 .app-competition-facts dt{color:var(--muted);font-size:11px}
 .app-competition-facts dd{margin:5px 0 0;font-weight:700;font-size:14px}
 /* RULES-04: shared responsive regulations, separate from competition navigation. */
-.app-rules-content{display:grid;gap:20px;max-width:1000px;min-width:0}
+.app-rules-content{display:grid;gap:20px;width:100%;max-width:none;min-width:0}
 .app-rules-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
 .app-rules-metric{min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel,transparent)}
 .app-rules-metric dt{color:var(--muted);font-size:12px;line-height:1.4}
@@ -735,6 +735,8 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 
 /* Standings bands mirror the Rules palette and retain the existing points column. */
 [data-standing-outcome="champion"],.app-rules-outcome[data-outcome="champion"]{--standing-outcome-color:#D4AF37}
+[data-standing-outcome="sovereign"]{--standing-outcome-color:#6B8FE3}
+[data-standing-outcome="federation"]{--standing-outcome-color:#8D72C8}
 [data-standing-outcome="promoted"],.app-rules-outcome[data-outcome="promoted"]{--standing-outcome-color:#31966B}
 [data-standing-outcome="quarterfinals"],.app-rules-outcome[data-outcome="quarterfinals"]{--standing-outcome-color:#31966B}
 [data-standing-outcome="playoff"],.app-rules-outcome[data-outcome="playoff"]{--standing-outcome-color:#4A8FD8}
@@ -1100,3 +1102,16 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
 .fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
 @media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
+
+/* UI refinement: compact Rules and international standings qualification. */
+.app-rules-outcome[data-rule-cup="sovereign"]{--standing-outcome-color:#6B8FE3}
+.app-rules-outcome[data-rule-cup="federation"]{--standing-outcome-color:#8D72C8}
+.app-rules-content{width:100%;max-width:none;justify-self:stretch}
+.app-rules-section{padding-top:12px}
+.app-rules-section p{line-height:1.5}
+.app-rules-outcomes{gap:4px}
+.app-rules-outcome{padding:7px 10px;border-radius:5px}
+.app-rules-metric{padding:9px 12px}
+.app-rules-metric dd{font-size:19px}
+.app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}
+.app-world-flag{width:100%;height:100%;object-fit:contain}
