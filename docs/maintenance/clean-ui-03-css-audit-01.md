@@ -49,3 +49,9 @@ PR #321 reconciled README and added navigation comments to CSS, with ordered CSS
 On the current `main`, `tools/generate-app-pages.mjs` (25,717 source characters) already inserts route-specific scripts and template dependencies. It contains separate `landing.js`, `competition-page.js`, `international-cups.js`, and Calendar bootstrap/model references; these are **not** proof that landing scripts are dead on non-Landing pages because runtime language/state initialization may depend on them. Current `assets/app.js` is approximately 73,130 characters and `assets/landing.js` approximately 12,049 characters. A removal/split requires ordered script-dependency traces in actual generated HTML and a five-language/theme/bootstrap regression first.
 
 P3 controls must similarly distinguish Calendar current-week navigation, Fixtures matchday selectors, History season selector, native dialog focus handling and touch/mobile behavior before sharing a primitive. **No shared-controls or asset-loading change is made in this PR.**
+
+## Checkpoint 03 — regression contracts
+
+Added `tests/clean-ui-03-css-contract.test.mjs` (Node built-in test runner) to pin the three proven same-condition responsive deduplications: a single History `display:none` source declaration at max-width 620, a single logo-size `64px` at max-width 620, and a single `58px` at max-width 360, while retaining the default `82px`. It also asserts presence of the shared template's current script/style dependencies rather than changing load order prematurely.
+
+These are **source contracts**, not replacement for browser CSSOM/visual parity. The earlier checked-in cross-route Chromium workflows must pass on the exact new HEAD. If the contract conflicts with an intentional later design change, update the contract and supporting QA together rather than deleting guards silently.
