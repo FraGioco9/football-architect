@@ -3,6 +3,7 @@ from pathlib import Path
 import sqlite3
 import unittest
 import re
+import tempfile
 
 MIGRATION = Path(__file__).resolve().parents[1] / "migrations" / "0001_world.sql"
 
@@ -31,6 +32,20 @@ class WorldMigrationTest(unittest.TestCase):
         before = self.row()
         self.db.executescript(MIGRATION.read_text(encoding="utf-8"))
         self.assertEqual(before, self.row())
+
+    def test_file_backed_world_survives_connection_restart(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "world.sqlite"
+            first = sqlite3.connect(path)
+            first.execute("PRAGMA foreign_keys=ON")
+            first.executescript(MIGRATION.read_text(encoding="utf-8"))
+            old = first.execute("SELECT generation, revision FROM world_state").fetchone()
+            first.close()
+            second = sqlite3.connect(path)
+            self.assertEqual(second.execute("SELECT generation, revision FROM world_state").fetchone(), old)
+            second.executescript(MIGRATION.read_text(encoding="utf-8"))
+            self.assertEqual(second.execute("SELECT generation, revision FROM world_state").fetchone(), old)
+            second.close()
 
     def test_singleton_cannot_be_deleted_or_duplicated(self):
         with self.assertRaises(sqlite3.IntegrityError):
