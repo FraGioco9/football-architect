@@ -6,7 +6,7 @@ const groups=Object.freeze({
  guide:{patterns:[/^guide\//,/^assets\/guide-[^/]*\.(?:js|mjs|css)$/,/^tests\/guide\.test\.mjs$/],tests:["tests/guide.test.mjs"]}
 });
 const safeDocs=/^(?:docs\/|README\.md$|\.github\/ISSUE_TEMPLATE\/)/;
-const infra=/^(?:tests\/ci-opt-01-browser-smoke\.mjs$|\.github\/workflows\/|tools\/ci-(?:fast-scope|opt-01-impact)\.mjs$|tests\/ci-(?:fast-scope|opt-01-impact)\.test\.mjs$)/;
+const infra=/^(?:tests\/ci-opt-01-browser-smoke\.mjs$|(?:tools\/ci-opt-01-node-inventory\.mjs|tests\/ci-opt-01-node-inventory\.test\.mjs)$|\.github\/workflows\/|tools\/ci-(?:fast-scope|opt-01-impact)\.mjs$|tests\/ci-(?:fast-scope|opt-01-impact)\.test\.mjs$)/;
 export function classifyImpact(changed){
  if(!Array.isArray(changed)||!changed.length||changed.some(p=>typeof p!=="string"||!p||p.startsWith("/")||p.includes("..")))return {mode:"full",area:null,tests:[]};
  const relevant=changed.filter(p=>!safeDocs.test(p));

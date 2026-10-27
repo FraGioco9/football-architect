@@ -67,7 +67,7 @@ jobs:
       - name: Site essential contracts (FAST and TARGETED)
         if: steps.scope.outputs.mode != 'full'
         run: |
-          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
+          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/ci-opt-01-node-inventory.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
       - name: Targeted area contracts
         if: steps.scope.outputs.mode == 'targeted'
         env:
