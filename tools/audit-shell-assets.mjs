@@ -4,7 +4,7 @@ import {pathToFileURL} from "node:url";
 
 export function shellAssetInventory(template){
   const head=template.split("</head>")[0];
-  const matches=[...head.matchAll(/<(?:script|link)\\b[^>]*?(?:src|href)="([^"]+)"[^>]*>/g)];
+  const matches=[...head.matchAll(/<(?:script|link)\b[^>]*?(?:src|href)="([^"]+)"[^>]*>/g)];
   return matches.map(match=>({url:match[1],kind:match[0].startsWith("<script")?"script":"link"}));
 }
 
