@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory} from "../tools/audit-shell-assets.mjs";
+import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages} from "../tools/audit-shell-assets.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("shell asset inventory preserves ordering and duplicates without changes",()=>{
@@ -46,4 +46,27 @@ test("page asset inventory does not label missing direct links as unused",()=>{
   const report=comparePageAssetInventory([{route:"/",html:"<head></head>"}]);
   assert.equal(report.shared.length,0);
   assert.equal(report.routeSpecific.length,0);
+});
+
+test("real generated app routes share baseline dependencies",()=>{
+  const report=auditGeneratedPages([
+    "dashboard/index.html","calendar/index.html","settings/index.html",
+    "competitions/index.html","clubs/index.html"
+  ],path=>read(path));
+  assert.equal(report.pages.length,5);
+  const common=report.shared.map(x=>x.url);
+  for(const required of ["/assets/app.css","/assets/app.js"]){
+    assert.ok(common.includes(required),"not common to app pages: "+required);
+  }
+  assert.ok(report.routeSpecific.length>0,"expected page-specific dependencies");
+});
+test("route comparison keeps page membership and does not rewrite generated HTML",()=>{
+  const pages=["dashboard/index.html","calendar/index.html"];
+  const before=pages.map(read);
+  const report=auditGeneratedPages(pages,path=>read(path));
+  assert.deepEqual(pages.map(read),before);
+  assert.deepEqual(report.pages.map(x=>x.route),pages);
+  for(const asset of [...report.shared,...report.routeSpecific]){
+    assert.ok(asset.routes.every(route=>pages.includes(route)));
+  }
 });

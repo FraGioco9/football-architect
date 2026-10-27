@@ -114,3 +114,9 @@ Repository tree read-only baseline at this checkpoint: 561 tracked blobs, of whi
 ## Checkpoint 13 — page asset dependency comparison and path classification fix
 
 Fixed the exact pathname normalization for root-relative asset URLs in the read-only presence checker, then added `comparePageAssetInventory([{route,html},...])`: a deterministic comparison of *direct head links* across supplied generated pages. It reports shared and route-specific resources with route membership but makes **no inference of unused or removable code**. Added regression tests for root-relative asset path normalization, page-specific vs common script comparisons and empty pages. This is groundwork for an eventual real generated-page dependency walk; it does not alter template scripts, DOM behavior, CSS or deployment gates. Tests remain reserved for the PR final acceptance stage.
+
+## Checkpoint 14 — actual generated-page direct-link audit
+
+The shell inventory now accepts multiple checked-in/generated HTML file paths through `node tools/audit-shell-assets.mjs dashboard/index.html calendar/index.html settings/index.html competitions/index.html clubs/index.html`. It emits shared and route-specific head links with route provenance and makes no filesystem changes. Tests read these five *actual* route files and protect common `app.css` / `app.js` links, page-specific links, provenance and nonmutation. This advances direct HTML dependency evidence, **not** proof of safe script unloading, dynamic reachability, browser timing or transfer-size improvements.
+
+No HTML output, shared template, generator, CSS declarations or JS runtime modified. CI is reserved for final PR acceptance; GitHub may still start repository-configured automatic checks following the atomic commit.

@@ -28,6 +28,12 @@ export function comparePageAssetInventory(pages){
   return {pages:inventories,shared,routeSpecific};
 }
 
+
+export function auditGeneratedPages(paths,read=readFileSync){
+  const pages=paths.map(path=>({route:path,html:read(path,"utf8")}));
+  return comparePageAssetInventory(pages);
+}
+
 export function shellAssetInventory(template){
   const head=template.split("</head>")[0];
   const matches=[...head.matchAll(/<(?:script|link)\b[^>]*?(?:src|href)="([^"]+)"[^>]*>/g)];
@@ -35,6 +41,12 @@ export function shellAssetInventory(template){
 }
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
-  const path=process.argv[2]||"templates/app-page.html";
-  console.log(JSON.stringify({file:path,assets:shellAssetInventory(readFileSync(path,"utf8"))},null,2));
+  const paths=process.argv.slice(2);
+  if(paths.length>1){
+    const report=auditGeneratedPages(paths);
+    console.log(JSON.stringify({routes:report.pages.map(x=>x.route),shared:report.shared,routeSpecific:report.routeSpecific},null,2));
+  }else{
+    const path=paths[0]||"templates/app-page.html";
+    console.log(JSON.stringify({file:path,assets:shellAssetInventory(readFileSync(path,"utf8"))},null,2));
+  }
 }
