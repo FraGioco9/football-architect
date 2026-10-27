@@ -29,3 +29,17 @@ Tracking: [issue #322](https://github.com/FraGioco9/football-architect/issues/32
 ## Related completed work
 
 PR #321 reconciled README and added navigation comments to CSS, with ordered CSSOM and visual parity checks. Those checks covered the **documentation/comment-only tree**; they do not automatically prove a later CSS consolidation safe.
+
+## Implementation checkpoint 02 (same Draft PR)
+
+- Removed the **later** copy of the same `@media(max-width:620px)` / `.app-competition-header` custom property assignment to `64px`, and the later `@media(max-width:360px)` assignment to `58px`. Earlier originals at the same breakpoints remain intact. Commit `f496ced0140620f032fc11f18faee2f645056de5`. This removes 166 source characters, not a claimed 166-byte minified payload reduction.
+- Prior History mobile override removal commit `c97d2d0854867c38be632a2e445501b21b5592b1` passed exact-head landing, head-exact and chromium jobs.
+- A follow-up brace/context scanner over the new file found 986 simple leaf declarations and no exact identical selector/body/context groups under its **limited** parser model. Its output is not a substitute for a CSS Syntax Level 3-compliant parser; nested media/keyframes and the scanner's context recovery limit its negative result.
+- More aggressive cleanup is **deferred** until full AST proof and route-level computed-style equivalence. The CSS remains intentionally mostly unchanged.
+
+## Candidate classification and next work
+
+- Identical text in different breakpoints (such as standing-table row height at min-width 621 and 1160) is **not** necessarily redundant: removing it changes cascade priority and can expose intervening overrides.
+- `@keyframes from`/`to` duplicates cannot be deduplicated across named animations.
+- Selector reuse across History record layouts and Calendar/Fixtures controls is intentional until responsive and keyboard/touch behaviors are mapped.
+- Only exact same-condition responsive assignments with an earlier preserved source have been targeted in this batch. Full visual/browser parity for the newest HEAD remains an acceptance gate.
