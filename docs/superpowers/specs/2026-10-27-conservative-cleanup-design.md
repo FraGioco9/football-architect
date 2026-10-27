@@ -3,7 +3,7 @@
 Date: 2026-10-27  
 Repository: FraGioco9/football-architect  
 Inspected main: `c40710cc2ccfcacb785d06aa51594e2ed07968de`  
-Status: approach selected by owner; implementation design awaiting approval.
+Status: approach and implementation design approved by owner on 2026-10-27; implementation tracked in the companion plan.
 
 ## Intent and selected approach
 
@@ -111,3 +111,11 @@ Use existing tests; add a test only for a concrete uncovered risk or proven defe
 The builder may choose formatting conventions, exact evidence commands and bounded rule groups while retaining the constraints above. If a planned removal cannot be proved safe, leave it in place and report why. Keep the two lots cohesive; split further only if review/testing makes the combined diff unsafe.
 
 Completion reporting must separate: actions already performed, proposed changes, verified results and outstanding access blockers. A docs/design commit is not implementation completion. No global cleanup completion claim while code or branch deletion remains outstanding.
+
+## Implementation verification — 2026-10-27
+
+README reconciled against current sources; publication wording explicitly retains the public division-search catalogue exception. CSS changes are comments and whitespace between nine neighbouring top-level blocks; no override, selector, declaration, media body, asset or runtime module removed.
+
+Local Node 22.23.4 full suite: **578/578 PASS, zero failed/skipped/cancelled**, with real Chromium. Generator: **23/23 HTML plus competition manifest, club template and club manifest match**. Native browser parsing retains **820 ordered rules**. A 30-case reduced-motion matrix rotates six representative routes through five locales, two themes and 1440/390/320 widths; CSSOM, computed-style/layout fingerprints and screenshot bytes are identical in every case. This is not the full Cartesian route matrix or real-iPhone Safari certification. The initial Node 24 suite overlapped formatting, so it is not claimed as a pristine full-suite baseline; original CSS bytes/CSSOM were captured before edits.
+
+Independent review: no remaining substantive or minor findings after correcting the README public-data overstatement. Exact-head remote CI and standalone INT24 verification are recorded in the PR description when complete. The branch inventory remains a dated candidate list: **no branch deletions**, merge or deployment were performed.
