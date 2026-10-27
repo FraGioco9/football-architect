@@ -34,9 +34,9 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
   const classification=assets.map(path=>{
     const references=mentions.get(path);
     if(references.length)return {path,status:"literal-reference",evidence:references.slice(0,6)};
-    if(path.startsWith("assets/flags/"))return {path,status:"dynamic-or-catalogue",evidence:["country flag lookup and source license review required"]};
-    if(path.startsWith("assets/clubs/"))return {path,status:"dynamic-or-catalogue",evidence:["club crest manifest/generated path"]};
-    if(path.startsWith("assets/divisions/"))return {path,status:"dynamic-or-catalogue",evidence:["division artwork generated catalogue"]};
+    if(path.startsWith("assets/flags/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-app-pages.mjs derives flagAsset from country ID","assets/flags/SOURCE.md records upstream and licensing provenance"]};
+    if(path.startsWith("assets/clubs/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-club-pages.mjs produces clubCrests manifest from clubCrestAssets","assets/club-crests.js enhances dynamic crest hosts"]};
+    if(path.startsWith("assets/divisions/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-app-pages.mjs uses division logos in generated HTML"]};
     return {path,status:"unresolved",evidence:["no literal path reference: not proof of nonuse"]};
   });
   return {
