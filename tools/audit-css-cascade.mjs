@@ -1,0 +1,75 @@
+// CLEAN-UI-03: read-only, context-aware CSS candidate inventory. Node 22; no dependencies.
+// Does not change CSS or claim browser equivalence.
+import {readFileSync} from "node:fs";
+import {pathToFileURL} from "node:url";
+
+export function inventoryCss(source) {
+  const blocks=[];
+  const stack=[];
+  let start=0,quote="",comment=false,paren=0,bracket=0;
+  for(let i=0;i<source.length;i++){
+    const c=source[i],next=source[i+1];
+    if(comment){if(c==="*"&&next==="/"){comment=false;i++;}continue;}
+    if(quote){if(c==="\\"){i++;continue;}if(c===quote)quote="";continue;}
+    if(c==="/"&&next==="*"){comment=true;i++;continue;}
+    if(c==='"'||c==="'"){quote=c;continue;}
+    if(c==="("){paren++;continue;}if(c===")"){if(!paren)throw Error("Unmatched closing parenthesis");paren--;continue;}
+    if(c==="["){bracket++;continue;}if(c==="]"){if(!bracket)throw Error("Unmatched closing bracket");bracket--;continue;}
+    if(paren||bracket)continue;
+    if(c==="{"){
+      const header=source.slice(start,i).replace(/\/\*[\s\S]*?\*\//g," ").trim().replace(/\s+/g," ");
+      stack.push({header,begin:i+1,line:source.slice(0,i).split("\n").length,children:false});
+      start=i+1;
+    }else if(c==="}"){
+      const block=stack.pop();
+      if(!block)throw Error("Unmatched closing brace");
+      const body=source.slice(block.begin,i).trim().replace(/\s+/g," ");
+      if(!block.children&&!block.header.startsWith("@")){
+        const parents=stack.map(x=>x.header);
+        blocks.push({selector:block.header,body,context:parents,line:block.line});
+      }
+      if(stack.length)stack[stack.length-1].children=true;
+      start=i+1;
+    }else if(c===";"&&stack.length===0)start=i+1;
+  }
+  if(stack.length||quote||comment||paren||bracket)throw Error("Unbalanced CSS input");
+  const groups=new Map();
+  for(const block of blocks){
+    // Context includes media/supports/container and keyframes; names are never discarded.
+    const key=JSON.stringify([block.context,block.selector,block.body]);
+    groups.set(key,[...(groups.get(key)||[]),block]);
+  }
+  const selectors=new Map();
+  for(const block of blocks){
+    const seen=selectors.get(block.selector)||[];
+    seen.push({context:block.context,line:block.line,body:block.body});
+    selectors.set(block.selector,seen);
+  }
+  const crossContextCandidates=[...selectors.entries()]
+    .filter(([,occurrences])=>occurrences.length>1)
+    .map(([selector,occurrences])=>({selector,occurrences}))
+    .filter(group=>new Set(group.occurrences.map(x=>JSON.stringify(x.context))).size>1);
+  const scopedRuleCounts={};
+  for(const block of blocks){
+    const scope=block.context.find(context=>/^@media\b/.test(context))||"(unscoped)";
+    scopedRuleCounts[scope]=(scopedRuleCounts[scope]||0)+1;
+  }
+  return {leafRules:blocks.length,scopedRuleCounts,crossContextCandidates,identicalContextGroups:[...groups.values()]
+    .filter(group=>group.length>1)
+    .map(group=>({selector:group[0].selector,context:group[0].context,lines:group.map(x=>x.line)}))};
+}
+
+export function formatCssAuditSummary(report) {
+  const scopes=Object.entries(report.scopedRuleCounts)
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
+    .map(([context,count])=>({context,count}));
+  return {totalLeafRules:report.leafRules,topScopes:scopes.slice(0,12),
+    exactDuplicateGroups:report.identicalContextGroups.length,
+    crossContextSelectorGroups:report.crossContextCandidates.length};
+}
+
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+  const path=process.argv[2]||"assets/app.css";
+  const report=inventoryCss(readFileSync(path,"utf8"));
+  console.log(JSON.stringify({file:path,summary:formatCssAuditSummary(report),...report},null,2));
+}

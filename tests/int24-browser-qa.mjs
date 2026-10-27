@@ -314,7 +314,7 @@ try {
  });
  await formPage.reload({waitUntil:'networkidle'});
  await formPage.waitForSelector('.app-world-form-glyph');
- for(const width of [1440,390,320])for(const theme of ['dark','light'])for(const lang of Object.keys(languages)){
+ for(const width of widths)for(const theme of ['dark','light'])for(const lang of Object.keys(languages)){
   await formPage.setViewportSize({width,height:900});
   await formPage.evaluate(({theme,lang})=>{document.documentElement.dataset.theme=theme;document.documentElement.lang=lang},{theme,lang});
   await formPage.waitForFunction(label=>document.querySelector('#competition-tab-standings')?.textContent===label,languages[lang]);
