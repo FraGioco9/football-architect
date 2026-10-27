@@ -27,6 +27,6 @@ jobs:
         with:
           node-version: '22'
       - name: Test password and world contracts (no remote services)
-        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts backend/tests/world-contract.test.ts backend/tests/world-repository.test.ts
+        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts backend/tests/world-contract.test.ts backend/tests/world-repository.test.ts backend/tests/http-public.test.ts
       - name: Verify D1-compatible SQLite migration locally
         run: python3 -m unittest discover -s backend/tests -p 'test_world_migration.py' -v
