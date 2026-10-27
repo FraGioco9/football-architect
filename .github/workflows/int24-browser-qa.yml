@@ -65,9 +65,15 @@ jobs:
           fi
           node tests/int24-browser-qa.mjs
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tests/clean-ui-03-css-parity.mjs
+            BASE="${{ github.event.pull_request.base.sha }}"
+            test "$BASE" != ""
+            if git diff --name-only "$BASE"...HEAD -- "*.css" | grep -q .; then
+              PR_BASE_SHA="$BASE" node tests/clean-ui-03-css-parity.mjs
+            else
+              echo "No CSS changes; baseline-versus-HEAD CSS screenshot audit not applicable."
+            fi
           else
-            echo "CSS base/HEAD parity is PR-only; retaining all push browser checks."
+            echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
           fi
           node tests/clean-ui-03-network-baseline.mjs
           node tests/clean-ui-03-webkit-iphone.mjs
