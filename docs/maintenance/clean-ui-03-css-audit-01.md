@@ -63,3 +63,9 @@ The pre-hardening HEAD `782069ca61c1a90c53ea2442cd91707c9bf1d040` completed all 
 ## Checkpoint 05 — navigation, focus, touch and palette contract expansion
 
 After confirming that the previous HEAD has passed `head-exact` while `landing` and `chromium` were still running, expanded `tests/clean-ui-03-css-contract.test.mjs` with **four** targeted protections (Calendar/Fixtures arrow and selector hover state, Calendar reduced-motion and touch overrides, History breakpoint scopes, four Calendar event types in dark/light palettes). This stage adds **no CSS edits**; the checks safeguard the most sensitive shared-controls styles in preparation for later consolidation. These regex and media-block source assertions are necessary guardrails, not full browser appearance/accessibility evidence. Exact-head CI must be checked after the final commit.
+
+## Checkpoint 06 — single-batch offline CSS audit
+
+Added a standalone, **read-only** Node 22 inventory command `node tools/audit-css-cascade.mjs assets/app.css`. It records leaf rule selectors, containing at-rule contexts and source lines, and reports only identical selector/body/context candidates. Named keyframes and distinct media conditions stay separate. Four synthetic fixtures cover repeated scopes, breakpoint/keyframe separation, comments/quoted braces, and fail-closed unbalanced input; a fifth smoke test scans the existing stylesheet. This is a diagnostic aid, not a fully standards-compliant CSS parser (e.g. selector syntax edge cases) and it never rewrites styles.
+
+**CI cadence:** Owner requests tests **only after completing the batch/PR**, not polling every intermediate commit. This checkpoint is prepared as one tree/commit update; no manual workflow was dispatched. Automatic push-triggered workflows may still be scheduled by GitHub repository policy. Review the exact-head results at the final acceptance gate.
