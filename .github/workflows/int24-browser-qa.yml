@@ -45,6 +45,12 @@ jobs:
       - name: Defer full browser checks on draft or provider-only PR
         if: steps.scope.outputs.mode == 'fast'
         run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
+      - name: Restore pinned Playwright browser cache
+        if: steps.scope.outputs.mode != 'fast'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-chromium-webkit-v1
       - name: Install isolated browser test dependency
         if: steps.scope.outputs.mode != 'fast'
         run: |
