@@ -39,7 +39,17 @@ export function inventoryCss(source) {
     const key=JSON.stringify([block.context,block.selector,block.body]);
     groups.set(key,[...(groups.get(key)||[]),block]);
   }
-  return {leafRules:blocks.length,identicalContextGroups:[...groups.values()]
+  const selectors=new Map();
+  for(const block of blocks){
+    const seen=selectors.get(block.selector)||[];
+    seen.push({context:block.context,line:block.line,body:block.body});
+    selectors.set(block.selector,seen);
+  }
+  const crossContextCandidates=[...selectors.entries()]
+    .filter(([,occurrences])=>occurrences.length>1)
+    .map(([selector,occurrences])=>({selector,occurrences}))
+    .filter(group=>new Set(group.occurrences.map(x=>JSON.stringify(x.context))).size>1);
+  return {leafRules:blocks.length,crossContextCandidates,identicalContextGroups:[...groups.values()]
     .filter(group=>group.length>1)
     .map(group=>({selector:group[0].selector,context:group[0].context,lines:group.map(x=>x.line)}))};
 }

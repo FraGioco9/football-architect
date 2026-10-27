@@ -43,3 +43,26 @@ test("unmatched delimiters fail closed, not silently accepted",()=>{
     assert.throws(()=>inventoryCss(source),/Unmatched/);
   }
 });
+
+test("repeated selectors across responsive contexts are flagged but never called safe duplicates",()=>{
+  const css="@media(max-width:620px){.x{padding:2px}}@media(min-width:621px){.x{padding:2px}}";
+  const result=inventoryCss(css);
+  assert.equal(result.identicalContextGroups.length,0);
+  assert.equal(result.crossContextCandidates.length,1);
+  assert.deepEqual(result.crossContextCandidates[0].occurrences.map(x=>x.context[0]),
+    ["@media(max-width:620px)","@media(min-width:621px)"]);
+});
+test("same-selector different declarations are visible in contextual audit",()=>{
+  const result=inventoryCss(".x{color:red}@media(max-width:620px){.x{color:blue}}");
+  assert.equal(result.crossContextCandidates.length,1);
+  assert.equal(result.crossContextCandidates[0].occurrences.length,2);
+});
+test("viewport height fallback declarations remain ordered and untouched",()=>{
+  const css=readFileSync(new URL("../assets/app.css",import.meta.url),"utf8");
+  for(const selector of [".app-body",".fa-career-shell",".fa-shell-sidebar"]){
+    const block=css.slice(css.indexOf(selector+"{")).split("}")[0];
+    assert.ok(block.indexOf("height:100vh")>=0);
+    assert.ok(block.indexOf("height:100svh")>block.indexOf("height:100vh"));
+    assert.ok(block.indexOf("height:100dvh")>block.indexOf("height:100svh"));
+  }
+});
