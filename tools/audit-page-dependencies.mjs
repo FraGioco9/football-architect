@@ -13,7 +13,7 @@ export function scanRouteDependencyFiles(routes,read=readFileSync){
       const url=queue.shift();
       if(visited.has(url))continue;
       visited.add(url);
-      if(!/^\/assets\/[a-zA-Z0-9_./-]+\.(?:js|mjs)$/.test(url)||url.includes("..")){
+      if(!/^\/assets\/[a-zA-Z0-9_./-]+\.(?:js|mjs)$/.test(url)||url.split("/").includes("..")){
         unresolved.push({url,reason:"nonlocal-or-unsafe"});continue;
       }
       let source;
