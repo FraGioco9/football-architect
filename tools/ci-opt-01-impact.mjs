@@ -13,6 +13,7 @@ export function classifyImpact(changed){
  if(!relevant.length)return {mode:"fast",area:null,tests:[]};
  if(relevant.some(p=>infra.test(p)))return {mode:"full",area:null,tests:[]}; // Never validate CI orchestration by skipping its execution.
  if(relevant.some(p=>/^assets\/.*(?:model|provider|registry|runtime|context)[^/]*\.(?:js|mjs)$/.test(p)))return {mode:"full",area:null,tests:[]};
+ if(relevant.some(p=>p.endsWith(".css")))return {mode:"full",area:null,tests:[]}; // Preserve exact-base CSS screenshot parity.
  const areas=new Set();
  for(const path of relevant){
   const matches=Object.entries(groups).filter(([,group])=>group.patterns.some(pattern=>pattern.test(path)));

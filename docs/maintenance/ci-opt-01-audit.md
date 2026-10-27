@@ -23,10 +23,10 @@ PR #254 (NAV-01) is merged/closed. Its unreachable PR-number-specific Chrome ins
 | --- | --- | --- | --- |
 | Docs only | FAST | Essential safety/provider/CI contracts | Deferred, explicitly not browser validation |
 | One bounded Calendar, Clubs, Competitions or Guide area | TARGETED | Essentials plus area contracts, including any changed area test file | Area-specific Chromium and WebKit smoke |
-| Workflow/CI orchestration, shared model/provider/registry/runtime/context, global CSS, unknown paths, multiple areas | FULL | Every discovered `tests/*.test.mjs` | Full Chromium, WebKit; CSS parity when applicable |
+| Workflow/CI orchestration, shared model/provider/registry/runtime/context, any CSS, unknown paths, multiple areas | FULL | Every discovered `tests/*.test.mjs` | Full Chromium, WebKit; CSS parity when applicable |
 | Non-draft PR or main push | FULL regardless of paths | Every discovered test file | Full regression |
 
-`tools/ci-opt-01-impact.mjs` defaults to FULL for missing/invalid base, invalid paths, empty changes and ambiguous/shared paths. It reads the actual git base-to-HEAD diff; no manual mode override is exposed. CI-only edits must run FULL rather than validate themselves by skipping their own execution. Docs mixed with a bounded area retain that area's selection. Unknown mixed paths require FULL.
+`tools/ci-opt-01-impact.mjs` defaults to FULL for missing/invalid base, invalid paths, empty changes and ambiguous/shared paths. It reads the actual git base-to-HEAD diff; no manual mode override is exposed. CI-only edits must run FULL rather than validate themselves by skipping their own execution. Docs mixed with a bounded area retain that area's selection. Unknown mixed paths and all CSS changes require FULL, preserving exact-base CSS parity even for an area-specific stylesheet.
 
 Exact source classification runs before expensive jobs; Site contracts additionally run against GitHub's integration SHA. Browser runs on exact PR source HEAD (or push SHA). These are two distinct checks. Review-ready updates always select FULL again; old Draft FAST greens are never acceptance evidence.
 

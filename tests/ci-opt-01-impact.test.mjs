@@ -79,3 +79,9 @@ test("only obsolete FAST/TARGETED jobs can be cancelled, FULL is protected",asyn
   assert.match(source,/cancel-in-progress:.*outputs.mode != 'full'/);
  }
 });
+
+test('area CSS changes preserve the exact-base screenshot parity gate',()=>{
+ for(const file of ['assets/club-page.css','assets/competition-stats.css','assets/world-calendar.css','assets/guide-theme.css']){
+  assert.equal(classifyImpact([file]).mode,'full',file);
+ }
+});
