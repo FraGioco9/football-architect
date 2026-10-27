@@ -131,9 +131,9 @@
   align-self:center;vertical-align:middle;
 }
 .club-identity .club-facts>div:has(.club-colors) dt,
-.club-identity .club-facts>div:has(.club-colors) dd{align-self:end}
-.club-identity .club-colors{align-items:flex-end}
-.club-identity .club-colors>.club-color{vertical-align:bottom}
+.club-identity .club-facts>div:has(.club-colors) dd{align-self:center}
+.club-identity .club-colors{align-items:center}
+.club-identity .club-colors>.club-color{vertical-align:middle}
 
 /* Normalize single-line identity content to a 23px line box. */
 .club-identity .club-facts>div:not(.club-fact-description) dt,
