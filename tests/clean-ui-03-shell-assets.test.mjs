@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages} from "../tools/audit-shell-assets.mjs";
+import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets} from "../tools/audit-shell-assets.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("shell asset inventory preserves ordering and duplicates without changes",()=>{
@@ -69,4 +69,15 @@ test("route comparison keeps page membership and does not rewrite generated HTML
   for(const asset of [...report.shared,...report.routeSpecific]){
     assert.ok(asset.routes.every(route=>pages.includes(route)));
   }
+});
+
+test("per-route dependency summary preserves common vs unique URLs",()=>{
+  const result=comparePageAssetInventory([
+    {route:"/a",html:'<head><script src="/shared.js"></script><script src="/a.js"></script><link href="/common.css"></head>'},
+    {route:"/b",html:'<head><script src="/shared.js"></script><script src="/b.js"></script><link href="/common.css"></head>'}
+  ]);
+  const [a,b]=summarizeRouteAssets(result);
+  assert.deepEqual([a.scriptCount,a.linkCount,a.sharedCount],[2,1,2]);
+  assert.deepEqual(a.routeSpecificAssets,["/a.js"]);
+  assert.deepEqual(b.routeSpecificAssets,["/b.js"]);
 });

@@ -120,3 +120,9 @@ Fixed the exact pathname normalization for root-relative asset URLs in the read-
 The shell inventory now accepts multiple checked-in/generated HTML file paths through `node tools/audit-shell-assets.mjs dashboard/index.html calendar/index.html settings/index.html competitions/index.html clubs/index.html`. It emits shared and route-specific head links with route provenance and makes no filesystem changes. Tests read these five *actual* route files and protect common `app.css` / `app.js` links, page-specific links, provenance and nonmutation. This advances direct HTML dependency evidence, **not** proof of safe script unloading, dynamic reachability, browser timing or transfer-size improvements.
 
 No HTML output, shared template, generator, CSS declarations or JS runtime modified. CI is reserved for final PR acceptance; GitHub may still start repository-configured automatic checks following the atomic commit.
+
+## Checkpoint 15 — measured direct-link counts per generated route
+
+Extended the generated-page inventory with deterministic per-route counts of head script references, head link references, cross-route shared references and route-specific URL lists. This is **source measurement**, not network traffic or load-time measurement. A new synthetic test locks shared/specific counts. The command can be run against five generated pages listed in checkpoint 14 without mutating source files. Runtime dependency tracing remains necessary before removing `landing.js` or `landing.css`, and no asset is marked safe for deletion from direct-link absence alone.
+
+No CI runs manually dispatched or polled mid-PR; no merge/deploy/DB operations.

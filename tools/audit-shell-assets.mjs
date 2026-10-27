@@ -29,6 +29,17 @@ export function comparePageAssetInventory(pages){
 }
 
 
+// A static advisory: this cannot resolve dynamic script injection or JS imports.
+export function summarizeRouteAssets(report){
+  return report.pages.map(page=>({
+    route:page.route,
+    scriptCount:page.assets.filter(asset=>asset.kind==="script").length,
+    linkCount:page.assets.filter(asset=>asset.kind==="link").length,
+    sharedCount:page.assets.filter(asset=>report.shared.some(shared=>shared.kind===asset.kind&&shared.url===asset.url)).length,
+    routeSpecificAssets:page.assets.filter(asset=>report.routeSpecific.some(other=>other.kind===asset.kind&&other.url===asset.url)).map(asset=>asset.url)
+  }));
+}
+
 export function auditGeneratedPages(paths,read=readFileSync){
   const pages=paths.map(path=>({route:path,html:read(path,"utf8")}));
   return comparePageAssetInventory(pages);
@@ -44,7 +55,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   const paths=process.argv.slice(2);
   if(paths.length>1){
     const report=auditGeneratedPages(paths);
-    console.log(JSON.stringify({routes:report.pages.map(x=>x.route),shared:report.shared,routeSpecific:report.routeSpecific},null,2));
+    console.log(JSON.stringify({routes:report.pages.map(x=>x.route),shared:report.shared,routeSpecific:report.routeSpecific,summary:summarizeRouteAssets(report)},null,2));
   }else{
     const path=paths[0]||"templates/app-page.html";
     console.log(JSON.stringify({file:path,assets:shellAssetInventory(readFileSync(path,"utf8"))},null,2));
