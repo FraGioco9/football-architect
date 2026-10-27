@@ -1,16 +1,7 @@
-# CLEAN-UI-03 — declared asset footprint baseline
+# CLEAN-UI-03 — declared asset footprint audit
 
-Read-only source-byte baseline from the Draft #323 repository tree. All figures below sum **raw checked-in blob sizes of directly referenced /assets links**, counting each unique path once per page. They do **not** represent gzip transfer bytes, dynamic network requests, cache effects, browser startup time, main-thread execution or performance improvements.
+This is a **local source footprint**, not network transfer size or browser performance. For each HTML route, the tool resolves absolute `/assets/` and relative `../assets/` links against that page, normalizes query/hash variants, deduplicates underlying files, and sums safe integer filesystem sizes. Non-local and traversing paths cannot be read from disk. Missing or invalid sizes are *unresolved*, not zero-byte resources. The Guide route is now covered alongside Dashboard, Calendar, Settings, Competitions, Clubs and domestic detail.
 
-| Route | Direct script/style asset references | Raw asset bytes |
-| --- | ---: | ---: |
-| Dashboard | 9 | 233,327 |
-| Calendar | 14 | 284,852 |
-| Settings | 9 | 233,327 |
-| Competitions index | 11 | 237,612 |
-| Clubs index | 14 | 271,449 |
-| Domestic competition IT-1 | 9 | 217,223 |
+Command: `node tools/measure-declared-assets.mjs dashboard/index.html calendar/index.html settings/index.html competitions/index.html clubs/index.html competitions/it-1/index.html guide/index.html`.
 
-All six inspected route families have zero missing local /assets paths. Repeat with `node tools/measure-declared-assets.mjs dashboard/index.html calendar/index.html settings/index.html competitions/index.html clubs/index.html competitions/it-1/index.html`.
-
-**Decision:** no selective loading changes can be defended from raw bytes alone. The Calendar has additional model/rendering code and Clubs extra directory scripts; competition detail already replaces generic app bootstrap with competition-specific scripts. Preserve script order, language/theme initialization and the public/DEV isolation gates. Do not trim landing.css or landing.js on the basis of filenames. The existing P4 network/behavior item is **still OPEN** until real browser request/transfer-size capture and responsive/keyboard test evidence; this is only the reproducible source baseline. No new checklist items or deploy.
+The previous six-route baseline in this PR remains **historical and provisional** until the complete local test suite is run. These numbers cannot justify removing shared `landing.js` or `landing.css`, changing script execution order or claiming network savings. Remaining P4 performance acceptance requires browser request tracing, transfer-size/caching measurements and interaction/DEV-public isolation regression verification; that item stays unchecked.
