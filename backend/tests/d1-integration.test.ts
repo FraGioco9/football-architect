@@ -3,6 +3,8 @@ import { env } from 'cloudflare:workers';
 import { applyD1Migrations } from 'cloudflare:test';
 import worker from '../src/index.ts';
 import { readWorld } from '../src/world-repository.ts';
+import { requireStoredSession } from '../src/session-repository.ts';
+import {createOpaqueToken,digestOpaqueToken} from '../src/session-tokens.ts';
 
 const bindings = env as unknown as {
   DB: {
@@ -49,6 +51,22 @@ describe('official local D1 binding, no remote services', () => {
     const reject=db.prepare("INSERT INTO world_state (id,generation) VALUES (2,'impossible')");
     await expect(db.batch([first,reject])).rejects.toThrow();
     expect(await readWorld(bindings.DB)).toEqual(before);
+  });
+  it('validates an actual D1 session digest and revokes after credential rotation',async()=>{
+    const now=1_800_000_000;
+    const token=createOpaqueToken(),digest=await digestOpaqueToken(token);
+    const db=bindings.DB as unknown as {prepare(sql:string): {bind(...v:unknown[]): {run():Promise<unknown>}}};
+    await db.prepare(
+      "INSERT INTO admin_accounts(id,email_normalized,password_verifier,credential_version,enabled,created_at) VALUES (?,?,?,?,?,?)"
+    ).bind('synthetic-operator','operator@example.invalid','nonproduction-fixture',1,1,now-100).run();
+    await db.prepare(
+      "INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES (?,?,?,?,?,?,?)"
+    ).bind(digest,'synthetic-operator',1,'a'.repeat(64),now-100,now-10,now+1000).run();
+    expect(await requireStoredSession(bindings.DB as never,token,now)).toBe('synthetic-operator');
+    await db.prepare("UPDATE admin_accounts SET credential_version=credential_version+1 WHERE id=?")
+      .bind('synthetic-operator').run();
+    await expect(requireStoredSession(bindings.DB as never,token,now)).rejects.toMatchObject({status:401});
+    await expect(requireStoredSession(bindings.DB as never,'malformed',now)).rejects.toMatchObject({status:401});
   });
   it('does not enable unauthenticated season preparation', async () => {
     const response = await worker.fetch(new Request('https://local.invalid/api/admin/prepare', {method:'POST'}), bindings);
