@@ -50,7 +50,11 @@ jobs:
             sleep 1
           done
           node tests/int24-browser-qa.mjs
-          PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tests/clean-ui-03-css-parity.mjs
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tests/clean-ui-03-css-parity.mjs
+          else
+            echo "CSS base/HEAD parity is PR-only; retaining all push browser checks."
+          fi
           node tests/clean-ui-03-network-baseline.mjs
           node tests/clean-ui-03-webkit-iphone.mjs
       - name: Upload screenshots and server log
