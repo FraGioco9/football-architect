@@ -312,13 +312,14 @@ try {
   sessionStorage.removeItem('football-architect:calendar-dev-world-day');
   window.dispatchEvent(new Event('fa:fictional-standings-change'));
  });
+ await formPage.reload({waitUntil:'networkidle'});
  await formPage.waitForSelector('.app-world-form-glyph');
  for(const width of [1440,390,320])for(const theme of ['dark','light'])for(const lang of Object.keys(languages)){
   await formPage.setViewportSize({width,height:900});
   await formPage.evaluate(({theme,lang})=>{document.documentElement.dataset.theme=theme;document.documentElement.lang=lang},{theme,lang});
   await formPage.waitForFunction(label=>document.querySelector('#competition-tab-standings')?.textContent===label,languages[lang]);
   const actual=await formPage.evaluate(()=>{
-   const glyphs=[...document.querySelectorAll('.app-world-form-glyph')].filter(el=>el.getBoundingClientRect().width>0);
+   const glyphs=[...document.querySelectorAll('.app-world-form-dot')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.querySelector('.app-world-form-glyph')||el);
    return {
     bands:[...document.querySelectorAll('#app-standings-body tr')].slice(0,7).map(el=>el.dataset.standingOutcome||''),
     centered:glyphs.length>0&&glyphs.every(el=>{const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),box=el.getBoundingClientRect();return Math.abs((text.left+text.right)-(box.left+box.right))<=2&&Math.abs((text.top+text.bottom)-(box.top+box.bottom))<=3}),
