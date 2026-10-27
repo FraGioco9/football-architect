@@ -37,3 +37,33 @@ Current Draft branch implements a fast essential Node contract set and defers br
 - Cancel superseded runs only within the same PR; never cancel main runs.
 - Keep all manual workflows manual. Do not touch Vercel/DB/deployment.
 - Do not add checkboxes to issue #324: update its existing 19 items only.
+
+## Operational selection matrix (Draft PR only)
+
+| Changed paths | Selection | Checks on Draft | Final gate |
+| --- | --- | --- | --- |
+| Docs / CI machinery only | FAST | Exact-head + syntax + baseline safety/provider contracts + impact-classifier contracts | FULL after marking ready |
+| Calendar-only | TARGETED | FAST + Calendar contracts + two-viewport Chromium smoke | FULL after marking ready |
+| Clubs-only | TARGETED | FAST + Club contracts + two-viewport Chromium smoke | FULL after marking ready |
+| Competitions-only | TARGETED | FAST + Competition contracts + two-viewport Chromium smoke | FULL after marking ready |
+| Guide-only | TARGETED | FAST + Guide contracts + two-viewport Chromium smoke | FULL after marking ready |
+| Shared / ambiguous / unrelated files | FULL | All Node and browser tests even when Draft | FULL on review and main |
+| Ready-for-review, main push | FULL | All Node, Chromium, CSS PR parity only on PR, network, WebKit | Same exact-head full run |
+
+TARGETED smoke must check HTTP 200, browser JS errors and horizontal overflow on mobile 390 and desktop 1440. This is narrower than full browser QA and must never be called equivalent. The full suite remains mandatory on review-ready exact HEAD, and any later commit returns the PR to pending until its checks finish.
+
+## CI workflow changes and failure response
+
+1. Verify latest PR `head.sha` and `main` commit; ignore green checks from older HEADs.
+2. Inspect Site checks and Football Architect Browser QA job **steps**; a skipped browser on Draft FAST is expected, not a substitute for final FULL.
+3. On a red status, retrieve failed step log and saved browser artifact. Do not rerun blindly, suppress assertions, or change test coverage to force green.
+4. Reconcile unknown/shared paths with FULL. When diagnosis is inconclusive, select FULL instead of introducing a new exception.
+5. Before merge, mark PR **Ready for review**, require both exact-HEAD FULL jobs success, ensure publication guard and no deployment workflow executed, then obtain explicit authorization.
+6. Following authorized merge, verify push FULL on the resulting `main` SHA; PR-only CSS baseline does not run on push (no PR base exists).
+7. If selection is unsafe or flaky, rollback only CI-OPT-01 changes from its single PR, or revert the integration commit after authorization; retain original source tests and publication guard unchanged.
+
+The workflow `concurrency` grouping is isolated by workflow name and PR number. New commits can cancel older runs on the same PR; `main` runs use unique run IDs and are not cancellable by this mechanism. Canceled runs are not passing results.
+
+## Manual workflows and artifacts
+
+`manual-debug-manifest-hash.yml`, `manual-public-debug-audit.yml` and `manual-vercel-preview.yml` stay `workflow_dispatch`-only; this refactor adds no automatic invocation. `render-01-perf.yml` remains unchanged pending legacy review. Browser screenshot/log upload now runs on **failure** for the full/targeted runner instead of unconditional upload, conserving runner minutes and storage while preserving diagnostics. Never schedule a Vercel deployment or remote DB step as part of CI optimization.
