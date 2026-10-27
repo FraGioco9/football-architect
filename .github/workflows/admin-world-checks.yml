@@ -33,6 +33,8 @@ jobs:
       - name: Install pinned Worker toolchain without remote credentials
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e "const fs=require('node:fs');console.log('FA316_LOCK_BEGIN'+JSON.stringify(JSON.parse(fs.readFileSync('backend/package-lock.json','utf8')))+'FA316_LOCK_END')"
           npm --prefix backend ci --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
