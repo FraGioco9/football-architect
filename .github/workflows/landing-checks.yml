@@ -62,22 +62,29 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
-            echo "mode=fast" >> "$GITHUB_OUTPUT"
-            echo "Draft PR: quick safety and contracts only. FULL required on ready_for_review."
+            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"
             echo "Final review or main: mandatory full regression suite."
           fi
       - name: Site contracts (full)
-        if: steps.scope.outputs.mode != 'fast'
+        if: steps.scope.outputs.mode == 'full'
         env:
           CHROME_BIN: ${{ steps.nav01-chrome.outputs.chrome-path }}
           FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && format('{0}/nav01-screenshots', runner.temp) || '' }}
         run: node --test --test-concurrency=1 tests/*.test.mjs
-      - name: Site contracts (fast-safe provider scope)
-        if: steps.scope.outputs.mode == 'fast'
+      - name: Site essential contracts (FAST and TARGETED)
+        if: steps.scope.outputs.mode != 'full'
         run: |
-          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
+          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
+      - name: Targeted area contracts
+        if: steps.scope.outputs.mode == 'targeted'
+        env:
+          TARGETED_TESTS: ${{ steps.scope.outputs.tests }}
+        run: |
+          test -n "$TARGETED_TESTS"
+          read -ra TEST_FILES <<< "$TARGETED_TESTS"
+          node --test --test-concurrency=1 "${TEST_FILES[@]}"
       - name: Upload NAV-01 Chromium screenshots
         if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
         uses: actions/upload-artifact@v4

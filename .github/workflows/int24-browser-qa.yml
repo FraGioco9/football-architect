@@ -37,8 +37,7 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
-            echo "mode=fast" >> "$GITHUB_OUTPUT"
-            echo "Draft PR: quick safety and contracts only. FULL required on ready_for_review."
+            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"
             echo "Final review or main: mandatory full regression suite."
@@ -51,7 +50,7 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
           npx playwright install chromium
-          npx playwright install --with-deps webkit
+          if [ "${{ steps.scope.outputs.mode }}" = "full" ]; then npx playwright install --with-deps webkit; fi
       - name: Run loopback preview and browser checks
         if: steps.scope.outputs.mode != 'fast'
         run: |
@@ -60,6 +59,10 @@ jobs:
             if curl -fsS http://127.0.0.1:2000/competitions >/dev/null; then break; fi
             sleep 1
           done
+          if [ "${{ steps.scope.outputs.mode }}" = "targeted" ]; then
+            FA_TARGET_AREA="${{ steps.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
+            exit 0
+          fi
           node tests/int24-browser-qa.mjs
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tests/clean-ui-03-css-parity.mjs

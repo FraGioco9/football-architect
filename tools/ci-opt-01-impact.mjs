@@ -22,3 +22,15 @@ export function classifyImpact(changed){
  const area=[...areas][0];
  return {mode:"targeted",area,tests:groups[area].tests};
 }
+
+if(process.argv[1]&&import.meta.url===new URL("file://"+process.argv[1]).href){
+ let selection={mode:"full",area:null,tests:[]};
+ try{
+  const base=process.env.PR_BASE_SHA;
+  if(process.env.GITHUB_EVENT_NAME!=="pull_request"||!/^[0-9a-f]{40}$/.test(base||""))throw Error("Invalid PR base");
+  const {execFileSync}=await import("node:child_process");
+  const changed=execFileSync("git",["diff","--name-only","--diff-filter=ACDMRT",base+"...HEAD"],{encoding:"utf8"}).trim().split("\n").filter(Boolean);
+  selection=classifyImpact(changed);
+ }catch{selection={mode:"full",area:null,tests:[]}}
+ process.stdout.write("mode="+selection.mode+"\narea="+(selection.area||"")+"\ntests="+selection.tests.join(" ")+"\n");
+}
