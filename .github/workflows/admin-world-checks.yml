@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: '22'
       - name: Test password and world contracts (no remote services)
-        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts backend/tests/world-contract.test.ts backend/tests/world-repository.test.ts backend/tests/http-public.test.ts backend/tests/command-contract.test.ts backend/tests/origin-policy.test.ts backend/tests/email-identity.test.ts backend/tests/session-tokens.test.ts
+        run: node --experimental-strip-types --test backend/tests/password-policy.test.ts backend/tests/world-contract.test.ts backend/tests/world-repository.test.ts backend/tests/http-public.test.ts backend/tests/command-contract.test.ts backend/tests/origin-policy.test.ts backend/tests/email-identity.test.ts backend/tests/session-tokens.test.ts backend/tests/session-policy.test.ts
       - name: Verify D1-compatible SQLite migration locally
         run: python3 -m unittest discover -s backend/tests -p 'test_world_migration.py' -v
       - name: Install pinned Worker toolchain without remote credentials
