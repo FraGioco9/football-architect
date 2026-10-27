@@ -17,6 +17,8 @@ const cssProperties=["display","visibility","position","width","height","padding
 const browser=await chromium.launch({headless:true});
 let compared=0;
 const findings=[];
+const cssomObservations=[];
+const screenshotComparisons=[];
 try{
  for(const route of routes)for(const width of widths)for(const dark of [false,true])for(const reducedMotion of [false,true]){
   const run=async(useBaseline)=>{
@@ -27,7 +29,7 @@ try{
     const response=await page.goto(origin+route,{waitUntil:"networkidle",timeout:25000});
     assert.equal(response?.status(),200,route);
     await page.evaluate(async()=>{await document.fonts.ready});
-    return await page.evaluate(({selectors,cssProperties})=>{
+    const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
      for(const selector of selectors){
       const elements=[...document.querySelectorAll(selector)].slice(0,12);
@@ -39,18 +41,32 @@ try{
      }
      return result;
     },{selectors,cssProperties});
+    const cssom=await page.evaluate(()=>{
+      const sheet=[...document.styleSheets].find(s=>s.href&&new URL(s.href).pathname==="/assets/app.css");
+      if(!sheet)return null;
+      const rules=[...sheet.cssRules];
+      return {totalTopLevelRules:rules.length,mediaRules:rules.filter(r=>r.type===CSSRule.MEDIA_RULE).length,calendarEnabledRules:rules.filter(r=>r.selectorText?.includes("#calendar-previous")&&r.selectorText?.includes(":not(:disabled)")).map(r=>r.selectorText)};
+    });
+    assert.ok(cssom,"app.css not found in browser CSSOM");
+    const shot=(route==="/calendar"||route==="/competitions/it-1/history")&&width===390&&!dark&&reducedMotion ? await page.screenshot({animations:"disabled",fullPage:true}) : null;
+    return {computed,cssom,shot};
    }finally{await context.close()}
   };
   const before=await run(true),after=await run(false);
   for(const selector of selectors){
-   if(JSON.stringify(before[selector])!==JSON.stringify(after[selector])){
-    findings.push({route,width,theme:dark?"dark":"light",reducedMotion,selector,before:before[selector],after:after[selector]});
+   if(JSON.stringify(before.computed[selector])!==JSON.stringify(after.computed[selector])){
+    findings.push({route,width,theme:dark?"dark":"light",reducedMotion,selector,before:before.computed[selector],after:after.computed[selector]});
    }
   }
+  cssomObservations.push({route,width,theme:dark?"dark":"light",reducedMotion,baseline:before.cssom,current:after.cssom});
+  if(before.shot&&after.shot)screenshotComparisons.push({route,width,matching:before.shot.equals(after.shot)});
   compared++;
  }
 }finally{await browser.close()}
 mkdirSync("int24-browser-artifacts",{recursive:true});
-writeFileSync("int24-browser-artifacts/clean-ui-03-css-parity.json",JSON.stringify({baseSha,compared,findings},null,2));
+writeFileSync("int24-browser-artifacts/clean-ui-03-css-parity.json",JSON.stringify({baseSha,compared,findings,cssomObservations,screenshotComparisons},null,2));
 assert.deepEqual(findings,[],`CSS computed-style parity mismatches: ${findings.length}; see clean-ui-03-css-parity.json`);
+assert.ok(cssomObservations.every(x=>x.baseline.totalTopLevelRules>0&&x.current.totalTopLevelRules>0),"empty CSSOM");
+assert.ok(screenshotComparisons.length===2,"two screenshot baseline comparisons required");
+assert.ok(screenshotComparisons.every(x=>x.matching),"CSS screenshot parity mismatch; see clean-ui-03-css-parity.json");
 console.log(`CSS parity PASS: ${compared} matched route/viewport/theme/motion combinations`);
