@@ -724,7 +724,6 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-history-record-group .app-competition-stat-grid[hidden]{display:none!important}
 @media(max-width:620px){
  .app-history-record-holders{gap:6px}
- .app-history-dev-archive-head{display:none}
  .app-history-dev-archive-club .app-world-club-name{overflow-wrap:anywhere}
 }
 @media(max-width:360px){
