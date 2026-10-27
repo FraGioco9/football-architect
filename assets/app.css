@@ -980,10 +980,7 @@ html[data-calendar-view="week"] #world-calendar #calendar-controls:not([hidden])
 #world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar{width:5px}
 #world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar-thumb{background:var(--muted);border-radius:6px}
 #world-calendar #calendar-controls #calendar-week-menu::-webkit-scrollbar-track{background:transparent}
-#world-calendar #calendar-controls #calendar-previous:not(:disabled),
-#world-calendar #calendar-controls #calendar-next:not(:disabled),
-#world-calendar #calendar-controls #calendar-week-trigger:not(:disabled),
-#world-calendar #calendar-controls #calendar-current-week:not(:disabled){cursor:pointer;opacity:1;transform:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease}
+#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next,#calendar-week-trigger,#calendar-current-week):not(:disabled){cursor:pointer;opacity:1;transform:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease}
 #world-calendar #calendar-controls #calendar-previous:not(:disabled):hover,
 #world-calendar #calendar-controls #calendar-next:not(:disabled):hover,
 #world-calendar #calendar-controls #calendar-week-trigger:not(:disabled):hover,
