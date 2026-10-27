@@ -108,3 +108,16 @@ test("Calendar and Fixtures chevrons retain matching shared geometry with indepe
   ];
   for(const declaration of pairs)assert.ok(css.includes(declaration),"shared arrow geometry changed");
 });
+
+test("CLEAN-UI-03: full CSS cleanup is limited to five duplicates and Calendar selector consolidation",()=>{
+ const css=read("assets/app.css");
+ const declarations=[
+  ".app-world-standing-table tbody tr>*{height:68px}",
+  ".app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}",
+  ".app-history-dev-archive-head{display:none}",
+  ".app-competition-header{--app-competition-logo-size:64px}",
+  ".app-competition-header{--app-competition-logo-size:58px}"
+ ];
+ for(const declaration of declarations)assert.equal(count(css,declaration),1,declaration);
+ assert.ok(css.includes("#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next,#calendar-week-trigger,#calendar-current-week):not(:disabled){"));
+});

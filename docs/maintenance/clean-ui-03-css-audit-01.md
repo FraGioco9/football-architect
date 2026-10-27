@@ -144,3 +144,7 @@ Added `summarizeImportReachability(traces)`, reporting HTML script roots, visite
 Code review on the branch confirms Calendar and Fixtures **already share** four paired geometry declarations for both standard chevrons and SVG icon viewport alignment. Keeping them as joint selector rules is the most conservative extraction of the genuinely identical styling contract: no new component, no change to selector order or specificity, and no coupling of their distinct enabled/disabled, week/matchday, tooltip, hover and keyboard rules. Two regression tests now lock the already-shared geometry and the four-ID Calendar enabled-state consolidation. Calendar event dialogs remain distinct, and real browser/iPhone, five-language and both-theme P3 verification remains outstanding.
 
 The resolved P3 scope is only **shared-arrow style extraction**; it does not certify identical behavior of all navigation controls or finish the entire P3 workstream.
+
+## P1 direct before/after proof (source-level)
+
+Compared the actual PR stylesheet to current main: 111,652 vs 111,152 characters (500 characters less). All five previously duplicated declarations appear once in the PR. The four Calendar active selectors collapse into one shared `:is()` rule, with the same ID-level specificity and declaration body. The comparison is source-based; ordered CSSOM, live computed styles, snapshots and Chromium remain unverified and are NOT approved by this evidence alone. The PR retains Draft/HOLD.
