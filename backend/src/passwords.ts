@@ -44,7 +44,7 @@ export async function hashPassword(password: string): Promise<string> {
   const salt=crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const compute = await wasmHash;
   const tag=compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
-    parallelism:PARALLELISM,memorySize:MEMORY_KIB,hashLength:HASH_BYTES});
+    parallelism:PARALLELISM,memorySize:MEMORY_KIB,tagLength:HASH_BYTES});
   const encoded=PREFIX+encode(salt)+'$'+encode(tag);
   tag.fill(0);
   salt.fill(0);
@@ -60,7 +60,7 @@ export async function verifyPassword(password: string, encoded: string): Promise
   if (!salt || !expected) return false;
   const compute = await wasmHash;
   const actual=compute({password:new TextEncoder().encode(password),salt,passes:ITERATIONS,
-    parallelism:PARALLELISM,memorySize:MEMORY_KIB,hashLength:HASH_BYTES});
+    parallelism:PARALLELISM,memorySize:MEMORY_KIB,tagLength:HASH_BYTES});
   let difference=0;
   for(let i=0;i<HASH_BYTES;i++) difference|=actual[i]^expected[i];
   actual.fill(0);
