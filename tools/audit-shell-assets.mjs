@@ -5,7 +5,8 @@ import {pathToFileURL} from "node:url";
 export function classifyAssetReferences(assetUrls,knownPaths){
   const known=new Set(knownPaths);
   return assetUrls.map(url=>{
-    const path=url.split(/[?#]/,1)[0].replace(/^\\//,"");
+    const rawPath=url.split(/[?#]/,1)[0];
+    const path=rawPath.startsWith("/")?rawPath.slice(1):rawPath;
     if(!path.startsWith("assets/"))return {url,path,classification:"non-asset"};
     return {url,path,classification:known.has(path)?"present":"unresolved"};
   });
