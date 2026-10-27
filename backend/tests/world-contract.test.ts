@@ -4,7 +4,7 @@ import { parseWorldV1 } from '../src/types.ts';
 import { projectWorld } from '../src/public-projections.ts';
 
 const generation = '550e8400-e29b-41d4-a716-446655440000';
-const unstarted = { schemaVersion: 1, generation, revision: 0, seasonNumber: 0, day: 0, phase: 'unstarted' };
+const unstarted = { schemaVersion: 1, generation, revision: 0, seasonNumber: 0, day: 0, phase: 'unstarted' } as const;
 test('fresh Season 0 is a real, valid initial world', () => {
   assert.deepEqual(parseWorldV1(unstarted), unstarted);
 });
