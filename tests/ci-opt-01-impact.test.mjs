@@ -13,3 +13,13 @@ test("docs and CI-only changes remain fast during drafts",()=>{
  assert.equal(classifyImpact(["docs/architecture/example.md"]).mode,"fast");
  assert.equal(classifyImpact([".github/workflows/int24-browser-qa.yml","tools/ci-opt-01-impact.mjs"]).mode,"fast");
 });
+
+test("source files do not bypass scoped validation",()=>{
+ const examples=["assets/app.css","assets/app.js","assets/routes-registry.mjs","assets/landing.js","tools/dev-standings-preview.mjs","tests/world-catalog.test.mjs"];
+ for(const file of examples)assert.equal(classifyImpact([file]).mode,"full",file);
+});
+test("impact combinations fail closed and targeted test paths are deterministic",()=>{
+ const candidates=[["calendar/index.html","calendar"],["clubs/it/1/overview/index.html","clubs"],["competitions/int-1/standings/index.html","competitions"],["guide/index.html","guide"]];
+ for(const [file,area] of candidates){const result=classifyImpact([file,"docs/README.md"]);assert.equal(result.area,area);assert.equal(result.mode,"targeted");assert.ok(result.tests.every(x=>/^tests\\/[a-z0-9-]+\\.test\\.mjs$/.test(x)));}
+ assert.equal(classifyImpact(candidates.map(([file])=>file)).mode,"full");
+});
