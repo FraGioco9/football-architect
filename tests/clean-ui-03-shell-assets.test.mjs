@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets} from "../tools/audit-shell-assets.mjs";
+import {shellAssetInventory,classifyAssetReferences,comparePageAssetInventory,auditGeneratedPages,summarizeRouteAssets,inspectStaticScriptReferences} from "../tools/audit-shell-assets.mjs";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("shell asset inventory preserves ordering and duplicates without changes",()=>{
@@ -80,4 +80,13 @@ test("per-route dependency summary preserves common vs unique URLs",()=>{
   assert.deepEqual([a.scriptCount,a.linkCount,a.sharedCount],[2,1,2]);
   assert.deepEqual(a.routeSpecificAssets,["/a.js"]);
   assert.deepEqual(b.routeSpecificAssets,["/b.js"]);
+});
+
+test("static script scanner reports literal imports without claiming dynamic resolution",()=>{
+  const refs=inspectStaticScriptReferences('import x from "./x.mjs"; import("./lazy.js"); require("./old.cjs");');
+  assert.deepEqual(refs.map(x=>x.kind),["static-import","dynamic-import-literal","require-literal"]);
+  assert.deepEqual(refs.map(x=>x.specifier),["./x.mjs","./lazy.js","./old.cjs"]);
+});
+test("scanner excludes computed dynamic imports from proven dependency list",()=>{
+  assert.deepEqual(inspectStaticScriptReferences('import("./"+name+".js")'),[]);
 });

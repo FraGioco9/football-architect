@@ -126,3 +126,7 @@ No HTML output, shared template, generator, CSS declarations or JS runtime modif
 Extended the generated-page inventory with deterministic per-route counts of head script references, head link references, cross-route shared references and route-specific URL lists. This is **source measurement**, not network traffic or load-time measurement. A new synthetic test locks shared/specific counts. The command can be run against five generated pages listed in checkpoint 14 without mutating source files. Runtime dependency tracing remains necessary before removing `landing.js` or `landing.css`, and no asset is marked safe for deletion from direct-link absence alone.
 
 No CI runs manually dispatched or polled mid-PR; no merge/deploy/DB operations.
+
+## Checkpoint 16 — static script-reference evidence
+
+Added a read-only `inspectStaticScriptReferences(source)` helper reporting only literal ESM imports, literal dynamic imports and literal CommonJS `require` specifiers. Computed dynamic imports are intentionally **unknown**, not absent dependencies. The helper is conservative, not a JavaScript parser and does not inspect runtime-created DOM script elements. Two regression tests cover literal and computed cases. This improves candidate discovery without authorizing removal of landing scripts or changing any runtime file. No intermediate CI polling/dispatch; final PR gate unchanged.

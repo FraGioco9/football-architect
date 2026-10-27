@@ -2,6 +2,21 @@
 import {readFileSync} from "node:fs";
 import {pathToFileURL} from "node:url";
 
+
+// Only report literal references; dynamic imports, template strings and DOM injection are unknown.
+export function inspectStaticScriptReferences(source){
+  const references=[];
+  const patterns=[
+    {kind:"static-import",regex:/\bimport\s+(?:[^"'\n]*?\s+from\s*)?["']([^"'\n]+)["']/g},
+    {kind:"dynamic-import-literal",regex:/\bimport\s*\(\s*["']([^"'\n]+)["']\s*\)/g},
+    {kind:"require-literal",regex:/\brequire\s*\(\s*["']([^"'\n]+)["']\s*\)/g}
+  ];
+  for(const {kind,regex} of patterns){
+    for(const match of source.matchAll(regex))references.push({kind,specifier:match[1]});
+  }
+  return references;
+}
+
 export function classifyAssetReferences(assetUrls,knownPaths){
   const known=new Set(knownPaths);
   return assetUrls.map(url=>{
