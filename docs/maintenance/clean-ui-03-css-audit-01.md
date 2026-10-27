@@ -138,3 +138,9 @@ Added `traceLiteralPageImports(report,sourceByUrl)` to connect each page's direc
 ## Checkpoint 18 — import graph completeness classification
 
 Added `summarizeImportReachability(traces)`, reporting HTML script roots, visited literal import modules, unresolved references and status `partial` / `literal-only-complete`. The latter deliberately **does not** mean full runtime reachability: scripts may rely on globals, calculated dynamic imports or DOM injection. Two tests guard missing-module counts and this distinction. There is no app behavior change, asset removal or optimization claim. Final exact-head CI remains deferred by owner request.
+
+## P3 implemented overlap — existing shared arrow styling (no new components)
+
+Code review on the branch confirms Calendar and Fixtures **already share** four paired geometry declarations for both standard chevrons and SVG icon viewport alignment. Keeping them as joint selector rules is the most conservative extraction of the genuinely identical styling contract: no new component, no change to selector order or specificity, and no coupling of their distinct enabled/disabled, week/matchday, tooltip, hover and keyboard rules. Two regression tests now lock the already-shared geometry and the four-ID Calendar enabled-state consolidation. Calendar event dialogs remain distinct, and real browser/iPhone, five-language and both-theme P3 verification remains outstanding.
+
+The resolved P3 scope is only **shared-arrow style extraction**; it does not certify identical behavior of all navigation controls or finish the entire P3 workstream.

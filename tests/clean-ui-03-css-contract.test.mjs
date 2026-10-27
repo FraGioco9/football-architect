@@ -90,3 +90,21 @@ test("identical standings/postseason declarations are not duplicated in nested c
  assert.equal(css.split(".app-world-standing-table tbody tr>*{height:68px}").length-1,1);
  assert.equal(css.split(".app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}").length-1,1);
 });
+
+test("Calendar enabled selector consolidation retains full four-ID contract",()=>{
+  const selector="#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next,#calendar-week-trigger,#calendar-current-week):not(:disabled)";
+  assert.ok(css.includes(selector+"{cursor:pointer;opacity:1;transform:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease}"));
+  assert.equal(count(css,selector+"{"),1);
+  for(const id of ["calendar-previous","calendar-next","calendar-week-trigger","calendar-current-week"]){
+    assert.ok(selector.includes("#"+id),"missing navigation control "+id);
+  }
+});
+test("Calendar and Fixtures chevrons retain matching shared geometry with independent host selectors",()=>{
+  const pairs=[
+    ".calendar-arrow:has(> .site-chevron),.app-fixtures-navigation .app-fixtures-arrow:has(> .site-chevron){position:relative}",
+    ".calendar-arrow> .site-chevron,.app-fixtures-navigation .app-fixtures-arrow> .site-chevron{position:absolute;inset-block-start:50%;inset-inline-start:50%;translate:-50% -50%;margin:0;flex:none;display:block}",
+    ".calendar-arrow:has(>svg.site-chevron),.app-fixtures-navigation .app-fixtures-arrow:has(>svg.site-chevron){position:relative;box-sizing:border-box;padding:0!important}",
+    ".calendar-arrow>svg.site-chevron,.app-fixtures-navigation .app-fixtures-arrow>svg.site-chevron{position:absolute;inset:0;margin:auto;width:20px;height:20px;translate:none;display:block;flex:none}"
+  ];
+  for(const declaration of pairs)assert.ok(css.includes(declaration),"shared arrow geometry changed");
+});
