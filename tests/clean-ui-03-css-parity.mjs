@@ -59,7 +59,16 @@ try{
    }
   }
   cssomObservations.push({route,width,theme:dark?"dark":"light",reducedMotion,baseline:before.cssom,current:after.cssom});
-  if(before.shot&&after.shot)screenshotComparisons.push({route,width,matching:before.shot.equals(after.shot)});
+  if(before.shot&&after.shot){
+    const matching=before.shot.equals(after.shot);
+    screenshotComparisons.push({route,width,matching});
+    if(!matching){
+      mkdirSync("int24-browser-artifacts",{recursive:true});
+      const slug=route.replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"");
+      writeFileSync("int24-browser-artifacts/css-parity-"+slug+"-before.png",before.shot);
+      writeFileSync("int24-browser-artifacts/css-parity-"+slug+"-after.png",after.shot);
+    }
+  }
   compared++;
  }
 }finally{await browser.close()}
