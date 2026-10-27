@@ -23,3 +23,23 @@ test("impact combinations fail closed and targeted test paths are deterministic"
  for(const [file,area] of candidates){const result=classifyImpact([file,"docs/README.md"]);assert.equal(result.area,area);assert.equal(result.mode,"targeted");assert.ok(result.tests.every(x=>x.startsWith("tests/")&&x.endsWith(".test.mjs")));}
  assert.equal(classifyImpact(candidates.map(([file])=>file)).mode,"full");
 });
+
+test("workflow gates preserve final FULL and main browser safety",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const node=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8");
+ const browser=readFileSync(new URL("../.github/workflows/int24-browser-qa.yml",import.meta.url),"utf8");
+ for(const workflow of [node,browser]){
+  assert.match(workflow,/ready_for_review/);
+  assert.match(workflow,/branches: \[main\]/);
+  assert.match(workflow,/echo "mode=full"/);
+  assert.match(workflow,/github\.event\.pull_request\.draft/);
+  assert.match(workflow,/github\.event_name == 'pull_request'/);
+ }
+ assert.match(node,/tests\/publication-gate\.test\.mjs/);
+ assert.match(node,/tests\/arch-clean-02-security\.test\.mjs/);
+ assert.match(node,/node --test --test-concurrency=1 tests\/\*\.test\.mjs/);
+ assert.match(browser,/node tests\/int24-browser-qa\.mjs/);
+ assert.match(browser,/node tests\/clean-ui-03-webkit-iphone\.mjs/);
+ assert.match(browser,/github\.event_name.*workflow_dispatch/);
+ assert.match(browser,/PR_BASE_SHA=.*node tests\/clean-ui-03-css-parity\.mjs/);
+});
