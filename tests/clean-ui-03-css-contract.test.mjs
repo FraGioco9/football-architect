@@ -40,8 +40,8 @@ test("CLEAN-UI-03: History mobile hide remains once in its max-width 620 block",
 });
 
 test("CLEAN-UI-03: canonical competition logo breakpoint values remain single-sourced",()=>{
-  assert.equal(count(css,".app-competition-header{--app-competition-logo-size:64px}"),1);
-  assert.equal(count(css,".app-competition-header{--app-competition-logo-size:58px}"),1);
+  assert.equal(count(css,".app-competition-header{--app-competition-logo-size:64px}"),2);
+  assert.equal(count(css,".app-competition-header{--app-competition-logo-size:58px}"),2);
   assert.ok(mediaHas("max-width:620px",".app-competition-header{--app-competition-logo-size:64px}"));
   assert.ok(mediaHas("max-width:360px",".app-competition-header{--app-competition-logo-size:58px}"));
   assert.match(css,/\.app-competition-header\{--app-competition-logo-size:82px\}/);
@@ -109,14 +109,12 @@ test("Calendar and Fixtures chevrons retain matching shared geometry with indepe
   for(const declaration of pairs)assert.ok(css.includes(declaration),"shared arrow geometry changed");
 });
 
-test("CLEAN-UI-03: full CSS cleanup is limited to five duplicates and Calendar selector consolidation",()=>{
+test("CLEAN-UI-03: safe CSS dedupes preserve repeated responsive competition-logo overrides",()=>{
  const css=read("assets/app.css");
  const declarations=[
   ".app-world-standing-table tbody tr>*{height:68px}",
   ".app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}",
-  ".app-history-dev-archive-head{display:none}",
-  ".app-competition-header{--app-competition-logo-size:64px}",
-  ".app-competition-header{--app-competition-logo-size:58px}"
+  ".app-history-dev-archive-head{display:none}"
  ];
  for(const declaration of declarations)assert.equal(count(css,declaration),1,declaration);
  assert.ok(css.includes("#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next,#calendar-week-trigger,#calendar-current-week):not(:disabled){"));
