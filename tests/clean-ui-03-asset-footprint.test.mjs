@@ -15,3 +15,14 @@ test("real page families have locally resolvable declared assets",()=>{
  assert.equal(report.length,6);
  for(const entry of report){assert.deepEqual(entry.unresolved,[],entry.route);assert.ok(entry.rawBytes>0);assert.ok(entry.declaredReferences>=5)}
 });
+
+test("a missing or invalid size does not silently poison the byte total",()=>{
+ const result=measureRouteDeclaredAssets(["x.html"],()=>'<head><script src="/assets/existing.js"></script><script src="/assets/missing.js"></script></head>',p=>p==="assets/existing.js"?100:undefined);
+ assert.equal(result[0].rawBytes,100);
+ assert.deepEqual(result[0].unresolved,["assets/missing.js"]);
+});
+test("negative and non-finite sizes are unresolved rather than valid savings",()=>{
+ const result=measureRouteDeclaredAssets(["x.html"],()=>'<script src="/assets/a.js"></script><script src="/assets/b.js"></script>',p=>p==="assets/a.js"?-1:NaN);
+ assert.equal(result[0].rawBytes,0);
+ assert.deepEqual(result[0].unresolved,["assets/a.js","assets/b.js"]);
+});

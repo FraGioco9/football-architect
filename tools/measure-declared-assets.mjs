@@ -8,7 +8,11 @@ export function measureRouteDeclaredAssets(paths,read=readFileSync,sizeOf=path=>
   const unique=[...new Set(assetPaths)];
   const unresolved=[],details=[];
   for(const path of unique){
-   try{details.push({path,bytes:sizeOf(path)})}catch{unresolved.push(path)}
+   try{
+    const bytes=sizeOf(path);
+    if(!Number.isSafeInteger(bytes)||bytes<0)throw new RangeError("Invalid file size");
+    details.push({path,bytes});
+   }catch{unresolved.push(path)}
   }
   return {route,declaredReferences:assetPaths.length,uniqueResources:unique.length,rawBytes:details.reduce((n,x)=>n+x.bytes,0),unresolved,assets:details};
  });
