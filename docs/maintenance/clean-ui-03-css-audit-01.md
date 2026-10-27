@@ -69,3 +69,9 @@ After confirming that the previous HEAD has passed `head-exact` while `landing` 
 Added a standalone, **read-only** Node 22 inventory command `node tools/audit-css-cascade.mjs assets/app.css`. It records leaf rule selectors, containing at-rule contexts and source lines, and reports only identical selector/body/context candidates. Named keyframes and distinct media conditions stay separate. Four synthetic fixtures cover repeated scopes, breakpoint/keyframe separation, comments/quoted braces, and fail-closed unbalanced input; a fifth smoke test scans the existing stylesheet. This is a diagnostic aid, not a fully standards-compliant CSS parser (e.g. selector syntax edge cases) and it never rewrites styles.
 
 **CI cadence:** Owner requests tests **only after completing the batch/PR**, not polling every intermediate commit. This checkpoint is prepared as one tree/commit update; no manual workflow was dispatched. Automatic push-triggered workflows may still be scheduled by GitHub repository policy. Review the exact-head results at the final acceptance gate.
+
+## Checkpoint 07 — audit robustness and strict context guards
+
+Follow-up hardening handles unmatched closing parentheses/brackets as fail-closed errors and adds scoped fixtures for distinct `@supports`/`@container` rules, accurate source line reporting and mismatched delimiters. These are deliberate **audit-only** changes; no new CSS styling rules were removed. The candidate inventory must still be treated as a conservative locator rather than a complete standards parser.
+
+The owner has requested **one CI acceptance run at the end of the PR**. Changes are grouped in a single tree/commit where possible. GitHub's automated push workflows remain under repository policy; no manual workflow dispatch or interim check polling is performed.

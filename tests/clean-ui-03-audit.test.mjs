@@ -25,3 +25,21 @@ test("production CSS is parsable for reporting without rewriting",()=>{
   assert.ok(result.leafRules>500);
   assert.ok(Array.isArray(result.identicalContextGroups));
 });
+
+test("same leaf selector in differently named supports and container rules is not duplicate",()=>{
+  const css="@supports(display:grid){.x{gap:8px}}@supports(display:flex){.x{gap:8px}}"+
+    "@container card (min-width:300px){.x{gap:8px}}";
+  assert.equal(inventoryCss(css).identicalContextGroups.length,0);
+});
+test("repeated rules report their own source lines and surrounding context",()=>{
+  const css="@media(max-width:620px){\n.x{color:red}\n}\n@media(max-width:620px){\n.x{color:red}\n}";
+  const groups=inventoryCss(css).identicalContextGroups;
+  assert.equal(groups.length,1);
+  assert.deepEqual(groups[0].context,["@media(max-width:620px)"]);
+  assert.deepEqual(groups[0].lines,[2,5]);
+});
+test("unmatched delimiters fail closed, not silently accepted",()=>{
+  for(const source of [".x{color:red}}", ".x[attr=ok]]{color:red}", ".x:not(.y)){color:red}"]){
+    assert.throws(()=>inventoryCss(source),/Unmatched/);
+  }
+});

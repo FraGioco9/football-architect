@@ -13,8 +13,8 @@ export function inventoryCss(source) {
     if(quote){if(c==="\\"){i++;continue;}if(c===quote)quote="";continue;}
     if(c==="/"&&next==="*"){comment=true;i++;continue;}
     if(c==='"'||c==="'"){quote=c;continue;}
-    if(c==="("){paren++;continue;}if(c===")"){paren--;continue;}
-    if(c==="["){bracket++;continue;}if(c==="]"){bracket--;continue;}
+    if(c==="("){paren++;continue;}if(c===")"){if(!paren)throw Error("Unmatched closing parenthesis");paren--;continue;}
+    if(c==="["){bracket++;continue;}if(c==="]"){if(!bracket)throw Error("Unmatched closing bracket");bracket--;continue;}
     if(paren||bracket)continue;
     if(c==="{"){
       const header=source.slice(start,i).replace(/\/\*[\s\S]*?\*\//g," ").trim().replace(/\s+/g," ");
