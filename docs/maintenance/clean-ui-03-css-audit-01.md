@@ -106,3 +106,7 @@ Control ownership reference (source-token inventory, **not** rendered component 
 | Dialog | 36 | 0 |
 
 Interaction contracts to retain before shared extraction: Calendar week buttons and current-week reset; Fixtures matchday navigation and disabled states; History archive season controls; event dialogs and Escape/focus return; touch/coarse-pointer tooltip suppression; reduced-motion animations; light/dark event palettes. CSS class reuse alone does not prove equivalent keyboard or layout behavior. No template/JS/CSS behavior change in this batch.
+
+## Checkpoint 12 — asset presence without false unused-file claims
+
+Repository tree read-only baseline at this checkpoint: 561 tracked blobs, of which 353 paths under `assets/` (directory entries excluded). These counts are **not** an unused-asset inventory. The shared-template inventory now includes a pure `classifyAssetReferences(urls,knownPaths)` helper that distinguishes `present`, `unresolved`, and `non-asset` URLs, while stripping only URL query/hash from path comparisons. It never calls a file dead just because it is not linked directly from the shell: generators, dynamic references, catalogs, manifests, flags, licensed artifacts and DEV/public guards must all be considered. Two tests protect query-string comparison, unresolved links and head-only extraction. No loading changes, no deletion, no CSS behavior changes.

@@ -2,6 +2,15 @@
 import {readFileSync} from "node:fs";
 import {pathToFileURL} from "node:url";
 
+export function classifyAssetReferences(assetUrls,knownPaths){
+  const known=new Set(knownPaths);
+  return assetUrls.map(url=>{
+    const path=url.split(/[?#]/,1)[0].replace(/^\\//,"");
+    if(!path.startsWith("assets/"))return {url,path,classification:"non-asset"};
+    return {url,path,classification:known.has(path)?"present":"unresolved"};
+  });
+}
+
 export function shellAssetInventory(template){
   const head=template.split("</head>")[0];
   const matches=[...head.matchAll(/<(?:script|link)\b[^>]*?(?:src|href)="([^"]+)"[^>]*>/g)];
