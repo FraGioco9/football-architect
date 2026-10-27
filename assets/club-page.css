@@ -221,3 +221,24 @@
  .club-competition-layout{row-gap:8px}
  .club-competition-next{padding-top:6px}
 }
+
+/* Empty fixtures use the same compact typography as match links. */
+.club-competition-next-empty{font-size:14px;line-height:1.25}
+@media(max-width:760px){.club-competition-next-empty{font-size:13px}}
+
+/* Shared label/value rows keep Status and Next Match aligned at every width. */
+.club-competition-layout{grid-template-rows:auto minmax(54px,auto);row-gap:4px}
+.club-competition-identity{grid-row:1/3}
+.club-competition-metrics,.club-competition-next{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;grid-template-rows:subgrid;grid-row:1/3;row-gap:4px;align-self:stretch;align-content:normal}
+.club-competition-metrics>div{display:contents}
+.club-competition-metrics dt,.club-competition-next>.club-competition-label{grid-row:1;align-self:start}
+.club-competition-metrics dd,.club-competition-next-content{grid-row:2;align-self:start}
+.club-competition-next-content>a.app-link{display:inline-block;width:fit-content;max-width:100%;-webkit-line-clamp:unset;text-decoration:none}
+.club-competition-next-content>a.app-link:is(:hover,:focus-visible){text-decoration:none}
+.club-competition-match-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
+@media(max-width:480px){
+ .club-competition-layout{grid-template-columns:minmax(60px,.6fr) minmax(0,1.4fr);grid-template-rows:auto auto minmax(54px,auto)}
+ .club-competition-identity{grid-column:1/-1;grid-row:1;margin-bottom:4px}
+ .club-competition-metrics{grid-column:1;grid-row:2/4;justify-self:start;text-align:left}
+ .club-competition-next{grid-column:2;grid-row:2/4;border:0;padding:0}
+}
