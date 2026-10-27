@@ -55,3 +55,7 @@ P3 controls must similarly distinguish Calendar current-week navigation, Fixture
 Added `tests/clean-ui-03-css-contract.test.mjs` (Node built-in test runner) to pin the three proven same-condition responsive deduplications: a single History `display:none` source declaration at max-width 620, a single logo-size `64px` at max-width 620, and a single `58px` at max-width 360, while retaining the default `82px`. It also asserts presence of the shared template's current script/style dependencies rather than changing load order prematurely.
 
 These are **source contracts**, not replacement for browser CSSOM/visual parity. The earlier checked-in cross-route Chromium workflows must pass on the exact new HEAD. If the contract conflicts with an intentional later design change, update the contract and supporting QA together rather than deleting guards silently.
+
+## Checkpoint 04 — exact-head CI and test hardening
+
+The pre-hardening HEAD `782069ca61c1a90c53ea2442cd91707c9bf1d040` completed all 3 checks successfully: `landing`, `head-exact`, `chromium`. The source-contract tests originally used multi-line regex spans that could inadvertently cross outside the intended `@media` block; follow-up commit `6e5b40e0d313f5237cc1acba1802ef61295c3d76` replaces these checks with balanced-brace `mediaBlocks`/ `mediaHas` assertions and retains exact declaration counts. This helper is intentionally narrow and only validates the three known declarations; it is **not** a full CSS parser or computed-style proof. Recheck CI on the newer HEAD.
