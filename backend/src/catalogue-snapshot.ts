@@ -32,12 +32,14 @@ export function validateSeasonOneParticipants(bindings:readonly SnapshotBinding[
  try{validateSeasonOneBindings(bindings)}catch{return fail()}
 }
 
+export async function canonicalHash(value:unknown):Promise<string>{return hashText(canonical(value))}
+
 /** Both arguments are server-owned. A manifest never supplies its own canonical catalogue. */
 export async function snapshotHashes(bindings:readonly SnapshotBinding[],catalogue:CanonicalCatalogue){
  const ordered=[...bindings].sort((a,b)=>a.competitionId<b.competitionId?-1:a.competitionId>b.competitionId?1:0);
  return {
-  participantsHash:await hashText(canonical(ordered.map(b=>({competitionId:b.competitionId,clubIds:[...b.clubIds].sort()})))),
-  rulesHash:await hashText(canonical([...catalogue.competitions].sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0)))
+  participantsHash:await canonicalHash(ordered.map(b=>({competitionId:b.competitionId,clubIds:[...b.clubIds].sort()}))),
+  rulesHash:await canonicalHash([...catalogue.competitions].sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0))
  };
 }
 /** Validate and copy immutable approval bytes against trusted canonical identities/full rules. */
@@ -79,11 +81,9 @@ export async function validateApprovedSnapshot(input:unknown,catalogue:Canonical
 export function requireApprovedSnapshot(snapshot:ApprovedSnapshot|null):ApprovedSnapshot{
  if(!snapshot||!validated.has(snapshot))return fail();return snapshot;
 }
-/** No production manifest is approved. Test catalogues are never imported here. */
-export function loadApprovedSnapshot():ApprovedSnapshot|null{return null}
 
 /** Complete Season 1 approval path: exact selection AND independently trusted full rule/hash validation.
- * This does not load/approve production input; loadApprovedSnapshot remains null.
+ * Production loading and approval provenance are enforced separately by approved-season-one.ts.
  */
 export async function validateApprovedSeasonOneSnapshot(input:unknown,catalogue:CanonicalCatalogue):Promise<ApprovedSnapshot>{
  validateSeasonOneParticipants((input as ApprovedSnapshot|null)?.bindings as readonly SnapshotBinding[]);

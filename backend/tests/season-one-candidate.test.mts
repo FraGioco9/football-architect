@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import * as tool from '../tools/season-one-candidate.mts';
-import {loadApprovedSnapshot,validateApprovedSeasonOneSnapshot} from '../src/catalogue-snapshot.ts';
+import {validateApprovedSeasonOneSnapshot} from '../src/catalogue-snapshot.ts';
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const cli=fileURLToPath(new URL('../tools/season-one-candidate.mts',import.meta.url));
 const candidatePath=join(root,'backend/catalogues/season-1.candidate.json');
@@ -27,7 +27,6 @@ test('candidate records all canonical full rules and approved slots without gran
   assert.deepEqual(competition.rules,original.rules);
  }
  await assert.rejects(validateApprovedSeasonOneSnapshot(candidate.manifest,candidate.catalogue),{code:'catalogue_not_approved'});
- assert.equal(loadApprovedSnapshot(),null);
  await tool.verifySeasonOneCandidate(candidate,sources);
 });
 

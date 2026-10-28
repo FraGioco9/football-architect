@@ -13,7 +13,6 @@ it('accepts only exact trusted identities, eighteen bindings and full canonical 
  expect(Object.isFrozen(approved)).toBe(true);expect(Object.isFrozen(approved.bindings[0].clubIds)).toBe(true);
  // Caller mutation must not rewrite a previously validated snapshot.
  manifest.bindings[0].clubIds[0]='UNKNOWN-1';expect(approved.bindings[0].clubIds[0]).toBe('IT-1');
- expect(api.loadApprovedSnapshot()).toBeNull();
 });
 it('rejects malformed, corrupt, incomplete and mismatched manifests without granting approval',async()=>{
  const original=await syntheticManifest(api),catalogue=syntheticCatalogue();
@@ -47,7 +46,6 @@ it('Season 1-only allocation accepts owner-approved 1–3 / 4–6 and rejects sy
  const wrong=structuredClone(seasonOne);
  wrong.find(b=>b.competitionId==='int-1')!.clubIds[0]='IT-4';
  expect(()=>api.validateSeasonOneParticipants(wrong)).toThrow();
- expect(api.loadApprovedSnapshot()).toBeNull();
 });
 
 it('rejects malformed Season 1 selections with structured catalogue errors',()=>{
@@ -80,7 +78,6 @@ it('complete Season 1 path binds actual selection to all canonical rules and ind
  await expect(api.validateApprovedSeasonOneSnapshot(manifest,changed)).rejects.toMatchObject({status:422});
  const synthetic=await syntheticManifest(api);
  await expect(api.validateApprovedSeasonOneSnapshot(synthetic,syntheticCatalogue())).rejects.toMatchObject({status:422});
- expect(api.loadApprovedSnapshot()).toBeNull();
 });
 
 // The candidate is real review input, not an executable approval or positive fixture.
@@ -89,5 +86,4 @@ it('pending canonical Season 1 candidate never grants production approval',async
  await expect(api.validateApprovedSeasonOneSnapshot(reviewCandidate,catalogue)).rejects.toMatchObject({status:422,code:'catalogue_not_approved'});
  await expect(api.validateApprovedSeasonOneSnapshot(reviewCandidate.manifest,catalogue)).rejects.toMatchObject({status:422,code:'catalogue_not_approved'});
  expect(()=>api.requireApprovedSnapshot(reviewCandidate.manifest as any)).toThrow();
- expect(api.loadApprovedSnapshot()).toBeNull();
 });

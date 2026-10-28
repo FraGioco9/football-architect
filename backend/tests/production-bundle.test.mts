@@ -15,6 +15,7 @@ test('actual Worker local compilation excludes synthetic approval fixtures and o
   assert.ok(Object.keys(meta.inputs).some(path=>path.endsWith('src/commands.ts')));
   for(const path of Object.keys(meta.inputs))assert.doesNotMatch(path,/(?:^|\/)(?:tests|fixtures|tools)\//,path);
   for(const path of Object.keys(meta.inputs))assert.doesNotMatch(path,/season-1\.candidate\.json/,path);
+  for(const required of ['catalogues/season-1.approval.json','data/clubs.json','data/divisions.json','data/international-competitions.json','assets/world-calendar-model.js'])assert.ok(Object.keys(meta.inputs).some(path=>path.endsWith(required)),required);
   const entries=await readdir(out);assert.ok(entries.some(path=>path.endsWith('.js')));
   for(const file of entries.filter(path=>/\.(?:js|map)$/.test(path)))assert.doesNotMatch(await readFile(join(out,file),'utf8'),/season-one-review-candidate|pending-owner-review|synthetic:test-only|synthetic-prepare|synthetic-operator-password|fixture@example\.invalid/);
  }finally{await rm(out,{recursive:true,force:true})}

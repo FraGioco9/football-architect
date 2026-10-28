@@ -1,3 +1,5 @@
+> Owner decision update — 28 October 2026: the owner approved this complete review package at immutable commit `8126da13d0f36a1a2087f66f21626d06fe00c873` ("Approvo, procedi con il prossimo blocco"). The separate `backend/catalogues/season-1.approval.json` records the decision, reviewed commit, canonical source and unchanged hashes. The text below is the historical review handoff; its pending-approval statements describe that earlier checkpoint. Runtime loading is now separately reviewed/tested in `backend/src/approved-season-one.ts`. Infrastructure/deployment authorization remains separate.
+
 # Season 1 production manifest review — pending owner decision
 
 PR #316 / issue #315. This is a concrete review package, **not production approval**.

@@ -64,7 +64,7 @@ export async function buildSeasonOneCandidate(sources:Record<string,string>){
 
 /** Strict full-content comparison catches drift outside the two canonical manifest hashes as well. */
 export async function verifySeasonOneCandidate(candidate:unknown,sources:Record<string,string>):Promise<void>{
- if(!isDeepStrictEqual(candidate,await buildSeasonOneCandidate(sources)))throw Error('Season 1 review candidate mismatch; production approval remains absent');
+ if(!isDeepStrictEqual(candidate,await buildSeasonOneCandidate(sources)))throw Error('Season 1 review candidate mismatch; candidate grants no production approval');
 }
 
 async function main(){
@@ -73,7 +73,7 @@ async function main(){
  const sources=await readPinnedSeasonOneSources(),candidate=await buildSeasonOneCandidate(sources);
  if(args[0]==='--write')await writeFile(resolve(root,target),JSON.stringify(candidate,null,2)+'\n');
  else await verifySeasonOneCandidate(JSON.parse(await readFile(resolve(root,target),'utf8')),sources);
- process.stdout.write(`Season 1 candidate ${args[0]==='--write'?'written':'verified'}: pending-owner-review; production approval absent.\n`);
+ process.stdout.write(`Season 1 candidate ${args[0]==='--write'?'written':'verified'}: pending-owner-review; candidate grants no production approval.\n`);
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  main().catch(error=>{process.stderr.write(`${error instanceof Error?error.message:'Candidate verification failed'}\n`);process.exitCode=1});

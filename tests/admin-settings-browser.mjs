@@ -16,7 +16,7 @@ const playwright=await import(process.env.FA_ADMIN_PLAYWRIGHT||'playwright');
 // Fail before opening servers when a browser is missing; never count it as a skip.
 const browser=await playwright.chromium.launch({headless:true});
 const state=await mkdtemp(join(tmpdir(),'fa-admin-browser-'));
-let worker,preview,logs='',checks=0;
+let worker,preview,logs='',checks=0,preparedWorld=null;
 const freePort=async()=>{const s=createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const port=s.address().port;await new Promise(r=>s.close(r));return port};
 const password='browser-synthetic-password-2026';
 try{
@@ -45,13 +45,19 @@ try{
    await page.locator('#admin-email').fill('operator@example.invalid');await page.locator('#admin-password').fill(password);
    await page.locator('#admin-password').press('Enter');await page.locator('[data-admin-signed-in]').waitFor({state:'visible'});
    assert.equal(await page.locator('#admin-password').inputValue(),'');
-   await page.waitForFunction(()=>!document.querySelector('[data-admin-prepare]').disabled);
-   const blocked=page.waitForResponse(r=>r.url().endsWith('/api/admin/seasons/prepare'));
-   await page.locator('[data-admin-prepare]').click();
-   const denied=await blocked;assert.equal(denied.status(),422);assert.equal((await denied.json()).error.code,'catalogue_not_approved');
-   await page.waitForFunction(()=>!document.querySelector('[data-admin-prepare]').disabled);
-   const status=await page.locator('[data-admin-status]').textContent();assert.ok(status.length>25,status);
-   const world=await page.evaluate(()=>fetch('/api/world').then(r=>r.json()));assert.equal(world.world.seasonNumber,0);assert.equal(world.world.revision,0);
+   if(!preparedWorld){
+    await page.waitForFunction(()=>!document.querySelector('[data-admin-prepare]').disabled);
+    const completion=page.waitForResponse(r=>r.url().endsWith('/api/admin/seasons/prepare'));
+    await page.locator('[data-admin-prepare]').click();
+    const result=await completion;assert.equal(result.status(),200);const outcome=await result.json();preparedWorld=outcome.world;
+    assert.equal(preparedWorld.seasonNumber,1);assert.equal(preparedWorld.revision,1);assert.equal(preparedWorld.day,0);assert.equal(preparedWorld.phase,'preparing');
+   }
+   await page.waitForFunction(()=>document.querySelector('[data-admin-world]').textContent.includes('1')&&document.querySelector('[data-admin-prepare]').disabled);
+   assert.ok((await page.locator('[data-admin-status]').textContent()).length>0);
+   const world=await page.evaluate(()=>fetch('/api/world').then(r=>r.json()));assert.deepEqual(world.world,preparedWorld);
+   await page.reload();await page.locator('[data-admin-signed-in]').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.querySelector('[data-admin-prepare]').disabled&&!document.querySelector('[data-admin-refresh]').disabled);
+   assert.deepEqual(await page.evaluate(()=>fetch('/api/world').then(r=>r.json())),{world:preparedWorld});
    const secrets=await page.evaluate(()=>JSON.stringify({local:{...localStorage},session:{...sessionStorage},cookie:document.cookie}));
    assert.ok(!secrets.includes(password));assert.ok(!secrets.includes('fa_admin_local'));assert.ok(!secrets.includes('csrf'));
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));

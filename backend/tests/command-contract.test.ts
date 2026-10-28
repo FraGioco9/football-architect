@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ApiError } from '../src/errors.ts';
 import { parseIdempotencyKey, parsePrepareRequest } from '../src/command-contract.ts';
-import { loadApprovedSnapshot } from '../src/catalogue-snapshot.ts';
+import { loadApprovedSnapshot } from '../src/approved-season-one.ts';
 
 const generation='550e8400-e29b-41d4-a716-446655440000';
 const valid={expectedGeneration:generation,expectedRevision:0};
@@ -23,6 +23,6 @@ test('idempotency key rejects short, oversized, whitespace and control bytes',()
   for(const invalid of [null,'','short','x'.repeat(129),'abc defghijklmnop','\r\nInjected: yes','ä'.repeat(20)])
     assert.throws(()=>parseIdempotencyKey(invalid),(e:unknown)=>e instanceof ApiError && e.status===422);
 });
-test('no production approval is bundled in this foundation',()=>{
-  assert.equal(loadApprovedSnapshot(),null);
+test('approved server loader binds the immutable owner decision, not client data',async()=>{
+  assert.equal((await loadApprovedSnapshot()).approvalReference,'owner:2026-10-28:season-1-review:8126da13d0f36a1a2087f66f21626d06fe00c873');
 });
