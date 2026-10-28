@@ -19,6 +19,7 @@ const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-settings.mjs": "dev-debug-settings.mjs",
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
+  "/__fa_dev__/dev-debug-config.mjs": "dev-debug-config.mjs",
   "/__fa_dev__/dev-world-clock.mjs": "dev-world-clock.mjs",
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
   "/__fa_dev__/dev-standings-preview-data.mjs": "dev-standings-preview-data.mjs",
