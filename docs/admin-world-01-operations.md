@@ -95,3 +95,26 @@ Validation commands: `npm --prefix backend test`, `npm --prefix backend run type
 Local continuation evidence: Node22.23.3 passes38 Worker/D1 tests,29 contracts,6 operator/persistence/real-Worker-restart/local-compilation tests and13 client/proxy/publication tests; TypeScript,6 SQLite tests and generator23/23 pass. Independent review found a delayed-world-response race hiding failed-logout retry; the regression failed before the epoch fix and passes afterward. The local broad Node run reported674 PASS/6 FAIL, with all six failures explicitly requiring unavailable Chrome (A04 browser baseline, CLUB-01, G10-PUBLIC-02, UI-THEME, CAL-IMP-02 and CAL-IMP-04). Chromium install returned a corrupt archive; the new actual-browser test fails missing engine locally and is not claimed PASS. Exact-head hosted validation remains required.
 
 Hosted first-batch evidence on `f26643f`: Admin #40676077674 PASS, including31 actual Settings→bridge→Wrangler→D1 Chromium cases. General gates exposed two harness defects: Browser #40676077611 passed245 legacy Chromium checks but failed an app.css-only parity assertion when only the new component stylesheet changed; Site #40676077712 failed UI-THEME because its static test server wrote200 headers before a missing API file read and then attempted404 headers. Both were reproduced locally. Corrective regressions use a real Git diff (component CSS retains FULL Chromium/WebKit while app.css changes additionally run its exact-base parity audit) and an actual HTTP404 request to the same static QA server. Both regressions fail before and pass after their fixes. The classifier still requires FULL for every CSS change. No browser failure or omitted later WebKit step is recorded as PASS; the corrective commit requires new automatic exact-head gates.
+
+
+## Production security and dependency gate review (28 October 2026)
+
+This is a source/configuration review, **not** a production certification or authorization to provision infrastructure. The real-world initialize command must remain fail-closed until an approved catalogue is committed and independently checked.
+
+| Gate | Verified source behavior | Missing production evidence / decision |
+| --- | --- | --- |
+| Canonical Season 1 approval | `loadApprovedSnapshot()` returns `null`; production `prepare` responds with `catalogue_not_approved` and does not write sporting data. | Owner-approved complete canonical competition rules and eligible participants, signed-off version/hash provenance and reviewed immutable approval manifest. |
+| Authentication and CSRF | Server-enforced sessions, exact configured mutation Origin and CSRF, dedicated operator account and generic failures; local Worker/D1 and browser tests pass on the previously recorded SHA. | Hosted trusted-source/origin topology, secure forwarding termination, session-cookie behavior under actual HTTPS. |
+| Credential protection | Pinned Argon2id v19 (19456 KiB, 2 passes, 1 lane), known-answer vectors, bounded verifier concurrency and rate limiting. | Production CPU/memory/concurrency measurements; reviewed compromised-password screening beyond the current eleven-entry blocklist. No weaker hash fallback. |
+| Persistence | Local transactional D1 preparation, rollback, replay and restart tests. | Actual remote D1 provisioning/migration/backup/recovery testing under separately authorized conditions. |
+| Public boundary | Anonymous world read is separated from Admin operations; static publication allowlist excludes backend and fixtures. | Hosted end-to-end origin/access check and production acceptance. |
+
+### Sequence and stop rules
+
+1. Obtain and review the real Season 1 participant/rules approval **without** introducing DEV/fictional data as canonical. Until then, `catalogue_not_approved` is expected and correct.
+2. Review trusted-origin/source routing and the Cloudflare resource envelope before enabling remote Admin access. Local browser results cannot substitute for deployed metrics.
+3. Extend the password denylist/screening design without sending secrets to external services or weakening login behavior. Treat the current limited blocklist as an explicit release blocker requiring a decision.
+4. After changes land on the PR, use FAST/TARGETED checks for eligible documentation and small code batches; run FULL exact-head acceptance only at the release gate or when required by CSS/security CI policy. Never count results from a prior HEAD as current-HEAD checks.
+5. Remain Draft/HOLD. **Stop** before deployment, remote D1 operations, operator credential provisioning or merging, all of which require separate authorization.
+
+No checkbox for a full initialize/read flow is checked based on synthetic approval fixtures, and no PR 2 or PR 3 checklist item is complete on this evidence.
