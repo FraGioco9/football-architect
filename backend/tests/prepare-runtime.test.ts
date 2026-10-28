@@ -1,3 +1,4 @@
+import reviewCandidate from '../catalogues/season-1.candidate.json' with {type:'json'};
 import {beforeAll,beforeEach,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -93,4 +94,11 @@ it('treats storage failure as unavailable rather than invalid credentials',async
 it('refuses structural approval objects that never passed server validation',async()=>{
  const snapshot=await approved();await expect(prepare(key,command(),structuredClone(snapshot))).rejects.toMatchObject({status:422});
  expect(await readWorld(db)).toEqual(world);
+});
+
+it('rejects a complete pending-review candidate at the D1 command boundary with zero writes',async()=>{
+ for(const candidate of [reviewCandidate,reviewCandidate.manifest,{...reviewCandidate.manifest,approvalReference:'forged-owner-approval'}])
+  await expect(prepare(key,command(),candidate)).rejects.toMatchObject({status:422,code:'catalogue_not_approved'});
+ expect(await readWorld(db)).toEqual(world);
+ for(const table of ['seasons','admin_operations'])expect((await db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first()).n).toBe(0);
 });

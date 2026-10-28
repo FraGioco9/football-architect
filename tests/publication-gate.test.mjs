@@ -15,7 +15,7 @@ test("INT24-PUBLIC: shared rules and stats are self-contained public dependencie
   const source=readFileSync(join(repositoryRoot,path),"utf8");
   assert.doesNotMatch(source,/\/__fa_dev__\/|(?:from\s*|require\s*\()\s*["\x27][^"\x27]*(?:tools\/dev-|dev-competition-stats|dev-standings-preview)/,"protected provider imported by "+path);
  }
- for(const path of ["tools/competition-catalogue.mjs","data/international-competitions.json","backend/catalogues/season-1.participants.json","tools/dev-competition-stats-data.mjs"]){
+ for(const path of ["tools/competition-catalogue.mjs","data/international-competitions.json","backend/catalogues/season-1.participants.json","backend/catalogues/season-1.candidate.json","backend/tools/season-one-candidate.mts","tools/dev-competition-stats-data.mjs"]){
   assert.ok(!publicFiles.includes(path),"private source must not publish: "+path);
  }
  const root=mkdtempSync(join(tmpdir(),"int24-public-contract-"));
@@ -40,7 +40,7 @@ test("PUBLIC-01: only explicit public assets are eligible; demo fixture is exclu
  for(const path of ["__fa_dev__/debug-settings.mjs","__fa_dev__/artifact-manifest.json",
                     "tools/dev-debug-settings.mjs","tools/dev-preview-artifact.mjs",
                     "tests/fixtures/it-1-demo.mjs","tests/world-competition-runtime.test.mjs",
-                    "tools/publication-guard.mjs","backend/catalogues/season-1.participants.json"])
+                    "tools/publication-guard.mjs","backend/catalogues/season-1.participants.json","backend/catalogues/season-1.candidate.json","backend/tools/season-one-candidate.mts"])
   assert.ok(!files.includes(path),"not public: "+path);
  assert.ok(existsSync(join(repositoryRoot,"tests/fixtures/it-1-demo.mjs")));
  const fixture=readFileSync(join(repositoryRoot,"tests/fixtures/it-1-demo.mjs"),"utf8");

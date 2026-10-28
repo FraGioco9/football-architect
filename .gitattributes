@@ -17,3 +17,10 @@ assets/clubs/**/*.svg -text
 
 clubs/_shared/index.html text eol=lf
 clubs/_shared/manifest.json text eol=lf
+
+# Season 1 review pins raw canonical source bytes across Windows/Unix checkouts.
+data/clubs.json text eol=lf
+data/divisions.json text eol=lf
+data/international-competitions.json text eol=lf
+backend/catalogues/season-1.participants.json text eol=lf
+assets/world-calendar-model.js text eol=lf

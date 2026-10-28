@@ -1,3 +1,4 @@
+import reviewCandidate from '../catalogues/season-1.candidate.json' with {type:'json'};
 import clubs from '../../data/clubs.json' with {type:'json'};
 import selection from '../catalogues/season-1.participants.json' with {type:'json'};
 import divisions from '../../data/divisions.json' with {type:'json'};
@@ -79,5 +80,14 @@ it('complete Season 1 path binds actual selection to all canonical rules and ind
  await expect(api.validateApprovedSeasonOneSnapshot(manifest,changed)).rejects.toMatchObject({status:422});
  const synthetic=await syntheticManifest(api);
  await expect(api.validateApprovedSeasonOneSnapshot(synthetic,syntheticCatalogue())).rejects.toMatchObject({status:422});
+ expect(api.loadApprovedSnapshot()).toBeNull();
+});
+
+// The candidate is real review input, not an executable approval or positive fixture.
+it('pending canonical Season 1 candidate never grants production approval',async()=>{
+ const catalogue:api.CanonicalCatalogue=JSON.parse(JSON.stringify(reviewCandidate.catalogue));
+ await expect(api.validateApprovedSeasonOneSnapshot(reviewCandidate,catalogue)).rejects.toMatchObject({status:422,code:'catalogue_not_approved'});
+ await expect(api.validateApprovedSeasonOneSnapshot(reviewCandidate.manifest,catalogue)).rejects.toMatchObject({status:422,code:'catalogue_not_approved'});
+ expect(()=>api.requireApprovedSnapshot(reviewCandidate.manifest as any)).toThrow();
  expect(api.loadApprovedSnapshot()).toBeNull();
 });
