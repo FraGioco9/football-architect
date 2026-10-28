@@ -118,3 +118,19 @@ This is a source/configuration review, **not** a production certification or aut
 5. Remain Draft/HOLD. **Stop** before deployment, remote D1 operations, operator credential provisioning or merging, all of which require separate authorization.
 
 No checkbox for a full initialize/read flow is checked based on synthetic approval fixtures, and no PR 2 or PR 3 checklist item is complete on this evidence.
+
+
+## Season 1 approval handoff — evidence required before enabling prepare
+
+The current manifest validator proves structural integrity of a **server-owned** approval, not the sporting correctness of a Season 1 selection. The approval is deliberately absent from production. The following is an acceptance handoff, not approval itself:
+
+1. Freeze the canonical 320 club identifiers (`IT/ENG/ES/DE/FR/PT/NL/BR-1..40`) and the 18 competition IDs (16 domestic, `int-1`, `int-2`). Record the catalogue source revision and checksum independently from the test fixture.
+2. For Season 1, explicitly confirm each domestic competition's 16 initial participants and the international 24-per-cup entries (three per country per cup, six disjoint international entries per country) against the owner-approved qualification model; **do not infer** Season 1 entrants from current DEV standings or random draws.
+3. Review the complete canonical rules for all 18 competition IDs, including domestic promotion/relegation/postseason outcomes, INT-24 draw/calendar constraints and the 56-day world calendar. Record the reviewed versions and full canonical hash inputs. Hash equality prevents silent drift but does not constitute sporting-policy approval.
+4. Record an unambiguous approval reference with reviewer decision and immutable source commit. Validate the proposed manifest using `validateApprovedSnapshot` against the independent canonical catalogue; reject missing, duplicate, stale or inconsistent participants and changed rules.
+5. Require an independently reviewed code change to replace the present `loadApprovedSnapshot() => null` boundary. Before that separate approval, an authenticated real `prepare` must continue to return HTTP 422 `catalogue_not_approved` without increasing world revision or creating Season 1.
+6. After any approved enabling change, rerun real workerd/D1 positive and negative tests, exact-head public/static isolation, browser and required FULL acceptance. Record actor/command/time/resulting revision before marking the protected initialize/read checklist item complete.
+
+Current source-only evidence: `backend/src/catalogue-snapshot.ts` validates 320 canonical identifiers, 18 bindings, rules versions, per-competition sizes, disjoint international allocations and SHA-256 digests. `backend/tests/catalogue-runtime.test.ts` includes synthetic positive and rejection cases, while `backend/tests/command-contract.test.ts` asserts the production approval remains null. These fixtures **must never** be promoted into production approval by renaming or copying them.
+
+No catalogue approval, production initialization, deployment or database action was performed by this handoff.
