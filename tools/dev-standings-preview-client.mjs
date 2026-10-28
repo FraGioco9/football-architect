@@ -2,6 +2,7 @@
 // This file must never be copied into a public artifact or loaded by public HTML.
 import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
+import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
 import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
@@ -411,9 +412,9 @@ if(validPath||indexPath||clubPath){
  Promise.resolve().then(() => {
 
   registerDebugControls("general",[{
-   type:"range",id:"season",label:"Season",min:0,max:4,step:1,scope:"general",
+   type:"range",id:"season",label:"Season",...DEBUG_CONTROL_LIMITS.season,scope:"general",
    value:()=>debugSeason,onChange:setSeason
-  },{type:"range",id:"world-day",label:"Day",min:1,max:56,step:1,scope:"general",disabled:()=>debugSeason===0,
+  },{type:"range",id:"world-day",label:"Day",...DEBUG_CONTROL_LIMITS.worldDay,scope:"general",disabled:()=>debugSeason===0,
    value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
    onChange:async n=>{if(debugSeason===0||!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n),previousMatchdays=matchdays;if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n)){if(target!==previousMatchdays)await setMatchdays(previousMatchdays);return false}syncDebugControls();return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
@@ -967,10 +968,10 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
  };
  const publish=()=>{devWorldClock.publish();syncInputs();calendarWidget?.syncVisibility?.()};
  registerDebugControls('general',[{
-  type:'range',id:'season',label:'Season',min:0,max:4,step:1,scope:'general',
+  type:'range',id:'season',label:'Season',...DEBUG_CONTROL_LIMITS.season,scope:'general',
   value:season,onChange:n=>{const ok=devWorldClock.setSeason(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  },{
-  type:'range',id:'world-day',label:'Day',min:1,max:56,step:1,scope:'general',disabled:()=>season()===0,
+  type:'range',id:'world-day',label:'Day',...DEBUG_CONTROL_LIMITS.worldDay,scope:'general',disabled:()=>season()===0,
   value:day,onChange:n=>{const ok=devWorldClock.setDay(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  },{
   type:'button',id:'reset-global',label:'Reset',scope:'general',
