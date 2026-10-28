@@ -1,0 +1,117 @@
+/* Server-authorized Admin UI. Credentials/CSRF are never written to browser storage. */
+((root,factory)=>{
+ const api=factory();if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ if(root.document)api.mount(root.document);
+})(typeof window!=='undefined'?window:globalThis,()=>{
+ 'use strict';
+ const copies={
+ en:{title:'World administration',intro:'Public access does not require an account. Operators sign in here to manage the shared world.',email:'Email',password:'Password',signIn:'Sign in',signOut:'Sign out',prepare:'Prepare season',refresh:'Refresh',checking:'Checking access…',signedOut:'Signed out.',signedIn:'Signed in.',unavailable:'Administration is unavailable. Try again later.',invalid:'Sign-in failed. Check your credentials.',throttled:'Too many attempts. Try again in 15 minutes.',prerequisite:'Preparation is blocked until the participant and rules catalogue is approved.',stale:'The world has changed. Refresh before trying again.',prepared:'Season prepared. It has not started.',working:'Working…',logoutFailed:'Sign-out could not be confirmed. Retry sign out.',season:'Season',revision:'revision',day:'day',unstarted:'unstarted',preparing:'preparing',active:'active',closed:'closed'},
+ it:{title:'Amministrazione del mondo',intro:'L’accesso pubblico non richiede un account. Gli operatori accedono qui per gestire il mondo condiviso.',email:'Email',password:'Password',signIn:'Accedi',signOut:'Esci',prepare:'Prepara stagione',refresh:'Aggiorna',checking:'Verifica accesso…',signedOut:'Accesso non effettuato.',signedIn:'Accesso effettuato.',unavailable:'Amministrazione non disponibile. Riprova più tardi.',invalid:'Accesso non riuscito. Controlla le credenziali.',throttled:'Troppi tentativi. Riprova fra 15 minuti.',prerequisite:'Preparazione bloccata: il catalogo di partecipanti e regole deve essere approvato.',stale:'Il mondo è cambiato. Aggiorna prima di riprovare.',prepared:'Stagione preparata, non ancora iniziata.',working:'Operazione in corso…',logoutFailed:'Uscita non confermata. Riprova a uscire.',season:'Stagione',revision:'revisione',day:'giorno',unstarted:'non iniziata',preparing:'in preparazione',active:'attiva',closed:'conclusa'},
+ de:{title:'Weltverwaltung',intro:'Der öffentliche Zugang benötigt kein Konto. Betreiber melden sich hier an, um die gemeinsame Welt zu verwalten.',email:'E-Mail',password:'Passwort',signIn:'Anmelden',signOut:'Abmelden',prepare:'Saison vorbereiten',refresh:'Aktualisieren',checking:'Zugang wird geprüft…',signedOut:'Abgemeldet.',signedIn:'Angemeldet.',unavailable:'Verwaltung nicht verfügbar. Später erneut versuchen.',invalid:'Anmeldung fehlgeschlagen. Zugangsdaten prüfen.',throttled:'Zu viele Versuche. In 15 Minuten erneut versuchen.',prerequisite:'Vorbereitung gesperrt, bis Teilnehmer- und Regelkatalog genehmigt sind.',stale:'Die Welt hat sich geändert. Zuerst aktualisieren.',prepared:'Saison vorbereitet, noch nicht gestartet.',working:'Wird bearbeitet…',logoutFailed:'Abmeldung nicht bestätigt. Erneut abmelden.',season:'Saison',revision:'Revision',day:'Tag',unstarted:'nicht gestartet',preparing:'in Vorbereitung',active:'aktiv',closed:'abgeschlossen'},
+ es:{title:'Administración del mundo',intro:'El acceso público no requiere una cuenta. Los operadores acceden aquí para gestionar el mundo compartido.',email:'Correo electrónico',password:'Contraseña',signIn:'Acceder',signOut:'Cerrar sesión',prepare:'Preparar temporada',refresh:'Actualizar',checking:'Comprobando acceso…',signedOut:'Sesión cerrada.',signedIn:'Sesión iniciada.',unavailable:'Administración no disponible. Inténtalo más tarde.',invalid:'Acceso fallido. Comprueba las credenciales.',throttled:'Demasiados intentos. Inténtalo en 15 minutos.',prerequisite:'Preparación bloqueada hasta aprobar el catálogo de participantes y reglas.',stale:'El mundo ha cambiado. Actualiza antes de intentarlo.',prepared:'Temporada preparada, aún no iniciada.',working:'Procesando…',logoutFailed:'No se confirmó el cierre. Vuelve a cerrar sesión.',season:'Temporada',revision:'revisión',day:'día',unstarted:'sin iniciar',preparing:'en preparación',active:'activa',closed:'finalizada'},
+ fr:{title:'Administration du monde',intro:'L’accès public ne nécessite pas de compte. Les opérateurs se connectent ici pour gérer le monde partagé.',email:'Adresse e-mail',password:'Mot de passe',signIn:'Se connecter',signOut:'Se déconnecter',prepare:'Préparer la saison',refresh:'Actualiser',checking:'Vérification de l’accès…',signedOut:'Déconnecté.',signedIn:'Connecté.',unavailable:'Administration indisponible. Réessayez plus tard.',invalid:'Échec de connexion. Vérifiez vos identifiants.',throttled:'Trop de tentatives. Réessayez dans 15 minutes.',prerequisite:'Préparation bloquée jusqu’à l’approbation du catalogue des participants et des règles.',stale:'Le monde a changé. Actualisez avant de réessayer.',prepared:'Saison préparée, pas encore commencée.',working:'Opération en cours…',logoutFailed:'Déconnexion non confirmée. Réessayez de vous déconnecter.',season:'Saison',revision:'révision',day:'jour',unstarted:'non commencée',preparing:'en préparation',active:'active',closed:'terminée'}
+ };
+ const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+ const validWorld=w=>w?.schemaVersion===1&&uuid.test(w.generation)&&Number.isSafeInteger(w.revision)&&w.revision>=0&&Number.isSafeInteger(w.seasonNumber)&&w.seasonNumber>=0&&Number.isInteger(w.day)&&w.day>=0&&w.day<=56&&['unstarted','preparing','active','closed'].includes(w.phase);
+ function createAdminController(request,changed){
+  let epoch=0,lastLogoutEpoch=0,csrf='',retryKey='',retryFor='',logoutCsrf='';
+  let value={actor:null,world:null,message:'checking',busy:false,logoutNeeded:false};
+  const state=()=>structuredClone(value),emit=()=>changed(state());
+  const clear=message=>{csrf='';value={actor:null,world:null,message,busy:false,logoutNeeded:value.logoutNeeded};emit()};
+  function failure(error){
+   if(error.status===401){clear('signedOut');return}
+   value.message=error.status===422&&error.code==='catalogue_not_approved'?'prerequisite':error.status===409?'stale':error.status===429?'throttled':error.status===401?'invalid':'unavailable';
+   value.busy=false;emit();
+  }
+  function acceptSession(data){
+   if(!data?.actor||typeof data.actor.id!=='string'||typeof data.actor.email!=='string'||!/^[a-f0-9]{64}$/.test(data.csrfToken))throw Error('invalid response');
+   value.actor={id:data.actor.id,email:data.actor.email};csrf=data.csrfToken;
+  }
+  async function worldRead(ticket,rechecked=false){
+   const data=await request('/api/admin/world');if(ticket!==epoch)return;
+   if(!validWorld(data?.world))throw Error('invalid response');
+   if(value.world&&value.world.generation!==data.world.generation&&!rechecked){
+    value.world=null;retryKey='';retryFor='';
+    const session=await request('/api/admin/session');if(ticket!==epoch)return;acceptSession(session);
+    return worldRead(ticket,true);
+   }
+   if(!value.world||value.world.generation!==data.world.generation||data.world.revision>=value.world.revision)value.world=data.world;
+   value.message='signedIn';
+  }
+  return {state,
+   async refresh(){
+    const ticket=++epoch;value.busy=true;emit();
+    try{const session=await request('/api/admin/session');if(ticket!==epoch)return;acceptSession(session);await worldRead(ticket)}
+    catch(error){if(ticket===epoch){clear(error.status===401?'signedOut':'unavailable');return}}
+    finally{if(ticket===epoch){value.busy=false;emit()}}
+   },
+   async login(email,password){
+    if(value.busy)return;const ticket=++epoch;value.busy=true;emit();
+    try{
+     const session=await request('/api/admin/login',{body:{email,password}});
+     if(ticket!==epoch){
+      // A delayed login can set an HttpOnly cookie after the first logout response.
+      // Revoke it only if no newer user action has replaced that logout.
+      if(epoch===lastLogoutEpoch&&session?.csrfToken){
+       const logoutTicket=epoch;logoutCsrf=session.csrfToken;value.logoutNeeded=true;emit();
+       try{await request('/api/admin/logout',{body:{},headers:{'X-CSRF-Token':logoutCsrf}});if(epoch===logoutTicket){value.logoutNeeded=false;logoutCsrf=''}}
+       catch{if(epoch===logoutTicket)value.message='logoutFailed'}
+       if(epoch===logoutTicket)emit();
+      }
+      return;
+     }
+     acceptSession(session);await worldRead(ticket);if(ticket===epoch)value.logoutNeeded=false;
+    }catch(error){if(ticket===epoch){clear(error.status===401?'invalid':error.status===429?'throttled':'unavailable');return}}
+    finally{if(ticket===epoch){value.busy=false;emit()}}
+   },
+   async logout(){
+    const token=csrf||logoutCsrf;logoutCsrf=token;const ticket=++epoch;lastLogoutEpoch=ticket;
+    value.logoutNeeded=true;clear('signedOut');value.busy=true;emit();
+    try{await request('/api/admin/logout',{body:{},headers:{'X-CSRF-Token':token}});if(ticket===epoch){value.logoutNeeded=false;logoutCsrf=''}}
+    catch{if(ticket===epoch)value.message='logoutFailed'}
+    finally{if(ticket===epoch){value.busy=false;emit()}}
+   },
+   async prepare(){
+    if(value.busy||!value.actor||!value.world||value.world.phase!=='unstarted')return;
+    const ticket=++epoch;const target=value.world.generation+':'+value.world.revision;
+    if(retryFor!==target){retryFor=target;retryKey=globalThis.crypto.randomUUID()}
+    value.busy=true;emit();
+    try{
+     const data=await request('/api/admin/seasons/prepare',{body:{expectedGeneration:value.world.generation,expectedRevision:value.world.revision},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':retryKey}});
+     if(ticket!==epoch)return;if(!validWorld(data?.world)||data.world.generation!==value.world.generation||data.world.revision<value.world.revision)throw Error('invalid response');
+     value.world=data.world;value.message='prepared';retryKey='';retryFor='';
+    }catch(error){if(ticket===epoch)failure(error)}
+    finally{if(ticket===epoch){value.busy=false;emit()}}
+   }
+  };
+ }
+ async function browserRequest(path,options={}){
+  const response=await fetch(path,{method:options.body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:{...(options.body===undefined?{}:{'Content-Type':'application/json'}),...options.headers},body:options.body===undefined?undefined:JSON.stringify(options.body)});
+  let data;try{data=await response.json()}catch{throw Error('unavailable')}
+  if(!response.ok)throw Object.assign(Error('request failed'),{status:response.status,code:data?.error?.code});return data;
+ }
+ function mount(doc){
+  const host=doc.querySelector('[data-admin-settings]');if(!host)return;
+  const find=s=>host.querySelector(s),form=find('[data-admin-login]'),email=find('#admin-email'),password=find('#admin-password');
+  const controller=createAdminController(browserRequest,render);
+  function render(state=controller.state()){
+   const text=copies[doc.documentElement.lang]||copies.en;
+   host.querySelectorAll('[data-admin-copy]').forEach(node=>node.textContent=text[node.dataset.adminCopy]);
+   find('[data-admin-status]').textContent=text[state.busy?'working':state.message]||text.unavailable;
+   form.hidden=!!state.actor;find('[data-admin-signed-in]').hidden=!state.actor;
+   find('[data-admin-logout]').hidden=!state.actor&&!state.busy&&!state.logoutNeeded;
+   host.setAttribute('aria-busy',String(state.busy));
+   form.querySelector('button').disabled=state.busy;
+   find('[data-admin-prepare]').disabled=state.busy||state.world?.phase!=='unstarted';find('[data-admin-refresh]').disabled=state.busy;
+   find('[data-admin-actor]').textContent=state.actor?.email||'';
+   const w=state.world;find('[data-admin-world]').textContent=w?`${text.season} ${w.seasonNumber} · ${text.revision} ${w.revision} · ${text.day} ${w.day} · ${text[w.phase]}`:'';
+  }
+  form.addEventListener('submit',async event=>{event.preventDefault();const secret=password.value;password.value='';await controller.login(email.value,secret);if(controller.state().actor)find('[data-admin-refresh]').focus();else password.focus()});
+  find('[data-admin-logout]').addEventListener('click',async()=>{password.value='';await controller.logout();email.focus()});
+  find('[data-admin-refresh]').addEventListener('click',()=>controller.refresh());
+  find('[data-admin-prepare]').addEventListener('click',()=>controller.prepare());
+  new MutationObserver(()=>render()).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
+  render();void controller.refresh();
+ }
+ return {createAdminController,mount};
+});

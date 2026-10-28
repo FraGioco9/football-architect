@@ -172,3 +172,5 @@ The tracked GitHub Actions workflow is test-only, requests read-only repository 
 ## Maintenance record
 
 The [conservative cleanup design](docs/superpowers/specs/2026-10-27-conservative-cleanup-design.md) and [branch inventory](docs/maintenance/2026-10-27-branch-inventory.json) record the 2026-10-27 audit. The inventory is a dated snapshot, not a live branch registry or proof of deletion. Re-fetch branch heads and open PRs before removal, retain exact SHA recovery references, and preserve unmerged work. Issue and PR closure must be justified by actual completed or superseded scope, not age alone.
+
+Admin World local foundation and the optional same-origin Settings API bridge are documented in [local operations](docs/admin-world-01-operations.md). The production preparation prerequisite remains blocked pending an approved catalogue. No remote database setup or deployment is part of these instructions.

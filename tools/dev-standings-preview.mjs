@@ -1,3 +1,4 @@
+import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
 // Loopback-only static DEV server. Never stage this module in a public artifact.
 import {resolveSubpage,clubViews} from "../assets/subpage-routes.mjs";
 import {parseRoute,buildRoute} from "../assets/routes-registry.mjs";
@@ -108,6 +109,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
       const remote = req.socket.remoteAddress;
       if (!isLoopback(remote) && !(!subdomains && LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
       if (!allowedHost(req.headers.host, subdomains)) return reject(res, 403);
+      if (await proxyAdminApi(req,res)) return;
       if (req.method !== "GET" && req.method !== "HEAD") return reject(res, 405);
       const raw = req.url?.split("?")[0] ?? "";
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||

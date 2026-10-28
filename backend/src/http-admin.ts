@@ -5,6 +5,7 @@ import {authenticate,csrfFor,login,requireCsrf} from './auth.ts';
 import {readWorld} from './world-repository.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {loadApprovedSnapshot} from './catalogue-snapshot.ts';
+import {prepareSeason} from './commands.ts';
 export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
@@ -65,10 +66,8 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/session')return json(200,{actor:session.actor,csrfToken:await csrfFor(token)});
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
   await requireCsrf(session,request.headers.get('X-CSRF-Token'));
-  parsePrepareRequest(await input(request));parseIdempotencyKey(request.headers.get('Idempotency-Key'));
-  if(!loadApprovedSnapshot())throw new ApiError(422,'catalogue_not_approved');
-  // Successful production preparation is never fabricated from incomplete contracts.
-  throw new ApiError(503,'prepare_unavailable');
+  const command=parsePrepareRequest(await input(request)),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
+  return json(200,await prepareSeason(db,session,command,key,loadApprovedSnapshot(),now));
  }catch(error){
   if(error instanceof ApiError)return json(error.status,{error:{code:error.code}},error.status===429?{'Retry-After':'900'}:{});
   return json(503,{error:{code:'admin_unavailable'}});
