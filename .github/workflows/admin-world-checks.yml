@@ -37,7 +37,7 @@ jobs:
       - name: Test password and world contracts (no remote services)
         run: npm --prefix backend run test:contracts
       - name: Verify D1-compatible SQLite migration locally
-        run: python3 -m unittest discover -s backend/tests -p 'test_world_migration.py' -v
+        run: python3 -m unittest discover -s backend/tests -p 'test_*migration.py' -v
       - name: Install pinned Worker toolchain without remote credentials
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
