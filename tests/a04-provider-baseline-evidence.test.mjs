@@ -423,8 +423,16 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
  }finally{
   try{socket?.close()}catch{}
-  proc.kill('SIGTERM');for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);if(proc.exitCode===null)proc.kill('SIGKILL');
+  if(proc.exitCode===null&&proc.signalCode===null)proc.kill('SIGTERM');
+  for(let i=0;i<30&&proc.exitCode===null&&proc.signalCode===null;i++)await delay(100);
+  if(proc.exitCode===null&&proc.signalCode===null)proc.kill('SIGKILL');
+  for(let i=0;i<30&&proc.exitCode===null&&proc.signalCode===null;i++)await delay(100);
   server.closeAllConnections();devServer.closeAllConnections();server.close();devServer.close();
-  rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});
+  // Chromium can create one last file during profile teardown even after its signal.
+  // Retry only the ephemeral profile deletion; preserve a persistent failure.
+  for(let attempt=0;;attempt++){
+   try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});break}
+   catch(error){if(attempt>=8||!['ENOTEMPTY','EBUSY','EPERM'].includes(error?.code))throw error;await delay(200*(attempt+1))}
+  }
  }
 });
