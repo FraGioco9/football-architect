@@ -22,3 +22,8 @@ The upstream adapter allocates a fixed WebAssembly linear memory of 1040 pages (
 - Production infrastructure provisioning and topology review require separate authorization.
 
 No real operator credentials, remote database, deployment or merge. Keep the PR Draft/HOLD until the full foundation and exact-head acceptance have been demonstrated.
+
+
+## Continuation — local authentication batch, 28 October 2026
+
+Independent argon2-cffi25.1.0 vector fixtures now pass in workerd (including Unicode), and a fifth simultaneous hash request is rejected by the four-operation queue limit. The shared password core is used by Worker and local-only operator tooling. Durable login/session/throttle/recovery tests are implemented; actual Miniflare and Wrangler restarts preserve singleton state and valid sessions. Two review findings (persistence-subtree symlinks and post-denial throttle-row growth) have RED→GREEN regressions. See `admin-world-01-operations.md` for exact scope, local setup and release limitations. Historical remaining-gate statements above are superseded only for these implemented local checks; production peak-memory/CPU/throughput, broad compromised-password screening, trusted production topology and full prepare/UI acceptance remain open. No production approval or deployment is claimed.

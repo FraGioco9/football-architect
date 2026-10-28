@@ -11,5 +11,5 @@ export default defineConfig({
       bindings: { TEST_MIGRATIONS: await readD1Migrations(path.resolve('migrations')) },
     },
   }))],
-  test: { include: ['tests/worker-runtime.test.ts','tests/password-runtime.test.ts','tests/d1-integration.test.ts'] },
+  test: { include: ['tests/*runtime.test.ts','tests/d1-integration.test.ts'] },
 });

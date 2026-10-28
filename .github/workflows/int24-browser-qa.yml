@@ -1,15 +1,49 @@
-name: INT-24 Chromium QA
+name: Football Architect Browser QA
 on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  chromium:
+  scope:
     runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.scope.outputs.mode }}
+      area: ${{ steps.scope.outputs.area }}
+      tests: ${{ steps.scope.outputs.tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assert exact classification checkout
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Classify fast-safe changes
+        id: scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "Final review or main: mandatory full regression suite."
+          fi
+  chromium:
+    needs: scope
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' && format('pr-{0}-{1}', github.event.pull_request.number, needs.scope.outputs.mode) || format('main-{0}', github.run_id) }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +53,7 @@ jobs:
           persist-credentials: false
       - name: Assert exact PR checkout
         env:
-          EXPECTED: ${{ github.event.pull_request.head.sha }}
+          EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           if [ -n "$EXPECTED" ]; then
             test "$(git rev-parse HEAD)" = "$EXPECTED"
@@ -27,34 +61,61 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Classify fast-safe changes
-        id: scope
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
-      - name: Skip browser work only for unpublished provider scope
-        if: steps.scope.outputs.mode == 'fast'
-        run: echo 'Browser suite deferred to main/full CI; provider scope is unpublished.'
+      - name: Defer full browser checks on draft or provider-only PR
+        if: needs.scope.outputs.mode == 'fast'
+        run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
+      - name: Restore pinned Playwright browser cache
+        if: needs.scope.outputs.mode != 'fast'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ needs.scope.outputs.mode }}-v2
       - name: Install isolated browser test dependency
-        if: steps.scope.outputs.mode != 'fast'
+        if: needs.scope.outputs.mode != 'fast'
         run: |
-          npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
+          if [ "${{ needs.scope.outputs.mode }}" = "targeted" ]; then
+            npm install --no-save --no-package-lock playwright@1.58.2
+          else
+            npm install --no-save --no-package-lock playwright@1.58.2 pixelmatch@7.1.0 pngjs@7.0.0
+          fi
           npx playwright install chromium
           npx playwright install --with-deps webkit
       - name: Run loopback preview and browser checks
-        if: steps.scope.outputs.mode != 'fast'
+        if: needs.scope.outputs.mode != 'fast'
         run: |
           node tools/dev-standings-preview.mjs > /tmp/int24-preview.log 2>&1 &
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:2000/competitions >/dev/null; then break; fi
             sleep 1
           done
+          if [ "${{ needs.scope.outputs.mode }}" = "targeted" ]; then
+            FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
+            FA_BROWSER_ENGINE=webkit FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
+            node tools/ci-opt-01-scenarios.mjs --browser
+          fi
           node tests/int24-browser-qa.mjs
-          PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tests/clean-ui-03-css-parity.mjs
-          node tests/clean-ui-03-network-baseline.mjs
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            test "$BASE" != ""
+            if git diff --name-only "$BASE"...HEAD -- "*.css" | grep -q .; then
+              PR_BASE_SHA="$BASE" node tests/clean-ui-03-css-parity.mjs
+            else
+              echo "No CSS changes; baseline-versus-HEAD CSS screenshot audit not applicable."
+            fi
+          else
+            echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node tests/clean-ui-03-network-baseline.mjs
+          else
+            echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
+          fi
           node tests/clean-ui-03-webkit-iphone.mjs
       - name: Upload screenshots and server log
-        if: always() && steps.scope.outputs.mode != 'fast'
+        if: failure() && needs.scope.outputs.mode != 'fast'
         uses: actions/upload-artifact@v4
         with:
           name: int24-chromium-screenshots
@@ -62,3 +123,4 @@ jobs:
             int24-browser-artifacts/
             /tmp/int24-preview.log
           if-no-files-found: warn
+          retention-days: 7

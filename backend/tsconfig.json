@@ -20,6 +20,8 @@
   "include": [
     "src/**/*.ts",
     "tests/**/*.ts",
-    "vitest.config.mts"
+    "vitest.config.mts",
+    "tools/**/*.mts",
+    "tests/**/*.mts"
   ]
 }

@@ -3,17 +3,22 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   head-exact:
     runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.scope.outputs.mode }}
+      area: ${{ steps.scope.outputs.area }}
+      tests: ${{ steps.scope.outputs.tests }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - name: Assert exact checked-out SHA
         env:
@@ -21,9 +26,26 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           echo "Verified source HEAD: $EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Classify fast-safe changes
+        id: scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "Final review or main: mandatory full regression suite."
+          fi
   landing:
     runs-on: ubuntu-latest
     needs: head-exact
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && needs.head-exact.outputs.mode != 'full' && format('pr-{0}-{1}', github.event.pull_request.number, needs.head-exact.outputs.mode) || format('main-{0}', github.run_id) }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' && needs.head-exact.outputs.mode != 'full' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,32 +68,28 @@ jobs:
           node --check assets/competition-page.js
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
-      - name: Install Chrome for NAV-01 visual QA
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
-        id: nav01-chrome
-        uses: browser-actions/setup-chrome@v2
-        with:
-          chrome-version: stable
-      - name: Classify fast-safe changes
-        id: scope
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: echo "mode=$(node tools/ci-fast-scope.mjs)" >> "$GITHUB_OUTPUT"
       - name: Site contracts (full)
-        if: steps.scope.outputs.mode != 'fast'
-        env:
-          CHROME_BIN: ${{ steps.nav01-chrome.outputs.chrome-path }}
-          FA_CLUB_QA_DIR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 254 && format('{0}/nav01-screenshots', runner.temp) || '' }}
-        run: node --test --test-concurrency=1 tests/*.test.mjs
-      - name: Site contracts (fast-safe provider scope)
-        if: steps.scope.outputs.mode == 'fast'
+        if: needs.head-exact.outputs.mode == 'full'
         run: |
-          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
-      - name: Upload NAV-01 Chromium screenshots
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 254 }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: nav01-chromium-screenshots
-          path: ${{ runner.temp }}/nav01-screenshots/nav01-*.png
-          if-no-files-found: error
-          retention-days: 7
+          if git diff --name-only "${{ github.event.pull_request.base.sha || github.event.before }}"...HEAD -- tools/ci-opt-01-node-review.json | grep -q .; then
+            node tools/ci-opt-01-node-runner.mjs --benchmark
+          fi
+          node tools/ci-opt-01-node-runner.mjs
+      - name: Site essential contracts (FAST and TARGETED)
+        if: needs.head-exact.outputs.mode != 'full'
+        run: |
+          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/ci-opt-01-node-inventory.test.mjs tests/ci-opt-01-node-runner.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
+      - name: Targeted area contracts
+        if: needs.head-exact.outputs.mode == 'targeted'
+        env:
+          TARGETED_TESTS: ${{ needs.head-exact.outputs.tests }}
+        run: |
+          test -n "$TARGETED_TESTS"
+          read -ra TEST_FILES <<< "$TARGETED_TESTS"
+          node --test --test-concurrency=1 "${TEST_FILES[@]}"
+      - name: Validate TARGETED Node selection on CI changes
+        if: needs.head-exact.outputs.mode == 'full' && github.event_name == 'pull_request'
+        run: |
+          if git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
+            node tools/ci-opt-01-scenarios.mjs --node
+          fi

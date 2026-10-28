@@ -24,7 +24,7 @@ export function adminCookiePolicy(mode: string, requestUrl: string): string {
     return '__Host-fa_admin; Secure; HttpOnly; SameSite=Strict; Path=/';
   }
   if (mode==='local' && url.protocol==='http:' &&
-      (url.hostname==='localhost' || url.hostname==='127.0.0.1' || url.hostname==='[::1]'))
+      (url.hostname==='localhost' || url.hostname==='127.0.0.1' || url.hostname==='[::1]' || url.hostname==='app.localhost'))
     return 'fa_admin_local; HttpOnly; SameSite=Strict; Path=/';
   throw new ApiError(503,'admin_unavailable');
 }

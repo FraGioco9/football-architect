@@ -28,4 +28,17 @@ describe('Worker Argon2id password runtime',()=>{
       expect(await verifyPassword(pwd,encoded)).toBe(false);
     await expect(hashPassword('password123456')).rejects.toThrow('invalid_password');
   });
+  it('matches independent argon2-cffi 25.1.0 known-answer fixtures at the production floor',async()=>{
+    const salt='MDEyMzQ1Njc4OWFiY2RlZg';
+    const vectors=[['independent-argon2-vector-2026','vkGKejmMYid+b4y79BCo6CA1EDcoxITIoX90Osr8sZM'],['Unicode 🔐 passphrase 2026','N4zUUixBd8zZ+qk3/uixLIWyDghj/U6V8nmNgUvKr7w']];
+    for(const [password,tag] of vectors)expect(await verifyPassword(password,'$argon2id$v=19$m=19456,t=2,p=1$'+salt+'$'+tag)).toBe(true);
+  });
+  it('caps one isolate to four pending WASM operations and fails overflow closed',async()=>{
+    const results=await Promise.allSettled(Array.from({length:5},(_,i)=>hashPassword('bounded-synthetic-password-'+i)));
+    expect(results.filter(x=>x.status==='fulfilled')).toHaveLength(4);
+    expect(results.filter(x=>x.status==='rejected')).toHaveLength(1);
+    const rejected=results.find(x=>x.status==='rejected') as PromiseRejectedResult;
+    expect(String(rejected.reason)).toContain('password_hash_busy');
+  });
+
 });

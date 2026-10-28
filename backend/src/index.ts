@@ -1,8 +1,9 @@
+import {handleAdmin,type AdminEnv} from './http-admin.ts';
 import { ApiError } from './errors.ts';
 import { projectWorld } from './public-projections.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
-export interface Env {
+export interface Env extends AdminEnv {
   DB?: WorldDatabase;
 }
 
@@ -17,8 +18,7 @@ function json(status: number, payload: unknown): Response {
 }
 
 /**
- * Deliberately read-only initial Worker boundary. No placeholder authorization,
- * account creation, credential acceptance or mutation endpoints are exposed.
+ * Anonymous public read and separately configured, server-authorized Admin routes.
  */
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -32,9 +32,9 @@ export default {
         return json(503, { error: { code: 'world_unavailable' } });
       }
     }
-    // Admin endpoints must fail closed until session and CSRF verification exist.
+    // Admin access requires explicit configuration, durable authorization and CSRF.
     if (url.pathname === '/api/admin' || url.pathname.startsWith('/api/admin/'))
-      return json(404, { error: { code: 'not_found' } });
+      return handleAdmin(request,env);
     return json(404, { error: { code: 'not_found' } });
   },
 };

@@ -26,7 +26,7 @@ test('unavailable or invalid database fails closed and never fabricates Season 0
 test('no mutating or unauthenticated admin route is enabled', async () => {
   for(const path of ['/api/admin','/api/admin/session','/api/admin/prepare']){
     const response=await fetch(path,{method:'POST',body:'{}',headers:{'Content-Type':'application/json'}});
-    assert.equal(response.status,404);
+    assert.equal(response.status,path==='/api/admin/session'?405:404);
   }
   assert.equal((await fetch('/api/world',{method:'POST'})).status,405);
   assert.equal((await fetch('/api/random')).status,404);
