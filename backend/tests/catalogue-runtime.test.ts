@@ -30,3 +30,17 @@ it('binds hashes deterministically despite object-key order and detects particip
  const reversed={clubIds:[...catalogue.clubIds].reverse(),competitions:[...catalogue.competitions].reverse()};
  expect(await api.snapshotHashes(manifest.bindings,reversed)).toEqual({participantsHash:manifest.participantsHash,rulesHash:manifest.rulesHash});
 });
+
+it('Season 1-only allocation accepts owner-approved 1–3 / 4–6 and rejects synthetic 5–7',async()=>{
+ const synthetic=await syntheticManifest(api);
+ expect(()=>api.validateSeasonOneParticipants(synthetic.bindings)).toThrow();
+ const seasonOne=structuredClone(synthetic.bindings);
+ const federation=seasonOne.find(b=>b.competitionId==='int-2');
+ if(!federation)throw new Error('missing Federation binding');
+ federation.clubIds=['IT','ENG','ES','DE','FR','PT','NL','BR'].flatMap(country=>[4,5,6].map(n=>`${country}-${n}`));
+ expect(()=>api.validateSeasonOneParticipants(seasonOne)).not.toThrow();
+ const wrong=structuredClone(seasonOne);
+ wrong.find(b=>b.competitionId==='int-1')!.clubIds[0]='IT-4';
+ expect(()=>api.validateSeasonOneParticipants(wrong)).toThrow();
+ expect(api.loadApprovedSnapshot()).toBeNull();
+});
