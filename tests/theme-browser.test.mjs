@@ -22,8 +22,9 @@ const server=createServer(async(req,res)=>{
     if(file!==root&&!file.startsWith(root+sep))throw Error("outside root");
     if(!extname(file))file=join(file,"index.html");
     if(route.startsWith("/assets/clubs/")&&clubCrestDelay)await delay(clubCrestDelay);
+    const bytes=await readFile(file);
     res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});
-    res.end(await readFile(file));
+    res.end(bytes);
   }catch(error){res.writeHead(404,{"Content-Type":"text/plain; charset=utf-8"});res.end("Not found: "+String(error?.code||error?.message||error));}
 });
 const devRouter=createPreviewServer();
@@ -62,6 +63,13 @@ const ratio=(a,b)=>{
   const light=x=>parse(x).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
   const x=light(a),y=light(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);
 };
+test("static QA server returns404 for absent Admin API without writing headers twice",async()=>{
+ server.listen(0,"127.0.0.1");await once(server,"listening");
+ try{
+  const response=await fetch("http://127.0.0.1:"+server.address().port+"/api/admin/session");
+  assert.equal(response.status,404);assert.match(await response.text(),/^Not found/);
+ }finally{server.closeAllConnections();await new Promise(r=>server.close(r))}
+});
 test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeout:180000},async()=>{
   // Detect Chrome before opening the server, so missing Chrome cannot leave Node hanging.
   const browser=chrome();

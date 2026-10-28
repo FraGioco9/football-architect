@@ -1,0 +1,56 @@
+name: Admin World foundation checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'assets/admin-settings.*'
+      - 'tools/render-admin-settings.mjs'
+      - 'tools/dev-admin-api-proxy.mjs'
+      - 'tools/dev-standings-preview.mjs'
+      - 'tools/generate-app-pages.mjs'
+      - 'settings/index.html'
+      - 'tests/admin-settings*'
+      - 'tests/dev-admin-api-proxy.test.mjs'
+      - '.github/workflows/admin-world-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  password-policy:
+    name: Admin foundation contracts (Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test password and world contracts (no remote services)
+        run: npm --prefix backend run test:contracts
+      - name: Verify D1-compatible SQLite migration locally
+        run: python3 -m unittest discover -s backend/tests -p 'test_world_migration.py' -v
+      - name: Install pinned Worker toolchain without remote credentials
+        run: |
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend ci --no-audit --no-fund
+      - name: Typecheck backend with pinned TypeScript
+        run: npm --prefix backend run typecheck
+      - name: Execute smoke tests in actual local Worker runtime
+        run: npm --prefix backend test
+      - name: Verify operator bootstrap, recovery and local persistence across restart
+        run: npm --prefix backend run test:operator
+      - name: Install isolated pinned Chromium test tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-admin-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-admin-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify Settings with real loopback Worker and D1
+        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs

@@ -16,6 +16,7 @@ function sandbox() {
  const debugRoot=join(root,"fixtures");
  mkdirSync(join(debugRoot,"tools"),{recursive:true});
  for(const [name,content] of [
+  ["dev-debug-config.mjs","export const DEBUG_CONTROL_LIMITS = {};\n"],
   ["dev-debug-settings.mjs","export const enabled = false;\n"],
   ["dev-standings-preview-client.mjs","export const client = true;\n"],
   ["dev-standings-preview-data.mjs","export const data = [];\n"],
@@ -127,15 +128,24 @@ test("DEBUG-INFRA-05: both contracts use isolated staging and approved transfer 
 test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
  const {root,debugRoot,protectedPath}=sandbox();
  try{
-  for(const name of ["dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs",
+  for(const name of ["dev-debug-config.mjs","dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs",
    "dev-debug-widget.mjs","dev-world-clock.mjs","dev-competition-stats-client.mjs","dev-competition-stats-data.mjs"])
    writeFileSync(join(debugRoot,"tools",name),readFileSync(join(repositoryRoot,"tools",name)));
   stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
   const directory=join(protectedPath,"__fa_dev__");
+  const bundled=readFileSync(join(directory,'standings-client.mjs'),'utf8');
+  assert.equal(existsSync(join(directory,'dev-debug-config.mjs')),false,'keep independent protected module contract');
+  const config=bundled.match(/const DEBUG_CONTROL_LIMITS=Object.freeze\([\s\S]*?\n\}\);/)?.[0];
+  assert.ok(config,'configured limits must reach protected client');
+  const limits=runInNewContext(config+';DEBUG_CONTROL_LIMITS');
+  assert.equal(limits.season.min,0);assert.equal(limits.season.max,4);
+  assert.equal(limits.worldDay.min,1);assert.equal(limits.worldDay.max,56);
+  assert.equal(limits.matchdays.max,30);assert.equal(Object.isFrozen(limits.worldDay),true);
+
   for(const name of ["debug-settings.mjs","standings-client.mjs","standings-data.mjs",
    "dev-standings-preview-data.mjs","debug-widget.mjs","dev-world-clock.mjs","stats-client.mjs","stats-data.mjs"]){
    const source=readFileSync(join(directory,name),"utf8");
-   for(const match of source.matchAll(/(?:import|export)\\s+(?:[^"'\\n]*?\\s+from\\s+)?["'](\\.[^"']+)["']/g))
+   for(const match of source.matchAll(/(?:import|export)\s+(?:[^"'\n]*?\s+from\s+)?["'](\.[^"']+)["']/g))
     assert.equal(existsSync(join(directory,match[1])),true,name+" imports missing "+match[1]);
   }
  }finally{rmSync(root,{recursive:true,force:true})}

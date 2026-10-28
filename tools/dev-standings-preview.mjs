@@ -1,3 +1,4 @@
+import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
 // Loopback-only static DEV server. Never stage this module in a public artifact.
 import {resolveSubpage,clubViews} from "../assets/subpage-routes.mjs";
 import {parseRoute,buildRoute} from "../assets/routes-registry.mjs";
@@ -18,6 +19,7 @@ const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-settings.mjs": "dev-debug-settings.mjs",
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
+  "/__fa_dev__/dev-debug-config.mjs": "dev-debug-config.mjs",
   "/__fa_dev__/dev-world-clock.mjs": "dev-world-clock.mjs",
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
   "/__fa_dev__/dev-standings-preview-data.mjs": "dev-standings-preview-data.mjs",
@@ -108,6 +110,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
       const remote = req.socket.remoteAddress;
       if (!isLoopback(remote) && !(!subdomains && LAN_ENABLED && isPrivateIPv4(remote))) return reject(res, 403);
       if (!allowedHost(req.headers.host, subdomains)) return reject(res, 403);
+      if (await proxyAdminApi(req,res)) return;
       if (req.method !== "GET" && req.method !== "HEAD") return reject(res, 405);
       const raw = req.url?.split("?")[0] ?? "";
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||

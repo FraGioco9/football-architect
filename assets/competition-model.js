@@ -17,7 +17,7 @@
   const profile={
     id:"domestic-league-v1",
     capacity:16,
-    participants:{status:"provisional",approved:false,source:"data/division-allocations.provisional.json"},
+    participants:{status:"provisional",approved:false,source:"backend/catalogues/season-1.participants.json"},
     format:{type:"double-round-robin",status:"preview",legs:2,phases:[{id:"league",type:"round-robin"}]},
     rules:{status:"undefined",points:null,tiebreakers:null,promotion:null,relegation:null}
   };

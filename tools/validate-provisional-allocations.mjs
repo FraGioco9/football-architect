@@ -3,16 +3,16 @@ import model from "../assets/competition-model.js";
 export function validateProvisionalAllocations(manifest,divisionData,clubData){
   const fail=message=>{throw Error("Provisional division allocations: "+message);};
   const check=(condition,message)=>{if(!condition)fail(message);};
-  check(manifest?.schema==="football-architect-provisional-division-allocation-v1","unexpected schema");
+  check(manifest?.schema==="football-architect-season-one-preview-v1","unexpected schema");
   check(manifest.status==="provisional"&&manifest.approved===false,"allocation must remain provisional");
-  check(manifest.sources?.clubs==="data/clubs.json"&&manifest.sources?.divisions==="data/divisions.json","source catalogues changed");
+  check(manifest.season===1&&manifest.source==="backend/catalogues/season-1.participants.json","season/source changed");
   const divisions=divisionData,clubs=clubData;
   const expectedCountries=model.countries;
   const capacity=model.profile.capacity;
   check(Array.isArray(divisions)&&divisions.length===model.divisionCount,"expected flat 16-division registry");
   const countries=[...new Set(divisions.map(d=>d.countryId))];
   check(countries.length===8&&new Set(countries).size===8&&expectedCountries.every(id=>countries.includes(id)),"unexpected countries");
-  check(divisions.every(d=>Array.isArray(d.clubIds)&&d.clubIds.length===0),"canonical participants must remain unset");
+  check(divisions.every(d=>!Object.hasOwn(d,"clubIds")),"canonical participants must remain unset");
   for(const countryId of expectedCountries){
     const national=divisions.filter(d=>d.countryId===countryId);
     check(national.length===2&&new Set(national.map(d=>d.countryName)).size===1,"inconsistent country metadata "+countryId);

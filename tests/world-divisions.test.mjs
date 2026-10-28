@@ -1,3 +1,4 @@
+import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import {runInNewContext} from 'node:vm';
 import routeRegistry from '../assets/routes-registry.js';
 import ruleEngine from '../assets/competition-rules.js';
@@ -11,7 +12,7 @@ import {fileURLToPath} from "node:url";
 const read=file=>readFileSync(new URL("../"+file,import.meta.url),"utf8");
 const divisions=JSON.parse(read("data/divisions.json"));
 const countries=[...new Map(divisions.map(d=>[d.countryId,{id:d.countryId,name:{en:d.countryName},flagAsset:"assets/flags/"+(d.countryId==="ENG"?"gb-eng":d.countryId.toLowerCase())+".svg"}])).values()];
-const allocation=JSON.parse(read("data/division-allocations.provisional.json"));
+const allocation=loadSeasonOnePreview();
 const clubs=JSON.parse(read("data/clubs.json"));
 const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
 const shared=read("competitions/_shared/index.html");

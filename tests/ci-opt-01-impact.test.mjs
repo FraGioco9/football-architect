@@ -80,7 +80,7 @@ test("only obsolete FAST/TARGETED jobs can be cancelled, FULL is protected",asyn
  }
 });
 
-test('area CSS changes preserve the exact-base screenshot parity gate',()=>{
+test('area CSS changes retain mandatory FULL browser coverage',()=>{
  for(const file of ['assets/club-page.css','assets/competition-stats.css','assets/world-calendar.css','assets/guide-theme.css']){
   assert.equal(classifyImpact([file]).mode,'full',file);
  }

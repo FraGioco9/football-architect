@@ -1,7 +1,9 @@
+import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import test from 'node:test';
 import {runInNewContext as vmRunInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {request} from 'node:http';
@@ -23,7 +25,7 @@ test('CLUB-01 all 320 identities and 1600 subpages resolve to one public templat
 test('CLUB-01 derived manifest preserves canonical fields and provisional placement',()=>{
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const descriptions=JSON.parse(read('data/club-descriptions.i18n.json'));
- const allocations=JSON.parse(read('data/division-allocations.provisional.json'));
+ const allocations=loadSeasonOnePreview();
  assert.equal(manifest.clubs.length,320);
  assert.equal(manifest.approved,false);
  for(const c of clubs){
@@ -46,6 +48,8 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared De
  try{
   const entrypoint=await get('/__fa_dev__/debug-settings.mjs');
   assert.equal(entrypoint.status,200);
+  const config=await get('/__fa_dev__/dev-debug-config.mjs');
+  assert.equal(config.status,200);assert.equal(config.body,read('tools/dev-debug-config.mjs'));
   assert.match(entrypoint.body,/import "\.\/standings-client\.mjs"/);
   for(const c of clubs){
    const base='/clubs/'+c.countryId.toLowerCase()+'/'+String(c.clubId);
@@ -69,8 +73,11 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared De
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
 test('CLUB-01 generation is deterministic and canonical inputs are unchanged',()=>{
+ const paths=['data/clubs.json','data/divisions.json','backend/catalogues/season-1.participants.json','data/club-descriptions.i18n.json'];
+ const fingerprint=()=>paths.map(path=>createHash('sha256').update(read(path)).digest('hex'));
+ const before=fingerprint();
  execFileSync(process.execPath,['tools/generate-app-pages.mjs','--check']);
- assert.equal(execFileSync('git',['diff','--','data/clubs.json','data/divisions.json','data/division-allocations.provisional.json','data/club-descriptions.i18n.json','assets/clubs'],{encoding:'utf8'}),'');
+ assert.deepEqual(fingerprint(),before);
 });
 
 test('CLUB-01 presentation uses every canonical identity in all five languages',async()=>{
