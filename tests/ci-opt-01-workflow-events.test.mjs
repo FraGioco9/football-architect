@@ -90,7 +90,7 @@ if [ "$1" = tests/int24-browser-qa.mjs ] && [ "$FA_FAIL_FULL" = 1 ]; then exit 4
 `);
   executable('curl','exit 0\n');
   executable('git',`for arg do
- if [ "$arg" = '*.css' ] && [ "$FA_CSS_CHANGED" = 1 ]; then printf 'assets/app.css\\n'; fi
+ if [ "$arg" = 'assets/app.css' ] && [ "$FA_CSS_CHANGED" = 1 ]; then printf 'assets/app.css\\n'; fi
 done
 exit 0
 `);
@@ -140,3 +140,24 @@ test('a failing Chromium suite fails the shell gate and cannot be masked by a la
  assert.equal(result.status,42);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs']);
 });
+
+test('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebKit for a new component stylesheet',()=>temporary(root=>{
+ git(root,'init','-q');mkdirSync(join(root,'assets'));
+ writeFileSync(join(root,'assets/app.css'),'body{color:black}');git(root,'add','.');git(root,'commit','-qm','base');
+ const base=git(root,'rev-parse','HEAD');
+ writeFileSync(join(root,'assets/admin-settings.css'),'.admin-settings{display:grid}');git(root,'add','.');git(root,'commit','-qm','component');
+ const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);
+ writeFileSync(join(bin,'node'),'#!/bin/sh\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\nprintf "%s\\n" "$1" >> "$FA_RECORD"\n',{mode:0o755});
+ writeFileSync(join(bin,'curl'),'#!/bin/sh\nexit 0\n',{mode:0o755});
+ const script=render(stepScript(read('int24-browser-qa.yml'),'Run loopback preview and browser checks'),{
+  'github.event_name':'pull_request','github.event.pull_request.base.sha':base,'needs.scope.outputs.mode':'full','needs.scope.outputs.area':''
+ }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
+ const execute=()=>{
+  writeFileSync(record,'');
+  const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record},encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);return readFileSync(record,'utf8').trim().split('\n');
+ };
+ assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+ writeFileSync(join(root,'assets/app.css'),'body{color:blue}');git(root,'add','.');git(root,'commit','-qm','app stylesheet');
+ assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/clean-ui-03-css-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+}));
