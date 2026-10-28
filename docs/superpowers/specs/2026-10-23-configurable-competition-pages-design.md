@@ -33,7 +33,7 @@ Rejected alternatives: separate copies of each page would preserve drift; a sing
 | --- | --- |
 | `data/divisions.json` | Existing domestic identity, capacity and new `rules` object for each division |
 | `data/international-competitions.json` (new) | Two cup identities, capacity and the same rules contract |
-| `data/division-allocations.provisional.json` | Existing provisional domestic memberships; remains separate from rules |
+| `backend/catalogues/season-1.participants.json` | Season 1 participant-only selection (migrated 2026-10-28); unapproved domestic preview projections remain separate from rules and real D1 state |
 | Season inputs / historical snapshots | Supplied participants, fixtures, results and the rules snapshot used for that season |
 | `assets/world-calendar-model.js` | Canonical 56-day event placement; configuration refers to its identities |
 

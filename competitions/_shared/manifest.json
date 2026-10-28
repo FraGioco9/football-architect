@@ -7,7 +7,7 @@
     "participants": {
       "status": "provisional",
       "approved": false,
-      "source": "data/division-allocations.provisional.json"
+      "source": "backend/catalogues/season-1.participants.json"
     },
     "format": {
       "type": "double-round-robin",
@@ -50,7 +50,6 @@
       "primaryHex": "#225B4C",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -223,7 +222,6 @@
       "primaryHex": "#4B7651",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -428,7 +426,6 @@
       "primaryHex": "#4A5063",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -601,7 +598,6 @@
       "primaryHex": "#6A6571",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -806,7 +802,6 @@
       "primaryHex": "#214D75",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -979,7 +974,6 @@
       "primaryHex": "#4A6480",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -1184,7 +1178,6 @@
       "primaryHex": "#913D48",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -1357,7 +1350,6 @@
       "primaryHex": "#9C594A",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -1562,7 +1554,6 @@
       "primaryHex": "#414E87",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -1735,7 +1726,6 @@
       "primaryHex": "#66628D",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -1940,7 +1930,6 @@
       "primaryHex": "#155F50",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -2113,7 +2102,6 @@
       "primaryHex": "#41746A",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -2318,7 +2306,6 @@
       "primaryHex": "#8B5129",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -2491,7 +2478,6 @@
       "primaryHex": "#88683C",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",
@@ -2696,7 +2682,6 @@
       "primaryHex": "#745064",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-top-v1",
@@ -2869,7 +2854,6 @@
       "primaryHex": "#675F7D",
       "secondaryHex": "#243039",
       "ivoryHex": "#F5F1E8",
-      "clubIds": [],
       "rules": {
         "schemaVersion": 1,
         "version": "domestic-second-v1",

@@ -127,7 +127,7 @@ The shell retains its historical disabled Continue control, without an active ca
 | International cups | [data/international-competitions.json](data/international-competitions.json) | Sovereign and Federation definitions |
 | Club identities | [data/clubs.json](data/clubs.json) | 320 identities; stable `(countryId, clubId)`, IDs 1–40 per country |
 | Approved identity source | [data/clubs-registry.csv](data/clubs-registry.csv) | Twelve canonical fields, including names, original description, colours and stadium |
-| Provisional participants | [data/division-allocations.provisional.json](data/division-allocations.provisional.json) | IDs 1–16 in tier 1, 17–32 in tier 2; 33–40 retained as asset-only |
+| Season 1 participant selection | [backend/catalogues/season-1.participants.json](backend/catalogues/season-1.participants.json) | Domestic 1–16 / 17–32, Sovereign 1–3, Federation 4–6 per nation; 33–40 inactive. Participant-only approval; public projections stay unapproved. D1 owns real seasonal state. |
 | Identity documentation | [docs/clubs/README.md](docs/clubs/README.md) | Schema, source provenance and integration rules |
 | National flags | [assets/flags/](assets/flags/) | Currently tracked national-flag SVG assets |
 | Division artwork | [assets/divisions/](assets/divisions/) | Primary/compact SVGs for all 16 domestic divisions; preserve source artwork |

@@ -1,10 +1,11 @@
+import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createWorldCatalog,parseClubId} from '../assets/world-catalog.mjs';
 import {loadWorldCatalog} from '../tools/load-world-catalog.mjs';
 const load=name=>JSON.parse(readFileSync(new URL('../data/'+name,import.meta.url),'utf8'));
-const sources=()=>({clubs:load('clubs.json'),divisions:load('divisions.json'),internationalCompetitions:load('international-competitions.json'),provisionalAllocations:load('division-allocations.provisional.json'),rivalries:load('club-rivalries.json'),descriptions:load('club-descriptions.i18n.json')});
+const sources=()=>({clubs:load('clubs.json'),divisions:load('divisions.json'),internationalCompetitions:load('international-competitions.json'),provisionalAllocations:loadSeasonOnePreview(),rivalries:load('club-rivalries.json'),descriptions:load('club-descriptions.i18n.json')});
 test('A01 canonical cardinalities and namespace separation',()=>{
  const c=loadWorldCatalog();
  assert.equal(c.clubs.length,320);assert.equal(c.divisions.length,16);assert.equal(c.competitions.length,18);assert.equal(c.rivalries.length,352);

@@ -1,10 +1,11 @@
+import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createHash} from "node:crypto";
 import {validateProvisionalAllocations} from "../tools/validate-provisional-allocations.mjs";
 const read=path=>JSON.parse(readFileSync(new URL("../"+path,import.meta.url),"utf8"));
-const manifest=read("data/division-allocations.provisional.json");
+const manifest=loadSeasonOnePreview();
 const divisions=read("data/divisions.json");
 const countries=[...new Set(divisions.map(d=>d.countryId))].map(id=>({id}));
 const clubs=read("data/clubs.json");
@@ -37,6 +38,7 @@ test("REGISTRY-01: CSV and JSON use the same flat division fields and records",(
   const lines=readFileSync(new URL("../data/divisions-registry.csv",import.meta.url),"utf8").trimEnd().split(/\r?\n/);
   const headers=lines[0].split(",");
   assert.equal(divisions.length,16);
+  assert.ok(divisions.every(d=>!Object.hasOwn(d,"clubIds")),"permanent divisions cannot own seasonal membership");
   assert.equal(lines.length,17);
   assert.deepEqual(Object.keys(divisions[0]).filter(key=>key!=="rules"),headers);
   assert.ok(divisions.every(d=>d.rules?.schemaVersion===1),"Each division declares versioned rules");
@@ -48,8 +50,7 @@ test("REGISTRY-01: CSV and JSON use the same flat division fields and records",(
     assert.equal(cells.length,headers.length);
     const row=Object.fromEntries(headers.map((key,j)=>[key,cells[j]]));
     for(const key of headers){
-      if(key==="clubIds")assert.deepEqual(divisions[i][key],[]);
-      else if(key==="tier"||key==="capacity")assert.equal(divisions[i][key],Number(row[key]),divisions[i].id+"."+key);
+      if(key==="tier"||key==="capacity")assert.equal(divisions[i][key],Number(row[key]),divisions[i].id+"."+key);
       else assert.equal(divisions[i][key],row[key],divisions[i].id+"."+key);
     }
     for(const key of ["primaryHex","secondaryHex","ivoryHex"])
@@ -60,7 +61,7 @@ test("REGISTRY-01: CSV and JSON use the same flat division fields and records",(
 });
 
 test("ALLOCATION-01: preserve v1 data and 320 identities; use 16+16+8 national groups",()=>{
-  assert.equal(manifest.schema,"football-architect-provisional-division-allocation-v1");
+  assert.equal(manifest.schema,"football-architect-season-one-preview-v1");
   assert.equal(manifest.status,"provisional");
   assert.equal(manifest.approved,false);
   const verified=validateProvisionalAllocations(manifest,divisions,clubs);
@@ -89,7 +90,7 @@ test("ALLOCATION-02: invalid memberships, origin and identities fail closed",()=
   reject(x=>{x.approved=true;});
   reject(x=>{x.schema="invalid-schema";});
   reject(x=>{x.status="approved";});
-  reject(x=>{x.sources.clubs="other.json";});
+  reject(x=>{x.source="other.json";});
   reject(x=>{x.allocations[0].clubIds.pop();});
   reject(x=>{x.allocations[0].clubIds[0]=33;});
   reject(x=>{x.allocations[0].clubIds[1]=1;});

@@ -16,7 +16,6 @@ const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],
  ["__fa_dev__/standings-client.mjs","tools/dev-standings-preview-client.mjs"],
  ["__fa_dev__/debug-widget.mjs","tools/dev-debug-widget.mjs"],
- ["__fa_dev__/dev-debug-config.mjs","tools/dev-debug-config.mjs"],
   ["__fa_dev__/dev-world-clock.mjs","tools/dev-world-clock.mjs"],
  ["__fa_dev__/standings-data.mjs","tools/dev-standings-preview-data.mjs"],
  ["__fa_dev__/dev-standings-preview-data.mjs","tools/dev-standings-preview-data.mjs"],
@@ -76,7 +75,15 @@ function expectedBytes(sourceRoot,debugRoot) {
  if(injected<1)throw Error("No app pages available for protected Debug injection");
  for(const [destination,source] of DEBUG_ASSETS){
   if(result.has(destination))throw Error("Debug path collides with public artifact");
-  result.set(destination,safeDebugBytes(debugRoot,source));
+  let bytes=safeDebugBytes(debugRoot,source);
+  if(source==='tools/dev-standings-preview-client.mjs'){
+   // Bundle only this dependency into the existing protected client. The independent
+   // download verifier's exact module allowlist stays unchanged; public bytes never use it.
+   const config=safeDebugBytes(debugRoot,'tools/dev-debug-config.mjs').toString('utf8');
+   bytes=Buffer.from(bytes.toString('utf8').replace('import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";',
+    ()=>config.replace(/export const DEBUG_CONTROL_LIMITS\s*=/,'const DEBUG_CONTROL_LIMITS=')));
+  }
+  result.set(destination,bytes);
  }
  const files=[...result.keys()].sort().map(path=>({
   path,sha256:createHash("sha256").update(result.get(path)).digest("hex")

@@ -220,7 +220,7 @@
               item.id !== item.countryId + "-" + item.tier ||
               ![1,2].includes(item.tier) || item.capacity !== 16 ||
               ids.has(item.id) || typeof item.countryName !== "string" || !item.countryName ||
-              !Array.isArray(item.clubIds)) return false;
+              Object.hasOwn(item,"clubIds")) return false;
           ids.add(item.id);
           countries.add(item.countryId);
           return true;

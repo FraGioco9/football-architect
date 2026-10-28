@@ -1,3 +1,4 @@
+import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -9,7 +10,7 @@ const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const clubs=json('data/clubs.json');
 const divisions=json('data/divisions.json');
 const cups=json('data/international-competitions.json');
-const allocations=json('data/division-allocations.provisional.json');
+const allocations=loadSeasonOnePreview();
 const rivalries=json('data/club-rivalries.json');
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
 
@@ -72,7 +73,7 @@ test('ARCH-CLEAN-02 baseline: approved rule profiles and round totals',()=>{
 });
 
 test('ARCH-CLEAN-02 baseline: input files are readable and independently fingerprintable',()=>{
-  for(const path of ['data/clubs.json','data/divisions.json','data/international-competitions.json','data/division-allocations.provisional.json','data/club-rivalries.json','data/club-descriptions.i18n.json','vercel.json']){
+  for(const path of ['data/clubs.json','data/divisions.json','data/international-competitions.json','backend/catalogues/season-1.participants.json','data/club-rivalries.json','data/club-descriptions.i18n.json','vercel.json']){
     assert.match(digest(read(path)),/^[0-9a-f]{64}$/);
   }
 });

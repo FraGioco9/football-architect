@@ -1,3 +1,7 @@
+import clubs from '../../data/clubs.json' with {type:'json'};
+import selection from '../catalogues/season-1.participants.json' with {type:'json'};
+import divisions from '../../data/divisions.json' with {type:'json'};
+import cups from '../../data/international-competitions.json' with {type:'json'};
 import {expect,it} from 'vitest';
 import * as api from '../src/catalogue-snapshot.ts';
 import {syntheticCatalogue,syntheticManifest} from './fixtures/synthetic-approval.ts';
@@ -42,5 +46,38 @@ it('Season 1-only allocation accepts owner-approved 1–3 / 4–6 and rejects sy
  const wrong=structuredClone(seasonOne);
  wrong.find(b=>b.competitionId==='int-1')!.clubIds[0]='IT-4';
  expect(()=>api.validateSeasonOneParticipants(wrong)).toThrow();
+ expect(api.loadApprovedSnapshot()).toBeNull();
+});
+
+it('rejects malformed Season 1 selections with structured catalogue errors',()=>{
+ for(const bindings of [null,{},Array(18).fill(null),Array(18).fill({competitionId:'IT-1'})])
+  expect(()=>api.validateSeasonOneParticipants(bindings as any)).toThrowError(expect.objectContaining({status:422,code:'catalogue_not_approved'}));
+});
+
+it('later-season snapshot validation permits certified cross-tier changes without applying Season 1 ranges',async()=>{
+ const manifest=await syntheticManifest(api),catalogue=syntheticCatalogue();
+ const top=manifest.bindings.find(b=>b.competitionId==='IT-1')!;
+ const second=manifest.bindings.find(b=>b.competitionId==='IT-2')!;
+ top.clubIds[15]='IT-17';second.clubIds[0]='IT-16';
+ Object.assign(manifest,await api.snapshotHashes(manifest.bindings,catalogue));
+ await expect(api.validateApprovedSnapshot(manifest,catalogue)).resolves.toBeTruthy();
+ await expect(api.validateApprovedSeasonOneSnapshot(manifest,catalogue)).rejects.toMatchObject({status:422});
+});
+
+it('complete Season 1 path binds actual selection to all canonical rules and independent Python hashes without enabling production',async()=>{
+ const catalogue:api.CanonicalCatalogue={clubIds:clubs.map(c=>`${c.countryId}-${c.clubId}`),competitions:[...divisions,...cups].map(c=>({id:c.id,rulesVersion:c.rules.version,rules:JSON.parse(JSON.stringify(c.rules))}))};
+ const bindings=selection.bindings.map(b=>({...b,rulesVersion:catalogue.competitions.find(c=>c.id===b.competitionId)!.rulesVersion}));
+ const hashes=await api.snapshotHashes(bindings,catalogue);
+ expect(hashes).toEqual({participantsHash:'d31b39b48190eed3e165931be573391d17298321fdb3ca71e922346aa3749d1a',rulesHash:'a87d7e02bb8045a4b081ca5b8b7c6d2032736f0efb4238f99032b6f638a8a67a'});
+ const manifest={manifestVersion:1,approvalReference:'test-only:canonical-reconciliation-not-production-approval',bindings,...hashes};
+ const approved=await api.validateApprovedSeasonOneSnapshot(manifest,catalogue);
+ expect(approved.bindings).toHaveLength(18);expect(Object.isFrozen(approved)).toBe(true);
+ // Selection-only input, corrupt approval hash, full-rule drift and old synthetic slots all fail closed.
+ await expect(api.validateApprovedSeasonOneSnapshot(selection,catalogue)).rejects.toMatchObject({status:422});
+ await expect(api.validateApprovedSeasonOneSnapshot({...manifest,rulesHash:'0'.repeat(64)},catalogue)).rejects.toMatchObject({status:422});
+ const changed=structuredClone(catalogue);(changed.competitions[0].rules as Record<string,unknown>).schemaVersion=2;
+ await expect(api.validateApprovedSeasonOneSnapshot(manifest,changed)).rejects.toMatchObject({status:422});
+ const synthetic=await syntheticManifest(api);
+ await expect(api.validateApprovedSeasonOneSnapshot(synthetic,syntheticCatalogue())).rejects.toMatchObject({status:422});
  expect(api.loadApprovedSnapshot()).toBeNull();
 });

@@ -1,3 +1,4 @@
+import {DEBUG_CONTROL_LIMITS} from '../tools/dev-debug-config.mjs';
 import competitionModel from "../assets/competition-model.js";
 // DEV-GATE-01..06 and deterministic multi-division regression coverage.
 // Run via Node's built-in test runner; no npm install or manual workflow needed.
@@ -10,7 +11,7 @@ import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
 import { runInNewContext } from "node:vm";
-const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33}));
+const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33,DEBUG_CONTROL_LIMITS}));
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -213,7 +214,7 @@ test("DEV-GATE-01: published artifact excludes all preview sources and private f
 test("DEV-GATE-02 + 05: public source bytes and canonical datasets stay unchanged", async () => {
   const files = ["assets/competition-page.js", "assets/app.css", "assets/theme.js",
     "competitions/it-1/index.html","competitions/_shared/manifest.json",
-    "data/divisions.json","data/clubs.json","data/division-allocations.provisional.json"];
+    "data/divisions.json","data/clubs.json","backend/catalogues/season-1.participants.json"];
   const before = files.map(f => hash(read(f)));
   for (const division of manifest.divisions) createPreviewStandings(division);
   assert.deepEqual(files.map(f => hash(read(f))), before);
@@ -521,7 +522,11 @@ test("DEV modular registry and adaptive panel contracts",()=>{
 
 
 test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4",()=>{
- assert.ok(client.includes('type:"range",id:"world-day",label:"Day",min:1,max:56,step:1'));
+ const start=client.indexOf('registerDebugControls("general",['),end=client.indexOf('  widgetRoot=createDebugWidget',start);
+ let controls;
+ runWithModel(client.slice(start,end),{registerDebugControls:(_scope,value)=>controls=value,setSeason(){},setSeasonLimit(){},setMatchdays(){}});
+ const day=controls.find(c=>c.id==='world-day');
+ assert.deepEqual({min:day.min,max:day.max,step:day.step},{min:1,max:56,step:1});
  assert.ok(client.includes('id:"world-day"'));
  assert.ok(widget.includes('input.type="range"'));
  for(const days of [0,1,2,3,4,30]){
@@ -569,7 +574,11 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
  assert.ok(widget.includes('const spin=element("span","fa-dev-number-spin")'));
  assert.ok(widget.includes('element("button","fa-dev-number-arrow")'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
- assert.ok(client.includes('type:"range",id:"world-day",label:"Day",min:1,max:56,step:1'));
+ const start=client.indexOf('registerDebugControls("general",['),end=client.indexOf('  widgetRoot=createDebugWidget',start);
+ let controls;
+ runWithModel(client.slice(start,end),{registerDebugControls:(_scope,value)=>controls=value,setSeason(){},setSeasonLimit(){},setMatchdays(){}});
+ const day=controls.find(c=>c.id==='world-day');
+ assert.deepEqual({min:day.min,max:day.max,step:day.step},{min:1,max:56,step:1});
  assert.ok(!client.includes('id:"matchdays-number"'),"no separate numeric row");
  assert.ok(client.includes('input.dataset.previous=String(value)'));
  assert.ok(widget.includes("scrollbar-width:thin;scrollbar-color:var(--scroll-thumb"));

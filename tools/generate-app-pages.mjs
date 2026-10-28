@@ -1,3 +1,4 @@
+import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
 import {renderAdminSettings} from './render-admin-settings.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
@@ -54,7 +55,7 @@ const worldCatalog = loadWorldCatalog();
 const divisionData = worldCatalog.divisions;
 const clubData = worldCatalog.clubs;
 if (!Array.isArray(clubData) || clubData.length !== 320) throw new Error("Expected 320 canonical club identities");
-const provisionalAssignments = JSON.parse(readFileSync(new URL("../data/division-allocations.provisional.json", import.meta.url), "utf8"));
+const provisionalAssignments = loadSeasonOnePreview();
 const {byDivision:provisionalClubs} = validateProvisionalAllocations(provisionalAssignments,divisionData,clubData);
 const encode = value => String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const flagForCountry = id => "assets/flags/" + (id === "ENG" ? "gb-eng" : id.toLowerCase()) + ".svg";

@@ -430,3 +430,12 @@ test("UI-WORLD resolves all canonical divisions by name and identifier",async()=
   app.input.emit("input");
   assert.equal(app.links().length,0);
 });
+
+test('search rejects seasonal members injected into the permanent catalogue',async()=>{
+ const catalogue=JSON.parse(read('data/divisions.json'));
+ catalogue[0].clubIds=[];
+ const app=simulate('en',catalogue);
+ await new Promise(resolve=>setImmediate(resolve));
+ app.trigger.emit('click');app.input.value='pt-1';app.input.emit('input');
+ assert.equal(app.links().length,0);
+});

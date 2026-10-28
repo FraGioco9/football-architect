@@ -1,3 +1,4 @@
+import {validateSeasonOneBindings} from '../catalogues/season-one-selection.mjs';
 import {ApiError} from './errors.ts';
 import {hashText} from './auth.ts';
 
@@ -28,21 +29,7 @@ const freeze=<T>(value:T):T=>{
 };
 /** Season 1 owner-approved selection only; later seasons use qualified sporting outcomes. */
 export function validateSeasonOneParticipants(bindings:readonly SnapshotBinding[]):void {
- if(!Array.isArray(bindings)||bindings.length!==18)return fail();
- const byId=new Map(bindings.map(b=>[b.competitionId,b]));
- if(byId.size!==18)return fail();
- for(const country of countries){
-  for(const tier of [1,2]){
-   const b=byId.get(`${country}-${tier}`);
-   const expected=Array.from({length:16},(_,i)=>`${country}-${i+1+(tier===1?0:16)}`);
-   if(!b||b.clubIds.length!==16||new Set(b.clubIds).size!==16||expected.some(id=>!b.clubIds.includes(id)))return fail();
-  }
- }
- for(const [id,first] of [['int-1',1],['int-2',4]] as const){
-  const b=byId.get(id);
-  const expected=countries.flatMap(country=>Array.from({length:3},(_,i)=>`${country}-${first+i}`));
-  if(!b||b.clubIds.length!==24||new Set(b.clubIds).size!==24||expected.some(club=>!b.clubIds.includes(club)))return fail();
- }
+ try{validateSeasonOneBindings(bindings)}catch{return fail()}
 }
 
 /** Both arguments are server-owned. A manifest never supplies its own canonical catalogue. */
@@ -65,7 +52,7 @@ export async function validateApprovedSnapshot(input:unknown,catalogue:Canonical
   if(!Array.isArray(catalogue.clubIds)||catalogue.clubIds.length!==320||new Set(catalogue.clubIds).size!==320||expectedClubs.some(id=>!catalogue.clubIds.includes(id)))return fail();
   if(!Array.isArray(catalogue.competitions)||catalogue.competitions.length!==18||new Set(catalogue.competitions.map(c=>c.id)).size!==18)return fail();
   for(const c of catalogue.competitions)if(!competitionIds.includes(c.id)||c.rulesVersion!==version(c.id)||!c.rules||typeof c.rules!=='object'||Array.isArray(c.rules))return fail();
-  const seen=new Set<string>(),cupClubs=new Set<string>();
+  const seen=new Set<string>(),cupClubs=new Set<string>(),domesticClubs=new Set<string>();
   for(const b of m.bindings){
    if(!b||Object.keys(b).sort().join(',')!=='clubIds,competitionId,rulesVersion'||!competitionIds.includes(b.competitionId)||seen.has(b.competitionId)||b.rulesVersion!==version(b.competitionId)||!Array.isArray(b.clubIds))return fail();
    seen.add(b.competitionId);
@@ -73,13 +60,16 @@ export async function validateApprovedSnapshot(input:unknown,catalogue:Canonical
    if(b.clubIds.length!==(international?24:16)||new Set(b.clubIds).size!==b.clubIds.length||b.clubIds.some((id:string)=>!catalogue.clubIds.includes(id)))return fail();
    if(international){
     for(const c of countries)if(b.clubIds.filter((id:string)=>id.startsWith(c+'-')).length!==3)return fail();
-    for(const id of b.clubIds){if(Number(id.split('-')[1])>32||cupClubs.has(id))return fail();cupClubs.add(id)}
+    for(const id of b.clubIds){if(cupClubs.has(id))return fail();cupClubs.add(id)}
    }else{
-    const [country,tier]=b.competitionId.split('-');
-    const expected=Array.from({length:16},(_,i)=>`${country}-${i+1+(tier==='1'?0:16)}`);
-    if(expected.some(id=>!b.clubIds.includes(id)))return fail();
+    const country=b.competitionId.split('-')[0];
+    for(const id of b.clubIds){
+     if(!id.startsWith(country+'-')||domesticClubs.has(id))return fail();
+     domesticClubs.add(id);
+    }
    }
   }
+  if([...cupClubs].some(id=>!domesticClubs.has(id)))return fail();
   const hashes=await snapshotHashes(m.bindings,catalogue);
   if(hashes.participantsHash!==m.participantsHash||hashes.rulesHash!==m.rulesHash)return fail();
   const result=freeze(JSON.parse(canonical(m)) as ApprovedSnapshot);
@@ -91,3 +81,11 @@ export function requireApprovedSnapshot(snapshot:ApprovedSnapshot|null):Approved
 }
 /** No production manifest is approved. Test catalogues are never imported here. */
 export function loadApprovedSnapshot():ApprovedSnapshot|null{return null}
+
+/** Complete Season 1 approval path: exact selection AND independently trusted full rule/hash validation.
+ * This does not load/approve production input; loadApprovedSnapshot remains null.
+ */
+export async function validateApprovedSeasonOneSnapshot(input:unknown,catalogue:CanonicalCatalogue):Promise<ApprovedSnapshot>{
+ validateSeasonOneParticipants((input as ApprovedSnapshot|null)?.bindings as readonly SnapshotBinding[]);
+ return validateApprovedSnapshot(input,catalogue);
+}

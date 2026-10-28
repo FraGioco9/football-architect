@@ -97,7 +97,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
   assert.equal(divisionCatalogue.length,16);
   for(const division of divisionCatalogue)
    fields(division,["id","countryId","countryName","tier","name","capacity",
-    "primaryHex","secondaryHex","ivoryHex","clubIds","rules"]);
+    "primaryHex","secondaryHex","ivoryHex","rules"]);
   for(const division of divisionCatalogue)assert.equal(division.rules?.schemaVersion,1);
   const jsonPaths=debug.filter(path=>path.endsWith(".json")).sort();
   assert.deepEqual(jsonPaths,[
