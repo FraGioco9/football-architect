@@ -26,6 +26,25 @@ function canonical(value:unknown):string {
 const freeze=<T>(value:T):T=>{
  if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value)}return value;
 };
+/** Season 1 owner-approved selection only; later seasons use qualified sporting outcomes. */
+export function validateSeasonOneParticipants(bindings:readonly SnapshotBinding[]):void {
+ if(!Array.isArray(bindings)||bindings.length!==18)return fail();
+ const byId=new Map(bindings.map(b=>[b.competitionId,b]));
+ if(byId.size!==18)return fail();
+ for(const country of countries){
+  for(const tier of [1,2]){
+   const b=byId.get(`${country}-${tier}`);
+   const expected=Array.from({length:16},(_,i)=>`${country}-${i+1+(tier===1?0:16)}`);
+   if(!b||b.clubIds.length!==16||new Set(b.clubIds).size!==16||expected.some(id=>!b.clubIds.includes(id)))return fail();
+  }
+ }
+ for(const [id,first] of [['int-1',1],['int-2',4]] as const){
+  const b=byId.get(id);
+  const expected=countries.flatMap(country=>Array.from({length:3},(_,i)=>`${country}-${first+i}`));
+  if(!b||b.clubIds.length!==24||new Set(b.clubIds).size!==24||expected.some(club=>!b.clubIds.includes(club)))return fail();
+ }
+}
+
 /** Both arguments are server-owned. A manifest never supplies its own canonical catalogue. */
 export async function snapshotHashes(bindings:readonly SnapshotBinding[],catalogue:CanonicalCatalogue){
  const ordered=[...bindings].sort((a,b)=>a.competitionId<b.competitionId?-1:a.competitionId>b.competitionId?1:0);
