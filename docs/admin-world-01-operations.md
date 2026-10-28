@@ -134,3 +134,13 @@ The current manifest validator proves structural integrity of a **server-owned**
 Current source-only evidence: `backend/src/catalogue-snapshot.ts` validates 320 canonical identifiers, 18 bindings, rules versions, per-competition sizes, disjoint international allocations and SHA-256 digests. `backend/tests/catalogue-runtime.test.ts` includes synthetic positive and rejection cases, while `backend/tests/command-contract.test.ts` asserts the production approval remains null. These fixtures **must never** be promoted into production approval by renaming or copying them.
 
 No catalogue approval, production initialization, deployment or database action was performed by this handoff.
+
+## Owner-approved Season 1 participant slots — 28 October 2026
+
+The owner explicitly approved these **exact initial international participant IDs**, for each of `IT`, `ENG`, `ES`, `DE`, `FR`, `PT`, `NL`, `BR`:
+
+- Sovereign Cup (`int-1`): IDs **1, 2, 3** of each country (8 × 3 = 24).
+- Federation Cup (`int-2`): IDs **4, 5, 6** of each country (8 × 3 = 24).
+- These are 48 distinct club entries, six per country, with no inter-cup overlap.
+
+Domestic Season 1 allocation remains IDs 1–16 (tier 1) and 17–32 (tier 2) per country; IDs 33–40 remain inactive. The former descriptions Federation 5–8 and fixture-only 5–7 were wrong and are superseded. Do not use synthetic fixture allocation as production authority. Participant **selection** is approved, but the full canonical rules, production snapshot hashes and immutable approval manifest still need independent validation before enabling `loadApprovedSnapshot()`. Production prepare remains blocked until that happens.
