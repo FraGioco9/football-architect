@@ -16,7 +16,7 @@ test('A05-12: exact-head Node and Chromium CI remain mandatory and non-publishin
  const site=read('.github/workflows/landing-checks.yml');
  const browser=read('.github/workflows/int24-browser-qa.yml');
  assert.match(site,/Assert exact checked-out SHA/);
- assert.match(site,/node --test --test-concurrency=1 tests\/\*\.test\.mjs/);
+ assert.match(site,/node tools\/ci-opt-01-node-runner\.mjs/);
  assert.match(browser,/Assert exact PR checkout/);
  assert.match(browser,/tests\/int24-browser-qa\.mjs/);
  assert.doesNotMatch(site+browser,/vercel deploy|supabase db push/);
