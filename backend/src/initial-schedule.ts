@@ -3,6 +3,9 @@ import {canonicalHash,requireApprovedSnapshot,type ApprovedSnapshot} from './cat
 import {buildSeasonCalendarEvidence} from './season-calendar-evidence.ts';
 import {ApiError} from './errors.ts';
 import {qualificationPots} from './season-qualification-pots.ts';
+import type {Database} from './database.ts';
+import {loadApprovedSnapshot} from './approved-season-one.ts';
+import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 export interface Fixture {id:string;competitionId:string;marker:string;day:number;round:number;homeClubId:string;awayClubId:string}
 export interface InitialSchedule {
  schemaVersion:1;season:number;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;
@@ -20,9 +23,8 @@ async function shuffle<T>(input:readonly T[],seed:string):Promise<T[]>{
   const j=n%range;[result[i],result[j]]=[result[j],result[i]];
  }return result;
 }
-async function generate(snapshot:ApprovedSnapshot,seed:string,season=1):Promise<InitialSchedule>{
- const trusted=requireApprovedSnapshot(snapshot);
- if(season!==1)return fail(); // A future season requires its own approved trusted snapshot loader.
+type SchedulingSnapshot=Pick<ApprovedSnapshot,'participantsHash'|'rulesHash'|'bindings'>;
+async function generate(trusted:SchedulingSnapshot,seed:string,season:number):Promise<InitialSchedule>{
  if(typeof seed!=='string'||!/^[A-Za-z0-9._:-]{16,256}$/.test(seed))return fail();
  const calendar=await buildSeasonCalendarEvidence(season);
  const days=JSON.parse(calendar.calendarJson).days as {day:number;events:{marker:string}[]}[];
@@ -67,7 +69,7 @@ async function generate(snapshot:ApprovedSnapshot,seed:string,season=1):Promise<
   pendingPhases:trusted.bindings.map(b=>({competitionId:b.competitionId,reason:'sporting-results-required'}))};
 }
 /** Structural validation is independent of the generation traversal. */
-function checkInvariants(schedule:InitialSchedule,snapshot:ApprovedSnapshot):void{
+function checkInvariants(schedule:InitialSchedule,snapshot:SchedulingSnapshot):void{
  if(schedule.fixtures.length!==3984||new Set(schedule.fixtures.map(g=>g.id)).size!==3984)return fail();
  for(const binding of snapshot.bindings){
   const cup=binding.competitionId.startsWith('int-'),games=schedule.fixtures.filter(g=>g.competitionId===binding.competitionId);
@@ -92,7 +94,8 @@ function checkInvariants(schedule:InitialSchedule,snapshot:ApprovedSnapshot):voi
  }
 }
 export async function buildInitialSchedule(snapshot:ApprovedSnapshot,seed:string):Promise<InitialSchedule>{
- const result=await generate(snapshot,seed);checkInvariants(result,snapshot);return result;
+ const trusted=requireApprovedSnapshot(snapshot);
+ const result=await generate(trusted,seed,1);checkInvariants(result,trusted);return result;
 }
 /** A status/hash supplied by stored data cannot certify itself. Reconstruct from
  * server-approved inputs and require exact canonical equality, including no scores. */
@@ -102,4 +105,30 @@ export async function validateInitialSchedule(input:unknown,snapshot:ApprovedSna
   const value=input as InitialSchedule,expected=await buildInitialSchedule(snapshot,value.seed);
   if(await canonicalHash(input)!==await canonicalHash(expected))return fail();
  }catch{return fail()}
+}
+
+/** Read-only fixture generation from a *persisted* approved Season 2 catalog.
+ * No client-provided participant list is trusted, and no fixture is persisted.
+ * The existing sporting executor remains restricted to Season 1 until its
+ * result/knockout/archive machinery has been made season-aware.
+ */
+export async function buildApprovedSeasonTwoInitialSchedule(db:Database,seed:string):Promise<InitialSchedule>{
+ const review=await readSeasonTwoCandidate(db);
+ const approved=await db.prepare('SELECT generation,source_archive_hash,snapshot_hash,snapshot_json FROM season_two_approvals WHERE target_season=2').first<{
+  generation:string;source_archive_hash:string;snapshot_hash:string;snapshot_json:string
+ }>();
+ if(!approved||approved.generation!==review.world.generation||approved.source_archive_hash!==review.sourceArchiveHash||
+  approved.snapshot_hash!==review.snapshot.snapshotHash)return fail();
+ const {snapshotHash,status,readyForActivation,...manifest}=review.snapshot;
+ if(await canonicalHash(manifest)!==snapshotHash||await canonicalHash(JSON.parse(approved.snapshot_json))!==snapshotHash)return fail();
+ const seasonOne=await loadApprovedSnapshot();
+ const versions=new Map(seasonOne.bindings.map(b=>[b.competitionId,b.rulesVersion]));
+ const bindings=manifest.bindings.map(b=>{
+  const rulesVersion=versions.get(b.competitionId);if(!rulesVersion)return fail();
+  return {competitionId:b.competitionId,rulesVersion,clubIds:b.clubIds};
+ });
+ const participantsHash=await canonicalHash([...bindings].sort((a,b)=>a.competitionId.localeCompare(b.competitionId,'en'))
+  .map(b=>({competitionId:b.competitionId,clubIds:[...b.clubIds].sort()})));
+ const trusted:SchedulingSnapshot={bindings,participantsHash,rulesHash:seasonOne.rulesHash};
+ const result=await generate(trusted,seed,2);checkInvariants(result,trusted);return result;
 }
