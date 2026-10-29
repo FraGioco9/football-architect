@@ -91,3 +91,31 @@ test('reset UI requires typed confirmation, is single-flight and rotates world g
 test('reset controls are rendered with explicit irreversible summary and confirmation',()=>{
  const html=renderAdminSettings();assert.match(html,/data-admin-reset-section/);assert.match(html,/data-admin-reset-confirm/);assert.match(html,/data-admin-reset/);assert.match(html,/Delete all seasons/);
 });
+
+test('operator status reports pending action, backend prerequisite and clears it after logout',async()=>{
+ const prepared={...world,phase:'preparing',seasonNumber:1,revision:1};
+ const pending=deferred();
+ const c=createAdminController(async(path)=>{
+  if(path.endsWith('session'))return session;
+  if(path.endsWith('world'))return {world};
+  if(path.endsWith('prepare'))return pending.promise;
+  return {signedOut:true};
+ },()=>{});
+ await c.refresh();
+ const operation=c.prepare();
+ assert.equal(c.state().operation,'prepare');
+ pending.resolve(Promise.reject(error(422,'catalogue_not_approved')));
+ await operation;
+ assert.equal(c.state().operation,'blocked');
+ assert.equal(c.state().errorCode,'catalogue_not_approved');
+ await c.logout();
+ assert.equal(c.state().actor,null);
+ assert.equal(c.state().operation,'idle');
+ assert.equal(c.state().errorCode,null);
+});
+test('settings markup includes accessible authoritative operation and backend error fields',()=>{
+ const html=renderAdminSettings();
+ assert.match(html,/data-admin-operation/);
+ assert.match(html,/data-admin-error-code/);
+ assert.match(html,/aria-live="polite"/);
+});
