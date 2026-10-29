@@ -139,3 +139,7 @@ Season 0 is real and unstarted, with no seasons, fixtures, results or archives. 
 - Select and pin the local Worker/D1 tooling with a committed dependency lock; prove password-runtime cost, throttle/session atomicity and world-command transaction guarantees in local integration tests. Local tests may execute isolated disposable migrations; remote migration execution remains unauthorized.
 
 **Scope control:** PR 1 foundation only; PR 2 operations/integration; PR 3 complete console/reset. Draft/HOLD, no merge, workflow dispatch, deploy, remote DB, or changes to unrelated PRs.
+
+## Subsequent owner clarification —29 October2026
+
+Result authority is now decided for the interim: automatically simulate and persist match outcomes using a temporary versioned score simulator; implement the full game engine later. This supersedes the unresolved manual-entry/engine question above, without authorizing player simulation or changing frozen competition rules. See `docs/superpowers/specs/2026-10-29-temporary-simulation.md` for current implementation boundaries and `docs/admin-world-01-operations.md` for evidence/commands. Initial lifecycle support fails closed before unimplemented knockout activity.

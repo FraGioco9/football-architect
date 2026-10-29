@@ -41,16 +41,27 @@ test('real Wrangler canonical initialize/read and idempotent audit survive resta
   const generate=()=>fetch(origin+'/api/admin/seasons/calendar',{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':auth.csrfToken,'Idempotency-Key':'canonical-restart-calendar-01'},body:JSON.stringify(calendarCommand)});
   const generated=await generate();assert.equal(generated.status,200);const calendarOutcome=await generated.json() as any;
   assert.deepEqual(calendarOutcome.world,{...outcome.world,revision:2});
-  await stop();const after=await start();assert.deepEqual(after,{world:calendarOutcome.world});
+  let simulatedWorld=calendarOutcome.world,lastAdvanceCommand:any,lastAdvanceOutcome:any;
+  const lifecycle=(action:string,command:any,key:string)=>fetch(origin+'/api/admin/seasons/'+action,{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':auth.csrfToken,'Idempotency-Key':key},body:JSON.stringify(command)});
+  const started=await lifecycle('start',{expectedGeneration:simulatedWorld.generation,expectedRevision:simulatedWorld.revision},'canonical-restart-start-01');assert.equal(started.status,200);simulatedWorld=(await started.json() as any).world;
+  while(simulatedWorld.day<13){
+   lastAdvanceCommand={expectedGeneration:simulatedWorld.generation,expectedRevision:simulatedWorld.revision};
+   const next=await lifecycle('advance',lastAdvanceCommand,'canonical-restart-day-'+(simulatedWorld.day+1));assert.equal(next.status,200);lastAdvanceOutcome=await next.json() as any;simulatedWorld=lastAdvanceOutcome.world;
+  }
+  await stop();const after=await start();assert.deepEqual(after,{world:simulatedWorld});
+  const advanceReplay=await lifecycle('advance',lastAdvanceCommand,'canonical-restart-day-13');assert.equal(advanceReplay.status,200);assert.deepEqual(await advanceReplay.json(),lastAdvanceOutcome);
   const calendarReplay=await generate();assert.equal(calendarReplay.status,200);assert.deepEqual(await calendarReplay.json(),calendarOutcome);
   const replay=await prepare();assert.equal(replay.status,200);assert.deepEqual(await replay.json(),outcome);
   assert.equal((await fetch(origin+'/api/admin/session',{headers:{Cookie:cookie}})).status,200);
-  const [one,two]=await Promise.all([fetch(origin+'/api/world').then(r=>r.json()),fetch(origin+'/api/world').then(r=>r.json())]);assert.deepEqual(one,two);assert.deepEqual(one,{world:calendarOutcome.world});
+  const [one,two]=await Promise.all([fetch(origin+'/api/world').then(r=>r.json()),fetch(origin+'/api/world').then(r=>r.json())]);assert.deepEqual(one,two);assert.deepEqual(one,{world:simulatedWorld});
   await stop();const persisted=await openLocalDatabase(state);
   try{
-   const rows=await persisted.db.prepare('SELECT * FROM admin_operations').all();assert.equal(rows.results.length,2);
+   const rows=await persisted.db.prepare('SELECT * FROM admin_operations').all();assert.equal(rows.results.length,15);
    const audit=rows.results.find((r:any)=>r.command==='prepare-season-v1')!;assert.equal(audit.id,outcome.operationId);assert.equal(audit.command,'prepare-season-v1');assert.equal(audit.resulting_revision,1);assert.ok(Number(audit.created_at)>0);
    const season=await persisted.db.prepare('SELECT * FROM seasons').first() as any;assert.equal(season.participants_hash,'d31b39b48190eed3e165931be573391d17298321fdb3ca71e922346aa3749d1a');
+   const day=await persisted.db.prepare('SELECT * FROM season_day_outcomes WHERE day=13').first() as any;
+   const scores=JSON.parse(day.outcome_json);assert.equal(scores.results.length,128);
+   assert.ok(scores.results.every((r:any)=>r.algorithmVersion==='temporary-score-v1'));
    const calendar=await persisted.db.prepare('SELECT * FROM season_calendars').first() as any;
    assert.equal(JSON.parse(calendar.calendar_json).fixtures.length,3984);
    const draws=await persisted.db.prepare('SELECT * FROM season_draws').all();assert.equal(draws.results.length,2);

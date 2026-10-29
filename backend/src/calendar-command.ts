@@ -7,6 +7,7 @@ import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule} from './initial-schedule.ts';
 import {readWorld} from './world-repository.ts';
+import {initialDrawOutcomes} from './initial-draws.ts';
 
 /** Generate only initial league fixtures. Never starts the season or manufactures
  * postseason qualifiers, sporting results, standings or completed history. */
@@ -29,14 +30,7 @@ export async function generateSeasonCalendar(db:Database,session:AdminSession,in
   const seed=crypto.randomUUID()+':'+crypto.randomUUID(),schedule=await buildInitialSchedule(snapshot,seed);
   const calendarJson=JSON.stringify(schedule),calendarHash=await canonicalHash(schedule);
   const operationId=crypto.randomUUID(),result:Outcome={world:{...world,revision:world.revision+1},operationId};
-  const draws=await Promise.all(['int-1','int-2'].map(async competitionId=>{
-   const base=competitionId==='int-1'?1:4,clubs=snapshot.bindings.find(b=>b.competitionId===competitionId)!.clubIds;
-   const outcome={schemaVersion:1,season:1,competitionId,stageId:'league',algorithmVersion:schedule.algorithmVersion,seed,
-    participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,calendarHash:schedule.calendarHash,
-    pots:Array.from({length:3},(_,p)=>clubs.filter(id=>Number(id.split('-')[1])===base+p)),
-    fixtures:schedule.fixtures.filter(g=>g.competitionId===competitionId)};
-   return {competitionId,json:JSON.stringify(outcome),hash:await canonicalHash(outcome)};
-  }));
+  const draws=await initialDrawOutcomes(schedule,snapshot);
   try{
    await db.batch([
     sessionGuard(db,session,now),
