@@ -1,7 +1,7 @@
 import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
-import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory} from '../src/admin-operator-migration.ts';
+import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness} from '../src/admin-operator-migration.ts';
 import {hashPassword} from '../src/passwords.ts';
 import {playerLogin} from '../src/player-auth.ts';
 const binding=env as any,db=binding.DB;
@@ -23,6 +23,16 @@ beforeEach(async()=>{
   .bind('migration-player',email,verifier,1,now()-100,'active',now()-100,now()-100).run();
 });
 describe('Trusted operator migration and rollback on disposable D1',()=>{
+ it('reports an unlinked enabled operator as rollout-blocking and a linked operator as ready',async()=>{
+  const initial=await adminOperatorMigrationReadiness(db);
+  const legacy=initial.blocked.find(x=>x.legacyAdminId==='migration-legacy');
+  expect(legacy?.status).toBe('unlinked');
+  expect(initial.ready).toBe(false);
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const final=await adminOperatorMigrationReadiness(db);
+  expect(final.blocked.some(x=>x.legacyAdminId==='migration-legacy')).toBe(false);
+  expect(final.linked).toBeGreaterThanOrEqual(1);
+ });
  it('grants all permissions and links the exact identity in one batch, without legacy login',async()=>{
   const linked=await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
   expect(linked).toEqual({linked:true,permissions:3});
