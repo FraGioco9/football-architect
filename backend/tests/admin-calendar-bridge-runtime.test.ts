@@ -9,6 +9,7 @@ import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {publishInternationalCalendar} from '../src/admin-calendar-publish.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
+import {rescheduleSeasonEvent} from '../src/admin-calendar-command.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
@@ -63,4 +64,23 @@ it('keeps draw and calendar publication atomic if final audit rejects',async()=>
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first<any>()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first<any>()).n).toBe(0);
  expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='international:calendar'").first<any>()).status).toBe('scheduled');
+});
+
+it('moves the independent international draw to day four and publication to day five without losing early-day receipts',async()=>{
+ // Only future events are movable: build a new plan from the still-eligible day-two state.
+ await db.prepare("UPDATE world_state SET day=2").run();
+ world=await readWorld(db);
+ world=(await rescheduleSeasonEvent(db,session,{...meta(),eventId:'international:calendar',day:5,order:2},'bridge-move-calendar-day5',now)).world;
+ world=(await rescheduleSeasonEvent(db,session,{...meta(),eventId:'international:draw',day:4,order:1},'bridge-move-draw-day4',now)).world;
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day3',now)).world;
+ expect(world.day).toBe(3);
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day4',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-moved-draw',now)).world;
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day5',now)).world;
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-moved-publication',now)).world;
+ const rows=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all<any>()).results;
+ expect(rows.map(r=>r.day)).toEqual([1,2,3,4,5]);
+ expect(rows.every(r=>JSON.parse(r.outcome_json).results.length===0)).toBe(true);
+ world=(await executeLifecycle(db,session,'advance',meta(),'bridge-moved-day6',now)).world;
+ expect(world.day).toBe(6);
 });
