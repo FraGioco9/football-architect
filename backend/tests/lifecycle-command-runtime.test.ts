@@ -18,7 +18,7 @@ const run=(action:'start'|'advance',key='lifecycle-synthetic-0001',cmd=command()
 const step=async()=>{const r=await run('advance','advance-day-'+(world.day+1)+'-synthetic');world=r.world;return r};
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
- await db.batch(['DELETE FROM season_day_outcomes','DELETE FROM season_draws','DELETE FROM season_calendars','DELETE FROM admin_operations','DELETE FROM seasons','DELETE FROM admin_sessions','DELETE FROM admin_accounts',"UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'"].map(s=>db.prepare(s)));
+ await db.batch(['DELETE FROM season_knockout_ties','DELETE FROM season_day_outcomes','DELETE FROM season_draws','DELETE FROM season_calendars','DELETE FROM admin_operations','DELETE FROM seasons','DELETE FROM admin_sessions','DELETE FROM admin_accounts',"UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'"].map(s=>db.prepare(s)));
  csrfToken=await csrfFor(token);session={actor:{id:'simulation-operator',email:'simulation@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await digestOpaqueToken(csrfToken)};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic-not-login',now-100).run();
  await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
@@ -64,11 +64,27 @@ it('rejects missing calendars/draws, corrupt immutable snapshots with correct ha
  await db.prepare('DELETE FROM season_day_outcomes').run();await expect(step()).rejects.toMatchObject({status:422});
  expect(await readWorld(db)).toEqual(world);
 });
-it('stops before an unimplemented knockout activity rather than skipping or inventing participants/results',async()=>{
+it('atomically generates knockout ties,handles phase-day contention/rollback,and completes56days with4082 final scores',async()=>{
  world=(await run('start')).world;while(world.day<35)await step();
- await expect(step()).rejects.toMatchObject({status:409,code:'activity_not_implemented'});expect((await readWorld(db)).day).toBe(35);
- expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=36').first()).toBeNull();
-},60000);
+ const old=await db.prepare('SELECT outcome_json FROM season_day_outcomes WHERE day=35').first();
+ const results=await Promise.allSettled([run('advance','phase-day36-competing-01'),run('advance','phase-day36-competing-02')]);
+ expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(results.filter(r=>r.status==='rejected').map((r:any)=>r.reason.status)).toEqual([409]);
+ world=(results.find(r=>r.status==='fulfilled') as PromiseFulfilledResult<any>).value.world;
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(8);
+ while(world.day<40)await step();
+ await db.prepare("CREATE TRIGGER knockout_late_failure BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'synthetic late failure'); END").run();
+ try{await expect(step()).rejects.toMatchObject({status:503})}finally{await db.prepare('DROP TRIGGER knockout_late_failure').run()}
+ expect((await readWorld(db)).day).toBe(40);expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(8);expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=41').first()).toBeNull();
+ while(world.day<56)await step();
+ expect((await readWorld(db)).day).toBe(56);expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
+ const receipts=(await db.prepare('SELECT * FROM season_day_outcomes ORDER BY day').all()).results;
+ expect(receipts).toHaveLength(56);expect(receipts.reduce((n:number,r:any)=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
+ expect(JSON.parse(receipts[52].outcome_json).results).toHaveLength(25);expect(JSON.parse(receipts[53].outcome_json).results).toHaveLength(9);
+ expect((await db.prepare('SELECT outcome_json FROM season_day_outcomes WHERE day=35').first()).outcome_json).toBe(old.outcome_json);
+ for(const r of (await db.prepare('SELECT * FROM season_knockout_ties').all()).results)expect(await canonicalHash(JSON.parse(r.plan_json))).toBe(r.plan_hash);
+ await expect(db.prepare("UPDATE season_knockout_ties SET plan_json='{}'").run()).rejects.toThrow();
+ await expect(step()).rejects.toMatchObject({status:409});
+},120000);
 it('HTTP enforces auth, Origin, CSRF and server-owned input for start and advance',async()=>{
  const config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
  const req=(action:string,headers:Record<string,string>={},body:unknown=command())=>new Request('http://localhost:2000/api/admin/seasons/'+action,{method:'POST',headers:{'Content-Type':'application/json',Origin:config.ADMIN_ORIGIN,Cookie:'fa_admin_local='+token,'X-CSRF-Token':csrfToken,'Idempotency-Key':'http-'+action+'-synthetic-0001',...headers},body:JSON.stringify(body)});
@@ -112,3 +128,17 @@ it('rolls back an advance if receipt source bindings change between validation a
  expect(await readWorld(db)).toEqual(world);expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=2').first()).toBeNull();
  expect(await db.prepare("SELECT id FROM admin_operations WHERE idempotency_key='receipt-race-synthetic-01'").first()).toBeNull();
 });
+
+it('rolls back an advance if a persisted knockout plan is replaced during commit',async()=>{
+ world=(await run('start')).world;while(world.day<36)await step();
+ const plan=await db.prepare('SELECT * FROM season_knockout_ties LIMIT 1').first();
+ const raced:Database={prepare:db.prepare.bind(db),async batch(statements){
+  if(statements.length>1){
+   await db.prepare('DELETE FROM season_knockout_ties WHERE competition_id=? AND phase_id=? AND tie_id=?').bind(plan.competition_id,plan.phase_id,plan.tie_id).run();
+   await db.prepare('INSERT INTO season_knockout_ties VALUES(?,?,?,?,?,?,?,?)').bind(1,plan.generation,plan.competition_id,plan.phase_id,plan.tie_id,'f'.repeat(64),plan.plan_json,now).run();
+  }return db.batch(statements);
+ }};
+ await expect(run('advance','knockout-replaced-race-01',command(),raced)).rejects.toMatchObject({status:503});
+ expect(await readWorld(db)).toEqual(world);expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=37').first()).toBeNull();
+ await expect(run('advance','knockout-invalid-stored-01')).rejects.toMatchObject({status:422,code:'knockout_evidence_invalid'});
+},60000);

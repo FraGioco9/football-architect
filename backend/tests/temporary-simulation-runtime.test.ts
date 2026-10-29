@@ -43,3 +43,10 @@ it('uses feasible terminal shootout pairs, including the regression seed that pr
  expect(result.resolution).toBe('penalties');
  expect(Math.abs(result.penalties!.home-result.penalties!.away)).toBe(1);
 });
+
+it('supports an explicit neutral final with a symmetric regulation policy',async()=>{
+ const final={...fixture,id:'season:1:int-1:SOVEREIGN-FINAL:IT-1:IT-2',competitionId:'int-1',marker:'SOVEREIGN-FINAL',day:54,round:13};
+ const result=await simulateTemporaryMatch(final,seed,{mode:'single-knockout',neutral:true} as any);
+ expect(result.context).toEqual({mode:'single-knockout',neutral:true});expect(result.winnerClubId).not.toBeNull();
+ await expect(simulateTemporaryMatch(final,seed,{mode:'regulation',neutral:true} as any)).rejects.toMatchObject({status:422});
+});

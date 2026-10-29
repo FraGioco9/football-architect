@@ -2,7 +2,7 @@
 import type {Fixture} from './initial-schedule.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {ApiError} from './errors.ts';
-export type MatchContext={mode:'regulation'}|{mode:'single-knockout'}|{mode:'second-leg';firstLegHomeGoals:number;firstLegAwayGoals:number};
+export type MatchContext={mode:'regulation'}|{mode:'single-knockout';neutral?:true}|{mode:'second-leg';firstLegHomeGoals:number;firstLegAwayGoals:number};
 export interface Score {home:number;away:number}
 export interface TemporaryResult {
  fixtureId:string;algorithmVersion:'temporary-score-v1';provenance:'temporary-simulation';sourceSeedHash:string;
@@ -14,12 +14,14 @@ export interface TemporaryResult {
 // point RNG or current clock affects a match. Keep v1 stable when replacing it.
 const homeTable=[0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,4];
 const awayTable=[0,0,0,0,0,0,1,1,1,1,1,1,2,2,3,4];
+const neutralTable=[0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,4];
 const extraTable=[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2];
 const fail=():never=>{throw new ApiError(422,'simulation_invalid')};
 function parseContext(input:unknown):MatchContext{
  if(!input||typeof input!=='object'||Array.isArray(input))return fail();
  const c=input as MatchContext,keys=Object.keys(c).sort().join(',');
  if((c.mode==='regulation'||c.mode==='single-knockout')&&keys==='mode')return {mode:c.mode};
+ if(c.mode==='single-knockout'&&keys==='mode,neutral'&&c.neutral===true)return {mode:c.mode,neutral:true};
  if(c.mode==='second-leg'&&keys==='firstLegAwayGoals,firstLegHomeGoals,mode'&&[c.firstLegHomeGoals,c.firstLegAwayGoals].every(x=>Number.isSafeInteger(x)&&x>=0&&x<=100))return {...c};
  return fail();
 }
@@ -34,7 +36,8 @@ export async function simulateTemporaryMatch(fixture:Fixture,seed:string,context
   typeof seed!=='string'||!/^[A-Za-z0-9._:-]{16,256}$/.test(seed))return fail();
  const algorithmVersion='temporary-score-v1' as const;
  const digest=await canonicalHash({algorithmVersion,seed,fixture,purpose:'regulation'});
- const regulation={home:homeTable[parseInt(digest[0],16)],away:awayTable[parseInt(digest[1],16)]};
+ const neutral=context.mode==='single-knockout'&&context.neutral===true;
+ const regulation={home:(neutral?neutralTable:homeTable)[parseInt(digest[0],16)],away:(neutral?neutralTable:awayTable)[parseInt(digest[1],16)]};
  let homeGoals=regulation.home,awayGoals=regulation.away,extraTime:Score|null=null,penalties:Score|null=null;
  const aggregate=()=>context.mode==='second-leg'?homeGoals+context.firstLegAwayGoals-awayGoals-context.firstLegHomeGoals:homeGoals-awayGoals;
  let difference=context.mode==='regulation'?homeGoals-awayGoals:aggregate();
