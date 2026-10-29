@@ -333,7 +333,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
     seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,
     playerStats:[{playerId:'a06-player',playerName:'A06 Historical Player',countryId:'IT',clubId:1,goals:3,assists:1,appearances:2,cleanSheets:0}]}]};
    for(const sourceFailure of [false,true]){
-    await visit(origin,'IT-1','fixtures',1);
+    await visit(devOrigin,'IT-1','fixtures',1);
     const previous=await run('window.__a04DocumentToken');await cmd('Page.reload');
     await wait('window.__a04DocumentToken!=='+JSON.stringify(previous)+"&&window.faCompetitionContext?.selectedSeason===1&&!!window.faHistoryPlayerRecords&&document.readyState==='complete'");
     const initial=seasonData(1,15);assert.equal(await put(initial),true);
@@ -382,7 +382,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    }
   });
   await t.test('E5: absent/zero/partial/invalid/recovered Stats in five locales, ARIA and mobile widths',async()=>{
-   await visit(origin,'IT-1');
+   await visit(devOrigin,'IT-1');
    const locales=[['en','No statistics yet.','Statistics are unavailable.','Stats','Close'],['de','Noch keine Statistiken.','Statistiken sind nicht verfügbar.','Statistiken','Schließen'],['es','Aún sin estadísticas.','Las estadísticas no están disponibles.','Estadísticas','Cerrar'],['fr','Aucune statistique.','Les statistiques sont indisponibles.','Statistiques','Fermer'],['it','Nessuna statistica.','Le statistiche non sono disponibili.','Statistiche','Chiudi']];
    for(const [lang,empty,error,nav,close] of locales){
     await run('document.documentElement.lang='+JSON.stringify(lang)+';window.faAppRenderLanguage()');
