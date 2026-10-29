@@ -62,6 +62,9 @@ it('runs approved Season2 through administrative events and sporting closure whi
  expect(oldView.data.fixtures).toEqual(first.data.fixtures);expect(oldView.data.history).toEqual(first.data.history);
  while(world.day<56)await command('/api/admin/seasons/advance');
  const ready=await (await call('/api/admin/seasons/events')).json() as any;expect(ready.closure.ready).toBe(true);
+ await command('/api/admin/seasons/archive');
+ const archived=await (await call('/api/admin/seasons/events')).json() as any;
+ expect(archived.events.find((event:any)=>event.id==='season:archive')?.status).toBe('completed');
  await command('/api/admin/seasons/close');
  const closed=await (await publicRead('/api/competitions/IT-1/seasons/2')).json() as any;
  expect(closed).toMatchObject({status:'available',data:{history:{season:2},seasonState:{phase:'closed',day:56}}});
