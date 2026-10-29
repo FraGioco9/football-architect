@@ -1,7 +1,7 @@
 import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
-import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness} from '../src/admin-operator-migration.ts';
+import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration} from '../src/admin-operator-migration.ts';
 import {hashPassword} from '../src/passwords.ts';
 import {playerLogin} from '../src/player-auth.ts';
 const binding=env as any,db=binding.DB;
@@ -23,6 +23,17 @@ beforeEach(async()=>{
   .bind('migration-player',email,verifier,1,now()-100,'active',now()-100,now()-100).run();
 });
 describe('Trusted operator migration and rollback on disposable D1',()=>{
+ it('preflights an explicit operator mapping without creating grants or links',async()=>{
+  const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
+  expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind(plan.playerAccountId).first()).toBeNull();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind(plan.playerAccountId,'admin.access',now()).run();
+  expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:false,reason:'existing_grants'});
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind(plan.playerAccountId).run();
+  await linkExistingAdminOperator(db,{...plan,approvedBy:'trusted-local-operator'},now());
+  expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:false,reason:'already_linked'});
+ });
  it('reports an unlinked enabled operator as rollout-blocking and a linked operator as ready',async()=>{
   const initial=await adminOperatorMigrationReadiness(db);
   const legacy=initial.blocked.find(x=>x.legacyAdminId==='migration-legacy');
