@@ -20,7 +20,7 @@ test('provisional holder plan swaps cross-cup champion without changing national
  assert.equal(new Set([...a,...b]).size,48);
  for(const c of countries)for(const cup of result.bindings)assert.equal(cup.clubIds.filter(x=>x.startsWith(c+'-')).length,3);
  assert.equal(result.readyForActivation,false);
- assert.equal(result.status,'proposal-requires-owner-approval');
+ assert.equal(result.status,'approved-holder-policy-applied');
 });
 test('aligned holders cause no changes and do not confer approval',()=>{
  const result=proposeHolderAllocation(candidate,[holder('int-1','IT-1'),holder('int-2','BR-4')]);
