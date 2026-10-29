@@ -35,6 +35,49 @@ export async function linkExistingAdminOperator(
  return {linked:true,permissions:3};
 }
 
+/** Trusted offline cutover for a complete, explicitly approved set of Admin operators.
+ * All mappings are committed in one D1 batch, or none are. No HTTP exposure.
+ */
+export async function migrateAdminOperatorsBatch(
+ db:Database,
+ selections:ReadonlyArray<{playerAccountId:string;legacyAdminId:string}>,
+ approvedBy:string,
+ now:number
+):Promise<{linked:number;permissionsGranted:number}>{
+ const valid=(x:unknown)=>typeof x==='string'&&x.length>0&&x.length<=128;
+ if(!Array.isArray(selections)||selections.length===0||selections.length>32||
+    !valid(approvedBy)||!Number.isSafeInteger(now)||now<=0)
+  throw new ApiError(422,'invalid_admin_migration');
+ const players=new Set<string>(),operators=new Set<string>();
+ for(const pair of selections){
+  if(!pair||!valid(pair.playerAccountId)||!valid(pair.legacyAdminId)||
+    players.has(pair.playerAccountId)||operators.has(pair.legacyAdminId))
+   throw new ApiError(422,'invalid_admin_migration');
+  players.add(pair.playerAccountId);operators.add(pair.legacyAdminId);
+ }
+ const statements=[];
+ for(const {playerAccountId,legacyAdminId} of selections){
+  statements.push(abortUnless(db,`SELECT 1 FROM player_accounts p JOIN admin_accounts a ON a.id=?
+   WHERE p.id=? AND p.status='active' AND p.email_verified_at IS NOT NULL
+   AND a.enabled=1 AND p.email_normalized=a.email_normalized
+   AND NOT EXISTS (SELECT 1 FROM player_admin_operator_links l
+    WHERE l.player_account_id=p.id OR l.legacy_admin_account_id=a.id)
+   AND NOT EXISTS (SELECT 1 FROM account_permissions g
+    WHERE g.account_id=p.id AND g.permission IN ('admin.access','admin.world.read','admin.world.write'))`,
+   [legacyAdminId,playerAccountId]));
+  statements.push(db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+   .bind(playerAccountId,legacyAdminId,now));
+  for(const permission of ['admin.access','admin.world.read','admin.world.write']){
+   statements.push(db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)')
+    .bind(playerAccountId,permission,now,approvedBy));
+  }
+ }
+ const result=await db.batch(statements);
+ if(result.some((row,index)=>index%5!==0&&row.meta.changes!==1))
+  throw new ApiError(503,'admin_migration_unavailable');
+ return {linked:selections.length,permissionsGranted:selections.length*3};
+}
+
 /** Offline-only preflight for an explicitly approved operator mapping.
  * It never infers identity from email, mints grants or changes D1.
  */
