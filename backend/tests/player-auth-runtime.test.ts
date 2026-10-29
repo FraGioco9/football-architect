@@ -242,6 +242,32 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect(()=>sessionGuard(db,legacy,Math.floor(Date.now()/1000)))
    .toThrowError('legacy_admin_session_retired');
  });
+ it('throttles repeated invalid login attempts without revealing account existence',async()=>{
+  const wrong='invalid-login-password-2026';
+  for(let attempt=0;attempt<5;attempt++){
+   const denied=await request('/api/player/login',{email:'player@example.invalid',password:wrong});
+   expect(denied.status).toBe(401);
+   expect(await denied.json()).toEqual({error:{code:'invalid_credentials'}});
+  }
+  const limited=await request('/api/player/login',{email:'player@example.invalid',password:wrong});
+  expect(limited.status).toBe(429);
+  expect(limited.headers.get('Retry-After')).toBe('900');
+  const distinct=await request('/api/player/login',{email:'unknown@example.invalid',password:wrong});
+  expect(distinct.status).toBe(401);
+  expect(await distinct.json()).toEqual({error:{code:'invalid_credentials'}});
+ });
+ it('does not let a revoked session recover through an already issued CSRF token',async()=>{
+  const signed=await login(),c=cookie(signed),csrf=(await signed.json() as any).csrfToken;
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await db.prepare('DELETE FROM player_sessions WHERE token_digest=?')
+   .bind(await digestOpaqueToken(c.split('=')[1])).run();
+  expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
+  const mutation=await request('/api/player/account/revoke-other-sessions',{},{
+   Cookie:c,'X-CSRF-Token':csrf
+  });
+  expect(mutation.status).toBe(401);
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(401);
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
