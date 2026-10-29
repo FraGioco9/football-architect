@@ -183,6 +183,19 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?').bind(now+30,digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
  });
+ it('denies cross-origin account mutation and an invalid CSRF without revoking the valid session',async()=>{
+  const signed=await login(),sessionCookie=cookie(signed);
+  const csrf=(await signed.json() as any).csrfToken;
+  const crossOrigin=await request('/api/player/account/revoke-other-sessions',{},
+   {Cookie:sessionCookie,Origin:'https://attacker.example.invalid','X-CSRF-Token':csrf});
+  expect(crossOrigin.status).toBe(403);
+  const missingCsrf=await request('/api/player/account/revoke-other-sessions',{}, {Cookie:sessionCookie});
+  expect(missingCsrf.status).toBe(403);
+  const unrelatedCsrf=await request('/api/player/account/revoke-other-sessions',{},
+   {Cookie:sessionCookie,'X-CSRF-Token':'0'.repeat(64)});
+  expect(unrelatedCsrf.status).toBe(403);
+  expect((await request('/api/player/session',undefined,{Cookie:sessionCookie})).status).toBe(200);
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
