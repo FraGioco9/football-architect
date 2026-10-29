@@ -178,6 +178,21 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(await db.prepare('SELECT 1 FROM player_sessions WHERE account_id=?').bind('migration-player').first()).toBeNull();
   expect(await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?').bind('migration-player').first()).toBeNull();
  });
+ it('revokes historical and other Player sessions without revoking the current Player session',async()=>{
+  const {revokeOtherSessions}=await import('../src/player-account-management.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const first=await playerLogin(db,{email,password},'local-loopback',now());
+  const second=await playerLogin(db,{email,password},'local-loopback',now());
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const digest=await digestOpaqueToken(first.token),csrfDigest=await digestOpaqueToken(first.csrfToken);
+  expect(await revokeOtherSessions(db,{actor:first.actor,digest,csrfDigest},now()))
+   .toEqual({otherSessionsRevoked:2});
+  expect(await db.prepare('SELECT 1 FROM player_sessions WHERE token_digest=?').bind(digest).first()).not.toBeNull();
+  expect(await db.prepare('SELECT 1 FROM player_sessions WHERE token_digest=?').bind(await digestOpaqueToken(second.token)).first()).toBeNull();
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?').bind('migration-legacy').first()).toBeNull();
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
