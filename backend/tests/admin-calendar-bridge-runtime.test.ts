@@ -9,6 +9,7 @@ import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {publishInternationalCalendar} from '../src/admin-calendar-publish.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
+import {closeSeason} from '../src/season-close-command.ts';
 import {rescheduleSeasonEvent} from '../src/admin-calendar-command.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
@@ -20,7 +21,7 @@ let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
- await db.batch(['DELETE FROM season_domestic_stages','DELETE FROM season_admin_events','DELETE FROM season_knockout_ties','DELETE FROM season_day_outcomes','DELETE FROM season_draws','DELETE FROM season_calendars','DELETE FROM admin_operations','DELETE FROM seasons','DELETE FROM admin_sessions','DELETE FROM admin_accounts',"UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'"].map(q=>db.prepare(q)));
+ await db.batch(['DELETE FROM season_archives','DELETE FROM season_domestic_stages','DELETE FROM season_admin_events','DELETE FROM season_knockout_ties','DELETE FROM season_day_outcomes','DELETE FROM season_draws','DELETE FROM season_calendars','DELETE FROM admin_operations','DELETE FROM seasons','DELETE FROM admin_sessions','DELETE FROM admin_accounts',"UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'"].map(q=>db.prepare(q)));
  const csrf=await csrfFor(token);
  session={actor:{id:'bridge-operator',email:'bridge@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-100).run();
@@ -94,4 +95,17 @@ it('continues all sporting days through day 56 after staged administrative setup
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n,r)=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first<any>()).n).toBe(54);
+},120000);
+
+it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
+ const command=meta(),saved=await closeSeason(db,session,command,'bridge-close-once-00001',now);
+ expect(saved.world).toMatchObject({day:56,phase:'closed'});
+ expect((await db.prepare('SELECT count(*) n FROM season_archives').first<any>()).n).toBe(1);
+ expect(await closeSeason(db,session,command,'bridge-close-once-00001',now)).toEqual(saved);
+ await expect(closeSeason(db,session,command,'bridge-close-twice-00001',now)).rejects.toMatchObject({status:409});
+ await expect(db.prepare("UPDATE season_archives SET results_count=1").run()).rejects.toThrow();
 },120000);
