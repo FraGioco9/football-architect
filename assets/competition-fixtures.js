@@ -322,15 +322,15 @@
   function contextChanged(){
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
-    if(!international&&data)return; // The protected domestic adapter commits transactionally through prepare().
+    if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
     if(!data){rounds=null;postseason=[];currentMatchday=null;render();return;}
     const previous=clubs;
     try{
-      clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
+      clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
       if(clubs.size!==capacity)throw Error('Invalid cup participants');
       const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
-      const current=calendar?rules.currentFixtureChoice(definition,calendar,window.faDevWorldClockSnapshot||window.faWorldClockSnapshot):null;
-      window.faFixtures.prepare(data.fixtures,{currentMatchday:current})();
+      const current=data.provenance?.kind==='authoritative'?data.currentMatchday:calendar?rules.currentFixtureChoice(definition,calendar,window.faDevWorldClockSnapshot||window.faWorldClockSnapshot):null;
+      window.faFixtures.prepare(data.fixtures,{currentMatchday:current,postseason:data.postseason||[],definition})();
     }catch{clubs=previous;rounds=null;postseason=[];currentMatchday=null;render();}
   }
   window.addEventListener('fa:competition-context-change',contextChanged);

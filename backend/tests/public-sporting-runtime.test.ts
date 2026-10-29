@@ -40,7 +40,7 @@ it('returns published future fixtures with no fabricated results or player stats
  await calendar();const r=await request(),body=await r.json() as any;
  expect(body).toMatchObject({providerId:'authoritative-world',status:'partial',data:{season:1,history:null,standings:{complete:false},statistics:{matchesPlayed:0,totalGoals:0,players:null}}});
  expect(body.data.fixtures).toHaveLength(240);
- expect(body.data.fixtures.every((f:any)=>f.result===null)).toBe(true);
+ expect(body.data.fixtures.every((f:any)=>f.result===null&&f.phaseId==='league'&&f.tieId===null&&f.leg===null&&f.neutral===false)).toBe(true);
  expect(body.data.calendar).toHaveLength(56);
  expect(JSON.stringify(body)).not.toMatch(/password|csrf|token|operationId|sourceSeedHash|"seed"|approvalReference/);
  expect(body.provenance.kind).toBe('authoritative');
@@ -92,6 +92,8 @@ it('returns canonical final league tables and history only after actual closure'
  expect(body).toMatchObject({status:'available',data:{history:{championClubId:expected[0].clubId,season:1}}});
  const cup=await (await request('int-1')).json() as any;
  expect(cup.data.fixtures).toHaveLength(93);
+ expect(cup.data.fixtures.filter((f:any)=>f.tieId!==null)).toHaveLength(21);
+ expect(cup.data.fixtures.find((f:any)=>f.marker==='SOVEREIGN-FINAL')).toMatchObject({phaseId:'final',tieId:'final',leg:1,neutral:true});
  expect(cup.data.standings.rows.every((r:any)=>r.played===6)).toBe(true);
  expect(cup.data.history.championClubId).toBe(cup.data.fixtures.find((f:any)=>f.marker==='SOVEREIGN-FINAL').result.winnerClubId);
 },120000);

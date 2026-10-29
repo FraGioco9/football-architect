@@ -102,7 +102,10 @@ export async function readPublicSportingSeason(db:Database,competitionId:string,
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();
   const data={season:selectedSeason,rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
-   fixtures:fixtures.map(f=>({...f,result:storedResults.has(f.id)?publicScore(storedResults.get(f.id)!):null})),standings,statistics:stats,
+   fixtures:fixtures.map(f=>{
+    const plan=plans.find(t=>t.fixtures.some(item=>item.fixture.id===f.id)),item=plan?.fixtures.find(item=>item.fixture.id===f.id);
+    return {...f,phaseId:plan?.phaseId??'league',tieId:plan?.tieId??null,leg:item?.leg??null,neutral:item?.neutral??false,result:storedResults.has(f.id)?publicScore(storedResults.get(f.id)!):null};
+   }),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
    history:archive?{season:1,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);

@@ -19,10 +19,11 @@
  function normalize(context){
   const current=context?.seasonData;
   const selectors=typeof window!=='undefined'?window.faProviderSelectors:null;
+  const authoritative=current?.provenance?.kind==='authoritative';
   const data=selectors&&current?selectors.selectSeasonData({
-   schemaVersion:1,providerId:'dev-fictional',competitionId:context.currentDefinition?.id||context.definition?.id,
+   schemaVersion:1,providerId:authoritative?'authoritative-world':'dev-fictional',competitionId:context.currentDefinition?.id||context.definition?.id,
    selectedSeason:context.selectedSeason,scope:'season',status:current.status,
-   provenance:{kind:'fictional',approved:false,coverage:'partial',sourceRef:'dev-competition-context'},data:current
+   provenance:{kind:authoritative?'authoritative':'fictional',approved:false,coverage:'partial',sourceRef:authoritative?current.provenance.sourceRef:'dev-competition-context'},data:current
   },context.currentDefinition?.id||context.definition?.id,context.selectedSeason):current;
   const statistics=data?.statistics;
   if(!statistics||!statistics.overview)return null;

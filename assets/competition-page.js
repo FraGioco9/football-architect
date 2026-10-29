@@ -822,14 +822,20 @@
     if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
   }
   function setDebugSeason(season){
+    if(activeDebugSeason===null)return false;
     if(!Number.isInteger(season)||season<0||season>4)return false;
     if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
     if(season===0)selectSeason(1);
     return true;
   }
-  function replaceSeasonData(data,expectedRevision){
+  function acceptSeasonData(data,expectedRevision,authoritative=false){
     const current=window.faCompetitionContext;
-    if(!current||current.revision!==expectedRevision||activeDebugSeason===0||!data||
+    if(authoritative){
+      if(activeDebugSeason!==null||!current||current.revision!==expectedRevision)return false;
+      if(data===null){nextContext(current.selectedSeason);return true;}
+      if(data?.provenance?.kind!=='authoritative')return false;
+    }else if(!Number.isInteger(activeDebugSeason)||activeDebugSeason<1)return false;
+    if(!current||current.revision!==expectedRevision||!data||
       data.season!==current.selectedSeason||!model.resolveSeasonRules(definition,data)||
       !["unavailable","partial","available"].includes(data.status)||!Array.isArray(data.participants)||
       data.participants.length!==definition.capacity||
@@ -844,6 +850,7 @@
     }
     nextContext(current.selectedSeason,data);return true;
   }
+  function replaceSeasonData(data,expectedRevision){return acceptSeasonData(data,expectedRevision,false);}
   async function start() {
     if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-1|int-2)$/.test(routeId)) throw Error("Invalid route identity");
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
@@ -877,10 +884,10 @@
     await loadScript('competition-rules-view.js');
     window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);
     window.addEventListener("fa:dev-progress-change",event=>{
-      setDebugSeason(event.detail?.season);
+      if(activeDebugSeason!==null)setDebugSeason(event.detail?.season);
     });
     window.addEventListener("fa:fictional-standings-change",event=>{
-      if(event.detail?.enabled===false)clearSeasonData();
+      if(activeDebugSeason!==null&&event.detail?.enabled===false)clearSeasonData();
     });
     document.getElementById("division-detail-name").textContent=definition.name;
     document.getElementById("app-competition-capacity").textContent=String(definition.capacity);
@@ -957,6 +964,25 @@
       const stats=window.faCompetitionStats.mount(statsPanel,window.faCompetitionContext);
       window.addEventListener('fa:competition-context-change',event=>stats.update(event.detail));
       window.addEventListener('fa:competition-route-change',()=>stats.update(window.faCompetitionContext));
+    }
+    if(activeDebugSeason===null){
+      try{
+        const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        const copy={en:['Loading season data…','Season data is unavailable.','No published season data yet.'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.']};
+        const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
+        document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
+        let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
+        const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onState:state=>{sourceState=state;renderSource()},
+          fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
+        let selection='';const select=()=>{const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(key===selection)return;selection=key;void loader.load()};
+        window.addEventListener('fa:competition-context-change',select);
+        window.addEventListener('focus',()=>void loader.load());
+        window.addEventListener('pageshow',event=>{if(event.persisted)void loader.load()});
+        window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
+        new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+        select();
+      }catch{clearSeasonData();}
     }
   }
   start().catch(fail);
