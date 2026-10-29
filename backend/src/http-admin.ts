@@ -12,10 +12,11 @@ import {rescheduleSeasonEvent} from './admin-calendar-command.ts';
 import {initializeAdministrativeEvents} from './admin-calendar-initialize.ts';
 import {completeConfirmationEvent} from './admin-calendar-confirm.ts';
 import {advanceAdministrativeClock} from './admin-calendar-clock.ts';
+import {readAdministrativeCalendar} from './admin-calendar-read.ts';
 export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
-const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST']]);
+const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST']]);
 function readCookie(request:Request,name:string){
  const values=(request.headers.get('Cookie')??'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));
  if(values.length>1)throw new ApiError(401,'unauthorized');
@@ -71,6 +72,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   const session=await authenticate(db,token,now);
   if(path==='/api/admin/session')return json(200,{actor:session.actor,csrfToken:await csrfFor(token)});
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
+  if(path==='/api/admin/seasons/events')return json(200,await readAdministrativeCalendar(db));
   await requireCsrf(session,request.headers.get('X-CSRF-Token'));
   const rawCommand=await input(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
   if(path==='/api/admin/seasons/events/initialize')return json(200,await initializeAdministrativeEvents(db,session,parsePrepareRequest(rawCommand),key,now));
