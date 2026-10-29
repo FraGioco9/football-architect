@@ -213,7 +213,7 @@
     button.disabled=state.busy||!state.actor||!canRunCommand(action,w,state.events,state.seasonTwo);
    }
    const selector=find('[data-admin-event-select]'),dayInput=find('[data-admin-event-day]'),orderInput=find('[data-admin-event-order]'),save=find('[data-admin-event-reschedule]');
-   const events=state.events?.mode==='administrative'&&state.events.worldGeneration===state.world?.generation&&state.events.worldRevision===state.world?.revision?state.events.rows:[];
+   const events=['administrative','sporting'].includes(state.events?.mode)&&state.events.worldGeneration===state.world?.generation&&state.events.worldRevision===state.world?.revision?state.events.rows:[];
    const movable=events.filter(e=>e.status==='scheduled'&&(e.id.startsWith('season:')&&e.day===56&&state.world.day<=56&&state.world.phase!=='closed'||e.day>state.world.day&&e.day<=12));
    const selected=selector.value;
    selector.replaceChildren();
@@ -224,7 +224,7 @@
    dayInput.max=picked?.id.startsWith('season:')?'56':'12';dayInput.min=picked?.id.startsWith('season:')?'56':'1';
    const valid=!!picked&&Number.isSafeInteger(dayInput.valueAsNumber)&&(picked.id.startsWith('season:')?dayInput.valueAsNumber===56:dayInput.valueAsNumber>state.world.day&&dayInput.valueAsNumber<=12)&&Number.isSafeInteger(orderInput.valueAsNumber)&&orderInput.valueAsNumber>=0&&orderInput.valueAsNumber<=9999;
    const enabled=!!state.actor&&!state.busy&&valid;
-   find('[data-admin-reschedule-section]').hidden=!state.actor||state.events?.mode!=='administrative';
+   find('[data-admin-reschedule-section]').hidden=!state.actor||!['administrative','sporting'].includes(state.events?.mode);
    selector.disabled=state.busy||!movable.length;dayInput.disabled=state.busy||!movable.length;orderInput.disabled=state.busy||!movable.length;save.disabled=!enabled;
    const nextEvent=state.events?.nextEvent;
    const nextSeason=find('[data-admin-next-season]'),proposal=state.seasonTwo;
@@ -239,7 +239,7 @@
    if(proposal?.holderProposal)for(const move of proposal.holderProposal.moves){if(!move.removedClubId)continue;const li=doc.createElement('li');li.textContent=text.nextProposal+' · '+move.cup+': '+move.championClubId+' / '+move.removedClubId+(move.sourceCup?' ('+move.sourceCup+')':'');holders.append(li)}
    const closure=state.events?.closure;
    find('[data-admin-closure]').textContent=state.actor&&closure?text.closureDays+' '+closure.days+'/56 · '+text.closureTies+' '+closure.ties+'/54 · '+(closure.ready?text.closureReady:text.closurePending):'';
-   find('[data-admin-next-event]').textContent=state.events?.mode==='administrative'?
+   find('[data-admin-next-event]').textContent=['administrative','sporting'].includes(state.events?.mode)?
     (nextEvent?nextEvent.id+' · '+text.day+' '+nextEvent.day+' · '+nextEvent.order+(nextEvent.ready?' · '+text.operationIdle:''):text.operationSuccess):'';
    const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]'),canReset=!!state.actor&&state.world?.phase!=='unstarted'&&!state.busy;
    find('[data-admin-reset-section]').hidden=!state.actor;
