@@ -9,6 +9,7 @@ import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {createProgression,processSportingDay} from './knockout-progression.ts';
+import {seasonArchiveSportingSummary} from './season-archive-summary.ts';
 interface Day {day:number;outcome_hash:string;outcome_json:string;calendar_hash:string}
 interface Tie {plan_hash:string;plan_json:string}
 export async function archiveSeason(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
@@ -46,6 +47,7 @@ export async function archiveSeason(db:Database,session:AdminSession,input:Prepa
  if(pending!==0)throw new ApiError(409,'archive_prerequisites');
  const resultsHash=await canonicalHash(rows.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
  const archiveHash=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:count,daysCount:56,tiesCount:54});
+ const summary=seasonArchiveSportingSummary(progression),summaryJson=JSON.stringify(summary),summaryHash=await canonicalHash(summary);
  const result:Outcome={operationId:crypto.randomUUID(),world:{...world,revision:world.revision+1}};
  try{
   await db.batch([
@@ -63,7 +65,9 @@ export async function archiveSeason(db:Database,session:AdminSession,input:Prepa
    abortUnless(db,"SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=? AND status='scheduled' AND scope<>'season')=0",[world.seasonNumber]),
    abortUnless(db,"SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id='season:archive' AND kind='archive-season' AND scope='season' AND scheduled_day=56 AND event_order=? AND status='scheduled' AND receipt_hash IS NULL",[world.seasonNumber,archiveEvent.event_order]),
    abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_archives WHERE season_number=${world.seasonNumber})=0`,[]),
+   abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM season_archive_summaries WHERE season_number=?)',[world.seasonNumber]),
    db.prepare('INSERT INTO season_archives VALUES(?,?,?,?,?,?,?,?,?,?)').bind(world.seasonNumber,world.generation,evidence.calendar.calendar_hash,resultsHash,knockoutHash,archiveHash,count,56,54,now),
+   db.prepare('INSERT INTO season_archive_summaries(season_number,generation,archive_hash,summary_hash,summary_json,created_at) VALUES(?,?,?,?,?,?)').bind(world.seasonNumber,world.generation,archiveHash,summaryHash,summaryJson,now),
    db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=? AND event_id='season:archive' AND status='scheduled'").bind(now,archiveHash,world.seasonNumber),
    db.prepare("UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?").bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(result.operationId,world.generation,key,requestHash,session.actor.id,'archive-season-v2',world.revision,result.world.revision,JSON.stringify(result),now),
