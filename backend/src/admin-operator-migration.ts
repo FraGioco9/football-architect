@@ -83,7 +83,10 @@ export async function revokeMigratedAdminOperator(db:Database,playerAccountId:st
  if(typeof playerAccountId!=='string'||!playerAccountId||!Number.isSafeInteger(now)||now<=0)
   throw new ApiError(422,'invalid_admin_migration');
  const results=await db.batch([
-  abortUnless(db,'SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?',[playerAccountId]),
+  abortUnless(db,`SELECT 1 FROM player_admin_operator_links l
+    JOIN player_accounts p ON p.id=l.player_account_id
+    JOIN admin_accounts a ON a.id=l.legacy_admin_account_id
+    WHERE l.player_account_id=? AND p.email_normalized=a.email_normalized`,[playerAccountId]),
   db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission IN ('admin.access','admin.world.read','admin.world.write')").bind(playerAccountId),
   db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerAccountId),
   db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerAccountId)
