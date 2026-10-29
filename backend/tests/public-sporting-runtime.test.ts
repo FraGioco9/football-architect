@@ -31,6 +31,14 @@ beforeEach(async()=>{
 async function prepare(){world=(await prepareSeason(db,session,meta(),'public-prepare-0001',await loadApprovedSnapshot(),now)).world}
 async function calendar(){await prepare();world=(await generateSeasonCalendar(db,session,meta(),'public-calendar-0001',now)).world}
 async function through(day:number){world=(await executeLifecycle(db,session,'start',meta(),'public-start-0001',now)).world;while(world.day<day)world=(await executeLifecycle(db,session,'advance',meta(),'public-day-'+(world.day+1)+'-0001',now)).world}
+it('keeps public competition reads independent of malformed Player cookies and disabled auth configuration',async()=>{
+ const url='https://example.invalid/api/competitions/IT-1/seasons/1';
+ const anonymous=await worker.fetch(new Request(url),{DB:db});
+ const malformedCookie=await worker.fetch(new Request(url,{headers:{Cookie:'fa_player_local=invalid; fa_admin_local=obsolete'}}),{DB:db,PLAYER_MODE:'production',PLAYER_ORIGIN:'https://other.invalid'});
+ expect(anonymous.status).toBe(200);
+ expect(malformedCookie.status).toBe(200);
+ expect(await malformedCookie.json()).toEqual(await anonymous.json());
+});
 it('reads anonymously with explicit empty and unsupported viewed-season states',async()=>{
  let r=await request();expect(r.status).toBe(200);expect(await r.json()).toMatchObject({status:'empty',selectedSeason:1,data:null});
  await prepare();r=await request();expect(await r.json()).toMatchObject({status:'empty',reason:'calendar-unpublished',data:null});
