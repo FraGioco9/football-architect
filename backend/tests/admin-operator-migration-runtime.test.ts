@@ -102,6 +102,13 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect((await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id=?')
    .bind('migration-player').first<{n:number}>())?.n).toBe(0);
  });
+ it('revokes historic Admin sessions in the same operation as unified cutover',async()=>{
+  await db.prepare(`INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at)
+   VALUES(?,?,?,?,?,?,?)`).bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?')
+   .bind('migration-legacy').first()).toBeNull();
+ });
  it('invalidates outstanding one-time credentials during single-operator elevation',async()=>{
   await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,expires_at,issued_at) VALUES(?,?,?,?,?)')
    .bind('f'.repeat(64),'migration-player','reset_password',now()+600,now()).run();
