@@ -27,6 +27,7 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM seasons WHERE generation<>?)',[world.generation]),
    db.prepare("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted' WHERE id=1 AND generation=? AND revision=?").bind(nextGeneration,world.generation,world.revision),
+   db.prepare('DELETE FROM season_two_approvals'),
    db.prepare('DELETE FROM season_archives'),
    db.prepare('DELETE FROM season_admin_events'),
    db.prepare('DELETE FROM season_domestic_stages'),
