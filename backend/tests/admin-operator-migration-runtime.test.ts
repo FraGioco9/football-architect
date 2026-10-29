@@ -44,6 +44,20 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(mismatch.ready).toBe(false);
   expect(mismatch.blocked.find(x=>x.legacyAdminId==='migration-legacy')?.status).toBe('invalid_player');
  });
+ it('blocks the migration gate when an unlinked Player owns orphan Admin grants',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)')
+   .bind('migration-second','orphan@example.invalid',verifier,1,now()-100,'active',now()-100,now()-100).run();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('migration-second','admin.world.read',now()).run();
+  const unsafe=await adminOperatorMigrationReadiness(db);
+  expect(unsafe.ready).toBe(false);
+  expect(unsafe.orphanGrants).toContain('migration-second');
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-second').run();
+  const safe=await adminOperatorMigrationReadiness(db);
+  expect(safe.ready).toBe(true);
+  expect(safe.orphanGrants).toEqual([]);
+ });
  it('rejects preexisting partial Admin grants before linking and preserves the original grant',async()=>{
   await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
    .bind('migration-player','admin.access',now()).run();
