@@ -1,7 +1,7 @@
 import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
-import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration,migrateAdminOperatorsBatch,revokeMigratedAdminOperatorsBatch} from '../src/admin-operator-migration.ts';
+import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration,preflightAdminOperatorsBatch,migrateAdminOperatorsBatch,revokeMigratedAdminOperatorsBatch} from '../src/admin-operator-migration.ts';
 import {hashPassword} from '../src/passwords.ts';
 import {playerLogin} from '../src/player-auth.ts';
 const binding=env as any,db=binding.DB;
@@ -78,6 +78,18 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
    .bind(...ids).first<{n:number}>())?.n).toBe(0);
   expect((await db.prepare('SELECT COUNT(*) AS n FROM admin_accounts WHERE id IN (?,?)')
    .bind('migration-legacy','migration-second-legacy').first<{n:number}>())?.n).toBe(2);
+ });
+ it('requires a complete explicit enabled-operator roster before cutover, with no D1 writes',async()=>{
+  const mapping={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
+  const good=await preflightAdminOperatorsBatch(db,[mapping]);
+  expect(good).toEqual({ready:true,totalEnabled:1,approved:1,blockers:[]});
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+   .bind('migration-second-legacy','second@example.invalid','historical-only',now()).run();
+  const partial=await preflightAdminOperatorsBatch(db,[mapping]);
+  expect(partial.ready).toBe(false);
+  expect(partial.blockers).toContainEqual({legacyAdminId:'migration-second-legacy',reason:'unmapped_operator'});
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first()).toBeNull();
+  await expect(preflightAdminOperatorsBatch(db,[mapping,mapping])).rejects.toMatchObject({status:422});
  });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
