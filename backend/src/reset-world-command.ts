@@ -7,12 +7,14 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 export interface ResetRequest extends PrepareRequest {confirmation:string}
 export async function resetWorld(db:Database,session:AdminSession,input:ResetRequest,keyInput:string,now:number):Promise<Outcome>{
- const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
- if(!input||input.confirmation!=='RESET SEASON 0'||Object.keys(input).sort().join(',')!=='confirmation,expectedGeneration,expectedRevision')
+ if(!input||typeof input!=='object'||Array.isArray(input)||input.confirmation!=='RESET SEASON 0'||Object.keys(input).sort().join(',')!=='confirmation,expectedGeneration,expectedRevision')
   throw new ApiError(422,'reset_confirmation_required');
+ const cmd=parsePrepareRequest({expectedGeneration:input.expectedGeneration,expectedRevision:input.expectedRevision}),key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'reset_unavailable');
  const requestHash=await hashText(JSON.stringify({command:'reset-world-v1',actor:session.actor.id,...cmd,confirmation:input.confirmation}));
- const saved=await replay(db,session,cmd,key,requestHash,now);if(saved)return saved;
+ // A reset changes the world generation, so old-generation replay must fail closed.
+ // A repeated request is explicitly stale, not a second destructive operation.
+ await replay(db,session,cmd,key,requestHash,now);
  const world=await readWorld(db);
  if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
  if(world.seasonNumber===0||!['preparing','active','closed'].includes(world.phase))throw new ApiError(409,'reset_prerequisites');
@@ -33,7 +35,7 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    db.prepare('DELETE FROM season_calendars'),
    db.prepare('DELETE FROM seasons'),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
-    .bind(operationId,nextGeneration,key,requestHash,session.actor.id,'reset-world-v1',0,1,JSON.stringify(result),now),
+    .bind(operationId,world.generation,key,requestHash,session.actor.id,'reset-world-v1',world.revision,world.revision+1,JSON.stringify(result),now),
   ]);
   return result;
  }catch{
