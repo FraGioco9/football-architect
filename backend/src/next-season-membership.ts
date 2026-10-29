@@ -2,6 +2,7 @@
  * Pure projection only; never an approved snapshot or D1 mutation.
  */
 import {ApiError} from './errors.ts';
+import type {Progression} from './knockout-progression.ts';
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
 export interface FinishedDivision {competitionId:string;rankedClubIds:readonly string[]}
 export interface CountryPostseason {countryId:string;playoutRelegatedClubId:string;playoffPromotedClubId:string}
@@ -35,4 +36,30 @@ export function proposeNextSeasonMembership(season:number,divisions:readonly Fin
  }
  if(sovereign.length!==24||federation.length!==24||new Set([...sovereign,...federation]).size!==48)return reject();
  return Object.freeze({season,bindings:Object.freeze([...results,{competitionId:'int-1',clubIds:sovereign},{competitionId:'int-2',clubIds:federation}].map(x=>Object.freeze({competitionId:x.competitionId,clubIds:Object.freeze([...x.clubIds])}))),status:'provisional-results-derived'});
+}
+
+/** Convert completed deterministic progression, never unvalidated client tables,
+ * into a review-only Season N+1 participant proposal.
+ * Caller must first validate all 56 immutable sporting receipts.
+ */
+export function membershipCandidateFromProgression(state:Progression):NextSeasonMembership {
+ if(state.lastDay!==56||state.results.size!==4082||state.ties.size!==54)return reject();
+ const divisions:FinishedDivision[]=[],outcomes:CountryPostseason[]=[];
+ for(const c of countries){
+  const top=state.tables.get(c+'-1'),second=state.tables.get(c+'-2');
+  const playout=state.ties.get(c+'-1:playout:playout'),final=state.ties.get(c+'-2:promotionPlayoffs:final');
+  if(!top||!second||top.length!==16||second.length!==16||!playout||!final)return reject();
+  const lastPlayout=playout.fixtures[playout.fixtures.length-1].fixture;
+  const lastFinal=final.fixtures[final.fixtures.length-1].fixture;
+  const playoutWinner=state.results.get(lastPlayout.id)?.winnerClubId;
+  const playoffWinner=state.results.get(lastFinal.id)?.winnerClubId;
+  if(!playoutWinner||!playoffWinner||!playout.originalRanks.some(x=>x.clubId===playoutWinner)||
+     !final.originalRanks.some(x=>x.clubId===playoffWinner))return reject();
+  const relegated=playout.originalRanks.find(x=>x.clubId!==playoutWinner)?.clubId;
+  if(!relegated)return reject();
+  divisions.push({competitionId:c+'-1',rankedClubIds:top.map(x=>x.clubId)},
+   {competitionId:c+'-2',rankedClubIds:second.map(x=>x.clubId)});
+  outcomes.push({countryId:c,playoutRelegatedClubId:relegated,playoffPromotedClubId:playoffWinner});
+ }
+ return proposeNextSeasonMembership(state.snapshot.manifestVersion+1,divisions,outcomes);
 }
