@@ -120,7 +120,9 @@ export async function buildApprovedSeasonTwoInitialSchedule(db:Database,seed:str
  if(!approved||approved.generation!==review.world.generation||approved.source_archive_hash!==review.sourceArchiveHash||
   approved.snapshot_hash!==review.snapshot.snapshotHash)return fail();
  const {snapshotHash,status,readyForActivation,...manifest}=review.snapshot;
- if(await canonicalHash(manifest)!==snapshotHash||await canonicalHash(JSON.parse(approved.snapshot_json))!==snapshotHash)return fail();
+ let stored:unknown;
+ try{stored=JSON.parse(approved.snapshot_json)}catch{return fail()}
+ if(await canonicalHash(manifest)!==snapshotHash||await canonicalHash(stored)!==snapshotHash)return fail();
  const seasonOne=await loadApprovedSnapshot();
  const versions=new Map(seasonOne.bindings.map(b=>[b.competitionId,b.rulesVersion]));
  const bindings=manifest.bindings.map(b=>{
