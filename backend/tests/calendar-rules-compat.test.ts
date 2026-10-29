@@ -9,9 +9,9 @@ test('division catalogue contains sporting rules only; versioned calendar owns 3
  assert.doesNotThrow(()=>assertCalendarMappings(divisions));
  const restored=legacySeasonOneRules(divisions);
  assert.equal(restored.length,16);
- assert.ok(restored.every(c=>c.rules.phases.every(p=>p.calendarEvents.length>=2)));
- assert.deepEqual(restored.find(c=>c.id==='BR-1')?.rules.phases[1].calendarEvents,['N31','N32']);
- assert.deepEqual(restored.find(c=>c.id==='BR-2')?.rules.phases[1].calendarEvents,['N31','N32','N33']);
+ assert.ok(restored.every(c=>c.rules.phases.every(p=>'calendarEvents' in p&&Array.isArray(p.calendarEvents)&&p.calendarEvents.length>=2)));
+ assert.deepEqual((restored.find(c=>c.id==='BR-1')!.rules.phases[1] as {calendarEvents:string[]}).calendarEvents,['N31','N32']);
+ assert.deepEqual((restored.find(c=>c.id==='BR-2')!.rules.phases[1] as {calendarEvents:string[]}).calendarEvents,['N31','N32','N33']);
 });
 test('unchanged frozen season-one approval still validates via trusted backwards-compatible reconstruction',async()=>{
  const snapshot=await loadApprovedSnapshot();
