@@ -51,9 +51,18 @@ export async function adminOperatorMigrationReadiness(db:Database){
    grants.get(row.playerAccountId)!==3?'missing_permissions':'linked'
  }));
  const blocked=operators.filter(x=>x.status!=='linked'&&x.status!=='disabled');
+ // Any unlinked administrative grant is a privilege outside the approved cutover.
+ // Report account IDs only: no email or password material leaves this offline inventory.
+ const orphanRows=await db.prepare(`SELECT DISTINCT p.account_id AS playerAccountId
+  FROM account_permissions p LEFT JOIN player_admin_operator_links l
+   ON l.player_account_id=p.account_id
+  WHERE p.permission IN ('admin.access','admin.world.read','admin.world.write')
+   AND l.player_account_id IS NULL ORDER BY p.account_id`)
+  .all<{playerAccountId:string}>();
+ const orphanGrants=orphanRows.results.map(x=>x.playerAccountId);
  return {total:operators.length,linked:operators.filter(x=>x.status==='linked').length,
   disabled:operators.filter(x=>x.status==='disabled').length,
-  blocked,ready:blocked.length===0&&operators.some(x=>x.status==='linked')};
+  blocked,orphanGrants,ready:blocked.length===0&&orphanGrants.length===0&&operators.some(x=>x.status==='linked')};
 }
 
 /** Read-only inventory for a trusted migration review, never exposed to web clients. */
