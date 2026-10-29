@@ -11,6 +11,7 @@ import {reviewInternationalHolders} from './international-holder-review.ts';
 import {proposeHolderAllocation} from './international-holder-allocation-proposal.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildQualificationReviewPacket} from './qualification-review-packet.ts';
+import {buildSeasonTwoSnapshot} from './season-two-snapshot.ts';
 type Receipt={day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string};
 type Tie={generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string};
 type Archive={generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number};
@@ -45,6 +46,7 @@ export async function readSeasonTwoCandidate(db:Database){
  const candidate=membershipCandidateFromProgression(state);
  const holderReview=reviewInternationalHolders(state,candidate);
  const holderProposal=proposeHolderAllocation(candidate,holderReview);
+ const snapshot=await buildSeasonTwoSnapshot(archiveHash,candidate,holderReview);
  const review=await buildQualificationReviewPacket(archiveHash,candidate,holderReview);
- return {world,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,review,requiresOwnerQualificationReview:true};
+ return {world,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,requiresOwnerQualificationReview:true};
 }
