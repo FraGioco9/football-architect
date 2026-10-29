@@ -200,8 +200,8 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const {sessionGuard}=await import('../src/command-guards.ts');
   const legacy={actor:{id:'old-admin',email:'old@example.invalid'},
    digest:'0'.repeat(64),csrfDigest:'1'.repeat(64),credentialVersion:1};
-  await expect(db.batch([sessionGuard(db,legacy,Math.floor(Date.now()/1000))]))
-   .rejects.toMatchObject({status:403,code:'legacy_admin_session_retired'});
+  expect(()=>sessionGuard(db,legacy,Math.floor(Date.now()/1000)))
+   .toThrowError('legacy_admin_session_retired');
  });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
