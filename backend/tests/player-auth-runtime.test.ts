@@ -69,7 +69,17 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES (?,?,?)').bind('player-1','admin.access',Math.floor(Date.now()/1000)).run();
   await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.read')).rejects.toMatchObject({status:403});
   await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES (?,?,?)').bind('player-1','admin.world.read',Math.floor(Date.now()/1000)).run();
+  // Permissions without an approved historical operator link are insufficient.
+  expect((await request('/api/player/admin/world',undefined,{Cookie:'fa_player_local='+token})).status).toBe(403);
+  const now=Math.floor(Date.now()/1000);
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+   .bind('read-legacy','player@example.invalid','synthetic-audit-only',now).run();
+  await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+   .bind('player-1','read-legacy',now).run();
   expect((await request('/api/player/admin/world',undefined,{Cookie:'fa_player_local='+token})).status).toBe(200);
+  await db.prepare("UPDATE admin_accounts SET enabled=0 WHERE id='read-legacy'").run();
+  expect((await request('/api/player/admin/world',undefined,{Cookie:'fa_player_local='+token})).status).toBe(403);
+  await db.prepare("UPDATE admin_accounts SET enabled=1 WHERE id='read-legacy'").run();
   expect((await authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.read')).actor.id).toBe('player-1');
   await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.write',csrf)).rejects.toMatchObject({status:403});
   await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES (?,?,?)').bind('player-1','admin.world.write',Math.floor(Date.now()/1000)).run();
