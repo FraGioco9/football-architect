@@ -14,7 +14,7 @@ const cookie=(response:Response)=>response.headers.get('set-cookie')!.split(';')
 const login=()=>request('/api/player/login',{email:' PLAYER@example.invalid ',password});
 beforeAll(async()=>{await applyD1Migrations(db,binding.TEST_MIGRATIONS);verifier=await hashPassword(password)});
 beforeEach(async()=>{
- await db.batch([db.prepare('DELETE FROM player_sessions'),db.prepare('DELETE FROM player_one_time_tokens'),db.prepare('DELETE FROM player_accounts'),db.prepare('DELETE FROM player_auth_throttles')]);
+ await db.batch([db.prepare('DELETE FROM player_admin_operator_links'),db.prepare('DELETE FROM account_permissions'),db.prepare('DELETE FROM player_sessions'),db.prepare('DELETE FROM player_one_time_tokens'),db.prepare('DELETE FROM player_accounts'),db.prepare('DELETE FROM player_auth_throttles')]);
  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)')
  .bind('player-1','player@example.invalid',verifier,1,100,'active',100,100).run();
 });
