@@ -336,6 +336,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
     await visit(devOrigin,'IT-1','fixtures',1);
     const previous=await run('window.__a04DocumentToken');await cmd('Page.reload');
     await wait('window.__a04DocumentToken!=='+JSON.stringify(previous)+"&&window.faCompetitionContext?.selectedSeason===1&&!!window.faHistoryPlayerRecords&&document.readyState==='complete'");
+    assert.equal(await run('window.faCompetitionContextApi.setDebugSeason(2)'),true,'synthetic History data requires DEV authority');
     const initial=seasonData(1,15);assert.equal(await put(initial),true);
     await run('window.faHistoryPlayerRecords.applyCanonicalHistory('+JSON.stringify(history)+')');
     const approved=await records();assert.ok(approved.length>0);assert.ok(JSON.stringify(approved).includes('A06 Historical Player'));
@@ -383,6 +384,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
   await t.test('E5: absent/zero/partial/invalid/recovered Stats in five locales, ARIA and mobile widths',async()=>{
    await visit(devOrigin,'IT-1');
+   assert.equal(await run('window.faCompetitionContextApi.setDebugSeason(2)'),true,'synthetic Stats data requires DEV authority');
    const locales=[['en','No statistics yet.','Statistics are unavailable.','Stats','Close'],['de','Noch keine Statistiken.','Statistiken sind nicht verfügbar.','Statistiken','Schließen'],['es','Aún sin estadísticas.','Las estadísticas no están disponibles.','Estadísticas','Cerrar'],['fr','Aucune statistique.','Les statistiques sont indisponibles.','Statistiques','Fermer'],['it','Nessuna statistica.','Le statistiche non sono disponibili.','Statistiche','Chiudi']];
    for(const [lang,empty,error,nav,close] of locales){
     await run('document.documentElement.lang='+JSON.stringify(lang)+';window.faAppRenderLanguage()');
