@@ -14,6 +14,8 @@ beforeEach(async()=>{
   db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id IN (?,?)').bind('migration-player','migration-second'),
   db.prepare('DELETE FROM account_permissions WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
   db.prepare('DELETE FROM player_sessions WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM player_one_time_tokens WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM admin_sessions WHERE account_id IN (?,?)').bind('migration-legacy','migration-second-legacy'),
   db.prepare('DELETE FROM player_accounts WHERE id IN (?,?)').bind('migration-player','migration-second'),
   db.prepare('DELETE FROM admin_accounts WHERE id IN (?,?)').bind('migration-legacy','migration-second-legacy')
  ]);
@@ -127,6 +129,15 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
    .bind('migration-player').first<{n:number}>())?.n).toBe(0);
   const next=await playerLogin(db,{email,password},'local-loopback',now());
   expect(next.token).not.toBe(first.token);
+ });
+ it('revokes post-migration reset links during emergency Admin rollback',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind('d'.repeat(64),'migration-player','reset_password',now(),now()+600).run();
+  const result=await revokeMigratedAdminOperator(db,'migration-player',now());
+  expect(result.revoked).toBe(true);
+  expect(await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?')
+   .bind('migration-player').first()).toBeNull();
  });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
