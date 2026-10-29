@@ -9,6 +9,8 @@ import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './com
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
 import {proposeAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {loadApprovedSnapshot} from './approved-season-one.ts';
+import {canonicalHash} from './catalogue-snapshot.ts';
 
 type EventRow={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];receipt_hash:string|null};
 export async function advanceAdministrativeClock(db:Database,session:AdminSession,action:'start'|'advance',input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
@@ -26,7 +28,25 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
  const template=proposeAdministrativeMilestones();
  if(events.length!==template.length||events.some(e=>!template.some(t=>t.id===e.id&&t.kind===e.kind&&t.scope===e.scope)))throw new ApiError(409,'calendar_event_prerequisites');
- if(events.some(e=>e.day<=world.day&&e.status!=='completed'))throw new ApiError(409,'calendar_event_prerequisites');
+ // Due participant confirmations are finalized atomically with advancing time.
+ // Artifact-generating milestones still require their own validated commands.
+ const outstanding=events.filter(e=>e.status==='scheduled'&&e.day<=world.day);
+ if(outstanding.some(e=>e.day<world.day||!e.kind.startsWith('confirm-')))throw new ApiError(409,'calendar_event_prerequisites');
+ const confirmations=outstanding.sort((a,b)=>a.order-b.order);
+ let confirmationGuards:ReturnType<typeof abortUnless>[]=[];
+ let confirmationUpdates:ReturnType<Database['prepare']>[]=[];
+ if(confirmations.length){
+  const approved=await loadApprovedSnapshot();
+  const stored=await db.prepare('SELECT generation,participants_hash,rules_hash,snapshot_json FROM seasons WHERE season_number=?').bind(world.seasonNumber).first<{generation:string;participants_hash:string;rules_hash:string;snapshot_json:string}>();
+  if(!stored||stored.generation!==world.generation||stored.participants_hash!==approved.participantsHash||stored.rules_hash!==approved.rulesHash||
+     await canonicalHash(JSON.parse(stored.snapshot_json))!==await canonicalHash(approved))throw new ApiError(422,'calendar_event_prerequisites');
+  confirmationGuards=[abortUnless(db,'SELECT 1 FROM seasons WHERE season_number=? AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?',
+   [world.seasonNumber,stored.generation,stored.participants_hash,stored.rules_hash,stored.snapshot_json])];
+  confirmationUpdates=await Promise.all(confirmations.map(async event=>{
+   const receipt=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,eventId:event.id,kind:event.kind,participantsHash:approved.participantsHash,rulesHash:approved.rulesHash});
+   return db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=? AND event_id=? AND scheduled_day=? AND status='scheduled'").bind(now,receipt,world.seasonNumber,event.id,world.day);
+  }));
+ }
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT day FROM season_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first())throw new ApiError(409,'calendar_event_prerequisites');
  if(events.some(e=>e.id==='domestic:calendar'&&e.day<=world.day)){
@@ -45,6 +65,8 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
    ...rows.map(r=>abortUnless(db,'SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id=? AND kind=? AND scope=? AND scheduled_day=? AND event_order=? AND status=?',[world.seasonNumber,r.event_id,r.kind,r.scope,r.scheduled_day,r.event_order,r.status])),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=?)=0',[world.seasonNumber]),
+   ...confirmationGuards,
+   ...confirmationUpdates,
    ...(events.some(e=>e.id==='domestic:calendar'&&e.day<=world.day)?[abortUnless(db,'SELECT 1 FROM season_domestic_stages WHERE season_number=1 AND generation=?',[world.generation])]:[]),
    db.prepare('UPDATE world_state SET phase=?,day=?,revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(after.phase,after.day,world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,name,world.revision,after.revision,JSON.stringify(result),now),
