@@ -6,10 +6,11 @@ import {readWorld} from './world-repository.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {prepareSeason} from './commands.ts';
+import {generateSeasonCalendar} from './calendar-command.ts';
 export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
-const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST']]);
+const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST']]);
 function readCookie(request:Request,name:string){
  const values=(request.headers.get('Cookie')??'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));
  if(values.length>1)throw new ApiError(401,'unauthorized');
@@ -67,6 +68,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
   await requireCsrf(session,request.headers.get('X-CSRF-Token'));
   const command=parsePrepareRequest(await input(request)),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
+  if(path==='/api/admin/seasons/calendar')return json(200,await generateSeasonCalendar(db,session,command,key,now));
   return json(200,await prepareSeason(db,session,command,key,await loadApprovedSnapshot(),now));
  }catch(error){
   if(error instanceof ApiError)return json(error.status,{error:{code:error.code}},error.status===429?{'Retry-After':'900'}:{});

@@ -38,8 +38,8 @@ export async function buildSeasonOneCalendarEvidence():Promise<CalendarEvidence>
    }
    if(day.events.length>2||((day.events.length===0)!==(day.kind!=='official')))return fail();
   }
-  if(national.length!==32||cups.length!==14)return fail();
-  for(let i=0;i<32;i++){
+  if(national.length!==33||cups.length!==14)return fail();
+  for(let i=0;i<33;i++){
    const e=national[i];
    if(e.marker!==`N${String(i+1).padStart(2,'0')}`||e.round!==i+1||e.phase!==(i<30?'league':'postseason'))return fail();
   }
