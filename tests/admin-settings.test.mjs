@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {renderAdminSettings} from '../tools/render-admin-settings.mjs';
 const require=createRequire(import.meta.url);
-const {createAdminController}=require('../assets/admin-settings.js');
+const {createAdminController,canRunCommand}=require('../assets/admin-settings.js');
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
 const session={actor:{id:'operator',email:'operator@example.invalid'},csrfToken:'a'.repeat(64)};
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
@@ -154,4 +154,24 @@ test('authenticated event snapshot is retained only when tied to current generat
  assert.equal(c.state().events.rows[0].id,'international:draw');
  const stale=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:active}:{...good,world:{...active,revision:6}},()=>{});
  await stale.refresh();assert.equal(stale.state().events,null);
+});
+
+test('action availability is derived exclusively from matching authenticated world evidence',()=>{
+ const preparing={...world,phase:'preparing',seasonNumber:1,revision:2};
+ const events={mode:'administrative',worldGeneration:preparing.generation,worldRevision:2,rows:[]};
+ assert.equal(canRunCommand('eventStart',preparing,events),true);
+ assert.equal(canRunCommand('start',preparing,events),false);
+ assert.equal(canRunCommand('initialize',preparing,events),false);
+ assert.equal(canRunCommand('eventStart',preparing,{...events,worldRevision:1}),false);
+ const active={...preparing,phase:'active',day:3};
+ const drawn={...events,rows:[{id:'international:draw',kind:'draw-international',day:3,status:'scheduled'}]};
+ assert.equal(canRunCommand('draw',active,drawn),true);
+ assert.equal(canRunCommand('publish',active,drawn),false);
+ assert.equal(canRunCommand('confirm',active,drawn),false);
+ assert.equal(canRunCommand('draw',active,{...drawn,worldGeneration:'650e8400-e29b-41d4-a716-446655440000'}),false);
+ assert.equal(canRunCommand('advance',active,{...drawn,mode:'legacy'}),true);
+ assert.equal(canRunCommand('eventAdvance',active,drawn),true);
+ const last={...active,day:56};
+ assert.equal(canRunCommand('close',last,{...drawn,mode:'legacy'}),true);
+ assert.equal(canRunCommand('advance',last,{...drawn,mode:'legacy'}),false);
 });
