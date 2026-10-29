@@ -18,13 +18,16 @@ const raw=new URL(location.href).searchParams.get('next')||'/account/';
 // Allow only approved internal post-login destinations. Do not allow origin-relative,
 // encoded separator or API redirects from untrusted query parameters.
 const safe=['/account/','/settings/'].includes(raw)?raw:'/account/';
+// Restore an already-authenticated session without prompting for the password again.
+// An unavailable session endpoint is not proof of authentication.
+(async()=>{try{const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok)return;const value=await r.json();if(value?.authenticated===true&&typeof value?.actor?.id==='string')location.replace(safe);}catch{/* Login remains available when the restore check fails. */}})();
 form.addEventListener('submit',async e=>{
  e.preventDefault();button.disabled=true;button.textContent=t[4];message.textContent='';
  const values=new FormData(form);const password=String(values.get('password')||'');
  try{
   const r=await fetch('/api/player/login',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(values.get('email')||''),password})});
   if(!r.ok){message.textContent=r.status===401?t[5]:r.status===429?t[7]:t[6];return;}
-  location.assign(safe);
+  form.reset();location.replace(safe);
  }catch{message.textContent=t[6]}finally{button.disabled=false;button.textContent=t[3];}
 });
 })();
