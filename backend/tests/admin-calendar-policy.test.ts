@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {rescheduleAdministrativeMilestone,dueAdministrativeMilestones,type AdministrativeMilestone} from '../src/admin-calendar-policy.ts';
+import {rescheduleAdministrativeMilestone,dueAdministrativeMilestones,proposeAdministrativeMilestones,type AdministrativeMilestone} from '../src/admin-calendar-policy.ts';
 const milestones:AdministrativeMilestone[]=[
  {id:'domestic:entrants',scope:'domestic',kind:'confirm-domestic-entrants',day:1,order:1,status:'scheduled'},
  {id:'domestic:fixtures',scope:'domestic',kind:'generate-domestic-calendar',day:2,order:1,status:'scheduled'},
@@ -32,4 +32,13 @@ test('rejects missing dependencies and forged or duplicate milestone identities'
  assert.throws(()=>dueAdministrativeMilestones([...milestones,milestones[0]],3));
  assert.throws(()=>rescheduleAdministrativeMilestone(milestones,'absent',4,3,0));
  assert.throws(()=>dueAdministrativeMilestones(milestones,57));
+});
+
+test('proposed new-season milestones mirror approved independently movable day 1/2/3 setup',()=>{
+ const plan=proposeAdministrativeMilestones();
+ assert.deepEqual(plan,milestones);
+ assert.ok(Object.isFrozen(plan));
+ assert.throws(()=>rescheduleAdministrativeMilestone(plan,'international:draw',1,3,0));
+ const changed=rescheduleAdministrativeMilestone(plan,'international:draw',2,2,0);
+ assert.equal(changed[3].day,2);
 });
