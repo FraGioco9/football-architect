@@ -34,6 +34,18 @@ export async function linkExistingAdminOperator(
  return {linked:true,permissions:3};
 }
 
+/** Reconcile migration readiness without granting any permissions. */
+export async function adminOperatorMigrationReadiness(db:Database){
+ const rows=await adminOperatorMigrationInventory(db);
+ const operators=rows.map(row=>({
+  legacyAdminId:row.legacyAdminId,
+  status:row.enabled!==1?'disabled':row.playerAccountId===null?'unlinked':
+   row.playerStatus!=='active'||row.verifiedAt===null?'invalid_player':'linked'
+ }));
+ return {total:operators.length,linked:operators.filter(x=>x.status==='linked').length,
+  blocked:operators.filter(x=>x.status!=='linked'),ready:operators.every(x=>x.status==='linked'||x.status==='disabled')};
+}
+
 /** Read-only inventory for a trusted migration review, never exposed to web clients. */
 export async function adminOperatorMigrationInventory(db:Database){
  const rows=await db.prepare(`SELECT a.id AS legacyAdminId,a.email_normalized AS legacyEmail,
