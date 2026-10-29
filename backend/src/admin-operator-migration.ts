@@ -107,6 +107,43 @@ export async function preflightAdminOperatorMigration(
  return {eligible:true,reason:'eligible'};
 }
 
+/** Read-only cutover plan: require an explicit one-to-one mapping for every enabled
+ * historical Admin. Does not infer IDs from email, award privileges, or change D1.
+ */
+export async function preflightAdminOperatorsBatch(
+ db:Database,selections:ReadonlyArray<{playerAccountId:string;legacyAdminId:string}>
+):Promise<{ready:boolean;totalEnabled:number;approved:number;blockers:Array<{legacyAdminId:string;reason:string}>}>{
+ const valid=(x:unknown)=>typeof x==='string'&&x.length>0&&x.length<=128;
+ if(!Array.isArray(selections)||selections.length===0||selections.length>32)
+  throw new ApiError(422,'invalid_admin_migration');
+ const players=new Set<string>(),operators=new Set<string>();
+ for(const pair of selections){
+  if(!pair||!valid(pair.playerAccountId)||!valid(pair.legacyAdminId)||
+     players.has(pair.playerAccountId)||operators.has(pair.legacyAdminId))
+   throw new ApiError(422,'invalid_admin_migration');
+  players.add(pair.playerAccountId);operators.add(pair.legacyAdminId);
+ }
+ const inventory=await adminOperatorMigrationInventory(db);
+ const enabled=inventory.filter(row=>row.enabled===1);
+ const blockers:Array<{legacyAdminId:string;reason:string}>=[];
+ for(const row of enabled){
+  const selected=selections.find(item=>item.legacyAdminId===row.legacyAdminId);
+  if(!selected){blockers.push({legacyAdminId:row.legacyAdminId,reason:'unmapped_operator'});continue}
+  const result=await preflightAdminOperatorMigration(db,selected);
+  if(!result.eligible)blockers.push({legacyAdminId:row.legacyAdminId,reason:result.reason});
+ }
+ for(const selected of selections){
+  if(!enabled.some(row=>row.legacyAdminId===selected.legacyAdminId))
+   blockers.push({legacyAdminId:selected.legacyAdminId,reason:'operator_not_enabled'});
+ }
+ const orphan=await db.prepare(`SELECT 1 FROM account_permissions p
+  LEFT JOIN player_admin_operator_links l ON l.player_account_id=p.account_id
+  WHERE p.permission IN ('admin.access','admin.world.read','admin.world.write')
+  AND l.player_account_id IS NULL LIMIT 1`).first();
+ if(orphan)blockers.push({legacyAdminId:'',reason:'orphan_admin_grants'});
+ return {ready:blockers.length===0,totalEnabled:enabled.length,approved:selections.length,blockers};
+}
+
 /** Reconcile migration readiness without granting any permissions. */
 export async function adminOperatorMigrationReadiness(db:Database){
  const rows=await adminOperatorMigrationInventory(db);
