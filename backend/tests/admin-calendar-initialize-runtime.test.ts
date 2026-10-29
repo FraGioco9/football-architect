@@ -22,11 +22,11 @@ beforeEach(async()=>{
  world=(await prepareSeason(db,session,{expectedGeneration:world.generation,expectedRevision:world.revision},'initialize-prepare-synthetic-0001',await loadApprovedSnapshot(),now)).world;
 });
 const cmd=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
-it('atomically seeds five ordered milestones without inventing games or draws, and replays',async()=>{
+it('atomically seeds eight ordered milestones without inventing games or draws, and replays',async()=>{
  const c=cmd(),a=await initializeAdministrativeEvents(db,session,c,'initialize-events-synthetic-0001',now);
  expect(a.world.revision).toBe(c.expectedRevision+1);
  expect((await db.prepare('SELECT event_id,scheduled_day,event_order FROM season_admin_events ORDER BY scheduled_day,event_order').all()).results.map((e:any)=>[e.event_id,e.scheduled_day,e.event_order])).toEqual([
- ['domestic:entrants',1,1],['international:entrants',1,2],['domestic:calendar',2,1],['international:draw',3,1],['international:calendar',3,2]]);
+ ['domestic:entrants',1,1],['international:entrants',1,2],['domestic:calendar',2,1],['international:draw',3,1],['international:calendar',3,2],['season:archive',56,9000],['season:close',56,9100],['season:next-prepare',56,9200]]);
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  expect(await initializeAdministrativeEvents(db,session,c,'initialize-events-synthetic-0001',now)).toEqual(a);
@@ -38,7 +38,7 @@ it('refuses to initialize future events over already-published Season 1 fixtures
  expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first()).n).toBe(0);
 });
 it('rolls back all milestones, revision and audit on late failure',async()=>{
- await db.prepare("CREATE TRIGGER event_init_fail BEFORE INSERT ON admin_operations WHEN NEW.command='initialize-admin-events-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
+ await db.prepare("CREATE TRIGGER event_init_fail BEFORE INSERT ON admin_operations WHEN NEW.command='initialize-admin-events-v2' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(initializeAdministrativeEvents(db,session,cmd(),'initialize-fail-synthetic-0001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER event_init_fail').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first()).n).toBe(0);
