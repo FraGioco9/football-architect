@@ -65,7 +65,10 @@ export function rescheduleAdministrativeMilestone(
   !Number.isSafeInteger(order)||order<0||order>9999)invalid();
  const original=events.find(e=>e.id===id);
  if(!original)return invalid();
- if(original.status==='completed'||original.day<=currentDay||day<=currentDay)blocked();
+ if(original.scope==='season'){
+  // All terminal actions are post-sport day-56 ordered milestones, not new days.
+  if(original.status==='completed'||currentDay>56||day!==56||currentDay===56&&day<currentDay||order===original.order)blocked();
+ }else if(original.status==='completed'||original.day<=currentDay||day<=currentDay)blocked();
  const next=events.map(e=>e.id===id?{...e,day,order}:e);
  validate(next);
  return Object.freeze(next.map(e=>Object.freeze(e)));
