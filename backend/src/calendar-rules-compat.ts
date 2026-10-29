@@ -17,10 +17,11 @@ function placements(){
   if(event.marker!=='N'+String(event.round).padStart(2,'0')||!Number.isInteger(event.round)||event.round<1||event.round>33)return fail();
   for(const competitionId of event.competitionIds){
    if(!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(competitionId))return fail();
+   // N33 occurs in the world calendar but only second-tier finals use that slot.
+   if(event.round===33&&competitionId.endsWith('-1'))continue;
    const kind=event.round<=30?'league':competitionId.endsWith('-1')?'playout':'promotionPlayoffs';
    const key=competitionId+':'+kind;
    const markers=placements.get(key)??[];
-   if(event.round===33&&competitionId.endsWith('-1'))return fail();
    markers.push(event.marker);
    placements.set(key,markers);
   }
