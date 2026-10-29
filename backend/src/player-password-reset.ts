@@ -1,3 +1,4 @@
+import {abortUnless} from './atomic-guard.ts';
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {parseOperatorEmail} from './email-identity.ts';
@@ -51,6 +52,7 @@ export async function completePasswordReset(db:Database,body:unknown,now:number)
  const verifier=await hashPassword(data.newPassword as string);
  try{
   const changes=await db.batch([
+   abortUnless(db,"SELECT 1 FROM player_one_time_tokens t JOIN player_accounts a ON a.id=t.account_id WHERE t.token_digest=? AND t.purpose='reset_password' AND t.consumed_at IS NULL AND t.expires_at>? AND a.status='active' AND a.email_verified_at IS NOT NULL",[digest,now]),
    db.prepare(`UPDATE player_one_time_tokens SET consumed_at=? WHERE token_digest=? AND purpose='reset_password'
    AND consumed_at IS NULL AND expires_at>? AND EXISTS(SELECT 1 FROM player_accounts WHERE id=player_one_time_tokens.account_id AND status='active')`).bind(now,digest,now),
    db.prepare(`UPDATE player_accounts SET password_verifier=?,credential_version=credential_version+1,updated_at=?
@@ -59,7 +61,7 @@ export async function completePasswordReset(db:Database,body:unknown,now:number)
    db.prepare("DELETE FROM player_sessions WHERE account_id=?").bind(row.account_id),
    db.prepare("DELETE FROM player_one_time_tokens WHERE account_id=? AND purpose='reset_password' AND token_digest<>?").bind(row.account_id,digest)
   ]);
-  if(changes[0].meta.changes!==1||changes[1].meta.changes!==1)throw Error('reset_race');
+  if(changes[1].meta.changes!==1||changes[2].meta.changes!==1)throw Error('reset_race');
  }catch{throw invalid()}
  return {reset:true,sessionsRevoked:true};
 }
