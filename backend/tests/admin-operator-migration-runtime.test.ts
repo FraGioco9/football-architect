@@ -1,7 +1,7 @@
 import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
-import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration} from '../src/admin-operator-migration.ts';
+import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration,migrateAdminOperatorsBatch} from '../src/admin-operator-migration.ts';
 import {hashPassword} from '../src/passwords.ts';
 import {playerLogin} from '../src/player-auth.ts';
 const binding=env as any,db=binding.DB;
@@ -23,6 +23,39 @@ beforeEach(async()=>{
   .bind('migration-player',email,verifier,1,now()-100,'active',now()-100,now()-100).run();
 });
 describe('Trusted operator migration and rollback on disposable D1',()=>{
+ it('migrates two explicitly mapped operators atomically and rejects a partial second mapping',async()=>{
+  const insert=async()=>{
+   await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+    .bind('migration-second-legacy','second-migration@example.invalid','historical-only',now()).run();
+   await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+    .bind('migration-second','second-migration@example.invalid',verifier,1,now()-100,'active',now()-100,now()-100).run();
+  };
+  await insert();
+  const mappings=[{playerAccountId:'migration-player',legacyAdminId:'migration-legacy'},
+   {playerAccountId:'migration-second',legacyAdminId:'migration-second-legacy'}];
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('mismatch@example.invalid','migration-second').run();
+  await expect(migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now())).rejects.toBeDefined();
+  const none=await db.prepare('SELECT COUNT(*) AS n FROM player_admin_operator_links WHERE player_account_id IN (?,?)')
+   .bind('migration-player','migration-second').first<{n:number}>();
+  expect(none?.n).toBe(0);
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('second-migration@example.invalid','migration-second').run();
+  expect(await migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now()))
+   .toEqual({linked:2,permissionsGranted:6});
+  const grants=await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id IN (?,?)')
+   .bind('migration-player','migration-second').first<{n:number}>();
+  expect(grants?.n).toBe(6);
+  await expect(migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now())).rejects.toBeDefined();
+ });
+ it('rejects duplicate operator and Player identities before any migration writes',async()=>{
+  await expect(migrateAdminOperatorsBatch(db,[
+   {playerAccountId:'migration-player',legacyAdminId:'migration-legacy'},
+   {playerAccountId:'migration-player',legacyAdminId:'migration-second-legacy'}
+  ],'trusted-local-operator',now())).rejects.toMatchObject({status:422});
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?')
+   .bind('migration-player').first()).toBeNull();
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
