@@ -1,11 +1,11 @@
 /** Real Season1 initial fixtures. No DEV imports, results or future qualifiers. */
 import {canonicalHash,requireApprovedSnapshot,type ApprovedSnapshot} from './catalogue-snapshot.ts';
-import {buildSeasonOneCalendarEvidence} from './season-calendar-evidence.ts';
+import {buildSeasonCalendarEvidence} from './season-calendar-evidence.ts';
 import {ApiError} from './errors.ts';
 import {qualificationPots} from './season-qualification-pots.ts';
 export interface Fixture {id:string;competitionId:string;marker:string;day:number;round:number;homeClubId:string;awayClubId:string}
 export interface InitialSchedule {
- schemaVersion:1;season:1;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;
+ schemaVersion:1;season:number;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;
  participantsHash:string;rulesHash:string;calendarHash:string;fixtures:Fixture[];
  pendingPhases:{competitionId:string;reason:'sporting-results-required'}[];
 }
@@ -20,16 +20,17 @@ async function shuffle<T>(input:readonly T[],seed:string):Promise<T[]>{
   const j=n%range;[result[i],result[j]]=[result[j],result[i]];
  }return result;
 }
-async function generate(snapshot:ApprovedSnapshot,seed:string):Promise<InitialSchedule>{
+async function generate(snapshot:ApprovedSnapshot,seed:string,season=1):Promise<InitialSchedule>{
  const trusted=requireApprovedSnapshot(snapshot);
+ if(season!==1)return fail(); // A future season requires its own approved trusted snapshot loader.
  if(typeof seed!=='string'||!/^[A-Za-z0-9._:-]{16,256}$/.test(seed))return fail();
- const calendar=await buildSeasonOneCalendarEvidence();
+ const calendar=await buildSeasonCalendarEvidence(season);
  const days=JSON.parse(calendar.calendarJson).days as {day:number;events:{marker:string}[]}[];
  const dayFor=new Map(days.flatMap(d=>d.events.map(e=>[e.marker,d.day] as const)));
  const fixtures:Fixture[]=[];
  const add=(competitionId:string,round:number,homeClubId:string,awayClubId:string,cup=false)=>{
   const marker=(cup?'I':'N')+String(round).padStart(2,'0'),day=dayFor.get(marker);if(!day)return fail();
-  fixtures.push({id:`season:1:${competitionId}:${marker}:${homeClubId}:${awayClubId}`,competitionId,marker,day,round,homeClubId,awayClubId});
+  fixtures.push({id:`season:${season}:${competitionId}:${marker}:${homeClubId}:${awayClubId}`,competitionId,marker,day,round,homeClubId,awayClubId});
  };
  for(const binding of trusted.bindings){
   const id=binding.competitionId;
@@ -61,7 +62,7 @@ async function generate(snapshot:ApprovedSnapshot,seed:string):Promise<InitialSc
   }
  }
  fixtures.sort((a,b)=>a.day-b.day||a.marker.localeCompare(b.marker,'en')||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
- return {schemaVersion:1,season:1,scope:'initial-leagues',algorithmVersion:'initial-leagues-v1',seed,
+ return {schemaVersion:1,season,scope:'initial-leagues',algorithmVersion:'initial-leagues-v1',seed,
   participantsHash:trusted.participantsHash,rulesHash:trusted.rulesHash,calendarHash:calendar.calendarHash,fixtures,
   pendingPhases:trusted.bindings.map(b=>({competitionId:b.competitionId,reason:'sporting-results-required'}))};
 }
