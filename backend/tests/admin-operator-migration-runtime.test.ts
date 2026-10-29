@@ -225,6 +225,27 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   await expect(authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.read'))
    .rejects.toMatchObject({status:403});
  });
+ it('requires both Admin access and the requested capability in one authorization snapshot',async()=>{
+  const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'")
+   .bind('migration-player').run();
+  expect((await authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read')).legacyOperatorId)
+   .toBe('migration-legacy');
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.write',signed.csrfToken))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.access'")
+   .bind('migration-player').run();
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+  await db.prepare("INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)")
+   .bind('migration-player','admin.access',now(),'trusted-local-operator').run();
+  await db.prepare('UPDATE admin_accounts SET email_normalized=? WHERE id=?')
+   .bind('changed-identity@example.invalid','migration-legacy').run();
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
