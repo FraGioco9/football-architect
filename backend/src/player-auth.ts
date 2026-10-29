@@ -37,7 +37,7 @@ export async function playerLogin(db:Database,input:unknown,source:string,now:nu
  const good=await verifyPassword(obj.password as string,account?.status==='active'&&account.email_verified_at?account.password_verifier:DUMMY);
  if(!good||!account||account.status!=='active'||!account.email_verified_at)throw invalid();
  const token=createOpaqueToken(),digest=await digestOpaqueToken(token);
- const csrfToken=createOpaqueToken(),csrfDigest=await digestOpaqueToken(csrfToken);
+ const csrfToken=await hashText('fa-player-csrf-v1:'+token),csrfDigest=await digestOpaqueToken(csrfToken);
  let previousDigest='';try{if(previous)previousDigest=await digestOpaqueToken(previous)}catch{/* malformed cookie ignored */}
  const result=await db.batch([
   db.prepare(`INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at)
@@ -67,3 +67,5 @@ export async function playerRequireCsrf(digest:string,token:string|null){
  let actual='';try{actual=await digestOpaqueToken(token??'')}catch{throw new ApiError(403,'csrf_forbidden')}
  if(actual!==digest)throw new ApiError(403,'csrf_forbidden');
 }
+
+export const playerCsrfFor=async(token:string)=>hashText('fa-player-csrf-v1:'+token);
