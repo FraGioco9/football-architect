@@ -33,20 +33,20 @@ beforeAll(async()=>{
 beforeEach(async()=>{await restoreTestWorld(db,baseline);world=await readWorld(db)});
 it('rejects close without archive and preserves the sporting world',async()=>{
  const before=world;
- await expect(closeSeason(db,session,input(),'no-archive',now)).rejects.toMatchObject({status:409});
+ await expect(closeSeason(db,session,input(),'admin-end-season-no-archive-0001',now)).rejects.toMatchObject({status:409});
  expect(await readWorld(db)).toEqual(before);
  expect(await count('season_archives')).toBe(0);
 });
 it('archives exactly once without closure, then closes with durable receipts and immutable History',async()=>{
- const original=input(),archive=await archiveSeason(db,session,original,'archive-once',now);world=archive.world;
+ const original=input(),archive=await archiveSeason(db,session,original,'admin-end-season-archive-once-0001',now);world=archive.world;
  expect(world.phase).toBe('active');
- expect(await archiveSeason(db,session,original,'archive-once',now)).toEqual(archive);
+ expect(await archiveSeason(db,session,original,'admin-end-season-archive-once-0001',now)).toEqual(archive);
  expect(await count('season_archives')).toBe(1);
  expect(await count('season_archive_summaries')).toBe(1);
  await expect(readClosedSeasonHistory(db,1)).rejects.toMatchObject({status:409});
- const prev=input(),closed=await closeSeason(db,session,prev,'close-once',now);world=closed.world;
+ const prev=input(),closed=await closeSeason(db,session,prev,'admin-end-season-close-once-0001',now);world=closed.world;
  expect(world.phase).toBe('closed');
- expect(await closeSeason(db,session,prev,'close-once',now)).toEqual(closed);
+ expect(await closeSeason(db,session,prev,'admin-end-season-close-once-0001',now)).toEqual(closed);
  expect((await receipts()).results.map((e:any)=>e.status)).toEqual(['completed','completed','scheduled']);
  const history=await readClosedSeasonHistory(db,1);
  expect(history.archiveHash).toMatch(/^[a-f0-9]{64}$/);
@@ -55,7 +55,7 @@ it('archives exactly once without closure, then closes with durable receipts and
 it('rolls back archive receipt, summary, world revision and audit on a late transaction error',async()=>{
  const before=await readWorld(db);
  await db.prepare("CREATE TRIGGER archive_late_failure BEFORE INSERT ON admin_operations WHEN NEW.command='archive-season-v2' BEGIN SELECT RAISE(ABORT,'late audit failure'); END").run();
- try{await expect(archiveSeason(db,session,input(),'archive-rollback',now)).rejects.toMatchObject({status:503})}
+ try{await expect(archiveSeason(db,session,input(),'admin-end-season-archive-rollback-0001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER archive_late_failure').run()}
  expect(await readWorld(db)).toEqual(before);
  expect(await count('season_archives')).toBe(0);
@@ -64,7 +64,7 @@ it('rolls back archive receipt, summary, world revision and audit on a late tran
 });
 it('rejects concurrent competing archive writes without duplicate sporting archives',async()=>{
  const command=input();
- const outcomes=await Promise.allSettled([archiveSeason(db,session,command,'race-a',now),archiveSeason(db,session,command,'race-b',now)]);
+ const outcomes=await Promise.allSettled([archiveSeason(db,session,command,'admin-end-season-race-a-0001',now),archiveSeason(db,session,command,'admin-end-season-race-b-0001',now)]);
  expect(outcomes.filter(x=>x.status==='fulfilled')).toHaveLength(1);
  expect(await count('season_archives')).toBe(1);
  expect(await count('season_archive_summaries')).toBe(1);
