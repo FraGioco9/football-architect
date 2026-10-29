@@ -91,12 +91,21 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    if(!expected||tie.generation!==world.generation||tie.plan_hash!==await canonicalHash(expected)||await canonicalHash(JSON.parse(tie.plan_json))!==tie.plan_hash)invalid();
   }
   const archive=await db.prepare(`SELECT * FROM season_archives WHERE season_number=${selectedSeason}`).first<Archive>();
+  // An archive may be sealed while its season is still active on day 56.
+  // History becomes public only after the separate close event receipt.
+  if(archive&&viewedWorld.phase!=='closed'&&viewedWorld.day!==56)invalid();
   if(viewedWorld.phase==='closed'){
    if(!archive||viewedWorld.day!==56||archive.generation!==world.generation||archive.calendar_hash!==evidence.calendar.calendar_hash||archive.days_count!==56||archive.results_count!==4082||archive.ties_count!==54||storedResults.size!==4082||ties.length!==54||!Number.isSafeInteger(archive.created_at)||archive.created_at<=0)invalid();
    const resultsHash=await canonicalHash(receipts.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
    const archiveHash=await canonicalHash({schemaVersion:1,season:selectedSeason,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:4082,daysCount:56,tiesCount:54});
    if(archive.results_hash!==resultsHash||archive.knockout_hash!==knockoutHash||archive.archive_hash!==archiveHash)invalid();
-  }else if(archive)invalid();
+   const summary=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(selectedSeason).first<{generation:string;archive_hash:string;summary_hash:string;summary_json:string}>();
+   const closure=await db.prepare("SELECT receipt_hash,status FROM season_admin_events WHERE season_number=? AND event_id='season:close' AND kind='close-season'").bind(selectedSeason).first<{receipt_hash:string|null;status:string}>();
+   if(!summary||summary.generation!==world.generation||summary.archive_hash!==archiveHash||!closure||closure.status!=='completed'||closure.receipt_hash!==archiveHash)invalid();
+   if(await canonicalHash(JSON.parse(summary.summary_json))!==summary.summary_hash)invalid();
+  }else if(archive){
+   if(viewedWorld.day!==56||archive.generation!==world.generation)invalid();
+  }
   if(competitionId==='world'){
    const plans=[...state.ties.values()];
    const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))].filter(f=>f.day===calendarDay);
@@ -123,7 +132,7 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
    fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
-   history:archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
+   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);
   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};

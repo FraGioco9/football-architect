@@ -7,6 +7,8 @@ import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
+import {archiveSeason} from '../src/season-archive-command.ts';
+import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
 import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {prepareSeasonTwo} from '../src/season-two-prepare-command.ts';
@@ -18,6 +20,7 @@ let baseline:Awaited<ReturnType<typeof captureTestWorld>>;
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const count=async(table:string,season=2)=>(await db.prepare(`SELECT count(*) n FROM ${table} WHERE season_number=?`).bind(season).first()).n;
+async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);
  session={actor:{id:'two-persistence',email:'two-persistence@example.invalid'},digest:await hashText('two-persistence-session'),credentialVersion:1,csrfDigest:await hashText('two-persistence-csrf')};
@@ -28,6 +31,8 @@ beforeAll(async()=>{
  world=(await generateSeasonCalendar(db,session,meta(),'two-baseline-calendar',now)).world;
  world=(await executeLifecycle(db,session,'start',meta(),'two-baseline-start',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'two-baseline-day-'+(world.day+1),now)).world;
+ await enrollTerminalEvents(world.seasonNumber);
+ world=(await archiveSeason(db,session,meta(),'two-baseline-close-archive',now)).world;
  world=(await closeSeason(db,session,meta(),'two-baseline-close',now)).world;
  baseline=await captureTestWorld(db);
 },120000);
@@ -50,6 +55,8 @@ it('persists the full Season1→2 transition, all56 Season2 receipts and a separ
  expect(JSON.parse((await db.prepare('SELECT calendar_json FROM season_calendars WHERE season_number=2').first()).calendar_json).fixtures.every((f:any)=>f.id.startsWith('season:2:'))).toBe(true);
  world=(await executeLifecycle(db,session,'start',meta(),'two-start-once-command',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'two-day-'+(world.day+1)+'-command',now)).world;
+ await enrollTerminalEvents(world.seasonNumber);
+ world=(await archiveSeason(db,session,meta(),'two-close-once-command-archive',now)).world;
  world=(await closeSeason(db,session,meta(),'two-close-once-command',now)).world;
  expect(world).toMatchObject({seasonNumber:2,day:56,phase:'closed'});
  expect(await count('season_day_outcomes')).toBe(56);expect(await count('season_knockout_ties')).toBe(54);
@@ -61,7 +68,7 @@ it('persists the full Season1→2 transition, all56 Season2 receipts and a separ
 },180000);
 it('rolls back the new snapshot/world/audit after a late prepare audit failure',async()=>{
  await approve();const before=world;
- await db.prepare("CREATE TRIGGER fail_next_prepare BEFORE INSERT ON admin_operations WHEN NEW.command='prepare-season-two-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
+ await db.prepare("CREATE TRIGGER fail_next_prepare BEFORE INSERT ON admin_operations WHEN NEW.command='prepare-season-two-v2' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(prepareSeasonTwo(db,session,meta(),'two-failed-prepare',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_next_prepare').run()}
  expect(await readWorld(db)).toEqual(before);expect(await count('seasons')).toBe(0);

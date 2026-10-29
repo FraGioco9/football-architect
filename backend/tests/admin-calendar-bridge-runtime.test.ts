@@ -11,6 +11,7 @@ import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {publishInternationalCalendar} from '../src/admin-calendar-publish.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
+import {archiveSeason} from '../src/season-archive-command.ts';
 import {readSeasonArchives} from '../src/season-archive-read.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {handleAdmin} from '../src/http-admin.ts';
@@ -106,6 +107,7 @@ it('closes and archives exactly one fully verified season and replays the same c
  world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
+ world=(await archiveSeason(db,session,meta(),'bridge-archive-once-00001',now)).world;
  const command=meta(),saved=await closeSeason(db,session,command,'bridge-close-once-00001',now);
  expect(saved.world).toMatchObject({day:56,phase:'closed'});
  expect((await db.prepare('SELECT count(*) n FROM season_archives').first()).n).toBe(1);

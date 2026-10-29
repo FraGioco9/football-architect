@@ -28,12 +28,15 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
  const authority=await loadSeasonSnapshotAuthority(db,world);
  const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<EventRow>()).results;
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
- if(command.day>12)throw new ApiError(409,'calendar_event_prerequisites');
+ const terminal=command.eventId.startsWith('season:');
+ if(terminal){
+  if(!['season:archive','season:close','season:next-prepare'].includes(command.eventId)||command.day!==56||world.day>56||world.phase!=='active'&&world.phase!=='preparing')throw new ApiError(409,'calendar_event_prerequisites');
+ }else if(command.day>12)throw new ApiError(409,'calendar_event_prerequisites');
  // A published sporting calendar or finalized results forbids retroactive moves,
  // even if an event row were unexpectedly left in scheduled status.
  const published=await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first();
  const finalized=await db.prepare('SELECT day FROM season_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first();
- if(published||finalized)throw new ApiError(409,'calendar_event_prerequisites');
+ if(!terminal&&(published||finalized))throw new ApiError(409,'calendar_event_prerequisites');
  const moved=rescheduleAdministrativeMilestone(events,command.eventId,command.day,command.order,world.day);
  const old=events.find(e=>e.id===command.eventId)!,next=moved.find(e=>e.id===command.eventId)!;
  const result:Outcome={operationId:crypto.randomUUID(),world:{...world,revision:world.revision+1}};
@@ -44,8 +47,10 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM season_admin_events WHERE season_number=?)=?',[world.seasonNumber,rows.length]),
    ...rows.map(r=>abortUnless(db,'SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id=? AND kind=? AND scope=? AND scheduled_day=? AND event_order=? AND status=?',[world.seasonNumber,r.event_id,r.kind,r.scope,r.scheduled_day,r.event_order,r.status])),
-   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
-   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=?)=0',[world.seasonNumber]),
+   ...(terminal?[]:[
+    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
+    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=?)=0',[world.seasonNumber]),
+   ]),
    db.prepare("UPDATE season_admin_events SET scheduled_day=?,event_order=? WHERE season_number=? AND event_id=? AND scheduled_day=? AND event_order=? AND status='scheduled'").bind(next.day,next.order,world.seasonNumber,old.id,old.day,old.order),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(result.operationId,world.generation,key,requestHash,session.actor.id,'reschedule-admin-event-v1',world.revision,result.world.revision,JSON.stringify(result),now),

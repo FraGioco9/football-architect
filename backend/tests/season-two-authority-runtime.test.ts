@@ -5,6 +5,8 @@ import {prepareSeason} from '../src/commands.ts';
 import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
+import {archiveSeason} from '../src/season-archive-command.ts';
+import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {loadApprovedSeasonTwoAuthority,buildApprovedSeasonTwoInitialSchedule} from '../src/season-two-initial-schedule.ts';
@@ -23,6 +25,8 @@ it('loads only durable approved Season2 authority and leaves the actual world cl
  world=(await generateSeasonCalendar(db,session,meta(),'next-engine-calendar-0001',now)).world;
  world=(await executeLifecycle(db,session,'start',meta(),'next-engine-start-0001',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'next-engine-day-'+(world.day+1),now)).world;
+ for(const event of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(world.seasonNumber,event.id,event.kind,event.scope,event.day,event.order,now).run();
+ world=(await archiveSeason(db,session,meta(),'next-engine-archive-0001',now)).world;
  world=(await closeSeason(db,session,meta(),'next-engine-close-0001',now)).world;
  await expect(loadApprovedSeasonTwoAuthority(db)).rejects.toMatchObject({status:422});
  const review=await readSeasonTwoCandidate(db);

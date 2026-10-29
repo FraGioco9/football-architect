@@ -226,6 +226,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <button type="button" data-admin-refresh data-admin-copy="refresh">Refresh</button>
  <p data-admin-next-event role="status" aria-live="polite"></p>
  <p data-admin-closure role="status" aria-live="polite"></p>
+ <p data-admin-copy="endSeasonFlow">Archive → Close → Prepare next season</p>
  <div data-admin-operations role="group" aria-labelledby="admin-heading">
  <button type="button" data-admin-command="nextPrepare" data-admin-copy="cmdnextPrepare" disabled>Prepare Season 2</button>
  <button type="button" data-admin-command="initialize" data-admin-copy="cmdinitialize" disabled>Initialize events</button>
@@ -235,6 +236,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <button type="button" data-admin-command="publish" data-admin-copy="cmdpublish" disabled>Publish international calendar</button>
  <button type="button" data-admin-command="start" data-admin-copy="cmdstart" disabled>Start season</button>
  <button type="button" data-admin-command="advance" data-admin-copy="cmdadvance" disabled>Advance day</button>
+ <button type="button" data-admin-command="archive" data-admin-copy="cmdarchive" disabled>Archive season</button>
  <button type="button" data-admin-command="close" data-admin-copy="cmdclose" disabled>Close season</button>
  <button type="button" data-admin-command="legacy" data-admin-copy="cmdlegacy" disabled>Generate season calendar</button>
  <button type="button" data-admin-command="eventStart" data-admin-copy="cmdeventStart" disabled>Start event calendar</button>
@@ -244,8 +246,8 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <h3 id="admin-reschedule-heading" data-admin-copy="reschedule0">Move future event</h3>
  <label for="admin-event-select" data-admin-copy="reschedule1">Scheduled milestone</label>
  <select id="admin-event-select" data-admin-event-select></select>
- <label for="admin-event-day" data-admin-copy="reschedule2">Day (1–12)</label>
- <input id="admin-event-day" data-admin-event-day type="number" min="1" max="12" step="1">
+ <label for="admin-event-day" data-admin-copy="reschedule2">Day (1–56)</label>
+ <input id="admin-event-day" data-admin-event-day type="number" min="1" max="56" step="1">
  <label for="admin-event-order" data-admin-copy="reschedule3">Order (0–9999)</label>
  <input id="admin-event-order" data-admin-event-order type="number" min="0" max="9999" step="1">
  <button type="button" data-admin-event-reschedule data-admin-copy="reschedule4" disabled>Save event placement</button>

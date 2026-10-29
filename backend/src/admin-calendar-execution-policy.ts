@@ -4,7 +4,7 @@
  * this policy must never mark them complete without such an outcome.
  */
 import {ApiError} from './errors.ts';
-import {dueAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,type AdministrativeMilestone,type MilestoneKind} from './admin-calendar-policy.ts';
 export type AdminEventAction='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar';
 export type EventExecution=Readonly<{event:AdministrativeMilestone;requiresArtifact:boolean}>;
 const dependencies:Record<AdminEventAction,readonly AdminEventAction[]>={
@@ -14,6 +14,7 @@ const dependencies:Record<AdminEventAction,readonly AdminEventAction[]>={
  'draw-international':['confirm-international-entrants'],
  'generate-international-calendar':['draw-international'],
 };
+const isExecutable=(kind:MilestoneKind):kind is AdminEventAction=>Object.prototype.hasOwnProperty.call(dependencies,kind);
 export function planDueAdministrativeEvents(events:readonly AdministrativeMilestone[],day:number,previousDay:number):readonly EventExecution[]{
  if(!Number.isSafeInteger(previousDay)||previousDay<0||previousDay>=day)
   throw new ApiError(422,'invalid_calendar_event');
@@ -23,6 +24,8 @@ export function planDueAdministrativeEvents(events:readonly AdministrativeMilest
  const completed=new Set(events.filter(e=>e.status==='completed').map(e=>e.scope+':'+e.kind));
  const plan:EventExecution[]=[];
  for(const event of due){
+  // Terminal milestones require their own audited D1 executors; fail closed until wired.
+  if(!isExecutable(event.kind))throw new ApiError(409,'calendar_event_prerequisites');
   if(dependencies[event.kind].some(kind=>!completed.has(event.scope+':'+kind)))
    throw new ApiError(409,'calendar_event_prerequisites');
   const requiresArtifact=!event.kind.startsWith('confirm-');

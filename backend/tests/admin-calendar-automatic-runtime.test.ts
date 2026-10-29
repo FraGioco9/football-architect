@@ -48,7 +48,7 @@ it('atomically completes current-day events, then hands off to ordinary sporting
  expect(JSON.parse((await db.prepare('SELECT calendar_json FROM season_calendars').first()).calendar_json).fixtures).toHaveLength(3984);
  const projection=await readAdministrativeCalendar(db);
  expect(projection.mode).toBe('sporting');
- expect(projection.events.every(e=>e.hasReceipt&&e.status==='completed')).toBe(true);
+ expect(projection.events.filter(e=>e.scope!=='season').every(e=>e.hasReceipt&&e.status==='completed')).toBe(true);
  const receipts=(await db.prepare('SELECT day,outcome_json,outcome_hash FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts.map((r:{day:number})=>r.day)).toEqual([1,2,3,4]);
  for(const r of receipts)expect(r.outcome_hash).toBe(await canonicalHash(JSON.parse(r.outcome_json)));

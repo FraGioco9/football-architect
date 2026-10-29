@@ -224,14 +224,20 @@ test('sporting day advancement becomes available only after administrative calen
  assert.equal(canRunCommand('advance',active,{...events,worldRevision:8}),false);
 });
 
-test('closure control requires authoritative completed day56 sporting evidence',()=>{
+test('terminal controls require the sealed archive receipt and ordered next event',()=>{
  const ended={...world,seasonNumber:1,phase:'active',day:56,revision:67};
- const projection={mode:'sporting',worldGeneration:ended.generation,worldRevision:ended.revision,rows:[],closure:{days:56,ties:54,archived:false,ready:true}};
- assert.equal(canRunCommand('close',ended,projection),true);
- assert.equal(canRunCommand('advance',ended,projection),false);
- assert.equal(canRunCommand('close',ended,{...projection,closure:{...projection.closure,ready:false}}),false);
- assert.equal(canRunCommand('close',ended,{...projection,worldRevision:66}),false);
- assert.equal(canRunCommand('close',{...ended,day:55},projection),false);
+ const archive={id:'season:archive',kind:'archive-season',status:'scheduled',day:56,order:9000};
+ const close={id:'season:close',kind:'close-season',status:'scheduled',day:56,order:9100};
+ const next={id:'season:next-prepare',kind:'prepare-next-season',status:'scheduled',day:56,order:9200};
+ const projection={mode:'sporting',worldGeneration:ended.generation,worldRevision:ended.revision,rows:[archive,close,next],closure:{days:56,ties:54,archived:false,ready:true}};
+ assert.equal(canRunCommand('archive',ended,projection),true);
+ assert.equal(canRunCommand('close',ended,projection),false);
+ const sealed={...projection,rows:[{...archive,status:'completed'},close,next],closure:{...projection.closure,archived:true,ready:false}};
+ assert.equal(canRunCommand('close',ended,sealed),true);
+ assert.equal(canRunCommand('advance',ended,sealed),false);
+ assert.equal(canRunCommand('close',ended,{...sealed,rows:[archive,close,next]}),false);
+ assert.equal(canRunCommand('close',ended,{...sealed,worldRevision:66}),false);
+ assert.equal(canRunCommand('close',{...ended,day:55},sealed),false);
 });
 
 test('closed Season 1 exposes review-only candidate and never invents activation authority',async()=>{
@@ -298,8 +304,10 @@ test('controller fails closed on stale event reads and never submits an unavaila
 test('sporting closure readiness survives the authenticated calendar projection',async()=>{
  const closedDay={...world,seasonNumber:1,phase:'active',day:56,revision:60};
  const closure={days:56,ties:54,archived:false,ready:true};
- const c=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:closedDay}:{world:closedDay,mode:'sporting',events:[],closure},()=>{});
+ const events=[{id:'season:archive',kind:'archive-season',status:'scheduled',day:56,order:9000}];
+ const c=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:closedDay}:{world:closedDay,mode:'sporting',events,closure},()=>{});
  await c.refresh();
  assert.deepEqual(c.state().events.closure,closure);
- assert.equal(canRunCommand('close',closedDay,c.state().events),true);
+ assert.equal(canRunCommand('archive',closedDay,c.state().events),true);
+ assert.equal(canRunCommand('close',closedDay,c.state().events),false);
 });
