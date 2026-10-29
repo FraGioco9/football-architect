@@ -196,6 +196,14 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect(unrelatedCsrf.status).toBe(403);
   expect((await request('/api/player/session',undefined,{Cookie:sessionCookie})).status).toBe(200);
  });
+ it('rejects a legacy Admin idempotent replay without consulting historic session state',async()=>{
+  const {replay}=await import('../src/command-guards.ts');
+  const legacy={actor:{id:'old-admin',email:'old@example.invalid'},
+   digest:'0'.repeat(64),csrfDigest:'1'.repeat(64),credentialVersion:1};
+  await expect(replay(db,legacy,{expectedGeneration:'unused'} as any,
+   'legacy-replay-key','legacy-request-hash',Math.floor(Date.now()/1000)))
+   .rejects.toMatchObject({status:403,code:'legacy_admin_session_retired'});
+ });
  it('rejects legacy Admin credentials at the shared mutation guard',async()=>{
   const {sessionGuard}=await import('../src/command-guards.ts');
   const legacy={actor:{id:'old-admin',email:'old@example.invalid'},
