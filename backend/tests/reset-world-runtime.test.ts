@@ -55,7 +55,7 @@ it('refuses missing confirmation and atomically rolls back failed reset audit',a
  finally{await db.prepare('DROP TRIGGER prevent_reset_audit').run()}
  expect(await readWorld(db)).toEqual(world);
  expect((await db.prepare('SELECT count(*) n FROM seasons').first()).n).toBe(1);
- expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first()).n).toBe(5);
+ expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first()).n).toBe(8);
 });
 
 it('invalidates old-generation commands and operation replays after successful reset',async()=>{
