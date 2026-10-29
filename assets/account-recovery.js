@@ -10,6 +10,8 @@ const copy={
 const t=copy[locale]||copy.en;document.documentElement.lang=copy[locale]?locale:'en';
 for(const [id,n] of [['heading',0],['email-label',1],['request-button',2],['password-label',3],['complete-button',4],['signin-link',5]])document.getElementById(id).textContent=t[n];
 const url=new URL(location.href),token=url.searchParams.get('token'),valid=!!token&&/^[a-f0-9]{64}$/.test(token);
+// Remove the one-time secret immediately, even when the link is malformed.
+history.replaceState(null,'',location.pathname);
 const ask=document.getElementById('request-form'),finish=document.getElementById('complete-form'),message=document.getElementById('message');
 finish.hidden=!valid;ask.hidden=valid;
 const post=async(path,payload)=>{const res=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});return res;};
@@ -20,6 +22,6 @@ ask.addEventListener('submit',async event=>{event.preventDefault();const button=
 }catch{message.textContent=t[9]}finally{button.disabled=false;}});
 finish.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('complete-button');button.disabled=true;message.textContent=t[11];try{
  const res=await post('/api/player/password-reset/complete',{token,newPassword:String(new FormData(finish).get('newPassword')||'')});
- if(res.ok){message.textContent=t[7];finish.hidden=true;history.replaceState(null,'',location.pathname);}else showError(res);
+ if(res.ok){message.textContent=t[7];finish.reset();finish.hidden=true;}else showError(res);
 }catch{message.textContent=t[9]}finally{button.disabled=false;}});
 })();
