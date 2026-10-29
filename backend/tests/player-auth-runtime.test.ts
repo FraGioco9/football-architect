@@ -196,6 +196,13 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect(unrelatedCsrf.status).toBe(403);
   expect((await request('/api/player/session',undefined,{Cookie:sessionCookie})).status).toBe(200);
  });
+ it('rejects legacy Admin credentials at the shared mutation guard',async()=>{
+  const {sessionGuard}=await import('../src/command-guards.ts');
+  const legacy={actor:{id:'old-admin',email:'old@example.invalid'},
+   digest:'0'.repeat(64),csrfDigest:'1'.repeat(64),credentialVersion:1};
+  await expect(db.batch([sessionGuard(db,legacy,Math.floor(Date.now()/1000))]))
+   .rejects.toMatchObject({status:403,code:'legacy_admin_session_retired'});
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
