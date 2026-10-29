@@ -17,12 +17,13 @@ import {stageDomesticCalendar} from './admin-domestic-stage.ts';
 import {executeInternationalDraw} from './admin-international-draw.ts';
 import {publishInternationalCalendar} from './admin-calendar-publish.ts';
 import {closeSeason} from './season-close-command.ts';
+import {resetWorld} from './reset-world-command.ts';
 import {readSeasonArchives} from './season-archive-read.ts';
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
-const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/close','POST']]);
+const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
 function readCookie(request:Request,name:string){
  const values=(request.headers.get('Cookie')??'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));
  if(values.length>1)throw new ApiError(401,'unauthorized');
@@ -83,6 +84,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/events')return json(200,await readAdministrativeCalendar(db));
   await requireCsrf(session,request.headers.get('X-CSRF-Token'));
   const rawCommand=await input(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
+  if(path==='/api/admin/world/reset')return json(200,await resetWorld(db,session,rawCommand as Parameters<typeof resetWorld>[2],key,now));
   if(path==='/api/admin/seasons/close')return json(200,await closeSeason(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/initialize')return json(200,await initializeAdministrativeEvents(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/start'||path==='/api/admin/seasons/events/advance')return json(200,await advanceAdministrativeClock(db,session,path.endsWith('/start')?'start':'advance',parsePrepareRequest(rawCommand),key,now));
