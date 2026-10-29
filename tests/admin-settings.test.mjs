@@ -119,3 +119,29 @@ test('settings markup includes accessible authoritative operation and backend er
  assert.match(html,/data-admin-error-code/);
  assert.match(html,/aria-live="polite"/);
 });
+
+test('operational command is single-flight, revision-bound and cannot run signed out',async()=>{
+ const preparing={...world,phase:'preparing',seasonNumber:1,revision:1};
+ const result={...preparing,revision:2};
+ const pending=deferred();let calls=0;
+ const c=createAdminController(async(path,opts)=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world:preparing};
+  if(path.endsWith('/events/initialize')){calls++;assert.deepEqual(opts.body,{expectedGeneration:preparing.generation,expectedRevision:1});assert.equal(opts.headers['X-CSRF-Token'],session.csrfToken);return pending.promise}
+  throw Error(path);
+ },()=>{});
+ await c.command('initialize');assert.equal(calls,0);
+ await c.refresh();
+ const run=c.command('initialize');await c.command('initialize');assert.equal(calls,1);
+ assert.equal(c.state().operation,'initialize');
+ pending.resolve({world:result,operationId:'unit-operation'});
+ await run;
+ assert.equal(c.state().world.revision,2);
+ assert.equal(c.state().operation,'completed');
+});
+test('operational command refuses stale generation response and reports an error',async()=>{
+ const preparing={...world,phase:'preparing',seasonNumber:1,revision:1};
+ const c=createAdminController(async(path)=>path.endsWith('/session')?session:path.endsWith('/world')?{world:preparing}:{world:{...preparing,generation:'650e8400-e29b-41d4-a716-446655440000',revision:2}},()=>{});
+ await c.refresh();await c.command('initialize');
+ assert.equal(c.state().message,'unavailable');
+});
