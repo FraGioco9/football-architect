@@ -37,6 +37,8 @@ export async function executeLifecycle(db:Database,session:AdminSession,action:'
   const world=await readWorld(db);
   if(world.generation!==command.expectedGeneration||world.revision!==command.expectedRevision)throw new ApiError(409,'stale_world');
   if((action==='start'&&(world.phase!=='preparing'||world.day!==0))||(action==='advance'&&(world.phase!=='active'||world.day>=56)))throw new ApiError(409,'prerequisites_incomplete');
+  const pending=(await db.prepare('SELECT count(*) AS n FROM season_admin_events WHERE season_number=? AND status=? AND scheduled_day<=?').bind(world.seasonNumber,'scheduled',world.day).first<{n:number}>())?.n;
+  if(pending)throw new ApiError(409,'calendar_event_prerequisites');
   const evidence=await loadSeasonSportingEvidence(db,world);
   const receipts=(await db.prepare('SELECT day,generation,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_day_outcomes WHERE season_number=1 ORDER BY day').all<Receipt>()).results;
   if(receipts.length!==world.day)throw new ApiError(422,'daily_evidence_invalid');
@@ -65,6 +67,7 @@ export async function executeLifecycle(db:Database,session:AdminSession,action:'
     sessionGuard(db,session,now),
     abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=1 AND phase=? AND day=?',[world.generation,world.revision,world.phase,world.day]),
     ...sourceGuards(db,evidence),
+    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=? AND status=? AND scheduled_day<=?)=0',[world.seasonNumber,'scheduled',world.day]),
     abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=1)=?',[world.day]),
     ...receipts.map(r=>abortUnless(db,'SELECT 1 FROM season_day_outcomes WHERE season_number=1 AND day=? AND generation=? AND calendar_hash=? AND simulation_version=? AND outcome_hash=? AND outcome_json=?',[r.day,world.generation,r.calendar_hash,r.simulation_version,r.outcome_hash,r.outcome_json])),
     abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_knockout_ties WHERE season_number=1)=?',[tieRows.length]),
