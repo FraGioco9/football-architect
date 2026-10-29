@@ -8,6 +8,7 @@ import {parseWorldV1,type WorldV1} from './types.ts';
 import {requireActiveSession,type SessionRow} from './session-policy.ts';
 import {unifiedAdminMutationGuard} from './unified-admin-transaction.ts';
 import {requireAccountPermission} from './account-permissions.ts';
+import {playerSessionValid} from './player-auth.ts';
 export interface Outcome {world:WorldV1;operationId:string}
 interface OperationRow {id:string;account_id:string;request_hash:string;outcome_json:string}
 export function sessionGuard(db:Database,session:AdminSession,now:number){
@@ -33,7 +34,18 @@ export async function replay(db:Database,session:AdminSession,command:PrepareReq
  try{await db.batch([sessionGuard(db,session,now)])}catch{
   // A failed integrity guard and unavailable storage must not share a 401 response.
   if(session.unified){
-   const match=await db.prepare('SELECT 1 AS linked FROM player_admin_operator_links WHERE player_account_id=? AND legacy_admin_account_id=?').bind(session.unified.playerId,session.actor.id).first<{linked:number}>();
+   const live=await db.prepare(`SELECT s.account_id,a.email_normalized,s.credential_version,
+    a.credential_version AS account_version,a.status,a.email_verified_at,s.csrf_digest,
+    s.created_at,s.last_seen_at,s.expires_at
+    FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id
+    WHERE s.token_digest=? AND s.account_id=?`)
+    .bind(session.unified.sessionDigest,session.unified.playerId).first<any>();
+   if(!playerSessionValid(live,now)||live.csrf_digest!==session.unified.csrfDigest)
+    throw new ApiError(401,'unauthorized');
+   const match=await db.prepare(`SELECT 1 AS linked FROM player_admin_operator_links l
+    JOIN admin_accounts a ON a.id=l.legacy_admin_account_id
+    WHERE l.player_account_id=? AND l.legacy_admin_account_id=? AND a.enabled=1`)
+    .bind(session.unified.playerId,session.actor.id).first<{linked:number}>();
    if(!match)throw new ApiError(403,'permission_denied');
    await requireAccountPermission(db,session.unified.playerId,'admin.access');
    await requireAccountPermission(db,session.unified.playerId,'admin.world.write');
