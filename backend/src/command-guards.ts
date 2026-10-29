@@ -13,13 +13,7 @@ export interface Outcome {world:WorldV1;operationId:string}
 interface OperationRow {id:string;account_id:string;request_hash:string;outcome_json:string}
 export function sessionGuard(db:Database,session:AdminSession,now:number){
  if(session.unified)return unifiedAdminMutationGuard(db,session.unified.playerId,session.actor.id,session.unified.sessionDigest,session.unified.csrfDigest,now);
- return abortUnless(db,`SELECT 1 FROM admin_sessions s JOIN admin_accounts a ON a.id=s.account_id
-  WHERE s.token_digest=? AND s.account_id=? AND s.credential_version=? AND s.csrf_digest=?
-  AND a.enabled=1 AND a.credential_version=s.credential_version
-  AND s.created_at>=0 AND s.created_at<=? AND s.last_seen_at>=s.created_at
-  AND s.last_seen_at<=? AND s.last_seen_at>? AND s.expires_at>?
-  AND s.expires_at<=s.created_at+28800`,
- [session.digest,session.actor.id,session.credentialVersion,session.csrfDigest,now,now,now-1800,now]);
+ throw new ApiError(403,'legacy_admin_session_retired');
 }
 function savedOutcome(row:OperationRow,session:AdminSession,hash:string):Outcome{
  if(row.account_id!==session.actor.id||row.request_hash!==hash)throw new ApiError(409,'idempotency_conflict');
