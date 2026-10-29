@@ -23,3 +23,14 @@ test('end-season policy: future move respects same-day order, sports completion 
  const completed=events.map(e=>e.id==='season:archive'?{...e,status:'completed' as const}:e);
  assert.throws(()=>rescheduleAdministrativeMilestone(completed,'season:archive',56,9001,55));
 });
+
+test('ordered terminal rescheduling cannot break execution dependencies or modify completed receipts',()=>{
+ const events=all();
+ const changed=rescheduleAdministrativeMilestone(events,'season:next-prepare',56,9250,56);
+ assert.equal(changed.find(e=>e.id==='season:next-prepare')?.order,9250);
+ assert.deepEqual(dueAdministrativeMilestones(changed,56).map(e=>e.id),['season:archive','season:close','season:next-prepare']);
+ assert.throws(()=>rescheduleAdministrativeMilestone(changed,'season:close',56,9300,56));
+ assert.throws(()=>rescheduleAdministrativeMilestone(changed,'season:archive',56,9100,56));
+ const complete=changed.map(e=>e.id==='season:archive'?{...e,status:'completed' as const}:e);
+ assert.throws(()=>rescheduleAdministrativeMilestone(complete,'season:archive',56,9001,56));
+});
