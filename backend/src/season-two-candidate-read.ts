@@ -48,5 +48,7 @@ export async function readSeasonTwoCandidate(db:Database){
  const holderProposal=proposeHolderAllocation(candidate,holderReview);
  const snapshot=await buildSeasonTwoSnapshot(archiveHash,candidate,holderReview);
  const review=await buildQualificationReviewPacket(archiveHash,candidate,holderReview);
- return {world,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,requiresOwnerQualificationReview:true};
+ const approval=await db.prepare('SELECT snapshot_hash,source_archive_hash,generation,approved_at FROM season_two_approvals WHERE target_season=2').first<{snapshot_hash:string;source_archive_hash:string;generation:string;approved_at:number}>();
+ if(approval&&(approval.snapshot_hash!==snapshot.snapshotHash||approval.source_archive_hash!==archiveHash||approval.generation!==world.generation))throw new ApiError(422,'qualification_evidence_invalid');
+ return {world,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,approval:approval?{snapshotHash:approval.snapshot_hash,approvedAt:approval.approved_at}:null,requiresOwnerQualificationReview:!approval};
 }
