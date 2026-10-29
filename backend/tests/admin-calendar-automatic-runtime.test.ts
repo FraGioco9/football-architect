@@ -1,3 +1,4 @@
+import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -18,7 +19,7 @@ let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const cmd=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
- await db.batch(['DELETE FROM season_domestic_stages','DELETE FROM season_admin_events','DELETE FROM season_knockout_ties','DELETE FROM season_day_outcomes','DELETE FROM season_draws','DELETE FROM season_calendars','DELETE FROM admin_operations','DELETE FROM seasons','DELETE FROM admin_sessions','DELETE FROM admin_accounts',"UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'"].map(q=>db.prepare(q)));
+ await clearTestWorld(db);
  const csrf=await csrfFor(token);
  session={actor:{id:'automatic-operator',email:'automatic@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-100).run();

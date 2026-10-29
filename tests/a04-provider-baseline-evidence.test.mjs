@@ -63,7 +63,7 @@ test('A04-E4: actual context revision lease rejects late historical responses',(
  assert.ok(start>=0&&end>start);
  const input=catalogue.find(x=>x.id==='IT-1'),projection=manifest.divisions.find(x=>x.id==='IT-1');
  const window={dispatchEvent(){}};
- const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=null;({replaceSeasonData,clearSeasonData,createContext})',{
+ const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=1;({replaceSeasonData,clearSeasonData,createContext})',{
   model,window,input,projection,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
  });
  window.faCompetitionContext=api.createContext(input,1,null,1);

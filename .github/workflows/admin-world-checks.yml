@@ -60,18 +60,19 @@ jobs:
           npm --prefix backend ci --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
+      # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       - name: Execute smoke tests in actual local Worker runtime
-        if: ${{ !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend test
       - name: Verify operator bootstrap, recovery and local persistence across restart
-        if: ${{ !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend run test:operator
       - name: Install isolated pinned Chromium test tooling
-        if: ${{ !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-admin-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-admin-browser/node_modules/.bin/playwright" install --with-deps chromium
       - name: Verify Settings and two-season lifecycle with real loopback Worker and D1
         timeout-minutes: 20
-        if: ${{ !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs

@@ -105,7 +105,7 @@ test("Admin workflow keeps exact-head contract checks while deferring heavy draf
  assert.match(admin,/Verify D1-compatible SQLite migration locally/);
  assert.match(admin,/Typecheck backend with pinned TypeScript/);
  assert.match(admin,/cancel-in-progress: true/);
- assert.match(admin,/if: \$\{\{ !github\.event\.pull_request\.draft \}\}/);
+ assert.match(admin,/if: \$\{\{ !github\.event\.pull_request\.draft \|\| contains\(github\.event\.pull_request\.body, '<!-- admin-world-final-verification -->'\) \}\}/);
  assert.match(site,/node --check assets\/admin-settings\.js/);
  assert.match(site,/tests\/admin-settings\.test\.mjs/);
 });

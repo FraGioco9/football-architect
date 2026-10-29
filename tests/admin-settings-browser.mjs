@@ -79,6 +79,9 @@ try{
   await page.route('**/api/admin/**',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"admin_unavailable"}}'}));
   await page.goto(origin+'/settings');await page.waitForFunction(()=>!document.querySelector('[data-admin-login] button').disabled);assert.ok(await page.locator('[data-admin-login]').isVisible());checks++;
  }finally{await context.close()}
+ // The independent30-login matrix has consumed the real source throttle budget.
+ // Reset only disposable test throttle rows between scenarios; production policy stays enabled.
+ const throttleState=await openLocalDatabase(state);try{await throttleState.db.prepare('DELETE FROM auth_throttles').run()}finally{await throttleState.close()}
  const lifecycle=await verifyAdminWorldLifecycle(browser,{origin:'http://localhost:2000',password});checks++;
  assert.ok(lifecycle.twoSeasonLifecycle&&lifecycle.staleResetProjection);
  assert.ok(!logs.includes(password));

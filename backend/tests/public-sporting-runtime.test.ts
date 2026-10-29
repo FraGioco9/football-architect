@@ -1,3 +1,4 @@
+import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -19,6 +20,7 @@ const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revi
 const request=(competition='IT-1',season='1',method='GET',database=db)=>worker.fetch(new Request('https://example.invalid/api/competitions/'+competition+'/seasons/'+season,{method}),{DB:database});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
+ await clearTestWorld(db);
  session={actor:{id:'public-operator',email:'public@example.invalid'},digest:await hashText('public-session'),credentialVersion:1,csrfDigest:await hashText('public-csrf')};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
  await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-10,now-5,now+1000).run();

@@ -17,7 +17,7 @@ function contextHarness(current){
  const source=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
  const start=source.indexOf('  const freeze=value=>'),end=source.indexOf('  async function start()',start);
  const window={dispatchEvent(){}};
- const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=null;({selectSeason,replaceSeasonData,clearSeasonData,createContext})',{
+ const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=2;({selectSeason,replaceSeasonData,clearSeasonData,createContext})',{
   model,window,input:current,projection:division,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
  });
  window.faCompetitionContext=api.createContext(current,1,null,1);

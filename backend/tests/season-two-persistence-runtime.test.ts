@@ -1,3 +1,4 @@
+import {captureTestWorld,restoreTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -13,6 +14,7 @@ import {readSeasonArchives} from '../src/season-archive-read.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {hashText,type AdminSession} from '../src/auth.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
+let baseline:Awaited<ReturnType<typeof captureTestWorld>>;
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const count=async(table:string,season=2)=>(await db.prepare(`SELECT count(*) n FROM ${table} WHERE season_number=?`).bind(season).first()).n;
@@ -27,8 +29,9 @@ beforeAll(async()=>{
  world=(await executeLifecycle(db,session,'start',meta(),'two-baseline-start',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'two-baseline-day-'+(world.day+1),now)).world;
  world=(await closeSeason(db,session,meta(),'two-baseline-close',now)).world;
+ baseline=await captureTestWorld(db);
 },120000);
-beforeEach(async()=>{world=await readWorld(db)});
+beforeEach(async()=>{await restoreTestWorld(db,baseline);world=await readWorld(db)});
 async function approve(){const c=await readSeasonTwoCandidate(db);world=(await approveSeasonTwoSnapshot(db,session,{...meta(),snapshotHash:c.snapshot.snapshotHash},'two-owner-approve',now)).world}
 it('requires actual durable membership approval and a closed source season',async()=>{
  const before=world;
@@ -45,9 +48,9 @@ it('persists the full Season1→2 transition, all56 Season2 receipts and a separ
  world=(await generateSeasonCalendar(db,session,meta(),'two-calendar-once',now)).world;
  expect(await count('season_draws')).toBe(2);
  expect(JSON.parse((await db.prepare('SELECT calendar_json FROM season_calendars WHERE season_number=2').first()).calendar_json).fixtures.every((f:any)=>f.id.startsWith('season:2:'))).toBe(true);
- world=(await executeLifecycle(db,session,'start',meta(),'two-start-once',now)).world;
- while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'two-day-'+(world.day+1),now)).world;
- world=(await closeSeason(db,session,meta(),'two-close-once',now)).world;
+ world=(await executeLifecycle(db,session,'start',meta(),'two-start-once-command',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'two-day-'+(world.day+1)+'-command',now)).world;
+ world=(await closeSeason(db,session,meta(),'two-close-once-command',now)).world;
  expect(world).toMatchObject({seasonNumber:2,day:56,phase:'closed'});
  expect(await count('season_day_outcomes')).toBe(56);expect(await count('season_knockout_ties')).toBe(54);
  const second=await db.prepare('SELECT * FROM season_archives WHERE season_number=2').first();expect(second.results_count).toBe(4082);expect(second.archive_hash).not.toBe(firstArchive.archive_hash);

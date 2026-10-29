@@ -16,7 +16,7 @@ test('A05-10 final: Fixtures scopes its current and event-driven world projectio
 
 test('A05-10 final: Calendar renders global day context, not per-competition results',()=>{
  const calendar=source('assets/world-calendar.js');
- assert.match(calendar,/clockAdapter\.project\(1,clockSnapshot\)/);
+ assert.match(calendar,/clockAdapter\.project\(window\.faCalendarSelectedSeason\?\.\(\)\?\?1,clockSnapshot\)/);
  assert.match(calendar,/clockAdapter\?\.normalize\(raw\)/);
  assert.doesNotMatch(calendar,/clockAdapter\.projectCompetition\(/);
  const full=adapter.project(1,null);

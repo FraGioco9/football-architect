@@ -1,3 +1,4 @@
+import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -16,7 +17,7 @@ let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const cmd=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
- await db.batch(['DELETE FROM season_domestic_stages','DELETE FROM season_admin_events','DELETE FROM season_knockout_ties','DELETE FROM season_day_outcomes','DELETE FROM season_draws','DELETE FROM season_calendars','DELETE FROM admin_operations','DELETE FROM seasons','DELETE FROM admin_sessions','DELETE FROM admin_accounts',"UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'"].map(q=>db.prepare(q)));
+ await clearTestWorld(db);
  const csrf=await csrfFor(token);
  session={actor:{id:'clock-operator',email:'clock@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-100).run();
@@ -47,13 +48,15 @@ it('keeps duplicate start idempotent and refuses stale competing key',async()=>{
 
 it('projects planned and completed milestones for authenticated Admin only',async()=>{
  const planned=await readAdministrativeCalendar(db);
- expect(planned).toMatchObject({mode:'administrative',events:[{id:'domestic:entrants',day:1,status:'scheduled',hasReceipt:false}]});
+ expect(planned.mode).toBe('administrative');
+ expect(planned.events).toHaveLength(5);
+ expect(planned.events.find(e=>e.id==='domestic:entrants')).toMatchObject({day:1,status:'scheduled',hasReceipt:false});
  const config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
  const req=(cookie:string)=>new Request('http://localhost:2000/api/admin/seasons/events',{headers:{Cookie:cookie}});
  expect((await handleAdmin(req(''),config)).status).toBe(401);
  expect((await handleAdmin(req('fa_admin_local='+token),config)).status).toBe(200);
- world=(await advanceAdministrativeClock(db,session,'start',cmd(),'clock-projection-start-0001',now)).world;
- world=(await completeConfirmationEvent(db,session,{...cmd(),eventId:'domestic:entrants'},'clock-projection-confirm-0001',now)).world;
+ world=(await advanceAdministrativeClock(db,session,'start',cmd(),'clock-projection-start-0001',Math.floor(Date.now()/1000))).world;
+ world=(await completeConfirmationEvent(db,session,{...cmd(),eventId:'domestic:entrants'},'clock-projection-confirm-0001',Math.floor(Date.now()/1000))).world;
  const after=await readAdministrativeCalendar(db);
  expect(after.events.find(e=>e.id==='domestic:entrants')).toMatchObject({status:'completed',hasReceipt:true,day:1});
  expect(after.events.find(e=>e.id==='international:entrants')).toMatchObject({status:'scheduled',hasReceipt:false});

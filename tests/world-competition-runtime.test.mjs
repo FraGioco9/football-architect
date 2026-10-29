@@ -23,7 +23,7 @@ const root="http://127.0.0.1:2000";
 test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs desktop and mobile bands prepared before publication',async()=>{
  const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
  current.rules.phases[0].rankOutcomes[0].to=2;current.rules.phases[0].rankOutcomes[1].from=3;
- const r=await simulate({division:divisionsForTest('IT-1'),data});
+ const r=await simulate({division:divisionsForTest('IT-1'),data,devSeason:1});
  const desktop=r.fields.get('app-standings-body').children;
  desktop.forEach((row,index)=>{row.children[0].textContent=String(index+1);r.window.faStandingsOutcomes.decorate(row,index+1)});
  r.window.faStandingsMobile.prepare(createPreviewStandings(divisionsForTest('IT-1'),15).rows)();
@@ -40,7 +40,7 @@ test('SEASON-EARLY-PROVIDER: historical bands repair before later shared scripts
  const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
  current.rules.phases[0].rankOutcomes[0].to=2;current.rules.phases[0].rankOutcomes[1].from=3;
  let observed='not reached';
- await simulate({division:divisionsForTest('IT-1'),data,onLoad(window,asset,fields){
+ await simulate({division:divisionsForTest('IT-1'),data,devSeason:1,onLoad(window,asset,fields){
   if(!asset.src.endsWith('/competition-fixtures.js'))return;
   window.faStandingsMobile.prepare(createPreviewStandings(divisionsForTest('IT-1'),15).rows)();
   const original=manifest.competitions.find(d=>d.id==='IT-1');
@@ -60,7 +60,7 @@ test('CONFIG-BANDS: standings styling follows edited rank bands instead of route
 });
 function divisionsForTest(id){return manifest.divisions.find(d=>d.id===id)||manifest.competitions.find(d=>d.id===id)}
 test('CONFIG-SUPPLIED-DOMESTIC: clearing supplied data resets table, mobile and qualified bracket',async()=>{
- const division=divisionsForTest('IT-1'),r=await simulate({division});
+ const division=divisionsForTest('IT-1'),r=await simulate({division,devSeason:1});
  const rows=createPreviewStandings(division,30).rows;
  const payload={season:1,rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants:division.clubs,fixtures:null,results:[],statistics:{standings:rows},status:'partial'};
  const api=r.window.faCompetitionContextApi;
@@ -72,7 +72,7 @@ test('CONFIG-SUPPLIED-DOMESTIC: clearing supplied data resets table, mobile and 
 });
 test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties and clear across seasons',async()=>{
  const cup=manifest.competitions.find(d=>d.id==='int-1');
- const r=await simulate({division:cup});
+ const r=await simulate({division:cup,devSeason:1});
  const participants=Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES'][Math.floor(i/8)],clubId:i%8+1,primaryName:'Club '+i,abbr:'C'+i}));
  const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
  const payload={season:1,rulesVersion:cup.rules.version,participants,fixtures:null,results:[],statistics:{standings},status:'partial'};
@@ -226,7 +226,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
     "/competitions/_shared/manifest.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
-    "/assets/competition-rules.js","/assets/competition-rules-view.js","/assets/provider-selectors-bootstrap.mjs","/assets/landing.js","/assets/app.js",
+    "/assets/world-calendar-model.js","/assets/competition-rules.js","/assets/competition-rules-view.js","/assets/provider-selectors-bootstrap.mjs","/assets/landing.js","/assets/app.js",
     "/assets/app-search.js","/assets/club-crests.js","/assets/competition-tabs.js","/assets/competition-history.js","/assets/competition-fixtures.js","/assets/competition-stats.js","/assets/competition-awards.js"
    ],division.id+ending);
    assert.equal(r.fields.get("division-detail-name").textContent,division.name);
@@ -606,7 +606,7 @@ test('POSTSEASON-TIPS: score help opens on hover, keyboard focus and tap and dis
 test('CONTEXT: all 18 routes publish their own immutable empty context before any panel script',async()=>{
  for(const definition of manifest.competitions){
   const r=await simulate({division:definition});
-  const count=definition.category==='international'?13:12;
+  const count=definition.category==='international'?14:13;
   assert.equal(r.loaded.length,count,definition.id);
   assert.equal(new Set(r.loaded).size,count,'one initialization per shared module');
   assert.ok(r.contexts.every(c=>c?.definition.id===definition.id),'context precedes consumers');
@@ -675,4 +675,11 @@ test('A03-04E2: desktop and compact public standings emit the same complete cano
    assert.deepEqual(links,expected,division.id+' '+id);
   }
  }
+});
+
+test('PUBLIC-AUTHORITY: untrusted provider application cannot populate public context',async()=>{
+ const division=divisionsForTest('IT-1'),r=await simulate({division});
+ const payload={season:1,rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants:division.clubs,fixtures:null,results:[],statistics:null,status:'partial'};
+ assert.equal(r.window.faCompetitionContextApi.replaceSeasonData(payload,r.window.faCompetitionContext.revision),false);
+ assert.equal(r.window.faCompetitionContext.seasonData,null);
 });

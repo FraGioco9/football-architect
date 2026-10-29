@@ -881,6 +881,7 @@
     const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
     nextContext(activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
+    await loadScript('world-calendar-model.js');
     await loadScript('competition-rules.js');
     await loadScript('competition-rules-view.js');
     window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);

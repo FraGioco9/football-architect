@@ -1,3 +1,4 @@
+import {legacySeasonOneRules} from '../src/calendar-rules-compat.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,mkdtemp,writeFile,rm,mkdir,stat} from 'node:fs/promises';
@@ -23,7 +24,7 @@ test('candidate records all canonical full rules and approved slots without gran
  const federation=candidate.manifest.bindings.find(b=>b.competitionId==='int-2')!;
  assert.deepEqual(federation.clubIds.filter(id=>id.startsWith('IT-')),['IT-4','IT-5','IT-6']);
  for(const competition of candidate.catalogue.competitions){
-  const original=[...JSON.parse(sources['data/divisions.json']),...JSON.parse(sources['data/international-competitions.json'])].find(c=>c.id===competition.id);
+  const original=[...legacySeasonOneRules(JSON.parse(sources['data/divisions.json'])),...JSON.parse(sources['data/international-competitions.json'])].find(c=>c.id===competition.id);
   assert.deepEqual(competition.rules,original.rules);
  }
  await assert.rejects(validateApprovedSeasonOneSnapshot(candidate.manifest,candidate.catalogue),{code:'catalogue_not_approved'});

@@ -1,3 +1,4 @@
+import {legacySeasonOneRules} from '../src/calendar-rules-compat.ts';
 import reviewCandidate from '../catalogues/season-1.candidate.json' with {type:'json'};
 import clubs from '../../data/clubs.json' with {type:'json'};
 import selection from '../catalogues/season-1.participants.json' with {type:'json'};
@@ -64,7 +65,7 @@ it('later-season snapshot validation permits certified cross-tier changes withou
 });
 
 it('complete Season 1 path binds actual selection to all canonical rules and independent Python hashes without enabling production',async()=>{
- const catalogue:api.CanonicalCatalogue={clubIds:clubs.map(c=>`${c.countryId}-${c.clubId}`),competitions:[...divisions,...cups].map(c=>({id:c.id,rulesVersion:c.rules.version,rules:JSON.parse(JSON.stringify(c.rules))}))};
+ const catalogue:api.CanonicalCatalogue={clubIds:clubs.map(c=>`${c.countryId}-${c.clubId}`),competitions:[...legacySeasonOneRules(divisions),...cups].map(c=>({id:c.id,rulesVersion:c.rules.version,rules:JSON.parse(JSON.stringify(c.rules))}))};
  const bindings=selection.bindings.map(b=>({...b,rulesVersion:catalogue.competitions.find(c=>c.id===b.competitionId)!.rulesVersion}));
  const hashes=await api.snapshotHashes(bindings,catalogue);
  expect(hashes).toEqual({participantsHash:'d31b39b48190eed3e165931be573391d17298321fdb3ca71e922346aa3749d1a',rulesHash:'a87d7e02bb8045a4b081ca5b8b7c6d2032736f0efb4238f99032b6f638a8a67a'});

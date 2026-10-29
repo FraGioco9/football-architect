@@ -42,10 +42,10 @@ function setup(options={}){
   });
   fields.get('world-calendar').querySelectorAll=s=>s==='[data-calendar-day]'?days:rows;
   let saved;
-  const window={faRoutesRegistry:routeRegistry,faWorldCalendarModel:model};
+  const window={faRoutesRegistry:routeRegistry,faWorldCalendarModel:model,addEventListener(){},dispatchEvent(){},faDevPreviewMode:true};
   const document={documentElement:root,getElementById:id=>fields.get(id),createElement:tag=>({...element(),tagName:tag})};
   runInNewContext(runtime(),{URL,URLSearchParams,location:{href:'http://localhost/calendar?season=1&calendarView=season',pathname:'/calendar',search:'?season=1&calendarView=season'},history:{state:null,replaceState(){},pushState(){}},window,document,sessionStorage:{setItem(k,v){if(options.blocked)throw Error('blocked');saved={k,v}}},
-    MutationObserver:class{constructor(fn){observer=fn}observe(){}}});
+    CustomEvent:class{constructor(type,options){this.type=type;this.detail=options?.detail}},MutationObserver:class{constructor(fn){observer=fn}observe(){}}});
   return {window,root,fields,days,rows,language(lang){root.lang=lang;observer()},saved:()=>saved};
 }
 
