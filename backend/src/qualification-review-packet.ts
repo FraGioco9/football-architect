@@ -3,6 +3,7 @@ import {ApiError} from './errors.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import type {NextSeasonMembership} from './next-season-membership.ts';
 import type {HolderReview} from './international-holder-review.ts';
+import {proposeHolderAllocation} from './international-holder-allocation-proposal.ts';
 export interface QualificationReviewPacket {
  schemaVersion:1;
  sourceSeason:1;
@@ -12,6 +13,7 @@ export interface QualificationReviewPacket {
  qualificationPolicyId:'int24ChampionAwareV1';
  status:'requires-owner-approval';
  blockingReasons:readonly string[];
+ holderAllocationHash:string;
  readyForActivation:false;
 }
 export async function buildQualificationReviewPacket(archiveHash:string,candidate:NextSeasonMembership,holders:readonly HolderReview[]):Promise<QualificationReviewPacket>{
@@ -34,11 +36,9 @@ export async function buildQualificationReviewPacket(archiveHash:string,candidat
    (h.allocatedCup!==null&&!['int-1','int-2'].includes(h.allocatedCup))||
    h.requiresQualificationPolicyDecision!==(h.allocatedCup!==h.competitionId)))
   throw new ApiError(422,'qualification_evidence_invalid');
- const reasons=['season-two-snapshot-not-approved','next-season-holder-allocation-policy-not-finalized'];
- for(const holder of holders){
-  if(holder.requiresQualificationPolicyDecision)reasons.push(holder.competitionId+':holder-conflict');
- }
+ const holderAllocation=proposeHolderAllocation(candidate,holders);
+ const reasons=['season-two-snapshot-not-approved'];
  return Object.freeze({schemaVersion:1,sourceSeason:1,targetSeason:2,sourceArchiveHash:archiveHash,
-  candidateHash:await canonicalHash(candidate),qualificationPolicyId:'int24ChampionAwareV1',
+  candidateHash:await canonicalHash(candidate),holderAllocationHash:await canonicalHash(holderAllocation.bindings),qualificationPolicyId:'int24ChampionAwareV1',
   status:'requires-owner-approval',blockingReasons:Object.freeze(reasons),readyForActivation:false});
 }
