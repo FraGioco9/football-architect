@@ -24,7 +24,10 @@ export async function changePlayerPassword(db:Database,session:Identity,body:unk
   db.prepare("UPDATE player_accounts SET password_verifier=?,credential_version=credential_version+1,updated_at=? WHERE id=? AND status='active' AND credential_version=? AND password_verifier=?")
   .bind(passwordVerifier,now,session.actor.id,row.credential_version,row.password_verifier),
   db.prepare("DELETE FROM player_sessions WHERE account_id=?").bind(session.actor.id),
-  db.prepare("DELETE FROM player_one_time_tokens WHERE account_id=? AND purpose='reset_password'").bind(session.actor.id)
+  db.prepare(`DELETE FROM admin_sessions WHERE account_id IN
+   (SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?)`).bind(session.actor.id),
+  // Invalidate every outstanding one-time credential after a password change.
+  db.prepare("DELETE FROM player_one_time_tokens WHERE account_id=?").bind(session.actor.id)
  ]);
  if(changes[1].meta.changes!==1)throw new ApiError(409,'credentials_changed');
  return {changed:true,sessionsRevoked:true};
