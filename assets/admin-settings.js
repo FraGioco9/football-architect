@@ -15,9 +15,9 @@
  const validWorld=w=>w?.schemaVersion===1&&uuid.test(w.generation)&&Number.isSafeInteger(w.revision)&&w.revision>=0&&Number.isSafeInteger(w.seasonNumber)&&w.seasonNumber>=0&&Number.isInteger(w.day)&&w.day>=0&&w.day<=56&&['unstarted','preparing','active','closed'].includes(w.phase);
  function createAdminController(request,changed){
   let epoch=0,lastLogoutEpoch=0,csrf='',retryKey='',retryFor='',logoutCsrf='';
-  let value={actor:null,world:null,message:'checking',busy:false,logoutNeeded:false,operation:'idle',errorCode:null};
+  let value={actor:null,world:null,message:'checking',busy:false,logoutNeeded:false,operation:'idle',errorCode:null,events:null};
   const state=()=>structuredClone(value),emit=()=>changed(state());
-  const clear=message=>{csrf='';value={actor:null,world:null,message,busy:false,logoutNeeded:value.logoutNeeded,operation:'idle',errorCode:null};emit()};
+  const clear=message=>{csrf='';value={actor:null,world:null,message,busy:false,logoutNeeded:value.logoutNeeded,operation:'idle',errorCode:null,events:null};emit()};
   function failure(error){
    if(error.status===401){clear('signedOut');return}
    value.errorCode=typeof error.code==='string'?error.code:null;
@@ -39,6 +39,9 @@
    }
    if(!value.world||value.world.generation!==data.world.generation||data.world.revision>=value.world.revision)value.world=data.world;
    value.message='signedIn';
+   const events=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
+   if(!validWorld(events?.world)||events.world.generation!==value.world.generation||events.world.revision!==value.world.revision||!['uninitialized','legacy','administrative'].includes(events.mode)||!Array.isArray(events.events))throw Error('invalid event state');
+   value.events={mode:events.mode,rows:events.events};
   }
   return {state,
    async refresh(){
@@ -90,7 +93,7 @@
      const data=await request(routes[action],{body,headers:{'X-CSRF-Token':csrf,'Idempotency-Key':globalThis.crypto.randomUUID()}});
      if(ticket!==epoch)return;
      if(!validWorld(data?.world)||data.world.generation!==old.generation||data.world.revision!==old.revision+1)throw Error('invalid response');
-     value.world=data.world;value.message='signedIn';value.operation='completed';retryKey='';retryFor='';
+     value.world=data.world;value.message='signedIn';value.operation='completed';value.events=null;retryKey='';retryFor='';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
    },
@@ -102,7 +105,7 @@
      const data=await request('/api/admin/world/reset',{body:{expectedGeneration:old.generation,expectedRevision:old.revision,confirmation},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':globalThis.crypto.randomUUID()}});
      if(ticket!==epoch)return;
      if(!validWorld(data?.world)||data.world.phase!=='unstarted'||data.world.seasonNumber!==0||data.world.day!==0||data.world.revision!==0||data.world.generation===old.generation)throw Error('invalid response');
-     value.world=data.world;value.message='resetDone';value.operation='completed';retryKey='';retryFor='';
+     value.world=data.world;value.events=null;value.message='resetDone';value.operation='completed';retryKey='';retryFor='';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
    },
@@ -114,7 +117,7 @@
     try{
      const data=await request('/api/admin/seasons/prepare',{body:{expectedGeneration:value.world.generation,expectedRevision:value.world.revision},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':retryKey}});
      if(ticket!==epoch)return;if(!validWorld(data?.world)||data.world.generation!==value.world.generation||data.world.revision<value.world.revision)throw Error('invalid response');
-     value.world=data.world;value.message='prepared';value.operation='completed';retryKey='';retryFor='';
+     value.world=data.world;value.events=null;value.message='prepared';value.operation='completed';retryKey='';retryFor='';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
    }
@@ -140,7 +143,19 @@
    find('[data-admin-prepare]').disabled=state.busy||state.world?.phase!=='unstarted';find('[data-admin-refresh]').disabled=state.busy;
    for(const button of host.querySelectorAll('[data-admin-command]')){
     const action=button.dataset.adminCommand,w=state.world;
-    button.disabled=state.busy||!state.actor||!w||w.phase==='unstarted'||(action==='close'&&(w.phase!=='active'||w.day!==56))||(action==='start'&&w.phase!=='preparing')||(action==='eventStart'&&w.phase!=='preparing')||((action==='advance'||action==='eventAdvance')&&w.phase!=='active');
+    const ev=state.events,rows=ev?.rows||[],mode=ev?.mode;
+    const next=rows.find(e=>e.status==='scheduled'&&e.day===w?.day);
+    const kinds={confirm:'confirm-',domestic:'generate-domestic-calendar',draw:'draw-international',publish:'generate-international-calendar'};
+    const eventKind=kinds[action],availableEvent=!!next&&(action==='confirm'?next.kind?.startsWith('confirm-'):next.kind===eventKind);
+    const enabled=action==='initialize'?w?.phase==='preparing'&&mode==='legacy':
+     action==='legacy'?w?.phase==='preparing'&&mode==='legacy':
+     action==='eventStart'?w?.phase==='preparing'&&mode==='administrative':
+     action==='start'?w?.phase==='preparing'&&mode==='legacy':
+     action==='eventAdvance'?w?.phase==='active'&&w.day<12&&mode==='administrative':
+     action==='advance'?w?.phase==='active'&&mode==='legacy'&&w.day<56:
+     action==='close'?w?.phase==='active'&&w.day===56:
+     !!eventKind&&w?.phase==='active'&&mode==='administrative'&&availableEvent;
+    button.disabled=state.busy||!state.actor||!enabled;
    }
    const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]'),canReset=!!state.actor&&state.world?.phase!=='unstarted'&&!state.busy;
    find('[data-admin-reset-section]').hidden=!state.actor;
