@@ -66,7 +66,8 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
    await body(request);
    const session=await playerAuthenticate(db,token,now);
    await playerRequireCsrf(session.csrfDigest,request.headers.get('X-CSRF-Token'));
-   await db.prepare('DELETE FROM player_sessions WHERE token_digest=?').bind(session.digest).run();
+   const removed=await db.prepare(`DELETE FROM player_sessions WHERE token_digest=? AND account_id=? AND csrf_digest=? AND expires_at>? AND last_seen_at>? AND EXISTS(SELECT 1 FROM player_accounts WHERE id=player_sessions.account_id AND credential_version=player_sessions.credential_version AND status='active' AND email_verified_at IS NOT NULL)`).bind(session.digest,session.actor.id,session.csrfDigest,now,now-604800).run();
+   if(removed.meta.changes!==1)throw new ApiError(401,'unauthorized');
    return json(200,{signedOut:true},{'Set-Cookie':set('',true)});
   }
   const session=await playerAuthenticate(db,token,now);
