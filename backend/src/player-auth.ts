@@ -57,9 +57,9 @@ export async function playerAuthenticate(db:Database,token:string,now:number){
  FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id WHERE s.token_digest=?`).bind(digest).first<Session>();
  if(!playerSessionValid(row,now))throw new ApiError(401,'unauthorized');
  const result=await db.prepare(`UPDATE player_sessions SET last_seen_at=MAX(last_seen_at,?) WHERE token_digest=? AND expires_at>?
- AND last_seen_at>? AND EXISTS(SELECT 1 FROM player_accounts a WHERE a.id=player_sessions.account_id
+ AND last_seen_at>? AND last_seen_at<=? AND created_at<=? AND EXISTS(SELECT 1 FROM player_accounts a WHERE a.id=player_sessions.account_id
  AND a.status='active' AND a.email_verified_at IS NOT NULL AND a.credential_version=player_sessions.credential_version)`)
- .bind(now,digest,now,now-IDLE).run();
+ .bind(now,digest,now,now-IDLE,now,now).run();
  if(result.meta.changes!==1)throw new ApiError(401,'unauthorized');
  return {actor:{id:row!.account_id,email:row!.email_normalized},digest,csrfDigest:row!.csrf_digest};
 }
