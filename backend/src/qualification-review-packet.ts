@@ -23,6 +23,12 @@ export async function buildQualificationReviewPacket(archiveHash:string,candidat
   candidate.bindings.length!==18||ids.size!==18||expectedIds.some(id=>!ids.has(id))||
   candidate.bindings.some(b=>!Array.isArray(b.clubIds)||b.clubIds.length!==(b.competitionId.startsWith('int-')?24:16)||new Set(b.clubIds).size!==b.clubIds.length)||
   new Set(cups.flatMap(b=>b.clubIds)).size!==48||
+  countries.some(c=>cups.some(b=>b.clubIds.filter(id=>id.startsWith(c+'-')).length!==3))||
+  countries.some(c=>{
+   const top=candidate.bindings.find(b=>b.competitionId===c+'-1')?.clubIds??[];
+   const second=candidate.bindings.find(b=>b.competitionId===c+'-2')?.clubIds??[];
+   return new Set([...top,...second]).size!==32||[...top,...second].some(id=>!id.startsWith(c+'-'));
+  })||
   holders.length!==2||new Set(holders.map(h=>h.competitionId)).size!==2||
   holders.some(h=>!['int-1','int-2'].includes(h.competitionId)||!countries.includes(h.countryId)||!h.championClubId.startsWith(h.countryId+'-')||
    (h.allocatedCup!==null&&!['int-1','int-2'].includes(h.allocatedCup))||
