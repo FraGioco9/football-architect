@@ -145,3 +145,13 @@ test('operational command refuses stale generation response and reports an error
  await c.refresh();await c.command('initialize');
  assert.equal(c.state().message,'unavailable');
 });
+
+test('authenticated event snapshot is retained only when tied to current generation and revision',async()=>{
+ const active={...world,phase:'active',seasonNumber:1,day:3,revision:7};
+ const good={world:active,mode:'administrative',events:[{id:'international:draw',kind:'draw-international',status:'scheduled',day:3,order:1}]};
+ const c=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:active}:good,()=>{});
+ await c.refresh();assert.equal(c.state().events.mode,'administrative');
+ assert.equal(c.state().events.rows[0].id,'international:draw');
+ const stale=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:active}:{...good,world:{...active,revision:6}},()=>{});
+ await stale.refresh();assert.equal(stale.state().events,null);
+});
