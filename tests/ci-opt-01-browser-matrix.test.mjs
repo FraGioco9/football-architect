@@ -7,7 +7,7 @@ test('bounded browser matrix includes all locales in both themes and all four wi
  for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light']){
   assert.ok(cases.some(x=>x.language===language&&x.theme===theme));
  }
- assert.deepEqual(Object.keys(areaRoutes),['calendar','clubs','competitions','guide']);
+ assert.deepEqual(Object.keys(areaRoutes),['calendar','clubs','competitions','guide','admin']);
  assert.ok(cases.some(x=>x.touch)&&cases.some(x=>!x.touch));
 });
 

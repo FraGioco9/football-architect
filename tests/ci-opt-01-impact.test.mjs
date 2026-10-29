@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {classifyImpact} from "../tools/ci-opt-01-impact.mjs";
 test("impact groups permit only one bounded area",()=>{
- for(const [path,area] of [["calendar/index.html","calendar"],["clubs/fr/1/overview/index.html","clubs"],["competitions/it-1/standings/index.html","competitions"],["guide/index.html","guide"]]){
+ for(const [path,area] of [["calendar/index.html","calendar"],["clubs/fr/1/overview/index.html","clubs"],["competitions/it-1/standings/index.html","competitions"],["guide/index.html","guide"],["settings/index.html","admin"]]){
   const x=classifyImpact([path]);assert.equal(x.mode,"targeted");assert.equal(x.area,area);assert.ok(x.tests.length>0);
  }
 });
