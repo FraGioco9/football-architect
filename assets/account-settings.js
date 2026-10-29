@@ -17,10 +17,11 @@ document.querySelector('#login-link a').textContent=t[19];
 const status=document.getElementById('status'),protectedPanel=document.getElementById('protected'),login=document.getElementById('login-link'),loading=document.getElementById('loading');
 let csrf='';
 const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(body)});const value=await r.json().catch(()=>({}));if(!r.ok)throw {status:r.status,code:value?.error?.code};return value};
+function redirectToLogin(){location.replace('/account/login/?next=%2Faccount%2F')}
 function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidden=false;loading.hidden=true;status.textContent=message}
 async function init(){try{
- const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){location.replace('/account/login/?next=%2Faccount%2F');return;}if(!r.ok){unauthenticated(t[17]);return;}
- const value=await r.json();if(!value?.authenticated||typeof value.csrfToken!=='string'){unauthenticated(t[13]);return;}
+ const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[17]);return;}
+ const value=await r.json();if(!value?.authenticated||typeof value.csrfToken!=='string'||!value.actor||typeof value.actor.email!=='string'){redirectToLogin();return;}
  csrf=value.csrfToken;document.getElementById('identity').textContent=value.actor.email;
  const permissions=Array.isArray(value.permissions)?value.permissions:[];
  document.getElementById('admin-entry').hidden=!(permissions.includes('admin.access')&&permissions.includes('admin.world.read'));
@@ -28,7 +29,7 @@ async function init(){try{
  await refreshSessions();
 }catch{unauthenticated(t[17])}}
 async function refreshSessions(){try{const response=await fetch('/api/player/sessions',{credentials:'same-origin',cache:'no-store'});if(!response.ok)return;const data=await response.json();const active=Array.isArray(data.sessions)?data.sessions.length:0;document.getElementById('sessions-summary').textContent=sessionsText+': '+active;}catch{/* Session summary is non-authoritative UI only. */}}
-async function execute(button,fn){button.disabled=true;status.textContent='';try{await fn()}catch(error){status.textContent=error?.code==='admin_transfer_required'?t[18]:error?.status===401?t[13]:t[17]}finally{button.disabled=false}}
+async function execute(button,fn){button.disabled=true;status.textContent='';try{await fn()}catch(error){if(error?.status===401){redirectToLogin();return;}status.textContent=error?.code==='admin_transfer_required'?t[18]:t[17]}finally{button.disabled=false}}
 document.getElementById('change-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('button'),async()=>{const fd=new FormData(form);await post('/api/player/account/change-password',{currentPassword:String(fd.get('currentPassword')),newPassword:String(fd.get('newPassword'))});form.reset();unauthenticated(t[14])})});
 document.getElementById('revoke-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/account/revoke-other-sessions',{});status.textContent=t[15];await refreshSessions()}));
 document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[13])}));
