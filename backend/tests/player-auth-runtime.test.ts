@@ -19,6 +19,24 @@ beforeEach(async()=>{
  .bind('player-1','player@example.invalid',verifier,1,100,'active',100,100).run();
 });
 describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
+ it('rolls back a world mutation atomically when an Admin permission is revoked',async()=>{
+  const {unifiedAdminMutationGuard}=await import('../src/unified-admin-transaction.ts');
+  const signed=await login(),data=await signed.json() as any;
+  const token=cookie(signed).split('=')[1];
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  const digest=await digestOpaqueToken(token),csrfDigest=await digestOpaqueToken(data.csrfToken);
+  const now=Math.floor(Date.now()/1000);
+  await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('player-1',permission,now)));
+  const original=(await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision;
+  await db.batch([unifiedAdminMutationGuard(db,'player-1',digest,csrfDigest,now),
+    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')]);
+  expect((await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision).toBe(original+1);
+  await db.prepare("DELETE FROM account_permissions WHERE permission='admin.world.write'").run();
+  await expect(db.batch([unifiedAdminMutationGuard(db,'player-1',digest,csrfDigest,now),
+    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')])).rejects.toBeDefined();
+  expect((await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision).toBe(original+1);
+ });
+
  it('returns server-derived permissions and checks Admin read/write separately',async()=>{
   const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
   const signed=await login(),token=cookie(signed).split('=')[1],csrf=(await signed.json() as any).csrfToken;
