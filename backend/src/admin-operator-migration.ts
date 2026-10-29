@@ -35,6 +35,35 @@ export async function linkExistingAdminOperator(
  return {linked:true,permissions:3};
 }
 
+/** Offline-only preflight for an explicitly approved operator mapping.
+ * It never infers identity from email, mints grants or changes D1.
+ */
+export async function preflightAdminOperatorMigration(
+ db:Database,selection:{playerAccountId:string;legacyAdminId:string}
+):Promise<{eligible:boolean;reason:'eligible'|'invalid_identity'|'already_linked'|'existing_grants'}>{
+ const {playerAccountId,legacyAdminId}=selection;
+ if(![playerAccountId,legacyAdminId].every(x=>typeof x==='string'&&x.length>0&&x.length<=128))
+  throw new ApiError(422,'invalid_admin_migration');
+ const account=await db.prepare(`SELECT p.id,p.status,p.email_verified_at,p.email_normalized AS playerEmail,
+  a.enabled,a.email_normalized AS legacyEmail FROM player_accounts p
+  JOIN admin_accounts a ON a.id=? WHERE p.id=?`)
+  .bind(legacyAdminId,playerAccountId).first<{
+   id:string;status:string;email_verified_at:number|null;playerEmail:string;legacyEmail:string;enabled:number
+  }>();
+ if(!account||account.status!=='active'||account.email_verified_at===null||
+    account.enabled!==1||account.playerEmail!==account.legacyEmail)
+  return {eligible:false,reason:'invalid_identity'};
+ const link=await db.prepare(`SELECT 1 FROM player_admin_operator_links
+  WHERE player_account_id=? OR legacy_admin_account_id=? LIMIT 1`)
+  .bind(playerAccountId,legacyAdminId).first();
+ if(link)return {eligible:false,reason:'already_linked'};
+ const grant=await db.prepare(`SELECT 1 FROM account_permissions WHERE account_id=?
+  AND permission IN ('admin.access','admin.world.read','admin.world.write') LIMIT 1`)
+  .bind(playerAccountId).first();
+ if(grant)return {eligible:false,reason:'existing_grants'};
+ return {eligible:true,reason:'eligible'};
+}
+
 /** Reconcile migration readiness without granting any permissions. */
 export async function adminOperatorMigrationReadiness(db:Database){
  const rows=await adminOperatorMigrationInventory(db);
