@@ -249,9 +249,12 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect(missing.status).toBe(401);expect(pending.status).toBe(401);
   expect(await missing.json()).toEqual(await pending.json());
  });
- it('keeps player cookie entirely unusable on Admin routes and public browsing anonymous',async()=>{
+ it('requires explicit Admin grants for unified Player cookies while leaving public browsing anonymous',async()=>{
   const signed=await login(),c=cookie(signed);
-  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(401);
+  // A valid unified Player session is authenticated but cannot administer
+  // the world without explicitly approved operator mapping and permissions.
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
+  expect((await request('/api/admin/world')).status).toBe(401);
   expect((await request('/api/world')).status).toBe(200);
   expect((await request('/api/player/session')).status).toBe(401);
  });
