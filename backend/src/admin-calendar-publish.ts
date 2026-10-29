@@ -9,10 +9,10 @@ import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
-import {dueAdministrativeMilestones} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,type MilestoneKind} from './admin-calendar-policy.ts';
 interface Stage {generation:string;algorithm_version:string;seed:string;participants_hash:string;rules_hash:string;fixtures_hash:string;fixtures_json:string}
 interface Draw {competition_id:string;stage_id:string;algorithm_version:string;seed:string;outcome_hash:string;outcome_json:string}
-interface Event {event_id:string;kind:string;scope:string;scheduled_day:number;event_order:number;status:'scheduled'|'completed';completed_at:number|null;receipt_hash:string|null}
+interface Event {event_id:string;kind:MilestoneKind;scope:string;scheduled_day:number;event_order:number;status:'scheduled'|'completed';completed_at:number|null;receipt_hash:string|null}
 export async function publishInternationalCalendar(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'calendar_event_unavailable');
