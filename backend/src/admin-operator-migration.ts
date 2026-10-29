@@ -97,8 +97,25 @@ export async function migrateAdminOperatorsBatch(
  // accounts outside the approved enabled roster. Clear their stale sessions too.
  // This keeps the post-cutover zero-legacy-session invariant achievable.
  statements.push(db.prepare('DELETE FROM admin_sessions'));
+ // Validate the committed state in the same transaction: all enabled operators
+ // have a valid linked Player with precisely the three approved capabilities,
+ // and there are no orphan grants or surviving legacy sessions.
+ statements.push(abortUnless(db,`SELECT 1 WHERE
+  NOT EXISTS(SELECT 1 FROM admin_accounts a
+    LEFT JOIN player_admin_operator_links l ON l.legacy_admin_account_id=a.id
+    LEFT JOIN player_accounts p ON p.id=l.player_account_id
+    WHERE a.enabled=1 AND (
+     p.id IS NULL OR p.status<>'active' OR p.email_verified_at IS NULL
+     OR p.email_normalized<>a.email_normalized
+     OR (SELECT COUNT(*) FROM account_permissions g WHERE g.account_id=p.id
+       AND g.permission IN ('admin.access','admin.world.read','admin.world.write'))<>3))
+  AND NOT EXISTS(SELECT 1 FROM account_permissions g
+    LEFT JOIN player_admin_operator_links l ON l.player_account_id=g.account_id
+    WHERE g.permission IN ('admin.access','admin.world.read','admin.world.write')
+    AND l.player_account_id IS NULL)
+  AND NOT EXISTS(SELECT 1 FROM admin_sessions)`,[]));
  const result=await db.batch(statements);
- if(result.slice(0,-2).some((row,index)=>index%8!==0&&index%8!==5&&index%8!==6&&index%8!==7&&row.meta.changes!==1))
+ if(result.slice(0,-3).some((row,index)=>index%8!==0&&index%8!==5&&index%8!==6&&index%8!==7&&row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {linked:selections.length,permissionsGranted:selections.length*3};
 }
