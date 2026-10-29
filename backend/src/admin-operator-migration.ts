@@ -164,3 +164,30 @@ export async function revokeMigratedAdminOperator(db:Database,playerAccountId:st
  if(results[2].meta.changes!==1)throw new ApiError(503,'admin_migration_unavailable');
  return {revoked:true,sessionsRevoked:results[3].meta.changes};
 }
+
+/** Trusted offline rollback of an explicitly selected group of migrated operators.
+ * D1 batch atomicity prevents partial privilege/session revocation.
+ * Historic audit principals are intentionally untouched.
+ */
+export async function revokeMigratedAdminOperatorsBatch(
+ db:Database,playerAccountIds:ReadonlyArray<string>,now:number
+):Promise<{revoked:number;sessionsRevoked:number}>{
+ const valid=(id:unknown)=>typeof id==='string'&&id.length>0&&id.length<=128;
+ if(!Array.isArray(playerAccountIds)||playerAccountIds.length===0||playerAccountIds.length>32||
+   !Number.isSafeInteger(now)||now<=0||playerAccountIds.some(id=>!valid(id))||
+   new Set(playerAccountIds).size!==playerAccountIds.length)
+  throw new ApiError(422,'invalid_admin_migration');
+ const statements=[];
+ for(const playerId of playerAccountIds){
+  // A disabled operator or changed email must not prevent emergency rollback.
+  statements.push(abortUnless(db,'SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?',[playerId]));
+  statements.push(db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission IN ('admin.access','admin.world.read','admin.world.write')").bind(playerId));
+  statements.push(db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerId));
+  statements.push(db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerId));
+ }
+ const results=await db.batch(statements);
+ if(results.some((row,index)=>index%4===2&&row.meta.changes!==1))
+  throw new ApiError(503,'admin_migration_unavailable');
+ return {revoked:playerAccountIds.length,sessionsRevoked:results.reduce((sum,row,index)=>
+  sum+(index%4===3?row.meta.changes:0),0)};
+}
