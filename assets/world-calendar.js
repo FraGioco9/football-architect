@@ -5,7 +5,7 @@
   if(!calendar||!model)return;
   const root=document.documentElement,days=model.createSeason(1).days;
   const clockAdapter=window.faWorldClockAdapter;
-  let clockSnapshot=null;
+  let clockSnapshot=null,publicWorld=null;
   const buttons=[...calendar.querySelectorAll('[data-calendar-day]')];
   const rows=[...calendar.querySelectorAll('[data-week]')];
   const get=id=>document.getElementById('calendar-'+id);
@@ -52,6 +52,7 @@
     get('selected').textContent=w.selected+': '+label(days[state.day-1],w);
     root.dataset.calendarReady='true';
     renderDetails();renderNav();renderClock();
+    window.dispatchEvent(new CustomEvent('fa:calendar-selection-change'));
   }
   function change(patch,focus=false){
     state={...state,...patch};render();
@@ -123,6 +124,7 @@
     fr:['Jour mondial indisponible','Saison','Jour','DEV/Aperçu fictif','Aucune horloge mondiale officielle',"Aujourd’hui","Aujourd’hui indisponible"],
     it:['Giorno mondiale non disponibile','Stagione','Giorno','DEV/Anteprima fittizia','Orologio mondiale ufficiale non disponibile','Oggi','Oggi non disponibile']
   };
+  for(const [lang,label] of Object.entries({en:'Authoritative world',it:'Mondo autorevole',de:'Verbindliche Welt',es:'Mundo oficial',fr:'Monde officiel'}))clockText[lang].push(label);
   // DEV presentation is enabled only by the isolated server-side HTML bootstrap.
   // Public pages must never accept a browser-dispatched fictional or authoritative clock.
   const devClockEnabled=window.faDevCalendarClockSnapshot?.source?.kind==='dev';
@@ -138,10 +140,10 @@
     if(!clockValue||!clockSource)return;
     const w=clockText[root.lang]||clockText.en;
     const valid=clockSnapshot?.current;
-    const navigable=Boolean(valid&&valid.season===1);
+    const navigable=Boolean(valid&&valid.season===(window.faCalendarSelectedSeason?.()??1));
     const dev=clockSnapshot?.source.kind==='dev';
     clockValue.textContent=valid?w[1]+' '+valid.season+' · '+w[2]+' '+valid.day+'/56 · '+Math.round(valid.day/56*100)+'%':w[0];
-    clockSource.textContent=dev?w[3]:w[4];
+    clockSource.textContent=dev?w[3]:clockSnapshot?.source.kind==='authoritative'?w[7]:w[4];
     if(todayButton){todayButton.disabled=!navigable;todayButton.textContent=navigable?w[5]:w[6]}
     if(devSlider&&devLabel){
       devSlider.hidden=devLabel.hidden=!dev;
@@ -150,7 +152,7 @@
       devLabel.textContent=w[3]+' · '+w[2];
     }
     if(clockAdapter){
-      let projected;try{projected=clockAdapter.project(1,clockSnapshot)}catch{projected=clockAdapter.project(1,null)}
+      let projected;try{projected=clockAdapter.project(window.faCalendarSelectedSeason?.()??1,clockSnapshot)}catch{projected=clockAdapter.project(window.faCalendarSelectedSeason?.()??1,null)}
       for(const button of buttons){
         const day=Number(button.dataset.calendarDay),relative=projected.days[day-1].relative;
         if(relative)button.dataset.clockRelative=relative;
@@ -158,7 +160,7 @@
       }
     }
   }
-  if(todayButton)todayButton.addEventListener('click',()=>{if(clockSnapshot?.current?.season===1)change({day:clockSnapshot.current.day})});
+  if(todayButton)todayButton.addEventListener('click',()=>{if(clockSnapshot?.current?.season===(window.faCalendarSelectedSeason?.()??1))change({day:clockSnapshot.current.day})});
   if(devSlider)devSlider.addEventListener('input',()=>{
     if(clockSnapshot?.source.kind!=='dev')return;
     const day=Number(devSlider.value);
@@ -207,7 +209,16 @@
     divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
     window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
   }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});rememberWeek();return true}});
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),getPublicWorld:()=>publicWorld,setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});rememberWeek();return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
+  if(!devClockEnabled&&window.faDevPreviewMode!==true){
+    pendingInitialWeek=state.view==='week';
+    import('/assets/authoritative-calendar.mjs').then(({mountAuthoritativeCalendar})=>mountAuthoritativeCalendar({root:calendar,onWorld:world=>{
+      publicWorld=world?Object.freeze({...world}):null;
+      try{clockSnapshot=world&&world.seasonNumber>0&&world.day>=1?clockAdapter.normalize({source:{kind:'authoritative',reference:'world:'+world.generation+':'+world.revision},current:{season:world.seasonNumber,day:world.day}}):null}catch{clockSnapshot=null}
+      if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){const day=currentWeekDay();if(day!==state.day)state={...state,day};if(world)pendingInitialWeek=false;}
+      render();window.dispatchEvent(new CustomEvent('fa:public-calendar-change'));
+    }})).catch(()=>{});
+  }
 })();

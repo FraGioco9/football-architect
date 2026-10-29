@@ -5,13 +5,13 @@ const hostPattern=/^(?:localhost|app\.localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5}
 const reply=(res,status,code)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({error:{code}}));return true};
 export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TARGET}={}){
  const raw=req.url||'';
- if(!/^\/api\/(?:world(?:$|[?/#])|admin(?:\/|$)|competitions(?:\/|$))/.test(raw))return false;
+ if(!/^\/api\/(?:world(?:$|[?/#])|admin(?:\/|$)|competitions(?:\/|$)|calendar(?:\/|$))/.test(raw))return false;
  if(!target)return false;
  // Validate original text too: URL normalizes alternative numeric IP spellings.
  if(!/^http:\/\/(?:127\.0\.0\.1|\[::1\]):[1-9][0-9]{0,4}\/?$/.test(target))return reply(res,503,'admin_unavailable');
  let url;try{url=new URL(target)}catch{return reply(res,503,'admin_unavailable')}
  if(!loopback(req.socket.remoteAddress)||!hostPattern.test(req.headers.host||'')||raw.includes('%')||raw.includes('\\')||raw.includes('?')||raw.includes('#')||/\/\.{1,2}(?:\/|$)/.test(raw))return reply(res,403,'forbidden');
- const publicRead=/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw);
+ const publicRead=/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
  if(!publicRead&&raw!=='/api/world'&&!['/api/admin/session','/api/admin/login','/api/admin/logout','/api/admin/world','/api/admin/seasons/prepare'].includes(raw))return reply(res,404,'not_found');
  if(!['GET','POST'].includes(req.method)||publicRead&&req.method!=='GET')return reply(res,405,'method_not_allowed');
  const chunks=[];let length=0;

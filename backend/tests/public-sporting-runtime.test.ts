@@ -120,3 +120,21 @@ it('rejects a self-rehashed corrupted saved score instead of showing a fabricate
  expect(await r.json()).toEqual({error:{code:'sporting_data_unavailable'}});
  expect(await readWorld(db)).toEqual(world);
 });
+it('projects one global day with the same saved scores as the competition source',async()=>{
+ await calendar();await through(13);
+ const response=await worker.fetch(new Request('https://example.invalid/api/calendar/seasons/1/days/13'),{DB:db});
+ expect(response.status).toBe(200);const day=await response.json() as any;
+ expect(day).toMatchObject({scope:'calendar',selectedSeason:1,day:13,status:'partial'});
+ expect(day.data.fixtures).toHaveLength(128);
+ expect(day.data.fixtures.every((f:any)=>f.day===13&&f.result!==null)).toBe(true);
+ const competition=await (await request()).json() as any;
+ expect(day.data.fixtures.filter((f:any)=>f.competitionId==='IT-1')).toEqual(competition.data.fixtures.filter((f:any)=>f.day===13));
+ expect(day.data.competitions).toHaveLength(18);
+ expect(JSON.stringify(day)).not.toMatch(/"seed"|token|csrf|password|sourceSeedHash/);
+});
+it('keeps daily calendar unsupported/unpublished states explicit and rejects invalid days/writes',async()=>{
+ const read=(season:number,day:number,method='GET')=>worker.fetch(new Request(`https://example.invalid/api/calendar/seasons/${season}/days/${day}`,{method}),{DB:db});
+ expect(await (await read(1,1)).json()).toMatchObject({status:'empty',data:null});
+ expect(await (await read(2,1)).json()).toMatchObject({status:'unavailable',selectedSeason:2,data:null});
+ expect((await read(1,57)).status).toBe(404);expect((await read(1,1,'POST')).status).toBe(405);
+});

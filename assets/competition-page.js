@@ -968,6 +968,10 @@
     if(activeDebugSeason===null){
       try{
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
+        const historyPanel=document.getElementById('competition-panel-history');
+        if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});window.addEventListener('fa:competition-context-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
+
         const copy={en:['Loading season data…','Season data is unavailable.','No published season data yet.'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.']};
         const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);

@@ -15,7 +15,7 @@ export function validPublicWorld(w){
 }
 function sameWorld(a,b){return ['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k])}
 function clubCatalog(manifest){return new Map((manifest?.divisions||[]).flatMap(d=>d.clubs||[]).map(c=>[key(c),c]))}
-function scoreValid(r,f){
+export function scoreValid(r,f){
  if(!object(r)||!count(r.homeGoals)||!count(r.awayGoals)||r.homeGoals>100||r.awayGoals>100||!['regulation','extra-time','penalties'].includes(r.resolution)||
    r.winnerClubId!==null&&![f.homeClubId,f.awayClubId].includes(r.winnerClubId))return false;
  const pair=p=>object(p)&&count(p.home)&&count(p.away)&&p.home<=100&&p.away<=100;
@@ -84,7 +84,9 @@ export function validateAuthoritativeSeason(input,context,manifest){
   if(day.day!==i+1||!Array.isArray(day.fixtureIds)||day.fixtureIds.length!==expected.length||new Set(day.fixtureIds).size!==expected.length||expected.some(f=>!day.fixtureIds.includes(f.id))||day.played!==expected.filter(f=>f.result!==null).length)fail();
  });
  if(w.phase==='closed'){
-  if(!object(d.history)||d.history.season!==d.season||!/^[a-f0-9]{64}$/.test(d.history.archiveHash)||!count(d.history.closedAt)||!ids.includes(d.history.championClubId))fail();
+  const final=fixtures.find(f=>f.marker===(definition.id==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
+  const champion=definition.category==='international'?final?.result?.winnerClubId:table.rows[0]?.clubId;
+  if(!table.complete||fixtures.some(f=>f.result===null)||!object(d.history)||d.history.season!==d.season||!/^[a-f0-9]{64}$/.test(d.history.archiveHash)||!count(d.history.closedAt)||d.history.closedAt===0||d.history.championClubId!==champion||!ids.includes(champion))fail();
  }else if(d.history!==null)fail();
  return freeze(structuredClone(input));
 }
@@ -113,6 +115,7 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  const currentChoice=source.world.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,
+  history:d.history?{season:d.history.season,archiveHash:d.history.archiveHash,closedAt:d.history.closedAt,championClubId:d.history.championClubId}:null,
   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,
   currentMatchday:source.world.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }

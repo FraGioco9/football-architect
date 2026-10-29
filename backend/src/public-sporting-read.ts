@@ -9,7 +9,7 @@ import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {sportingDayPayload} from './sporting-day-payload.ts';
-import {createProgression,processSportingDay,tieKey} from './knockout-progression.ts';
+import {createProgression,processSportingDay,tieKey,type KnockoutTie} from './knockout-progression.ts';
 import {rankLeagueTable} from './league-standings.ts';
 import type {TemporaryResult} from './temporary-simulation.ts';
 import type {Fixture} from './initial-schedule.ts';
@@ -46,10 +46,14 @@ function teamStatistics(clubs:readonly string[],fixtures:readonly Fixture[],resu
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),players:null,playerStatus:'unavailable' as const};
 }
-export async function readPublicSportingSeason(db:Database,competitionId:string,selectedSeason:number){
- if(!competitionPattern.test(competitionId)||!Number.isSafeInteger(selectedSeason)||selectedSeason<1)throw new ApiError(404,'not_found');
+function projectFixtures(fixtures:readonly Fixture[],plans:readonly KnockoutTie[],results:ReadonlyMap<string,TemporaryResult>){
+ const metadata=new Map(plans.flatMap(plan=>plan.fixtures.map(item=>[item.fixture.id,{phaseId:plan.phaseId,tieId:plan.tieId,leg:item.leg,neutral:item.neutral}] as const)));
+ return fixtures.map(f=>({...f,...(metadata.get(f.id)??{phaseId:'league',tieId:null,leg:null,neutral:false}),result:results.has(f.id)?publicScore(results.get(f.id)!):null}));
+}
+async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number){
+ if((competitionId!=='world'&&!competitionPattern.test(competitionId))||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
  const world=await readWorld(db);
- const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,competitionId,selectedSeason,world};
+ const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:{competitionId}),selectedSeason,world};
  const empty=async(status:'empty'|'unavailable',reason:string)=>{
   await unchanged(db,world);
   return {...base,status,reason,provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
@@ -91,6 +95,19 @@ export async function readPublicSportingSeason(db:Database,competitionId:string,
    const archiveHash=await canonicalHash({schemaVersion:1,season:1,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:4082,daysCount:56,tiesCount:54});
    if(archive.results_hash!==resultsHash||archive.knockout_hash!==knockoutHash||archive.archive_hash!==archiveHash)invalid();
   }else if(archive)invalid();
+  if(competitionId==='world'){
+   const plans=[...state.ties.values()];
+   const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))].filter(f=>f.day===calendarDay);
+   const canonical=(await import('../../assets/world-calendar-model.js')).default.createSeason(1) as {days:{events:{marker:string}[]}[]};
+   const priorities=new Map(canonical.days[calendarDay!-1].events.map((e,i)=>[e.marker,i]));
+   all.sort((a,b)=>(Number(priorities.get(a.marker))-Number(priorities.get(b.marker)))||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
+   const data={season:selectedSeason,day:calendarDay,calendarHash:evidence.calendar.calendar_hash,rulesHash:evidence.snapshot.rulesHash,
+    competitions:evidence.snapshot.bindings.map(b=>({id:b.competitionId,rulesVersion:b.rulesVersion,clubIds:[...b.clubIds]})),
+    fixtures:projectFixtures(all,plans,storedResults)};
+   await unchanged(db,world);
+   return {...base,status:world.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:1:${evidence.calendar.calendar_hash}`},data};
+  }
   const binding=evidence.snapshot.bindings.find(b=>b.competitionId===competitionId);if(!binding)invalid();
   const leagueFixtures=evidence.schedule.fixtures.filter(f=>f.competitionId===competitionId);
   const plans=[...state.ties.values()].filter(t=>t.competitionId===competitionId);
@@ -102,10 +119,7 @@ export async function readPublicSportingSeason(db:Database,competitionId:string,
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();
   const data={season:selectedSeason,rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
-   fixtures:fixtures.map(f=>{
-    const plan=plans.find(t=>t.fixtures.some(item=>item.fixture.id===f.id)),item=plan?.fixtures.find(item=>item.fixture.id===f.id);
-    return {...f,phaseId:plan?.phaseId??'league',tieId:plan?.tieId??null,leg:item?.leg??null,neutral:item?.neutral??false,result:storedResults.has(f.id)?publicScore(storedResults.get(f.id)!):null};
-   }),standings,statistics:stats,
+   fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
    history:archive?{season:1,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);
@@ -113,3 +127,9 @@ export async function readPublicSportingSeason(db:Database,competitionId:string,
    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:1:${evidence.calendar.calendar_hash}`},data};
  }catch(error){if(error instanceof ApiError&&error.code==='stale_world')throw error;return invalid()}
 }
+
+export function readPublicSportingSeason(db:Database,competitionId:string,selectedSeason:number){
+ if(!competitionPattern.test(competitionId))throw new ApiError(404,'not_found');
+ return readPublicProjection(db,competitionId,selectedSeason);
+}
+export function readPublicCalendarDay(db:Database,selectedSeason:number,day:number){return readPublicProjection(db,'world',selectedSeason,day)}
