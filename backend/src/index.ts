@@ -1,5 +1,7 @@
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
 import { ApiError } from './errors.ts';
+import {requireDatabase} from './database.ts';
+import {readPublicSportingSeason} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -30,6 +32,16 @@ export default {
       } catch (error) {
         if (error instanceof ApiError) return json(error.status, { error: { code: error.code } });
         return json(503, { error: { code: 'world_unavailable' } });
+      }
+    }
+    const sporting=url.pathname.match(/^\/api\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))\/seasons\/([1-9][0-9]*)$/);
+    if(sporting){
+      if(request.method!=='GET')return json(405,{error:{code:'method_not_allowed'}});
+      if(url.search||!Number.isSafeInteger(Number(sporting[2])))return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicSportingSeason(requireDatabase(env.DB),sporting[1],Number(sporting[2])))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
+        return json(503,{error:{code:'sporting_data_unavailable'}});
       }
     }
     // Admin access requires explicit configuration, durable authorization and CSRF.

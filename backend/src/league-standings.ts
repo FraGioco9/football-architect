@@ -15,10 +15,11 @@ function partition(rows:LeagueRow[],value:(r:LeagueRow)=>number[]):LeagueRow[][]
  for(const row of sorted){const last=groups[groups.length-1];if(last&&numericCompare(value(last[0]),value(row))===0)last.push(row);else groups.push([row])}
  return groups;
 }
-/** Complete sporting league evidence only. Caller supplies independently validated
+/** Sporting league evidence; strict complete-season coverage by default. Caller supplies independently validated
  * seasonal memberships/fixtures. Scores from knockouts never enter these tables. */
-export async function rankLeagueTable(competitionId:string,clubIds:readonly string[],fixtures:readonly Fixture[],scores:ReadonlyMap<string,FinalScore>,seed:string):Promise<readonly Readonly<LeagueRow>[]>{
- const cup=competitionId.startsWith('int-');
+export async function rankLeagueTable(competitionId:string,clubIds:readonly string[],fixtures:readonly Fixture[],scores:ReadonlyMap<string,FinalScore>,seed:string,coverage?:{throughDay:number}):Promise<readonly Readonly<LeagueRow>[]>{
+ const cup=competitionId.startsWith('int-'),throughDay=coverage?.throughDay;
+ if(coverage&&(typeof throughDay!=='number'||!Number.isSafeInteger(throughDay)||throughDay<0||throughDay>56))return fail();
  if(!/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competitionId)||!Array.isArray(clubIds)||clubIds.length<2||new Set(clubIds).size!==clubIds.length||typeof seed!=='string'||seed.length<16||
   fixtures.length!==(cup?72:clubIds.length*(clubIds.length-1))||new Set(fixtures.map(f=>f.id)).size!==fixtures.length||(cup&&clubIds.length!==24))return fail();
  const rows=new Map<string,LeagueRow>(),opponents=new Map<string,string[]>(),pairs=new Set<string>();
@@ -28,15 +29,18 @@ export async function rankLeagueTable(competitionId:string,clubIds:readonly stri
  }
  for(const f of fixtures){
   const score=scores.get(f.id),home=rows.get(f.homeClubId),away=rows.get(f.awayClubId),pair=f.homeClubId+':'+f.awayClubId;
-  if(f.competitionId!==competitionId||!home||!away||home===away||pairs.has(pair)||!score||![score.homeGoals,score.awayGoals].every(x=>Number.isSafeInteger(x)&&x>=0&&x<=100))return fail();
-  pairs.add(pair);opponents.get(home.clubId)!.push(away.clubId);opponents.get(away.clubId)!.push(home.clubId);
+  if(f.competitionId!==competitionId||!home||!away||home===away||pairs.has(pair)||!Number.isInteger(f.day)||f.day<1||f.day>56)return fail();
+  pairs.add(pair);
+  if(throughDay!==undefined&&f.day>throughDay)continue;
+  if(!score||![score.homeGoals,score.awayGoals].every(x=>Number.isSafeInteger(x)&&x>=0&&x<=100))return fail();
+  opponents.get(home.clubId)!.push(away.clubId);opponents.get(away.clubId)!.push(home.clubId);
   home.played++;away.played++;home.goalsFor+=score.homeGoals;home.goalsAgainst+=score.awayGoals;away.goalsFor+=score.awayGoals;away.goalsAgainst+=score.homeGoals;away.awayGoals+=score.awayGoals;
   if(score.homeGoals===score.awayGoals){home.drawn++;away.drawn++;home.points++;away.points++}
   else if(score.homeGoals>score.awayGoals){home.won++;away.lost++;home.points+=3}
   else{away.won++;home.lost++;away.points+=3;away.awayWins++}
  }
  for(const row of rows.values()){
-  if(row.played!==(cup?6:2*(clubIds.length-1))||new Set(opponents.get(row.clubId)).size!==(cup?6:clubIds.length-1))return fail();
+  if(throughDay===undefined&&(row.played!==(cup?6:2*(clubIds.length-1))||new Set(opponents.get(row.clubId)).size!==(cup?6:clubIds.length-1)))return fail();
   row.goalDifference=row.goalsFor-row.goalsAgainst;
  }
  for(const row of rows.values())for(const opponent of opponents.get(row.clubId)!){const r=rows.get(opponent)!;row.opponentsPoints+=r.points;row.opponentsGoalDifference+=r.goalDifference;row.opponentsGoalsFor+=r.goalsFor}
@@ -44,7 +48,7 @@ export async function rankLeagueTable(competitionId:string,clubIds:readonly stri
  const headToHead=(group:LeagueRow[]):LeagueRow[]=>{
   if(group.length<2)return group;
   const mini=new Map(group.map(r=>[r.clubId,[0,0,0]]));
-  for(const f of fixtures){const h=mini.get(f.homeClubId),a=mini.get(f.awayClubId);if(!h||!a)continue;const s=scores.get(f.id)!;
+  for(const f of fixtures){if(throughDay!==undefined&&f.day>throughDay)continue;const h=mini.get(f.homeClubId),a=mini.get(f.awayClubId);if(!h||!a)continue;const s=scores.get(f.id)!;
    h[0]+=s.homeGoals>s.awayGoals?3:s.homeGoals===s.awayGoals?1:0;a[0]+=s.awayGoals>s.homeGoals?3:s.homeGoals===s.awayGoals?1:0;
    h[1]+=s.homeGoals-s.awayGoals;a[1]+=s.awayGoals-s.homeGoals;h[2]+=s.homeGoals;a[2]+=s.awayGoals;
   }
