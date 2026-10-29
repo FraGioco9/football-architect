@@ -91,6 +91,17 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first()).toBeNull();
   await expect(preflightAdminOperatorsBatch(db,[mapping,mapping])).rejects.toMatchObject({status:422});
  });
+ it('refuses a partial bulk cutover even without a separate preflight',async()=>{
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+   .bind('migration-second-legacy','unmapped@example.invalid','historical-only',now()).run();
+  await expect(migrateAdminOperatorsBatch(db,[
+   {playerAccountId:'migration-player',legacyAdminId:'migration-legacy'}
+  ],'trusted-local-operator',now())).rejects.toBeDefined();
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?')
+   .bind('migration-player').first()).toBeNull();
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id=?')
+   .bind('migration-player').first<{n:number}>())?.n).toBe(0);
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
