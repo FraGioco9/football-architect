@@ -8,7 +8,7 @@ type Phase={id:string;calendarEvents?:readonly string[];[key:string]:unknown};
 type Division={id:string;rules:{phases:readonly Phase[];[key:string]:unknown};[key:string]:unknown};
 const fail=():never=>{throw new ApiError(422,'calendar_invalid')};
 function placements(){
- const calendar=calendarModel.createSeason(1);
+ const calendar=calendarModel.createSeason(1) as {schemaVersion:number;model:string;days:{events:{family:string;marker:string;round:number;competitionIds:string[]}[]}[]};
  if(calendar.schemaVersion!==1||calendar.model!=='WORLD-TIME-QA-06'||calendar.days.length!==56)return fail();
  const national=calendar.days.flatMap(day=>day.events.filter(event=>event.family==='national'));
  if(national.length!==33||new Set(national.map(x=>x.marker)).size!==33)return fail();
