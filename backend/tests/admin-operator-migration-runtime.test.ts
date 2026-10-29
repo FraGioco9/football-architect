@@ -102,6 +102,17 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect((await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id=?')
    .bind('migration-player').first<{n:number}>())?.n).toBe(0);
  });
+ it('invalidates every pre-cutover Player session when elevating an Admin identity',async()=>{
+  const first=await playerLogin(db,{email,password},'local-loopback',now());
+  expect(first.token).toBeTruthy();
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_sessions WHERE account_id=?')
+   .bind('migration-player').first<{n:number}>())?.n).toBe(1);
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_sessions WHERE account_id=?')
+   .bind('migration-player').first<{n:number}>())?.n).toBe(0);
+  const next=await playerLogin(db,{email,password},'local-loopback',now());
+  expect(next.token).not.toBe(first.token);
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
