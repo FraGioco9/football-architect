@@ -3,9 +3,6 @@ import {canonicalHash,requireApprovedSnapshot,type ApprovedSnapshot} from './cat
 import {buildSeasonCalendarEvidence} from './season-calendar-evidence.ts';
 import {ApiError} from './errors.ts';
 import {qualificationPots} from './season-qualification-pots.ts';
-import type {Database} from './database.ts';
-import {loadApprovedSnapshot} from './approved-season-one.ts';
-import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 export interface Fixture {id:string;competitionId:string;marker:string;day:number;round:number;homeClubId:string;awayClubId:string}
 export interface InitialSchedule {
  schemaVersion:1;season:number;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;
@@ -23,7 +20,7 @@ async function shuffle<T>(input:readonly T[],seed:string):Promise<T[]>{
   const j=n%range;[result[i],result[j]]=[result[j],result[i]];
  }return result;
 }
-type SchedulingSnapshot=Pick<ApprovedSnapshot,'participantsHash'|'rulesHash'|'bindings'>;
+export type SchedulingSnapshot=Pick<ApprovedSnapshot,'participantsHash'|'rulesHash'|'bindings'>;
 async function generate(trusted:SchedulingSnapshot,seed:string,season:number):Promise<InitialSchedule>{
  if(typeof seed!=='string'||!/^[A-Za-z0-9._:-]{16,256}$/.test(seed))return fail();
  const calendar=await buildSeasonCalendarEvidence(season);
@@ -107,30 +104,11 @@ export async function validateInitialSchedule(input:unknown,snapshot:ApprovedSna
  }catch{return fail()}
 }
 
-/** Read-only fixture generation from a *persisted* approved Season 2 catalog.
- * No client-provided participant list is trusted, and no fixture is persisted.
- * The existing sporting executor remains restricted to Season 1 until its
- * result/knockout/archive machinery has been made season-aware.
+
+/** Pure fixture generator for an already authenticated/validated seasonal snapshot.
+ * Not an approval boundary: only the server-owned loader may call this method.
  */
-export async function buildApprovedSeasonTwoInitialSchedule(db:Database,seed:string):Promise<InitialSchedule>{
- const review=await readSeasonTwoCandidate(db);
- const approved=await db.prepare('SELECT generation,source_archive_hash,snapshot_hash,snapshot_json FROM season_two_approvals WHERE target_season=2').first<{
-  generation:string;source_archive_hash:string;snapshot_hash:string;snapshot_json:string
- }>();
- if(!approved||approved.generation!==review.world.generation||approved.source_archive_hash!==review.sourceArchiveHash||
-  approved.snapshot_hash!==review.snapshot.snapshotHash)return fail();
- const {snapshotHash,status,readyForActivation,...manifest}=review.snapshot;
- let stored:unknown;
- try{stored=JSON.parse(approved.snapshot_json)}catch{return fail()}
- if(await canonicalHash(manifest)!==snapshotHash||await canonicalHash(stored)!==snapshotHash)return fail();
- const seasonOne=await loadApprovedSnapshot();
- const versions=new Map(seasonOne.bindings.map(b=>[b.competitionId,b.rulesVersion]));
- const bindings=manifest.bindings.map(b=>{
-  const rulesVersion=versions.get(b.competitionId);if(!rulesVersion)return fail();
-  return {competitionId:b.competitionId,rulesVersion,clubIds:b.clubIds};
- });
- const participantsHash=await canonicalHash([...bindings].sort((a,b)=>a.competitionId.localeCompare(b.competitionId,'en'))
-  .map(b=>({competitionId:b.competitionId,clubIds:[...b.clubIds].sort()})));
- const trusted:SchedulingSnapshot={bindings,participantsHash,rulesHash:seasonOne.rulesHash};
- const result=await generate(trusted,seed,2);checkInvariants(result,trusted);return result;
+export async function buildTrustedSeasonSchedule(snapshot:SchedulingSnapshot,seed:string,season:number):Promise<InitialSchedule>{
+ if(!Number.isSafeInteger(season)||season<1||season>1000000)return fail();
+ const result=await generate(snapshot,seed,season);checkInvariants(result,snapshot);return result;
 }
