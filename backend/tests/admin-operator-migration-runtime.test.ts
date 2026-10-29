@@ -32,6 +32,17 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   const final=await adminOperatorMigrationReadiness(db);
   expect(final.blocked.some(x=>x.legacyAdminId==='migration-legacy')).toBe(false);
   expect(final.linked).toBeGreaterThanOrEqual(1);
+  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind('migration-player').run();
+  const partial=await adminOperatorMigrationReadiness(db);
+  expect(partial.ready).toBe(false);
+  expect(partial.blocked.find(x=>x.legacyAdminId==='migration-legacy')?.status).toBe('missing_permissions');
+  await db.prepare("INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)")
+   .bind('migration-player','admin.world.write',now()).run();
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('changed-email@example.invalid','migration-player').run();
+  const mismatch=await adminOperatorMigrationReadiness(db);
+  expect(mismatch.ready).toBe(false);
+  expect(mismatch.blocked.find(x=>x.legacyAdminId==='migration-legacy')?.status).toBe('invalid_player');
  });
  it('grants all permissions and links the exact identity in one batch, without legacy login',async()=>{
   const linked=await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
