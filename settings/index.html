@@ -221,6 +221,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  </form>
  <div data-admin-signed-in hidden>
  <p data-admin-actor></p><p data-admin-world></p>
+ <p><strong data-admin-copy="operationLabel">Current operation</strong>: <span data-admin-operation aria-live="polite"></span> <code data-admin-error-code></code></p>
  <button type="button" data-admin-prepare data-admin-copy="prepare">Prepare season</button>
  <button type="button" data-admin-refresh data-admin-copy="refresh">Refresh</button>
  <section data-admin-reset-section aria-labelledby="admin-reset-heading" hidden>
