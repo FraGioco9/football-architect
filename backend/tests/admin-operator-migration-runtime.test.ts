@@ -105,6 +105,22 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
    {expectedGeneration:state!.generation} as any,'identity-drift-replay','request-hash',now()))
    .rejects.toMatchObject({status:403,code:'permission_denied'});
  });
+ it('keeps emergency rollback possible after identity drift and operator disablement',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('altered@example.invalid','migration-player').run();
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  const revoked=await revokeMigratedAdminOperator(db,'migration-player',now());
+  expect(revoked.revoked).toBe(true);
+  expect(revoked.sessionsRevoked).toBe(1);
+  const active=await db.prepare('SELECT token_digest FROM player_sessions WHERE account_id=?').bind('migration-player').first();
+  expect(active).toBeNull();
+  const grants=await db.prepare('SELECT permission FROM account_permissions WHERE account_id=?').bind('migration-player').all();
+  expect(grants.results).toHaveLength(0);
+  const historic=await db.prepare('SELECT id FROM admin_accounts WHERE id=?').bind('migration-legacy').first();
+  expect(historic).not.toBeNull();
+ });
  it('rolls back permissions and unified sessions while preserving historical admin identity',async()=>{
   await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
   const signed=await playerLogin(db,{email,password},'local-loopback',now());
