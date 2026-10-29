@@ -282,6 +282,18 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-orphan').run();
   await db.prepare('DELETE FROM player_accounts WHERE id=?').bind('migration-orphan').run();
  });
+ it('verifies zero privileged remnants after emergency single-operator rollback',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await playerLogin(db,{email,password},'local-loopback',now());
+  expect((await revokeMigratedAdminOperator(db,'migration-player',now())).revoked).toBe(true);
+  const checks=await db.batch([
+   db.prepare("SELECT COUNT(*) AS n FROM account_permissions WHERE account_id=? AND permission IN ('admin.access','admin.world.read','admin.world.write')").bind('migration-player'),
+   db.prepare('SELECT COUNT(*) AS n FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player'),
+   db.prepare('SELECT COUNT(*) AS n FROM player_sessions WHERE account_id=?').bind('migration-player'),
+   db.prepare('SELECT COUNT(*) AS n FROM player_one_time_tokens WHERE account_id=?').bind('migration-player')
+  ]);
+  expect(checks.every(x=>(x.results[0] as {n:number}).n===0)).toBe(true);
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
