@@ -26,6 +26,7 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
  if(world.phase==='unstarted'||world.phase==='closed')throw new ApiError(409,'calendar_event_prerequisites');
  const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<EventRow>()).results;
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
+ if(command.day>12)throw new ApiError(409,'calendar_event_prerequisites');
  const moved=rescheduleAdministrativeMilestone(events,command.eventId,command.day,command.order,world.day);
  const old=events.find(e=>e.id===command.eventId)!,next=moved.find(e=>e.id===command.eventId)!;
  const result:Outcome={operationId:crypto.randomUUID(),world:{...world,revision:world.revision+1}};
