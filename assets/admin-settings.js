@@ -58,7 +58,7 @@
    // An unavailable events read must fail closed for event actions, not erase the world read.
    try{
     const events=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
-    value.events=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision&&['uninitialized','legacy','administrative','sporting'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events}:null;
+    value.events=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision&&['uninitialized','legacy','administrative','sporting'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events,worldGeneration:events.world.generation,worldRevision:events.world.revision,nextEvent:events.nextEvent??null,remaining:events.remaining??null,blocked:events.blocked===true,closure:events.closure??null}:null;
    }catch(error){if(ticket!==epoch)return;if(error?.status===401)throw error;value.events=null;}
    if(value.world?.seasonNumber===1&&value.world.phase==='closed'){
     try{
@@ -137,7 +137,7 @@
    },
    async command(action){
     const routes={initialize:'/api/admin/seasons/events/initialize',confirm:'/api/admin/seasons/events/confirm',domestic:'/api/admin/seasons/events/domestic-calendar',draw:'/api/admin/seasons/events/international-draw',publish:'/api/admin/seasons/events/international-calendar',start:'/api/admin/seasons/start',advance:'/api/admin/seasons/advance',close:'/api/admin/seasons/close',legacy:'/api/admin/seasons/calendar',eventStart:'/api/admin/seasons/events/start',eventAdvance:'/api/admin/seasons/events/advance'};
-    if(!Object.hasOwn(routes,action)||value.busy||!value.actor||!value.world||value.world.phase==='unstarted')return;
+    if(!Object.hasOwn(routes,action)||value.busy||!value.actor||!value.world||value.world.phase==='unstarted'||!canRunCommand(action,value.world,value.events))return;
     const ticket=++epoch,old=value.world;
     value.busy=true;value.operation=action;value.errorCode=null;emit();
     try{
