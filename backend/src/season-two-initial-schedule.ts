@@ -30,5 +30,5 @@ export async function buildApprovedSeasonTwoInitialSchedule(db:Database,seed:str
  const participantsHash=await canonicalHash([...bindings].sort((a,b)=>a.competitionId.localeCompare(b.competitionId,'en'))
   .map(b=>({competitionId:b.competitionId,clubIds:[...b.clubIds].sort()})));
  const trusted:SchedulingSnapshot={bindings,participantsHash,rulesHash:seasonOne.rulesHash};
- const result=await generate(trusted,seed,2);checkInvariants(result,trusted);return result;
+ return buildTrustedSeasonSchedule(trusted,seed,2);
 }
