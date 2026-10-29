@@ -7,6 +7,7 @@ import {prepareSeason} from '../src/commands.ts';
 import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
+import {archiveSeason} from '../src/season-archive-command.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
@@ -89,6 +90,7 @@ it('returns canonical final league tables and history only after actual closure'
  const scores=new Map<string,{homeGoals:number;awayGoals:number}>(rows.flatMap((r:any)=>JSON.parse(r.outcome_json).results.map((s:any)=>[s.fixtureId,s])));
  const expected=await rankLeagueTable('IT-1',evidence.snapshot.bindings.find(b=>b.competitionId==='IT-1')!.clubIds,evidence.schedule.fixtures.filter(f=>f.competitionId==='IT-1'),scores,evidence.schedule.seed);
  expect(body.data.standings.rows).toEqual(expected.map(({drawKey,...row})=>row));
+ world=(await archiveSeason(db,session,meta(),'public-archive-00001',now)).world;
  world=(await closeSeason(db,session,meta(),'public-close-0001',now)).world;
  body=await (await request()).json() as any;
  expect(body).toMatchObject({status:'available',data:{history:{championClubId:expected[0].clubId,season:1}}});
