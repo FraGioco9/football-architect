@@ -27,7 +27,7 @@ it('purges all season state and retains admin access plus historical operation l
  const before=cmd();
  world=(await initializeAdministrativeEvents(db,session,before,'reset-event-init-00001',now)).world;
  const previousGeneration=world.generation;
- const originalAudit=(await db.prepare('SELECT count(*) n FROM admin_operations').first<any>()).n;
+ const originalAudit=(await db.prepare('SELECT count(*) n FROM admin_operations').first()).n;
  const resetRequest={...cmd(),confirmation:'RESET SEASON 0'};
  const outcome=await resetWorld(db,session,resetRequest,'reset-full-command-00001',now);
  expect(outcome.world).toMatchObject({phase:'unstarted',seasonNumber:0,day:0,revision:0});
@@ -35,13 +35,13 @@ it('purges all season state and retains admin access plus historical operation l
  expect(await readWorld(db)).toEqual(outcome.world);
  await expect(resetWorld(db,session,resetRequest,'reset-full-command-00001',now)).rejects.toMatchObject({status:409});
  await expect(resetWorld(db,session,resetRequest,'reset-other-command-00001',now)).rejects.toMatchObject({status:409});
- const audit=await db.prepare("SELECT generation,expected_revision,resulting_revision FROM admin_operations WHERE command='reset-world-v1'").first<any>();
+ const audit=await db.prepare("SELECT generation,expected_revision,resulting_revision FROM admin_operations WHERE command='reset-world-v1'").first();
  expect(audit).toMatchObject({generation:previousGeneration,expected_revision:resetRequest.expectedRevision,resulting_revision:resetRequest.expectedRevision+1});
  for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_archives'])
-  expect((await db.prepare('SELECT count(*) n FROM '+table).first<any>()).n).toBe(0);
- expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first<any>()).n).toBe(1);
- expect((await db.prepare('SELECT count(*) n FROM admin_sessions').first<any>()).n).toBe(1);
- expect((await db.prepare('SELECT count(*) n FROM admin_operations').first<any>()).n).toBe(originalAudit+1);
+  expect((await db.prepare('SELECT count(*) n FROM '+table).first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM admin_sessions').first()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM admin_operations').first()).n).toBe(originalAudit+1);
  await expect(initializeAdministrativeEvents(db,session,{expectedGeneration:previousGeneration,expectedRevision:world.revision},'stale-event-command-00001',now)).rejects.toMatchObject({status:409});
  const prepared=await prepareSeason(db,session,{expectedGeneration:outcome.world.generation,expectedRevision:0},'new-generation-prepare-00001',await loadApprovedSnapshot(),now);
  expect(prepared.world).toMatchObject({seasonNumber:1,phase:'preparing',revision:1});
@@ -53,8 +53,8 @@ it('refuses missing confirmation and atomically rolls back failed reset audit',a
  try{await expect(resetWorld(db,session,{...cmd(),confirmation:'RESET SEASON 0'},'reset-rollback-00001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER prevent_reset_audit').run()}
  expect(await readWorld(db)).toEqual(world);
- expect((await db.prepare('SELECT count(*) n FROM seasons').first<any>()).n).toBe(1);
- expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first<any>()).n).toBe(5);
+ expect((await db.prepare('SELECT count(*) n FROM seasons').first()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first()).n).toBe(5);
 });
 
 it('invalidates old-generation commands and operation replays after successful reset',async()=>{
@@ -65,7 +65,7 @@ it('invalidates old-generation commands and operation replays after successful r
  expect(newWorld.revision).toBe(0);
  await expect(prepareSeason(db,session,{expectedGeneration:generation,expectedRevision:revision},'old-generation-prepare-00001',await loadApprovedSnapshot(),now)).rejects.toMatchObject({status:409});
  await expect(resetWorld(db,session,{expectedGeneration:generation,expectedRevision:revision,confirmation:'RESET SEASON 0'},'reset-invalidation-00001',now)).rejects.toMatchObject({status:409});
- const saved=await db.prepare("SELECT generation,request_hash,account_id,outcome_json FROM admin_operations WHERE command='reset-world-v1'").first<any>();
+ const saved=await db.prepare("SELECT generation,request_hash,account_id,outcome_json FROM admin_operations WHERE command='reset-world-v1'").first();
  expect(saved.generation).toBe(generation);
  expect(saved.account_id).toBe(session.actor.id);
  expect(JSON.parse(saved.outcome_json).world).toEqual(first.world);
@@ -92,9 +92,9 @@ it.each([
  const outcome=await resetWorld(db,session,command,'reset-from-'+phase+'-00001',now);
  expect(outcome.world).toMatchObject({phase:'unstarted',seasonNumber:0,day:0,revision:0});
  expect(outcome.world.generation).not.toBe(world.generation);
- expect((await db.prepare('SELECT count(*) n FROM seasons').first<any>()).n).toBe(0);
- expect((await db.prepare('SELECT count(*) n FROM season_archives').first<any>()).n).toBe(0);
- expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first<any>()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM seasons').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_archives').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first()).n).toBe(1);
  await expect(resetWorld(db,session,command,'reset-repeated-'+phase+'-00001',now)).rejects.toMatchObject({status:409});
  const prepared=await prepareSeason(db,session,{expectedGeneration:outcome.world.generation,expectedRevision:0},'reset-reprepare-'+phase+'-00001',await loadApprovedSnapshot(),now);
  expect(prepared.world).toMatchObject({phase:'preparing',seasonNumber:1,day:0,revision:1});
