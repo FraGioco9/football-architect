@@ -93,6 +93,22 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect((await request('/api/player/logout',{}, {Cookie:c,'X-CSRF-Token':data.csrfToken})).status).toBe(200);
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
  });
+ it('keeps only the current session after explicit other-device revocation',async()=>{
+  const first=await login(),firstCookie=cookie(first),firstToken=(await first.json() as any).csrfToken;
+  const second=await login(),secondCookie=cookie(second);
+  const before=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
+  expect(before.status).toBe(200);
+  const rows=(await before.json() as any).sessions;
+  expect(rows).toHaveLength(2);
+  expect(rows.filter((r:any)=>r.current)).toHaveLength(1);
+  expect(JSON.stringify(rows)).not.toContain(firstCookie.split('=')[1]);
+  const revoked=await request('/api/player/account/revoke-other-sessions',{}, {Cookie:firstCookie,'X-CSRF-Token':firstToken});
+  expect(revoked.status).toBe(200);
+  expect((await request('/api/player/session',undefined,{Cookie:secondCookie})).status).toBe(401);
+  expect((await request('/api/player/session',undefined,{Cookie:firstCookie})).status).toBe(200);
+  const remaining=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
+  expect((await remaining.json() as any).sessions).toHaveLength(1);
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
