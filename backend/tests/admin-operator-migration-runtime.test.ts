@@ -161,6 +161,23 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(remaining.results[0].token_digest).toBe(digest);
   expect(remaining.results[0].consumed_at).not.toBeNull();
  });
+ it('invalidates historical Admin sessions and all pending tokens after password change',async()=>{
+  const {changePlayerPassword}=await import('../src/player-account-management.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  const digest=await digestOpaqueToken(signed.token),csrfDigest=await digestOpaqueToken(signed.csrfToken);
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind('e'.repeat(64),'migration-player','reset_password',now(),now()+600).run();
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const result=await changePlayerPassword(db,{actor:signed.actor,digest,csrfDigest},
+   {currentPassword:password,newPassword:'changed-valid-password-2026'},now());
+  expect(result.sessionsRevoked).toBe(true);
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?').bind('migration-legacy').first()).toBeNull();
+  expect(await db.prepare('SELECT 1 FROM player_sessions WHERE account_id=?').bind('migration-player').first()).toBeNull();
+  expect(await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?').bind('migration-player').first()).toBeNull();
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
