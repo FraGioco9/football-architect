@@ -35,7 +35,7 @@ export async function readAdministrativeCalendar(db:Database){
   if((event.status==='completed')!==(event.completedAt!==null&&event.hasReceipt))throw new ApiError(422,'calendar_event_invalid');
  }
  // Revalidate ordering/dependencies even for rows modified outside the command boundary.
- if(rows.length&&world.day<56)dueAdministrativeMilestones(events,Math.max(1,world.day));
+ if(rows.length)dueAdministrativeMilestones(events,Math.max(1,world.day));
  const pending=events.filter(e=>e.status==='scheduled').sort((a,b)=>a.day-b.day||a.order-b.order);
  const next=pending[0]??null;
  const blocked=next!==null&&next.day<world.day;
@@ -46,7 +46,7 @@ export async function readAdministrativeCalendar(db:Database){
  const closure={days:counts?.days??0,ties:counts?.ties??0,archived:(counts?.archives??0)>0,
   ready:world.phase==='active'&&world.day===56&&pending.every(e=>e.scope==='season')&&counts?.days===56&&counts?.ties===54&&counts?.archives===0};
  return {world,events,mode:rows.length===0&&world.phase==='preparing'?'legacy' as const:sporting?'sporting' as const:rows.length===0?'legacy' as const:'administrative' as const,closure,calendarReady:!!calendar,
-  nextEvent:next?{id:next.id,kind:next.kind,day:next.day,order:next.order,ready:world.phase==='active'&&!blocked&&next.day===world.day}:null,
+  nextEvent:next?{id:next.id,kind:next.kind,day:next.day,order:next.order,ready:!blocked&&next.day===world.day&&(world.phase==='active'||world.phase==='closed'&&next.id==='season:next-prepare')}:null,
   remaining:pending.length,blocked};
 
 }
