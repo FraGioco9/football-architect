@@ -72,8 +72,21 @@ export async function migrateAdminOperatorsBatch(
     .bind(playerAccountId,permission,now,approvedBy));
   }
  }
+ // A partial approved roster is not a safe cutover: enforce complete coverage
+ // within the SAME atomic D1 batch, not only in a separate read-only preflight.
+ const slots=selections.map(()=>'?').join(',');
+ statements.push(abortUnless(db,`SELECT 1 WHERE
+  NOT EXISTS(SELECT 1 FROM admin_accounts a
+   WHERE a.enabled=1 AND a.id NOT IN (${slots}))
+  AND NOT EXISTS(SELECT 1 FROM player_admin_operator_links l
+   JOIN admin_accounts a ON a.id=l.legacy_admin_account_id WHERE a.enabled<>1)
+  AND NOT EXISTS(SELECT 1 FROM account_permissions p
+   LEFT JOIN player_admin_operator_links l ON l.player_account_id=p.account_id
+   WHERE p.permission IN ('admin.access','admin.world.read','admin.world.write')
+    AND l.player_account_id IS NULL AND p.account_id NOT IN (${slots}))`,
+   [...selections.map(x=>x.legacyAdminId),...selections.map(x=>x.playerAccountId)]));
  const result=await db.batch(statements);
- if(result.some((row,index)=>index%5!==0&&row.meta.changes!==1))
+ if(result.slice(0,-1).some((row,index)=>index%5!==0&&row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {linked:selections.length,permissionsGranted:selections.length*3};
 }
