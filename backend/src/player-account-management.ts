@@ -20,7 +20,7 @@ export async function changePlayerPassword(db:Database,session:Identity,body:unk
  if(!row||!await verifyPassword(data.currentPassword as string,row.password_verifier))throw new ApiError(401,'invalid_credentials');
  const passwordVerifier=await hashPassword(data.newPassword as string);
  const changes=await db.batch([
-  abortUnless(db,"SELECT 1 FROM player_accounts WHERE id=? AND status='active' AND credential_version=? AND password_verifier=? AND EXISTS (SELECT 1 FROM player_sessions WHERE token_digest=? AND account_id=?)",[session.actor.id,row.credential_version,row.password_verifier,session.digest,session.actor.id]),
+  abortUnless(db,"SELECT 1 FROM player_accounts a JOIN player_sessions s ON s.account_id=a.id WHERE a.id=? AND a.status='active' AND a.email_verified_at IS NOT NULL AND a.credential_version=? AND a.password_verifier=? AND s.token_digest=? AND s.account_id=a.id AND s.credential_version=a.credential_version AND s.created_at>0 AND s.created_at<=? AND s.last_seen_at>=s.created_at AND s.last_seen_at<=? AND s.last_seen_at>? AND s.expires_at>? AND s.expires_at<=s.created_at+2592000",[session.actor.id,row.credential_version,row.password_verifier,session.digest,now,now,now-604800,now]),
   db.prepare("UPDATE player_accounts SET password_verifier=?,credential_version=credential_version+1,updated_at=? WHERE id=? AND status='active' AND credential_version=? AND password_verifier=?")
   .bind(passwordVerifier,now,session.actor.id,row.credential_version,row.password_verifier),
   db.prepare("DELETE FROM player_sessions WHERE account_id=?").bind(session.actor.id),
@@ -31,7 +31,7 @@ export async function changePlayerPassword(db:Database,session:Identity,body:unk
 }
 export async function revokeOtherSessions(db:Database,session:Identity,now:number){
  const results=await db.batch([
-  abortUnless(db,"SELECT 1 FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id WHERE s.token_digest=? AND s.account_id=? AND a.status='active' AND a.credential_version=s.credential_version AND s.expires_at>? AND s.last_seen_at>?",[session.digest,session.actor.id,now,now-604800]),
+  abortUnless(db,"SELECT 1 FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id WHERE s.token_digest=? AND s.account_id=? AND a.status='active' AND a.email_verified_at IS NOT NULL AND a.credential_version=s.credential_version AND s.created_at>0 AND s.created_at<=? AND s.last_seen_at>=s.created_at AND s.last_seen_at<=? AND s.last_seen_at>? AND s.expires_at>? AND s.expires_at<=s.created_at+2592000",[session.digest,session.actor.id,now,now,now-604800,now]),
   db.prepare("DELETE FROM player_sessions WHERE account_id=? AND token_digest<>?").bind(session.actor.id,session.digest)
  ]);
  return {otherSessionsRevoked:results[1].meta.changes};
@@ -49,7 +49,7 @@ export async function deletePlayerAccount(db:Database,session:Identity,body:unkn
  const linked=await db.prepare("SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?").bind(session.actor.id).first<{legacy_admin_account_id:string}>();
  if(linked)throw new ApiError(409,'admin_transfer_required');
  const changes=await db.batch([
-  abortUnless(db,"SELECT 1 FROM player_accounts a JOIN player_sessions s ON s.account_id=a.id WHERE a.id=? AND a.password_verifier=? AND a.status='active' AND s.token_digest=? AND s.expires_at>? AND NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=a.id)",[session.actor.id,account.password_verifier,session.digest,now]),
+  abortUnless(db,"SELECT 1 FROM player_accounts a JOIN player_sessions s ON s.account_id=a.id WHERE a.id=? AND a.password_verifier=? AND a.status='active' AND a.email_verified_at IS NOT NULL AND s.token_digest=? AND s.credential_version=a.credential_version AND s.created_at>0 AND s.created_at<=? AND s.last_seen_at>=s.created_at AND s.last_seen_at<=? AND s.last_seen_at>? AND s.expires_at>? AND s.expires_at<=s.created_at+2592000 AND NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=a.id)",[session.actor.id,account.password_verifier,session.digest,now,now,now-604800,now]),
   db.prepare("DELETE FROM player_accounts WHERE id=? AND password_verifier=? AND status='active'").bind(session.actor.id,account.password_verifier)
  ]);
  if(changes[1].meta.changes!==1)throw new ApiError(409,'account_changed');
