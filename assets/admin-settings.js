@@ -23,7 +23,7 @@
   if(action==='initialize'||action==='legacy')return w.phase==='preparing'&&mode==='legacy';
   if(action==='eventStart')return w.phase==='preparing'&&mode==='administrative';
   if(action==='start')return w.phase==='preparing'&&mode==='legacy';
-  if(action==='eventAdvance')return w.phase==='active'&&w.day<12&&mode==='administrative';
+  if(action==='eventAdvance')return w.phase==='active'&&w.day<=12&&mode==='administrative'&&!ev.blocked;
   if(action==='advance')return w.phase==='active'&&(mode==='legacy'||mode==='sporting')&&w.day<56;
   if(action==='close')return w.phase==='active'&&w.day===56&&mode==='sporting'&&ev.closure?.ready===true;
   return !!eventKind&&w.phase==='active'&&mode==='administrative'&&availableEvent;
