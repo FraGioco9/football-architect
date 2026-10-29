@@ -6,6 +6,8 @@ import {prepareSeason} from '../src/commands.ts';
 import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
+import {archiveSeason} from '../src/season-archive-command.ts';
+import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
 import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
@@ -18,6 +20,7 @@ const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revi
 const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_admin_local='+token,Origin:config.ADMIN_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
 async function command(path:string){const r=await call(path,meta());expect(r.status).toBe(200);const data=await r.json() as any;world=data.world;return data}
 const publicRead=(path:string)=>worker.fetch(new Request('http://localhost:2000'+path),{DB:db});
+async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);csrf=await csrfFor(token);
  session={actor:{id:'activation-operator',email:'activation@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
@@ -26,6 +29,8 @@ beforeAll(async()=>{
  world=await readWorld(db);world=(await prepareSeason(db,session,meta(),'activation-source-prepare',await loadApprovedSnapshot(),now)).world;
  world=(await generateSeasonCalendar(db,session,meta(),'activation-source-calendar',now)).world;world=(await executeLifecycle(db,session,'start',meta(),'activation-source-start',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'activation-source-day-'+(world.day+1),now)).world;
+ await enrollTerminalEvents(world.seasonNumber);
+ world=(await archiveSeason(db,session,meta(),'activation-source-close-archive',now)).world;
  world=(await closeSeason(db,session,meta(),'activation-source-close',now)).world;
  const proposal=await readSeasonTwoCandidate(db);world=(await approveSeasonTwoSnapshot(db,session,{...meta(),snapshotHash:proposal.snapshot.snapshotHash},'activation-source-approve',now)).world;
 },120000);
