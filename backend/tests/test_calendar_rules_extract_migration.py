@@ -1,18 +1,16 @@
-"""Verify calendar rules extraction matches the exact original Season1 approved source structure."""
-import json
+"""No secondary calendar placement source: versioned WORLD-TIME model is authoritative."""
 import unittest
 from pathlib import Path
+import json
 ROOT=Path(__file__).resolve().parents[2]
-class CalendarRulesExtractTest(unittest.TestCase):
- def test_all_division_phases_have_one_unique_mapping(self):
+class CalendarRuleSeparationTest(unittest.TestCase):
+ def test_permanent_divisions_no_longer_own_sporting_day_slots(self):
+  self.assertFalse((ROOT/'data/calendar-rules.json').exists())
   divisions=json.loads((ROOT/'data/divisions.json').read_text(encoding='utf-8'))
-  rule=json.loads((ROOT/'data/calendar-rules.json').read_text(encoding='utf-8'))
-  expected={(d['id'],p['id']) for d in divisions for p in d['rules']['phases']}
-  got=[(e['competitionId'],e['phaseId']) for e in rule['domesticPhases']]
-  self.assertEqual(len(got),len(expected))
-  self.assertEqual(set(got),expected)
+  self.assertEqual(len(divisions),16)
+  self.assertEqual(sum(len(d['rules']['phases']) for d in divisions),32)
   self.assertTrue(all('calendarEvents' not in p for d in divisions for p in d['rules']['phases']))
-  for e in rule['domesticPhases']:
-   expected_markers=['N'+str(i).zfill(2) for i in (range(1,31) if e['phaseId']=='league' else range(31,33) if e['phaseId']=='playout' else range(31,34))]
-   self.assertEqual(e['markers'],expected_markers)
+  source=(ROOT/'assets/world-calendar-model.js').read_text(encoding='utf-8')
+  self.assertIn('WORLD-TIME-QA-06',source)
+  self.assertIn('nationalDays',source)
 if __name__=='__main__':unittest.main()
