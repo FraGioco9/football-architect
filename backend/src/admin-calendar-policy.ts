@@ -47,7 +47,7 @@ export function rescheduleAdministrativeMilestone(
   !Number.isSafeInteger(day)||day<1||day>56||
   !Number.isSafeInteger(order)||order<0||order>9999)invalid();
  const original=events.find(e=>e.id===id);
- if(!original)invalid();
+ if(!original)return invalid();
  if(original.status==='completed'||original.day<=currentDay||day<=currentDay)blocked();
  const next=events.map(e=>e.id===id?{...e,day,order}:e);
  validate(next);
