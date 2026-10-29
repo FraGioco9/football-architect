@@ -40,7 +40,7 @@ async function body(request:Request){
 }
 export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Response>{
  const path=new URL(request.url).pathname;
- const methods:Record<string,string>={'/api/player/password-reset/request':'POST','/api/player/password-reset/complete':'POST','/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/account/change-password':'POST','/api/player/account/revoke-other-sessions':'POST','/api/player/account/delete':'POST','/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/permissions':'GET','/api/player/admin/world':'GET'};
+ const methods:Record<string,string>={'/api/player/password-reset/request':'POST','/api/player/password-reset/complete':'POST','/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/account/change-password':'POST','/api/player/account/revoke-other-sessions':'POST','/api/player/account/delete':'POST','/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/sessions':'GET','/api/player/permissions':'GET','/api/player/admin/world':'GET'};
  const method=methods[path];if(!method)return json(404,{error:{code:'not_found'}});
  if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
  try{
@@ -80,6 +80,10 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
   if(path==='/api/player/admin/world'){
    await authorizeUnifiedAdmin(db,token,now,'admin.world.read');
    return json(200,{world:await readWorld(db)});
+  }
+  if(path==='/api/player/sessions'){
+   const rows=await db.prepare('SELECT token_digest,created_at,last_seen_at,expires_at FROM player_sessions WHERE account_id=? ORDER BY created_at DESC LIMIT 100').bind(session.actor.id).all<{token_digest:string;created_at:number;last_seen_at:number;expires_at:number}>();
+   return json(200,{sessions:rows.results.map(row=>({current:row.token_digest===session.digest,createdAt:row.created_at,lastSeenAt:row.last_seen_at,expiresAt:row.expires_at}))});
   }
   if(path==='/api/player/permissions')return json(200,{permissions:await readAccountPermissions(db,session.actor.id)});
   return json(200,{actor:session.actor,authenticated:true,csrfToken:await playerCsrfFor(token),permissions:await readAccountPermissions(db,session.actor.id)});
