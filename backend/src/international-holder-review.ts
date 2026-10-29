@@ -26,7 +26,9 @@ export function reviewInternationalHolders(state:Progression,candidate:NextSeaso
   if(!winner||![fixture.homeClubId,fixture.awayClubId].includes(winner))return invalid();
   const country=winner.split('-')[0];
   if(!['IT','ENG','ES','DE','FR','PT','NL','BR'].includes(country))return invalid();
-  const allocatedCup=byCup.get('int-1')!.includes(winner)?'int-1':byCup.get('int-2')!.includes(winner)?'int-2':null;
+  const sovereign=byCup.get('int-1')!.includes(winner),federation=byCup.get('int-2')!.includes(winner);
+  if(sovereign&&federation)return invalid();
+  const allocatedCup=sovereign?'int-1':federation?'int-2':null;
   reviews.push(Object.freeze({competitionId:cup,championClubId:winner,countryId:country,allocatedCup,requiresQualificationPolicyDecision:allocatedCup!==cup}));
  }
  return Object.freeze(reviews);
