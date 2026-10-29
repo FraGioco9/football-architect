@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Football Architect — Account</title><link rel="stylesheet" href="/assets/admin-settings.css">
+<style>main{max-width:40rem;margin:4rem auto;padding:1.5rem}form{display:grid;gap:.8rem;margin:1.5rem 0}label{display:grid;gap:.35rem}input{font:inherit;padding:.7rem;width:100%;box-sizing:border-box}button{font:inherit;padding:.7rem}section{margin-top:2rem}p[role=status]{min-height:1.5em}</style>
+<script src="/assets/account-settings.js" defer></script></head>
+<body><main><a href="/">Football Architect</a><h1 id="title">Your account</h1>
+<p id="loading" role="status" aria-live="polite">Checking your session…</p>
+<div id="protected" hidden><p id="identity"></p><p id="permissions"></p>
+<section><h2 id="change-title">Change password</h2><form id="change-form">
+<label><span id="current-label">Current password</span><input name="currentPassword" type="password" autocomplete="current-password" required></label>
+<label><span id="new-label">New password</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128"></label>
+<button type="submit" id="change-button">Change password</button></form></section>
+<section><h2 id="sessions-title">Sessions</h2><button id="revoke-button" type="button">Sign out other devices</button><p><button id="logout-button" type="button">Sign out</button></p></section>
+<section><h2 id="delete-title">Delete account</h2><form id="delete-form">
+<label><span id="delete-password-label">Password</span><input name="password" type="password" autocomplete="current-password" required></label>
+<label><span id="confirm-label">Type DELETE MY ACCOUNT</span><input name="confirmation" type="text" autocomplete="off" required></label>
+<button type="submit" id="delete-button">Delete account</button></form></section></div>
+<p id="status" role="status" aria-live="polite"></p><p id="login-link" hidden><a href="/account/login/?next=%2Faccount%2F">Sign in</a></p></main></body></html>
