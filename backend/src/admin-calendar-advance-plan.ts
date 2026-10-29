@@ -91,7 +91,7 @@ export async function planAdministrativeAdvance(db:Database,world:WorldV1,rows:r
    writes.push(db.prepare('INSERT INTO season_calendars VALUES(?,?,?,?,?,?)').bind(world.seasonNumber,schedule.algorithmVersion,calendarHash,JSON.stringify(schedule),'generated',now));
    // No administrative event may be moved into the sporting portion of the season.
    // All prerequisites have completed before any destination-day match is finalized.
-   if(rows.some(r=>r.scheduled_day>world.day))blocked();
+   if(rows.some(r=>r.scope!=='season'&&r.scheduled_day>world.day))blocked();
    const progression=createProgression(snapshot,schedule);
    for(let day=1;day<=destinationDay;day++){
     const processed=await processSportingDay(progression,day);
