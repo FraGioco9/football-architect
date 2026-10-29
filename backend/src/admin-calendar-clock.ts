@@ -10,7 +10,7 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 import {proposeAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
 
-type EventRow={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status']};
+type EventRow={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];receipt_hash:string|null};
 export async function advanceAdministrativeClock(db:Database,session:AdminSession,action:'start'|'advance',input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'calendar_event_unavailable');
