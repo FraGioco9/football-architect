@@ -28,6 +28,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const now=Math.floor(Date.now()/1000);
   await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('player-1',permission,now)));
   await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('linked-admin','linked-admin@example.invalid','synthetic',now).run();
+  await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')])).rejects.toBeDefined();
   await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('player-1','linked-admin',now).run();
   const original=(await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision;
   await db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),
