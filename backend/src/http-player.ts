@@ -1,7 +1,7 @@
 import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
-import {playerLogin,playerAuthenticate,playerRequireCsrf} from './player-auth.ts';
+import {playerLogin,playerAuthenticate,playerRequireCsrf,playerCsrfFor} from './player-auth.ts';
 export interface PlayerEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
@@ -54,8 +54,7 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
    return json(200,{signedOut:true},{'Set-Cookie':set('',true)});
   }
   const session=await playerAuthenticate(db,token,now);
-  // CSRF token is intentionally returned only on login, never reconstructed from cookie.
-  return json(200,{actor:session.actor,authenticated:true});
+  return json(200,{actor:session.actor,authenticated:true,csrfToken:await playerCsrfFor(token)});
  }catch(error){
   if(error instanceof ApiError)return json(error.status,{error:{code:error.code}},error.status===429?{'Retry-After':'900'}:{});
   return json(503,{error:{code:'player_unavailable'}});
