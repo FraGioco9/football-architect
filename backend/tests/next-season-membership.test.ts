@@ -19,6 +19,6 @@ test('projects 16 domestic divisions and 2 cups without modifying approved input
 test('rejects absent outcomes, wrong playout loser, duplicate membership or forged playoff promotion',()=>{
  assert.throws(()=>proposeNextSeasonMembership(2,divisions,outcomes.slice(1)));
  assert.throws(()=>proposeNextSeasonMembership(2,divisions,[{...outcomes[0],playoutRelegatedClubId:'IT-12'},...outcomes.slice(1)]));
- assert.throws(()=>proposeNextSeasonMembership(2,divisions,[{...outcomes[0],playoffPromotedClubId:'IT-20'},...outcomes.slice(1)]));
+ assert.throws(()=>proposeNextSeasonMembership(2,divisions,[{...outcomes[0],playoffPromotedClubId:'IT-24'},...outcomes.slice(1)]));
  assert.throws(()=>proposeNextSeasonMembership(2,[{...divisions[0],rankedClubIds:[...divisions[0].rankedClubIds.slice(1),divisions[0].rankedClubIds[1]]},...divisions.slice(1)],outcomes));
 });
