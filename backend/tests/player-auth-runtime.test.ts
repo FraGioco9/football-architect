@@ -109,6 +109,23 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const remaining=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
   expect((await remaining.json() as any).sessions).toHaveLength(1);
  });
+ it('does not present expired or idle sessions as active devices',async()=>{
+  const first=await login(),firstCookie=cookie(first);
+  await login();
+  const current=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
+  expect(current.status).toBe(200);
+  expect((await current.json() as any).sessions).toHaveLength(2);
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  const firstDigest=await digestOpaqueToken(firstCookie.split('=')[1]);
+  const expired=await db.prepare('SELECT token_digest FROM player_sessions WHERE token_digest<>? LIMIT 1').bind(firstDigest).first<{token_digest:string}>();
+  expect(expired).not.toBeNull();
+  await db.prepare('UPDATE player_sessions SET expires_at=? WHERE token_digest=?').bind(Math.floor(Date.now()/1000)-1,expired!.token_digest).run();
+  const listed=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
+  expect(listed.status).toBe(200);
+  const sessions=(await listed.json() as any).sessions;
+  expect(sessions).toHaveLength(1);
+  expect(sessions[0].current).toBe(true);
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
