@@ -44,7 +44,10 @@ export async function replay(db:Database,session:AdminSession,command:PrepareReq
     throw new ApiError(401,'unauthorized');
    const match=await db.prepare(`SELECT 1 AS linked FROM player_admin_operator_links l
     JOIN admin_accounts a ON a.id=l.legacy_admin_account_id
-    WHERE l.player_account_id=? AND l.legacy_admin_account_id=? AND a.enabled=1`)
+    JOIN player_accounts p ON p.id=l.player_account_id
+    WHERE l.player_account_id=? AND l.legacy_admin_account_id=? AND a.enabled=1
+    AND p.status='active' AND p.email_verified_at IS NOT NULL
+    AND p.email_normalized=a.email_normalized`)
     .bind(session.unified.playerId,session.actor.id).first<{linked:number}>();
    if(!match)throw new ApiError(403,'permission_denied');
    await requireAccountPermission(db,session.unified.playerId,'admin.access');
