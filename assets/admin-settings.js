@@ -118,8 +118,8 @@
    const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]'),canReset=!!state.actor&&state.world?.phase!=='unstarted'&&!state.busy;
    find('[data-admin-reset-section]').hidden=!state.actor;
    resetInput.disabled=!canReset;
-   resetButton.disabled=!canReset||resetInput.value!=='RESET SEASON 0';
    if(state.message==='resetDone')resetInput.value='';
+   resetButton.disabled=!canReset||resetInput.value!=='RESET SEASON 0';
    find('[data-admin-actor]').textContent=state.actor?.email||'';
    const w=state.world;find('[data-admin-world]').textContent=w?`${text.season} ${w.seasonNumber} · ${text.revision} ${w.revision} · ${text.day} ${w.day} · ${text[w.phase]}`:'';
   }
