@@ -25,7 +25,9 @@ export async function readAdministrativeCalendar(db:Database){
  const pending=events.filter(e=>e.status==='scheduled').sort((a,b)=>a.day-b.day||a.order-b.order);
  const next=pending[0]??null;
  const blocked=next!==null&&next.day<world.day;
- return {world,events,mode:'administrative' as const,
+ const published=events.some(e=>e.id==='international:calendar'&&e.status==='completed');
+ const calendar=published?await db.prepare('SELECT calendar_hash FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first<{calendar_hash:string}>():null;
+ return {world,events,mode:published&&calendar?'sporting' as const:'administrative' as const,
   nextEvent:next?{id:next.id,kind:next.kind,day:next.day,order:next.order,ready:world.phase==='active'&&!blocked&&next.day===world.day}:null,
   remaining:pending.length,blocked};
 
