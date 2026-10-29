@@ -38,12 +38,11 @@ export async function prepareSeasonTwo(db:Database,session:AdminSession,input:Pr
    abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM season_admin_events WHERE season_number=1 AND status='scheduled' AND event_id<>'season:next-prepare')",[]),
    ...['seasons','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_archives','season_admin_events','season_domestic_stages','season_archive_summaries'].map(table=>abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM ${table} WHERE season_number=2)=0`,[])),
    db.prepare('INSERT INTO seasons(season_number,generation,participants_hash,rules_hash,snapshot_json,created_at) VALUES(?,?,?,?,?,?)').bind(2,world.generation,snapshot.participantsHash,snapshot.rulesHash,JSON.stringify(snapshot),now),
-   db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=1 AND event_id='season:next-prepare' AND status='scheduled'").bind(now,a.snapshotHash,world.seasonNumber),
+   db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=1 AND event_id='season:next-prepare' AND status='scheduled'").bind(now,a.snapshotHash),
    db.prepare("UPDATE world_state SET season_number=2,day=0,phase='preparing',revision=revision+1 WHERE id=1 AND generation=? AND revision=?").bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(result.operationId,world.generation,key,hash,session.actor.id,name,world.revision,result.world.revision,JSON.stringify(result),now),
   ]);return result;
- }catch(error){
-  console.error('ADMIN-WORLD-02 prepare-next D1 batch failure',error);
+ }catch{
   const winner=await replay(db,session,cmd,key,hash,now);if(winner)return winner;
   const current=await readWorld(db);if(current.generation!==world.generation||current.revision!==world.revision)throw new ApiError(409,'stale_world');
   throw new ApiError(503,'prepare_next_unavailable');
