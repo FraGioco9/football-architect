@@ -30,6 +30,37 @@ describe('canonical final league standings',()=>{
   expect(table.map(r=>r.clubId)).toEqual([...binding.clubIds].sort());
   expect(table.every(r=>r.played===6&&r.points===6&&r.opponentsPoints===36&&r.opponentsGoalDifference===0&&r.opponentsGoalsFor===0)).toBe(true);
  });
+ it('applies actual INT24 opponents-points precedence when primary metrics tie',async()=>{
+  const snapshot=await loadApprovedSnapshot(),schedule=await buildInitialSchedule(snapshot,seed),binding=snapshot.bindings.find(b=>b.competitionId==='int-1')!;
+  const games=schedule.fixtures.filter(f=>f.competitionId==='int-1');
+  const clubSet=new Set(binding.clubIds);
+  expect(clubSet.size).toBe(24);
+  const adjacency=new Map(binding.clubIds.map(c=>[c,new Set<string>()]));
+  for(const f of games){adjacency.get(f.homeClubId)!.add(f.awayClubId);adjacency.get(f.awayClubId)!.add(f.homeClubId)}
+  // A and B play six draws each. Change only matches between other clubs;
+  // then their primary metrics remain identical while opponents' points vary.
+  const baseline=new Map(games.map(f=>[f.id,{homeGoals:0,awayGoals:0}]));
+  let witness:{a:string;b:string;game:Fixture}|undefined;
+  for(const a of binding.clubIds)for(const b of binding.clubIds){
+   if(a===b)continue;
+   for(const game of games){
+    if([a,b].includes(game.homeClubId)||[a,b].includes(game.awayClubId))continue;
+    const aCount=Number(adjacency.get(a)!.has(game.homeClubId))+Number(adjacency.get(a)!.has(game.awayClubId));
+    const bCount=Number(adjacency.get(b)!.has(game.homeClubId))+Number(adjacency.get(b)!.has(game.awayClubId));
+    if(aCount===2&&bCount===0){witness={a,b,game};break}
+   }
+   if(witness)break;
+  }
+  expect(witness).toBeDefined();
+  const {a,b,game}=witness!;
+  const changed=new Map(baseline);changed.set(game.id,{homeGoals:1,awayGoals:0});
+  const table=await rankLeagueTable('int-1',binding.clubIds,games,changed,seed);
+  const higher=table.find(r=>r.clubId===a)!,lower=table.find(r=>r.clubId===b)!;
+  expect([higher.points,higher.goalDifference,higher.goalsFor,higher.won,higher.awayGoals,higher.awayWins])
+   .toEqual([lower.points,lower.goalDifference,lower.goalsFor,lower.won,lower.awayGoals,lower.awayWins]);
+  expect(higher.opponentsPoints).toBe(lower.opponentsPoints+1);
+  expect(higher.rank).toBeLessThan(lower.rank);
+ });
  it('rejects missing,duplicate,foreign,negative or incomplete score evidence',async()=>{
   const missing=new Map(scores);missing.delete(fixtures[0].id);
   await expect(rankLeagueTable('IT-1',clubs,fixtures,missing,seed)).rejects.toMatchObject({status:422});
