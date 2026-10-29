@@ -212,13 +212,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <div class="app-settings-panel-content">
  <p data-admin-copy="intro">Public access does not require an account. Operators sign in here to manage the shared world.</p>
  <p data-admin-status role="status" aria-live="polite">Checking access…</p>
- <form data-admin-login>
- <label for="admin-email" data-admin-copy="email">Email</label>
- <input id="admin-email" name="email" type="email" autocomplete="username" required maxlength="254">
- <label for="admin-password" data-admin-copy="password">Password</label>
- <input id="admin-password" name="password" type="password" autocomplete="current-password" required maxlength="256">
- <button type="submit" data-admin-copy="signIn">Sign in</button>
- </form>
+ <p data-admin-signin-link><a href="/account/login?next=%2Fsettings%2F" data-admin-copy="accountSignIn">Sign in with your Football Architect account</a></p>
  <div data-admin-signed-in hidden>
  <p data-admin-actor></p><p data-admin-world></p>
  <p><strong data-admin-copy="operationLabel">Current operation</strong>: <span data-admin-operation aria-live="polite"></span> <code data-admin-error-code></code></p>
@@ -268,7 +262,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <button type="button" data-admin-reset data-admin-copy="resetButton" disabled>Delete all seasons</button>
  </section>
  </div>
- <button type="button" data-admin-logout data-admin-copy="signOut" hidden>Sign out</button>
+
  </div></section>
             <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">
               <h2 id="app-career-heading" data-app-i18n="careerPanel">Your career</h2>
