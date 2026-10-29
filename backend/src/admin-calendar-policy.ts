@@ -58,3 +58,20 @@ export function dueAdministrativeMilestones(events:readonly AdministrativeMilest
  if(!Number.isSafeInteger(day)||day<1||day>56)invalid();
  return Object.freeze(events.filter(e=>e.day===day&&e.status==='scheduled').sort((a,b)=>a.order-b.order));
 }
+
+/** Default *proposed* administrative schedule for a newly prepared season.
+ * It does not write to D1 and does not replace the approved Season 1 calendar.
+ * The authenticated season-preparation executor must persist a validated copy
+ * only when its lifecycle no longer assumes that fixtures precede day 1.
+ */
+export function proposeAdministrativeMilestones():readonly AdministrativeMilestone[]{
+ const events:AdministrativeMilestone[]=[
+  {id:'domestic:entrants',kind:'confirm-domestic-entrants',scope:'domestic',day:1,order:1,status:'scheduled'},
+  {id:'international:entrants',kind:'confirm-international-entrants',scope:'international',day:1,order:2,status:'scheduled'},
+  {id:'domestic:calendar',kind:'generate-domestic-calendar',scope:'domestic',day:2,order:1,status:'scheduled'},
+  {id:'international:draw',kind:'draw-international',scope:'international',day:3,order:1,status:'scheduled'},
+  {id:'international:calendar',kind:'generate-international-calendar',scope:'international',day:3,order:2,status:'scheduled'},
+ ];
+ validate(events);
+ return Object.freeze(events.map(e=>Object.freeze(e)));
+}
