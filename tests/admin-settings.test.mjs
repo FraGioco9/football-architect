@@ -172,7 +172,7 @@ test('action availability is derived exclusively from matching authenticated wor
  assert.equal(canRunCommand('advance',active,{...drawn,mode:'legacy'}),true);
  assert.equal(canRunCommand('eventAdvance',active,drawn),true);
  const last={...active,day:56};
- assert.equal(canRunCommand('close',last,{...drawn,mode:'legacy'}),true);
+ assert.equal(canRunCommand('close',last,{...drawn,mode:'legacy'}),false);
  assert.equal(canRunCommand('advance',last,{...drawn,mode:'legacy'}),false);
 });
 
