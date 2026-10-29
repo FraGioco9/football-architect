@@ -190,7 +190,7 @@
    for(const e of movable){const option=doc.createElement('option');option.value=e.id;option.textContent=e.id+' · '+text.day+' '+e.day+' · '+e.order;selector.append(option)}
    if(movable.some(e=>e.id===selected))selector.value=selected;
    const picked=movable.find(e=>e.id===selector.value);
-   if(picked&&selected!==picked.id){dayInput.value=String(picked.day);orderInput.value=String(picked.order)}
+   if(picked&&(selected!==picked.id||dayInput.value===''||orderInput.value==='')){dayInput.value=String(picked.day);orderInput.value=String(picked.order)}
    const valid=!!picked&&Number.isSafeInteger(dayInput.valueAsNumber)&&dayInput.valueAsNumber>state.world.day&&dayInput.valueAsNumber<=12&&Number.isSafeInteger(orderInput.valueAsNumber)&&orderInput.valueAsNumber>=0&&orderInput.valueAsNumber<=9999;
    const enabled=!!state.actor&&!state.busy&&valid;
    find('[data-admin-reschedule-section]').hidden=!state.actor||state.events?.mode!=='administrative';
