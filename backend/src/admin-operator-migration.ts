@@ -126,6 +126,10 @@ export async function preflightAdminOperatorsBatch(
  const inventory=await adminOperatorMigrationInventory(db);
  const enabled=inventory.filter(row=>row.enabled===1);
  const blockers:Array<{legacyAdminId:string;reason:string}>=[];
+ for(const row of inventory){
+  if(row.enabled!==1&&row.playerAccountId!==null)
+   blockers.push({legacyAdminId:row.legacyAdminId,reason:'disabled_operator_still_linked'});
+ }
  for(const row of enabled){
   const selected=selections.find(item=>item.legacyAdminId===row.legacyAdminId);
   if(!selected){blockers.push({legacyAdminId:row.legacyAdminId,reason:'unmapped_operator'});continue}
