@@ -50,6 +50,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check current Admin and public JavaScript syntax before expensive tests
+        run: |
+          node --check assets/admin-settings.js
+          node --check assets/authoritative-season.mjs
+          node --check assets/authoritative-calendar.mjs
+          node --check assets/authoritative-history.mjs
+          node --check tests/admin-settings-browser.mjs
+          node --check tests/admin-world-lifecycle-browser.mjs
+          node --check tests/season-two-navigation-browser.mjs
       - name: Test password and world contracts (no remote services)
         run: npm --prefix backend run test:contracts
       - name: Verify D1-compatible SQLite migration locally
