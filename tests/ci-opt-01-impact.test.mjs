@@ -85,3 +85,27 @@ test('area CSS changes retain mandatory FULL browser coverage',()=>{
   assert.equal(classifyImpact([file]).mode,'full',file);
  }
 });
+
+test("Admin World changes select bounded Settings contracts without skipping cross-cutting safety",()=>{
+ for(const file of ["assets/admin-settings.js","settings/index.html","tests/admin-settings.test.mjs"]){
+  const scope=classifyImpact([file]);
+  assert.equal(scope.mode,"targeted",file);
+  assert.equal(scope.area,"admin",file);
+  assert.ok(scope.tests.includes("tests/admin-settings.test.mjs"));
+  assert.ok(scope.tests.includes("tests/dev-admin-api-proxy.test.mjs"));
+ }
+ for(const files of [["assets/admin-settings.css"],["backend/src/http-admin.ts"],["data/divisions.json"],["assets/admin-settings.js","backend/src/reset-world-command.ts"]])
+  assert.equal(classifyImpact(files).mode,"full",files.join(","));
+});
+test("Admin workflow keeps exact-head contract checks while deferring heavy draft runtime",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const admin=readFileSync(new URL("../.github/workflows/admin-world-checks.yml",import.meta.url),"utf8");
+ const site=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8");
+ assert.match(admin,/Test password and world contracts/);
+ assert.match(admin,/Verify D1-compatible SQLite migration locally/);
+ assert.match(admin,/Typecheck backend with pinned TypeScript/);
+ assert.match(admin,/cancel-in-progress: true/);
+ assert.match(admin,/if: \$\{\{ !github\.event\.pull_request\.draft \}\}/);
+ assert.match(site,/node --check assets\/admin-settings\.js/);
+ assert.match(site,/tests\/admin-settings\.test\.mjs/);
+});
