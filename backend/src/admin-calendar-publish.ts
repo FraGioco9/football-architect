@@ -41,7 +41,7 @@ export async function publishInternationalCalendar(db:Database,session:AdminSess
  const calendarJson=JSON.stringify(schedule),calendarHash=await canonicalHash(schedule);
  const receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:1,eventId:'international:calendar',calendarHash,domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>d.outcome_hash)});
  const emptyDays=await Promise.all(Array.from({length:world.day},async(_,i)=>{
-  const payload={schemaVersion:1,season:1,generation:world.generation,day:i+1,calendarHash:schedule.calendarHash,simulationVersion:'temporary-score-v1',results:[]};
+  const payload={schemaVersion:1,season:1,generation:world.generation,day:i+1,calendarHash,simulationVersion:'temporary-score-v1',results:[]};
   return {day:i+1,json:JSON.stringify(payload),hash:await canonicalHash(payload)};
  }));
  if(world.day>=13)throw new ApiError(409,'calendar_event_prerequisites');
