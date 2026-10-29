@@ -4,7 +4,6 @@ import {requestPasswordReset,completePasswordReset} from './player-password-rese
 import {registerPlayer,verifyPlayerEmail,type VerificationDelivery} from './player-registration.ts';
 import {readAccountPermissions} from './account-permissions.ts';
 import {authorizeUnifiedAdmin} from './unified-admin-authorization.ts';
-import {linkedAuditOperator} from './unified-admin-transaction.ts';
 import {readWorld} from './world-repository.ts';
 import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
@@ -81,8 +80,6 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
   }
   if(path==='/api/player/admin/world'){
    const authorized=await authorizeUnifiedAdmin(db,token,now,'admin.world.read');
-   // A grant alone cannot bypass the approved migration of the historic audit operator.
-   if(!await linkedAuditOperator(db,authorized.actor.id))throw new ApiError(403,'permission_denied');
    return json(200,{world:await readWorld(db)});
   }
   if(path==='/api/player/sessions'){
