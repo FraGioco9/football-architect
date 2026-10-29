@@ -249,6 +249,11 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <input id="admin-event-order" data-admin-event-order type="number" min="0" max="9999" step="1">
  <button type="button" data-admin-event-reschedule data-admin-copy="reschedule4" disabled>Save event placement</button>
  </section>
+ <section data-admin-next-season aria-labelledby="admin-next-season-heading" hidden>
+ <h3 id="admin-next-season-heading" data-admin-copy="nextHeading">Season 2 — qualification review</h3>
+ <p data-admin-next-season-summary role="status" aria-live="polite"></p>
+ <ul data-admin-next-season-holders></ul>
+ </section>
  <section data-admin-reset-section aria-labelledby="admin-reset-heading" hidden>
  <h3 id="admin-reset-heading" data-admin-copy="resetTitle">Reset world to Season 0</h3>
  <p data-admin-copy="resetSummary">Permanently deletes all season calendars, draws, match results, statistics, playoff records, administrative events and history. Club catalogues, rules and administrator access remain.</p>
