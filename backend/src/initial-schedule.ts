@@ -57,7 +57,7 @@ async function generate(snapshot:ApprovedSnapshot,seed:string):Promise<InitialSc
    }
   }
  }
- fixtures.sort((a,b)=>a.day-b.day||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
+ fixtures.sort((a,b)=>a.day-b.day||a.marker.localeCompare(b.marker,'en')||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
  return {schemaVersion:1,season:1,scope:'initial-leagues',algorithmVersion:'initial-leagues-v1',seed,
   participantsHash:trusted.participantsHash,rulesHash:trusted.rulesHash,calendarHash:calendar.calendarHash,fixtures,
   pendingPhases:trusted.bindings.map(b=>({competitionId:b.competitionId,reason:'sporting-results-required'}))};

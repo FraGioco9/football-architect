@@ -37,6 +37,14 @@ describe('canonical initial sporting schedules',()=>{
   expect(schedule.pendingPhases).toHaveLength(18);
   await expect(validateInitialSchedule(schedule,snapshot)).resolves.toBeUndefined();
  });
+ it('places international matches before domestic matches on every approved double matchday',async()=>{
+  const schedule=await buildInitialSchedule(await loadApprovedSnapshot(),seed);
+  for(const day of [16,19,22,25,28,31]){
+   const fixtures=schedule.fixtures.filter(g=>g.day===day);
+   expect(fixtures.slice(0,24).every(g=>g.marker.startsWith('I'))).toBe(true);
+   expect(fixtures.slice(24).every(g=>g.marker.startsWith('N'))).toBe(true);
+  }
+ });
  it('reproduces complete schedules for 32 seeds and varies the saved outcome',async()=>{
   const snapshot=await loadApprovedSnapshot(),hashes=new Set<string>();
   for(let i=0;i<32;i++){

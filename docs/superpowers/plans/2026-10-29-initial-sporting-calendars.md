@@ -24,6 +24,8 @@ No remote DB, deploy, merge, new PR, workflow dispatch, DEV imports or simulated
 - [ ] Run complete backend runtime/contracts/typecheck/migrations/operator checks, focused public isolation and generator parity; review diff, push one grouped update with lease through GitHub tools.
 - [ ] Verify exact-head automatic CI; update existing #315 and #326 without credit for unsupported lifecycle/public integration. Leave Draft/HOLD.
 
-Execution ledger: Tasks1–2 complete. Runtime63/63,contracts34/34,migrations9/9,typecheck PASS; operator10/10 PASS including real Wrangler restart with generated fixtures/draws. Node22 runtime/contracts/typecheck PASS.
+Execution ledger: Tasks1–2 complete. Runtime64/64,contracts34/34,migrations9/9,typecheck PASS; operator10/10 PASS including real Wrangler restart with generated fixtures/draws. Node22 runtime/contracts/typecheck PASS.
 Ruling: constructive seeded cycle fallback chosen under #234; a constrained valid draw family, not uniform sampling of every valid draw. No sporting rule changed.
 Review: independent reviewer found no Critical/Important issue. Minor deferred: same-hashes/modified snapshot-json negative test; current guard independently reviewed.
+
+Final ordering correction: six double matchdays emit international fixtures before national fixtures, preserving the approved event order. Regression reproduced RED then GREEN; no day, pairing, pot or sporting rule changed.
