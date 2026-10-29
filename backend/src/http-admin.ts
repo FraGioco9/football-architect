@@ -1,6 +1,6 @@
 import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {adminCookiePolicy,requireMutationOrigin} from './origin-policy.ts';
+import {requireMutationOrigin} from './origin-policy.ts';
 import type {AdminSession} from './auth.ts';
 import {playerAuthenticate,playerCsrfFor,playerRequireCsrf} from './player-auth.ts';
 import {requireAccountPermission} from './account-permissions.ts';
@@ -26,7 +26,7 @@ import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
-export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string;PLAYER_MODE?:string;PLAYER_ORIGIN?:string}
+export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow','Vary':'Cookie'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
 const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
@@ -46,20 +46,20 @@ async function input(request:Request){
  try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(data)) as unknown}catch{throw new ApiError(400,'invalid_json')}
 }
 function configuration(request:Request,env:AdminEnv){
- const origin=env.ADMIN_ORIGIN??'',mode=env.ADMIN_MODE??'';
- requireMutationOrigin(origin,origin);
- const policy=adminCookiePolicy(mode,origin);
- const url=new URL(request.url);
- let source:string;
+ const origin=env.PLAYER_ORIGIN??'',mode=env.PLAYER_MODE??'',url=new URL(request.url);
+ if(!origin)throw new ApiError(503,'admin_unavailable');
+ try{const configured=new URL(origin);if(configured.origin!==origin||configured.pathname!=='/'||configured.search||configured.hash||configured.username||configured.password)throw Error()}
+ catch{throw new ApiError(503,'admin_unavailable')}
  if(mode==='local'){
-  if(url.protocol!=='http:'||!['localhost','127.0.0.1','[::1]','app.localhost'].includes(url.hostname))throw new ApiError(503,'admin_unavailable');
-  source='local-loopback'; // Do not trust caller-supplied forwarded client addresses.
+  if(url.origin!==origin||url.protocol!=='http:'||!['localhost','127.0.0.1','[::1]','app.localhost'].includes(url.hostname))
+   throw new ApiError(503,'admin_unavailable');
  }else{
-  if(mode!=='production'||env.ADMIN_TRUSTED_SOURCE!=='cloudflare'||url.origin!==origin||url.protocol!=='https:')throw new ApiError(503,'admin_unavailable');
-  const ip=request.headers.get('CF-Connecting-IP');if(!ip||ip.length>45||!/^[0-9a-fA-F:.]+$/.test(ip))throw new ApiError(503,'admin_unavailable');
-  source=ip;
+  if(mode!=='production'||env.PLAYER_TRUSTED_SOURCE!=='cloudflare'||url.origin!==origin||url.protocol!=='https:')
+   throw new ApiError(503,'admin_unavailable');
+  const ip=request.headers.get('CF-Connecting-IP');
+  if(!ip||ip.length>45||!/^[0-9a-fA-F:.]+$/.test(ip))throw new ApiError(503,'admin_unavailable');
  }
- return {origin,policy,source,name:policy.split(';')[0]};
+ return {origin};
 }
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
@@ -72,8 +72,6 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   // mint or revoke separate admin credentials.
   if(path==='/api/admin/login'||path==='/api/admin/logout')
    return json(410,{error:{code:'legacy_admin_login_retired'}});
-  if(env.PLAYER_MODE!==env.ADMIN_MODE||env.PLAYER_ORIGIN!==config.origin)
-   throw new ApiError(503,'admin_unavailable');
   const playerCookie=env.PLAYER_MODE==='production'?'__Host-fa_player':'fa_player_local';
   const playerToken=readCookie(request,playerCookie);
   const player=await playerAuthenticate(db,playerToken,now);
