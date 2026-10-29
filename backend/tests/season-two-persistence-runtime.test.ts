@@ -68,7 +68,7 @@ it('persists the full Season1→2 transition, all56 Season2 receipts and a separ
 },180000);
 it('rolls back the new snapshot/world/audit after a late prepare audit failure',async()=>{
  await approve();const before=world;
- await db.prepare("CREATE TRIGGER fail_next_prepare BEFORE INSERT ON admin_operations WHEN NEW.command='prepare-season-two-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
+ await db.prepare("CREATE TRIGGER fail_next_prepare BEFORE INSERT ON admin_operations WHEN NEW.command='prepare-season-two-v2' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(prepareSeasonTwo(db,session,meta(),'two-failed-prepare',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_next_prepare').run()}
  expect(await readWorld(db)).toEqual(before);expect(await count('seasons')).toBe(0);
