@@ -12,7 +12,8 @@ export function unifiedAdminMutationGuard(db:Database, actorId:string, legacyOpe
  JOIN player_admin_operator_links l ON l.player_account_id=a.id
  JOIN admin_accounts legacy ON legacy.id=l.legacy_admin_account_id
  WHERE s.account_id=? AND l.legacy_admin_account_id=?
- AND legacy.enabled=1 AND s.token_digest=? AND s.csrf_digest=?
+ AND legacy.enabled=1 AND legacy.email_normalized=a.email_normalized
+ AND s.token_digest=? AND s.csrf_digest=?
  AND a.status='active' AND a.email_verified_at IS NOT NULL
  AND a.credential_version=s.credential_version
  AND s.created_at>0 AND s.created_at<=? AND s.last_seen_at>=s.created_at
@@ -27,6 +28,8 @@ export function unifiedAdminMutationGuard(db:Database, actorId:string, legacyOpe
 export async function linkedAuditOperator(db:Database,playerAccountId:string):Promise<string|null>{
  const row=await db.prepare(`SELECT l.legacy_admin_account_id AS id
  FROM player_admin_operator_links l JOIN admin_accounts a ON a.id=l.legacy_admin_account_id
- WHERE l.player_account_id=? AND a.enabled=1`).bind(playerAccountId).first<{id:string}>();
+ JOIN player_accounts p ON p.id=l.player_account_id
+ WHERE l.player_account_id=? AND a.enabled=1 AND p.status='active'
+ AND p.email_verified_at IS NOT NULL AND p.email_normalized=a.email_normalized`).bind(playerAccountId).first<{id:string}>();
  return row?.id??null;
 }
