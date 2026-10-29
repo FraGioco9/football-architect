@@ -35,9 +35,13 @@ export async function changePlayerPassword(db:Database,session:Identity,body:unk
 export async function revokeOtherSessions(db:Database,session:Identity,now:number){
  const results=await db.batch([
   abortUnless(db,"SELECT 1 FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id WHERE s.token_digest=? AND s.account_id=? AND a.status='active' AND a.email_verified_at IS NOT NULL AND a.credential_version=s.credential_version AND s.created_at>0 AND s.created_at<=? AND s.last_seen_at>=s.created_at AND s.last_seen_at<=? AND s.last_seen_at>? AND s.expires_at>? AND s.expires_at<=s.created_at+2592000",[session.digest,session.actor.id,now,now,now-604800,now]),
-  db.prepare("DELETE FROM player_sessions WHERE account_id=? AND token_digest<>?").bind(session.actor.id,session.digest)
+  db.prepare("DELETE FROM player_sessions WHERE account_id=? AND token_digest<>?").bind(session.actor.id,session.digest),
+  // A unified account's other sessions include any historical Admin sessions.
+  // Do not revoke the current Player session.
+  db.prepare(`DELETE FROM admin_sessions WHERE account_id IN
+   (SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?)`).bind(session.actor.id)
  ]);
- return {otherSessionsRevoked:results[1].meta.changes};
+ return {otherSessionsRevoked:results[1].meta.changes+results[2].meta.changes};
 }
 /** Account removal does not remove historical Admin audit records. Explicit
  * player->operator links are cascaded, while legacy admin_accounts remain.
