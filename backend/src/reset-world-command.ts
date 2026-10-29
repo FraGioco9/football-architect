@@ -14,7 +14,8 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
  const requestHash=await hashText(JSON.stringify({command:'reset-world-v1',actor:session.actor.id,...cmd,confirmation:input.confirmation}));
  // A reset changes the world generation, so old-generation replay must fail closed.
  // A repeated request is explicitly stale, not a second destructive operation.
- await replay(db,session,cmd,key,requestHash,now);
+ const alreadyRecorded=await replay(db,session,cmd,key,requestHash,now);
+ if(alreadyRecorded)throw new ApiError(409,'reset_already_processed');
  const world=await readWorld(db);
  if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
  if(world.seasonNumber===0||!['preparing','active','closed'].includes(world.phase))throw new ApiError(409,'reset_prerequisites');
