@@ -37,9 +37,13 @@ export async function readClosedSeasonHistory(db:Database,seasonNumber:number){
  const archive=archives.find(a=>a.seasonNumber===seasonNumber);
  if(!archive||!archive.hasSportingSummary)throw new ApiError(404,'archive_unavailable');
  if(seasonNumber===world.seasonNumber&&world.phase!=='closed')throw new ApiError(409,'archive_prerequisites');
+ const closure=await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id='season:close' AND kind='close-season'").bind(seasonNumber).first<{status:string;receipt_hash:string|null}>();
+ if(!closure||closure.status!=='completed'||closure.receipt_hash!==archive.archiveHash)throw new ApiError(409,'archive_prerequisites');
  const row=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(seasonNumber).first<{generation:string;archive_hash:string;summary_hash:string;summary_json:string}>();
  if(!row||row.generation!==world.generation||row.archive_hash!==archive.archiveHash)throw new ApiError(422,'archive_invalid');
  let summary:unknown;try{summary=JSON.parse(row.summary_json)}catch{throw new ApiError(422,'archive_invalid')}
  if(await canonicalHash(summary)!==row.summary_hash)throw new ApiError(422,'archive_invalid');
+ const after=await readWorld(db);
+ if(after.generation!==world.generation||after.revision!==world.revision||after.seasonNumber!==world.seasonNumber||after.phase!==world.phase||after.day!==world.day)throw new ApiError(409,'stale_world');
  return {seasonNumber,archiveHash:archive.archiveHash,summary};
 }
