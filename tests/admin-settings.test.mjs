@@ -195,3 +195,18 @@ test('event rescheduling rejects past and out-of-range values and sends a guarde
  await c.reschedule('international:draw',4,2);
  assert.equal(writes,1);
 });
+
+test('only the first outstanding due milestone can be selected for execution',()=>{
+ const active={...world,seasonNumber:1,phase:'active',day:3,revision:4};
+ const projection={mode:'administrative',worldGeneration:active.generation,worldRevision:active.revision,rows:[
+  {id:'international:calendar',kind:'generate-international-calendar',day:3,order:2,status:'scheduled'},
+  {id:'international:draw',kind:'draw-international',day:3,order:1,status:'scheduled'}
+ ]};
+ assert.equal(canRunCommand('draw',active,projection),true);
+ assert.equal(canRunCommand('publish',active,projection),false);
+ const completed={...projection,rows:[{...projection.rows[0]},{...projection.rows[1],status:'completed'}]};
+ assert.equal(canRunCommand('publish',active,completed),true);
+ const overdue={...projection,rows:[{...projection.rows[1],day:2},projection.rows[0]]};
+ assert.equal(canRunCommand('publish',active,overdue),false);
+ assert.equal(canRunCommand('draw',active,overdue),false);
+});
