@@ -9,7 +9,7 @@ const candidate:NextSeasonMembership={season:2,status:'provisional-results-deriv
 ]};
 function state(a:string,b:string):Progression {
  const tie=(cup:string,clubId:string)=>({fixtures:[{fixture:{id:cup+':final',homeClubId:clubId,awayClubId:'BR-30'}}]});
- return {lastDay:56,results:new Map([['int-1:final',{winnerClubId:a}],['int-2:final',{winnerClubId:b}]]),
+ return {lastDay:56,results:new Map([['int-1:final',{winnerClubId:a}],['int-2:final',{winnerClubId:b}],...Array.from({length:4080},(_,i)=>['played:'+i,{}])]),
  ties:new Map([['int-1:final:final',tie('int-1',a)],['int-2:final:final',tie('int-2',b)],...Array.from({length:52},(_,i)=>['other:'+i,{}])]),
  } as unknown as Progression;
 }
