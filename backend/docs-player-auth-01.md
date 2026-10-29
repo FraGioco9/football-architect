@@ -8,7 +8,7 @@ The current Worker dispatches `/api/admin/*` to `handleAdmin`; public world and 
 ## First implemented increment
 `0013_player_auth.sql` adds only four player-prefixed tables; it does not add player privileges or touch world tables. Account status and verification timestamps are persisted without deciding the registration UX. Token purposes are restricted to verification and password reset. Digests are SHA-256-sized columns, not raw bearer tokens. Player sessions refer only to player accounts and cascade on account deletion. Migration and isolation contracts live in `tests/test_player_auth_migration.py`.
 
-No live Worker endpoint, email delivery or player credential is enabled by this increment. The schema alone does not establish that hashing or HTTP security is implemented.
+The next backend increment implements opt-in /api/player/login, /api/player/session and /api/player/logout. Player bindings PLAYER_MODE and PLAYER_ORIGIN are required; absent configuration fails closed. Existing Admin endpoints and public routes are unchanged. Login requires an active, email-verified Player account; public registration and email dispatch remain deliberately disabled until delivery integration is approved. Worker tests cover login/session restore/CSRF/logout/rotation prerequisites and isolation; their execution is not yet confirmed.
 
 ## Follow-on engineering plan (2–3 cohesive PRs)
 1. This PR: D1 schema, verified local migration contracts, Player Worker service with scoped auth, session lifecycle and security tests after product decisions.
@@ -29,5 +29,5 @@ No live Worker endpoint, email delivery or player credential is enabled by this 
 Server-side origin + CSRF verification on state-changing operations; httpOnly Secure SameSite cookies; scoped throttle keys; constant-cost unknown email handling; password Argon2id with random salt; digest-only token storage; transactional one-time token consumption; no player-to-admin escalation; no cached private data; public routes remain anonymous; forbid remote D1 in tests. Turnstile never replaces backend rate limits.
 
 ## Validation
-Targeted test: `python -m unittest backend/tests/test_player_auth_migration.py` from repository root.
+Targeted checks: `python -m unittest backend/tests/test_player_auth_migration.py` from repository root, then `cd backend && npx vitest run tests/player-auth-runtime.test.ts` in a locally provisioned Worker/D1 test environment. New targeted tests are committed but not yet confirmed PASS.
 Full integration, real Worker+D1 and browser checks are deferred by owner instruction.
