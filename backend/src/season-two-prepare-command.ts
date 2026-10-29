@@ -42,7 +42,8 @@ export async function prepareSeasonTwo(db:Database,session:AdminSession,input:Pr
    db.prepare("UPDATE world_state SET season_number=2,day=0,phase='preparing',revision=revision+1 WHERE id=1 AND generation=? AND revision=?").bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(result.operationId,world.generation,key,hash,session.actor.id,name,world.revision,result.world.revision,JSON.stringify(result),now),
   ]);return result;
- }catch{
+ }catch(error){
+  console.error('ADMIN-WORLD-02 prepare-next D1 batch failure',error);
   const winner=await replay(db,session,cmd,key,hash,now);if(winner)return winner;
   const current=await readWorld(db);if(current.generation!==world.generation||current.revision!==world.revision)throw new ApiError(409,'stale_world');
   throw new ApiError(503,'prepare_next_unavailable');
