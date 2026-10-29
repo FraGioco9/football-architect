@@ -7,6 +7,7 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
+import {createProgression,processSportingDay} from './knockout-progression.ts';
 interface Day {day:number;outcome_hash:string;outcome_json:string;calendar_hash:string}
 interface Tie {plan_hash:string;plan_json:string}
 export async function closeSeason(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
@@ -21,16 +22,23 @@ export async function closeSeason(db:Database,session:AdminSession,input:Prepare
  const rows=(await db.prepare('SELECT day,outcome_hash,outcome_json,calendar_hash FROM season_day_outcomes WHERE season_number=1 ORDER BY day').all<Day>()).results;
  const ties=(await db.prepare('SELECT plan_hash,plan_json FROM season_knockout_ties WHERE season_number=1 ORDER BY competition_id,phase_id,tie_id').all<Tie>()).results;
  if(rows.length!==56||ties.length!==54)throw new ApiError(409,'archive_prerequisites');
+ const progression=createProgression(evidence.snapshot,evidence.schedule);
  let count=0;
  for(let i=0;i<rows.length;i++){
   const r=rows[i];
   let payload:{day:number;results:unknown[];calendarHash:string};
   try{payload=JSON.parse(r.outcome_json)}catch{throw new ApiError(422,'archive_invalid')}
   if(r.day!==i+1||r.calendar_hash!==evidence.calendar.calendar_hash||payload.day!==r.day||payload.calendarHash!==r.calendar_hash||!Array.isArray(payload.results)||await canonicalHash(payload)!==r.outcome_hash)throw new ApiError(422,'archive_invalid');
+  const expectedDay=await processSportingDay(progression,i+1);
+  const expected={schemaVersion:1,season:1,generation:world.generation,day:i+1,calendarHash:evidence.calendar.calendar_hash,simulationVersion:'temporary-score-v1',results:expectedDay.results};
+  if(await canonicalHash(expected)!==r.outcome_hash)throw new ApiError(422,'archive_invalid');
   count+=payload.results.length;
  }
- if(count!==4082)throw new ApiError(422,'archive_invalid');
- for(const t of ties)if(await canonicalHash(JSON.parse(t.plan_json))!==t.plan_hash)throw new ApiError(422,'archive_invalid');
+ if(count!==4082||progression.results.size!==4082||progression.ties.size!==54)throw new ApiError(422,'archive_invalid');
+ const expectedTies=[...progression.ties.values()].map(x=>x);
+ const expectedHashes=await Promise.all(expectedTies.map(canonicalHash));
+ for(const t of ties)if(await canonicalHash(JSON.parse(t.plan_json))!==t.plan_hash||!expectedHashes.includes(t.plan_hash))throw new ApiError(422,'archive_invalid');
+ if(new Set(ties.map(t=>t.plan_hash)).size!==54)throw new ApiError(422,'archive_invalid');
  const pending=(await db.prepare("SELECT count(*) n FROM season_admin_events WHERE season_number=1 AND status='scheduled'").first<{n:number}>())?.n??0;
  if(pending!==0)throw new ApiError(409,'archive_prerequisites');
  const resultsHash=await canonicalHash(rows.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
