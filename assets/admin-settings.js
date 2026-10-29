@@ -178,7 +178,8 @@
    host.querySelectorAll('[data-admin-copy]').forEach(node=>node.textContent=text[node.dataset.adminCopy]);
    find('[data-admin-status]').textContent=text[state.busy?'working':state.message]||text.unavailable;
    find('[data-admin-signin-link]').hidden=!!state.actor;
-   find('[data-admin-no-permission]').hidden=!!state.actor||state.message!=='forbidden';
+   find('[data-admin-no-permission]').hidden=state.message!=='forbidden';
+   find('[data-admin-no-permission]').textContent=text.forbidden;
    find('[data-admin-signed-in]').hidden=!state.actor;
    host.setAttribute('aria-busy',String(state.busy));
    const canWrite=state.permissions.includes('admin.access')&&state.permissions.includes('admin.world.write');
