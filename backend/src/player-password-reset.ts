@@ -59,7 +59,13 @@ export async function completePasswordReset(db:Database,body:unknown,now:number)
    WHERE id=? AND status='active' AND EXISTS
    (SELECT 1 FROM player_one_time_tokens WHERE token_digest=? AND purpose='reset_password' AND consumed_at=?)`).bind(verifier,now,row.account_id,digest,now),
    db.prepare("DELETE FROM player_sessions WHERE account_id=?").bind(row.account_id),
-   db.prepare("DELETE FROM player_one_time_tokens WHERE account_id=? AND purpose='reset_password' AND token_digest<>?").bind(row.account_id,digest)
+   // Password recovery for an Admin-linked Player must also invalidate any
+   // historical Admin sessions, not just unified Player sessions.
+   db.prepare(`DELETE FROM admin_sessions WHERE account_id IN
+    (SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?)`).bind(row.account_id),
+   // Invalidate all other outstanding one-time links (including verification).
+   // Keep the consumed reset record so a replay remains unambiguously spent.
+   db.prepare("DELETE FROM player_one_time_tokens WHERE account_id=? AND token_digest<>?").bind(row.account_id,digest)
   ]);
   if(changes[1].meta.changes!==1||changes[2].meta.changes!==1)throw Error('reset_race');
  }catch{throw invalid()}
