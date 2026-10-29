@@ -7,6 +7,8 @@ const copy={
  de:['Anmelden','E-Mail','Passwort','Anmelden','Anmeldung läuft…','Ungültige Zugangsdaten oder nicht bestätigte E-Mail.','Anmeldung nicht verfügbar.','Bitte später erneut versuchen.'],
  es:['Acceder','Correo electrónico','Contraseña','Acceder','Accediendo…','Credenciales incorrectas o correo sin verificar.','Acceso no disponible.','Inténtalo más tarde.'],
  fr:['Se connecter','E-mail','Mot de passe','Se connecter','Connexion…','Identifiants incorrects ou e-mail non vérifié.','Connexion indisponible.','Veuillez réessayer plus tard.']};
+const recoveryText={en:'Forgot your password?',it:'Password dimenticata?',de:'Passwort vergessen?',es:'¿Olvidaste tu contraseña?',fr:'Mot de passe oublié ?'};
+document.getElementById('recovery-link').textContent=recoveryText[locale]||recoveryText.en;
 const t=copy[locale]||copy.en;document.documentElement.lang=copy[locale]?locale:'en';
 for(const [id,i] of [['heading',0],['email-label',1],['password-label',2],['submit',3]])document.getElementById(id).textContent=t[i];
 const form=document.getElementById('account-login'),message=document.getElementById('message'),button=document.getElementById('submit');
