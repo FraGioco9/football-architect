@@ -83,3 +83,15 @@ it('moves the independent international draw to day four and publication to day 
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-moved-day6',now)).world;
  expect(world.day).toBe(6);
 });
+
+it('continues all sporting days through day 56 after staged administrative setup',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-full-day3',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-full-draw',now)).world;
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
+ expect(world).toMatchObject({day:56,phase:'active'});
+ const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all<any>()).results;
+ expect(receipts).toHaveLength(56);
+ expect(receipts.reduce((n,r)=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first<any>()).n).toBe(54);
+},120000);
