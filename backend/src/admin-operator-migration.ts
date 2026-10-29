@@ -221,10 +221,12 @@ export async function revokeMigratedAdminOperator(db:Database,playerAccountId:st
   // Rollback must remain available even after identity drift or operator disablement.
   abortUnless(db,'SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?',[playerAccountId]),
   db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission IN ('admin.access','admin.world.read','admin.world.write')").bind(playerAccountId),
-  db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerAccountId),
-  db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerAccountId)
+  db.prepare('DELETE FROM admin_sessions WHERE account_id=(SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?)').bind(playerAccountId),
+  db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerAccountId),
+  db.prepare('DELETE FROM player_one_time_tokens WHERE account_id=?').bind(playerAccountId),
+  db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerAccountId)
  ]);
- if(results[2].meta.changes!==1)throw new ApiError(503,'admin_migration_unavailable');
+ if(results[5].meta.changes!==1)throw new ApiError(503,'admin_migration_unavailable');
  return {revoked:true,sessionsRevoked:results[3].meta.changes};
 }
 
@@ -245,12 +247,14 @@ export async function revokeMigratedAdminOperatorsBatch(
   // A disabled operator or changed email must not prevent emergency rollback.
   statements.push(abortUnless(db,'SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?',[playerId]));
   statements.push(db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission IN ('admin.access','admin.world.read','admin.world.write')").bind(playerId));
-  statements.push(db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerId));
+  statements.push(db.prepare('DELETE FROM admin_sessions WHERE account_id=(SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?)').bind(playerId));
   statements.push(db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerId));
+  statements.push(db.prepare('DELETE FROM player_one_time_tokens WHERE account_id=?').bind(playerId));
+  statements.push(db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerId));
  }
  const results=await db.batch(statements);
- if(results.some((row,index)=>index%4===2&&row.meta.changes!==1))
+ if(results.some((row,index)=>index%6===5&&row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {revoked:playerAccountIds.length,sessionsRevoked:results.reduce((sum,row,index)=>
-  sum+(index%4===3?row.meta.changes:0),0)};
+  sum+(index%6===3?row.meta.changes:0),0)};
 }
