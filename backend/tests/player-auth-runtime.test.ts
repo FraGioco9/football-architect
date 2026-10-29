@@ -35,6 +35,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   await expect(db.batch([unifiedAdminMutationGuard(db,'player-1',digest,csrfDigest,now),
     db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')])).rejects.toBeDefined();
   expect((await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision).toBe(original+1);
+  await db.prepare('UPDATE world_state SET revision=? WHERE id=1').bind(original).run();
  });
 
  it('returns server-derived permissions and checks Admin read/write separately',async()=>{
