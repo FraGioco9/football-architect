@@ -72,3 +72,22 @@ test('a late login world response cannot hide retry after a failed logout',async
  pending.resolve({world});await signingIn;
  assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().logoutNeeded,true);assert.equal(c.state().message,'logoutFailed');
 });
+
+test('reset UI requires typed confirmation, is single-flight and rotates world generation',async()=>{
+ const active={...world,phase:'preparing',seasonNumber:1,revision:2},next={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
+ const pending=deferred();let resets=0;
+ const c=createAdminController(async(path,options)=>{
+  if(path.endsWith('session'))return session;
+  if(path.endsWith('world'))return {world:active};
+  if(path.endsWith('/reset')){resets++;assert.deepEqual(options.body,{expectedGeneration:active.generation,expectedRevision:2,confirmation:'RESET SEASON 0'});assert.equal(options.headers['X-CSRF-Token'],session.csrfToken);return pending.promise}
+  throw Error(path);
+ },()=>{});
+ await c.refresh();await c.reset('WRONG');assert.equal(resets,0);
+ const first=c.reset('RESET SEASON 0');await c.reset('RESET SEASON 0');assert.equal(resets,1);
+ pending.resolve({world:next,operationId:'reset-123'});await first;
+ assert.deepEqual(c.state().world,next);assert.equal(c.state().message,'resetDone');
+ await c.reset('RESET SEASON 0');assert.equal(resets,1);
+});
+test('reset controls are rendered with explicit irreversible summary and confirmation',()=>{
+ const html=renderAdminSettings();assert.match(html,/data-admin-reset-section/);assert.match(html,/data-admin-reset-confirm/);assert.match(html,/data-admin-reset/);assert.match(html,/Delete all seasons/);
+});
