@@ -13,6 +13,20 @@
  };
  const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
  const validWorld=w=>w?.schemaVersion===1&&uuid.test(w.generation)&&Number.isSafeInteger(w.revision)&&w.revision>=0&&Number.isSafeInteger(w.seasonNumber)&&w.seasonNumber>=0&&Number.isInteger(w.day)&&w.day>=0&&w.day<=56&&['unstarted','preparing','active','closed'].includes(w.phase);
+ function canRunCommand(action,w,ev){
+  if(!w||!ev||ev.worldGeneration!==w.generation||ev.worldRevision!==w.revision)return false;
+  const rows=ev.rows||[],mode=ev.mode;
+  const next=rows.find(e=>e.status==='scheduled'&&e.day===w.day);
+  const kinds={confirm:'confirm-',domestic:'generate-domestic-calendar',draw:'draw-international',publish:'generate-international-calendar'};
+  const eventKind=kinds[action],availableEvent=!!next&&(action==='confirm'?next.kind?.startsWith('confirm-'):next.kind===eventKind);
+  if(action==='initialize'||action==='legacy')return w.phase==='preparing'&&mode==='legacy';
+  if(action==='eventStart')return w.phase==='preparing'&&mode==='administrative';
+  if(action==='start')return w.phase==='preparing'&&mode==='legacy';
+  if(action==='eventAdvance')return w.phase==='active'&&w.day<12&&mode==='administrative';
+  if(action==='advance')return w.phase==='active'&&mode==='legacy'&&w.day<56;
+  if(action==='close')return w.phase==='active'&&w.day===56;
+  return !!eventKind&&w.phase==='active'&&mode==='administrative'&&availableEvent;
+ }
  function createAdminController(request,changed){
   let epoch=0,lastLogoutEpoch=0,csrf='',retryKey='',retryFor='',logoutCsrf='';
   let value={actor:null,world:null,message:'checking',busy:false,logoutNeeded:false,operation:'idle',errorCode:null,events:null};
@@ -147,19 +161,7 @@
    find('[data-admin-prepare]').disabled=state.busy||state.world?.phase!=='unstarted';find('[data-admin-refresh]').disabled=state.busy;
    for(const button of host.querySelectorAll('[data-admin-command]')){
     const action=button.dataset.adminCommand,w=state.world;
-    const ev=state.events,rows=ev?.rows||[],mode=ev?.mode;
-    const next=rows.find(e=>e.status==='scheduled'&&e.day===w?.day);
-    const kinds={confirm:'confirm-',domestic:'generate-domestic-calendar',draw:'draw-international',publish:'generate-international-calendar'};
-    const eventKind=kinds[action],availableEvent=!!next&&(action==='confirm'?next.kind?.startsWith('confirm-'):next.kind===eventKind);
-    const enabled=action==='initialize'?w?.phase==='preparing'&&mode==='legacy':
-     action==='legacy'?w?.phase==='preparing'&&mode==='legacy':
-     action==='eventStart'?w?.phase==='preparing'&&mode==='administrative':
-     action==='start'?w?.phase==='preparing'&&mode==='legacy':
-     action==='eventAdvance'?w?.phase==='active'&&w.day<12&&mode==='administrative':
-     action==='advance'?w?.phase==='active'&&mode==='legacy'&&w.day<56:
-     action==='close'?w?.phase==='active'&&w.day===56:
-     !!eventKind&&w?.phase==='active'&&mode==='administrative'&&availableEvent;
-    button.disabled=state.busy||!state.actor||!enabled;
+    button.disabled=state.busy||!state.actor||!canRunCommand(action,w,state.events);
    }
    const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]'),canReset=!!state.actor&&state.world?.phase!=='unstarted'&&!state.busy;
    find('[data-admin-reset-section]').hidden=!state.actor;
@@ -182,5 +184,5 @@
   new MutationObserver(()=>render()).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
   render();void controller.refresh();
  }
- return {createAdminController,mount};
+ return {createAdminController,mount,canRunCommand};
 });
