@@ -158,6 +158,20 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect((await request('/api/player/session',undefined,{Cookie:primaryCookie})).status).toBe(200);
   expect((await request('/api/player/session',undefined,{Cookie:otherCookie})).status).toBe(200);
  });
+ it('reports revoked unified Admin replay as unauthorized, not a storage outage',async()=>{
+  const {replay}=await import('../src/command-guards.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  const signed=await login(),c=cookie(signed),raw=c.split('=')[1],token=await digestOpaqueToken(raw);
+  const csrfToken=(await signed.json() as any).csrfToken;
+  const session={actor:{id:'audit-operator',email:'player@example.invalid'},digest:token,credentialVersion:1,
+   csrfDigest:await digestOpaqueToken(csrfToken),
+   unified:{playerId:'player-1',sessionDigest:token,csrfDigest:await digestOpaqueToken(csrfToken)}};
+  await db.prepare('DELETE FROM player_sessions WHERE token_digest=?').bind(token).run();
+  const world=(await (await request('/api/world')).json() as any).world;
+  await expect(replay(db,session,{expectedGeneration:world.generation,expectedRevision:world.revision},
+   'revoked-replay-test-0001','synthetic-request-hash',Math.floor(Date.now()/1000)))
+   .rejects.toMatchObject({status:401,code:'unauthorized'});
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
