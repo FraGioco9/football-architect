@@ -3,19 +3,22 @@
  * A protected D1 command must enforce expected world revision and persist receipts.
  */
 import {ApiError} from './errors.ts';
-export type MilestoneKind='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar';
+export type MilestoneKind='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar'|'archive-season'|'close-season'|'prepare-next-season';
 export type MilestoneStatus='scheduled'|'completed';
 export interface AdministrativeMilestone {
  readonly id:string;readonly kind:MilestoneKind;readonly scope:string;
  readonly day:number;readonly order:number;readonly status:MilestoneStatus;
 }
-const kinds:readonly MilestoneKind[]=['confirm-domestic-entrants','confirm-international-entrants','generate-domestic-calendar','draw-international','generate-international-calendar'];
+const kinds:readonly MilestoneKind[]=['confirm-domestic-entrants','confirm-international-entrants','generate-domestic-calendar','draw-international','generate-international-calendar','archive-season','close-season','prepare-next-season'];
 const requirements:Record<MilestoneKind,readonly MilestoneKind[]>={
  'confirm-domestic-entrants':[],
  'confirm-international-entrants':[],
  'generate-domestic-calendar':['confirm-domestic-entrants'],
  'draw-international':['confirm-international-entrants'],
  'generate-international-calendar':['draw-international'],
+ 'archive-season':[],
+ 'close-season':['archive-season'],
+ 'prepare-next-season':['close-season'],
 };
 const invalid=():never=>{throw new ApiError(422,'invalid_calendar_event')};
 const blocked=():never=>{throw new ApiError(409,'calendar_event_prerequisites')};
@@ -34,11 +37,23 @@ function validate(events:readonly AdministrativeMilestone[]):void {
   if(ids.has(e.id)||positions.has(position)||scopes.has(identity))invalid();
   ids.add(e.id);positions.add(position);scopes.add(identity);
  }
+ const finalIds=['season:archive','season:close','season:next-prepare'] as const;
+ const finalKinds=['archive-season','close-season','prepare-next-season'] as const;
+ const finalEvents=finalIds.map(id=>events.find(e=>e.id===id));
+ if(finalEvents.some(Boolean)){
+  if(finalEvents.some(e=>!e))blocked();
+  for(let i=0;i<finalEvents.length;i++){
+   const e=finalEvents[i]!;
+   if(e.scope!=='season'||e.kind!==finalKinds[i]||e.day!==56||e.order<8000)blocked();
+   if(i>0&&key(finalEvents[i-1]!)>=key(e))blocked();
+  }
+  if(events.some(e=>e.kind==='archive-season'||e.kind==='close-season'||e.kind==='prepare-next-season')&&events.filter(e=>finalKinds.includes(e.kind as typeof finalKinds[number])).length!==3)blocked();
+ }
  const domestic=events.find(e=>e.id==='domestic:calendar'),internationalDraw=events.find(e=>e.id==='international:draw');
  if(domestic&&internationalDraw&&key(domestic)>=key(internationalDraw))blocked();
  for(const e of events)for(const kind of requirements[e.kind]){
   const prerequisite=events.find(p=>p.scope===e.scope&&p.kind===kind);
-  if(!prerequisite||key(prerequisite)>=key(e))blocked();
+  if((!prerequisite||key(prerequisite)>=key(e))&&e.scope!=='season')blocked();
  }
 }
 export function rescheduleAdministrativeMilestone(
@@ -75,5 +90,19 @@ export function proposeAdministrativeMilestones():readonly AdministrativeMilesto
   {id:'international:calendar',kind:'generate-international-calendar',scope:'international',day:3,order:2,status:'scheduled'},
  ];
  validate(events);
+ return Object.freeze(events.map(e=>Object.freeze(e)));
+}
+
+/** Proposed terminal administrative milestones. These are deliberately NOT added
+ * to legacy season initialization until the D1 migration and lifecycle commands
+ * are ready, so persisted five-event schedules remain valid in the interim.
+ */
+export function proposeEndSeasonMilestones():readonly AdministrativeMilestone[]{
+ const events:AdministrativeMilestone[]=[
+  {id:'season:archive',kind:'archive-season',scope:'season',day:56,order:9000,status:'scheduled'},
+  {id:'season:close',kind:'close-season',scope:'season',day:56,order:9100,status:'scheduled'},
+  {id:'season:next-prepare',kind:'prepare-next-season',scope:'season',day:56,order:9200,status:'scheduled'},
+ ];
+ validate([...proposeAdministrativeMilestones(),...events]);
  return Object.freeze(events.map(e=>Object.freeze(e)));
 }
