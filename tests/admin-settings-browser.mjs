@@ -66,9 +66,21 @@ try{
    assert.deepEqual(await page.evaluate(()=>fetch('/api/world').then(r=>r.json())),{world:preparedWorld});
    const secrets=await page.evaluate(()=>JSON.stringify({local:{...localStorage},session:{...sessionStorage},cookie:document.cookie}));
    assert.ok(!secrets.includes(password));assert.ok(!secrets.includes('fa_admin_local'));assert.ok(!secrets.includes('csrf'));
+   // Final QA: verify native keyboard activation, labelled controls and live status in every locale/theme/width.
+   for(const id of ['admin-email','admin-password']){
+    const control=page.locator('#'+id);
+    assert.equal(await control.evaluate(el=>el.labels?.length>0),true,id+' requires a programmatic label');
+   }
+   assert.equal(await page.locator('[data-admin-operation]').getAttribute('aria-live'),'polite');
+   await page.locator('[data-admin-refresh]').focus();
+   assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-admin-refresh')),true);
+   const keyboardRefresh=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/world'&&r.request().method()==='GET');
+   await page.keyboard.press('Enter');
+   assert.equal((await keyboardRefresh).status(),200,'Keyboard refresh must use the protected Admin read');
+   await page.waitForFunction(()=>!document.querySelector('[data-admin-refresh]').disabled);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
    assert.deepEqual(errors,[]);
-   await page.locator('[data-admin-logout]').click();await page.locator('[data-admin-login]').waitFor({state:'visible'});
+   await page.locator('[data-admin-logout]').focus();await page.keyboard.press('Enter');await page.locator('[data-admin-login]').waitFor({state:'visible'});
    await page.waitForFunction(()=>!document.querySelector('[data-admin-login] button').disabled);
    assert.equal(await page.evaluate(()=>fetch('/api/admin/session').then(r=>r.status)),401);
    checks++;
