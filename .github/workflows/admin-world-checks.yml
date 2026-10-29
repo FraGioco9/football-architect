@@ -70,6 +70,9 @@ jobs:
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
+      - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: npm --prefix backend exec vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
       - name: Execute smoke tests in actual local Worker runtime
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend test
