@@ -3,6 +3,7 @@
   "use strict";
   if(window.faCompetitionContextApi)return;
   const sourceUrl = document.currentScript?.src;
+  const requestedSeasonWasExplicit=window.location?.href?new URL(window.location.href).searchParams.has('season'):false;
   const routeId = document.querySelector('meta[name="fa-competition"]')?.content;
   const root = new URL("../competitions/_shared/", sourceUrl);
   const status = document.getElementById("main-content");
@@ -556,7 +557,7 @@
     let graph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
     let suppliedOwned=false;
     const empty=()=>{
-      if(definition.category==='domestic'){
+      if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         tbody.replaceChildren(...division.clubs.map(club=>createStandingsRow(club)));mobile.prepare(rows)();window.faPostseason?.prepare(null)();suppliedOwned=false;return;
       }
@@ -575,7 +576,7 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){if(suppliedOwned)empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
@@ -845,7 +846,7 @@
     for(const club of data.participants){
       if(!club||!model.countries.includes(club.countryId)||!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40)return false;
       const id=club.countryId+"-"+club.clubId;
-      if(ids.has(id)||division&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId))return false;
+      if(ids.has(id)||!authoritative&&division&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId))return false;
       ids.add(id);
     }
     nextContext(current.selectedSeason,data);return true;
@@ -879,7 +880,7 @@
     const raw=new URL(window.location.href).searchParams.get("season");
     const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
-    nextContext(seasons.includes(requested)?requested:1);
+    nextContext(activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
     await loadScript('competition-rules.js');
     await loadScript('competition-rules-view.js');
     window.addEventListener('fa:competition-context-change',refreshSeasonPresentation);
@@ -967,6 +968,7 @@
     }
     if(activeDebugSeason===null){
       try{
+        const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
@@ -977,7 +979,7 @@
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
         let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onState:state=>{sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         let selection='';const select=()=>{const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(key===selection)return;selection=key;void loader.load()};
         window.addEventListener('fa:competition-context-change',select);

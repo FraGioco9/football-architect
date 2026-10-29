@@ -35,3 +35,8 @@ test('loads a single daily source and commits only after a matching second world
  assert.equal(await loader.load(),true);assert.equal(committed.length,1);
  assert.deepEqual(paths,['/api/world','/api/calendar/seasons/1/days/1','/api/world']);
 });
+test('validates archived Season1 scores against its closed state while actual world is Season2 day1',()=>{
+ const value=published(13);value.world={...world,seasonNumber:2,day:1};value.status='available';value.data.seasonState={phase:'closed',day:56};
+ for(const f of value.data.fixtures)f.result={homeGoals:0,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:null};
+ assert.equal(validateCalendarDay(value,{season:1,day:13},manifest).data.fixtures.length,128);
+});

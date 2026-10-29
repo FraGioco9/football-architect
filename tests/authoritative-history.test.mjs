@@ -12,3 +12,6 @@ test('refuses unknown historical champion and preserves unavailable player/all-t
  const c=context();c.seasonData.history.championClubId='FR-1';assert.equal(historyViewModel(c),null);
  const data=historyViewModel(context());assert.equal(data.players,null);assert.equal(data.allTime,null);
 });
+test('keeps selected Season1 history when actual world advances into active Season2',()=>{
+ const c=context();c.seasonData.world={phase:'active',seasonNumber:2,day:1};c.seasonData.seasonState={phase:'closed',day:56};assert.equal(historyViewModel(c).season,1);
+});

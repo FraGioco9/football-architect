@@ -1,4 +1,4 @@
-/** Anonymous, read-only projection of persisted inaugural sporting evidence.
+/** Anonymous, read-only projection of persisted sporting evidence for supported seasons1/2.
  * Verification reconstructs deterministic expectations; only stored, validated
  * results are projected. Reads never finalize matches or persist repaired data.
  */
@@ -59,26 +59,28 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   return {...base,status,reason,provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
  };
  // A future/unimplemented viewed season must never be silently mapped to Season1.
- if(selectedSeason!==1)return empty('unavailable','unsupported-season');
+ if(![1,2].includes(selectedSeason))return empty('unavailable','unsupported-season');
  if(world.seasonNumber===0)return empty('empty','season-not-prepared');
- // The sporting authority has not yet been generalized to later active seasons.
- if(world.seasonNumber!==1)return empty('unavailable','unsupported-world-season');
+ // Only seasons1/2 currently have a complete approved authority chain.
+ if(![1,2].includes(world.seasonNumber))return empty('unavailable','unsupported-world-season');
+ if(selectedSeason>world.seasonNumber)return empty('empty','season-not-prepared');
+ const viewedWorld=selectedSeason===world.seasonNumber?world:{...world,seasonNumber:selectedSeason,day:56,phase:'closed' as const};
  try{
-  const published=await db.prepare('SELECT calendar_hash FROM season_calendars WHERE season_number=1').first<{calendar_hash:string}>();
+  const published=await db.prepare(`SELECT calendar_hash FROM season_calendars WHERE season_number=${selectedSeason}`).first<{calendar_hash:string}>();
   if(!published){
    // Staged fixtures, participant lists and draw outputs remain private until publication.
-   const leaked=(await db.prepare('SELECT count(*) n FROM season_day_outcomes WHERE season_number=1').first<{n:number}>())?.n;
-   if(leaked||world.day>12||world.phase==='closed')invalid();
+   const leaked=(await db.prepare(`SELECT count(*) n FROM season_day_outcomes WHERE season_number=${selectedSeason}`).first<{n:number}>())?.n;
+   if(leaked||viewedWorld.day>12||viewedWorld.phase==='closed')invalid();
    return await empty('empty','calendar-unpublished');
   }
-  const evidence=await loadSeasonSportingEvidence(db,world);
-  const receipts=(await db.prepare('SELECT day,generation,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_day_outcomes WHERE season_number=1 ORDER BY day').all<Receipt>()).results;
-  const ties=(await db.prepare('SELECT generation,competition_id,phase_id,tie_id,plan_hash,plan_json FROM season_knockout_ties WHERE season_number=1 ORDER BY competition_id,phase_id,tie_id').all<Tie>()).results;
-  if(receipts.length!==world.day)invalid();
+  const evidence=await loadSeasonSportingEvidence(db,viewedWorld);
+  const receipts=(await db.prepare(`SELECT day,generation,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_day_outcomes WHERE season_number=${selectedSeason} ORDER BY day`).all<Receipt>()).results;
+  const ties=(await db.prepare(`SELECT generation,competition_id,phase_id,tie_id,plan_hash,plan_json FROM season_knockout_ties WHERE season_number=${selectedSeason} ORDER BY competition_id,phase_id,tie_id`).all<Tie>()).results;
+  if(receipts.length!==viewedWorld.day)invalid();
   const state=createProgression(evidence.snapshot,evidence.schedule),storedResults=new Map<string,TemporaryResult>();
   for(let i=0;i<receipts.length;i++){
    const row=receipts[i],expectedDay=await processSportingDay(state,i+1);
-   const expected=sportingDayPayload(1,world.generation,i+1,evidence.calendar.calendar_hash,expectedDay.results);
+   const expected=sportingDayPayload(selectedSeason,world.generation,i+1,evidence.calendar.calendar_hash,expectedDay.results);
    const digest=await canonicalHash(expected),saved=JSON.parse(row.outcome_json) as ReturnType<typeof sportingDayPayload>;
    if(row.day!==i+1||row.generation!==world.generation||row.calendar_hash!==evidence.calendar.calendar_hash||row.simulation_version!=='temporary-score-v1'||row.outcome_hash!==digest||await canonicalHash(saved)!==digest)invalid();
    for(const result of saved.results){if(storedResults.has(result.fixtureId))invalid();storedResults.set(result.fixtureId,result)}
@@ -88,43 +90,43 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    const expected=state.ties.get(tieKey({competitionId:tie.competition_id,phaseId:tie.phase_id,tieId:tie.tie_id}));
    if(!expected||tie.generation!==world.generation||tie.plan_hash!==await canonicalHash(expected)||await canonicalHash(JSON.parse(tie.plan_json))!==tie.plan_hash)invalid();
   }
-  const archive=await db.prepare('SELECT * FROM season_archives WHERE season_number=1').first<Archive>();
-  if(world.phase==='closed'){
-   if(!archive||world.day!==56||archive.generation!==world.generation||archive.calendar_hash!==evidence.calendar.calendar_hash||archive.days_count!==56||archive.results_count!==4082||archive.ties_count!==54||storedResults.size!==4082||ties.length!==54||!Number.isSafeInteger(archive.created_at)||archive.created_at<=0)invalid();
+  const archive=await db.prepare(`SELECT * FROM season_archives WHERE season_number=${selectedSeason}`).first<Archive>();
+  if(viewedWorld.phase==='closed'){
+   if(!archive||viewedWorld.day!==56||archive.generation!==world.generation||archive.calendar_hash!==evidence.calendar.calendar_hash||archive.days_count!==56||archive.results_count!==4082||archive.ties_count!==54||storedResults.size!==4082||ties.length!==54||!Number.isSafeInteger(archive.created_at)||archive.created_at<=0)invalid();
    const resultsHash=await canonicalHash(receipts.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
-   const archiveHash=await canonicalHash({schemaVersion:1,season:1,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:4082,daysCount:56,tiesCount:54});
+   const archiveHash=await canonicalHash({schemaVersion:1,season:selectedSeason,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:4082,daysCount:56,tiesCount:54});
    if(archive.results_hash!==resultsHash||archive.knockout_hash!==knockoutHash||archive.archive_hash!==archiveHash)invalid();
   }else if(archive)invalid();
   if(competitionId==='world'){
    const plans=[...state.ties.values()];
    const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))].filter(f=>f.day===calendarDay);
-   const canonical=(await import('../../assets/world-calendar-model.js')).default.createSeason(1) as {days:{events:{marker:string}[]}[]};
+   const canonical=(await import('../../assets/world-calendar-model.js')).default.createSeason(selectedSeason) as {days:{events:{marker:string}[]}[]};
    const priorities=new Map(canonical.days[calendarDay!-1].events.map((e,i)=>[e.marker,i]));
    all.sort((a,b)=>(Number(priorities.get(a.marker))-Number(priorities.get(b.marker)))||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
-   const data={season:selectedSeason,day:calendarDay,calendarHash:evidence.calendar.calendar_hash,rulesHash:evidence.snapshot.rulesHash,
+   const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},day:calendarDay,calendarHash:evidence.calendar.calendar_hash,rulesHash:evidence.snapshot.rulesHash,
     competitions:evidence.snapshot.bindings.map(b=>({id:b.competitionId,rulesVersion:b.rulesVersion,clubIds:[...b.clubIds]})),
     fixtures:projectFixtures(all,plans,storedResults)};
    await unchanged(db,world);
-   return {...base,status:world.phase==='closed'?'available' as const:'partial' as const,reason:null,
-    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:1:${evidence.calendar.calendar_hash}`},data};
+   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
   }
   const binding=evidence.snapshot.bindings.find(b=>b.competitionId===competitionId);if(!binding)invalid();
   const leagueFixtures=evidence.schedule.fixtures.filter(f=>f.competitionId===competitionId);
   const plans=[...state.ties.values()].filter(t=>t.competitionId===competitionId);
   const fixtures=[...leagueFixtures,...plans.flatMap(t=>t.fixtures.map(f=>f.fixture))].sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en'));
-  const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:world.day});
+  const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
   const standings={complete:leagueFixtures.every(f=>storedResults.has(f.id)),rows:table.map(({drawKey,...row})=>row)};
   const stats=teamStatistics(binding.clubIds,fixtures,storedResults);
   const final=fixtures.find(f=>f.marker===(competitionId==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();
-  const data={season:selectedSeason,rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
+  const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
    fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
-   history:archive?{season:1,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
+   history:archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);
-  return {...base,status:world.phase==='closed'?'available' as const:'partial' as const,reason:null,
-   provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:1:${evidence.calendar.calendar_hash}`},data};
+  return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+   provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
  }catch(error){if(error instanceof ApiError&&error.code==='stale_world')throw error;return invalid()}
 }
 

@@ -227,6 +227,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <p data-admin-next-event role="status" aria-live="polite"></p>
  <p data-admin-closure role="status" aria-live="polite"></p>
  <div data-admin-operations role="group" aria-label="Season operations">
+ <button type="button" data-admin-command="nextPrepare" data-admin-copy="cmdnextPrepare" disabled>Prepare Season 2</button>
  <button type="button" data-admin-command="initialize" data-admin-copy="cmdinitialize" disabled>Initialize events</button>
  <button type="button" data-admin-command="confirm" data-admin-copy="cmdconfirm" disabled>Confirm entrants</button>
  <button type="button" data-admin-command="domestic" data-admin-copy="cmddomestic" disabled>Generate domestic calendar</button>
@@ -235,7 +236,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <button type="button" data-admin-command="start" data-admin-copy="cmdstart" disabled>Start season</button>
  <button type="button" data-admin-command="advance" data-admin-copy="cmdadvance" disabled>Advance day</button>
  <button type="button" data-admin-command="close" data-admin-copy="cmdclose" disabled>Close season</button>
- <button type="button" data-admin-command="legacy" data-admin-copy="cmdlegacy" disabled>Generate legacy calendar</button>
+ <button type="button" data-admin-command="legacy" data-admin-copy="cmdlegacy" disabled>Generate season calendar</button>
  <button type="button" data-admin-command="eventStart" data-admin-copy="cmdeventStart" disabled>Start event calendar</button>
  <button type="button" data-admin-command="eventAdvance" data-admin-copy="cmdeventAdvance" disabled>Advance event calendar</button>
  </div>

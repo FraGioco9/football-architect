@@ -1,7 +1,7 @@
 // Sealed authoritative History. No verified-source relabel, fictional records or players.
 export function historyViewModel(context){
  const data=context?.seasonData,history=data?.history;
- if(data?.provenance?.kind!=='authoritative'||data.world?.phase!=='closed'||data.season!==context.selectedSeason||history?.season!==context.selectedSeason||
+ if(data?.provenance?.kind!=='authoritative'||(data.seasonState?.phase??data.world?.phase)!=='closed'||data.season!==context.selectedSeason||history?.season!==context.selectedSeason||
     !/^[a-f0-9]{64}$/.test(history?.archiveHash||'')||!Number.isSafeInteger(history.closedAt)||history.closedAt<=0)return null;
  const table=data.statistics?.standings,clubs=new Map((data.participants||[]).map(c=>[c.countryId+'-'+c.clubId,c]));
  const champion=clubs.get(history.championClubId);

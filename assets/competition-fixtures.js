@@ -206,7 +206,9 @@
     return item;
   }
   function render(){
-    const available=rounds!==null&&availableSeasons.has(navigation.get().season);
+    const supplied=window.faCompetitionContext?.seasonData;
+    const authoritative=supplied?.provenance?.kind==='authoritative'&&String(supplied.season)===navigation.get().season;
+    const available=rounds!==null&&(authoritative||availableSeasons.has(navigation.get().season));
     const hasPostseason=available&&Boolean(stage);
     if(menuHasPostseason!==hasPostseason){
       menuHasPostseason=hasPostseason;postChoice.hidden=!hasPostseason;
@@ -335,7 +337,7 @@
   }
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:world-clock-snapshot',event=>{
-    if(!international)return;
+    if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
     currentMatchday=calendar?rules.currentFixtureChoice(definition,calendar,event.detail):null;render();
   });

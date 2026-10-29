@@ -1,3 +1,4 @@
+import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 /** Explicit opt-in for next-generation administrative milestones.
  * No initial season fixtures or draws are created by this operation.
  */
@@ -16,7 +17,8 @@ export async function initializeAdministrativeEvents(db:Database,session:AdminSe
  const saved=await replay(db,session,command,key,hash,now);if(saved)return saved;
  const world=await readWorld(db);
  if(world.generation!==command.expectedGeneration||world.revision!==command.expectedRevision)throw new ApiError(409,'stale_world');
- if(world.seasonNumber!==1||world.phase!=='preparing'||world.day!==0||world.revision===Number.MAX_SAFE_INTEGER)throw new ApiError(409,'calendar_event_prerequisites');
+ if(![1,2].includes(world.seasonNumber)||world.phase!=='preparing'||world.day!==0||world.revision===Number.MAX_SAFE_INTEGER)throw new ApiError(409,'calendar_event_prerequisites');
+ const authority=await loadSeasonSnapshotAuthority(db,world);
  const count=(await db.prepare('SELECT count(*) AS n FROM season_admin_events WHERE season_number=?').bind(world.seasonNumber).first<{n:number}>())?.n;
  if(count!==0)throw new ApiError(409,'calendar_event_prerequisites');
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
@@ -26,7 +28,8 @@ export async function initializeAdministrativeEvents(db:Database,session:AdminSe
  try{
   await db.batch([
    sessionGuard(db,session,now),
-   abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=1 AND phase='preparing' AND day=0",[world.generation,world.revision]),
+   ...authority.guards,
+   abortUnless(db,`SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=${world.seasonNumber} AND phase='preparing' AND day=0`,[world.generation,world.revision]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=?)=0',[world.seasonNumber]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=?)=0',[world.seasonNumber]),

@@ -52,7 +52,8 @@ export async function readSeasonTwoCandidateSource(db:Database,allowArchivedSour
  const review=await buildQualificationReviewPacket(archiveHash,candidate,holderReview);
  const approval=await db.prepare('SELECT snapshot_hash,source_archive_hash,generation,approved_at FROM season_two_approvals WHERE target_season=2').first<{snapshot_hash:string;source_archive_hash:string;generation:string;approved_at:number}>();
  if(approval&&(approval.snapshot_hash!==snapshot.snapshotHash||approval.source_archive_hash!==archiveHash||approval.generation!==world.generation))throw new ApiError(422,'qualification_evidence_invalid');
- const reviewPacket={world:current,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,approval:approval?{snapshotHash:approval.snapshot_hash,approvedAt:approval.approved_at}:null,requiresOwnerQualificationReview:!approval};
+ const activation={targetSeason:2,ready:!!approval&&current.seasonNumber===1&&current.phase==='closed'&&current.day===56,blockingReasons:approval?[]:['season-two-owner-approval-required']};
+ const reviewPacket={world:current,activation,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,approval:approval?{snapshotHash:approval.snapshot_hash,approvedAt:approval.approved_at}:null,requiresOwnerQualificationReview:!approval};
  return {review:reviewPacket,source:{world,evidence,archive,receipts,ties}};
 }
 export async function readSeasonTwoCandidate(db:Database){return (await readSeasonTwoCandidateSource(db)).review;}

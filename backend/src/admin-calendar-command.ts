@@ -1,3 +1,4 @@
+import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 /** Protected future administrative milestone rescheduling. No fixture mutation. */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';
@@ -24,6 +25,7 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
  const world=await readWorld(db);
  if(world.generation!==command.expectedGeneration||world.revision!==command.expectedRevision)throw new ApiError(409,'stale_world');
  if(world.phase==='unstarted'||world.phase==='closed')throw new ApiError(409,'calendar_event_prerequisites');
+ const authority=await loadSeasonSnapshotAuthority(db,world);
  const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<EventRow>()).results;
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
  if(command.day>12)throw new ApiError(409,'calendar_event_prerequisites');
@@ -38,6 +40,7 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
  try{
   await db.batch([
    sessionGuard(db,session,now),
+   ...authority.guards,
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM season_admin_events WHERE season_number=?)=?',[world.seasonNumber,rows.length]),
    ...rows.map(r=>abortUnless(db,'SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id=? AND kind=? AND scope=? AND scheduled_day=? AND event_order=? AND status=?',[world.seasonNumber,r.event_id,r.kind,r.scope,r.scheduled_day,r.event_order,r.status])),

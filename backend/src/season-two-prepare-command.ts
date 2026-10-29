@@ -1,4 +1,4 @@
-/** Internal command layer only: HTTP/UI activation remains unexposed. */
+/** Protected Season1→2 preparation; HTTP/UI callers enforce Origin and CSRF. */
 import type {Database} from './database.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import {ApiError} from './errors.ts';

@@ -7,7 +7,7 @@ import type {Database} from './database.ts';
 import {parseIdempotencyKey,parsePrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {loadApprovedSnapshot} from './approved-season-one.ts';
+import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {dueAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
 
@@ -33,7 +33,7 @@ export async function completeConfirmationEvent(db:Database,session:AdminSession
  const first=due[0];
  if(!first||first.id!==command.eventId||!first.kind.startsWith('confirm-')||
     events.some(e=>e.day<world.day&&e.status!=='completed'))throw new ApiError(409,'calendar_event_prerequisites');
- const snapshot=await loadApprovedSnapshot();
+ const authority=await loadSeasonSnapshotAuthority(db,world),snapshot=authority.snapshot;
  const stored=await db.prepare('SELECT generation,participants_hash,rules_hash,snapshot_json FROM seasons WHERE season_number=?').bind(world.seasonNumber).first<{generation:string;participants_hash:string;rules_hash:string;snapshot_json:string}>();
  if(!stored||stored.generation!==world.generation||stored.participants_hash!==snapshot.participantsHash||stored.rules_hash!==snapshot.rulesHash||
     await canonicalHash(JSON.parse(stored.snapshot_json))!==await canonicalHash(snapshot))throw new ApiError(422,'calendar_event_prerequisites');
@@ -42,6 +42,7 @@ export async function completeConfirmationEvent(db:Database,session:AdminSession
  try{
   await db.batch([
    sessionGuard(db,session,now),
+   ...authority.guards,
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 FROM seasons WHERE season_number=? AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?',[world.seasonNumber,stored.generation,stored.participants_hash,stored.rules_hash,stored.snapshot_json]),
    abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM season_admin_events WHERE season_number=?)=?',[world.seasonNumber,rows.length]),

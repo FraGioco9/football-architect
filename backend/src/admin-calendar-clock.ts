@@ -18,7 +18,7 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
  if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
  const starting=action==='start'&&world.phase==='preparing'&&world.day===0;
  const advancing=action==='advance'&&world.phase==='active'&&world.day>=1&&world.day<=12;
- if(world.seasonNumber!==1||world.revision===Number.MAX_SAFE_INTEGER||!(starting||advancing))throw new ApiError(409,'calendar_event_prerequisites');
+ if(![1,2].includes(world.seasonNumber)||world.revision===Number.MAX_SAFE_INTEGER||!(starting||advancing))throw new ApiError(409,'calendar_event_prerequisites');
  const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<AdvanceEventRow>()).results;
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
  const template=proposeAdministrativeMilestones();

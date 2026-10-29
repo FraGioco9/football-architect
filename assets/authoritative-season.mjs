@@ -13,6 +13,14 @@ export function validPublicWorld(w){
  return object(w)&&w.schemaVersion===1&&typeof w.generation==='string'&&uuid.test(w.generation)&&count(w.revision)&&count(w.seasonNumber)&&count(w.day)&&w.day<=56&&
   (w.phase==='unstarted'?w.seasonNumber===0&&w.day===0&&w.revision===0:w.seasonNumber>0&&(w.phase==='preparing'?w.day===0:w.phase==='active'?w.day>=1:w.phase==='closed'&&w.day===56));
 }
+export function viewedSeasonState(input){
+ const w=input?.world,d=input?.data,season=input?.selectedSeason;
+ if(!validPublicWorld(w)||![1,2].includes(season)||!d||season>w.seasonNumber)return null;
+ const state=d.seasonState??(season===w.seasonNumber?{day:w.day,phase:w.phase}:null);
+ if(!state||!Number.isInteger(state.day)||state.day<0||state.day>56||!['preparing','active','closed'].includes(state.phase))return null;
+ if(season===w.seasonNumber)return state.day===w.day&&state.phase===w.phase?state:null;
+ return state.phase==='closed'&&state.day===56?state:null;
+}
 function sameWorld(a,b){return ['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k])}
 function clubCatalog(manifest){return new Map((manifest?.divisions||[]).flatMap(d=>d.clubs||[]).map(c=>[key(c),c]))}
 export function scoreValid(r,f){
@@ -39,10 +47,10 @@ export function validateAuthoritativeSeason(input,context,manifest){
   if(!allowed.includes(input.reason)||input.data!==null||input.provenance?.kind!=='none'||input.provenance.sourceRef!==null||input.provenance.resultAuthority!==null)fail();
   return freeze(structuredClone(input));
  }
- const {data:d,world:w,provenance:p}=input;
- if(input.selectedSeason!==1||w.seasonNumber!==1||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
+ const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
+ if(!viewed||![1,2].includes(w.seasonNumber)||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
     p?.kind!=='authoritative'||p.resultAuthority!=='temporary-score-v1'||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':[a-f0-9]{64}$').test(p.sourceRef)||
-    (input.status==='available')!==(w.phase==='closed'))fail();
+    (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
     definition.category==='domestic'&&ids.some(id=>!id.startsWith(definition.id.split('-')[0]+'-')))fail();
@@ -54,7 +62,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
      !/^(?:[NI](?:0[1-9]|[12][0-9]|3[0-3])|FEDERATION-FINAL|SOVEREIGN-FINAL)$/.test(f.marker)||
      f.id!==`season:${d.season}:${definition.id}:${f.marker}:${f.homeClubId}:${f.awayClubId}`||seen.has(f.id)||
      typeof f.neutral!=='boolean'||!definition.rules.phases.some(p=>p.id===f.phaseId)||
-     (f.result!==null)!==(f.day<=w.day)||f.result!==null&&!scoreValid(f.result,f))fail();
+     (f.result!==null)!==(f.day<=viewed.day)||f.result!==null&&!scoreValid(f.result,f))fail();
   const phase=definition.rules.phases.find(p=>p.id===f.phaseId);
   if(phase.type==='knockout'){
    const tie=phase.ties.find(t=>t.id===f.tieId),position=f.phaseId+':'+f.tieId+':'+f.leg;
@@ -83,7 +91,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
   const expected=fixtures.filter(f=>f.day===i+1);
   if(day.day!==i+1||!Array.isArray(day.fixtureIds)||day.fixtureIds.length!==expected.length||new Set(day.fixtureIds).size!==expected.length||expected.some(f=>!day.fixtureIds.includes(f.id))||day.played!==expected.filter(f=>f.result!==null).length)fail();
  });
- if(w.phase==='closed'){
+ if(viewed.phase==='closed'){
   const final=fixtures.find(f=>f.marker===(definition.id==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const champion=definition.category==='international'?final?.result?.winnerClubId:table.rows[0]?.clubId;
   if(!table.complete||fixtures.some(f=>f.result===null)||!object(d.history)||d.history.season!==d.season||!/^[a-f0-9]{64}$/.test(d.history.archiveHash)||!count(d.history.closedAt)||d.history.closedAt===0||d.history.championClubId!==champion||!ids.includes(champion))fail();
@@ -112,14 +120,14 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
   standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recent(r.clubId).slice(-5)})),
   teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),players:[]};
- const currentChoice=source.world.phase==='active'&&source.world.seasonNumber===d.season?
+ const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,
   history:d.history?{season:d.history.season,archiveHash:d.history.archiveHash,closedAt:d.history.closedAt,championClubId:d.history.championClubId}:null,
-  provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,
-  currentMatchday:source.world.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
+  provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,seasonState:viewedSeasonState(source),
+  currentMatchday:viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }
-export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJson,manifest,onState=()=>{}}){
+export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJson,manifest,onState=()=>{},onWorld=()=>{}}){
  let epoch=0,controller=null,disposed=false;
  return Object.freeze({async load(){
   if(disposed||isDev())return false;
@@ -129,6 +137,7 @@ export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJs
   let completed=false;
   try{
    const before=await fetchJson('/api/world',{signal});if(!current()||!validPublicWorld(before?.world))return false;
+   onWorld(before.world);if(!current())return false;
    const payload=await fetchJson(`/api/competitions/${context.definition.id}/seasons/${context.selectedSeason}`,{signal});if(!current())return false;
    const source=validateAuthoritativeSeason(payload,context,manifest);
    if(!sameWorld(before.world,source.world))return false;

@@ -1,5 +1,5 @@
 // Private read-only calendar transport. Browser events never confer world authority.
-import {validPublicWorld,scoreValid} from './authoritative-season.mjs';
+import {validPublicWorld,scoreValid,viewedSeasonState} from './authoritative-season.mjs';
 const fail=()=>{throw TypeError('Invalid authoritative calendar')};
 const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
 const key=c=>c.countryId+'-'+c.clubId;
@@ -9,23 +9,24 @@ export function validateCalendarDay(input,selection,manifest){
   const reasons=input.status==='empty'?['season-not-prepared','calendar-unpublished']:input.status==='unavailable'?['unsupported-season','unsupported-world-season']:[];
   if(!reasons.includes(input.reason)||input.data!==null||input.provenance?.kind!=='none'||input.provenance.sourceRef!==null||input.provenance.resultAuthority!==null)fail();return structuredClone(input);
  }
- const {data:d,world:w,provenance:p}=input;
- if(selection.season!==1||w.seasonNumber!==1||d?.season!==selection.season||d.day!==selection.day||input.reason!==null||p?.kind!=='authoritative'||p.resultAuthority!=='temporary-score-v1'||
-   !/^[a-f0-9]{64}$/.test(d.calendarHash)||!/^[a-f0-9]{64}$/.test(d.rulesHash)||p.sourceRef!==`world:${w.generation}:season:1:${d.calendarHash}`||(input.status==='available')!==(w.phase==='closed'))fail();
+ const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
+ if(!viewed||![1,2].includes(w.seasonNumber)||d?.season!==selection.season||d.day!==selection.day||input.reason!==null||p?.kind!=='authoritative'||p.resultAuthority!=='temporary-score-v1'||
+   !/^[a-f0-9]{64}$/.test(d.calendarHash)||!/^[a-f0-9]{64}$/.test(d.rulesHash)||p.sourceRef!==`world:${w.generation}:season:${selection.season}:${d.calendarHash}`||(input.status==='available')!==(viewed.phase==='closed'))fail();
  const definitions=new Map(manifest.competitions.map(c=>[c.id,c])),catalog=new Map(manifest.divisions.flatMap(d=>d.clubs).map(c=>[key(c),c]));
  if(!Array.isArray(d.competitions)||d.competitions.length!==18||new Set(d.competitions.map(c=>c.id)).size!==18||!Array.isArray(d.fixtures))fail();
  const bindings=new Map(d.competitions.map(c=>[c.id,c]));
  for(const c of d.competitions){const def=definitions.get(c.id);if(!def||c.rulesVersion!==def.rules.version||!Array.isArray(c.clubIds)||c.clubIds.length!==def.capacity||new Set(c.clubIds).size!==c.clubIds.length||c.clubIds.some(id=>!catalog.has(id)))fail();
-  if(def.category==='domestic'){const ids=manifest.divisions.find(d=>d.id===c.id).clubs.map(key);if(c.clubIds.some(id=>!ids.includes(id)))fail()}
+  if(def.category==='domestic'){const ids=manifest.divisions.find(d=>d.id===c.id).clubs.map(key);if(selection.season===1?c.clubIds.some(id=>!ids.includes(id)):c.clubIds.some(id=>!id.startsWith(c.id.split('-')[0]+'-')))fail()}
   else for(const country of ['IT','ENG','ES','DE','FR','PT','NL','BR'])if(c.clubIds.filter(id=>id.startsWith(country+'-')).length!==3)fail();
  }
+ for(const country of ['IT','ENG','ES','DE','FR','PT','NL','BR'])if(new Set([...(bindings.get(country+'-1')?.clubIds||[]),...(bindings.get(country+'-2')?.clubIds||[])]).size!==32)fail();
  if(new Set(['int-1','int-2'].flatMap(id=>bindings.get(id).clubIds)).size!==48)fail();
  const events=globalThis.faWorldCalendarModel.createSeason(selection.season).days[selection.day-1].events,seen=new Set();
  for(const f of d.fixtures){
   const binding=bindings.get(f.competitionId),def=definitions.get(f.competitionId),phase=def?.rules.phases.find(p=>p.id===f.phaseId),event=events.find(e=>e.marker===f.marker&&e.competitionIds.includes(f.competitionId));
   if(!binding||!phase||!event||f.day!==selection.day||!binding.clubIds.includes(f.homeClubId)||!binding.clubIds.includes(f.awayClubId)||f.homeClubId===f.awayClubId||
     !Number.isInteger(f.round)||f.round<1||f.round>33||f.id!==`season:${selection.season}:${f.competitionId}:${f.marker}:${f.homeClubId}:${f.awayClubId}`||seen.has(f.id)||
-    !phase.calendarEvents.includes(f.marker)||typeof f.neutral!=='boolean'||(f.result!==null)!==(selection.day<=w.day)||f.result!==null&&!scoreValid(f.result,f))fail();
+    !phase.calendarEvents.includes(f.marker)||typeof f.neutral!=='boolean'||(f.result!==null)!==(selection.day<=viewed.day)||f.result!==null&&!scoreValid(f.result,f))fail();
   if(phase.type==='knockout'){const tie=phase.ties.find(t=>t.id===f.tieId);if(!tie||!Number.isInteger(f.leg)||f.leg<1||f.leg>tie.legs||f.neutral!==(tie.homePolicy==='neutral'))fail()}
   else if(f.tieId!==null||f.leg!==null||f.neutral||f.round!==phase.calendarEvents.indexOf(f.marker)+1)fail();seen.add(f.id);
  }

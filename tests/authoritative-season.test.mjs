@@ -85,3 +85,13 @@ test('current-matchday shortcut follows the next canonical event and disappears 
  raw.world={...world,day:56};assert.equal(adaptAuthoritativeSeason(raw,ctx(),manifest).currentMatchday,null);
  raw.world={...world,phase:'closed',day:56};assert.equal(adaptAuthoritativeSeason(raw,ctx(),manifest).currentMatchday,null);
 });
+test('accepts a Season2 promotion without reusing inaugural division membership',()=>{
+ const raw=source(),mapping=new Map();raw.selectedSeason=2;raw.world={...world,seasonNumber:2};raw.data.season=2;raw.data.seasonState={day:1,phase:'active'};
+ raw.provenance.sourceRef='world:'+world.generation+':season:2:'+'a'.repeat(64);
+ raw.data.participants=raw.data.participants.map(id=>id==='IT-16'?'IT-17':id);
+ for(const row of [...raw.data.standings.rows,...raw.data.statistics.teams])if(row.clubId==='IT-16')row.clubId='IT-17';
+ for(const f of raw.data.fixtures){const old=f.id;if(f.homeClubId==='IT-16')f.homeClubId='IT-17';if(f.awayClubId==='IT-16')f.awayClubId='IT-17';f.id=`season:2:IT-1:${f.marker}:${f.homeClubId}:${f.awayClubId}`;mapping.set(old,f.id)}
+ for(const day of raw.data.calendar)day.fixtureIds=day.fixtureIds.map(id=>mapping.get(id));
+ const c={...ctx(),selectedSeason:2};const data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,c,manifest),c,manifest);
+ assert.ok(data.participants.some(c=>c.clubId===17));assert.equal(data.season,2);
+});

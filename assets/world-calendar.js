@@ -217,7 +217,7 @@
     import('/assets/authoritative-calendar.mjs').then(({mountAuthoritativeCalendar})=>mountAuthoritativeCalendar({root:calendar,onWorld:world=>{
       publicWorld=world?Object.freeze({...world}):null;
       try{clockSnapshot=world&&world.seasonNumber>0&&world.day>=1?clockAdapter.normalize({source:{kind:'authoritative',reference:'world:'+world.generation+':'+world.revision},current:{season:world.seasonNumber,day:world.day}}):null}catch{clockSnapshot=null}
-      if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){const day=currentWeekDay();if(day!==state.day)state={...state,day};if(world)pendingInitialWeek=false;}
+      if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){const day=currentWeekDay();if(day!==state.day)state={...state,day};if(world&&clockSnapshot?.current?.season===(window.faCalendarSelectedSeason?.()??1))pendingInitialWeek=false;}
       render();window.dispatchEvent(new CustomEvent('fa:public-calendar-change'));
     }})).catch(()=>{});
   }
