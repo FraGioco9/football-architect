@@ -118,7 +118,8 @@ export async function adminOperatorMigrationReadiness(db:Database){
  const grants=new Map(permissions.results.map(row=>[row.playerAccountId,row.permissionCount]));
  const operators=rows.map(row=>({
   legacyAdminId:row.legacyAdminId,
-  status:row.enabled!==1?'disabled':row.playerAccountId===null?'unlinked':
+  status:row.enabled!==1?(row.playerAccountId===null?'disabled':'disabled_linked'):
+   row.playerAccountId===null?'unlinked':
    row.playerStatus!=='active'||row.verifiedAt===null||row.playerEmail!==row.legacyEmail?'invalid_player':
    grants.get(row.playerAccountId)!==3?'missing_permissions':'linked'
  }));
