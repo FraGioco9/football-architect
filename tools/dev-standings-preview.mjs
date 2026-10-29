@@ -104,7 +104,7 @@ async function safeFile(root, relativePath) {
 }
 
 // Exported solely to test the server without opening a production or LAN socket.
-export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
+export function createPreviewServer({ root = ROOT, subdomains = false, devPreview = true } = {}) {
   return createServer(async (req, res) => {
     try {
       const remote = req.socket.remoteAddress;
@@ -140,7 +140,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards"]);
         const next=allowed.has(legacy.get("view"))?legacy.get("view"):"overview";
         legacy.delete("view");
-        if(next==="history"||next==="rules"){legacy.delete("season");legacy.delete("matchday");}
+        if(next==="history"||next==="rules")legacy.delete("matchday");
         const suffix=legacy.toString();
         res.writeHead(308,{"Location":buildRoute({kind:"competition",id:rootDivision[1],view:next})+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
@@ -155,6 +155,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
       const virtual = VIRTUAL[raw];
       let body, type;
       if (virtual) {
+        if(!devPreview)return reject(res,404);
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
@@ -164,13 +165,13 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
-        if(file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
-        if(file==="calendar/index.html"){
+        if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
+        if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
           const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
           body=Buffer.from(body.toString("utf8").replace('<script data-calendar-bootstrap>',bootstrap+'<script data-calendar-bootstrap>'),"utf8");
         }
-        if (DETAIL.test(raw) || CUP_DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html") {
+        if (devPreview && (DETAIL.test(raw) || CUP_DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html")) {
           const html = body.toString("utf8");
           if (html.split("</head>").length !== 2) return reject(res, 500);
           // Resolve the requested DEV season before the browser paints the selector.
@@ -186,7 +187,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
         }
       }
-      if (subdomains && type === TYPES[".html"]) {
+      if (devPreview && subdomains && type === TYPES[".html"]) {
         const appOrigin = "http://app.localhost:2000", siteOrigin = "http://localhost:2000";
         const config = '<script>document.documentElement.dataset.faDevAppOrigin="' + appOrigin +
           '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';
@@ -200,7 +201,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false } = {}) {
           }), "utf8");
       }
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
-      if(type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",'<script>window.faDevPreviewMode=true</script>\n</head>'),"utf8");
+      if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",'<script>window.faDevPreviewMode=true</script>\n</head>'),"utf8");
       res.writeHead(200, {
         "Content-Type": type,
         "Cache-Control": "no-store",

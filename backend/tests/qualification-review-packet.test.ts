@@ -18,8 +18,9 @@ test('review packet is stable, archive-bound and never an activation authorizati
  assert.deepEqual(a,b);
  assert.equal(a.readyForActivation,false);
  assert.equal(a.status,'requires-owner-approval');
- assert.ok(a.blockingReasons.includes('int-1:holder-conflict'));
- assert.ok(!a.blockingReasons.includes('int-2:holder-conflict'));
+ assert.deepEqual(a.blockingReasons,['season-two-snapshot-not-approved']);
+ assert.match(a.holderAllocationHash,/^[a-f0-9]{64}$/);
+ assert.notEqual(a.holderAllocationHash,a.candidateHash);
  assert.match(a.candidateHash,/^[a-f0-9]{64}$/);
  assert.equal(Object.isFrozen(a),true);
  const changed={...candidate,bindings:candidate.bindings.map(b=>b.competitionId==='IT-1'?{...b,clubIds:[...b.clubIds].reverse()}:b)} as NextSeasonMembership;

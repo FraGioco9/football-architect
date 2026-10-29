@@ -43,8 +43,13 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  world=(await advanceAdministrativeClock(db,session,'advance',command(),'domestic-day3-00001',now)).world;
  expect(world.day).toBe(3);
 });
-it('refuses a day-three transition until domestic fixture evidence exists',async()=>{
- await expect(advanceAdministrativeClock(db,session,'advance',command(),'domestic-day3-too-early',now)).rejects.toMatchObject({status:409});
+it('atomically generates due domestic evidence when advancing to day three',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',command(),'domestic-day3-automatic',now)).world;
+ expect(world.day).toBe(3);
+ const stage=await db.prepare('SELECT fixtures_json FROM season_domestic_stages').first();
+ expect(JSON.parse(stage.fixtures_json)).toHaveLength(3840);
+ expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('completed');
+ expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
 });
 it('rolls back domestic staging on audit failure',async()=>{
  await db.prepare("CREATE TRIGGER fail_domestic_stage BEFORE INSERT ON admin_operations WHEN NEW.command='stage-domestic-calendar-v1' BEGIN SELECT RAISE(ABORT,'late stage failure'); END").run();

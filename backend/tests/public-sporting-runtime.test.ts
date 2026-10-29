@@ -30,7 +30,7 @@ async function through(day:number){world=(await executeLifecycle(db,session,'sta
 it('reads anonymously with explicit empty and unsupported viewed-season states',async()=>{
  let r=await request();expect(r.status).toBe(200);expect(await r.json()).toMatchObject({status:'empty',selectedSeason:1,data:null});
  await prepare();r=await request();expect(await r.json()).toMatchObject({status:'empty',reason:'calendar-unpublished',data:null});
- const future=await request('IT-1','2');expect(await future.json()).toMatchObject({status:'unavailable',selectedSeason:2,reason:'unsupported-season',data:null});
+ const future=await request('IT-1','2');expect(await future.json()).toMatchObject({status:'empty',selectedSeason:2,reason:'season-not-prepared',data:null});
  expect((await request('IT-1','1','POST')).status).toBe(405);
  expect((await request('ZZ-1')).status).toBe(404);
  expect((await request('IT-1','0')).status).toBe(404);
@@ -135,6 +135,8 @@ it('projects one global day with the same saved scores as the competition source
 it('keeps daily calendar unsupported/unpublished states explicit and rejects invalid days/writes',async()=>{
  const read=(season:number,day:number,method='GET')=>worker.fetch(new Request(`https://example.invalid/api/calendar/seasons/${season}/days/${day}`,{method}),{DB:db});
  expect(await (await read(1,1)).json()).toMatchObject({status:'empty',data:null});
- expect(await (await read(2,1)).json()).toMatchObject({status:'unavailable',selectedSeason:2,data:null});
+ await prepare();
+ expect(await (await read(2,1)).json()).toMatchObject({status:'empty',selectedSeason:2,reason:'season-not-prepared',data:null});
+ expect(await (await read(3,1)).json()).toMatchObject({status:'unavailable',selectedSeason:3,reason:'unsupported-season',data:null});
  expect((await read(1,57)).status).toBe(404);expect((await read(1,1,'POST')).status).toBe(405);
 });

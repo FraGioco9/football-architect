@@ -6,12 +6,24 @@ on:
     paths:
       - 'backend/**'
       - 'assets/admin-settings.*'
+      - 'assets/authoritative-*'
+      - 'assets/competition-page.js'
+      - 'assets/competition-fixtures.js'
+      - 'assets/competition-tabs.js'
+      - 'assets/calendar-simplified.js'
+      - 'assets/world-calendar.js'
+      - 'calendar/index.html'
       - 'tools/render-admin-settings.mjs'
       - 'tools/dev-admin-api-proxy.mjs'
       - 'tools/dev-standings-preview.mjs'
       - 'tools/generate-app-pages.mjs'
       - 'settings/index.html'
       - 'tests/admin-settings*'
+      - 'tests/admin-world-lifecycle-browser.mjs'
+      - 'tests/season-two-*'
+      - 'tests/authoritative-*'
+      - 'tests/backend-test-discovery.test.mjs'
+      - 'tests/admin-public-preview.test.mjs'
       - 'tests/dev-admin-api-proxy.test.mjs'
       - '.github/workflows/admin-world-checks.yml'
 
@@ -59,6 +71,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-admin-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-admin-browser/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Verify Settings with real loopback Worker and D1
+      - name: Verify Settings and two-season lifecycle with real loopback Worker and D1
+        timeout-minutes: 20
         if: ${{ !github.event.pull_request.draft }}
         run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs

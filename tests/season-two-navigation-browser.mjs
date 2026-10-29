@@ -9,7 +9,7 @@ export async function verifySeasonTwoNavigation(page,baseUrl='http://localhost:2
  assert.equal(new URL(page.url()).searchParams.get('season'),'1');
  await page.goto(baseUrl+'/competitions/it-1/fixtures?season=2');
  await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2&&window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative'&&!document.getElementById('app-fixtures-list')?.hidden);
- assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),8);
+ assert.equal(await page.locator('#app-fixtures-list .app-fixture-match').count(),8);
  await page.goto(baseUrl+'/calendar?season=2');
  await page.waitForFunction(()=>window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber===2&&window.faCalendarSelectedSeason?.()===2);
  await page.locator('#calendar-season-picker').focus();await page.keyboard.press('ArrowUp');

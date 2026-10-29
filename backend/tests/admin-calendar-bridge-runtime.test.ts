@@ -49,7 +49,7 @@ it('runs distinct domestic, draw and publication transactions before handing off
  const calendar=await db.prepare('SELECT calendar_json FROM season_calendars').first();
  expect(JSON.parse(calendar.calendar_json).fixtures).toHaveLength(3984);
  const receipts=(await db.prepare('SELECT day,outcome_json,outcome_hash FROM season_day_outcomes ORDER BY day').all()).results;
- expect(receipts.map(r=>r.day)).toEqual([1,2,3]);
+ expect(receipts.map((r:{day:number})=>r.day)).toEqual([1,2,3]);
  for(const r of receipts){expect(JSON.parse(r.outcome_json).results).toEqual([]);expect(r.outcome_hash).toBe(await canonicalHash(JSON.parse(r.outcome_json)));}
  expect((await db.prepare("SELECT count(*) n FROM season_admin_events WHERE status='completed'").first()).n).toBe(5);
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-sporting-day4-00001',now)).world;
@@ -82,8 +82,8 @@ it('moves the independent international draw to day four and publication to day 
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day5',now)).world;
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-moved-publication',now)).world;
  const rows=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
- expect(rows.map(r=>r.day)).toEqual([1,2,3,4,5]);
- expect(rows.every(r=>JSON.parse(r.outcome_json).results.length===0)).toBe(true);
+ expect(rows.map((r:{day:number})=>r.day)).toEqual([1,2,3,4,5]);
+ expect(rows.every((r:{outcome_json:string})=>JSON.parse(r.outcome_json).results.length===0)).toBe(true);
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-moved-day6',now)).world;
  expect(world.day).toBe(6);
 });
@@ -96,7 +96,7 @@ it('continues all sporting days through day 56 after staged administrative setup
  expect(world).toMatchObject({day:56,phase:'active'});
  const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts).toHaveLength(56);
- expect(receipts.reduce((n,r)=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
+ expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
 },120000);
 
@@ -119,7 +119,10 @@ it('closes and archives exactly one fully verified season and replays the same c
   expect(holder.championClubId.startsWith(holder.countryId+'-')).toBe(true);
   expect(holder.requiresQualificationPolicyDecision).toBe(holder.allocatedCup!==holder.competitionId);
  }
- expect(next.requiresOwnerQualificationReview).toBe(next.holderReview.some(h=>h.requiresQualificationPolicyDecision));
+ expect(next.requiresOwnerQualificationReview).toBe(true);
+ expect(next.review.blockingReasons).toEqual(['season-two-snapshot-not-approved']);
+ expect(next.holderProposal.status).toBe('approved-holder-policy-applied');
+ expect(next.activation).toMatchObject({targetSeason:2,ready:false});
  for(const binding of next.candidate.bindings)expect(binding.clubIds).toHaveLength(binding.competitionId.startsWith('int-')?24:16);
  expect(archive.archives[0]).toMatchObject({seasonNumber:1,resultsCount:4082,daysCount:56,tiesCount:54});
  const env={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};

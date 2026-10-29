@@ -95,3 +95,12 @@ test('accepts a Season2 promotion without reusing inaugural division membership'
  const c={...ctx(),selectedSeason:2};const data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,c,manifest),c,manifest);
  assert.ok(data.participants.some(c=>c.clubId===17));assert.equal(data.season,2);
 });
+
+test('viewed season state cannot disguise current-world time or unsealed historical data',()=>{
+ const changes=[
+  r=>{r.data.seasonState={day:2,phase:'active'}},
+  r=>{r.world={...world,seasonNumber:2};r.data.seasonState={day:56,phase:'active'}},
+  r=>{r.world={...world,seasonNumber:2};delete r.data.seasonState},
+ ];
+ for(const alter of changes){const raw=source();alter(raw);assert.throws(()=>validateAuthoritativeSeason(raw,ctx(),manifest));}
+});

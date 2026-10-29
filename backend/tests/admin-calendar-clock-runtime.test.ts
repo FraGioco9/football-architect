@@ -29,13 +29,15 @@ it('activates at day 1 without inventing schedules; confirms both entrants and m
  world=(await advanceAdministrativeClock(db,session,'start',cmd(),'clock-start-synthetic-0001',now)).world;
  expect(world).toMatchObject({phase:'active',day:1});
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
- await expect(advanceAdministrativeClock(db,session,'advance',cmd(),'clock-early-synthetic-0001',now)).rejects.toMatchObject({status:409});
  for(const id of ['domestic:entrants','international:entrants']){
   world=(await completeConfirmationEvent(db,session,{...cmd(),eventId:id},'clock-confirm-'+id+'-synthetic',now)).world;
  }
  world=(await advanceAdministrativeClock(db,session,'advance',cmd(),'clock-day2-synthetic-0001',now)).world;
  expect(world.day).toBe(2);
- await expect(advanceAdministrativeClock(db,session,'advance',cmd(),'clock-day3-blocked-0001',now)).rejects.toMatchObject({status:409});
+ world=(await advanceAdministrativeClock(db,session,'advance',cmd(),'clock-day3-automatic-stage',now)).world;
+ expect(world.day).toBe(3);
+ expect((await db.prepare('SELECT count(*) n FROM season_domestic_stages').first()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
 });
 it('keeps duplicate start idempotent and refuses stale competing key',async()=>{
  const c=cmd(),r=await advanceAdministrativeClock(db,session,'start',c,'clock-replay-synthetic-0001',now);

@@ -16,7 +16,7 @@ export function proposeHolderAllocation(candidate:NextSeasonMembership,holders:r
  if(candidate.season!==2||candidate.status!=='provisional-results-derived'||holders.length!==2)return invalid();
  const countryIds=['IT','ENG','ES','DE','FR','PT','NL','BR'];
  const cupIds=['int-1','int-2'] as const;
- const cups=new Map(cupIds.map(id=>{
+ const cups=new Map<'int-1'|'int-2',string[]>(cupIds.map(id=>{
   const binding=candidate.bindings.find(b=>b.competitionId===id);
   if(!binding||binding.clubIds.length!==24)return invalid();
   return [id,[...binding.clubIds]] as const;

@@ -12,7 +12,7 @@ const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
 export async function buildSeasonTwoSnapshot(sourceArchiveHash:string,candidate:NextSeasonMembership,holders:readonly HolderReview[]){
  if(!/^[a-f0-9]{64}$/.test(sourceArchiveHash)||candidate.season!==2||candidate.status!=='provisional-results-derived')return invalid();
  const allocation=proposeHolderAllocation(candidate,holders);
- const international=new Map(allocation.bindings.map(b=>[b.competitionId,b.clubIds]));
+ const international=new Map<string,readonly string[]>(allocation.bindings.map(b=>[b.competitionId,b.clubIds]));
  const expected=[...countries.flatMap(c=>[c+'-1',c+'-2']),'int-1','int-2'];
  if(candidate.bindings.length!==18||new Set(candidate.bindings.map(x=>x.competitionId)).size!==18)return invalid();
  const bindings=expected.map(id=>{

@@ -129,16 +129,16 @@
     },
     {
       "input": "/competitions/it-1/history?season=4&matchday=9&x=1#anchor",
-      "expected": "/competitions/it-1/history",
+      "expected": "/competitions/it-1/history?season=4",
       "view": "history",
-      "season": "1",
+      "season": "4",
       "matchday": 9
     },
     {
       "input": "/competitions/it-1/rules?season=4&matchday=9",
-      "expected": "/competitions/it-1/rules",
+      "expected": "/competitions/it-1/rules?season=4",
       "view": "rules",
-      "season": "1",
+      "season": "4",
       "matchday": 9
     },
     {

@@ -302,3 +302,22 @@ Public data now separates `world` (the current singleton clock) from `data.seaso
 The Settings generator had retained its original foundation-only surface while generated Settings contained later controls. Its source now carries the complete current markup, including the new command, so regeneration preserves the real Admin surface. Calendar bootstrap and generated HTML both preserve initial explicit-season intent; selecting a season manually prevents later implicit selection changes.
 
 **#315 lifecycle implementation completed through supported Season1→2:19/22 (86.4%).** New HTTP/D1, control, promoted-membership, historical clock and navigation browser scenarios are authored, **not executed** per owner. Source review's History URL and Calendar keyboard findings were corrected; an additional inaugural-only Fixtures filter and initial unknown-membership placeholder were corrected during inspection. Syntax/whitespace checks pass; full TypeScript still has the same9pre-existing diagnostics. Remaining acceptance work is full lifecycle/cross-session verification, desktop/mobile/keyboard/locales, and setup/recovery documentation plus aligned exact-head CI. These unchecked gates are not replaced by implementation credit. No production provisioning, remote D1 operation, deployment, merge, browser PASS or CI PASS is claimed.
+
+
+### Final test alignment checkpoint (29 October 2026)
+
+Checklist remains **19/22 (86.4%)**: this block aligns verification sources and does not certify acceptance. The nine previously known TypeScript diagnostics are corrected by explicit mutable/lookup Map types and typed test receipt callbacks; qualification behavior is unchanged. `npm --prefix backend run typecheck` now exits0.
+
+`test:contracts` discovers every pure backend `*.test.ts` (currently26 files), excluding real Worker/D1 runtime and separate operator `*.test.mts` suites. Unclassified Node candidates fail closed. The seven previously omitted season/event/holder contract files are included automatically. Site FULL still discovers every root `*.test.mjs`; the reviewed parallel lane and fingerprints remain unchanged. Shared authority/backend/CI changes still require FULL. Draft restrictions on heavy Worker/operator/Chromium jobs and exact-head checks are preserved.
+
+The Admin Chromium runner now explicitly requests `createPreviewServer({subdomains:true,devPreview:false})`. This loopback-only mode serves canonical static pages without any DEV dataset, fixture client, clock bootstrap or DEV virtual modules; ordinary preview defaults are unchanged. New browser flow uses actual same-origin HTTP commands and disposable D1: administrative events → Season1 day56/closure → exact owner snapshot approval → Season2 preparation/events → independent anonymous historical/latest navigation → held stale projection across reset → fresh Season1 preparation. The stale-response case waits for terminal rejection and records every authoritative context commit, including transient ones. History/Rules aliases retain viewed season. All existing30 locale/theme/width Settings cases remain and assert new labels and accessible field relationships.
+
+Final execution order after alignment (not executed in this checkpoint):
+
+1. Node22 backend contracts, local SQLite migrations and backend typecheck.
+2. Actual local Worker/D1 suite, then operator/bundle/restart suite with pinned backend dependencies.
+3. Site FULL via `node tools/ci-opt-01-node-runner.mjs`; generator parity via the existing check; publication/security regressions remain included.
+4. `FA_ADMIN_PLAYWRIGHT=<pinned Playwright module> node --experimental-strip-types tests/admin-settings-browser.mjs` for actual two-season browser flow. Run existing full Browser matrix for WebKit/mobile and all affected routes.
+5. Attach exact proposed SHA evidence and actual limitations to #315/#326 before accepting any of the three remaining checklist nodes. No historic PASS record certifies the new source.
+
+Independent source review found two P2 gaps: premature stale-reset assertion and legacy History alias dropping season. Both have source fixes and authored assertions; runtime verification remains deferred by explicit owner instruction. No runtime tests/browser/CI dispatch or rerun, merge/deploy/provisioning/remote D1 in this checkpoint.

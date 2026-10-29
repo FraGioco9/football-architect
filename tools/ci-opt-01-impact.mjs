@@ -3,7 +3,7 @@ const groups=Object.freeze({
  calendar:{patterns:[/^calendar\//,/^assets\/.*calendar[^/]*\.(?:js|mjs|css)$/,/^tests\/(?:cal-|calendar-|world-calendar-)/],tests:["tests/cal-world-56a.test.mjs","tests/cal-week-init-01.test.mjs","tests/calendar-season-link.test.mjs","tests/world-calendar-navigation.test.mjs","tests/world-calendar-ui.test.mjs"]},
  clubs:{patterns:[/^clubs\//,/^assets\/club-[^/]*\.(?:js|mjs|css)$/,/^tests\/club-/],tests:["tests/club-pages.test.mjs","tests/club-competition-summary.test.mjs","tests/club-crests.test.mjs"]},
  competitions:{patterns:[/^competitions\//,/^assets\/competition-[^/]*\.(?:js|mjs|css)$/,/^tests\/competition-/],tests:["tests/competition-model.test.mjs","tests/competition-fixtures.test.mjs","tests/competition-navigation.test.mjs","tests/competition-history.test.mjs"]},
- admin:{patterns:[/^settings\/index\.html$/,/^assets\/admin-settings\.(?:js|css)$/,/^tests\/admin-settings\.test\.mjs$/],tests:["tests/admin-settings.test.mjs","tests/dev-admin-api-proxy.test.mjs"]},
+ admin:{patterns:[/^settings\/index\.html$/,/^assets\/admin-settings\.(?:js|css)$/,/^tests\/admin-settings\.test\.mjs$/],tests:["tests/admin-settings.test.mjs","tests/season-two-controls.test.mjs","tests/dev-admin-api-proxy.test.mjs"]},
  guide:{patterns:[/^guide\//,/^assets\/guide-[^/]*\.(?:js|mjs|css)$/,/^tests\/guide\.test\.mjs$/],tests:["tests/guide.test.mjs"]}
 });
 const safeDocs=/^(?:docs\/|README\.md$|\.github\/ISSUE_TEMPLATE\/)/;

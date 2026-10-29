@@ -52,3 +52,25 @@ test('public sporting bridge permits only canonical GET paths and strips operato
   }
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
 });
+
+test('protected next-season routes enforce exact method and forward only to the fixed Worker',async()=>{
+ const seen=[];
+ const upstream=createServer(async(req,res)=>{
+  seen.push(req.url);assert.equal(req.method,'POST');
+  assert.equal(req.headers['x-csrf-token'],'synthetic-csrf');assert.equal(req.headers['idempotency-key'],'synthetic-command');
+  let body='';for await(const part of req)body+=part;assert.equal(JSON.parse(body).expectedRevision,70);
+  res.writeHead(200,{'Content-Type':'application/json'});res.end('{"ok":true}');
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ try{
+  for(const path of ['/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare']){
+   const denied=response();await proxyAdminApi(req(path),denied,{target});assert.equal(denied.status,405);
+   const status=await new Promise((resolve,reject)=>{
+    const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method:'POST',headers:{Host:'localhost:2000','Content-Type':'application/json','X-CSRF-Token':'synthetic-csrf','Idempotency-Key':'synthetic-command'}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode))});r.on('error',reject);r.end(JSON.stringify({expectedRevision:70}));
+   });assert.equal(status,200);
+  }
+  const unknown=response();await proxyAdminApi({...req('/api/admin/seasons/next-prepare-extra'),method:'POST'},unknown,{target});assert.equal(unknown.status,404);
+  assert.deepEqual(seen,['/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare']);
+ }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
+});

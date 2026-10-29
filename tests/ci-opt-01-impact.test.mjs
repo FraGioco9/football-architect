@@ -109,3 +109,9 @@ test("Admin workflow keeps exact-head contract checks while deferring heavy draf
  assert.match(site,/node --check assets\/admin-settings\.js/);
  assert.match(site,/tests\/admin-settings\.test\.mjs/);
 });
+
+test('Admin targeted contracts include approved Season2 controls; shared season authority remains FULL',()=>{
+ const result=classifyImpact(['assets/admin-settings.js']);
+ assert.equal(result.mode,'targeted');assert.ok(result.tests.includes('tests/season-two-controls.test.mjs'));
+ for(const path of ['assets/authoritative-season.mjs','assets/authoritative-calendar.mjs','backend/tools/run-contracts.mjs','tests/admin-world-lifecycle-browser.mjs'])assert.equal(classifyImpact([path]).mode,'full',path);
+});

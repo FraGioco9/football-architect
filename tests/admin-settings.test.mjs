@@ -33,7 +33,7 @@ test('newer request wins and lower world revisions cannot overwrite observed sta
 });
 test('changed generation requires an authenticated reread, never compares generation strings',async()=>{
  let reads=0;const changed={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
- const c=createAdminController(async path=>path.endsWith('session')?session:{world:++reads===1?world:changed},()=>{});
+ const c=createAdminController(async path=>{if(path.endsWith('/session'))return session;if(path.endsWith('/world'))return {world:++reads===1?world:changed};return {world:reads===1?world:changed,mode:'uninitialized',events:[]}},()=>{});
  await c.refresh();await c.refresh();assert.equal(c.state().world.generation,changed.generation);assert.equal(reads,3);
 });
 test('missing API and unauthorized responses clear privileged state honestly',async()=>{
@@ -46,7 +46,8 @@ test('prepare is single-flight, sends only concurrency metadata, preserves retry
  const pending=deferred();let mutations=0,firstKey;
  const c=createAdminController(async(path,options)=>{
   if(path.endsWith('session'))return session;if(path.endsWith('world'))return {world};
-  mutations++;assert.deepEqual(options.body,{expectedGeneration:world.generation,expectedRevision:0});
+  if(path.endsWith('/events'))return {world,mode:'uninitialized',events:[]};
+  assert.equal(path,'/api/admin/seasons/prepare');mutations++;assert.deepEqual(options.body,{expectedGeneration:world.generation,expectedRevision:0});
   assert.equal(options.headers['X-CSRF-Token'],session.csrfToken);
   if(!firstKey)firstKey=options.headers['Idempotency-Key'];else assert.equal(options.headers['Idempotency-Key'],firstKey);
   return pending.promise;
@@ -127,6 +128,7 @@ test('operational command is single-flight, revision-bound and cannot run signed
  const c=createAdminController(async(path,opts)=>{
   if(path.endsWith('/session'))return session;
   if(path.endsWith('/world'))return {world:preparing};
+  if(path.endsWith('/events'))return {world:preparing,mode:'legacy',events:[],calendarReady:false};
   if(path.endsWith('/events/initialize')){calls++;assert.deepEqual(opts.body,{expectedGeneration:preparing.generation,expectedRevision:1});assert.equal(opts.headers['X-CSRF-Token'],session.csrfToken);return pending.promise}
   throw Error(path);
  },()=>{});
@@ -141,7 +143,7 @@ test('operational command is single-flight, revision-bound and cannot run signed
 });
 test('operational command refuses stale generation response and reports an error',async()=>{
  const preparing={...world,phase:'preparing',seasonNumber:1,revision:1};
- const c=createAdminController(async(path)=>path.endsWith('/session')?session:path.endsWith('/world')?{world:preparing}:{world:{...preparing,generation:'650e8400-e29b-41d4-a716-446655440000',revision:2}},()=>{});
+ const c=createAdminController(async(path)=>path.endsWith('/session')?session:path.endsWith('/world')?{world:preparing}:path.endsWith('/events')?{world:preparing,mode:'legacy',events:[],calendarReady:false}:{world:{...preparing,generation:'650e8400-e29b-41d4-a716-446655440000',revision:2}},()=>{});
  await c.refresh();await c.command('initialize');
  assert.equal(c.state().message,'unavailable');
 });
@@ -239,7 +241,7 @@ test('closed Season 1 exposes review-only candidate and never invents activation
  await c.refresh();
  assert.equal(c.state().seasonTwo.review.readyForActivation,false);
  assert.equal(c.state().seasonTwo.review.blockingReasons[0],'season-two-snapshot-not-approved');
- assert.equal(canRunCommand('prepare-next',closed,c.state().events),false);
+ assert.equal(canRunCommand('nextPrepare',closed,c.state().events,c.state().seasonTwo),false);
 });
 
 test('explicit Season 2 approval is bound to reviewed snapshot and expected revision',async()=>{
