@@ -40,6 +40,11 @@ export async function publishInternationalCalendar(db:Database,session:AdminSess
  }
  const calendarJson=JSON.stringify(schedule),calendarHash=await canonicalHash(schedule);
  const receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:1,eventId:'international:calendar',calendarHash,domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>d.outcome_hash)});
+ const emptyDays=await Promise.all(Array.from({length:world.day},async(_,i)=>{
+  const payload={schemaVersion:1,season:1,generation:world.generation,day:i+1,calendarHash:schedule.calendarHash,simulationVersion:'temporary-score-v1',results:[]};
+  return {day:i+1,json:JSON.stringify(payload),hash:await canonicalHash(payload)};
+ }));
+ if(world.day>=13)throw new ApiError(409,'calendar_event_prerequisites');
  const operationId=crypto.randomUUID(),result:Outcome={world:{...world,revision:world.revision+1},operationId};
  try{
   await db.batch([
@@ -49,9 +54,11 @@ export async function publishInternationalCalendar(db:Database,session:AdminSess
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=1)=2',[]),
    ...draws.map(d=>abortUnless(db,'SELECT 1 FROM season_draws WHERE season_number=1 AND competition_id=? AND stage_id=? AND seed=? AND outcome_hash=? AND outcome_json=?',[d.competition_id,d.stage_id,d.seed,d.outcome_hash,d.outcome_json])),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=1)=0',[]),
+   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=1)=0',[]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=1)=?',[rows.length]),
    ...rows.map(r=>abortUnless(db,'SELECT 1 FROM season_admin_events WHERE season_number=1 AND event_id=? AND scheduled_day=? AND event_order=? AND status=? AND completed_at IS ? AND receipt_hash IS ?',[r.event_id,r.scheduled_day,r.event_order,r.status,r.completed_at,r.receipt_hash])),
    db.prepare('INSERT INTO season_calendars VALUES(?,?,?,?,?,?)').bind(1,schedule.algorithmVersion,calendarHash,calendarJson,'generated',now),
+   ...emptyDays.map(d=>db.prepare('INSERT INTO season_day_outcomes VALUES(?,?,?,?,?,?,?,?)').bind(1,world.generation,d.day,schedule.calendarHash,'temporary-score-v1',d.hash,d.json,now)),
    db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=1 AND event_id='international:calendar' AND status='scheduled' AND scheduled_day=?").bind(now,receipt,world.day),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,'publish-international-calendar-v1',world.revision,result.world.revision,JSON.stringify(result),now)
