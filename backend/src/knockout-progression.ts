@@ -1,4 +1,5 @@
 import divisions from '../../data/divisions.json' with {type:'json'};
+import {legacySeasonOneRules} from './calendar-rules-compat.ts';
 import cups from '../../data/international-competitions.json' with {type:'json'};
 import calendarModel from '../../assets/world-calendar-model.js';
 import {requireApprovedSnapshot,canonicalHash,type ApprovedSnapshot} from './catalogue-snapshot.ts';
@@ -11,7 +12,7 @@ interface TieRule {id:string;participants:Participant[];legs:number;homePolicy:s
 interface PhaseRule {id:string;type:string;calendarEvents:string[];ties?:TieRule[]}
 interface Definition {id:string;rules:{version:string;phases:PhaseRule[]}}
 interface Marker {marker:string;round:number|null;phase:string;competitionIds:string[]}
-const definitions=[...divisions,...cups] as Definition[];
+const definitions=[...legacySeasonOneRules(divisions),...cups] as Definition[];
 const calendar=calendarModel.createSeason(1) as {days:{day:number;events:Marker[]}[]};
 const events=new Map(calendar.days.flatMap(d=>d.events.map(e=>[e.marker,{...e,day:d.day}])));
 const fail=():never=>{throw new ApiError(422,'knockout_prerequisites_incomplete')};
