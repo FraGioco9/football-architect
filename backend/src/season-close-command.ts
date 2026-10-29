@@ -18,10 +18,10 @@ export async function closeSeason(db:Database,session:AdminSession,input:Prepare
  const previous=await replay(db,session,cmd,key,requestHash,now);if(previous)return previous;
  const world=await readWorld(db);
  if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
- if(world.phase!=='active'||world.day!==56||world.seasonNumber!==1||world.revision===Number.MAX_SAFE_INTEGER)throw new ApiError(409,'archive_prerequisites');
+ if(world.phase!=='active'||world.day!==56||![1,2].includes(world.seasonNumber)||world.revision===Number.MAX_SAFE_INTEGER)throw new ApiError(409,'archive_prerequisites');
  const evidence=await loadSeasonSportingEvidence(db,world);
- const rows=(await db.prepare('SELECT day,outcome_hash,outcome_json,calendar_hash FROM season_day_outcomes WHERE season_number=1 ORDER BY day').all<Day>()).results;
- const ties=(await db.prepare('SELECT plan_hash,plan_json FROM season_knockout_ties WHERE season_number=1 ORDER BY competition_id,phase_id,tie_id').all<Tie>()).results;
+ const rows=(await db.prepare(`SELECT day,outcome_hash,outcome_json,calendar_hash FROM season_day_outcomes WHERE season_number=${world.seasonNumber} ORDER BY day`).all<Day>()).results;
+ const ties=(await db.prepare(`SELECT plan_hash,plan_json FROM season_knockout_ties WHERE season_number=${world.seasonNumber} ORDER BY competition_id,phase_id,tie_id`).all<Tie>()).results;
  if(rows.length!==56||ties.length!==54)throw new ApiError(409,'archive_prerequisites');
  const progression=createProgression(evidence.snapshot,evidence.schedule);
  let count=0;
@@ -40,26 +40,27 @@ export async function closeSeason(db:Database,session:AdminSession,input:Prepare
  const expectedHashes=await Promise.all(expectedTies.map(canonicalHash));
  for(const t of ties)if(await canonicalHash(JSON.parse(t.plan_json))!==t.plan_hash||!expectedHashes.includes(t.plan_hash))throw new ApiError(422,'archive_invalid');
  if(new Set(ties.map(t=>t.plan_hash)).size!==54)throw new ApiError(422,'archive_invalid');
- const pending=(await db.prepare("SELECT count(*) n FROM season_admin_events WHERE season_number=1 AND status='scheduled'").first<{n:number}>())?.n??0;
+ const pending=(await db.prepare(`SELECT count(*) n FROM season_admin_events WHERE season_number=${world.seasonNumber} AND status='scheduled'`).first<{n:number}>())?.n??0;
  if(pending!==0)throw new ApiError(409,'archive_prerequisites');
  const resultsHash=await canonicalHash(rows.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
- const archiveHash=await canonicalHash({schemaVersion:1,season:1,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:count,daysCount:56,tiesCount:54});
+ const archiveHash=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:count,daysCount:56,tiesCount:54});
  const result:Outcome={operationId:crypto.randomUUID(),world:{...world,phase:'closed',revision:world.revision+1}};
  try{
   await db.batch([
    sessionGuard(db,session,now),
-   abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=1 AND phase='active' AND day=56",[world.generation,world.revision]),
-   abortUnless(db,'SELECT 1 FROM season_calendars WHERE season_number=1 AND calendar_hash=? AND calendar_json=?',[evidence.calendar.calendar_hash,JSON.stringify(evidence.schedule)]),
-   abortUnless(db,'SELECT 1 FROM seasons WHERE season_number=1 AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?',[world.generation,evidence.snapshot.participantsHash,evidence.snapshot.rulesHash,evidence.season.snapshot_json]),
-   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=1)=2',[]),
-   ...evidence.draws.map(d=>abortUnless(db,'SELECT 1 FROM season_draws WHERE season_number=1 AND competition_id=? AND outcome_hash=? AND outcome_json=?',[d.competition_id,d.outcome_hash,d.outcome_json])),
-   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=1)=56',[]),
-   ...rows.map(r=>abortUnless(db,'SELECT 1 FROM season_day_outcomes WHERE season_number=1 AND day=? AND outcome_hash=? AND outcome_json=? AND calendar_hash=?',[r.day,r.outcome_hash,r.outcome_json,r.calendar_hash])),
-   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_knockout_ties WHERE season_number=1)=54',[]),
-   ...ties.map(t=>abortUnless(db,'SELECT 1 FROM season_knockout_ties WHERE season_number=1 AND plan_hash=? AND plan_json=?',[t.plan_hash,t.plan_json])),
-   abortUnless(db,"SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=1 AND status='scheduled')=0",[]),
-   abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_archives WHERE season_number=1)=0',[]),
-   db.prepare('INSERT INTO season_archives VALUES(?,?,?,?,?,?,?,?,?,?)').bind(1,world.generation,evidence.calendar.calendar_hash,resultsHash,knockoutHash,archiveHash,count,56,54,now),
+   ...evidence.authorityGuards,
+   abortUnless(db,`SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=${world.seasonNumber} AND phase='active' AND day=56`,[world.generation,world.revision]),
+   abortUnless(db,`SELECT 1 FROM season_calendars WHERE season_number=${world.seasonNumber} AND calendar_hash=? AND calendar_json=?`,[evidence.calendar.calendar_hash,JSON.stringify(evidence.schedule)]),
+   abortUnless(db,`SELECT 1 FROM seasons WHERE season_number=${world.seasonNumber} AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?`,[world.generation,evidence.snapshot.participantsHash,evidence.snapshot.rulesHash,evidence.season.snapshot_json]),
+   abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=${world.seasonNumber})=2`,[]),
+   ...evidence.draws.map(d=>abortUnless(db,`SELECT 1 FROM season_draws WHERE season_number=${world.seasonNumber} AND competition_id=? AND outcome_hash=? AND outcome_json=?`,[d.competition_id,d.outcome_hash,d.outcome_json])),
+   abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=${world.seasonNumber})=56`,[]),
+   ...rows.map(r=>abortUnless(db,`SELECT 1 FROM season_day_outcomes WHERE season_number=${world.seasonNumber} AND day=? AND outcome_hash=? AND outcome_json=? AND calendar_hash=?`,[r.day,r.outcome_hash,r.outcome_json,r.calendar_hash])),
+   abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_knockout_ties WHERE season_number=${world.seasonNumber})=54`,[]),
+   ...ties.map(t=>abortUnless(db,`SELECT 1 FROM season_knockout_ties WHERE season_number=${world.seasonNumber} AND plan_hash=? AND plan_json=?`,[t.plan_hash,t.plan_json])),
+   abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=${world.seasonNumber} AND status='scheduled')=0`,[]),
+   abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_archives WHERE season_number=${world.seasonNumber})=0`,[]),
+   db.prepare('INSERT INTO season_archives VALUES(?,?,?,?,?,?,?,?,?,?)').bind(world.seasonNumber,world.generation,evidence.calendar.calendar_hash,resultsHash,knockoutHash,archiveHash,count,56,54,now),
    db.prepare("UPDATE world_state SET phase='closed',revision=revision+1 WHERE id=1 AND generation=? AND revision=?").bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(result.operationId,world.generation,key,requestHash,session.actor.id,'close-season-v1',world.revision,result.world.revision,JSON.stringify(result),now),
   ]);

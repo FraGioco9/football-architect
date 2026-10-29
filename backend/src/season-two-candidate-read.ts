@@ -15,9 +15,10 @@ import {buildQualificationReviewPacket} from './qualification-review-packet.ts';
 import {buildSeasonTwoSnapshot} from './season-two-snapshot.ts';
 type Receipt={day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string};
 type Tie={generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string};
-type Archive={generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number};
-export async function readSeasonTwoCandidate(db:Database){
- const world=await readWorld(db);
+type Archive={generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number};
+export async function readSeasonTwoCandidateSource(db:Database,allowArchivedSource=false){
+ const current=await readWorld(db);
+ const world=allowArchivedSource&&current.seasonNumber===2?{...current,seasonNumber:1,day:56,phase:'closed' as const}:current;
  if(world.phase!=='closed'||world.seasonNumber!==1||world.day!==56)throw new ApiError(409,'qualification_prerequisites');
  const evidence=await loadSeasonSportingEvidence(db,world);
  const archive=await db.prepare('SELECT * FROM season_archives WHERE season_number=1').first<Archive>();
@@ -51,5 +52,7 @@ export async function readSeasonTwoCandidate(db:Database){
  const review=await buildQualificationReviewPacket(archiveHash,candidate,holderReview);
  const approval=await db.prepare('SELECT snapshot_hash,source_archive_hash,generation,approved_at FROM season_two_approvals WHERE target_season=2').first<{snapshot_hash:string;source_archive_hash:string;generation:string;approved_at:number}>();
  if(approval&&(approval.snapshot_hash!==snapshot.snapshotHash||approval.source_archive_hash!==archiveHash||approval.generation!==world.generation))throw new ApiError(422,'qualification_evidence_invalid');
- return {world,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,approval:approval?{snapshotHash:approval.snapshot_hash,approvedAt:approval.approved_at}:null,requiresOwnerQualificationReview:!approval};
+ const reviewPacket={world:current,sourceArchiveHash:archiveHash,candidate,holderReview,holderProposal,snapshot,review,approval:approval?{snapshotHash:approval.snapshot_hash,approvedAt:approval.approved_at}:null,requiresOwnerQualificationReview:!approval};
+ return {review:reviewPacket,source:{world,evidence,archive,receipts,ties}};
 }
+export async function readSeasonTwoCandidate(db:Database){return (await readSeasonTwoCandidateSource(db)).review;}

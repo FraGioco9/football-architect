@@ -3,14 +3,14 @@ import type {Database} from './database.ts';
 import {ApiError} from './errors.ts';
 import {canonicalHash,snapshotHashes,validateApprovedSnapshot} from './catalogue-snapshot.ts';
 import {loadApprovedSnapshot,serverCanonicalCatalogue} from './approved-season-one.ts';
-import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
+import {readSeasonTwoCandidateSource} from './season-two-candidate-read.ts';
 import {readWorld} from './world-repository.ts';
 import {buildTrustedSeasonSchedule,type InitialSchedule} from './initial-schedule.ts';
 function fail():never{throw new ApiError(422,'schedule_invalid')}
 export async function loadApprovedSeasonTwoAuthority(db:Database){
- const review=await readSeasonTwoCandidate(db);
- const approved=await db.prepare('SELECT generation,source_archive_hash,snapshot_hash,snapshot_json FROM season_two_approvals WHERE target_season=2').first<{
-  generation:string;source_archive_hash:string;snapshot_hash:string;snapshot_json:string
+ const {review,source}=await readSeasonTwoCandidateSource(db,true);
+ const approved=await db.prepare('SELECT generation,source_archive_hash,snapshot_hash,snapshot_json,approved_by,approved_at FROM season_two_approvals WHERE target_season=2').first<{
+  generation:string;source_archive_hash:string;snapshot_hash:string;snapshot_json:string;approved_by:string;approved_at:number
  }>();
  if(!approved||approved.generation!==review.world.generation||approved.source_archive_hash!==review.sourceArchiveHash||approved.snapshot_hash!==review.snapshot.snapshotHash)fail();
  const {snapshotHash,status,readyForActivation,...manifest}=review.snapshot;
@@ -26,8 +26,8 @@ export async function loadApprovedSeasonTwoAuthority(db:Database){
  if(hashes.rulesHash!==seasonOne.rulesHash)fail();
  const snapshot=await validateApprovedSnapshot({manifestVersion:1,approvalReference:'season-two-owner-approval:'+snapshotHash,bindings,...hashes},catalogue);
  const after=await readWorld(db);
- if(after.generation!==review.world.generation||after.revision!==review.world.revision||after.phase!=='closed'||after.seasonNumber!==1||after.day!==56)throw new ApiError(409,'stale_world');
- return {world:review.world,snapshot,sourceArchiveHash:review.sourceArchiveHash,snapshotHash,approval:approved};
+ if(after.generation!==review.world.generation||after.revision!==review.world.revision||after.seasonNumber!==review.world.seasonNumber||after.phase!==review.world.phase||after.day!==review.world.day)throw new ApiError(409,'stale_world');
+ return {world:review.world,snapshot,sourceArchiveHash:review.sourceArchiveHash,snapshotHash,approval:approved,source};
 }
 export async function buildApprovedSeasonTwoInitialSchedule(db:Database,seed:string):Promise<InitialSchedule>{
  const authority=await loadApprovedSeasonTwoAuthority(db);
