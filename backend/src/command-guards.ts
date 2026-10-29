@@ -1,6 +1,8 @@
 import {ApiError} from './errors.ts';
 import type {AdminSession} from './auth.ts';
-import type {Database,Statement} from './database.ts';
+import type {Database} from './database.ts';
+import {abortUnless} from './atomic-guard.ts';
+export {abortUnless} from './atomic-guard.ts';
 import type {PrepareRequest} from './command-contract.ts';
 import {parseWorldV1,type WorldV1} from './types.ts';
 import {requireActiveSession,type SessionRow} from './session-policy.ts';
@@ -8,11 +10,6 @@ import {unifiedAdminMutationGuard} from './unified-admin-transaction.ts';
 import {requireAccountPermission} from './account-permissions.ts';
 export interface Outcome {world:WorldV1;operationId:string}
 interface OperationRow {id:string;account_id:string;request_hash:string;outcome_json:string}
-/** SQL failure, rather than zero affected rows, makes a failed guard abort the D1 batch. */
-export function abortUnless(db:Database,condition:string,values:unknown[]):Statement{
- return db.prepare(`INSERT INTO world_state(id,generation) SELECT 2,? WHERE NOT EXISTS(${condition})`)
-  .bind('00000000-0000-4000-8000-000000000000',...values);
-}
 export function sessionGuard(db:Database,session:AdminSession,now:number){
  if(session.unified)return unifiedAdminMutationGuard(db,session.unified.playerId,session.actor.id,session.unified.sessionDigest,session.unified.csrfDigest,now);
  return abortUnless(db,`SELECT 1 FROM admin_sessions s JOIN admin_accounts a ON a.id=s.account_id
