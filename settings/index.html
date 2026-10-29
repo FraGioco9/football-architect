@@ -237,6 +237,16 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <button type="button" data-admin-command="eventStart" data-admin-copy="cmdeventStart" disabled>Start event calendar</button>
  <button type="button" data-admin-command="eventAdvance" data-admin-copy="cmdeventAdvance" disabled>Advance event calendar</button>
  </div>
+ <section data-admin-reschedule-section aria-labelledby="admin-reschedule-heading" hidden>
+ <h3 id="admin-reschedule-heading" data-admin-copy="reschedule0">Move future event</h3>
+ <label for="admin-event-select" data-admin-copy="reschedule1">Scheduled milestone</label>
+ <select id="admin-event-select" data-admin-event-select></select>
+ <label for="admin-event-day" data-admin-copy="reschedule2">Day (1–12)</label>
+ <input id="admin-event-day" data-admin-event-day type="number" min="1" max="12" step="1">
+ <label for="admin-event-order" data-admin-copy="reschedule3">Order (0–9999)</label>
+ <input id="admin-event-order" data-admin-event-order type="number" min="0" max="9999" step="1">
+ <button type="button" data-admin-event-reschedule data-admin-copy="reschedule4" disabled>Save event placement</button>
+ </section>
  <section data-admin-reset-section aria-labelledby="admin-reset-heading" hidden>
  <h3 id="admin-reset-heading" data-admin-copy="resetTitle">Reset world to Season 0</h3>
  <p data-admin-copy="resetSummary">Permanently deletes all season calendars, draws, match results, statistics, playoff records, administrative events and history. Club catalogues, rules and administrator access remain.</p>

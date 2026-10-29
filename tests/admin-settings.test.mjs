@@ -175,3 +175,23 @@ test('action availability is derived exclusively from matching authenticated wor
  assert.equal(canRunCommand('close',last,{...drawn,mode:'legacy'}),true);
  assert.equal(canRunCommand('advance',last,{...drawn,mode:'legacy'}),false);
 });
+
+test('event rescheduling rejects past and out-of-range values and sends a guarded revision',async()=>{
+ const preparing={...world,seasonNumber:1,phase:'preparing',revision:3,day:0};
+ const events={world:preparing,mode:'administrative',events:[{id:'international:draw',kind:'draw-international',status:'scheduled',day:3,order:1}]};
+ let writes=0;
+ const c=createAdminController(async(path,opts)=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world:preparing};
+  if(path.endsWith('/events'))return events;
+  if(path.endsWith('/reschedule')){writes++;assert.deepEqual(opts.body,{expectedGeneration:preparing.generation,expectedRevision:3,eventId:'international:draw',day:4,order:2});return {world:{...preparing,revision:4}}}
+  throw Error(path);
+ },()=>{});
+ await c.refresh();
+ await c.reschedule('international:draw',0,2);
+ await c.reschedule('international:draw',13,2);
+ await c.reschedule('unknown',4,2);
+ assert.equal(writes,0);
+ await c.reschedule('international:draw',4,2);
+ assert.equal(writes,1);
+});
