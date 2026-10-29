@@ -231,3 +231,13 @@ test('closure control requires authoritative completed day56 sporting evidence',
  assert.equal(canRunCommand('close',ended,{...projection,worldRevision:66}),false);
  assert.equal(canRunCommand('close',{...ended,day:55},projection),false);
 });
+
+test('closed Season 1 exposes review-only candidate and never invents activation authority',async()=>{
+ const closed={...world,seasonNumber:1,phase:'closed',day:56,revision:82};
+ const candidate={world:closed,candidate:{status:'provisional-results-derived',bindings:[{competitionId:'int-1',clubIds:[]}]},review:{status:'requires-owner-approval',readyForActivation:false,blockingReasons:['season-two-snapshot-not-approved']},holderReview:[]};
+ const c=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:closed}:path.endsWith('/next-candidate')?candidate:{world:closed,events:[],mode:'legacy'},()=>{});
+ await c.refresh();
+ assert.equal(c.state().seasonTwo.review.readyForActivation,false);
+ assert.equal(c.state().seasonTwo.review.blockingReasons[0],'season-two-snapshot-not-approved');
+ assert.equal(canRunCommand('prepare-next',closed,c.state().events),false);
+});
