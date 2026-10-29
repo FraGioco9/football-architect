@@ -2,6 +2,7 @@
  * This endpoint never writes seasons, allocations, approvals, or simulated results.
  */
 import {ApiError} from './errors.ts';
+import {sportingDayPayload} from './sporting-day-payload.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
@@ -28,7 +29,7 @@ export async function readSeasonTwoCandidate(db:Database){
  const state=createProgression(evidence.snapshot,evidence.schedule);
  for(let i=0;i<receipts.length;i++){
   const expected=await processSportingDay(state,i+1),r=receipts[i];
-  const payload={schemaVersion:1,season:1,generation:world.generation,day:i+1,calendarHash:evidence.calendar.calendar_hash,simulationVersion:'temporary-score-v1',results:expected.results};
+  const payload=sportingDayPayload(world.seasonNumber,world.generation,i+1,evidence.calendar.calendar_hash,expected.results);
   const digest=await canonicalHash(payload);
   if(r.day!==i+1||r.generation!==world.generation||r.calendar_hash!==evidence.calendar.calendar_hash||r.simulation_version!=='temporary-score-v1'||r.outcome_hash!==digest||
      await canonicalHash(JSON.parse(r.outcome_json))!==digest)throw new ApiError(422,'qualification_evidence_invalid');

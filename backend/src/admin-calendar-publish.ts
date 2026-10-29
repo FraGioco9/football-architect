@@ -1,5 +1,6 @@
 /** Publish the complete immutable calendar only after independently persisted draws. */
 import {ApiError} from './errors.ts';
+import {sportingDayPayload} from './sporting-day-payload.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
@@ -48,7 +49,7 @@ export async function publishInternationalCalendar(db:Database,session:AdminSess
  const priorTies=[];
  for(let day=1;day<=world.day;day++){
   const processed=await processSportingDay(progression,day);
-  const payload={schemaVersion:1,season:1,generation:world.generation,day,calendarHash,simulationVersion:'temporary-score-v1',results:processed.results};
+  const payload=sportingDayPayload(world.seasonNumber,world.generation,day,calendarHash,processed.results);
   elapsedDays.push({day,json:JSON.stringify(payload),hash:await canonicalHash(payload)});
   for(const plan of processed.newTies)priorTies.push({plan,json:JSON.stringify(plan),hash:await canonicalHash(plan)});
  }

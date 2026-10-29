@@ -7,14 +7,11 @@ import {readWorld} from './world-repository.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {createProgression,processSportingDay,tieKey} from './knockout-progression.ts';
-import type {TemporaryResult} from './temporary-simulation.ts';
+import {sportingDayPayload} from './sporting-day-payload.ts';
 import {proposeLifecycleTransition} from './lifecycle-policy.ts';
 type Evidence=Awaited<ReturnType<typeof loadSeasonSportingEvidence>>;
 interface Receipt {day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string}
 interface TieRow {generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string}
-function dayOutcome(evidence:Evidence,generation:string,day:number,results:TemporaryResult[]){
- return {schemaVersion:1,season:1,generation,day,calendarHash:evidence.calendar.calendar_hash,simulationVersion:'temporary-score-v1',results};
-}
 function sourceGuards(db:Database,e:Evidence):Statement[]{
  return [
   abortUnless(db,'SELECT 1 FROM seasons WHERE season_number=1 AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?',[e.season.generation,e.snapshot.participantsHash,e.snapshot.rulesHash,e.season.snapshot_json]),
@@ -47,7 +44,7 @@ export async function executeLifecycle(db:Database,session:AdminSession,action:'
   // completion count nor a recomputed stored hash can certify forged results.
   for(let i=0;i<receipts.length;i++){
    const row=receipts[i];
-   const day=await processSportingDay(progression,i+1),expected=dayOutcome(evidence,world.generation,i+1,day.results),expectedHash=await canonicalHash(expected);
+   const day=await processSportingDay(progression,i+1),expected=sportingDayPayload(world.seasonNumber,world.generation,i+1,evidence.calendar.calendar_hash,day.results),expectedHash=await canonicalHash(expected);
    try{if(row.day!==i+1||row.generation!==world.generation||row.calendar_hash!==evidence.calendar.calendar_hash||row.simulation_version!=='temporary-score-v1'||row.outcome_hash!==expectedHash||await canonicalHash(JSON.parse(row.outcome_json))!==expectedHash)throw Error('invalid receipt')}catch{throw new ApiError(422,'daily_evidence_invalid')}
   }
   const tieRows=(await db.prepare('SELECT generation,competition_id,phase_id,tie_id,plan_hash,plan_json FROM season_knockout_ties WHERE season_number=1').all<TieRow>()).results;
@@ -58,7 +55,7 @@ export async function executeLifecycle(db:Database,session:AdminSession,action:'
   }
   const proposal=proposeLifecycleTransition(world,action,{calendarComplete:true,drawsComplete:true,dueActivitiesComplete:true,resultsComplete:false,archiveComplete:false,nextSeasonSnapshotApproved:false});
   const day=await processSportingDay(progression,proposal.after.day);
-  const payload=dayOutcome(evidence,world.generation,proposal.after.day,day.results),payloadJson=JSON.stringify(payload),payloadHash=await canonicalHash(payload);
+  const payload=sportingDayPayload(world.seasonNumber,world.generation,proposal.after.day,evidence.calendar.calendar_hash,day.results),payloadJson=JSON.stringify(payload),payloadHash=await canonicalHash(payload);
   const newTies=await Promise.all(day.newTies.map(async plan=>({plan,json:JSON.stringify(plan),hash:await canonicalHash(plan)})));
   if(proposal.after.day===56&&(progression.results.size!==4082||progression.ties.size!==54))throw new ApiError(422,'sporting_season_incomplete');
   const operationId=crypto.randomUUID(),result:Outcome={world:proposal.after,operationId};

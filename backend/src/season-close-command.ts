@@ -1,5 +1,6 @@
 /** Close an audited complete season; never fabricate next-season entrants. */
 import {ApiError} from './errors.ts';
+import {sportingDayPayload} from './sporting-day-payload.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
@@ -30,7 +31,7 @@ export async function closeSeason(db:Database,session:AdminSession,input:Prepare
   try{payload=JSON.parse(r.outcome_json)}catch{throw new ApiError(422,'archive_invalid')}
   if(r.day!==i+1||r.calendar_hash!==evidence.calendar.calendar_hash||payload.day!==r.day||payload.calendarHash!==r.calendar_hash||!Array.isArray(payload.results)||await canonicalHash(payload)!==r.outcome_hash)throw new ApiError(422,'archive_invalid');
   const expectedDay=await processSportingDay(progression,i+1);
-  const expected={schemaVersion:1,season:1,generation:world.generation,day:i+1,calendarHash:evidence.calendar.calendar_hash,simulationVersion:'temporary-score-v1',results:expectedDay.results};
+  const expected=sportingDayPayload(world.seasonNumber,world.generation,i+1,evidence.calendar.calendar_hash,expectedDay.results);
   if(await canonicalHash(expected)!==r.outcome_hash)throw new ApiError(422,'archive_invalid');
   count+=payload.results.length;
  }
