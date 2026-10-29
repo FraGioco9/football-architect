@@ -15,7 +15,9 @@ const t=copy[locale]||copy.en;document.documentElement.lang=copy[locale]?locale:
 for(const [id,i] of [['heading',0],['email-label',1],['password-label',2],['submit',3]])document.getElementById(id).textContent=t[i];
 const form=document.getElementById('account-login'),message=document.getElementById('message'),button=document.getElementById('submit');
 const raw=new URL(location.href).searchParams.get('next')||'/account/';
-const safe=raw.startsWith('/')&&!raw.startsWith('//')&&!raw.includes('\\')&&!/[\r\n\u0000-\u001f]/.test(raw)&&!raw.startsWith('/api/')?raw:'/account/';
+// Allow only approved internal post-login destinations. Do not allow origin-relative,
+// encoded separator or API redirects from untrusted query parameters.
+const safe=['/account/','/settings/'].includes(raw)?raw:'/account/';
 form.addEventListener('submit',async e=>{
  e.preventDefault();button.disabled=true;button.textContent=t[4];message.textContent='';
  const values=new FormData(form);const password=String(values.get('password')||'');
