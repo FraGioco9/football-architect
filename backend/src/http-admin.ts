@@ -1,7 +1,7 @@
 import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {adminCookiePolicy,requireMutationOrigin} from './origin-policy.ts';
-import {authenticate,csrfFor,login,requireCsrf,type AdminSession} from './auth.ts';
+import type {AdminSession} from './auth.ts';
 import {playerAuthenticate,playerCsrfFor,playerRequireCsrf} from './player-auth.ts';
 import {requireAccountPermission} from './account-permissions.ts';
 import {linkedAuditOperator} from './unified-admin-transaction.ts';
