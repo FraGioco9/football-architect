@@ -208,6 +208,23 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   await expect(requireAccountPermission(db,'migration-player','admin.world.write'))
    .rejects.toMatchObject({status:403,code:'permission_denied'});
  });
+ it('uses the same verified Admin link for both read and write shared authorization',async()=>{
+  const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403});
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const fresh=await playerLogin(db,{email,password},'local-loopback',now());
+  const authorized=await authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.read');
+  expect(authorized.legacyOperatorId).toBe('migration-legacy');
+  await expect(authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.write','invalid-csrf'))
+   .rejects.toMatchObject({status:403});
+  const writable=await authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.write',fresh.csrfToken);
+  expect(writable.legacyOperatorId).toBe('migration-legacy');
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  await expect(authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403});
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
