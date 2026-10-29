@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Football Architect — Account login</title>
+<link rel="stylesheet" href="/assets/admin-settings.css">
+<style>main{max-width:34rem;margin:5rem auto;padding:1.5rem}form{display:grid;gap:1rem}label{display:grid;gap:.4rem}input{font:inherit;padding:.75rem;width:100%;box-sizing:border-box}button{font:inherit;padding:.8rem}p[role=status]{min-height:1.8em}</style>
+<script src="/assets/account-login.js" defer></script></head>
+<body><main><a href="/" id="home">Football Architect</a><h1 id="heading">Sign in</h1>
+<form id="account-login" autocomplete="on"><label><span id="email-label">Email</span><input name="email" type="email" autocomplete="username" required maxlength="254"></label>
+<label><span id="password-label">Password</span><input name="password" type="password" autocomplete="current-password" required minlength="15" maxlength="128"></label>
+<button type="submit" id="submit">Sign in</button></form><p id="message" role="status" aria-live="polite"></p></main></body></html>
