@@ -2,6 +2,7 @@
 import {canonicalHash,requireApprovedSnapshot,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {buildSeasonOneCalendarEvidence} from './season-calendar-evidence.ts';
 import {ApiError} from './errors.ts';
+import {qualificationPots} from './season-qualification-pots.ts';
 export interface Fixture {id:string;competitionId:string;marker:string;day:number;round:number;homeClubId:string;awayClubId:string}
 export interface InitialSchedule {
  schemaVersion:1;season:1;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;
@@ -49,9 +50,7 @@ async function generate(snapshot:ApprovedSnapshot,seed:string):Promise<InitialSc
    const order=await shuffle(countries,seed+':'+id);
    // Pot positions are league-derived qualification order, not fixed club IDs.
    // Season 1 retains the identical selection; later seasons can promote new clubs.
-   const qualifiers=new Map(countries.map(country=>[country,binding.clubIds.filter(club=>club.startsWith(country+'-'))]));
-   if([...qualifiers.values()].some(ids=>ids.length!==3))return fail();
-   const pots=Array.from({length:3},(_,p)=>order.map(country=>qualifiers.get(country)![p]));
+   const pots=qualificationPots(binding.clubIds,order);
    const rounds=await shuffle([0,1,2,3,4,5],seed+':rounds:'+id);
    const layouts=[[0,1,2],[0,2,1],[1,2,0],[1,0,2],[2,0,1],[2,1,0]];
    for(let r=0;r<6;r++){
@@ -82,9 +81,9 @@ function checkInvariants(schedule:InitialSchedule,snapshot:ApprovedSnapshot):voi
    if(home.length!==(cup?3:15)||away.length!==(cup?3:15)||new Set(opponents).size!==(cup?6:15))return fail();
    if(cup){
     if(opponents.some(id=>id.split('-')[0]===club.split('-')[0]))return fail();
-    const qualifiers=new Map(countries.map(country=>[country,binding.clubIds.filter(id=>id.startsWith(country+'-'))]));
+    const pots=qualificationPots(binding.clubIds,countries);
     for(let p=0;p<3;p++){
-     const pot=new Set(countries.map(country=>qualifiers.get(country)![p]));
+     const pot=new Set(pots[p]);
      if(home.filter(g=>pot.has(g.awayClubId)).length!==1||away.filter(g=>pot.has(g.homeClubId)).length!==1)return fail();
     }
    }else for(const opponent of binding.clubIds.filter(id=>id!==club))if(home.filter(g=>g.awayClubId===opponent).length!==1||away.filter(g=>g.homeClubId===opponent).length!==1)return fail();
