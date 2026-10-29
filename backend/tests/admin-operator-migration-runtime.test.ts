@@ -139,6 +139,28 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?')
    .bind('migration-player').first()).toBeNull();
  });
+ it('revokes all other recovery links and old Admin sessions after a password reset',async()=>{
+  const {completePasswordReset}=await import('../src/player-password-reset.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  const token='reset-fixture-token-with-adequate-entropy-2026';
+  const digest=await digestOpaqueToken(token);
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind(digest,'migration-player','reset_password',now(),now()+600).run();
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind('c'.repeat(64),'migration-player','reset_password',now(),now()+600).run();
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  expect(await completePasswordReset(db,{token,newPassword:'a-new-valid-password-2026'},now()))
+   .toEqual({reset:true,sessionsRevoked:true});
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?')
+   .bind('migration-legacy').first()).toBeNull();
+  const remaining=await db.prepare('SELECT token_digest,consumed_at FROM player_one_time_tokens WHERE account_id=?')
+   .bind('migration-player').all<{token_digest:string;consumed_at:number|null}>();
+  expect(remaining.results).toHaveLength(1);
+  expect(remaining.results[0].token_digest).toBe(digest);
+  expect(remaining.results[0].consumed_at).not.toBeNull();
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
