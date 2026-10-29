@@ -4,7 +4,7 @@ import {applyD1Migrations} from 'cloudflare:test';
 import worker from '../src/index.ts';
 import {hashPassword} from '../src/passwords.ts';
 const binding=env as any,db=binding.DB,origin='http://localhost:2000';
-const configured={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin,ADMIN_MODE:'local',ADMIN_ORIGIN:origin};
+const configured={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
 const password='synthetic-player-password-2026';
 let verifier:string;
 function request(path:string,body?:unknown,headers:Record<string,string>={},method=body===undefined?'GET':'POST'){
