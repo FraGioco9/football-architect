@@ -34,6 +34,8 @@ function validate(events:readonly AdministrativeMilestone[]):void {
   if(ids.has(e.id)||positions.has(position)||scopes.has(identity))invalid();
   ids.add(e.id);positions.add(position);scopes.add(identity);
  }
+ const domestic=events.find(e=>e.id==='domestic:calendar'),internationalDraw=events.find(e=>e.id==='international:draw');
+ if(domestic&&internationalDraw&&key(domestic)>=key(internationalDraw))blocked();
  for(const e of events)for(const kind of requirements[e.kind]){
   const prerequisite=events.find(p=>p.scope===e.scope&&p.kind===kind);
   if(!prerequisite||key(prerequisite)>=key(e))blocked();
