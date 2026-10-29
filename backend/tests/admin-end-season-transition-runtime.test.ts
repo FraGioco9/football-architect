@@ -16,7 +16,7 @@ const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>,baseline:Awaited<ReturnType<typeof captureTestWorld>>;
 const input=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const receipts=()=>db.prepare('SELECT event_id,status,receipt_hash FROM season_admin_events WHERE season_number=1 ORDER BY event_order').all();
-const count=async(table:string)=>(await db.prepare('SELECT count(*) n FROM '+table).first<{n:number}>())!.n;
+const count=async(table:string)=>(await db.prepare('SELECT count(*) n FROM '+table).first())!.n;
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);
  session={actor:{id:'end-season-operator',email:'end-season@example.invalid'},digest:await hashText('end-season-session'),credentialVersion:1,csrfDigest:await hashText('end-season-csrf')};
