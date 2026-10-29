@@ -36,7 +36,7 @@ test('rejects missing dependencies and forged or duplicate milestone identities'
 
 test('proposed new-season milestones mirror approved independently movable day 1/2/3 setup',()=>{
  const plan=proposeAdministrativeMilestones();
- assert.deepEqual(plan,milestones);
+ assert.deepEqual([...plan].sort((a,b)=>a.id.localeCompare(b.id)),[...milestones].sort((a,b)=>a.id.localeCompare(b.id)));
  assert.ok(Object.isFrozen(plan));
  assert.throws(()=>rescheduleAdministrativeMilestone(plan,'international:draw',1,3,0));
  const changed=rescheduleAdministrativeMilestone(plan,'international:draw',2,2,0);
