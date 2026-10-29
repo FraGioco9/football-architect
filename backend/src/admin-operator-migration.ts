@@ -37,23 +37,32 @@ export async function linkExistingAdminOperator(
 /** Reconcile migration readiness without granting any permissions. */
 export async function adminOperatorMigrationReadiness(db:Database){
  const rows=await adminOperatorMigrationInventory(db);
+ const permissions=await db.prepare(`SELECT p.account_id AS playerAccountId,
+  COUNT(DISTINCT CASE WHEN p.permission IN ('admin.access','admin.world.read','admin.world.write')
+  THEN p.permission END) AS permissionCount
+  FROM account_permissions p JOIN player_admin_operator_links l ON l.player_account_id=p.account_id
+  GROUP BY p.account_id`).all<{playerAccountId:string;permissionCount:number}>();
+ const grants=new Map(permissions.results.map(row=>[row.playerAccountId,row.permissionCount]));
  const operators=rows.map(row=>({
   legacyAdminId:row.legacyAdminId,
   status:row.enabled!==1?'disabled':row.playerAccountId===null?'unlinked':
-   row.playerStatus!=='active'||row.verifiedAt===null?'invalid_player':'linked'
+   row.playerStatus!=='active'||row.verifiedAt===null||row.playerEmail!==row.legacyEmail?'invalid_player':
+   grants.get(row.playerAccountId)!==3?'missing_permissions':'linked'
  }));
+ const blocked=operators.filter(x=>x.status!=='linked'&&x.status!=='disabled');
  return {total:operators.length,linked:operators.filter(x=>x.status==='linked').length,
-  blocked:operators.filter(x=>x.status!=='linked'),ready:operators.every(x=>x.status==='linked'||x.status==='disabled')};
+  disabled:operators.filter(x=>x.status==='disabled').length,
+  blocked,ready:blocked.length===0};
 }
 
 /** Read-only inventory for a trusted migration review, never exposed to web clients. */
 export async function adminOperatorMigrationInventory(db:Database){
  const rows=await db.prepare(`SELECT a.id AS legacyAdminId,a.email_normalized AS legacyEmail,
    a.enabled, l.player_account_id AS playerAccountId,
-   p.status AS playerStatus,p.email_verified_at AS verifiedAt
+   p.status AS playerStatus,p.email_normalized AS playerEmail,p.email_verified_at AS verifiedAt
    FROM admin_accounts a LEFT JOIN player_admin_operator_links l ON l.legacy_admin_account_id=a.id
    LEFT JOIN player_accounts p ON p.id=l.player_account_id ORDER BY a.id`)
- .all<{legacyAdminId:string;legacyEmail:string;enabled:number;playerAccountId:string|null;playerStatus:string|null;verifiedAt:number|null}>();
+ .all<{legacyAdminId:string;legacyEmail:string;enabled:number;playerAccountId:string|null;playerStatus:string|null;playerEmail:string|null;verifiedAt:number|null}>();
  return rows.results;
 }
 
