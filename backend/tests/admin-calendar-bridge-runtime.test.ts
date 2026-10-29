@@ -113,6 +113,13 @@ it('closes and archives exactly one fully verified season and replays the same c
  const next=await readSeasonTwoCandidate(db);
  expect(next.candidate).toMatchObject({season:2,status:'provisional-results-derived'});
  expect(next.candidate.bindings).toHaveLength(18);
+ expect(next.holderReview).toHaveLength(2);
+ for(const holder of next.holderReview){
+  expect(['int-1','int-2']).toContain(holder.competitionId);
+  expect(holder.championClubId.startsWith(holder.countryId+'-')).toBe(true);
+  expect(holder.requiresQualificationPolicyDecision).toBe(holder.allocatedCup!==holder.competitionId);
+ }
+ expect(next.requiresOwnerQualificationReview).toBe(next.holderReview.some(h=>h.requiresQualificationPolicyDecision));
  for(const binding of next.candidate.bindings)expect(binding.clubIds).toHaveLength(binding.competitionId.startsWith('int-')?24:16);
  expect(archive.archives[0]).toMatchObject({seasonNumber:1,resultsCount:4082,daysCount:56,tiesCount:54});
  const env={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
