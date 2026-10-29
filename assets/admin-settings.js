@@ -24,7 +24,7 @@
   if(action==='eventStart')return w.phase==='preparing'&&mode==='administrative';
   if(action==='start')return w.phase==='preparing'&&mode==='legacy';
   if(action==='eventAdvance')return w.phase==='active'&&w.day<12&&mode==='administrative';
-  if(action==='advance')return w.phase==='active'&&mode==='legacy'&&w.day<56;
+  if(action==='advance')return w.phase==='active'&&(mode==='legacy'||mode==='sporting')&&w.day<56;
   if(action==='close')return w.phase==='active'&&w.day===56;
   return !!eventKind&&w.phase==='active'&&mode==='administrative'&&availableEvent;
  }
@@ -57,7 +57,7 @@
    // An unavailable events read must fail closed for event actions, not erase the world read.
    try{
     const events=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
-    value.events=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision&&['uninitialized','legacy','administrative'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events}:null;
+    value.events=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision&&['uninitialized','legacy','administrative','sporting'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events}:null;
    }catch(error){if(ticket!==epoch)return;if(error?.status===401)throw error;value.events=null;}
   }
   return {state,
