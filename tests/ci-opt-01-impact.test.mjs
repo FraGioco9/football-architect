@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {classifyImpact} from "../tools/ci-opt-01-impact.mjs";
 test("impact groups permit only one bounded area",()=>{
- for(const [path,area] of [["calendar/index.html","calendar"],["clubs/fr/1/overview/index.html","clubs"],["competitions/it-1/standings/index.html","competitions"],["guide/index.html","guide"]]){
+ for(const [path,area] of [["calendar/index.html","calendar"],["clubs/fr/1/overview/index.html","clubs"],["competitions/it-1/standings/index.html","competitions"],["guide/index.html","guide"],["settings/index.html","admin"]]){
   const x=classifyImpact([path]);assert.equal(x.mode,"targeted");assert.equal(x.area,area);assert.ok(x.tests.length>0);
  }
 });
@@ -46,7 +46,7 @@ test("workflow gates preserve final FULL and main browser safety",async()=>{
 
 test("every bounded TARGETED area selects existing nonempty test files",async()=>{
  const {existsSync}=await import("node:fs");
- for(const path of ["calendar/index.html","clubs/index.html","competitions/it-1/standings/index.html","guide/index.html"]){
+ for(const path of ["calendar/index.html","clubs/index.html","competitions/it-1/standings/index.html","guide/index.html","settings/index.html"]){
   const selected=classifyImpact([path]);
   assert.equal(selected.mode,"targeted");
   assert.ok(selected.tests.length>0);
@@ -84,4 +84,34 @@ test('area CSS changes retain mandatory FULL browser coverage',()=>{
  for(const file of ['assets/club-page.css','assets/competition-stats.css','assets/world-calendar.css','assets/guide-theme.css']){
   assert.equal(classifyImpact([file]).mode,'full',file);
  }
+});
+
+test("Admin World changes select bounded Settings contracts without skipping cross-cutting safety",()=>{
+ for(const file of ["assets/admin-settings.js","settings/index.html","tests/admin-settings.test.mjs"]){
+  const scope=classifyImpact([file]);
+  assert.equal(scope.mode,"targeted",file);
+  assert.equal(scope.area,"admin",file);
+  assert.ok(scope.tests.includes("tests/admin-settings.test.mjs"));
+  assert.ok(scope.tests.includes("tests/dev-admin-api-proxy.test.mjs"));
+ }
+ for(const files of [["assets/admin-settings.css"],["backend/src/http-admin.ts"],["data/divisions.json"],["assets/admin-settings.js","backend/src/reset-world-command.ts"]])
+  assert.equal(classifyImpact(files).mode,"full",files.join(","));
+});
+test("Admin workflow keeps exact-head contract checks while deferring heavy draft runtime",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const admin=readFileSync(new URL("../.github/workflows/admin-world-checks.yml",import.meta.url),"utf8");
+ const site=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8");
+ assert.match(admin,/Test password and world contracts/);
+ assert.match(admin,/Verify D1-compatible SQLite migration locally/);
+ assert.match(admin,/Typecheck backend with pinned TypeScript/);
+ assert.match(admin,/cancel-in-progress: true/);
+ assert.match(admin,/if: \$\{\{ !github\.event\.pull_request\.draft \|\| contains\(github\.event\.pull_request\.body, '<!-- admin-world-final-verification -->'\) \}\}/);
+ assert.match(site,/node --check assets\/admin-settings\.js/);
+ assert.match(site,/tests\/admin-settings\.test\.mjs/);
+});
+
+test('Admin targeted contracts include approved Season2 controls; shared season authority remains FULL',()=>{
+ const result=classifyImpact(['assets/admin-settings.js']);
+ assert.equal(result.mode,'targeted');assert.ok(result.tests.includes('tests/season-two-controls.test.mjs'));
+ for(const path of ['assets/authoritative-season.mjs','assets/authoritative-calendar.mjs','backend/tools/run-contracts.mjs','tests/admin-world-lifecycle-browser.mjs'])assert.equal(classifyImpact([path]).mode,'full',path);
 });

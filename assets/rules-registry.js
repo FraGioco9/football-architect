@@ -16,6 +16,7 @@
   const byCompetition=new Map(),byVersion=new Map(),historical=new Map();
   for(const item of definitions){
    if(!item||typeof item.id!=='string'||byCompetition.has(item.id))fail('duplicate or invalid competition');
+   if(!versions.includes(item.rules?.version))fail('unknown version '+item.rules?.version);
    const normalized=engine.normalizeCompetition(item);
    const {id,rules,category,tier}=normalized;
    const version=rules.version;

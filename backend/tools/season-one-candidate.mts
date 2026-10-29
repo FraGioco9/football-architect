@@ -1,3 +1,4 @@
+import {legacySeasonOneRules} from '../src/calendar-rules-compat.ts';
 /** Offline review preparation only. Not imported by the Worker; no database or approval operation. */
 import {createHash} from 'node:crypto';
 import {readFile,writeFile} from 'node:fs/promises';
@@ -9,13 +10,14 @@ import {snapshotHashes,validateApprovedSeasonOneSnapshot,type CanonicalCatalogue
 
 export const SOURCE_REVISION='c187d4ebfc0240515e79b4dbd9f3dceea3f293cc';
 const root=fileURLToPath(new URL('../../',import.meta.url));
-// Independently Python-hashed bytes at SOURCE_REVISION. Works with shallow CI/source-only checkouts.
+// Frozen review ancestry at SOURCE_REVISION; byte pins below track the approved calendar-compatible source layout.
+// The reconstructed full rules and approval hashes remain those of that review; no new approval is granted.
 const sourceChecksums:Readonly<Record<string,string>>={
  "data/clubs.json": "48a8e2ba8299ef49455630c052ac038b19bebafdab4ba134deb95da23dcf05b7",
- "data/divisions.json": "06381dc661f1619b866987a8b9ecbf6b8abc7a7de5398cd6882bffb34a19b6f2",
+ "data/divisions.json": "3a9de975a1916aefe19e0e85ba39dbec66a3cdb32fab6618a1e732976107d4b3",
  "data/international-competitions.json": "56ef86848e58010f31aeaba46fe5027dede3af2a33db4b558025cc8490f51f65",
  "backend/catalogues/season-1.participants.json": "f09cda2533f4cb8b77eac1fe5c5d96c992238530786ff49c7999715fc3770d93",
- "assets/world-calendar-model.js": "946fbc3825cdd3c00d957fd582c0d47d8af5c97124ff963f14dec6c47c44d7eb"
+ "assets/world-calendar-model.js": "1d2461e0fff14afe0bd84b604ed7e75486710e8171abf710c446d4206f797f9b"
 };
 const sourcePaths=Object.keys(sourceChecksums);
 const target='backend/catalogues/season-1.candidate.json';
@@ -41,7 +43,7 @@ export async function buildSeasonOneCandidate(sources:Record<string,string>){
  const selection=JSON.parse(sources['backend/catalogues/season-1.participants.json']);
  validateSeasonOneSelection(selection);
  const clubs=JSON.parse(sources['data/clubs.json']) as {countryId:string;clubId:string|number}[];
- const definitions=[...JSON.parse(sources['data/divisions.json']),...JSON.parse(sources['data/international-competitions.json'])];
+ const definitions=[...legacySeasonOneRules(JSON.parse(sources['data/divisions.json'])),...JSON.parse(sources['data/international-competitions.json'])];
  const catalogue:CanonicalCatalogue={
   clubIds:clubs.map(c=>`${c.countryId}-${c.clubId}`),
   competitions:definitions.map(c=>({id:c.id,rulesVersion:c.rules.version,rules:c.rules})),

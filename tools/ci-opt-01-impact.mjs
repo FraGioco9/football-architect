@@ -3,6 +3,7 @@ const groups=Object.freeze({
  calendar:{patterns:[/^calendar\//,/^assets\/.*calendar[^/]*\.(?:js|mjs|css)$/,/^tests\/(?:cal-|calendar-|world-calendar-)/],tests:["tests/cal-world-56a.test.mjs","tests/cal-week-init-01.test.mjs","tests/calendar-season-link.test.mjs","tests/world-calendar-navigation.test.mjs","tests/world-calendar-ui.test.mjs"]},
  clubs:{patterns:[/^clubs\//,/^assets\/club-[^/]*\.(?:js|mjs|css)$/,/^tests\/club-/],tests:["tests/club-pages.test.mjs","tests/club-competition-summary.test.mjs","tests/club-crests.test.mjs"]},
  competitions:{patterns:[/^competitions\//,/^assets\/competition-[^/]*\.(?:js|mjs|css)$/,/^tests\/competition-/],tests:["tests/competition-model.test.mjs","tests/competition-fixtures.test.mjs","tests/competition-navigation.test.mjs","tests/competition-history.test.mjs"]},
+ admin:{patterns:[/^settings\/index\.html$/,/^assets\/admin-settings\.(?:js|css)$/,/^tests\/admin-settings\.test\.mjs$/],tests:["tests/admin-settings.test.mjs","tests/season-two-controls.test.mjs","tests/dev-admin-api-proxy.test.mjs"]},
  guide:{patterns:[/^guide\//,/^assets\/guide-[^/]*\.(?:js|mjs|css)$/,/^tests\/guide\.test\.mjs$/],tests:["tests/guide.test.mjs"]}
 });
 const safeDocs=/^(?:docs\/|README\.md$|\.github\/ISSUE_TEMPLATE\/)/;
@@ -15,6 +16,7 @@ export function classifyImpact(changed){
  if(relevant.some(p=>/^assets\/.*(?:model|provider|registry|runtime|context)[^/]*\.(?:js|mjs)$/.test(p)))return {mode:"full",area:null,tests:[]};
  if(relevant.some(p=>p.endsWith(".css")))return {mode:"full",area:null,tests:[]}; // Preserve exact-base CSS screenshot parity.
  if(relevant.some(p=>["assets/club-crests.js","assets/competition-tabs.js","assets/competition-rules.js"].includes(p)))return {mode:"full",area:null,tests:[]}; // Cross-area consumers confirmed in generator/runtime sources.
+ if(relevant.some(p=>/^assets\/authoritative-[^/]+\.mjs$/.test(p)))return {mode:'full',area:null,tests:[]};
  const areas=new Set();
  for(const path of relevant){
   const matches=Object.entries(groups).filter(([,group])=>group.patterns.some(pattern=>pattern.test(path)));

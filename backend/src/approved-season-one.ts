@@ -5,6 +5,7 @@ import cups from '../../data/international-competitions.json' with {type:'json'}
 import calendarModel from '../../assets/world-calendar-model.js';
 import approval from '../catalogues/season-1.approval.json' with {type:'json'};
 import {ApiError} from './errors.ts';
+import {legacySeasonOneRules,assertCalendarMappings} from './calendar-rules-compat.ts';
 import {canonicalHash,validateApprovedSeasonOneSnapshot,type ApprovedSnapshot,type CanonicalCatalogue} from './catalogue-snapshot.ts';
 
 // Independently Python-reconciled immutable owner decision on the complete 8126da1 review package.
@@ -20,11 +21,17 @@ export async function validateProductionSeasonOneApproval(input:unknown,catalogu
  }catch{throw new ApiError(422,'catalogue_not_approved')}
 }
 
-export async function loadApprovedSnapshot():Promise<ApprovedSnapshot>{
- const catalogue:CanonicalCatalogue={
+/** Canonical identities and full sporting rules, independent of seasonal membership. */
+export function serverCanonicalCatalogue():CanonicalCatalogue{
+ assertCalendarMappings(divisions);
+ const compatibilityDivisions=legacySeasonOneRules(divisions);
+ return {
   clubIds:clubs.map(c=>`${c.countryId}-${c.clubId}`),
-  competitions:[...divisions,...cups].map(c=>({id:c.id,rulesVersion:c.rules.version,rules:JSON.parse(JSON.stringify(c.rules))})),
+  competitions:[...compatibilityDivisions,...cups].map(c=>({id:c.id,rulesVersion:c.rules.version,rules:JSON.parse(JSON.stringify(c.rules))})),
  };
+}
+export async function loadApprovedSnapshot():Promise<ApprovedSnapshot>{
+ const catalogue=serverCanonicalCatalogue();
  // Copy design event markers only; this creates no fixtures, results, season state or database writes.
  const calendar=JSON.parse(JSON.stringify(calendarModel.createSeason(1)));
  return validateProductionSeasonOneApproval(approval,catalogue,calendar);

@@ -65,10 +65,10 @@ test('Calendar season 0 keeps season 1 selectable without an inactive-season mes
   const trigger={disabled:false};
   const root={dataset:{}};
   const document={documentElement:{dataset:{}},getElementById:()=>null,createElement:()=>({dataset:{},setAttribute(){},addEventListener(){}})};
-  const window={};
+  const window={dispatchEvent(){}};
   const history={replaceState(state,title,url){href=String(url)}};
   const location={get href(){return href},pathname:'/calendar',get search(){return new URL(href).search}};
-  runInNewContext(snippet+';updateSeason();',{document,window,history,location,URL,URLSearchParams,sessionStorage:{getItem:()=> '0'},seasonKey:'season',dev:true,menu,value,trigger,root,selector:{querySelector:()=>({})},t:()=>({season:'Season'}),closeMenu(){},chooseSeason(){}});
+  runInNewContext(snippet+';updateSeason();',{document,window,history,location,URL,URLSearchParams,sessionStorage:{getItem:()=> '0'},seasonKey:'season',dev:true,publicDefaultApplied:false,CustomEvent:class{},menu,value,trigger,root,selector:{querySelector:()=>({})},t:()=>({season:'Season'}),closeMenu(){},chooseSeason(){}});
   assert.equal(window.faCalendarSelectedSeason(),1);
   assert.equal(value.textContent,'1');
   assert.equal(trigger.disabled,false);

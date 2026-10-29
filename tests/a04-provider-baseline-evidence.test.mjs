@@ -63,7 +63,7 @@ test('A04-E4: actual context revision lease rejects late historical responses',(
  assert.ok(start>=0&&end>start);
  const input=catalogue.find(x=>x.id==='IT-1'),projection=manifest.divisions.find(x=>x.id==='IT-1');
  const window={dispatchEvent(){}};
- const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=null;({replaceSeasonData,clearSeasonData,createContext})',{
+ const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=1;({replaceSeasonData,clearSeasonData,createContext})',{
   model,window,input,projection,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
  });
  window.faCompetitionContext=api.createContext(input,1,null,1);
@@ -234,7 +234,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   if(!allowed.has(file)){res.writeHead(404);res.end();return}
   res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(readFileSync(join(staged,file)));
  });
- const router=createPreviewServer(),devServer=createServer((req,res)=>{req.headers.host='127.0.0.1:2000';router.emit('request',req,res)});
+ const router=createPreviewServer(),devServer=createServer((req,res)=>{const path=new URL(req.url,'http://localhost').pathname;if(delayedSources.has(path)){delayedSources.get(path)(res);return}req.headers.host='127.0.0.1:2000';router.emit('request',req,res)});
  server.listen(0,'127.0.0.1');devServer.listen(0,'127.0.0.1');
  await Promise.all([once(server,'listening'),once(devServer,'listening')]);
  const origin='http://127.0.0.1:'+server.address().port,devOrigin='http://127.0.0.1:'+devServer.address().port;
@@ -333,9 +333,10 @@ test('A04 browser baseline: public routes, provider states, delayed publications
     seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,
     playerStats:[{playerId:'a06-player',playerName:'A06 Historical Player',countryId:'IT',clubId:1,goals:3,assists:1,appearances:2,cleanSheets:0}]}]};
    for(const sourceFailure of [false,true]){
-    await visit(origin,'IT-1','fixtures',1);
+    await visit(devOrigin,'IT-1','fixtures',1);
     const previous=await run('window.__a04DocumentToken');await cmd('Page.reload');
     await wait('window.__a04DocumentToken!=='+JSON.stringify(previous)+"&&window.faCompetitionContext?.selectedSeason===1&&!!window.faHistoryPlayerRecords&&document.readyState==='complete'");
+    assert.equal(await run('window.faCompetitionContextApi.setDebugSeason(2)'),true,'synthetic History data requires DEV authority');
     const initial=seasonData(1,15);assert.equal(await put(initial),true);
     await run('window.faHistoryPlayerRecords.applyCanonicalHistory('+JSON.stringify(history)+')');
     const approved=await records();assert.ok(approved.length>0);assert.ok(JSON.stringify(approved).includes('A06 Historical Player'));
@@ -382,7 +383,8 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    }
   });
   await t.test('E5: absent/zero/partial/invalid/recovered Stats in five locales, ARIA and mobile widths',async()=>{
-   await visit(origin,'IT-1');
+   await visit(devOrigin,'IT-1');
+   assert.equal(await run('window.faCompetitionContextApi.setDebugSeason(2)'),true,'synthetic Stats data requires DEV authority');
    const locales=[['en','No statistics yet.','Statistics are unavailable.','Stats','Close'],['de','Noch keine Statistiken.','Statistiken sind nicht verfügbar.','Statistiken','Schließen'],['es','Aún sin estadísticas.','Las estadísticas no están disponibles.','Estadísticas','Cerrar'],['fr','Aucune statistique.','Les statistiques sont indisponibles.','Statistiques','Fermer'],['it','Nessuna statistica.','Le statistiche non sono disponibili.','Statistiche','Chiudi']];
    for(const [lang,empty,error,nav,close] of locales){
     await run('document.documentElement.lang='+JSON.stringify(lang)+';window.faAppRenderLanguage()');
@@ -423,8 +425,16 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
  }finally{
   try{socket?.close()}catch{}
-  proc.kill('SIGTERM');for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);if(proc.exitCode===null)proc.kill('SIGKILL');
+  if(proc.exitCode===null&&proc.signalCode===null)proc.kill('SIGTERM');
+  for(let i=0;i<30&&proc.exitCode===null&&proc.signalCode===null;i++)await delay(100);
+  if(proc.exitCode===null&&proc.signalCode===null)proc.kill('SIGKILL');
+  for(let i=0;i<30&&proc.exitCode===null&&proc.signalCode===null;i++)await delay(100);
   server.closeAllConnections();devServer.closeAllConnections();server.close();devServer.close();
-  rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});
+  // Chromium can create one last file during profile teardown even after its signal.
+  // Retry only the ephemeral profile deletion; preserve a persistent failure.
+  for(let attempt=0;;attempt++){
+   try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});break}
+   catch(error){if(attempt>=8||!['ENOTEMPTY','EBUSY','EPERM'].includes(error?.code))throw error;await delay(200*(attempt+1))}
+  }
  }
 });

@@ -32,3 +32,45 @@ test('forwards bounded same-origin API requests, Origin and cookies, without red
   });assert.equal(result.status,200);assert.equal(result.body,'{"ok":true}');assert.match(result.cookie[0],/HttpOnly/);
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
 });
+test('public sporting bridge permits only canonical GET paths and strips operator credentials',async()=>{
+ const upstream=createServer((req,res)=>{
+  assert.ok(['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13'].includes(req.url));
+  for(const key of ['cookie','x-csrf-token','idempotency-key','origin'])assert.equal(req.headers[key],undefined);
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['must-not-cross=1']});res.end(JSON.stringify({data:'x'.repeat(80000)}));
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ try{
+  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1']){
+   const res=response();await proxyAdminApi(req(path),res,{target});assert.equal(res.status,path.includes('?')?403:404);
+  }
+  const denied=response();await proxyAdminApi({...req('/api/competitions/IT-1/seasons/1'),method:'POST'},denied,{target});assert.equal(denied.status,405);
+  for(const path of ['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13']){
+  const result=await new Promise((resolve,reject)=>{
+   const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,headers:{Host:'localhost:2000',Cookie:'operator=private','X-CSRF-Token':'private'}},res=>{let body='';res.on('data',c=>body+=c);res.on('end',()=>resolve({status:res.statusCode,body,cookie:res.headers['set-cookie']}))});r.on('error',reject);r.end();
+  });assert.equal(result.status,200);assert.equal(JSON.parse(result.body).data.length,80000);assert.equal(result.cookie,undefined);
+  }
+ }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
+});
+
+test('protected next-season routes enforce exact method and forward only to the fixed Worker',async()=>{
+ const seen=[];
+ const upstream=createServer(async(req,res)=>{
+  seen.push(req.url);assert.equal(req.method,'POST');
+  assert.equal(req.headers['x-csrf-token'],'synthetic-csrf');assert.equal(req.headers['idempotency-key'],'synthetic-command');
+  let body='';for await(const part of req)body+=part;assert.equal(JSON.parse(body).expectedRevision,70);
+  res.writeHead(200,{'Content-Type':'application/json'});res.end('{"ok":true}');
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ try{
+  for(const path of ['/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare']){
+   const denied=response();await proxyAdminApi(req(path),denied,{target});assert.equal(denied.status,405);
+   const status=await new Promise((resolve,reject)=>{
+    const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method:'POST',headers:{Host:'localhost:2000','Content-Type':'application/json','X-CSRF-Token':'synthetic-csrf','Idempotency-Key':'synthetic-command'}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode))});r.on('error',reject);r.end(JSON.stringify({expectedRevision:70}));
+   });assert.equal(status,200);
+  }
+  const unknown=response();await proxyAdminApi({...req('/api/admin/seasons/next-prepare-extra'),method:'POST'},unknown,{target});assert.equal(unknown.status,404);
+  assert.deepEqual(seen,['/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare']);
+ }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
+});

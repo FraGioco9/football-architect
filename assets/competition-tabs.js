@@ -123,19 +123,19 @@
     const id=params.get("season"),round=params.get("matchday"),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
-    return {season:availableSeasons.includes(requested)?requested:"1",
+    return {season:devSeasons.length&&!availableSeasons.includes(requested)?"1":requested,
       view:views.includes(explicit)?explicit:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
-    if(!availableSeasons.includes(state.season))state.season="1";
+    if(devSeasons.length&&!availableSeasons.includes(state.season))state.season="1";
     const url=new URL(window.location.href);
     const identity=routePath();
     url.pathname=routes.buildRoute({kind:identity.kind,id:identity.base.slice("/competitions/".length),view:state.view});
     url.search="";url.hash="";
     if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
-    if(state.view!=="history"&&state.view!=="rules")url.searchParams.set("season",state.season);
+    url.searchParams.set("season",state.season);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
@@ -201,6 +201,11 @@
   }
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
+  window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
+    if(devSeasons.length||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    availableSeasons=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));latestSeason=availableSeasons.at(-1);
+    seasonPicker.update(seasonOptions());apply({...state,season:selectLatest?latestSeason:state.season},{replace:true});return true;
+  };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
     if(limit!==0&&!devSeasons.includes(String(limit)))return false;
     const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);

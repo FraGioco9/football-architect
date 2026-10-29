@@ -1,0 +1,7 @@
+# INT24 ChampionAwareV1 — approved titleholder qualification
+
+Owner approval: 29 October 2026. Implemented in `backend/src/international-holder-allocation-proposal.ts`.
+
+The Sovereign Cup (`int-1`) and Federation Cup (`int-2`) each receive exactly **three clubs per country** across eight countries (24 clubs per cup). The previous season's titleholder has a guaranteed place **in the cup it won**. If already allocated there, the allocation is unchanged. If assigned to the opposite cup, it replaces the last league-qualified club from its nation in the won cup, and that displaced club takes the vacated place in the opposite cup. If absent from both cups, it replaces the last league-qualified club from its nation in the won cup. The algorithm never displaces either cup titleholder, including when both titleholders qualify for opposite cups.
+
+The last qualified club is defined by the deterministic initial league-derived ordering for that country and cup, excluding protected titleholders. All final allocations must retain 3 per nation per cup, 48 distinct international clubs and both titleholders in their own cup; otherwise the proposal is rejected. This rule is approved; the **Season 2 participant snapshot is not yet approved**, and proposal computation is read-only. `readyForActivation` remains false pending separate snapshot approval and lifecycle implementation. Neither preview nor rule approval triggers a D1 write, season transition, merge or deployment.

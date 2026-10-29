@@ -72,8 +72,8 @@ test("ROUTE-02 DEV routes redirect base and serve explicit views",async()=>{
  try{
   assert.deepEqual(await get("/competitions/it-1"),{status:308,location:"/competitions/it-1/overview"});
   assert.deepEqual(await get("/competitions/it-1?season=2&view=fixtures&matchday=7"),{status:308,location:"/competitions/it-1/fixtures?season=2&matchday=7"});
-  assert.deepEqual(await get("/competitions/it-1?season=4&view=history&matchday=9"),{status:308,location:"/competitions/it-1/history"});
-  assert.deepEqual(await get("/competitions/it-1?season=3&view=rules"),{status:308,location:"/competitions/it-1/rules"});
+  assert.deepEqual(await get("/competitions/it-1?season=4&view=history&matchday=9"),{status:308,location:"/competitions/it-1/history?season=4"});
+  assert.deepEqual(await get("/competitions/it-1?season=3&view=rules"),{status:308,location:"/competitions/it-1/rules?season=3"});
   for(const view of ["standings","fixtures","stats","history","rules","awards","postseason"])
    assert.equal((await get("/competitions/it-1/"+view)).status,200,view);
   assert.deepEqual(await get("/competitions/it-1/fixtures/?season=2"),{status:308,location:"/competitions/it-1/fixtures?season=2"});
@@ -91,7 +91,7 @@ test("A03-04B: DEV redirect and security oracle",async()=>{
   for(const [path,status,location] of [
    ["/competitions/it-1",308,"/competitions/it-1/overview"],
    ["/competitions/it-1?season=2&view=fixtures&matchday=7",308,"/competitions/it-1/fixtures?season=2&matchday=7"],
-   ["/competitions/it-1?season=4&view=history&matchday=9",308,"/competitions/it-1/history"],
+   ["/competitions/it-1?season=4&view=history&matchday=9",308,"/competitions/it-1/history?season=4"],
    ["/competitions/it-1/fixtures/?season=2",308,"/competitions/it-1/fixtures?season=2"],
    ["/clubs/it/1?view=stats",308,"/clubs/it/1/stats"],
    ["/clubs/it/%31/overview",403,null],

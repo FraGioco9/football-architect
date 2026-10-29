@@ -11,7 +11,7 @@
     },
     {
       "path": "data/divisions.json",
-      "sha256": "06381dc661f1619b866987a8b9ecbf6b8abc7a7de5398cd6882bffb34a19b6f2"
+      "sha256": "3a9de975a1916aefe19e0e85ba39dbec66a3cdb32fab6618a1e732976107d4b3"
     },
     {
       "path": "data/international-competitions.json",
@@ -23,7 +23,7 @@
     },
     {
       "path": "assets/world-calendar-model.js",
-      "sha256": "946fbc3825cdd3c00d957fd582c0d47d8af5c97124ff963f14dec6c47c44d7eb"
+      "sha256": "1d2461e0fff14afe0bd84b604ed7e75486710e8171abf710c446d4206f797f9b"
     }
   ],
   "worldCalendar": {

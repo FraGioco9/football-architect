@@ -1,6 +1,6 @@
 // Pairwise coverage, not a Cartesian matrix or physical Safari certification.
 import assert from 'node:assert/strict';
-export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide'});
+export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide',admin:'/settings'});
 export function browserCases(){
  return ['en','de','es','fr','it'].flatMap((language,i)=>[320,390,768,1440].map((width,j)=>{
   const theme=['dark','light'][(i+j)%2];
@@ -9,7 +9,17 @@ export function browserCases(){
 }
 export async function verifyArea(page,area,{touch}){
  const activate=async locator=>touch?locator.tap():locator.click();
- if(area==='calendar'){
+ if(area==='admin'){
+  const login=page.locator('[data-admin-login]');
+  await login.waitFor({state:'visible'});
+  assert.equal(await page.locator('#admin-email').getAttribute('autocomplete'),'username');
+  assert.equal(await page.locator('#admin-password').getAttribute('autocomplete'),'current-password');
+  assert.equal(await page.locator('[data-admin-reset-section]').isVisible(),false);
+  assert.equal(await page.locator('[data-admin-prepare]').isVisible(),false);
+  assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
+  await page.locator('#admin-email').focus();
+  assert.equal(await page.locator('#admin-email').evaluate(el=>el===document.activeElement),true);
+ }else if(area==='calendar'){
   const picker=page.locator('#calendar-season-picker');
   await activate(picker);
   assert.equal(await page.locator('#calendar-season-menu [role=option]').count(),1);

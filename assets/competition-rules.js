@@ -1,5 +1,5 @@
 /* Configurable tournament rules: pure validation and normalization, browser + Node. */
-((root,factory)=>{const api=factory();root.faCompetitionRules=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;})(typeof window!=="undefined"?window:globalThis,()=>{
+((root,factory)=>{const api=factory(()=>root.faWorldCalendarModel||(typeof module!=="undefined"&&module.exports?require("./world-calendar-model.js"):null));root.faCompetitionRules=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;})(typeof window!=="undefined"?window:globalThis,getCalendarModel=>{
 "use strict";
 const isObject=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
 const integer=x=>Number.isSafeInteger(x)&&x>=0;
@@ -10,7 +10,19 @@ const outcomes=new Set(["champion","remain","relegated","playout","promoted","pr
 const policies=new Set(["none","int24ChampionAwareV1"]),drawPolicies=new Set(["int24SixOpponentsV1"]);
 const homePolicies=new Set(["higherOriginalTableRank","neutral"]),resolutions=new Set(["aggregateExtraTimePenalties","singleExtraTimePenalties"]);
 const calendarEvent=(event,category)=>category==="international"?/^(I0[1-9]|I1[0-2]|SOVEREIGN-FINAL|FEDERATION-FINAL)$/.test(event):/^N(0[1-9]|[12][0-9]|3[0-3])$/.test(event);
+function withCalendarBindings(input){
+ if(!isObject(input)||!Array.isArray(input.rules?.phases)||!['domestic-top-v1','domestic-second-v1'].includes(input.rules.version)||input.capacity!==16)return input;
+ const missing=input.rules.phases.some(p=>isObject(p)&&!Object.hasOwn(p,'calendarEvents'));
+ if(!missing)return input;
+ const calendar=getCalendarModel();
+ if(!calendar?.domesticPhaseMarkers)return input;
+ return {...input,rules:{...input.rules,phases:input.rules.phases.map(p=>{
+  if(!isObject(p)||Object.hasOwn(p,'calendarEvents'))return p;
+  try{const {id,type,labelKey,...rest}=p;return {id,type,labelKey,calendarEvents:calendar.domesticPhaseMarkers(input.id,id),...rest}}catch{return p}
+ })}};
+}
 function validateCompetition(input){
+input=withCalendarBindings(input);
 const errors=[],err=(path,message)=>errors.push({path,message});
 if(!isObject(input))return {valid:false,errors:[{path:"",message:"Expected competition object"}]};
 const {id,capacity,rules}=input;
@@ -36,7 +48,7 @@ if(p.type==="leaguePhase"){if(!integer(p.rounds)||!integer(p.matchesPerClub)||!i
 if(!isObject(p.points)||["win","draw","loss"].some(k=>!integer(p.points[k])))err(path+".points","Points must be nonnegative integers");
 if(!Array.isArray(p.tiebreakers)||!p.tiebreakers.length||p.tiebreakers.some(k=>!tieBreakers.has(k))||new Set(p.tiebreakers).size!==p.tiebreakers.length)err(path+".tiebreakers","Unsupported or duplicate tiebreaker");
 if(!Array.isArray(p.rankOutcomes))err(path+".rankOutcomes","Missing rank outcomes");else {let positions=new Set();p.rankOutcomes.forEach((o,j)=>{const op=path+".rankOutcomes["+j+"]";if(!isObject(o)||!integer(o.from)||!integer(o.to)||o.from<1||o.to<o.from||o.to>capacity||!outcomes.has(o.kind)){err(op,"Invalid outcome range/kind");return}for(let k=o.from;k<=o.to;k++){if(positions.has(k))err(op,"Overlapping rank "+k);positions.add(k)}});if(positions.size!==capacity)err(path+".rankOutcomes","Incomplete rank coverage")}
-if(p.type==="roundRobin"&&p.calendarEvents.length!==(capacity-1)*p.meetingsPerPair)err(path+".calendarEvents","Round-robin rounds do not match capacity");if(p.type==="leaguePhase"&&(p.calendarEvents.length!==p.rounds||capacity*p.matchesPerClub%2))err(path+".calendarEvents","League phase rounds incompatible with participants");
+if(p.type==="roundRobin"&&(!Array.isArray(p.calendarEvents)||p.calendarEvents.length!==(capacity-1)*p.meetingsPerPair))err(path+".calendarEvents","Round-robin rounds do not match capacity");if(p.type==="leaguePhase"&&(!Array.isArray(p.calendarEvents)||p.calendarEvents.length!==p.rounds||capacity*p.matchesPerClub%2))err(path+".calendarEvents","League phase rounds incompatible with participants");
 }else if(p.type==="knockout"){if(!Array.isArray(p.ties)||!p.ties.length)err(path+".ties","Missing ties");else p.ties.forEach((t,j)=>{const tp=path+".ties["+j+"]";if(!isObject(t)||typeof t.id!=="string"||!t.id||ties.has(t.id)){err(tp+".id","Duplicate/missing tie ID");return}ties.set(t.id,{phase:i,index:j});for(const field of ["winnerOutcome","loserOutcome"])if(t[field]!==undefined&&!outcomes.has(t[field]))err(tp+"."+field,"Unsupported tie outcome");if(![1,2].includes(t.legs)||!homePolicies.has(t.homePolicy)||!resolutions.has(t.resolution)||!Array.isArray(t.participants)||t.participants.length!==2)err(tp,"Invalid knockout structure");if(t.legs===1&&t.resolution!=="singleExtraTimePenalties"||t.legs===2&&t.resolution!=="aggregateExtraTimePenalties")err(tp+".resolution","Resolution incompatible with legs")});}
 });
 rules.phases.forEach((p,i)=>{if(!isObject(p))return;const path="rules.phases["+i+"]";
@@ -56,7 +68,7 @@ if(category==="international"){
 return {valid:errors.length===0,errors};
 }
 function phaseMetrics(definition,phaseId){const p=definition.rules.phases.find(p=>p.id===phaseId);if(!p)return null;const n=definition.capacity;if(p.type==="roundRobin"){const rounds=(n-1)*p.meetingsPerPair;return freeze({rounds,matchesPerRound:n/2,matches:rounds*n/2})}if(p.type==="leaguePhase")return freeze({rounds:p.rounds,matchesPerRound:n/2,matches:n*p.matchesPerClub/2});return freeze({rounds:p.calendarEvents.length,matchesPerRound:null,matches:p.ties.reduce((a,t)=>a+t.legs,0)})}
-function normalizeCompetition(record){const check=validateCompetition(record);if(!check.valid)throw new TypeError(check.errors.map(x=>x.path+": "+x.message).join("; "));const value=clone(record);value.category=value.category||(value.countryId?"domestic":"international");value.slug=value.slug||String(value.id).toLowerCase();const phaseTotals={};let totalMatches=0;for(const p of value.rules.phases){const m=phaseMetrics(value,p.id);phaseTotals[p.id]=m;totalMatches+=m.matches}value.metrics={phases:phaseTotals,totalMatches};value.capabilities={phaseIds:value.rules.phases.map(p=>p.id),awardIds:[...value.rules.awards]};return freeze(value)}
+function normalizeCompetition(record){const check=validateCompetition(record);if(!check.valid)throw new TypeError(check.errors.map(x=>x.path+": "+x.message).join("; "));const value=clone(withCalendarBindings(record));value.category=value.category||(value.countryId?"domestic":"international");value.slug=value.slug||String(value.id).toLowerCase();const phaseTotals={};let totalMatches=0;for(const p of value.rules.phases){const m=phaseMetrics(value,p.id);phaseTotals[p.id]=m;totalMatches+=m.matches}value.metrics={phases:phaseTotals,totalMatches};value.capabilities={phaseIds:value.rules.phases.map(p=>p.id),awardIds:[...value.rules.awards]};return freeze(value)}
 function outcomeAt(definition,phaseId,rank){const phase=definition.rules.phases.find(p=>p.id===phaseId);return phase&&Array.isArray(phase.rankOutcomes)?phase.rankOutcomes.find(x=>rank>=x.from&&rank<=x.to)||null:null}
 const clubKey=club=>club&&typeof club.countryId==='string'&&Number.isInteger(club.clubId)?club.countryId+'-'+club.clubId:null;
 const tableClub=row=>row?.club||row;

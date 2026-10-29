@@ -89,5 +89,13 @@
           ...event,competitions:event.competitions.filter(item=>item.competitionId===competitionId)
         }))}))});
   }
-  return freeze({createSeason,projectSeason,projectCompetition});
+  // Derive legacy presentation/snapshot bindings from this sole calendar authority.
+  function domesticPhaseMarkers(competitionId,phaseId){
+    assert(divisions.includes(competitionId),"Unknown domestic competition");
+    const tier=Number(competitionId.slice(-1));
+    assert(phaseId==='league'||phaseId===(tier===1?'playout':'promotionPlayoffs'),"Unknown domestic phase");
+    return freeze(createSeason(1).days.flatMap(day=>day.events).filter(event=>event.family==='national'&&event.competitionIds.includes(competitionId)&&
+      (phaseId==='league'?event.round<=30:event.round>=31&&event.round<=(tier===1?32:33))).map(event=>event.marker));
+  }
+  return freeze({createSeason,projectSeason,projectCompetition,domesticPhaseMarkers});
 });

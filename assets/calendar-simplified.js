@@ -13,6 +13,7 @@
  const t=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
  const dev=window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev';
+ const publicSeasonLimit=()=>Math.max(1,Math.min(2,window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber||1));
  const heading=root.querySelector('.calendar-heading');
  const selector=document.querySelector('#app-calendar > .calendar-season-picker')||document.createElement('div');
  selector.className='calendar-season-picker app-competition-season';
@@ -20,19 +21,21 @@
  const trigger=selector.querySelector('#calendar-season-picker'),menu=selector.querySelector('#calendar-season-menu'),value=selector.querySelector('#calendar-season-value');
  document.getElementById('calendar-title')?.after(selector);
  function closeMenu(){menu.hidden=true;trigger.setAttribute('aria-expanded','false')}
- function chooseSeason(n){selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.search='?'+new URLSearchParams({season:String(n),calendarView:document.documentElement.dataset.calendarView==='week'?'week':'season'});history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
+ function chooseSeason(n){publicDefaultApplied=true;selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.search='?'+new URLSearchParams({season:String(n),calendarView:document.documentElement.dataset.calendarView==='week'?'week':'season'});history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
  trigger.addEventListener('click',()=>{menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden))});
  document.addEventListener('pointerdown',e=>{if(!selector.contains(e.target))closeMenu()});
- trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():1,selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
+ trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():publicSeasonLimit(),selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
  menu.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();trigger.focus()}});
  const readDebugSeason=()=>{try{const raw=sessionStorage.getItem(seasonKey),n=raw===null||raw.trim()===''?NaN:Number(raw);return Number.isInteger(n)&&n>=0&&n<=4?n:1}catch{return 1}};
- let selectedSeason=1;
+ let selectedSeason=1,publicDefaultApplied=false;
  window.faCalendarSelectedSeason=()=>selectedSeason;
- const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=Math.max(1,dev?readDebugSeason():1);
+ const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?Math.max(1,readDebugSeason()):999999999);
  function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?season="+selectedSeason+"&calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
  function updateSeason(){
-  const limit=dev?readDebugSeason():1;
+  const limit=dev?readDebugSeason():publicSeasonLimit();
   const params=new URL(location.href).searchParams;
+  const authoritative=window.faWorldCalendar?.getPublicWorld?.();
+  if(!dev&&!publicDefaultApplied&&document.documentElement.dataset.calendarSeasonExplicit!=='true'&&authoritative?.seasonNumber>0){params.set('season',String(Math.min(2,authoritative.seasonNumber)));publicDefaultApplied=true;}
   const requested=Number(params.get('season'));
   if(params.has('season')&&validSeason(requested))selectedSeason=requested;
   else {selectedSeason=Math.max(1,limit);const url=new URL(location.href);url.searchParams.set('season',String(selectedSeason));url.searchParams.delete('day');history.replaceState(history.state,'',url)}
@@ -47,12 +50,13 @@
   selector.querySelector('#calendar-season-label').textContent=t().season;
   root.dataset.season=String(selectedSeason);
   syncCalendarLink();
+  window.dispatchEvent(new CustomEvent('fa:calendar-selection-change'));
   if(typeof updateCurrentDay==='function')updateCurrentDay();
   window.faCalendarSyncWeek?.();
  }
 
  window.addEventListener('fa:dev-progress-change',updateSeason);
- window.addEventListener('popstate',updateSeason);
+ window.addEventListener('popstate',()=>{publicDefaultApplied=true;updateSeason()});
  // A day is never a permanent route or selection.
  if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
  updateSeason();
@@ -87,7 +91,7 @@
    const state=window.faWorldCalendar?.getSelection?.();
    const shown=state?.view==='week';
    const week=shown?Math.ceil(state.day/7):(Number(document.documentElement.dataset.calendarWeek)||1);
-   const showShortcut=shown&&dev&&selectedSeason===readDebugSeason()&&week!==currentWeek();
+   const showShortcut=shown&&currentDay()>0&&(dev?selectedSeason===readDebugSeason():selectedSeason===window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber)&&week!==currentWeek();
    weekValue.textContent=t().week+' '+week;
    current.querySelector('span').textContent=t().currentWeek;
    current.setAttribute('aria-label',t().currentWeek);
@@ -126,7 +130,7 @@
  dialog.addEventListener('pointerup',event=>{validBackdropClick=!!backdropStart&&event.target===dialog&&event.pointerId===backdropStart.id&&Math.hypot(event.clientX-backdropStart.x,event.clientY-backdropStart.y)<=8;backdropStart=null});
  dialog.addEventListener('pointercancel',resetPointer);
  dialog.addEventListener('click',event=>{const outside=event.target===dialog&&validBackdropClick;validBackdropClick=false;if(outside)requestClose()});
- dialog.addEventListener('close',()=>{resetPointer();if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;dialog.classList.remove('is-closing');if(previousFocus?.isConnected){if(escapeReturn&&!keyboardOpen)previousFocus.classList.add('app-search-escape-return');else previousFocus.classList.remove('app-search-escape-return');previousFocus.focus({preventScroll:true})}escapeReturn=false});
+ dialog.addEventListener('close',()=>{delete dialog.dataset.authoritativeDay;window.dispatchEvent(new CustomEvent('fa:calendar-selection-change'));resetPointer();if(closingTimer!==null)clearTimeout(closingTimer);closingTimer=null;dialog.classList.remove('is-closing');if(previousFocus?.isConnected){if(escapeReturn&&!keyboardOpen)previousFocus.classList.add('app-search-escape-return');else previousFocus.classList.remove('app-search-escape-return');previousFocus.focus({preventScroll:true})}escapeReturn=false});
  root.addEventListener('focusout',event=>event.target?.classList?.remove('app-search-escape-return'));
  const names=()=>({national:t().national,international:t().international});
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
@@ -135,6 +139,7 @@
  const namesFor=e=>e.family==='national'&&e.phase==='postseason'?t().postseason+' '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names()[e.family]||e.family)+' '+e.round;
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
+  dialog.dataset.authoritativeDay=String(n);
   tooltip.hidden=true;previousFocus=focus||day;keyboardOpen=Boolean(previousFocus?.matches?.(':focus-visible'));
   previousFocus?.classList?.remove('app-search-escape-return');
   dialog.querySelector('#calendar-event-dialog-title').textContent=t().day+' '+n;
@@ -148,6 +153,7 @@
    row.append(code,description);body.append(row);
   }
   if(!dialog.open&&closingTimer===null){dialog.showModal();if(keyboardOpen)closeButton.focus({preventScroll:true});else {dialog.tabIndex=-1;dialog.focus({preventScroll:true})}}
+  window.dispatchEvent(new CustomEvent('fa:calendar-selection-change',{detail:{refresh:true}}));
  }
  window.faCalendarShowDay=day=>showDay(day,day);
  new MutationObserver(()=>{updateSeason();window.faCalendarSyncWeek?.()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
@@ -168,9 +174,11 @@
   marker.addEventListener('focusout',()=>{tooltip.hidden=true});
   marker.addEventListener('click',()=>{tooltip.hidden=true});
  }
- function currentDay(){const n=window.faDevWorldClockSnapshot?.current?.day;if(dev&&Number.isInteger(n)&&n>=1&&n<=56)return n;try{const stored=sessionStorage.getItem('football-architect:calendar-dev-world-day');const value=stored===null?NaN:Number(stored);return Number.isInteger(value)&&value>=1&&value<=56?value:1}catch{return 1}}
- function updateCurrentDay(){const n=dev&&selectedSeason===readDebugSeason()?currentDay():0;for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current){cell.dataset.devCurrentDay='true';cell.setAttribute('aria-current','true')}else{delete cell.dataset.devCurrentDay;cell.removeAttribute('aria-current')}}document.querySelector('style[data-calendar-dev-highlight]')?.remove()}
+ function currentDay(){if(!dev){const world=window.faWorldCalendar?.getPublicWorld?.();return world?.seasonNumber===selectedSeason&&Number.isInteger(world.day)&&world.day>=1&&world.day<=56?world.day:0}const n=window.faDevWorldClockSnapshot?.current?.day;if(dev&&Number.isInteger(n)&&n>=1&&n<=56)return n;try{const stored=sessionStorage.getItem('football-architect:calendar-dev-world-day');const value=stored===null?NaN:Number(stored);return Number.isInteger(value)&&value>=1&&value<=56?value:1}catch{return 1}}
+ function updateCurrentDay(){const n=dev?(selectedSeason===readDebugSeason()?currentDay():0):currentDay();for(const cell of root.querySelectorAll('[data-calendar-day]')){const current=Number(cell.dataset.calendarDay)===n;if(current){cell.dataset.devCurrentDay='true';cell.setAttribute('aria-current','true')}else{delete cell.dataset.devCurrentDay;cell.removeAttribute('aria-current')}}document.querySelector('style[data-calendar-dev-highlight]')?.remove()}
+ window.addEventListener('fa:public-calendar-change',()=>{updateSeason();updateCurrentDay();window.faCalendarSyncWeek?.()});
  window.addEventListener('fa:dev-world-day-change',()=>{updateCurrentDay();window.faCalendarSyncWeek?.()});
   window.addEventListener('fa:world-clock-snapshot',()=>{updateCurrentDay();window.faCalendarSyncWeek?.()});
  updateCurrentDay();
+ window.dispatchEvent(new CustomEvent('fa:calendar-ui-ready'));
 })();
