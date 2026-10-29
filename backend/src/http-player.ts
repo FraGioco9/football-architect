@@ -74,8 +74,8 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
    await playerRequireCsrf(session.csrfDigest,request.headers.get('X-CSRF-Token'));
    const payload=await body(request);
    if(path==='/api/player/account/change-password')return json(200,await changePlayerPassword(db,session,payload,now),{'Set-Cookie':set('',true)});
-   if(path==='/api/player/account/revoke-other-sessions')return json(200,await revokeOtherSessions(db,session));
-   return json(200,await deletePlayerAccount(db,session,payload),{'Set-Cookie':set('',true)});
+   if(path==='/api/player/account/revoke-other-sessions')return json(200,await revokeOtherSessions(db,session,now));
+   return json(200,await deletePlayerAccount(db,session,payload,now),{'Set-Cookie':set('',true)});
   }
   if(path==='/api/player/admin/world'){
    await authorizeUnifiedAdmin(db,token,now,'admin.world.read');
