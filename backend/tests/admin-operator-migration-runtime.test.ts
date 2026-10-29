@@ -193,6 +193,21 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(await db.prepare('SELECT 1 FROM player_sessions WHERE token_digest=?').bind(await digestOpaqueToken(second.token)).first()).toBeNull();
   expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?').bind('migration-legacy').first()).toBeNull();
  });
+ it('never exposes orphan or identity-drift Admin permissions to account reads or authorization',async()=>{
+  const {readAccountPermissions,requireAccountPermission}=await import('../src/account-permissions.ts');
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('migration-player','admin.access',now()).run();
+  expect(await readAccountPermissions(db,'migration-player')).toEqual([]);
+  await expect(requireAccountPermission(db,'migration-player','admin.access'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-player').run();
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect(await readAccountPermissions(db,'migration-player')).toEqual(['admin.access','admin.world.read','admin.world.write']);
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  expect(await readAccountPermissions(db,'migration-player')).toEqual([]);
+  await expect(requireAccountPermission(db,'migration-player','admin.world.write'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
