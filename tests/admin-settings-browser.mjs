@@ -60,6 +60,10 @@ try{
    assert.ok((await page.locator('[data-admin-status]').textContent()).length>0);
    const nextLabels={en:'Prepare Season 2',it:'Prepara Stagione 2',de:'Saison 2 vorbereiten',es:'Preparar Temporada 2',fr:'Préparer la saison 2'};
    assert.equal(await page.locator('[data-admin-command="nextPrepare"]').textContent(),nextLabels[language]);
+   const approvalLabels={en:'Approve Season 2 participants',it:'Approva partecipanti Stagione 2',de:'Teilnehmer für Saison 2 genehmigen',es:'Aprobar participantes de la temporada 2',fr:'Approuver les participants de la saison 2'};
+   assert.equal(await page.locator('[data-admin-next-season-approve]').textContent(),approvalLabels[language]);
+   assert.equal(await page.locator('label[for="admin-next-season-confirm"]').textContent().then(x=>x.includes('APPROVE SEASON 2')),true);
+   assert.equal(await page.locator('[data-admin-operations]').getAttribute('aria-labelledby'),'admin-heading');
    const world=await page.evaluate(()=>fetch('/api/world').then(r=>r.json()));assert.deepEqual(world.world,preparedWorld);
    await page.reload();await page.locator('[data-admin-signed-in]').waitFor({state:'visible'});
    await page.waitForFunction(()=>document.querySelector('[data-admin-prepare]').disabled&&!document.querySelector('[data-admin-refresh]').disabled);
