@@ -223,6 +223,13 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <p data-admin-actor></p><p data-admin-world></p>
  <button type="button" data-admin-prepare data-admin-copy="prepare">Prepare season</button>
  <button type="button" data-admin-refresh data-admin-copy="refresh">Refresh</button>
+ <section data-admin-reset-section aria-labelledby="admin-reset-heading" hidden>
+ <h3 id="admin-reset-heading" data-admin-copy="resetTitle">Reset world to Season 0</h3>
+ <p data-admin-copy="resetSummary">Permanently deletes all season calendars, draws, match results, statistics, playoff records, administrative events and history. Club catalogues, rules and administrator access remain.</p>
+ <label for="admin-reset-confirm" data-admin-copy="resetPrompt">Type RESET SEASON 0 to confirm</label>
+ <input id="admin-reset-confirm" data-admin-reset-confirm type="text" autocomplete="off" spellcheck="false" maxlength="14" aria-describedby="admin-reset-heading">
+ <button type="button" data-admin-reset data-admin-copy="resetButton" disabled>Delete all seasons</button>
+ </section>
  </div>
  <button type="button" data-admin-logout data-admin-copy="signOut" hidden>Sign out</button>
  </div></section>
