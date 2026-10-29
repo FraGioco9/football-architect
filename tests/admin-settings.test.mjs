@@ -221,3 +221,13 @@ test('sporting day advancement becomes available only after administrative calen
  assert.equal(canRunCommand('advance',active,{...events,mode:'administrative'}),false);
  assert.equal(canRunCommand('advance',active,{...events,worldRevision:8}),false);
 });
+
+test('closure control requires authoritative completed day56 sporting evidence',()=>{
+ const ended={...world,seasonNumber:1,phase:'active',day:56,revision:67};
+ const projection={mode:'sporting',worldGeneration:ended.generation,worldRevision:ended.revision,rows:[],closure:{days:56,ties:54,archived:false,ready:true}};
+ assert.equal(canRunCommand('close',ended,projection),true);
+ assert.equal(canRunCommand('advance',ended,projection),false);
+ assert.equal(canRunCommand('close',ended,{...projection,closure:{...projection.closure,ready:false}}),false);
+ assert.equal(canRunCommand('close',ended,{...projection,worldRevision:66}),false);
+ assert.equal(canRunCommand('close',{...ended,day:55},projection),false);
+});
