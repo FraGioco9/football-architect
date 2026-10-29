@@ -126,6 +126,28 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   expect(sessions).toHaveLength(1);
   expect(sessions[0].current).toBe(true);
  });
+ it('isolates two Player identities and refuses unauthorized Admin escalation',async()=>{
+  const primary=await login(),primaryCookie=cookie(primary),primaryCsrf=(await primary.json() as any).csrfToken;
+  const otherPassword='synthetic-other-player-secret-2026';
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)')
+   .bind('player-2','other@example.invalid',await hashPassword(otherPassword),1,100,'active',100,100).run();
+  const second=await request('/api/player/login',{email:'other@example.invalid',password:otherPassword});
+  expect(second.status).toBe(200);
+  const otherCookie=cookie(second),otherCsrf=(await second.json() as any).csrfToken;
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('player-1','admin.access',Math.floor(Date.now()/1000)).run();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('player-1','admin.world.read',Math.floor(Date.now()/1000)).run();
+  expect((await request('/api/player/permissions',undefined,{Cookie:otherCookie})).status).toBe(200);
+  expect(await (await request('/api/player/permissions',undefined,{Cookie:otherCookie})).json()).toEqual({permissions:[]});
+  expect((await request('/api/player/admin/world',undefined,{Cookie:otherCookie})).status).toBe(403);
+  const forbidden=await request('/api/player/account/revoke-other-sessions',{}, {Cookie:otherCookie,'X-CSRF-Token':primaryCsrf});
+  expect(forbidden.status).toBe(403);
+  const revoked=await request('/api/player/account/revoke-other-sessions',{}, {Cookie:otherCookie,'X-CSRF-Token':otherCsrf});
+  expect(revoked.status).toBe(200);
+  expect((await request('/api/player/session',undefined,{Cookie:primaryCookie})).status).toBe(200);
+  expect((await request('/api/player/session',undefined,{Cookie:otherCookie})).status).toBe(200);
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
