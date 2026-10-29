@@ -29,7 +29,7 @@ export async function planAdministrativeAdvance(db:Database,world:WorldV1,rows:r
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
  // Validates unique positions, IDs, scopes and all dependency placement, including completed rows.
  dueAdministrativeMilestones(events,Math.max(1,world.day));
- if(events.some(e=>e.day>12||e.day<world.day&&e.status!=='completed'))blocked();
+ if(events.some(e=>e.scope!=='season'&&e.day>12||e.day<world.day&&e.status!=='completed'))blocked();
  if(rows.some(r=>r.status==='completed'&&(r.scheduled_day>world.day||!r.receipt_hash||!Number.isSafeInteger(r.completed_at)||r.completed_at===null||r.completed_at<=0)||
     r.status==='scheduled'&&(r.completed_at!==null||r.receipt_hash!==null)))invalid();
  const authority=await loadSeasonSnapshotAuthority(db,world),snapshot=authority.snapshot;
