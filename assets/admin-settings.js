@@ -16,7 +16,8 @@
  function canRunCommand(action,w,ev){
   if(!w||!ev||ev.worldGeneration!==w.generation||ev.worldRevision!==w.revision)return false;
   const rows=ev.rows||[],mode=ev.mode;
-  const next=rows.find(e=>e.status==='scheduled'&&e.day===w.day);
+  const first=rows.filter(e=>e.status==='scheduled').sort((a,b)=>a.day-b.day||a.order-b.order)[0];
+  const next=first?.day===w.day?first:null;
   const kinds={confirm:'confirm-',domestic:'generate-domestic-calendar',draw:'draw-international',publish:'generate-international-calendar'};
   const eventKind=kinds[action],availableEvent=!!next&&(action==='confirm'?next.kind?.startsWith('confirm-'):next.kind===eventKind);
   if(action==='initialize'||action==='legacy')return w.phase==='preparing'&&mode==='legacy';
@@ -121,8 +122,8 @@
      if(action==='confirm'){
       const data=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
       if(data?.world?.generation!==old.generation||data.world.revision!==old.revision)throw Object.assign(Error('stale'),{status:409,code:'stale_world'});
-      const due=data.events?.find(e=>e.status==='scheduled'&&e.day===old.day&&e.kind?.startsWith('confirm-'));
-      if(!due)throw Object.assign(Error('blocked'),{status:409,code:'calendar_event_prerequisites'});
+      const due=data.events?.filter(e=>e.status==='scheduled').sort((a,b)=>a.day-b.day||a.order-b.order)[0];
+      if(!due||due.day!==old.day||!due.kind?.startsWith('confirm-'))throw Object.assign(Error('blocked'),{status:409,code:'calendar_event_prerequisites'});
       body={...body,eventId:due.id};
      }
      const data=await request(routes[action],{body,headers:{'X-CSRF-Token':csrf,'Idempotency-Key':globalThis.crypto.randomUUID()}});
@@ -195,6 +196,9 @@
    const enabled=!!state.actor&&!state.busy&&valid;
    find('[data-admin-reschedule-section]').hidden=!state.actor||state.events?.mode!=='administrative';
    selector.disabled=state.busy||!movable.length;dayInput.disabled=state.busy||!movable.length;orderInput.disabled=state.busy||!movable.length;save.disabled=!enabled;
+   const nextEvent=state.events?.nextEvent;
+   find('[data-admin-next-event]').textContent=state.events?.mode==='administrative'?
+    (nextEvent?nextEvent.id+' · '+text.day+' '+nextEvent.day+' · '+nextEvent.order+(nextEvent.ready?' · '+text.operationIdle:''):text.operationSuccess):'';
    const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]'),canReset=!!state.actor&&state.world?.phase!=='unstarted'&&!state.busy;
    find('[data-admin-reset-section]').hidden=!state.actor;
    resetInput.disabled=!canReset;

@@ -2,7 +2,7 @@
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
-import {proposeAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,proposeAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
 export async function readAdministrativeCalendar(db:Database){
  const world=await readWorld(db);
@@ -20,5 +20,13 @@ export async function readAdministrativeCalendar(db:Database){
  for(const event of events){
   if((event.status==='completed')!==(event.completedAt!==null&&event.hasReceipt))throw new ApiError(422,'calendar_event_invalid');
  }
- return {world,events,mode:'administrative' as const};
+ // Revalidate ordering/dependencies even for rows modified outside the command boundary.
+ if(world.day<56)dueAdministrativeMilestones(events,Math.max(1,world.day));
+ const pending=events.filter(e=>e.status==='scheduled').sort((a,b)=>a.day-b.day||a.order-b.order);
+ const next=pending[0]??null;
+ const blocked=next!==null&&next.day<world.day;
+ return {world,events,mode:'administrative' as const,
+  nextEvent:next?{id:next.id,kind:next.kind,day:next.day,order:next.order,ready:world.phase==='active'&&!blocked&&next.day===world.day}:null,
+  remaining:pending.length,blocked};
+
 }
