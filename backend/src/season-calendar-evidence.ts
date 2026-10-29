@@ -12,7 +12,6 @@ export type CalendarEvidence=Readonly<{
 const countryIds=['IT','ENG','ES','DE','FR','PT','NL','BR'];
 const domestic=countryIds.flatMap(country=>[country+'-1',country+'-2']);
 const international=['int-1','int-2'];
-const allDays=new Set<number>();
 const hasExact=(actual:string[],expected:string[])=>actual.length===expected.length&&expected.every((x,i)=>actual[i]===x);
 const fail=():never=>{throw new ApiError(422,'calendar_invalid')};
 
@@ -37,7 +36,6 @@ export async function buildSeasonOneCalendarEvidence():Promise<CalendarEvidence>
      cups.push(event);
     }else return fail();
    }
-   if(day.events.length>0)allDays.add(day.day);
    if(day.events.length>2||((day.events.length===0)!==(day.kind!=='official')))return fail();
   }
   if(national.length!==32||cups.length!==14)return fail();
