@@ -35,7 +35,7 @@ export async function initializeAdministrativeEvents(db:Database,session:AdminSe
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=?)=0',[world.seasonNumber]),
    ...events.map(e=>db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(world.seasonNumber,e.id,e.kind,e.scope,e.day,e.order,now)),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
-   db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,'initialize-admin-events-v1',world.revision,result.world.revision,JSON.stringify(result),now),
+   db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,'initialize-admin-events-v2',world.revision,result.world.revision,JSON.stringify(result),now),
   ]);
   return result;
  }catch{
