@@ -263,3 +263,41 @@ test('explicit Season 2 approval is bound to reviewed snapshot and expected revi
  await controller.approveSeasonTwo(hash);
  assert.equal(called,1);
 });
+
+test('Admin event read retains generation, revision and due-event authority',async()=>{
+ const active={...world,seasonNumber:1,phase:'active',day:3,revision:11};
+ const projection={world:active,mode:'administrative',events:[
+  {id:'international:draw',kind:'draw-international',status:'scheduled',day:3,order:1},
+  {id:'international:calendar',kind:'generate-international-calendar',status:'scheduled',day:3,order:2}
+ ],nextEvent:{id:'international:draw',day:3,ready:true},remaining:2,blocked:false};
+ const c=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:active}:projection,()=>{});
+ await c.refresh();
+ const events=c.state().events;
+ assert.equal(events.worldGeneration,active.generation);
+ assert.equal(events.worldRevision,active.revision);
+ assert.equal(events.nextEvent.id,'international:draw');
+ assert.equal(canRunCommand('draw',active,events),true);
+ assert.equal(canRunCommand('publish',active,events),false);
+});
+test('controller fails closed on stale event reads and never submits an unavailable command',async()=>{
+ const active={...world,seasonNumber:1,phase:'active',day:3,revision:11};
+ let writes=0;
+ const c=createAdminController(async(path)=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world:active};
+  if(path.endsWith('/events'))return {world:{...active,revision:10},mode:'sporting',events:[]};
+  writes++;return {world:active};
+ },()=>{});
+ await c.refresh();
+ assert.equal(c.state().events,null);
+ await c.command('advance');
+ assert.equal(writes,0);
+});
+test('sporting closure readiness survives the authenticated calendar projection',async()=>{
+ const closedDay={...world,seasonNumber:1,phase:'active',day:56,revision:60};
+ const closure={days:56,ties:54,archived:false,ready:true};
+ const c=createAdminController(async path=>path.endsWith('/session')?session:path.endsWith('/world')?{world:closedDay}:{world:closedDay,mode:'sporting',events:[],closure},()=>{});
+ await c.refresh();
+ assert.deepEqual(c.state().events.closure,closure);
+ assert.equal(canRunCommand('close',closedDay,c.state().events),true);
+});
