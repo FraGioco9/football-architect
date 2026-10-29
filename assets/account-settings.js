@@ -16,7 +16,7 @@ let csrf='';
 const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(body)});const value=await r.json().catch(()=>({}));if(!r.ok)throw {status:r.status,code:value?.error?.code};return value};
 function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidden=false;loading.hidden=true;status.textContent=message}
 async function init(){try{
- const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok){unauthenticated(t[13]);return;}
+ const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){location.replace('/account/login/?next=%2Faccount%2F');return;}if(!r.ok){unauthenticated(t[17]);return;}
  const value=await r.json();if(!value?.authenticated||typeof value.csrfToken!=='string'){unauthenticated(t[13]);return;}
  csrf=value.csrfToken;document.getElementById('identity').textContent=value.actor.email;
  document.getElementById('permissions').textContent=(value.permissions||[]).join(', ');
