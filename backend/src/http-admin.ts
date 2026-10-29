@@ -2,9 +2,8 @@ import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
 import type {AdminSession} from './auth.ts';
-import {playerAuthenticate,playerCsrfFor,playerRequireCsrf} from './player-auth.ts';
-import {requireAccountPermission} from './account-permissions.ts';
-import {linkedAuditOperator} from './unified-admin-transaction.ts';
+import {playerCsrfFor} from './player-auth.ts';
+import {authorizeUnifiedAdmin} from './unified-admin-authorization.ts';
 import {readWorld} from './world-repository.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
@@ -74,13 +73,11 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
    return json(410,{error:{code:'legacy_admin_login_retired'}});
   const playerCookie=env.PLAYER_MODE==='production'?'__Host-fa_player':'fa_player_local';
   const playerToken=readCookie(request,playerCookie);
-  const player=await playerAuthenticate(db,playerToken,now);
-  await requireAccountPermission(db,player.actor.id,'admin.access');
   const isWrite=request.method!=='GET';
-  await requireAccountPermission(db,player.actor.id,isWrite?'admin.world.write':'admin.world.read');
-  if(isWrite)await playerRequireCsrf(player.csrfDigest,request.headers.get('X-CSRF-Token'));
-  const legacyId=await linkedAuditOperator(db,player.actor.id);
-  if(!legacyId)throw new ApiError(403,'permission_denied');
+  const player=await authorizeUnifiedAdmin(db,playerToken,now,
+   isWrite?'admin.world.write':'admin.world.read',
+   isWrite?request.headers.get('X-CSRF-Token'):null);
+  const legacyId=player.legacyOperatorId;
   const legacy=await db.prepare('SELECT email_normalized AS email,credential_version FROM admin_accounts WHERE id=? AND enabled=1').bind(legacyId).first<{email:string;credential_version:number}>();
   if(!legacy)throw new ApiError(403,'permission_denied');
   const session:AdminSession={actor:{id:legacyId,email:player.actor.email},digest:player.digest,
