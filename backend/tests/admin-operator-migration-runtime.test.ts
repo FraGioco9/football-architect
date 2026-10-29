@@ -90,6 +90,17 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   await linkExistingAdminOperator(db,{...plan,approvedBy:'trusted-local-operator'},now());
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:false,reason:'already_linked'});
  });
+ it('blocks cutover on a disabled operator still linked to Player privileges',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  const blocked=await adminOperatorMigrationReadiness(db);
+  expect(blocked.ready).toBe(false);
+  expect(blocked.blocked.find(row=>row.legacyAdminId==='migration-legacy')?.status).toBe('disabled_linked');
+  await revokeMigratedAdminOperator(db,'migration-player',now());
+  const clean=await adminOperatorMigrationReadiness(db);
+  expect(clean.blocked.find(row=>row.legacyAdminId==='migration-legacy')).toBeUndefined();
+  expect(clean.disabled).toBeGreaterThanOrEqual(1);
+ });
  it('reports an unlinked enabled operator as rollout-blocking and a linked operator as ready',async()=>{
   const initial=await adminOperatorMigrationReadiness(db);
   const legacy=initial.blocked.find(x=>x.legacyAdminId==='migration-legacy');
