@@ -172,6 +172,17 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
    'revoked-replay-test-0001','synthetic-request-hash',Math.floor(Date.now()/1000)))
    .rejects.toMatchObject({status:401,code:'unauthorized'});
  });
+ it('rejects session timestamps outside absolute lifetime and blocks session restoration',async()=>{
+  const signed=await login(),c=cookie(signed),now=Math.floor(Date.now()/1000);
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  const digest=await digestOpaqueToken(c.split('=')[1]);
+  await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592001 WHERE token_digest=?').bind(digest).run();
+  expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
+  await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592000,last_seen_at=created_at-1 WHERE token_digest=?').bind(digest).run();
+  expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
+  await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?').bind(now+30,digest).run();
+  expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
+ });
  it('rejects unverified and absent users without disclosing their existence',async()=>{
   const missing=await request('/api/player/login',{email:'missing@example.invalid',password});
   await db.prepare("UPDATE player_accounts SET status='pending',email_verified_at=NULL").run();
