@@ -62,6 +62,7 @@ jobs:
           node-version: '22'
       - name: Verify JavaScript syntax
         run: |
+          node --check assets/admin-settings.js
           node --check assets/landing.js
           node --check assets/app.js
           node --check assets/app-search.js
@@ -78,7 +79,7 @@ jobs:
       - name: Site essential contracts (FAST and TARGETED)
         if: needs.head-exact.outputs.mode != 'full'
         run: |
-          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/ci-opt-01-node-inventory.test.mjs tests/ci-opt-01-node-runner.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs
+          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/ci-opt-01-node-inventory.test.mjs tests/ci-opt-01-node-runner.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs tests/admin-settings.test.mjs tests/dev-admin-api-proxy.test.mjs
       - name: Targeted area contracts
         if: needs.head-exact.outputs.mode == 'targeted'
         env:

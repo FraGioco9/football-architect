@@ -46,7 +46,7 @@ test("workflow gates preserve final FULL and main browser safety",async()=>{
 
 test("every bounded TARGETED area selects existing nonempty test files",async()=>{
  const {existsSync}=await import("node:fs");
- for(const path of ["calendar/index.html","clubs/index.html","competitions/it-1/standings/index.html","guide/index.html"]){
+ for(const path of ["calendar/index.html","clubs/index.html","competitions/it-1/standings/index.html","guide/index.html","settings/index.html"]){
   const selected=classifyImpact([path]);
   assert.equal(selected.mode,"targeted");
   assert.ok(selected.tests.length>0);
