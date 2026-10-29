@@ -27,12 +27,13 @@ function parseContext(input:unknown):MatchContext{
 }
 export async function simulateTemporaryMatch(fixture:Fixture,seed:string,contextInput:MatchContext):Promise<TemporaryResult>{
  const context=parseContext(contextInput);
- if(!fixture||Object.keys(fixture).sort().join(',')!=='awayClubId,competitionId,day,homeClubId,id,marker,round'||
+ const identity=typeof fixture?.id==='string'?fixture.id.match(/^season:([1-9][0-9]{0,6}):/):null,season=identity?Number(identity[1]):0;
+ if(!fixture||!Number.isSafeInteger(season)||season<1||season>1000000||Object.keys(fixture).sort().join(',')!=='awayClubId,competitionId,day,homeClubId,id,marker,round'||
   !['homeClubId','awayClubId'].every(k=>/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.test(fixture[k as 'homeClubId']))||fixture.homeClubId===fixture.awayClubId||
   !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(fixture.competitionId)||
   !/^(?:[NI](?:0[1-9]|[12][0-9]|3[0-3])|FEDERATION-FINAL|SOVEREIGN-FINAL)$/.test(fixture.marker)||
   !Number.isInteger(fixture.day)||fixture.day<1||fixture.day>56||!Number.isInteger(fixture.round)||fixture.round<1||fixture.round>33||
-  fixture.id!==`season:1:${fixture.competitionId}:${fixture.marker}:${fixture.homeClubId}:${fixture.awayClubId}`||
+  fixture.id!==`season:${season}:${fixture.competitionId}:${fixture.marker}:${fixture.homeClubId}:${fixture.awayClubId}`||
   typeof seed!=='string'||!/^[A-Za-z0-9._:-]{16,256}$/.test(seed))return fail();
  const algorithmVersion='temporary-score-v1' as const;
  const digest=await canonicalHash({algorithmVersion,seed,fixture,purpose:'regulation'});

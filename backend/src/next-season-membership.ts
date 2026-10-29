@@ -61,5 +61,5 @@ export function membershipCandidateFromProgression(state:Progression):NextSeason
    {competitionId:c+'-2',rankedClubIds:second.map(x=>x.clubId)});
   outcomes.push({countryId:c,playoutRelegatedClubId:relegated,playoffPromotedClubId:playoffWinner});
  }
- return proposeNextSeasonMembership(2,divisions,outcomes);
+ return proposeNextSeasonMembership(state.schedule.season+1,divisions,outcomes);
 }

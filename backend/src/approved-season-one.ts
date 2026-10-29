@@ -21,13 +21,17 @@ export async function validateProductionSeasonOneApproval(input:unknown,catalogu
  }catch{throw new ApiError(422,'catalogue_not_approved')}
 }
 
-export async function loadApprovedSnapshot():Promise<ApprovedSnapshot>{
+/** Canonical identities and full sporting rules, independent of seasonal membership. */
+export function serverCanonicalCatalogue():CanonicalCatalogue{
  assertCalendarMappings(divisions);
  const compatibilityDivisions=legacySeasonOneRules(divisions);
- const catalogue:CanonicalCatalogue={
+ return {
   clubIds:clubs.map(c=>`${c.countryId}-${c.clubId}`),
   competitions:[...compatibilityDivisions,...cups].map(c=>({id:c.id,rulesVersion:c.rules.version,rules:JSON.parse(JSON.stringify(c.rules))})),
  };
+}
+export async function loadApprovedSnapshot():Promise<ApprovedSnapshot>{
+ const catalogue=serverCanonicalCatalogue();
  // Copy design event markers only; this creates no fixtures, results, season state or database writes.
  const calendar=JSON.parse(JSON.stringify(calendarModel.createSeason(1)));
  return validateProductionSeasonOneApproval(approval,catalogue,calendar);

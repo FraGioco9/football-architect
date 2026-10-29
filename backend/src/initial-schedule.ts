@@ -9,6 +9,15 @@ export interface InitialSchedule {
  participantsHash:string;rulesHash:string;calendarHash:string;fixtures:Fixture[];
  pendingPhases:{competitionId:string;reason:'sporting-results-required'}[];
 }
+const generatedSchedules=new WeakMap<object,string>();
+function rememberSchedule(schedule:InitialSchedule,snapshot:SchedulingSnapshot):InitialSchedule{
+ const freeze=(value:unknown):void=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value)}};
+ freeze(schedule);generatedSchedules.set(schedule,JSON.stringify({participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,bindings:snapshot.bindings}));return schedule;
+}
+/** Reconstruction must come through the trusted generator, not a deserialized status/hash. */
+export function requireGeneratedSchedule(schedule:InitialSchedule,snapshot:SchedulingSnapshot):void{
+ if(!generatedSchedules.has(schedule)||generatedSchedules.get(schedule)!==JSON.stringify({participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,bindings:snapshot.bindings}))throw new ApiError(422,'schedule_invalid');
+}
 const fail=():never=>{throw new ApiError(422,'schedule_invalid')};
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
 /** SHA-256 counter stream: runtime-independent seed mixing and unbiased Fisher-Yates. */
@@ -92,7 +101,7 @@ function checkInvariants(schedule:InitialSchedule,snapshot:SchedulingSnapshot):v
 }
 export async function buildInitialSchedule(snapshot:ApprovedSnapshot,seed:string):Promise<InitialSchedule>{
  const trusted=requireApprovedSnapshot(snapshot);
- const result=await generate(trusted,seed,1);checkInvariants(result,trusted);return result;
+ const result=await generate(trusted,seed,1);checkInvariants(result,trusted);return rememberSchedule(result,trusted);
 }
 /** A status/hash supplied by stored data cannot certify itself. Reconstruct from
  * server-approved inputs and require exact canonical equality, including no scores. */
@@ -110,5 +119,5 @@ export async function validateInitialSchedule(input:unknown,snapshot:ApprovedSna
  */
 export async function buildTrustedSeasonSchedule(snapshot:SchedulingSnapshot,seed:string,season:number):Promise<InitialSchedule>{
  if(!Number.isSafeInteger(season)||season<1||season>1000000)return fail();
- const result=await generate(snapshot,seed,season);checkInvariants(result,snapshot);return result;
+ const result=await generate(snapshot,seed,season);checkInvariants(result,snapshot);return rememberSchedule(result,snapshot);
 }
