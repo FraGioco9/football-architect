@@ -10,7 +10,7 @@
 <label><span id="current-label">Current password</span><input name="currentPassword" type="password" autocomplete="current-password" required></label>
 <label><span id="new-label">New password</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128"></label>
 <button type="submit" id="change-button">Change password</button></form></section>
-<section><h2 id="sessions-title">Sessions</h2><button id="revoke-button" type="button">Sign out other devices</button><p><button id="logout-button" type="button">Sign out</button></p></section>
+<section><h2 id="sessions-title">Sessions</h2><p id="sessions-summary" aria-live="polite"></p><button id="revoke-button" type="button">Sign out other devices</button><p><button id="logout-button" type="button">Sign out</button></p></section>
 <section><h2 id="delete-title">Delete account</h2><form id="delete-form">
 <label><span id="delete-password-label">Password</span><input name="password" type="password" autocomplete="current-password" required></label>
 <label><span id="confirm-label">Type DELETE MY ACCOUNT</span><input name="confirmation" type="text" autocomplete="off" required></label>
