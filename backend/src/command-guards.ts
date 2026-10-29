@@ -5,7 +5,6 @@ import {abortUnless} from './atomic-guard.ts';
 export {abortUnless} from './atomic-guard.ts';
 import type {PrepareRequest} from './command-contract.ts';
 import {parseWorldV1,type WorldV1} from './types.ts';
-import {requireActiveSession,type SessionRow} from './session-policy.ts';
 import {unifiedAdminMutationGuard} from './unified-admin-transaction.ts';
 import {requireAccountPermission} from './account-permissions.ts';
 import {playerSessionValid} from './player-auth.ts';
@@ -48,13 +47,7 @@ export async function replay(db:Database,session:AdminSession,command:PrepareReq
    await requireAccountPermission(db,session.unified.playerId,'admin.world.write');
    throw new ApiError(503,'prepare_unavailable');
   }
-  const row=await db.prepare(`SELECT s.account_id,s.credential_version AS session_credential_version,
-   a.credential_version AS account_credential_version,a.enabled,s.created_at,s.last_seen_at,s.expires_at,s.csrf_digest
-   FROM admin_sessions s JOIN admin_accounts a ON a.id=s.account_id WHERE s.token_digest=?`)
-   .bind(session.digest).first<SessionRow&{csrf_digest:string}>();
-  requireActiveSession(row,now);
-  if(row!.account_id!==session.actor.id||row!.session_credential_version!==session.credentialVersion||row!.csrf_digest!==session.csrfDigest)throw new ApiError(401,'unauthorized');
-  throw new ApiError(503,'prepare_unavailable');
+  throw new ApiError(403,'legacy_admin_session_retired');
  }
  const world=await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>();
  if(!world)throw new ApiError(503,'prepare_unavailable');
