@@ -1,4 +1,5 @@
 import {ApiError} from './errors.ts';
+import {readAccountPermissions} from './account-permissions.ts';
 import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
 import {playerLogin,playerAuthenticate,playerRequireCsrf,playerCsrfFor} from './player-auth.ts';
@@ -34,7 +35,7 @@ async function body(request:Request){
 }
 export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Response>{
  const path=new URL(request.url).pathname;
- const methods:Record<string,string>={'/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET'};
+ const methods:Record<string,string>={'/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/permissions':'GET'};
  const method=methods[path];if(!method)return json(404,{error:{code:'not_found'}});
  if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
  try{
@@ -54,7 +55,8 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
    return json(200,{signedOut:true},{'Set-Cookie':set('',true)});
   }
   const session=await playerAuthenticate(db,token,now);
-  return json(200,{actor:session.actor,authenticated:true,csrfToken:await playerCsrfFor(token)});
+  if(path==='/api/player/permissions')return json(200,{permissions:await readAccountPermissions(db,session.actor.id)});
+  return json(200,{actor:session.actor,authenticated:true,csrfToken:await playerCsrfFor(token),permissions:await readAccountPermissions(db,session.actor.id)});
  }catch(error){
   if(error instanceof ApiError)return json(error.status,{error:{code:error.code}},error.status===429?{'Retry-After':'900'}:{});
   return json(503,{error:{code:'player_unavailable'}});
