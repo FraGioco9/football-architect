@@ -7,6 +7,8 @@ import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.t
 import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {readWorld} from '../src/world-repository.ts';
+import {readAdministrativeCalendar} from '../src/admin-calendar-read.ts';
+import {handleAdmin} from '../src/http-admin.ts';
 import {csrfFor,hashText,type AdminSession} from '../src/auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='f'.repeat(64);
@@ -39,4 +41,18 @@ it('keeps duplicate start idempotent and refuses stale competing key',async()=>{
  const c=cmd(),r=await advanceAdministrativeClock(db,session,'start',c,'clock-replay-synthetic-0001',now);
  expect(await advanceAdministrativeClock(db,session,'start',c,'clock-replay-synthetic-0001',now)).toEqual(r);
  await expect(advanceAdministrativeClock(db,session,'start',c,'clock-compete-synthetic-0001',now)).rejects.toMatchObject({status:409});
+});
+
+it('projects planned and completed milestones for authenticated Admin only',async()=>{
+ const planned=await readAdministrativeCalendar(db);
+ expect(planned).toMatchObject({mode:'administrative',events:[{id:'domestic:entrants',day:1,status:'scheduled',hasReceipt:false}]});
+ const config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
+ const req=(cookie:string)=>new Request('http://localhost:2000/api/admin/seasons/events',{headers:{Cookie:cookie}});
+ expect((await handleAdmin(req(''),config)).status).toBe(401);
+ expect((await handleAdmin(req('fa_admin_local='+token),config)).status).toBe(200);
+ world=(await advanceAdministrativeClock(db,session,'start',cmd(),'clock-projection-start-0001',now)).world;
+ world=(await completeConfirmationEvent(db,session,{...cmd(),eventId:'domestic:entrants'},'clock-projection-confirm-0001',now)).world;
+ const after=await readAdministrativeCalendar(db);
+ expect(after.events.find(e=>e.id==='domestic:entrants')).toMatchObject({status:'completed',hasReceipt:true,day:1});
+ expect(after.events.find(e=>e.id==='international:entrants')).toMatchObject({status:'scheduled',hasReceipt:false});
 });
