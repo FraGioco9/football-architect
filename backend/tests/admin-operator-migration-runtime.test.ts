@@ -246,6 +246,17 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
    .rejects.toMatchObject({status:403,code:'permission_denied'});
  });
+ it('reports cutover not ready while any historic Admin session remains',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const clean=await adminOperatorMigrationReadiness(db);
+  expect(clean.legacySessionsRemaining).toBe(0);
+  expect(clean.ready).toBe(true);
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const unsafe=await adminOperatorMigrationReadiness(db);
+  expect(unsafe.legacySessionsRemaining).toBe(1);
+  expect(unsafe.ready).toBe(false);
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
