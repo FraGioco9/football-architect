@@ -19,6 +19,24 @@ beforeEach(async()=>{
  .bind('player-1','player@example.invalid',verifier,1,100,'active',100,100).run();
 });
 describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
+ it('returns server-derived permissions and checks Admin read/write separately',async()=>{
+  const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
+  const signed=await login(),token=cookie(signed).split('=')[1],csrf=(await signed.json() as any).csrfToken;
+  const empty=await request('/api/player/permissions',undefined,{Cookie:'fa_player_local='+token});
+  expect(await empty.json()).toEqual({permissions:[]});
+  await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.read')).rejects.toMatchObject({status:403});
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES (?,?,?)').bind('player-1','admin.access',Math.floor(Date.now()/1000)).run();
+  await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.read')).rejects.toMatchObject({status:403});
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES (?,?,?)').bind('player-1','admin.world.read',Math.floor(Date.now()/1000)).run();
+  expect((await authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.read')).actor.id).toBe('player-1');
+  await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.write',csrf)).rejects.toMatchObject({status:403});
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES (?,?,?)').bind('player-1','admin.world.write',Math.floor(Date.now()/1000)).run();
+  await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.write','0'.repeat(64))).rejects.toMatchObject({status:403});
+  expect((await authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.write',csrf)).actor.id).toBe('player-1');
+  await db.prepare("DELETE FROM account_permissions WHERE permission='admin.access'").run();
+  await expect(authorizeUnifiedAdmin(db,token,Math.floor(Date.now()/1000),'admin.world.write',csrf)).rejects.toMatchObject({status:403});
+ });
+
  it('logs in with a digest-only session and restores CSRF after reload, then revokes at logout',async()=>{
   const signed=await login();expect(signed.status).toBe(200);
   expect(signed.headers.get('set-cookie')).toMatch(/^fa_player_local=[0-9a-f]{64};.*HttpOnly.*SameSite=Strict/);
