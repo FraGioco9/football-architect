@@ -44,6 +44,15 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(mismatch.ready).toBe(false);
   expect(mismatch.blocked.find(x=>x.legacyAdminId==='migration-legacy')?.status).toBe('invalid_player');
  });
+ it('rejects preexisting partial Admin grants before linking and preserves the original grant',async()=>{
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('migration-player','admin.access',now()).run();
+  await expect(linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now())).rejects.toBeDefined();
+  const rows=await db.prepare('SELECT permission FROM account_permissions WHERE account_id=?').bind('migration-player').all<{permission:string}>();
+  expect(rows.results.map(x=>x.permission)).toEqual(['admin.access']);
+  const link=await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first();
+  expect(link).toBeNull();
+ });
  it('grants all permissions and links the exact identity in one batch, without legacy login',async()=>{
   const linked=await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
   expect(linked).toEqual({linked:true,permissions:3});
