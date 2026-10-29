@@ -75,3 +75,32 @@ it('invalidates old-generation commands and operation replays after successful r
  expect(second.world.generation).toBe(newWorld.generation);
  await expect(prepareSeason(db,session,{expectedGeneration:generation,expectedRevision:revision},'old-generation-prepare-00002',await loadApprovedSnapshot(),now)).rejects.toMatchObject({status:409});
 });
+
+it.each([
+ {phase:'active' as const,day:12},
+ {phase:'closed' as const,day:56},
+])('reset safely erases an $phase world and permits fresh preparation',async({phase,day})=>{
+ // A local D1 state fixture isolates the destructive reset contract from the
+ // separate full sporting-season acceptance suite.
+ await db.prepare("UPDATE world_state SET phase=?,day=?,revision=revision+1 WHERE id=1").bind(phase,day).run();
+ world=await readWorld(db);
+ if(phase==='closed'){
+  await db.prepare("INSERT INTO season_archives(season_number,generation,calendar_hash,results_hash,knockout_hash,archive_hash,results_count,days_count,ties_count,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
+   .bind(1,world.generation,'a'.repeat(64),'b'.repeat(64),'c'.repeat(64),'d'.repeat(64),4082,56,54,now).run();
+ }
+ const command={...cmd(),confirmation:'RESET SEASON 0'};
+ const outcome=await resetWorld(db,session,command,'reset-from-'+phase+'-00001',now);
+ expect(outcome.world).toMatchObject({phase:'unstarted',seasonNumber:0,day:0,revision:0});
+ expect(outcome.world.generation).not.toBe(world.generation);
+ expect((await db.prepare('SELECT count(*) n FROM seasons').first<any>()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_archives').first<any>()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first<any>()).n).toBe(1);
+ await expect(resetWorld(db,session,command,'reset-repeated-'+phase+'-00001',now)).rejects.toMatchObject({status:409});
+ const prepared=await prepareSeason(db,session,{expectedGeneration:outcome.world.generation,expectedRevision:0},'reset-reprepare-'+phase+'-00001',await loadApprovedSnapshot(),now);
+ expect(prepared.world).toMatchObject({phase:'preparing',seasonNumber:1,day:0,revision:1});
+});
+it('rejects reset of an already empty Season 0, even with a fresh idempotency key',async()=>{
+ const first=await resetWorld(db,session,{...cmd(),confirmation:'RESET SEASON 0'},'reset-once-00001',now);
+ await expect(resetWorld(db,session,{expectedGeneration:first.world.generation,expectedRevision:0,confirmation:'RESET SEASON 0'},'reset-empty-00001',now)).rejects.toMatchObject({status:409});
+ expect(await readWorld(db)).toEqual(first.world);
+});
