@@ -27,7 +27,11 @@ export async function readAdministrativeCalendar(db:Database){
  const blocked=next!==null&&next.day<world.day;
  const published=events.some(e=>e.id==='international:calendar'&&e.status==='completed');
  const calendar=published?await db.prepare('SELECT calendar_hash FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first<{calendar_hash:string}>():null;
- return {world,events,mode:published&&calendar?'sporting' as const:'administrative' as const,
+ const sporting=published&&!!calendar;
+ const counts=sporting?await db.prepare('SELECT (SELECT count(*) FROM season_day_outcomes WHERE season_number=?) AS days, (SELECT count(*) FROM season_knockout_ties WHERE season_number=?) AS ties, (SELECT count(*) FROM season_archives WHERE season_number=?) AS archives').bind(world.seasonNumber,world.seasonNumber,world.seasonNumber).first<{days:number;ties:number;archives:number}>():null;
+ const closure={days:counts?.days??0,ties:counts?.ties??0,archived:(counts?.archives??0)>0,
+  ready:world.phase==='active'&&world.day===56&&pending.length===0&&counts?.days===56&&counts?.ties===54&&counts?.archives===0};
+ return {world,events,mode:sporting?'sporting' as const:'administrative' as const,closure,
   nextEvent:next?{id:next.id,kind:next.kind,day:next.day,order:next.order,ready:world.phase==='active'&&!blocked&&next.day===world.day}:null,
   remaining:pending.length,blocked};
 
