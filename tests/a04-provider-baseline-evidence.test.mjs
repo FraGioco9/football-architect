@@ -234,7 +234,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   if(!allowed.has(file)){res.writeHead(404);res.end();return}
   res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(readFileSync(join(staged,file)));
  });
- const router=createPreviewServer(),devServer=createServer((req,res)=>{req.headers.host='127.0.0.1:2000';router.emit('request',req,res)});
+ const router=createPreviewServer(),devServer=createServer((req,res)=>{const path=new URL(req.url,'http://localhost').pathname;if(delayedSources.has(path)){delayedSources.get(path)(res);return}req.headers.host='127.0.0.1:2000';router.emit('request',req,res)});
  server.listen(0,'127.0.0.1');devServer.listen(0,'127.0.0.1');
  await Promise.all([once(server,'listening'),once(devServer,'listening')]);
  const origin='http://127.0.0.1:'+server.address().port,devOrigin='http://127.0.0.1:'+devServer.address().port;
