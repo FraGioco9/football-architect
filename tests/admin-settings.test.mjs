@@ -210,3 +210,14 @@ test('only the first outstanding due milestone can be selected for execution',()
  assert.equal(canRunCommand('publish',active,overdue),false);
  assert.equal(canRunCommand('draw',active,overdue),false);
 });
+
+test('sporting day advancement becomes available only after administrative calendar publication',()=>{
+ const active={...world,seasonNumber:1,phase:'active',day:3,revision:9};
+ const events={mode:'sporting',worldGeneration:active.generation,worldRevision:active.revision,rows:[
+  {id:'international:calendar',day:3,kind:'generate-international-calendar',status:'completed'}
+ ]};
+ assert.equal(canRunCommand('advance',active,events),true);
+ assert.equal(canRunCommand('eventAdvance',active,events),false);
+ assert.equal(canRunCommand('advance',active,{...events,mode:'administrative'}),false);
+ assert.equal(canRunCommand('advance',active,{...events,worldRevision:8}),false);
+});
