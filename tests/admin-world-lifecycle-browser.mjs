@@ -29,7 +29,8 @@ export async function verifyAdminWorldLifecycle(browser,{origin,password}){
   for(let day=2;day<=4;day++)await click('eventAdvance','/api/admin/seasons/events/advance');
   world=await read();assert.equal(world.day,4);
   for(let day=5;day<=56;day++)world=await command('/api/admin/seasons/advance');
-  await admin.reload();await click('close','/api/admin/seasons/close');
+  await admin.reload();await click('archive','/api/admin/seasons/archive');
+  await click('close','/api/admin/seasons/close');
   assert.equal(await admin.locator('[data-admin-command="nextPrepare"]').isDisabled(),true,'Approval must precede activation');
   await admin.locator('[data-admin-next-season-confirm]').fill('APPROVE SEASON 2');
   await click('approve','/api/admin/seasons/next-approve');
