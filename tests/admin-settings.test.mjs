@@ -241,3 +241,25 @@ test('closed Season 1 exposes review-only candidate and never invents activation
  assert.equal(c.state().seasonTwo.review.blockingReasons[0],'season-two-snapshot-not-approved');
  assert.equal(canRunCommand('prepare-next',closed,c.state().events),false);
 });
+
+test('explicit Season 2 approval is bound to reviewed snapshot and expected revision',async()=>{
+ const closed={...world,seasonNumber:1,phase:'closed',day:56,revision:23};
+ const hash='a'.repeat(64);
+ const proposal={world:closed,candidate:{status:'provisional-results-derived',bindings:[]},
+  snapshot:{status:'awaiting-season-snapshot-approval',readyForActivation:false,snapshotHash:hash},
+  review:{status:'requires-owner-approval',readyForActivation:false,blockingReasons:['season-two-snapshot-not-approved']},holderReview:[],approval:null};
+ let called=0;
+ const controller=createAdminController(async(path,options)=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world:closed};
+  if(path.endsWith('/next-candidate'))return proposal;
+  if(path.endsWith('/events'))return {world:closed,mode:'legacy',events:[]};
+  if(path.endsWith('/next-approve')){called++;assert.deepEqual(options.body,{expectedGeneration:closed.generation,expectedRevision:23,snapshotHash:hash});return {world:{...closed,revision:24}}}
+  throw Error(path);
+ },()=>{});
+ await controller.refresh();
+ await controller.approveSeasonTwo('b'.repeat(64));
+ assert.equal(called,0);
+ await controller.approveSeasonTwo(hash);
+ assert.equal(called,1);
+});
