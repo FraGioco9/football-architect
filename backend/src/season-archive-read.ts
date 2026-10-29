@@ -17,11 +17,29 @@ export async function readSeasonArchives(db:Database){
  }
  const summaries=(await db.prepare('SELECT season_number,generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries ORDER BY season_number DESC').all<{season_number:number;generation:string;archive_hash:string;summary_hash:string;summary_json:string}>()).results;
  const bySeason=new Map(rows.map(row=>[row.season_number,row]));
+ const summaryBySeason=new Map<number,unknown>();
  for(const record of summaries){
   const base=bySeason.get(record.season_number);
   if(!base||base.generation!==record.generation||base.archive_hash!==record.archive_hash||!/^[a-f0-9]{64}$/.test(record.summary_hash))throw new ApiError(422,'archive_invalid');
   let summary:unknown;try{summary=JSON.parse(record.summary_json)}catch{throw new ApiError(422,'archive_invalid')}
   if(await canonicalHash(summary)!==record.summary_hash)throw new ApiError(422,'archive_invalid');
+  summaryBySeason.set(record.season_number,summary);
  }
- return {world,archives:rows.map(row=>({seasonNumber:row.season_number,calendarHash:row.calendar_hash,resultsHash:row.results_hash,knockoutHash:row.knockout_hash,archiveHash:row.archive_hash,resultsCount:row.results_count,daysCount:row.days_count,tiesCount:row.ties_count,closedAt:row.created_at,hasSportingSummary:summaries.some(x=>x.season_number===row.season_number)}))};
+ return {world,archives:rows.map(row=>({seasonNumber:row.season_number,calendarHash:row.calendar_hash,resultsHash:row.results_hash,knockoutHash:row.knockout_hash,archiveHash:row.archive_hash,resultsCount:row.results_count,daysCount:row.days_count,tiesCount:row.ties_count,closedAt:row.created_at,hasSportingSummary:summaryBySeason.has(row.season_number)}))};
+}
+
+/** History-facing read of finalized sporting metadata; never simulates on read.
+ * An archive is available only after its independent closing event completes.
+ */
+export async function readClosedSeasonHistory(db:Database,seasonNumber:number){
+ if(!Number.isSafeInteger(seasonNumber)||seasonNumber<1)throw new ApiError(422,'archive_invalid');
+ const {world,archives}=await readSeasonArchives(db);
+ const archive=archives.find(a=>a.seasonNumber===seasonNumber);
+ if(!archive||!archive.hasSportingSummary)throw new ApiError(404,'archive_unavailable');
+ if(seasonNumber===world.seasonNumber&&world.phase!=='closed')throw new ApiError(409,'archive_prerequisites');
+ const row=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(seasonNumber).first<{generation:string;archive_hash:string;summary_hash:string;summary_json:string}>();
+ if(!row||row.generation!==world.generation||row.archive_hash!==archive.archiveHash)throw new ApiError(422,'archive_invalid');
+ let summary:unknown;try{summary=JSON.parse(row.summary_json)}catch{throw new ApiError(422,'archive_invalid')}
+ if(await canonicalHash(summary)!==row.summary_hash)throw new ApiError(422,'archive_invalid');
+ return {seasonNumber,archiveHash:archive.archiveHash,summary};
 }
