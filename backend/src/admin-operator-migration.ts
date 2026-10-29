@@ -21,7 +21,8 @@ export async function linkExistingAdminOperator(
   abortUnless(db,`SELECT 1 FROM player_accounts p JOIN admin_accounts a ON a.id=?
     WHERE p.id=? AND p.status='active' AND p.email_verified_at IS NOT NULL
     AND a.enabled=1 AND p.email_normalized=a.email_normalized
-    AND NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=p.id OR legacy_admin_account_id=a.id)`,
+    AND NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=p.id OR legacy_admin_account_id=a.id)
+    AND NOT EXISTS(SELECT 1 FROM account_permissions WHERE account_id=p.id AND permission IN ('admin.access','admin.world.read','admin.world.write'))`,
     [legacyAdminId,playerAccountId]),
   db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
     .bind(playerAccountId,legacyAdminId,now),
@@ -52,7 +53,7 @@ export async function adminOperatorMigrationReadiness(db:Database){
  const blocked=operators.filter(x=>x.status!=='linked'&&x.status!=='disabled');
  return {total:operators.length,linked:operators.filter(x=>x.status==='linked').length,
   disabled:operators.filter(x=>x.status==='disabled').length,
-  blocked,ready:blocked.length===0};
+  blocked,ready:blocked.length===0&&operators.some(x=>x.status==='linked')};
 }
 
 /** Read-only inventory for a trusted migration review, never exposed to web clients. */
