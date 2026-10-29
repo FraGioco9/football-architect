@@ -95,7 +95,9 @@
      const data=await request(routes[action],{body,headers:{'X-CSRF-Token':csrf,'Idempotency-Key':globalThis.crypto.randomUUID()}});
      if(ticket!==epoch)return;
      if(!validWorld(data?.world)||data.world.generation!==old.generation||data.world.revision!==old.revision+1)throw Error('invalid response');
-     value.world=data.world;value.message='signedIn';value.operation='completed';value.events=null;retryKey='';retryFor='';
+     value.world=data.world;value.events=null;retryKey='';retryFor='';
+     await worldRead(ticket);if(ticket!==epoch)return;
+     value.message='signedIn';value.operation='completed';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
    },
