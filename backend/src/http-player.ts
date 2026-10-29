@@ -1,4 +1,5 @@
 import {ApiError} from './errors.ts';
+import {requestPasswordReset,completePasswordReset} from './player-password-reset.ts';
 import {registerPlayer,verifyPlayerEmail,type VerificationDelivery} from './player-registration.ts';
 import {readAccountPermissions} from './account-permissions.ts';
 import {authorizeUnifiedAdmin} from './unified-admin-authorization.ts';
@@ -6,7 +7,7 @@ import {readWorld} from './world-repository.ts';
 import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
 import {playerLogin,playerAuthenticate,playerRequireCsrf,playerCsrfFor} from './player-auth.ts';
-export interface PlayerEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string;PLAYER_VERIFICATION_DELIVERY?:VerificationDelivery}
+export interface PlayerEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string;PLAYER_VERIFICATION_DELIVERY?:VerificationDelivery;PLAYER_RESET_DELIVERY?:VerificationDelivery}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
 function config(request:Request,env:PlayerEnv){
@@ -38,7 +39,7 @@ async function body(request:Request){
 }
 export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Response>{
  const path=new URL(request.url).pathname;
- const methods:Record<string,string>={'/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/permissions':'GET','/api/player/admin/world':'GET'};
+ const methods:Record<string,string>={'/api/player/password-reset/request':'POST','/api/player/password-reset/complete':'POST','/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/permissions':'GET','/api/player/admin/world':'GET'};
  const method=methods[path];if(!method)return json(404,{error:{code:'not_found'}});
  if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
  try{
@@ -46,6 +47,11 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
   if(method==='POST'||request.headers.has('Origin'))requireMutationOrigin(request.headers.get('Origin'),c.origin);
   const token=cookie(request,c.cookie);
   const set=(value:string,clear=false)=>`${c.cookie}=${value}; ${c.flags}; Max-Age=${clear?0:2592000}`;
+  if(path==='/api/player/password-reset/request'){
+   if(typeof env.PLAYER_RESET_DELIVERY!=='function')throw new ApiError(503,'reset_unavailable');
+   return json(202,await requestPasswordReset(db,await body(request),c.source,now,env.PLAYER_RESET_DELIVERY));
+  }
+  if(path==='/api/player/password-reset/complete')return json(200,await completePasswordReset(db,await body(request),now));
   if(path==='/api/player/register'){
    if(typeof env.PLAYER_VERIFICATION_DELIVERY!=='function')throw new ApiError(503,'verification_unavailable');
    return json(202,await registerPlayer(db,await body(request),c.source,now,env.PLAYER_VERIFICATION_DELIVERY));
