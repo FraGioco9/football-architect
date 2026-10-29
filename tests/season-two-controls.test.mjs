@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),{canRunCommand}=require('../assets/admin-settings.js');
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:70,seasonNumber:1,day:56,phase:'closed'};
-const events={worldGeneration:world.generation,worldRevision:70,mode:'sporting',rows:[],closure:{days:56,ties:54,archived:true}};
+const events={worldGeneration:world.generation,worldRevision:70,mode:'sporting',rows:[{id:'season:archive',kind:'archive-season',status:'completed',day:56,order:9000},{id:'season:close',kind:'close-season',status:'completed',day:56,order:9100},{id:'season:next-prepare',kind:'prepare-next-season',status:'scheduled',day:56,order:9200}],closure:{days:56,ties:54,archived:true}};
 const proposal={worldGeneration:world.generation,worldRevision:70,snapshot:{snapshotHash:'a'.repeat(64)},approval:{snapshotHash:'a'.repeat(64)},activation:{targetSeason:2,ready:true}};
 test('next preparation requires closedSeason1 and exact approved snapshot/current review',()=>{
  assert.equal(canRunCommand('nextPrepare',world,events,proposal),true);
