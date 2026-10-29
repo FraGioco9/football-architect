@@ -21,6 +21,7 @@ export async function generateSeasonCalendar(db:Database,session:AdminSession,in
   const world=await readWorld(db);
   if(world.generation!==command.expectedGeneration||world.revision!==command.expectedRevision)throw new ApiError(409,'stale_world');
   if(world.seasonNumber!==1||world.phase!=='preparing'||world.day!==0)throw new ApiError(422,'calendar_prerequisites');
+  if((await db.prepare('SELECT count(*) AS n FROM season_admin_events WHERE season_number=1').first<{n:number}>())?.n!==0)throw new ApiError(409,'calendar_event_prerequisites');
   const snapshot=await loadApprovedSnapshot();
   const stored=await db.prepare('SELECT generation,participants_hash,rules_hash,snapshot_json FROM seasons WHERE season_number=1')
    .first<{generation:string;participants_hash:string;rules_hash:string;snapshot_json:string}>();
@@ -34,6 +35,7 @@ export async function generateSeasonCalendar(db:Database,session:AdminSession,in
   try{
    await db.batch([
     sessionGuard(db,session,now),
+    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=1)=0',[]),
     abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=1 AND phase='preparing' AND day=0",[command.expectedGeneration,command.expectedRevision]),
     abortUnless(db,'SELECT 1 FROM seasons WHERE season_number=1 AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?',[world.generation,snapshot.participantsHash,snapshot.rulesHash,stored.snapshot_json]),
     db.prepare('INSERT INTO season_calendars VALUES(?,?,?,?,?,?)').bind(1,schedule.algorithmVersion,calendarHash,calendarJson,'generated',now),

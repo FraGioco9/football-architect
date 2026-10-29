@@ -9,10 +9,11 @@ import {prepareSeason} from './commands.ts';
 import {generateSeasonCalendar} from './calendar-command.ts';
 import {executeLifecycle} from './lifecycle-command.ts';
 import {rescheduleSeasonEvent} from './admin-calendar-command.ts';
+import {initializeAdministrativeEvents} from './admin-calendar-initialize.ts';
 export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
-const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST']]);
+const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST']]);
 function readCookie(request:Request,name:string){
  const values=(request.headers.get('Cookie')??'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));
  if(values.length>1)throw new ApiError(401,'unauthorized');
@@ -70,6 +71,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
   await requireCsrf(session,request.headers.get('X-CSRF-Token'));
   const rawCommand=await input(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
+  if(path==='/api/admin/seasons/events/initialize')return json(200,await initializeAdministrativeEvents(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/reschedule')return json(200,await rescheduleSeasonEvent(db,session,rawCommand,key,now));
   const command=parsePrepareRequest(rawCommand);
   if(path==='/api/admin/seasons/start'||path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,path.endsWith('/start')?'start':'advance',command,key,now));
