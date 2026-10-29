@@ -1,5 +1,5 @@
 import {ApiError} from './errors.ts';
-import {abortUnless} from './command-guards.ts';
+import {abortUnless} from './atomic-guard.ts';
 import type {Database} from './database.ts';
 import {validatePasswordShape} from './password-policy.ts';
 import {verifyPassword,hashPassword} from './passwords.ts';
