@@ -21,12 +21,15 @@ beforeEach(async()=>{
 describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
  it('Admin HTTP uses unified cookies and denies legacy sign-in and privilege withdrawal',async()=>{
   const now=Math.floor(Date.now()/1000);
-  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('legacy-mapped','legacy-mapped@example.invalid','synthetic',now).run();
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('legacy-mapped','player@example.invalid','synthetic',now).run();
   await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('player-1','legacy-mapped',now).run();
   const signed=await login(),cookieHeader=cookie(signed);
   expect((await request('/api/admin/world',undefined,{Cookie:cookieHeader})).status).toBe(403);
   await db.batch(['admin.access','admin.world.read'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('player-1',permission,now)));
   expect((await request('/api/admin/world',undefined,{Cookie:cookieHeader})).status).toBe(200);
+  await db.prepare("UPDATE admin_accounts SET enabled=0 WHERE id='legacy-mapped'").run();
+  expect((await request('/api/admin/world',undefined,{Cookie:cookieHeader})).status).toBe(403);
+  await db.prepare("UPDATE admin_accounts SET enabled=1 WHERE id='legacy-mapped'").run();
   expect((await request('/api/admin/seasons/prepare',{}, {Cookie:cookieHeader})).status).toBe(403);
   await db.prepare("DELETE FROM account_permissions WHERE permission='admin.world.read'").run();
   expect((await request('/api/admin/world',undefined,{Cookie:cookieHeader})).status).toBe(403);
