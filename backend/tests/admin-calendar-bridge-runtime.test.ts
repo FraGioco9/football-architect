@@ -32,9 +32,9 @@ beforeEach(async()=>{
  for(const eventId of ['domestic:entrants','international:entrants'])world=(await completeConfirmationEvent(db,session,{...meta(),eventId},'bridge-confirm-'+eventId,now)).world;
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day2-00001',now)).world;
  world=(await stageDomesticCalendar(db,session,meta(),'bridge-domestic-00001',now)).world;
- world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
 });
 it('runs distinct domestic, draw and publication transactions before handing off to sporting day 4',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
  await expect(publishInternationalCalendar(db,session,meta(),'bridge-premature-calendar-00001',now)).rejects.toMatchObject({status:409});
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-00001',now)).world;
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first<any>()).n).toBe(2);
@@ -53,6 +53,7 @@ it('runs distinct domestic, draw and publication transactions before handing off
  expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first<any>()).n).toBe(4);
 });
 it('keeps draw and calendar publication atomic if final audit rejects',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
  await db.prepare("CREATE TRIGGER fail_draw BEFORE INSERT ON admin_operations WHEN NEW.command='execute-international-draw-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(executeInternationalDraw(db,session,meta(),'bridge-draw-fail-00001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_draw').run()}
@@ -67,9 +68,7 @@ it('keeps draw and calendar publication atomic if final audit rejects',async()=>
 });
 
 it('moves the independent international draw to day four and publication to day five without losing early-day receipts',async()=>{
- // Only future events are movable: build a new plan from the still-eligible day-two state.
- await db.prepare("UPDATE world_state SET day=2").run();
- world=await readWorld(db);
+ // Both international events are still future events at day two.
  world=(await rescheduleSeasonEvent(db,session,{...meta(),eventId:'international:calendar',day:5,order:2},'bridge-move-calendar-day5',now)).world;
  world=(await rescheduleSeasonEvent(db,session,{...meta(),eventId:'international:draw',day:4,order:1},'bridge-move-draw-day4',now)).world;
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day3',now)).world;
