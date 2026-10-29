@@ -78,6 +78,44 @@ describe('PLAYER-AUTH password recovery delivery contract (deferred acceptance)'
   });
   expect(result.status).toBe(200);
  });
+ it('rejects expired, malformed, and previously consumed recovery links',async()=>{
+  let token='';
+  const config={...base,PLAYER_RESET_DELIVERY:async(_email:string,raw:string)=>{token=raw}};
+  expect((await request('/api/player/password-reset/request',{email},config)).status).toBe(202);
+  expect((await request('/api/player/password-reset/complete',{
+   token:'not-a-token',newPassword:'recovery-invalid-token-password-2026'
+  })).status).toBe(400);
+  await db.prepare("UPDATE player_one_time_tokens SET expires_at=issued_at WHERE purpose='reset_password'")
+   .run();
+  expect((await request('/api/player/password-reset/complete',{
+   token,newPassword:'recovery-expired-token-password-2026'
+  })).status).toBe(400);
+  expect((await request('/api/player/login',{email,password})).status).toBe(200);
+ });
+ it('enforces per-account password-reset throttling independently of email existence',async()=>{
+  const deliveries:string[]=[];
+  const config={...base,PLAYER_RESET_DELIVERY:async(address:string)=>{deliveries.push(address)}};
+  for(let n=0;n<3;n++){
+   expect((await request('/api/player/password-reset/request',{email},config)).status).toBe(202);
+  }
+  const exceeded=await request('/api/player/password-reset/request',{email},config);
+  expect(exceeded.status).toBe(429);
+  expect(exceeded.headers.get('Retry-After')).toBe('900');
+  expect(deliveries).toHaveLength(3);
+  // A different account must not inherit this account's quota.
+  expect((await request('/api/player/password-reset/request',{
+   email:'unknown-account@example.invalid'
+  },config)).status).toBe(202);
+ });
+ it('rejects cross-origin reset requests before issuing any one-time token',async()=>{
+  const response=await worker.fetch(new Request(origin+'/api/player/password-reset/request',{
+   method:'POST',headers:{Origin:'https://attacker.example.invalid','Content-Type':'application/json'},
+   body:JSON.stringify({email})
+  }),{...base,PLAYER_RESET_DELIVERY:async()=>{}});
+  expect(response.status).toBe(403);
+  const n=await db.prepare('SELECT COUNT(*) AS n FROM player_one_time_tokens').first<{n:number}>();
+  expect(n?.n).toBe(0);
+ });
  it('revokes an older reset link only after a replacement was successfully delivered',async()=>{
   const issued:string[]=[];
   const config={...base,PLAYER_RESET_DELIVERY:async(_email:string,token:string)=>{issued.push(token)}};
