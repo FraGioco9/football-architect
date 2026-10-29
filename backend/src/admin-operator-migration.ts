@@ -93,8 +93,12 @@ export async function migrateAdminOperatorsBatch(
    WHERE p.permission IN ('admin.access','admin.world.read','admin.world.write')
     AND l.player_account_id IS NULL AND p.account_id NOT IN (${slots}))`,
    [...selections.map(x=>x.legacyAdminId),...selections.map(x=>x.playerAccountId)]));
+ // The old login is retired for every operator, including disabled historical
+ // accounts outside the approved enabled roster. Clear their stale sessions too.
+ // This keeps the post-cutover zero-legacy-session invariant achievable.
+ statements.push(db.prepare('DELETE FROM admin_sessions'));
  const result=await db.batch(statements);
- if(result.slice(0,-1).some((row,index)=>index%8!==0&&index%8!==5&&index%8!==6&&index%8!==7&&row.meta.changes!==1))
+ if(result.slice(0,-2).some((row,index)=>index%8!==0&&index%8!==5&&index%8!==6&&index%8!==7&&row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {linked:selections.length,permissionsGranted:selections.length*3};
 }
