@@ -195,9 +195,16 @@ export async function adminOperatorMigrationReadiness(db:Database){
    AND l.player_account_id IS NULL ORDER BY p.account_id`)
   .all<{playerAccountId:string}>();
  const orphanGrants=orphanRows.results.map(x=>x.playerAccountId);
+ // A verified cutover must not retain any historical Admin session, including
+ // a previously disabled operator's session. Never expose session digests.
+ const staleSessions=await db.prepare(`SELECT COUNT(*) AS count FROM admin_sessions`)
+  .first<{count:number}>();
+ const legacySessionsRemaining=Number(staleSessions?.count??0);
+ const ready=blocked.length===0&&orphanGrants.length===0&&legacySessionsRemaining===0&&
+  operators.some(x=>x.status==='linked');
  return {total:operators.length,linked:operators.filter(x=>x.status==='linked').length,
   disabled:operators.filter(x=>x.status==='disabled').length,
-  blocked,orphanGrants,ready:blocked.length===0&&orphanGrants.length===0&&operators.some(x=>x.status==='linked')};
+  blocked,orphanGrants,legacySessionsRemaining,ready};
 }
 
 /** Read-only inventory for a trusted migration review, never exposed to web clients. */
