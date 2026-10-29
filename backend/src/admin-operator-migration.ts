@@ -1,6 +1,6 @@
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
-import {abortUnless} from './command-guards.ts';
+import {abortUnless} from './atomic-guard.ts';
 
 /**
  * Trusted, offline-only migration operation. Never expose this function from
