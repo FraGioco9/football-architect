@@ -252,7 +252,14 @@ export async function revokeMigratedAdminOperator(db:Database,playerAccountId:st
   db.prepare('DELETE FROM admin_sessions WHERE account_id=(SELECT legacy_admin_account_id FROM player_admin_operator_links WHERE player_account_id=?)').bind(playerAccountId),
   db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerAccountId),
   db.prepare('DELETE FROM player_one_time_tokens WHERE account_id=?').bind(playerAccountId),
-  db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerAccountId)
+  db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerAccountId),
+  abortUnless(db,`SELECT 1 WHERE
+   NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?)
+   AND NOT EXISTS(SELECT 1 FROM account_permissions WHERE account_id=?
+    AND permission IN ('admin.access','admin.world.read','admin.world.write'))
+   AND NOT EXISTS(SELECT 1 FROM player_sessions WHERE account_id=?)
+   AND NOT EXISTS(SELECT 1 FROM player_one_time_tokens WHERE account_id=?)`,
+   [playerAccountId,playerAccountId,playerAccountId,playerAccountId])
  ]);
  if(results[5].meta.changes!==1)throw new ApiError(503,'admin_migration_unavailable');
  return {revoked:true,sessionsRevoked:results[3].meta.changes};
@@ -279,10 +286,17 @@ export async function revokeMigratedAdminOperatorsBatch(
   statements.push(db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerId));
   statements.push(db.prepare('DELETE FROM player_one_time_tokens WHERE account_id=?').bind(playerId));
   statements.push(db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind(playerId));
+  statements.push(abortUnless(db,`SELECT 1 WHERE
+   NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?)
+   AND NOT EXISTS(SELECT 1 FROM account_permissions WHERE account_id=?
+    AND permission IN ('admin.access','admin.world.read','admin.world.write'))
+   AND NOT EXISTS(SELECT 1 FROM player_sessions WHERE account_id=?)
+   AND NOT EXISTS(SELECT 1 FROM player_one_time_tokens WHERE account_id=?)`,
+   [playerId,playerId,playerId,playerId]));
  }
  const results=await db.batch(statements);
- if(results.some((row,index)=>index%6===5&&row.meta.changes!==1))
+ if(results.some((row,index)=>index%7===5&&row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {revoked:playerAccountIds.length,sessionsRevoked:results.reduce((sum,row,index)=>
-  sum+(index%6===3?row.meta.changes:0),0)};
+  sum+(index%7===3?row.meta.changes:0),0)};
 }
