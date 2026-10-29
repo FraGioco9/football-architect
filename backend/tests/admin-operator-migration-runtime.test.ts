@@ -97,6 +97,13 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
    .bind('new-identity@example.invalid','migration-player').run();
   expect(await linkedAuditOperator(db,'migration-player')).toBeNull();
   await expect(db.batch([unifiedAdminMutationGuard(db,'migration-player','migration-legacy',digest,csrfDigest,now())])).rejects.toBeDefined();
+  const {replay}=await import('../src/command-guards.ts');
+  const state=await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>();
+  expect(state).not.toBeNull();
+  await expect(replay(db,{actor:{id:'migration-legacy',email},digest,credentialVersion:1,
+   csrfDigest,unified:{playerId:'migration-player',sessionDigest:digest,csrfDigest}},
+   {expectedGeneration:state!.generation} as any,'identity-drift-replay','request-hash',now()))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
  });
  it('rolls back permissions and unified sessions while preserving historical admin identity',async()=>{
   await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
