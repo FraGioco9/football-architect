@@ -2,6 +2,7 @@ import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {playerAuthenticate,playerRequireCsrf} from './player-auth.ts';
 import {requireAccountPermission,type AccountPermission} from './account-permissions.ts';
+import {linkedAuditOperator} from './unified-admin-transaction.ts';
 
 /** Shared administrative authorization boundary for the unified account system.
  * Does not authenticate legacy admin_sessions, does not authorize mutations by UI flags,
@@ -18,7 +19,9 @@ export async function authorizeUnifiedAdmin(
  await requireAccountPermission(db,session.actor.id,'admin.access');
  await requireAccountPermission(db,session.actor.id,permission);
  if(permission==='admin.world.write')await playerRequireCsrf(session.csrfDigest,csrfToken??null);
- return {actor:session.actor,digest:session.digest};
+ const legacyOperatorId=await linkedAuditOperator(db,session.actor.id);
+ if(!legacyOperatorId)throw new ApiError(403,'permission_denied');
+ return {actor:session.actor,digest:session.digest,csrfDigest:session.csrfDigest,legacyOperatorId};
 }
 
 /** Enforce explicit authorization; 'access' alone never grants read/write. */
