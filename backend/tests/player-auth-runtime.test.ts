@@ -46,7 +46,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const digest=await digestOpaqueToken(token),csrfDigest=await digestOpaqueToken(data.csrfToken);
   const now=Math.floor(Date.now()/1000);
   await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('player-1',permission,now)));
-  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('linked-admin','linked-admin@example.invalid','synthetic',now).run();
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('linked-admin','player@example.invalid','synthetic',now).run();
   await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')])).rejects.toBeDefined();
   await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('player-1','linked-admin',now).run();
   const original=(await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision;
@@ -62,6 +62,34 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   await db.prepare('DELETE FROM admin_accounts WHERE id=?').bind('linked-admin').run();
  });
 
+ it('isolates account sessions and private endpoints across two Player identities',async()=>{
+  const now=Math.floor(Date.now()/1000);
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+   .bind('player-2','second@example.invalid',verifier,1,now-100,'active',now-100,now-100).run();
+  const first=await login();
+  const firstCookie=cookie(first),firstCsrf=(await first.json() as any).csrfToken;
+  const second=await request('/api/player/login',{email:'second@example.invalid',password});
+  const secondCookie=cookie(second),secondCsrf=(await second.json() as any).csrfToken;
+  const firstSession=await request('/api/player/session',undefined,{Cookie:firstCookie});
+  const secondSession=await request('/api/player/session',undefined,{Cookie:secondCookie});
+  expect((await firstSession.json() as any).actor.id).toBe('player-1');
+  expect((await secondSession.json() as any).actor.id).toBe('player-2');
+  const firstList=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
+  const secondList=await request('/api/player/sessions',undefined,{Cookie:secondCookie});
+  expect((await firstList.json() as any).sessions).toHaveLength(1);
+  expect((await secondList.json() as any).sessions).toHaveLength(1);
+  const blocked=await request('/api/player/account/revoke-other-sessions',{},{
+   Cookie:firstCookie,'X-CSRF-Token':secondCsrf
+  });
+  expect(blocked.status).toBe(403);
+  const valid=await request('/api/player/account/revoke-other-sessions',{},{
+   Cookie:firstCookie,'X-CSRF-Token':firstCsrf
+  });
+  expect(valid.status).toBe(200);
+  const survivor=await request('/api/player/session',undefined,{Cookie:secondCookie});
+  expect(survivor.status).toBe(200);
+  expect((await survivor.json() as any).actor.id).toBe('player-2');
+ });
  it('returns server-derived permissions and checks Admin read/write separately',async()=>{
   const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
   const signed=await login(),token=cookie(signed).split('=')[1],csrf=(await signed.json() as any).csrfToken;
