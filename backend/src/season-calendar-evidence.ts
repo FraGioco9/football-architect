@@ -16,18 +16,19 @@ const hasExact=(actual:string[],expected:string[])=>actual.length===expected.len
 const fail=():never=>{throw new ApiError(422,'calendar_invalid')};
 
 /** Derives and checks design event markers, never football fixtures or results. */
-export async function buildSeasonOneCalendarEvidence():Promise<CalendarEvidence>{
+export async function buildSeasonCalendarEvidence(season:number):Promise<CalendarEvidence>{
+ if(!Number.isSafeInteger(season)||season<1||season>1000000)return fail();
  try{
-  const source=calendarModel.createSeason(1) as {schemaVersion:number;model:string;season:number;days:Day[]};
+  const source=calendarModel.createSeason(season) as {schemaVersion:number;model:string;season:number;days:Day[]};
   const days=source.days;
-  if(source.schemaVersion!==1||source.season!==1||source.model!=='WORLD-TIME-QA-06'||
+  if(source.schemaVersion!==1||source.season!==season||source.model!=='WORLD-TIME-QA-06'||
      !Array.isArray(days)||days.length!==56)return fail();
   const national:Marker[]=[],cups:Marker[]=[];
   for(let i=0;i<days.length;i++){
    const day=days[i];
-   if(day.day!==i+1||day.id!==`season:1:day:${i+1}`||!Array.isArray(day.events))return fail();
+   if(day.day!==i+1||day.id!==`season:${season}:day:${i+1}`||!Array.isArray(day.events))return fail();
    for(const event of day.events){
-    if(event.id!==`season:1:${event.marker}`||!Array.isArray(event.competitionIds))return fail();
+    if(event.id!==`season:${season}:${event.marker}`||!Array.isArray(event.competitionIds))return fail();
     if(event.family==='national'){
      if(!hasExact(event.competitionIds,domestic))return fail();
      national.push(event);
@@ -49,7 +50,10 @@ export async function buildSeasonOneCalendarEvidence():Promise<CalendarEvidence>
   }
   if(cups[12].marker!=='FEDERATION-FINAL'||cups[13].marker!=='SOVEREIGN-FINAL'||days[55].kind!=='transition')return fail();
   const calendarHash=await canonicalHash(JSON.parse(JSON.stringify(source)));
-  if(calendarHash!==approval.calendarHash)return fail();
-  return {season:1,calendarVersion:'WORLD-TIME-QA-06',calendarHash,calendarJson:JSON.stringify(source)};
+  if(season===1&&calendarHash!==approval.calendarHash)return fail();
+  return {season,calendarVersion:'WORLD-TIME-QA-06',calendarHash,calendarJson:JSON.stringify(source)};
  }catch{throw new ApiError(422,'calendar_invalid')}
 }
+
+/** Preserve the independent owner-approved Season 1 hash gate. */
+export function buildSeasonOneCalendarEvidence():Promise<CalendarEvidence>{return buildSeasonCalendarEvidence(1)}
