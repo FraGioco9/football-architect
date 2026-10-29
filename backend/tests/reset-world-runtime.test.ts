@@ -56,3 +56,22 @@ it('refuses missing confirmation and atomically rolls back failed reset audit',a
  expect((await db.prepare('SELECT count(*) n FROM seasons').first<any>()).n).toBe(1);
  expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first<any>()).n).toBe(5);
 });
+
+it('invalidates old-generation commands and operation replays after successful reset',async()=>{
+ const generation=world.generation,revision=world.revision;
+ const first=await resetWorld(db,session,{...cmd(),confirmation:'RESET SEASON 0'},'reset-invalidation-00001',now);
+ const newWorld=await readWorld(db);
+ expect(newWorld.generation).not.toBe(generation);
+ expect(newWorld.revision).toBe(0);
+ await expect(prepareSeason(db,session,{expectedGeneration:generation,expectedRevision:revision},'old-generation-prepare-00001',await loadApprovedSnapshot(),now)).rejects.toMatchObject({status:409});
+ await expect(resetWorld(db,session,{expectedGeneration:generation,expectedRevision:revision,confirmation:'RESET SEASON 0'},'reset-invalidation-00001',now)).rejects.toMatchObject({status:409});
+ const saved=await db.prepare("SELECT generation,request_hash,account_id,outcome_json FROM admin_operations WHERE command='reset-world-v1'").first<any>();
+ expect(saved.generation).toBe(generation);
+ expect(saved.account_id).toBe(session.actor.id);
+ expect(JSON.parse(saved.outcome_json).world).toEqual(first.world);
+ expect(saved.outcome_json).not.toContain('fixtures');
+ expect(saved.outcome_json).not.toContain('results');
+ const second=await prepareSeason(db,session,{expectedGeneration:newWorld.generation,expectedRevision:0},'post-reset-prepare-00001',await loadApprovedSnapshot(),now);
+ expect(second.world.generation).toBe(newWorld.generation);
+ await expect(prepareSeason(db,session,{expectedGeneration:generation,expectedRevision:revision},'old-generation-prepare-00002',await loadApprovedSnapshot(),now)).rejects.toMatchObject({status:409});
+});
