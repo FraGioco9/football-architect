@@ -25,7 +25,7 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
  const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<EventRow>()).results;
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
  const template=proposeAdministrativeMilestones();
- if(events.length!==template.length||events.some((e,i)=>e.id!==template[i].id||e.kind!==template[i].kind||e.scope!==template[i].scope))throw new ApiError(409,'calendar_event_prerequisites');
+ if(events.length!==template.length||events.some(e=>!template.some(t=>t.id===e.id&&t.kind===e.kind&&t.scope===e.scope)))throw new ApiError(409,'calendar_event_prerequisites');
  if(events.some(e=>e.day<=world.day&&e.status!=='completed'))throw new ApiError(409,'calendar_event_prerequisites');
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT season_number FROM season_draws WHERE season_number=?').bind(world.seasonNumber).first()||
