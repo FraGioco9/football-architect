@@ -270,6 +270,18 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
    .bind('migration-disabled-legacy').first()).toBeNull();
   await db.prepare('DELETE FROM admin_accounts WHERE id=?').bind('migration-disabled-legacy').run();
  });
+ it('rejects full-roster cutover if postcondition finds orphan Admin privileges',async()=>{
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,status,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+   .bind('migration-orphan','orphan@example.invalid',verifier,'active',now(),now()).run();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)')
+   .bind('migration-orphan','admin.access',now(),'fixture').run();
+  await expect(migrateAdminOperatorsBatch(db,[{playerAccountId:'migration-player',legacyAdminId:'migration-legacy'}],
+   'trusted-local-operator',now())).rejects.toBeDefined();
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?')
+   .bind('migration-player').first()).toBeNull();
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-orphan').run();
+  await db.prepare('DELETE FROM player_accounts WHERE id=?').bind('migration-orphan').run();
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
