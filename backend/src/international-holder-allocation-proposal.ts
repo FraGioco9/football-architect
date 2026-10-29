@@ -1,5 +1,5 @@
-/** Non-binding holder accommodation proposal. Never writes or grants qualification.
- * Preserve 3 clubs per country in each cup; all policy decisions remain owner-blocked.
+/** Approved INT24 ChampionAwareV1 holder placement policy.
+ * Pure, deterministic: no D1 writes or Season 2 activation.
  */
 import {ApiError} from './errors.ts';
 import type {NextSeasonMembership} from './next-season-membership.ts';
@@ -24,6 +24,7 @@ export function proposeHolderAllocation(candidate:NextSeasonMembership,holders:r
  if(new Set([...cups.values()].flat()).size!==48||cupIds.some(cup=>countryIds.some(country=>cups.get(cup)!.filter(id=>id.startsWith(country+'-')).length!==3)))return invalid();
  const moves:HolderMove[]=[];
  const seen=new Set<string>();
+ const protectedHolders=new Set(holders.map(h=>h.championClubId));
  for(const cup of cupIds){
   const holder=holders.find(h=>h.competitionId===cup);
   if(!holder||seen.has(holder.championClubId)||holder.countryId!==holder.championClubId.split('-')[0]||!countryIds.includes(holder.countryId))return invalid();
@@ -31,7 +32,8 @@ export function proposeHolderAllocation(candidate:NextSeasonMembership,holders:r
   const target=cups.get(cup)!;
   const otherId=cup==='int-1'?'int-2':'int-1',other=cups.get(otherId)!;
   if(target.includes(holder.championClubId)){moves.push({cup,championClubId:holder.championClubId,removedClubId:null,sourceCup:null,swapClubId:null});continue}
-  const displaced=target.filter(id=>id.startsWith(holder.countryId+'-')).at(-1);
+  // Preserve both trophy holders even when they currently occupy the other cup.
+  const displaced=target.filter(id=>id.startsWith(holder.countryId+'-')&&!protectedHolders.has(id)).at(-1);
   if(!displaced)return invalid();
   const oldIndex=other.indexOf(holder.championClubId);
   const sourceCup=oldIndex===-1?null:otherId;
@@ -41,7 +43,7 @@ export function proposeHolderAllocation(candidate:NextSeasonMembership,holders:r
  }
  if(new Set([...cups.values()].flat()).size!==48||cupIds.some(cup=>countryIds.some(country=>cups.get(cup)!.filter(id=>id.startsWith(country+'-')).length!==3))||
     holders.some(h=>!cups.get(h.competitionId)!.includes(h.championClubId)))return invalid();
- return Object.freeze({status:'proposal-requires-owner-approval' as const,
+ return Object.freeze({status:'approved-holder-policy-applied' as const,
   bindings:Object.freeze(cupIds.map(cup=>Object.freeze({competitionId:cup,clubIds:Object.freeze(cups.get(cup)!)}))),
   moves:Object.freeze(moves.map(x=>Object.freeze(x))),readyForActivation:false as const});
 }
