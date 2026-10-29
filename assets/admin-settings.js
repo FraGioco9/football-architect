@@ -39,9 +39,11 @@
    }
    if(!value.world||value.world.generation!==data.world.generation||data.world.revision>=value.world.revision)value.world=data.world;
    value.message='signedIn';
-   const events=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
-   if(!validWorld(events?.world)||events.world.generation!==value.world.generation||events.world.revision!==value.world.revision||!['uninitialized','legacy','administrative'].includes(events.mode)||!Array.isArray(events.events))throw Error('invalid event state');
-   value.events={mode:events.mode,rows:events.events};
+   // An unavailable events read must fail closed for event actions, not erase the world read.
+   try{
+    const events=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
+    value.events=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision&&['uninitialized','legacy','administrative'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events}:null;
+   }catch(error){if(ticket!==epoch)return;if(error?.status===401)throw error;value.events=null;}
   }
   return {state,
    async refresh(){
