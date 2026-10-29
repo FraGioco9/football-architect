@@ -49,7 +49,7 @@ it('keeps duplicate start idempotent and refuses stale competing key',async()=>{
 it('projects planned and completed milestones for authenticated Admin only',async()=>{
  const planned=await readAdministrativeCalendar(db);
  expect(planned.mode).toBe('administrative');
- expect(planned.events).toHaveLength(5);
+ expect(planned.events).toHaveLength(8);
  expect(planned.events.find(e=>e.id==='domestic:entrants')).toMatchObject({day:1,status:'scheduled',hasReceipt:false});
  const config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
  const req=(cookie:string)=>new Request('http://localhost:2000/api/admin/seasons/events',{headers:{Cookie:cookie}});
