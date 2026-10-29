@@ -30,6 +30,12 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT season_number FROM season_draws WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT day FROM season_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first())throw new ApiError(409,'calendar_event_prerequisites');
+ if(world.day===2){
+  const stage=await db.prepare('SELECT generation,fixtures_hash,fixtures_json FROM season_domestic_stages WHERE season_number=1').first<{generation:string;fixtures_hash:string;fixtures_json:string}>();
+  if(!stage||stage.generation!==world.generation)throw new ApiError(409,'calendar_event_prerequisites');
+  const domestic=rows.find(r=>r.event_id==='domestic:calendar');
+  if(!domestic||domestic.status!=='completed'||!domestic.receipt_hash)throw new ApiError(409,'calendar_event_prerequisites');
+ }
  const after={...world,phase:'active' as const,day:world.day+1,revision:world.revision+1};
  const operationId=crypto.randomUUID(),result:Outcome={world:after,operationId};
  try{
@@ -41,6 +47,7 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=?)=0',[world.seasonNumber]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=?)=0',[world.seasonNumber]),
+   ...(world.day===2?[abortUnless(db,'SELECT 1 FROM season_domestic_stages WHERE season_number=1 AND generation=?',[world.generation])]:[]),
    db.prepare('UPDATE world_state SET phase=?,day=?,revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(after.phase,after.day,world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,name,world.revision,after.revision,JSON.stringify(result),now),
   ]);
