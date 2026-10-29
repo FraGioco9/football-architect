@@ -4,6 +4,8 @@ import type {Database,Statement} from './database.ts';
 import type {PrepareRequest} from './command-contract.ts';
 import {parseWorldV1,type WorldV1} from './types.ts';
 import {requireActiveSession,type SessionRow} from './session-policy.ts';
+import {unifiedAdminMutationGuard} from './unified-admin-transaction.ts';
+import {requireAccountPermission} from './account-permissions.ts';
 export interface Outcome {world:WorldV1;operationId:string}
 interface OperationRow {id:string;account_id:string;request_hash:string;outcome_json:string}
 /** SQL failure, rather than zero affected rows, makes a failed guard abort the D1 batch. */
@@ -12,6 +14,7 @@ export function abortUnless(db:Database,condition:string,values:unknown[]):State
   .bind('00000000-0000-4000-8000-000000000000',...values);
 }
 export function sessionGuard(db:Database,session:AdminSession,now:number){
+ if(session.unified)return unifiedAdminMutationGuard(db,session.unified.playerId,session.actor.id,session.unified.sessionDigest,session.unified.csrfDigest,now);
  return abortUnless(db,`SELECT 1 FROM admin_sessions s JOIN admin_accounts a ON a.id=s.account_id
   WHERE s.token_digest=? AND s.account_id=? AND s.credential_version=? AND s.csrf_digest=?
   AND a.enabled=1 AND a.credential_version=s.credential_version
@@ -32,6 +35,13 @@ export async function replay(db:Database,session:AdminSession,command:PrepareReq
  // An idempotent result still requires a live credential/session and the original world generation.
  try{await db.batch([sessionGuard(db,session,now)])}catch{
   // A failed integrity guard and unavailable storage must not share a 401 response.
+  if(session.unified){
+   const match=await db.prepare('SELECT 1 AS linked FROM player_admin_operator_links WHERE player_account_id=? AND legacy_admin_account_id=?').bind(session.unified.playerId,session.actor.id).first<{linked:number}>();
+   if(!match)throw new ApiError(403,'permission_denied');
+   await requireAccountPermission(db,session.unified.playerId,'admin.access');
+   await requireAccountPermission(db,session.unified.playerId,'admin.world.write');
+   throw new ApiError(503,'prepare_unavailable');
+  }
   const row=await db.prepare(`SELECT s.account_id,s.credential_version AS session_credential_version,
    a.credential_version AS account_credential_version,a.enabled,s.created_at,s.last_seen_at,s.expires_at,s.csrf_digest
    FROM admin_sessions s JOIN admin_accounts a ON a.id=s.account_id WHERE s.token_digest=?`)
