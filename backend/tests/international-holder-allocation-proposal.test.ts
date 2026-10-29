@@ -31,3 +31,11 @@ test('invalid duplicate champions and wrong quotas cannot generate a plan',()=>{
  assert.throws(()=>proposeHolderAllocation(candidate,[holder('int-1','IT-4'),holder('int-2','IT-4')]));
  assert.throws(()=>proposeHolderAllocation({...candidate,bindings:[{competitionId:'int-1',clubIds:[]},candidate.bindings[1]]},[holder('int-1','IT-1'),holder('int-2','IT-4')]));
 });
+
+test('both cup winners are preserved when their initial cups are reversed',()=>{
+ const result=proposeHolderAllocation(candidate,[holder('int-1','IT-4'),holder('int-2','IT-1')]);
+ assert.ok(result.bindings[0].clubIds.includes('IT-4'));
+ assert.ok(result.bindings[1].clubIds.includes('IT-1'));
+ assert.equal(new Set(result.bindings.flatMap(b=>b.clubIds)).size,48);
+ assert.ok(result.bindings.every(b=>b.clubIds.filter(id=>id.startsWith('IT-')).length===3));
+});
