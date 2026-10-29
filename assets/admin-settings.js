@@ -64,7 +64,7 @@
     try{
      const proposal=await request('/api/admin/seasons/next-candidate');if(ticket!==epoch)return;
      if(proposal?.world?.generation===value.world.generation&&proposal.world.revision===value.world.revision&&proposal.candidate?.status==='provisional-results-derived'&&proposal.review?.status==='requires-owner-approval'&&proposal.review.readyForActivation===false&&Array.isArray(proposal.review.blockingReasons)&&Array.isArray(proposal.holderReview)&&Array.isArray(proposal.candidate.bindings)){
-      value.seasonTwo={review:proposal.review,holders:proposal.holderReview,bindings:proposal.candidate.bindings};
+      value.seasonTwo={review:proposal.review,holders:proposal.holderReview,bindings:proposal.candidate.bindings,holderProposal:proposal.holderProposal?.readyForActivation===false?proposal.holderProposal:null};
      }
     }catch(error){if(ticket!==epoch)return;if(error?.status===401)throw error;value.seasonTwo=null;}
    }
@@ -212,6 +212,7 @@
    summary.textContent=proposal?text.nextReviewRequired+' · '+proposal.bindings.length+' '+text.nextCompetitions+' · '+proposal.review.blockingReasons.join(', '):text.nextReviewUnavailable;
    const holders=find('[data-admin-next-season-holders]');holders.replaceChildren();
    if(proposal)for(const item of proposal.holders){const li=doc.createElement('li');li.textContent=item.competitionId+' · '+item.championClubId+' · '+(item.requiresQualificationPolicyDecision?text.nextHolderBlocked:text.nextHolderAligned);holders.append(li)}
+   if(proposal?.holderProposal)for(const move of proposal.holderProposal.moves){if(!move.removedClubId)continue;const li=doc.createElement('li');li.textContent=text.nextProposal+' · '+move.cup+': '+move.championClubId+' / '+move.removedClubId+(move.sourceCup?' ('+move.sourceCup+')':'');holders.append(li)}
    const closure=state.events?.closure;
    find('[data-admin-closure]').textContent=state.actor&&closure?text.closureDays+' '+closure.days+'/56 · '+text.closureTies+' '+closure.ties+'/54 · '+(closure.ready?text.closureReady:text.closurePending):'';
    find('[data-admin-next-event]').textContent=state.events?.mode==='administrative'?
