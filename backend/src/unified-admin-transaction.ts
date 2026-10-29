@@ -1,5 +1,5 @@
 import type {Database} from './database.ts';
-import {abortUnless} from './command-guards.ts';
+import {abortUnless} from './atomic-guard.ts';
 
 /**
  * Atomic bridge for unified Admin commands. A linked historic operator is an
