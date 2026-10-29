@@ -41,34 +41,34 @@ it('runs distinct domestic, draw and publication transactions before handing off
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
  await expect(publishInternationalCalendar(db,session,meta(),'bridge-premature-calendar-00001',now)).rejects.toMatchObject({status:409});
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-00001',now)).world;
- expect((await db.prepare('SELECT count(*) n FROM season_draws').first<any>()).n).toBe(2);
- expect((await db.prepare('SELECT count(*) n FROM season_calendars').first<any>()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(2);
+ expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  const before=meta(),published=await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now);
  world=published.world;
  expect(await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now)).toEqual(published);
- const calendar=await db.prepare('SELECT calendar_json FROM season_calendars').first<any>();
+ const calendar=await db.prepare('SELECT calendar_json FROM season_calendars').first();
  expect(JSON.parse(calendar.calendar_json).fixtures).toHaveLength(3984);
- const receipts=(await db.prepare('SELECT day,outcome_json,outcome_hash FROM season_day_outcomes ORDER BY day').all<any>()).results;
+ const receipts=(await db.prepare('SELECT day,outcome_json,outcome_hash FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts.map(r=>r.day)).toEqual([1,2,3]);
  for(const r of receipts){expect(JSON.parse(r.outcome_json).results).toEqual([]);expect(r.outcome_hash).toBe(await canonicalHash(JSON.parse(r.outcome_json)));}
- expect((await db.prepare("SELECT count(*) n FROM season_admin_events WHERE status='completed'").first<any>()).n).toBe(5);
+ expect((await db.prepare("SELECT count(*) n FROM season_admin_events WHERE status='completed'").first()).n).toBe(5);
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-sporting-day4-00001',now)).world;
  expect(world.day).toBe(4);
- expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first<any>()).n).toBe(4);
+ expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first()).n).toBe(4);
 });
 it('keeps draw and calendar publication atomic if final audit rejects',async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
  await db.prepare("CREATE TRIGGER fail_draw BEFORE INSERT ON admin_operations WHEN NEW.command='execute-international-draw-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(executeInternationalDraw(db,session,meta(),'bridge-draw-fail-00001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_draw').run()}
- expect((await db.prepare('SELECT count(*) n FROM season_draws').first<any>()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-good-00001',now)).world;
  await db.prepare("CREATE TRIGGER fail_publish BEFORE INSERT ON admin_operations WHEN NEW.command='publish-international-calendar-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(publishInternationalCalendar(db,session,meta(),'bridge-publish-fail-00001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_publish').run()}
- expect((await db.prepare('SELECT count(*) n FROM season_calendars').first<any>()).n).toBe(0);
- expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first<any>()).n).toBe(0);
- expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='international:calendar'").first<any>()).status).toBe('scheduled');
+ expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first()).n).toBe(0);
+ expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='international:calendar'").first()).status).toBe('scheduled');
 });
 
 it('moves the independent international draw to day four and publication to day five without losing early-day receipts',async()=>{
@@ -81,7 +81,7 @@ it('moves the independent international draw to day four and publication to day 
  world=(await executeInternationalDraw(db,session,meta(),'bridge-moved-draw',now)).world;
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day5',now)).world;
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-moved-publication',now)).world;
- const rows=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all<any>()).results;
+ const rows=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
  expect(rows.map(r=>r.day)).toEqual([1,2,3,4,5]);
  expect(rows.every(r=>JSON.parse(r.outcome_json).results.length===0)).toBe(true);
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-moved-day6',now)).world;
@@ -94,10 +94,10 @@ it('continues all sporting days through day 56 after staged administrative setup
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
  expect(world).toMatchObject({day:56,phase:'active'});
- const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all<any>()).results;
+ const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n,r)=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first<any>()).n).toBe(54);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
 },120000);
 
 it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
@@ -107,7 +107,7 @@ it('closes and archives exactly one fully verified season and replays the same c
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
  const command=meta(),saved=await closeSeason(db,session,command,'bridge-close-once-00001',now);
  expect(saved.world).toMatchObject({day:56,phase:'closed'});
- expect((await db.prepare('SELECT count(*) n FROM season_archives').first<any>()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM season_archives').first()).n).toBe(1);
  const archive=await readSeasonArchives(db);
  expect(archive.archives).toHaveLength(1);
  const next=await readSeasonTwoCandidate(db);
