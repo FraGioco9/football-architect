@@ -28,9 +28,11 @@ export async function linkExistingAdminOperator(
     .bind(playerAccountId,legacyAdminId,now),
   ...(['admin.access','admin.world.read','admin.world.write'] as const).map(permission=>
     db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)')
-      .bind(playerAccountId,permission,now,approvedBy))
+      .bind(playerAccountId,permission,now,approvedBy)),
+  // Privilege elevation must never upgrade sessions issued before approval.
+  db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerAccountId)
  ]);
- if(results[1].meta.changes!==1||results.slice(2).some(row=>row.meta.changes!==1))
+ if(results[1].meta.changes!==1||results.slice(2,5).some(row=>row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {linked:true,permissions:3};
 }
@@ -71,6 +73,8 @@ export async function migrateAdminOperatorsBatch(
    statements.push(db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)')
     .bind(playerAccountId,permission,now,approvedBy));
   }
+  // No pre-migration Player session may silently acquire newly granted Admin rights.
+  statements.push(db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(playerAccountId));
  }
  // A partial approved roster is not a safe cutover: enforce complete coverage
  // within the SAME atomic D1 batch, not only in a separate read-only preflight.
@@ -86,7 +90,7 @@ export async function migrateAdminOperatorsBatch(
     AND l.player_account_id IS NULL AND p.account_id NOT IN (${slots}))`,
    [...selections.map(x=>x.legacyAdminId),...selections.map(x=>x.playerAccountId)]));
  const result=await db.batch(statements);
- if(result.slice(0,-1).some((row,index)=>index%5!==0&&row.meta.changes!==1))
+ if(result.slice(0,-1).some((row,index)=>index%6!==0&&index%6!==5&&row.meta.changes!==1))
   throw new ApiError(503,'admin_migration_unavailable');
  return {linked:selections.length,permissionsGranted:selections.length*3};
 }
