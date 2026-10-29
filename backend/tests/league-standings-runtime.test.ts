@@ -47,7 +47,7 @@ describe('canonical final league standings',()=>{
     if([a,b].includes(game.homeClubId)||[a,b].includes(game.awayClubId))continue;
     const aCount=Number(adjacency.get(a)!.has(game.homeClubId))+Number(adjacency.get(a)!.has(game.awayClubId));
     const bCount=Number(adjacency.get(b)!.has(game.homeClubId))+Number(adjacency.get(b)!.has(game.awayClubId));
-    if(aCount===2&&bCount===0){witness={a,b,game};break}
+    if(aCount===1&&bCount===0&&adjacency.get(a)!.has(game.homeClubId)){witness={a,b,game};break}
    }
    if(witness)break;
   }
@@ -58,7 +58,7 @@ describe('canonical final league standings',()=>{
   const higher=table.find(r=>r.clubId===a)!,lower=table.find(r=>r.clubId===b)!;
   expect([higher.points,higher.goalDifference,higher.goalsFor,higher.won,higher.awayGoals,higher.awayWins])
    .toEqual([lower.points,lower.goalDifference,lower.goalsFor,lower.won,lower.awayGoals,lower.awayWins]);
-  expect(higher.opponentsPoints).toBe(lower.opponentsPoints+1);
+  expect(higher.opponentsPoints).toBe(lower.opponentsPoints+2);
   expect(higher.rank).toBeLessThan(lower.rank);
  });
  it('rejects missing,duplicate,foreign,negative or incomplete score evidence',async()=>{
