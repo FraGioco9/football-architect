@@ -7,6 +7,7 @@ import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {createProgression,processSportingDay,tieKey} from './knockout-progression.ts';
 import {membershipCandidateFromProgression} from './next-season-membership.ts';
+import {reviewInternationalHolders} from './international-holder-review.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 type Receipt={day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string};
 type Tie={generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string};
@@ -40,5 +41,6 @@ export async function readSeasonTwoCandidate(db:Database){
  const archiveHash=await canonicalHash({schemaVersion:1,season:1,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:4082,daysCount:56,tiesCount:54});
  if(archive.results_hash!==resultsHash||archive.knockout_hash!==knockoutHash||archive.archive_hash!==archiveHash)throw new ApiError(422,'qualification_evidence_invalid');
  const candidate=membershipCandidateFromProgression(state);
- return {world,sourceArchiveHash:archiveHash,candidate};
+ const holderReview=reviewInternationalHolders(state,candidate);
+ return {world,sourceArchiveHash:archiveHash,candidate,holderReview,requiresOwnerQualificationReview:holderReview.some(h=>h.requiresQualificationPolicyDecision)};
 }
