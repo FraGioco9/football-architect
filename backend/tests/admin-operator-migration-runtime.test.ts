@@ -86,6 +86,18 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect((await db.prepare('SELECT COUNT(*) n FROM account_permissions WHERE account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(0);
   expect((await db.prepare('SELECT COUNT(*) n FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(0);
  });
+ it('revokes linked Admin authority immediately if the Player email diverges',async()=>{
+  const {linkedAuditOperator,unifiedAdminMutationGuard}=await import('../src/unified-admin-transaction.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  const digest=await digestOpaqueToken(signed.token),csrfDigest=await digestOpaqueToken(signed.csrfToken);
+  expect(await linkedAuditOperator(db,'migration-player')).toBe('migration-legacy');
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('new-identity@example.invalid','migration-player').run();
+  expect(await linkedAuditOperator(db,'migration-player')).toBeNull();
+  await expect(db.batch([unifiedAdminMutationGuard(db,'migration-player','migration-legacy',digest,csrfDigest,now())])).rejects.toBeDefined();
+ });
  it('rolls back permissions and unified sessions while preserving historical admin identity',async()=>{
   await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
   const signed=await playerLogin(db,{email,password},'local-loopback',now());
