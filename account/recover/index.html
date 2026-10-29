@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Football Architect — Password recovery</title><link rel="stylesheet" href="/assets/admin-settings.css">
+<style>main{max-width:34rem;margin:5rem auto;padding:1.5rem}form{display:grid;gap:1rem}label{display:grid;gap:.4rem}input{font:inherit;padding:.75rem;width:100%;box-sizing:border-box}button{font:inherit;padding:.8rem}p[role=status]{min-height:1.8em}</style>
+<script src="/assets/account-recovery.js" defer></script></head>
+<body><main><a href="/" id="home">Football Architect</a><h1 id="heading">Recover your password</h1>
+<form id="request-form"><label><span id="email-label">Email</span><input type="email" name="email" autocomplete="email" required maxlength="254"></label><button type="submit" id="request-button">Send recovery email</button></form>
+<form id="complete-form" hidden><label><span id="password-label">New password</span><input type="password" name="newPassword" autocomplete="new-password" required minlength="15" maxlength="128"></label><button type="submit" id="complete-button">Reset password</button></form>
+<p id="message" role="status" aria-live="polite"></p><p><a href="/account/login/" id="signin-link">Back to sign in</a></p></main></body></html>
