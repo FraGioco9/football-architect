@@ -257,6 +257,19 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
   expect(unsafe.legacySessionsRemaining).toBe(1);
   expect(unsafe.ready).toBe(false);
  });
+ it('retires historical sessions of disabled operators during complete roster migration',async()=>{
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at,enabled) VALUES(?,?,?,?,?)')
+   .bind('migration-disabled-legacy','disabled@example.invalid','historical-only',now(),0).run();
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-disabled-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const mappings=[{playerAccountId:'migration-player',legacyAdminId:'migration-legacy'}];
+  expect(await migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now()))
+   .toEqual({linked:1,permissionsGranted:3});
+  expect((await adminOperatorMigrationReadiness(db)).ready).toBe(true);
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?')
+   .bind('migration-disabled-legacy').first()).toBeNull();
+  await db.prepare('DELETE FROM admin_accounts WHERE id=?').bind('migration-disabled-legacy').run();
+ });
  it('preflights an explicit operator mapping without creating grants or links',async()=>{
   const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
   expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
