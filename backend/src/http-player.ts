@@ -83,7 +83,7 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
    return json(200,{world:await readWorld(db)});
   }
   if(path==='/api/player/sessions'){
-   const rows=await db.prepare('SELECT token_digest,created_at,last_seen_at,expires_at FROM player_sessions WHERE account_id=? AND expires_at>? AND last_seen_at>? AND last_seen_at<=? AND created_at<=? ORDER BY created_at DESC LIMIT 100').bind(session.actor.id,now,now-604800,now,now).all<{token_digest:string;created_at:number;last_seen_at:number;expires_at:number}>();
+   const rows=await db.prepare('SELECT token_digest,created_at,last_seen_at,expires_at FROM player_sessions WHERE account_id=? AND credential_version=(SELECT credential_version FROM player_accounts WHERE id=?) AND created_at>0 AND created_at<=? AND last_seen_at>=created_at AND last_seen_at<=? AND last_seen_at>? AND expires_at>? AND expires_at<=created_at+2592000 ORDER BY created_at DESC LIMIT 100').bind(session.actor.id,session.actor.id,now,now,now-604800,now).all<{token_digest:string;created_at:number;last_seen_at:number;expires_at:number}>();
    return json(200,{sessions:rows.results.map(row=>({current:row.token_digest===session.digest,createdAt:row.created_at,lastSeenAt:row.last_seen_at,expiresAt:row.expires_at}))});
   }
   if(path==='/api/player/permissions')return json(200,{permissions:await readAccountPermissions(db,session.actor.id)});
