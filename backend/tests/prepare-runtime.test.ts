@@ -46,8 +46,14 @@ it('replays the saved outcome for concurrent identical keys with one durable mut
 it('rejects conflicting replay including another actor and does not change the saved outcome',async()=>{
  const first=await prepare();await expect(prepare(key,{...command(),expectedRevision:1})).rejects.toMatchObject({status:409});
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('other','other@example.invalid','synthetic',now-100).run();
- await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('synthetic-player','other',now-100).run();
- await expect(commands.prepareSeason(db,{...session,actor:{id:'other',email:'other@example.invalid'}},command(),key,await approved(),now)).rejects.toMatchObject({status:409});
+ // A second distinct Player and operator must never replay the first actor's outcome.
+ const otherSession:AdminSession={...session,actor:{id:'other',email:'other@example.invalid'},digest:'c'.repeat(64),csrfDigest:'d'.repeat(64),
+  unified:{playerId:'other-player',sessionDigest:'c'.repeat(64),csrfDigest:'d'.repeat(64)}};
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind('other-player','other@example.invalid','synthetic',1,now-100,'active',now-100,now-100).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('other-player','other',now-100).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(otherSession.digest,'other-player',1,otherSession.csrfDigest,now-100,now-10,now+1000).run();
+ await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('other-player',permission,now-100)));
+ await expect(commands.prepareSeason(db,otherSession,command(),key,await approved(),now)).rejects.toMatchObject({status:409});
  expect(await readWorld(db)).toEqual(first.world);
 });
 it('allows only one winner for concurrent different keys at the same revision',async()=>{
