@@ -11,7 +11,8 @@ import {readWorld} from '../src/world-repository.ts';
 import {readAdministrativeCalendar} from '../src/admin-calendar-read.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
-import {csrfFor,hashText,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
+import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='f'.repeat(64);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
@@ -19,10 +20,13 @@ const cmd=()=>({expectedGeneration:world.generation,expectedRevision:world.revis
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
- const csrf=await csrfFor(token);
- session={actor:{id:'clock-operator',email:'clock@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
+ const csrf=await playerCsrfFor(token);
+ session={actor:{id:'clock-operator',email:'clock@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await digestOpaqueToken(csrf),unified:{playerId:'clock-player',sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf)}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-100).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind('clock-player',session.actor.email,'synthetic',1,now-100,'active',now-100,now-100).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('clock-player',session.actor.id,now-100).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(session.digest,'clock-player',1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('clock-player',permission,now-100)));
  world=await readWorld(db);
  world=(await prepareSeason(db,session,cmd(),'clock-prepare-synthetic-0001',await loadApprovedSnapshot(),now)).world;
  world=(await initializeAdministrativeEvents(db,session,cmd(),'clock-initialize-synthetic-0001',now)).world;
