@@ -16,7 +16,7 @@ const error=(status,code)=>Object.assign(Error(code),{status,code});
 test('Admin renderer delegates sign-in to unified account with no password form',()=>{
  const html=renderAdminSettings();
  assert.match(html,/data-admin-signin-link/);
- assert.match(html,/account\\/login\\/\\?next=%2Fsettings%2F/);
+ assert.ok(html.includes('/account/login/?next=%2Fsettings%2F'));
  assert.match(html,/data-admin-no-permission/);
  assert.doesNotMatch(html,/data-admin-login|admin-password|autocomplete="current-password"/);
  assert.doesNotMatch(html,/localStorage|sessionStorage/);
