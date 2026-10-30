@@ -1,3 +1,4 @@
+import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
@@ -20,18 +21,15 @@ import {rescheduleSeasonEvent} from '../src/admin-calendar-command.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
-import {csrfFor,hashText,type AdminSession} from '../src/auth.ts';
-import {digestOpaqueToken} from '../src/session-tokens.ts';
+import {type AdminSession} from '../src/auth.ts';
+
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='7'.repeat(64);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
- const csrf=await csrfFor(token);
- session={actor:{id:'bridge-operator',email:'bridge@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
- await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-100).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
+ session=(await seedUnifiedOperator(db,'bridge-operator','bridge@example.invalid',now,token)).session;
  world=await readWorld(db);
  world=(await prepareSeason(db,session,meta(),'bridge-prepare-00001',await loadApprovedSnapshot(),now)).world;
  world=(await initializeAdministrativeEvents(db,session,meta(),'bridge-initialize-00001',now)).world;
