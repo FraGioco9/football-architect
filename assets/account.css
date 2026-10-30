@@ -30,3 +30,6 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body [hidden]{display:none!important}
 .account-footer{margin-top:auto;text-align:center;color:var(--muted);padding:20px;font-size:12px}
 @media(max-width:480px){.account-header{padding-block:18px}.account-brand{width:44px;max-width:44px}.account-brand .brand-image-wide{display:none}.account-brand .brand-image-symbol{display:block;width:44px;height:44px}.account-body main{margin-top:20px}.account-body h1{font-size:25px}}
+
+/* Account containers do not receive decorative highlighting. Keyboard focus remains on controls. */
+.account-body main.app-panel,.account-body main.app-panel:hover,.account-body main.app-panel:focus-within{border-color:transparent;outline:none;box-shadow:none}

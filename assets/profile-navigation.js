@@ -7,11 +7,12 @@
  function profileDestination(authenticated,href,language){
   const url=new URL(authenticated?'/account/':'/account/login/',href);
   if(!authenticated)url.searchParams.set('next','/account/');
-  url.searchParams.set('lang',['en','de','es','fr','it'].includes(language)?language:'en');
+  if(['de','es','fr','it'].includes(language))url.searchParams.set('lang',language);
   return url.href;
  }
  function mount(win){
   const link=win.document.getElementById('app-nav-profile');if(!link)return;
+  link.href=profileDestination(false,link.href,win.document.documentElement.lang);
   let pending=false;
   link.addEventListener('click',async event=>{
    if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
@@ -28,9 +29,9 @@
       win.location.assign(profileDestination(true,destination.href,win.document.documentElement.lang));return;
      }
     }
-    // Unavailable checks are not proof of logout; the account page handles them.
-    win.location.assign(destination.href);
-   }catch{win.location.assign(destination.href)}finally{win.clearTimeout(timer);pending=false;link.removeAttribute('aria-busy');}
+    // Login restores a confirmed session if this preliminary check was unavailable.
+    win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang));
+   }catch{win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang))}finally{win.clearTimeout(timer);pending=false;link.removeAttribute('aria-busy');}
   });
  }
  return {profileDestination,mount};

@@ -9,5 +9,5 @@ test('profile destination keeps app origin, language and safe post-login return'
  const anonymous=new URL(profileDestination(false,origin+'/account/','fr'));
  assert.equal(anonymous.origin,origin);assert.equal(anonymous.pathname,'/account/login/');
  assert.equal(anonymous.searchParams.get('next'),'/account/');assert.equal(anonymous.searchParams.get('lang'),'fr');
- assert.equal(new URL(profileDestination(false,origin,'invalid')).searchParams.get('lang'),'en');
+ assert.equal(new URL(profileDestination(false,origin,'invalid')).searchParams.get('lang'),null);
 });

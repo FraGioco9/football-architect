@@ -112,7 +112,7 @@
       const target=new URL(link.getAttribute('href'),window.location.href);
       const host=(window.location.hostname||'').replace(/^www\./,'');
       if(target.hostname==='app.'+host&&target.protocol===window.location.protocol){
-        target.searchParams.set('lang',language);link.href=target.href;
+        if(language==='en')target.searchParams.delete('lang');else target.searchParams.set('lang',language);link.href=target.href;
       }
     }
   }

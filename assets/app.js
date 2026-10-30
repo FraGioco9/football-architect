@@ -1238,7 +1238,7 @@
       if(original.origin!==window.location.origin&&original.hostname!=='app.'+window.location.hostname.replace(/^www\./,''))continue;
       const target=new URL(appHref(original.pathname+original.search),window.location.href);
       if(target.hostname==='localhost')target.hostname='app.localhost';
-      target.searchParams.set('lang',language());link.href=target.href;
+      if(language()==='en')target.searchParams.delete('lang');else target.searchParams.set('lang',language());link.href=target.href;
     }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
@@ -1276,7 +1276,7 @@
       link.setAttribute("href",appHref(routes.divisions));
     }
     for (const link of document.querySelectorAll("a.app-brand")) {
-      link.setAttribute("href",siteHref("/"));
+      link.setAttribute("href",appHref("/dashboard"));
     }
     for (const link of document.querySelectorAll('[data-app-i18n="openGuide"]')) {
       link.setAttribute("href",siteHref("/guide"));

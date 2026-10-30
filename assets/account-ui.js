@@ -18,7 +18,7 @@
   url.search='';url.hash='';url.username='';url.password='';
   if(['/account/','/settings/'].includes(next))url.searchParams.set('next',next);
   if((url.pathname.includes('/recover')||url.pathname.includes('/verify-email'))&&/^[a-f0-9]{64}$/.test(token||''))url.searchParams.set('token',token);
-  url.searchParams.set('lang',resolveLanguage(language,null));
+  const locale=resolveLanguage(language,null);if(locale!=='en')url.searchParams.set('lang',locale);
   return url.href;
  }
  function mount(win){
@@ -73,7 +73,7 @@
    language=resolveLanguage(value,null);doc.documentElement.lang=language;
    try{win.localStorage.setItem(key,language)}catch{/* Current document still changes language. */}
    // Keep reloads in the chosen language; one-time tokens are never reintroduced.
-   const current=new URL(win.location.href);current.searchParams.set('lang',language);
+   const current=new URL(win.location.href);if(language==='en')current.searchParams.delete('lang');else current.searchParams.set('lang',language);
    win.history.replaceState(null,'',current.pathname+current.search);
    const select=doc.getElementById('account-language');if(select)select.value=language;
    const label=doc.getElementById('account-language-label');
@@ -86,7 +86,7 @@
    choose(language);
    if(typeof win.faBindCompetitionMenu==='function')for(const select of doc.querySelectorAll('select[data-account-select]'))enhanceSelect(select);
    for(const link of doc.querySelectorAll('[data-account-home]')){
-    const home=new URL('/',url);if(home.hostname.startsWith('app.'))home.hostname=home.hostname.slice(4);
+    const home=new URL('/dashboard',url);
     link.href=home.href;
    }
   }

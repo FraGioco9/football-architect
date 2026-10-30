@@ -26,6 +26,9 @@ try{
    await page.route('**/api/player/register',r=>{payload=r.request().postDataJSON();return r.fulfill({status:409,contentType:'application/json',body:'{"error":{"code":"username_unavailable"}}'});});
    await page.goto('http://app.localhost:2000/account/register/');
    assert.equal(await page.locator('html').getAttribute('lang'),language);
+   if(language==='en')assert.equal(new URL(page.url()).searchParams.has('lang'),false);
+   assert.equal(new URL(await page.locator('[data-account-home]').getAttribute('href'),page.url()).pathname,'/dashboard');
+   assert.equal(await page.locator('main').evaluate(el=>getComputedStyle(el).borderTopColor),'rgba(0, 0, 0, 0)');
    assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
    assert.equal(await page.locator('main.app-panel').count(),1);
    assert.equal(await page.locator('#account-language').isVisible(),false);

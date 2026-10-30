@@ -9,7 +9,7 @@ test('account entry uses app host and carries only supported language and safe a
  assert.equal(accountTarget('https://app.example.com/account/login/?next=//evil.invalid','fr'),'https://app.example.com/account/login/?lang=fr');
  assert.throws(()=>accountTarget('https://example.com/api/admin','it'));
  assert.equal(new URL(accountTarget('https://example.com/account/recover/?token='+'a'.repeat(64),'es')).searchParams.get('token'),'a'.repeat(64));
- assert.equal(new URL(accountTarget('http://app.localhost:2000/account/','xx')).searchParams.get('lang'),'en');
+ assert.equal(new URL(accountTarget('http://app.localhost:2000/account/','xx')).searchParams.get('lang'),null);
 });
 test('language selection prioritizes explicit trusted handoff then saved language with English fallback',()=>{
  assert.equal(resolveLanguage('it','de'),'it');

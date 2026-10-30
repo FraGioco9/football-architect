@@ -30,7 +30,7 @@ try{
    assert.equal(destination.hostname,'app.localhost');
    assert.equal(destination.pathname,'/account/login');
    assert.equal(destination.searchParams.get('next'),'/settings/');
-   assert.equal(destination.searchParams.get('lang'),language);
+   assert.equal(destination.searchParams.get('lang'),language==='en'?null:language);
    assert.equal(await page.locator('[data-admin-login],#admin-email,#admin-password').count(),0);
    assert.equal(await page.locator('[data-admin-signed-in]').isVisible(),false);
    assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);

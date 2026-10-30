@@ -19,6 +19,8 @@ try{
    await page.goto('http://app.localhost:2000/dashboard');
    const profile=page.locator('#app-nav-profile');await profile.waitFor();
    assert.equal(await profile.getAttribute('aria-label'),labels[language]);
+   assert.equal(new URL(await page.locator('.app-brand').getAttribute('href'),page.url()).pathname,'/dashboard');
+   if(language==='en')assert.equal(new URL(await profile.getAttribute('href')).searchParams.has('lang'),false);
    assert.equal(await page.locator('#app-nav-settings').evaluate(el=>el.nextElementSibling.id),'app-nav-profile');
    assert.equal(sessions,0,'Public page load does not probe player session');
    await profile.click();
@@ -33,5 +35,14 @@ try{
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close();}
  }
+ const fallback=await browser.newContext();
+ try{
+  const page=await fallback.newPage(),visited=[];
+  page.on('request',r=>{if(r.isNavigationRequest())visited.push(new URL(r.url()).pathname)});
+  await page.route('**/api/player/session',r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}));
+  await page.goto('http://app.localhost:2000/dashboard');await page.locator('#app-nav-profile').click();
+  await page.waitForURL(url=>url.pathname==='/account/login/');
+  assert.equal(visited.includes('/account/'),false);checks++;
+ }finally{await fallback.close()}
  console.log('Profile sidebar browser matrix PASS: '+checks+' cases');
 }finally{preview.closeAllConnections();await new Promise(r=>preview.close(r));await browser.close();}
