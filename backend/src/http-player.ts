@@ -55,7 +55,7 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
   if(path==='/api/player/password-reset/complete')return json(200,await completePasswordReset(db,await body(request),now));
   if(path==='/api/player/register'){
    if(typeof env.PLAYER_VERIFICATION_DELIVERY!=='function')throw new ApiError(503,'verification_unavailable');
-   return json(202,await registerPlayer(db,await body(request),c.source,now,env.PLAYER_VERIFICATION_DELIVERY));
+   return json(202,await registerPlayer(db,await body(request),c.source,now,env.PLAYER_VERIFICATION_DELIVERY,request.headers.get('Accept-Language')??'en'));
   }
   if(path==='/api/player/verify-email')return json(200,await verifyPlayerEmail(db,await body(request),now));
   if(path==='/api/player/login'){
