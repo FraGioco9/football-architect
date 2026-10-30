@@ -44,7 +44,11 @@ beforeAll(async()=>{
  world=(await closeSeason(db,session,meta(),'two-baseline-close',now)).world;
  baseline=await captureTestWorld(db);
 },120000);
-beforeEach(async()=>{await restoreTestWorld(db,baseline);world=await readWorld(db)});
+beforeEach(async()=>{await restoreTestWorld(db,baseline);
+ // Resetting legacy audit operators cascades their bridge rows; restore the explicit test link.
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('two-persistence-player',session.actor.id,now-10).run();
+ world=await readWorld(db)});
 async function approve(){const c=await readSeasonTwoCandidate(db);world=(await approveSeasonTwoSnapshot(db,session,{...meta(),snapshotHash:c.snapshot.snapshotHash},'two-owner-approve',now)).world}
 it('requires actual durable membership approval and a closed source season',async()=>{
  const before=world;
