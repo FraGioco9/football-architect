@@ -2,6 +2,12 @@
 
 Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
 
+## Latest focused acceptance evidence — 30 October 2026
+- Exact HEAD `0a0fc2b3b8233a89b3d584861253b7eb89b8bcc2`: Admin World foundation checks **SUCCESS**, including local auth, **213/213 full Worker D1 tests**, operator persistence/restart and Chromium login/register layout and safe return. This supersedes the historical 71-failure baseline described below.
+- Site checks and full Browser QA **SKIPPED intentionally** under Draft diagnostic conditions, **not passed** on that HEAD. WebKit and full exact-head acceptance remain open.
+- A new isolated unified Admin regression exercises verified Player-to-legacy-operator email correspondence and link removal; test outcome must be confirmed on its own exact HEAD before claiming PASS.
+- No live operator cutover, credentials, remote D1, outgoing email, deployment or merge. Owner sign-off for actual #10 cutover and delivery provider #12 remains required. Checklist **12/15 (80%)**.
+
 ## Exact-head starting point
 - Baseline inspected: `fcdd1bcc01a37acbaac58bde4df7c6ad06bd98cd` (PR #329).
 - Baseline GitHub CI: Site checks, Browser QA and Admin World foundation all SUCCESS on this commit.
