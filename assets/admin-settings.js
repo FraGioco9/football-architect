@@ -158,7 +158,9 @@
     try{
      const data=await request('/api/admin/seasons/prepare',{body:{expectedGeneration:value.world.generation,expectedRevision:value.world.revision},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':retryKey}});
      if(ticket!==epoch)return;if(!validWorld(data?.world)||data.world.generation!==value.world.generation||data.world.revision<value.world.revision)throw Error('invalid response');
-     value.world=data.world;value.events=null;value.message='prepared';value.operation='completed';retryKey='';retryFor='';
+     value.world=data.world;value.events=null;
+     await worldRead(ticket);if(ticket!==epoch)return;
+     value.message='prepared';value.operation='completed';retryKey='';retryFor='';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
    }

@@ -344,3 +344,40 @@ test('sporting closure readiness survives the authenticated calendar projection'
  assert.equal(canRunCommand('archive',closedDay,c.state().events),true);
  assert.equal(canRunCommand('close',closedDay,c.state().events),false);
 });
+
+test('successful preparation hydrates event authority so initialization is enabled without manual refresh',async()=>{
+ let current=world;
+ const c=createAdminController(async(path,options)=>{
+  if(path.endsWith('/session'))return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path.endsWith('/events'))return {world:current,mode:current.seasonNumber===0?'uninitialized':'legacy',events:[],calendarReady:false};
+  assert.equal(path,'/api/admin/seasons/prepare');
+  assert.deepEqual(options.body,{expectedGeneration:world.generation,expectedRevision:0});
+  current={...world,revision:1,seasonNumber:1,phase:'preparing'};
+  return {world:current};
+ },()=>{});
+ await c.refresh();await c.prepare();
+ assert.deepEqual(c.state().world,current);
+ assert.equal(canRunCommand('initialize',c.state().world,c.state().events),true);
+ assert.equal(c.state().message,'prepared');
+});
+
+test('revocation while prepared events load cannot restore authority or prepared success',async()=>{
+ const pending=deferred(),started=deferred();let current=world,revoked=false;
+ const c=createAdminController(async(path)=>{
+  if(revoked)throw error(401,'unauthorized');
+  if(path.endsWith('/session'))return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path.endsWith('/events')){
+   if(current.seasonNumber===1){started.resolve();return pending.promise;}
+   return {world:current,mode:'uninitialized',events:[]};
+  }
+  assert.equal(path,'/api/admin/seasons/prepare');
+  current={...world,revision:1,seasonNumber:1,phase:'preparing'};return {world:current};
+ },()=>{});
+ await c.refresh();const preparing=c.prepare();await started.promise;
+ revoked=true;await c.refresh();
+ pending.resolve({world:current,mode:'legacy',events:[],calendarReady:false});await preparing;
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().events,null);
+ assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'signedOut');
+});

@@ -35,6 +35,7 @@ on:
       - 'settings/index.html'
       - 'tests/admin-settings*'
       - 'tests/admin-world-lifecycle-browser.mjs'
+      - 'tests/admin-world-lifecycle-runner.mts'
       - 'tests/season-two-*'
       - 'tests/authoritative-*'
       - 'tests/backend-test-discovery.test.mjs'
@@ -75,6 +76,7 @@ jobs:
           node --check assets/authoritative-history.mjs
           node --check tests/admin-settings-browser.mjs
           node --check tests/admin-world-lifecycle-browser.mjs
+          node --check tests/admin-world-lifecycle-runner.mts
           node --check tests/season-two-navigation-browser.mjs
       - name: Verify CI optimization safety contracts before dependency installation
         run: node --test tests/ci-opt-02-workflow-contract.test.mjs
@@ -163,7 +165,7 @@ jobs:
         run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs
 
   operator-final:
-    name: Final local operator persistence and restart
+    name: Final local operator persistence, restart and browser lifecycle
     if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
     runs-on: ubuntu-latest
     steps:
@@ -187,3 +189,15 @@ jobs:
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Verify operator bootstrap, recovery and local persistence across restart
         run: npm --prefix backend run test:operator
+      - name: Cache pinned lifecycle Chromium binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-1.58.2
+      - name: Install isolated lifecycle browser tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-lifecycle-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify unified Admin two-season lifecycle with real local Worker and D1
+        timeout-minutes: 10
+        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-lifecycle-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-world-lifecycle-runner.mts

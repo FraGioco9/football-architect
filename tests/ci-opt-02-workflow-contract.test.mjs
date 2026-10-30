@@ -19,6 +19,7 @@ test('CI-OPT-02 keeps full Worker, operator, migration and browser final gates',
  assert.match(workflow,/python3 -m unittest discover/);
  assert.match(workflow,/npm --prefix backend run typecheck/);
  assert.match(workflow,/tests\/admin-settings-browser\.mjs/);
+ assert.match(workflow,/run: .*node --experimental-strip-types tests\/admin-world-lifecycle-runner\.mts/);
  assert.match(workflow,/operator-final:/);
  assert.match(workflow,/admin-world-final-verification/);
 });
