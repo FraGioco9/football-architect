@@ -97,3 +97,27 @@ it('propagates the registration request language to simulated delivery',async()=
  expect(response.status).toBe(202);
  expect(deliveredLanguage).toBe('it-IT,it;q=0.9');
 });
+
+it('completes simulated registration, one-time verification and authenticated login without outbound email',async()=>{
+ let message:{to:string;token:string;locale?:string}|undefined;
+ const config={...base,PLAYER_VERIFICATION_DELIVERY:async(to:string,token:string,locale?:string)=>{message={to,token,locale}}};
+ const payload={email:'journey@example.invalid',password,username:'journey_player'};
+ const response=await worker.fetch(new Request(origin+'/api/player/register',{
+  method:'POST',headers:{Origin:origin,'Content-Type':'application/json','Accept-Language':'it-IT'},
+  body:JSON.stringify(payload)
+ }),config);
+ expect(response.status).toBe(202);
+ expect(message?.to).toBe(payload.email);
+ expect(message?.locale).toBe('it-IT');
+ expect((await send('/api/player/login',{email:payload.email,password})).status).toBe(401);
+ const token=message!.token;
+ expect(token).toMatch(/^[0-9a-f]{64}$/);
+ expect((await send('/api/player/verify-email',{token})).status).toBe(200);
+ expect((await send('/api/player/verify-email',{token})).status).toBe(400);
+ const signed=await send('/api/player/login',{email:payload.email,password});
+ expect(signed.status).toBe(200);
+ const sessionCookie=signed.headers.get('set-cookie')!.split(';')[0];
+ const restored=await worker.fetch(new Request(origin+'/api/player/session',{headers:{Origin:origin,Cookie:sessionCookie}}),base);
+ expect(restored.status).toBe(200);
+ expect((await restored.json() as any).authenticated).toBe(true);
+});
