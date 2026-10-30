@@ -183,7 +183,8 @@
    // A direct pointer target avoids ancestor :hover matching on nested label markup.
    let hoveredField=null;
    const setHovered=target=>{
-    const next=target?.matches?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select:not([hidden]),.language-trigger')&&!target.disabled&&!target.hasAttribute('aria-disabled')?target:null;
+    const control=target?.closest?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select:not([hidden]),.language-trigger');
+    const next=control&&!control.disabled&&!control.hasAttribute('aria-disabled')?control:null;
     if(hoveredField===next)return;
     hoveredField?.removeAttribute('data-field-pointer-hover');
     hoveredField=next;
