@@ -1,10 +1,11 @@
+import type {Database} from '../src/database.ts';
 import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import worker from '../src/index.ts';
 import {hashPassword} from '../src/passwords.ts';
 
-const binding=env as any,db=binding.DB,origin='http://localhost:2000';
+const binding=env as any,db=binding.DB as Database,origin='http://localhost:2000';
 const base={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
 const email='recovery@example.invalid',password='recovery-original-password-2026';
 const request=(path:string,body:unknown,config=base)=>worker.fetch(new Request(origin+path,{
