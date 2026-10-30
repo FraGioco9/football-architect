@@ -44,6 +44,34 @@ beforeEach(async()=>{
  .bind('operator-player','operator-legacy',now()).run();
 });
 describe('Unified Admin HTTP contract — replacement for the legacy login',()=>{
+ it('keeps Player identity usable without an Admin role and never derives authority from email or grants alone',async()=>{
+  // A regular verified Player can sign in, but neither a matching email nor
+  // unaffiliated grants may turn the account into an Admin.
+  await db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind('operator-player').run();
+  const signed=await login();
+  expect(signed.status).toBe(200);
+  const c=cookie(signed);
+  const session=await request('/api/player/session',undefined,{Cookie:c});
+  expect(session.status).toBe(200);
+  expect((await session.json() as any).permissions).toEqual([]);
+  expect((await request('/api/admin/session',undefined,{Cookie:c})).status).toBe(403);
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
+  await grant('admin.access','admin.world.read','admin.world.write');
+  const stillPlayer=await request('/api/player/permissions',undefined,{Cookie:c});
+  expect(stillPlayer.status).toBe(200);
+  expect((await stillPlayer.json() as any).permissions).toEqual([]);
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
+  await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+   .bind('operator-player','operator-legacy',now()).run();
+  const authorized=await request('/api/player/permissions',undefined,{Cookie:c});
+  expect(authorized.status).toBe(200);
+  expect((await authorized.json() as any).permissions).toEqual(['admin.access','admin.world.read','admin.world.write']);
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(200);
+  await db.prepare("DELETE FROM account_permissions WHERE permission='admin.access'").run();
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
+  expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(200);
+  expect((await request('/api/world')).status).toBe(200);
+ });
  it('rejects legacy login and logout even if supplied an old credential cookie',async()=>{
   expect((await request('/api/admin/login',{email,password})).status).toBe(410);
   expect((await request('/api/admin/logout',{}, {Cookie:'fa_admin_local=old'})).status).toBe(410);
