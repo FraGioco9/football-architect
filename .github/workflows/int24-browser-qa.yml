@@ -5,6 +5,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 jobs:
@@ -69,7 +73,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers-1.58.2-shared-v3
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ needs.scope.outputs.mode }}-v2
       - name: Install isolated browser test dependency
         if: needs.scope.outputs.mode != 'fast'
         run: |
