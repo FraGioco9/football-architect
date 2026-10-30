@@ -2,6 +2,11 @@
 
 This is the **final execution checklist**, not evidence that gates have passed. Owner direction: do not start full CI until implementation and obsolete test updates are complete. No auto-merge, production deploy, remote D1, live email or real operator cutover.
 
+## Final gate activation
+- PR #329 now selects `admin-world-final-verification` on Draft, replacing focused diagnostic markers. This activates the complete Admin Worker/operator and Chromium/WebKit account gates without releasing or deploying.
+- The original issue stands at **13/15 (86.7%)**. Production operator cutover and real Cloudflare email activation remain HOLD; a green CI does not authorize them.
+- Capture the exact resulting HEAD and jobs before marking #15 passed. Site checks and generic Browser QA are separate workflows and must be checked independently for skips or failures.
+
 ## Gate A — implementation and security review
 - [ ] Unified Player login/logout/session, registration/verification and recovery flows conform to a single browser session model.
 - [ ] Owner-selected Account UI locale propagates to the email template in EN/DE/ES/FR/IT. Unrecognized locale uses English.
