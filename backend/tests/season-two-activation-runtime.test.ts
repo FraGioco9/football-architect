@@ -15,10 +15,10 @@ import {readWorld} from '../src/world-repository.ts';
 import {type AdminSession} from '../src/auth.ts';
 import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
-const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='6'.repeat(64),config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
+const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='6'.repeat(64),config={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:'http://localhost:2000'};
 let world:Awaited<ReturnType<typeof readWorld>>,session:AdminSession,csrf:string;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
-const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_player_local='+token,Origin:config.ADMIN_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
+const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_player_local='+token,Origin:config.PLAYER_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
 async function command(path:string){const r=await call(path,meta());expect(r.status).toBe(200);const data=await r.json() as any;world=data.world;return data}
 const publicRead=(path:string)=>worker.fetch(new Request('http://localhost:2000'+path),{DB:db});
 async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
