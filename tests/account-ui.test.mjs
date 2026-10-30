@@ -50,3 +50,11 @@ test('login and register provide localized Go back links without obsolete arrow 
  const theme=await readFile(new URL('../assets/theme.js',import.meta.url),'utf8');
  assert.match(theme,/peek\(\)/);
 });
+
+test('registration and recovery send the selected interface locale, not the browser default, to the mock delivery API',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ for(const file of ['account-onboarding.js','account-recovery.js']){
+  const source=await readFile(new URL('../assets/'+file,import.meta.url),'utf8');
+  assert.match(source,/'Accept-Language':ui\.language/,file);
+ }
+});
