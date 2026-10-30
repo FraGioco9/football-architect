@@ -240,7 +240,7 @@ test("PUBLIC-03: execute the actual staging script for both approval contracts",
  try{
   const source=join(root,"source");mkdirSync(source);
   // Copy a source fixture; the staging script must import real builders and verify their output.
-  for(const path of ["assets","dashboard","calendar","settings","competitions","clubs","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
+  for(const path of ["assets","dashboard","calendar","settings","competitions","clubs","account","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
    fs.cpSync(join(repositoryRoot,path),join(source,path),{recursive:true});
   const debug=join(root,"expected-debug");stageProtectedDebugArtifact(repositoryRoot,debug);
   const approved=createHash("sha256").update(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"))).digest("hex");
