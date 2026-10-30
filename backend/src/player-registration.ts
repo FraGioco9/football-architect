@@ -5,6 +5,7 @@ import {parseOperatorEmail} from './email-identity.ts';
 import {validatePasswordShape} from './password-policy.ts';
 import {createOpaqueToken,digestOpaqueToken} from './session-tokens.ts';
 import {hashText} from './auth.ts';
+import {parseRegistrationProfile} from './player-profile.ts';
 
 /** Delivery is injected only by an explicitly configured server-side provider.
  * No public response, database row or log contains the raw verification token.
@@ -26,10 +27,14 @@ async function throttle(db:Database,email:string,source:string,now:number){
 export async function registerPlayer(db:Database,input:unknown,source:string,now:number,deliver:VerificationDelivery){
  if(!input||typeof input!=='object'||Array.isArray(input))throw new ApiError(422,'invalid_registration');
  const fields=input as Record<string,unknown>;
- if(Object.keys(fields).sort().join(',')!=='email,password'||validatePasswordShape(fields.password)!==null)
+ if(Object.keys(fields).some(key=>!['email','password','username','nationality','city'].includes(key))||validatePasswordShape(fields.password)!==null)
   throw new ApiError(422,'invalid_registration');
+ const profile=parseRegistrationProfile(fields);
  let email:string;try{email=parseOperatorEmail(fields.email)}catch{throw new ApiError(422,'invalid_registration')}
  await throttle(db,email,source,now);
+ // Username availability is public, but must never depend on email existence.
+ const taken=await db.prepare('SELECT id FROM player_accounts WHERE username=? COLLATE NOCASE').bind(profile.username).first();
+ if(taken)throw new ApiError(409,'username_unavailable');
  // Existing emails are deliberately indistinguishable from new registration.
  const exists=await db.prepare('SELECT id FROM player_accounts WHERE email_normalized=?').bind(email).first<{id:string}>();
  if(exists)return generic;
@@ -37,13 +42,20 @@ export async function registerPlayer(db:Database,input:unknown,source:string,now
  const verifier=await hashPassword(fields.password as string);
  const id=crypto.randomUUID(),token=createOpaqueToken(),digest=await digestOpaqueToken(token);
  const inserted=await db.batch([
-  db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,status,created_at,updated_at) VALUES(?,?,?,\'pending\',?,?) ON CONFLICT(email_normalized) DO NOTHING')
-    .bind(id,email,verifier,now,now),
+  db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,status,created_at,updated_at,username,nationality,city) VALUES(?,?,?,\'pending\',?,?,?,?,?) ON CONFLICT DO NOTHING')
+    .bind(id,email,verifier,now,now,profile.username,profile.nationality,profile.city),
   db.prepare(`INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at)
    SELECT ?,id,'verify_email',?,? FROM player_accounts
    WHERE id=? AND status='pending' AND email_verified_at IS NULL`).bind(digest,now,now+86400,id)
  ]);
- if(inserted[0].meta.changes!==1)return generic;
+ if(inserted[0].meta.changes!==1){
+  const conflict=await db.prepare('SELECT id FROM player_accounts WHERE username=? COLLATE NOCASE').bind(profile.username).first();
+  if(conflict)throw new ApiError(409,'username_unavailable');
+  // Preserve generic duplicate-email behavior, including concurrent registrations.
+  const duplicate=await db.prepare('SELECT id FROM player_accounts WHERE email_normalized=?').bind(email).first();
+  if(duplicate)return generic;
+  throw new ApiError(409,'username_unavailable');
+ }
  try{await deliver(email,token)}catch{
   // Don't leave an unrecoverable pending account if delivery fails.
   await db.prepare("DELETE FROM player_accounts WHERE id=? AND status='pending' AND email_verified_at IS NULL").bind(id).run();

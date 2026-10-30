@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
-<title>Football Architect — Account</title><link rel="stylesheet" href="/assets/admin-settings.css">
-<style>main{max-width:40rem;margin:4rem auto;padding:1.5rem}form{display:grid;gap:.8rem;margin:1.5rem 0}label{display:grid;gap:.35rem}input{font:inherit;padding:.7rem;width:100%;box-sizing:border-box}button{font:inherit;padding:.7rem}section{margin-top:2rem}p[role=status]{min-height:1.5em}</style>
+<title>Football Architect — Account</title><script src="/assets/account-ui.js"></script><script src="/assets/theme.js"></script><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/assets/landing.css"><link rel="stylesheet" href="/assets/account.css">
+
 <script src="/assets/account-settings.js" defer></script><meta name="robots" content="noindex,nofollow"></head>
-<body><main><a href="/">Football Architect</a><h1 id="title">Your account</h1>
+<body class="account-body"><header class="account-header"><a class="account-brand" data-account-home href="/" aria-label="Football Architect"><img class="brand-image brand-image-wide" src="/assets/brand/horizontal-dark.svg" width="512" height="156" alt="Football Architect"><img class="brand-image brand-image-symbol" src="/assets/brand/symbol-dark.svg" width="44" height="44" alt="Football Architect"></a><label class="account-language" for="account-language"><span id="account-language-label">Language</span><select id="account-language"><option value="en">English</option><option value="de">Deutsch</option><option value="es">Español</option><option value="fr">Français</option><option value="it">Italiano</option></select></label></header><main class="account-wide"><h1 id="title">Your account</h1>
 <p id="loading" role="status" aria-live="polite">Checking your session…</p>
 <div id="protected" hidden><section aria-labelledby="welcome-title"><h2 id="welcome-title">Welcome to Football Architect</h2><p id="welcome-description">You can browse the shared football world and manage your account. Gameplay and club management are not available yet.</p><nav aria-label="Explore Football Architect"><p><a id="clubs-link" href="/clubs/">Browse clubs</a> · <a id="competitions-link" href="/competitions/">Competitions</a> · <a id="guide-link" href="/guide/">Guide</a></p></nav><p id="admin-entry" hidden><a href="/settings/" id="admin-link">World administration</a></p></section><section aria-labelledby="profile-title"><h2 id="profile-title">Account information</h2><p id="identity"></p></section>
-<section><h2 id="change-title">Change password</h2><form id="change-form">
+<section><h2 id="change-title">Change password</h2><form method="post" id="change-form">
 <label><span id="current-label">Current password</span><input name="currentPassword" type="password" autocomplete="current-password" required></label>
 <label><span id="new-label">New password</span><input name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128"></label>
 <button type="submit" id="change-button">Change password</button></form></section>
 <section><h2 id="sessions-title">Sessions</h2><p id="sessions-summary" aria-live="polite"></p><button id="revoke-button" type="button">Sign out other devices</button><p><button id="logout-button" type="button">Sign out</button></p></section>
-<section><h2 id="delete-title">Delete account</h2><form id="delete-form">
+<section><h2 id="delete-title">Delete account</h2><form method="post" id="delete-form">
 <label><span id="delete-password-label">Password</span><input name="password" type="password" autocomplete="current-password" required></label>
 <label><span id="confirm-label">Type DELETE MY ACCOUNT</span><input name="confirmation" type="text" autocomplete="off" required></label>
 <button type="submit" id="delete-button">Delete account</button></form></section></div>
-<p id="status" role="status" aria-live="polite"></p><p id="login-link" hidden><a href="/account/login/?next=%2Faccount%2F">Sign in</a></p></main></body></html>
+<p id="status" role="status" aria-live="polite"></p><p id="login-link" hidden><a href="/account/login/?next=%2Faccount%2F">Sign in</a></p></main><footer class="account-footer">Football Architect</footer></body></html>

@@ -104,6 +104,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
    "__fa_dev__/artifact-manifest.json",
    "clubs/_shared/manifest.json",
    "competitions/_shared/manifest.json",
+   "data/country-codes.json",
    "data/divisions.json",
    "vercel.json"
   ]);

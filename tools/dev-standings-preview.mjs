@@ -193,7 +193,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';
         body = Buffer.from(body.toString("utf8").replace("</head>", config + "\n</head>")
           .replace(/(\bhref=")([^"#]+)(")/g, (all, prefix, href, quote) => {
-            if (/^\/(?:dashboard|calendar|settings|competitions|clubs)(?:[/?#]|$)/.test(href))
+            if (/^\/(?:account|dashboard|calendar|settings|competitions|clubs)(?:[/?#]|$)/.test(href))
               return prefix + appOrigin + href + quote;
             if (href === "/" || /^\/guide(?:[/?#]|$)/.test(href))
               return prefix + siteOrigin + (href === "/" ? "" : href) + quote;

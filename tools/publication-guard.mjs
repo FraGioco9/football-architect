@@ -9,7 +9,7 @@ import {validateDivisionAssets} from "./validate-division-assets.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
-const required=["account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","assets/account-login.js","assets/account-onboarding.js","assets/account-recovery.js","assets/account-settings.js","assets/account-verification.js",
+const required=["assets/account-ui.js","assets/account.css","data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","assets/account-login.js","assets/account-onboarding.js","assets/account-recovery.js","assets/account-settings.js","assets/account-verification.js",
  "assets/competition-stats.js",
  "clubs/_shared/index.html","clubs/_shared/manifest.json","assets/club-page.js","assets/club-model.js","assets/club-page.css",
  "vercel.json","index.html","guide/index.html","dashboard/index.html",
@@ -20,12 +20,12 @@ const required=["account/index.html","account/login/index.html","account/recover
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"));
-const rootFiles=new Set(["account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","competitions/int-1/index.html","competitions/int-2/index.html","clubs/index.html","clubs/_shared/index.html","clubs/_shared/manifest.json","vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
+const rootFiles=new Set(["data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","competitions/int-1/index.html","competitions/int-2/index.html","clubs/index.html","clubs/_shared/index.html","clubs/_shared/manifest.json","vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
  "dashboard/index.html","calendar/index.html",
  "settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
  "data/divisions.json"]);
-const runtimeAssets=new Set(["account-login.js","account-onboarding.js","account-recovery.js","account-settings.js","account-verification.js","authoritative-calendar.mjs","authoritative-history.mjs","authoritative-season.mjs","admin-settings.js","admin-settings.css","provider-selectors.mjs","provider-selectors-bootstrap.mjs","routes-registry.js","world-calendar-model.js","world-clock-adapter.js","world-calendar.js","calendar-simplified.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
+const runtimeAssets=new Set(["account-ui.js","account.css","account-login.js","account-onboarding.js","account-recovery.js","account-settings.js","account-verification.js","authoritative-calendar.mjs","authoritative-history.mjs","authoritative-season.mjs","admin-settings.js","admin-settings.css","provider-selectors.mjs","provider-selectors-bootstrap.mjs","routes-registry.js","world-calendar-model.js","world-clock-adapter.js","world-calendar.js","calendar-simplified.js","club-page.js","club-model.js","club-page.css","landing.js","landing.css","guide.css","app.js","app.css",
  "app-search.js","competition-stats.js","competition-rules.js","competition-rules-view.js","international-cups.js","sidebar-evolution.js","sidebar-evolution.css","clubs-directory.js","clubs-directory.css","club-crests.js","competition-model.js","competition-history.js","competition-page.js","competition-tabs.js","competition-fixtures.js","competition-awards.js","competition-awards.css","theme.js",
 ]);
 

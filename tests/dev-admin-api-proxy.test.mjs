@@ -74,3 +74,28 @@ test('protected next-season routes enforce exact method and forward only to the 
   assert.deepEqual(seen,['/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare']);
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
 });
+
+test('Player bridge is app-only and enforces exact routes and methods',async()=>{
+ const target='http://127.0.0.1:8787';
+ for(const [path,method,host,expected] of [
+  ['/api/player/login','POST','localhost:2000',403],
+  ['/api/player/login','GET','app.localhost:2000',405],
+  ['/api/player/unknown','POST','app.localhost:2000',404],
+  ['/api/player/register?next=evil','POST','app.localhost:2000',403]
+ ]){
+  const result=response();await proxyAdminApi({...req(path,'127.0.0.1',host),method},result,{target});assert.equal(result.status,expected);
+ }
+});
+test('Player bridge preserves validated app host and session cookie for Worker origin checks',async()=>{
+ const upstream=createServer(async(req,res)=>{
+  assert.equal(req.url,'/api/player/session');assert.equal(req.headers.host,'app.localhost:2000');
+  assert.equal(req.headers.cookie,'fa_player_local=synthetic');assert.equal(req.headers['x-forwarded-host'],undefined);
+  res.writeHead(200,{'Content-Type':'application/json'});res.end('{"authenticated":true}');
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target:'http://127.0.0.1:'+upstream.address().port}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ try{
+  const result=await new Promise((resolve,reject)=>{
+   const r=request({hostname:'127.0.0.1',port:bridge.address().port,path:'/api/player/session',headers:{Host:'app.localhost:2000',Cookie:'fa_player_local=synthetic','X-Forwarded-Host':'evil.invalid'}},res=>{let body='';res.on('data',c=>body+=c);res.on('end',()=>resolve({status:res.statusCode,body}))});r.on('error',reject);r.end();
+  });assert.equal(result.status,200);assert.equal(JSON.parse(result.body).authenticated,true);
+ }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);}
+});

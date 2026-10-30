@@ -1232,6 +1232,14 @@
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
+    for(const link of document.querySelectorAll('a[href*="/account"]')){
+      const original=new URL(link.getAttribute('href'),window.location.href);
+      if(!/^\/account(?:\/|$)/.test(original.pathname))continue;
+      if(original.origin!==window.location.origin&&original.hostname!=='app.'+window.location.hostname.replace(/^www\./,''))continue;
+      const target=new URL(appHref(original.pathname+original.search),window.location.href);
+      if(target.hostname==='localhost')target.hostname='app.localhost';
+      target.searchParams.set('lang',language());link.href=target.href;
+    }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
     let activeSeason=1;

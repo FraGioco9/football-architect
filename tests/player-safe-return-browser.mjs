@@ -16,6 +16,11 @@ const server=createServer((request,response)=>{
  if(pathname==='/assets/account-login.js'){
   response.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});response.end(js);return;
  }
+ if(['/assets/account-ui.js','/assets/theme.js','/assets/landing.css','/assets/account.css','/favicon.svg'].includes(pathname)){
+  readFile(new URL('..'+pathname,import.meta.url)).then(bytes=>{
+   response.writeHead(200,{'Content-Type':pathname.endsWith('.js')?'text/javascript':pathname.endsWith('.css')?'text/css':'image/svg+xml'});response.end(bytes);
+  }).catch(()=>{response.writeHead(404);response.end();});return;
+ }
  if(pathname==='/api/player/session'){
   response.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
   response.end(JSON.stringify({authenticated:true,actor:{id:'synthetic-player'}}));return;
@@ -31,7 +36,7 @@ try{
  server.listen(0,'127.0.0.1');await once(server,'listening');
  const origin='http://127.0.0.1:'+server.address().port;
  const playwright=await import(process.env.FA_PLAYER_PLAYWRIGHT||'playwright');
- browser=await playwright.chromium.launch({headless:true});
+ browser=await playwright.chromium.launch({headless:true,...(process.env.FA_PLAYER_CHROME?{executablePath:process.env.FA_PLAYER_CHROME,args:['--no-sandbox']}: {})});
  const cases=[
   ['/account/','/account/'],['/settings/','/settings/'],
   ['https://example.invalid/','/account/'],['//example.invalid','/account/'],

@@ -6,7 +6,7 @@ import {createRequire} from 'node:module';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 const require=createRequire(new URL('../backend/package.json',import.meta.url));
 const playwright=await import(process.env.FA_ADMIN_PLAYWRIGHT||require.resolve('playwright'));
-const browser=await playwright.chromium.launch({headless:true});
+const browser=await playwright.chromium.launch({headless:true,...(process.env.FA_ADMIN_CHROME?{executablePath:process.env.FA_ADMIN_CHROME,args:['--no-sandbox']}: {})});
 const preview=createPreviewServer({subdomains:true,devPreview:false});
 let checks=0;
 try{
@@ -26,7 +26,11 @@ try{
    await page.goto('http://localhost:2000/settings');
    const signIn=page.locator('[data-admin-signin-link] a');
    await signIn.waitFor({state:'visible'});
-   assert.equal(await signIn.getAttribute('href'),'/account/login?next=%2Fsettings%2F');
+   const destination=new URL(await signIn.getAttribute('href'),'http://localhost:2000');
+   assert.equal(destination.hostname,'app.localhost');
+   assert.equal(destination.pathname,'/account/login');
+   assert.equal(destination.searchParams.get('next'),'/settings/');
+   assert.equal(destination.searchParams.get('lang'),language);
    assert.equal(await page.locator('[data-admin-login],#admin-email,#admin-password').count(),0);
    assert.equal(await page.locator('[data-admin-signed-in]').isVisible(),false);
    assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
