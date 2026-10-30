@@ -101,6 +101,20 @@ jobs:
       - name: Operator persistence and restart in focused Draft mode
         if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
         run: npm --prefix backend run test:operator
+      # Draft-only account QA: Chromium only, no WebKit or full site matrix.
+      - name: Install focused Account Chromium QA tooling
+        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-account-focused" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-account-focused/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify Login Register Go back spacing and safe return (Draft)
+        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
+        env:
+          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-account-focused/node_modules/playwright/index.mjs
+          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-account-focused/node_modules/playwright/index.mjs
+        run: |
+          node tests/account-layout-browser.mjs
+          node tests/player-safe-return-browser.mjs
       - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
         if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: |
