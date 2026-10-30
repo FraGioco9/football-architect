@@ -20,6 +20,8 @@ export async function readAccountPermissions(db:Database,accountId:string):Promi
  JOIN admin_accounts legacy ON legacy.id=l.legacy_admin_account_id
  WHERE p.account_id=? AND a.status='active'
  AND a.email_verified_at IS NOT NULL AND legacy.enabled=1
- AND legacy.email_normalized=a.email_normalized ORDER BY p.permission`).bind(accountId).all<{permission:AccountPermission}>();
+ AND legacy.email_normalized=a.email_normalized
+ AND EXISTS(SELECT 1 FROM account_permissions access WHERE access.account_id=a.id AND access.permission='admin.access')
+ ORDER BY p.permission`).bind(accountId).all<{permission:AccountPermission}>();
  return result.results.map(x=>x.permission).filter(x=>ACCOUNT_PERMISSIONS.includes(x));
 }
