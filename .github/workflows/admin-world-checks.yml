@@ -69,6 +69,8 @@ jobs:
         run: python3 -m unittest discover -s backend/tests -p 'test_*migration.py' -v
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
+      - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
+        run: npm --prefix backend run test:auth-local
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
