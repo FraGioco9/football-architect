@@ -68,7 +68,7 @@ jobs:
       - name: Install pinned Worker toolchain without remote credentials
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
-          npm --prefix backend ci --no-audit --no-fund
+          npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
