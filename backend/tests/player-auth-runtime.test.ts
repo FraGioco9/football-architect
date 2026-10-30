@@ -48,16 +48,16 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const now=Math.floor(Date.now()/1000);
   await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('player-1',permission,now)));
   await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('linked-admin','player@example.invalid','synthetic',now).run();
-  await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),db.prepare('UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'')])).rejects.toBeDefined();
+  await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),db.prepare("UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'")])).rejects.toBeDefined();
   await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('player-1','linked-admin',now).run();
-  const original=(await db.prepare('SELECT updated_at FROM player_accounts WHERE id='player-1'').first<{updated_at:number}>())!.updated_at;
+  const original=(await db.prepare("SELECT updated_at FROM player_accounts WHERE id='player-1'").first<{updated_at:number}>())!.updated_at;
   await db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),
-    db.prepare('UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'')]);
-  expect((await db.prepare('SELECT updated_at FROM player_accounts WHERE id='player-1'').first<{updated_at:number}>())!.updated_at).toBe(original+1);
+    db.prepare("UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'")]);
+  expect((await db.prepare("SELECT updated_at FROM player_accounts WHERE id='player-1'").first<{updated_at:number}>())!.updated_at).toBe(original+1);
   await db.prepare("DELETE FROM account_permissions WHERE permission='admin.world.write'").run();
   await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),
-    db.prepare('UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'')])).rejects.toBeDefined();
-  expect((await db.prepare('SELECT updated_at FROM player_accounts WHERE id='player-1'').first<{updated_at:number}>())!.updated_at).toBe(original+1);
+    db.prepare("UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'")])).rejects.toBeDefined();
+  expect((await db.prepare("SELECT updated_at FROM player_accounts WHERE id='player-1'").first<{updated_at:number}>())!.updated_at).toBe(original+1);
   await db.prepare("UPDATE player_accounts SET updated_at=? WHERE id='player-1'").bind(original).run();
   await db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind('player-1').run();
   await db.prepare('DELETE FROM admin_accounts WHERE id=?').bind('linked-admin').run();
