@@ -52,7 +52,7 @@ it('rolls back placement and revision on late audit failure; rejects revoked ses
  try{await expect(run()).rejects.toMatchObject({status:503})}finally{await db.prepare('DROP TRIGGER admin_event_late_fail').run()}
  expect(await readWorld(db)).toEqual(world);
  expect((await db.prepare("SELECT scheduled_day FROM season_admin_events WHERE event_id='international:draw'").first()).scheduled_day).toBe(3);
- await db.prepare('DELETE FROM admin_sessions').run();
+ await db.prepare('DELETE FROM player_sessions').run();
  await expect(run()).rejects.toMatchObject({status:401});
 });
 it('HTTP enforces unified Player origin, CSRF and read/write privileges',async()=>{
