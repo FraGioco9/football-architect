@@ -50,7 +50,7 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
   const set=(value:string,clear=false)=>`${c.cookie}=${value}; ${c.flags}; Max-Age=${clear?0:2592000}`;
   if(path==='/api/player/password-reset/request'){
    if(typeof env.PLAYER_RESET_DELIVERY!=='function')throw new ApiError(503,'reset_unavailable');
-   return json(202,await requestPasswordReset(db,await body(request),c.source,now,env.PLAYER_RESET_DELIVERY));
+   return json(202,await requestPasswordReset(db,await body(request),c.source,now,env.PLAYER_RESET_DELIVERY,request.headers.get('Accept-Language')??'en'));
   }
   if(path==='/api/player/password-reset/complete')return json(200,await completePasswordReset(db,await body(request),now));
   if(path==='/api/player/register'){
