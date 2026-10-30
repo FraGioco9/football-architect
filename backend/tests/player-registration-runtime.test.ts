@@ -86,3 +86,14 @@ it('taken username responses cannot distinguish existing and unknown emails',asy
  expect(known.status).toBe(unknown.status);
  expect(await known.json()).toEqual(await unknown.json());
 });
+
+it('propagates the registration request language to simulated delivery',async()=>{
+ let deliveredLanguage='';
+ const config={...base,PLAYER_VERIFICATION_DELIVERY:async(_email:string,_token:string,locale?:string)=>{deliveredLanguage=locale??''}};
+ const response=await worker.fetch(new Request(origin+'/api/player/register',{
+  method:'POST',headers:{Origin:origin,'Content-Type':'application/json','Accept-Language':'it-IT,it;q=0.9'},
+  body:JSON.stringify({email:'language@example.invalid',password,username:'language_user'})
+ }),config);
+ expect(response.status).toBe(202);
+ expect(deliveredLanguage).toBe('it-IT,it;q=0.9');
+});
