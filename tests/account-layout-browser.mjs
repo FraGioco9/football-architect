@@ -30,5 +30,23 @@ try{
    }
   }finally{await context.close();}
  }
+ // Account return navigation is kept in this tab and is never exposed as a next query.
+ for(const route of ['login','register']){
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   await context.addInitScript(()=>sessionStorage.setItem('football-architect:login-return','/calendar?season=2&view=week'));
+   const page=await context.newPage();
+   await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
+   await page.goto('http://app.localhost:2000/account/'+route);
+   await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
+   const goBack=page.locator('#account-go-back');
+   assert.equal(await goBack.textContent(),route==='login'?'Go back':'Go back');
+   assert.equal(new URL(await goBack.getAttribute('href'),'http://app.localhost:2000').pathname+'/calendar?season=2&view=week','/calendar?season=2&view=week');
+   assert.equal(new URL(page.url()).searchParams.has('next'),false);
+   await goBack.click();
+   await page.waitForURL('**/calendar?season=2&view=week');
+   checks++;
+  }finally{await context.close();}
+ }
  console.log(engine+' account spacing and dropdown placement PASS: '+checks+' cases');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close();}
