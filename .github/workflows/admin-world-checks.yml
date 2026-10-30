@@ -90,6 +90,14 @@ jobs:
       - name: Focused historical Worker D1 regressions (Draft diagnostic)
         if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: cd backend && npx vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
+      # Focused phase two: historical full Worker suite plus local operator/restart checks.
+      # This diagnostic runs before browser installation; failures stop immediately.
+      - name: Full Worker D1 regression in focused Draft mode
+        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
+        run: npm --prefix backend test
+      - name: Operator persistence and restart in focused Draft mode
+        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
+        run: npm --prefix backend run test:operator
       - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
         if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: |
