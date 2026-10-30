@@ -5,6 +5,15 @@ const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
 const browser=await playwright.chromium.launch({headless:true,...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
 const preview=createPreviewServer({subdomains:true,devPreview:false});
 let checks=0;
+async function chooseMenu(page,id,value){
+ const trigger=page.locator('#'+id+'-trigger');
+ assert.equal(await trigger.getAttribute('role'),'combobox');
+ assert.equal(await trigger.getAttribute('class'),'language-trigger');
+ await trigger.click();
+ await page.locator('#'+id+'-menu [data-menu-value="'+value+'"]').click();
+ assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+}
+
 try{
  preview.listen(2000,'127.0.0.1');await once(preview,'listening');
  for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light'])for(const width of [320,390,1440]){
@@ -18,12 +27,14 @@ try{
    await page.goto('http://app.localhost:2000/account/register/');
    assert.equal(await page.locator('html').getAttribute('lang'),language);
    assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
+   assert.equal(await page.locator('main.app-panel').count(),1);
+   assert.equal(await page.locator('#account-language').isVisible(),false);
    await page.locator('#nationality option[value="IT"]').waitFor({state:'attached'});
    await page.locator('[name=username]').fill('Francesco_9');
    await page.locator('[name=email]').fill('synthetic@example.invalid');
    await page.locator('[name=password]').fill('synthetic-test-password-2026');
-   await page.locator('[name=city]').fill('Bologna');await page.locator('#nationality').selectOption('IT');
-   const next=language==='it'?'de':'it';await page.locator('#account-language').selectOption(next);
+   await page.locator('[name=city]').fill('Bologna');await chooseMenu(page,'nationality','IT');
+   const next=language==='it'?'de':'it';await chooseMenu(page,'account-language',next);
    assert.equal(await page.locator('[name=username]').inputValue(),'Francesco_9');
    assert.equal(await page.locator('[name=password]').inputValue(),'synthetic-test-password-2026');
    assert.equal(await page.locator('#nationality').inputValue(),'IT');
@@ -47,18 +58,27 @@ try{
   await page.route('**/api/player/verify-email',r=>{verified++;return r.fulfill({status:200,body:'{"verified":true}',contentType:'application/json'});});
   await page.goto('http://app.localhost:2000/account/verify-email/?token='+'a'.repeat(64));
   await page.waitForFunction(()=>document.getElementById('status').textContent.includes('vérifié'));
-  await page.locator('#account-language').selectOption('it');
+  await chooseMenu(page,'account-language','it');
   assert.equal(new URL(page.url()).searchParams.has('token'),false);assert.equal(verified,1);checks++;
   let release;
   await page.route('**/api/player/password-reset/request',r=>new Promise(resolve=>{release=async()=>{await r.fulfill({status:503,body:'{}',contentType:'application/json'});resolve();};}));
   await page.goto('http://app.localhost:2000/account/recover/?lang=en');
   await page.locator('[name=email]').fill('synthetic@example.invalid');
   await page.locator('#request-button').click();await page.waitForFunction(()=>document.getElementById('request-button').disabled);
-  await page.locator('#account-language').selectOption('it');
+  await chooseMenu(page,'account-language','it');
   while(!release)await new Promise(r=>setTimeout(r,10));await release();
   await page.waitForFunction(()=>!document.getElementById('request-button').disabled);
   assert.equal(await page.locator('#request-button').textContent(),'Invia email di recupero');checks++;
   await page.goto('http://app.localhost:2000/account/register/?lang=it');
+  await page.route('**/api/player/register',r=>r.fulfill({status:202,contentType:'application/json',body:'{"accepted":true,"verificationRequired":true}'}));
+  await chooseMenu(page,'nationality','IT');
+  await page.locator('[name=username]').fill('Another_Player');
+  await page.locator('[name=email]').fill('synthetic@example.invalid');
+  await page.locator('[name=password]').fill('synthetic-test-password-2026');
+  await page.locator('#submit').click();
+  await page.waitForFunction(()=>document.getElementById('status').textContent.includes('controlla la tua email'));
+  assert.equal(await page.locator('#nationality').inputValue(),'');
+  assert.equal(await page.locator('#nationality-value').textContent(),'Non specificata');checks++;
   const unicodeCity='𐐀'.repeat(60);
   await page.locator('[name=city]').pressSequentially(unicodeCity);
   assert.equal(await page.locator('[name=city]').inputValue(),unicodeCity);

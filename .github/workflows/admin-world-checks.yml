@@ -5,6 +5,15 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'backend/**'
+      - 'account/**'
+      - 'assets/account-*'
+      - 'assets/account.css'
+      - 'assets/profile-navigation.js'
+      - 'assets/competition-tabs.js'
+      - 'tools/render-sidebar.mjs'
+      - 'assets/sidebar-first-paint.js'
+      - 'tests/account-*'
+      - 'tests/profile-*'
       - 'assets/admin-settings.*'
       - 'assets/authoritative-*'
       - 'assets/competition-page.js'
@@ -79,6 +88,8 @@ jobs:
         run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
       - name: Verify account style, language, app entry and registration in Chromium
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
+      - name: Verify signed-out and authenticated Profile sidebar entry
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}

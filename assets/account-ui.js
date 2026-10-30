@@ -31,6 +31,38 @@
    win.location.replace(target);
   }
   const callbacks=new Set();
+  const selects=new Map();
+  function refreshMenus(){
+   for(const [select,view] of selects){
+    const fingerprint=JSON.stringify([...select.options].map(option=>[option.value,option.textContent]));
+    if(view.fingerprint!==fingerprint){
+     const options=[...select.options].map((item,index)=>{
+      const option=doc.createElement('div');option.className='language-option';option.setAttribute('role','option');
+      option.id=view.menu.id+'-'+index;option.dataset.menuValue=item.value;option.textContent=item.textContent;return option;
+     });
+     view.menu.replaceChildren(...options);view.binding.update(options);view.fingerprint=fingerprint;
+    }
+    view.binding.sync(select.value);view.value.textContent=select.selectedOptions[0]?.textContent||'';view.trigger.disabled=select.disabled;
+   }
+  }
+  function enhanceSelect(select){
+   const control=doc.createElement('div');control.className='language-control';
+   const trigger=doc.createElement('button');trigger.type='button';trigger.className='language-trigger';trigger.id=select.id+'-trigger';
+   trigger.setAttribute('role','combobox');trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls',select.id+'-menu');
+   const label=select.id==='account-language'?'account-language-label':'nationality-label';
+   trigger.setAttribute('aria-labelledby',label+' '+select.id+'-value');
+   const value=doc.createElement('span');value.id=select.id+'-value';trigger.append(value);
+   trigger.insertAdjacentHTML('beforeend','<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+   const menu=doc.createElement('div');menu.id=select.id+'-menu';menu.className='language-menu';menu.hidden=true;menu.setAttribute('role','listbox');menu.setAttribute('aria-labelledby',label);
+   select.before(control);control.append(select,trigger,menu);select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
+   const binding=win.faBindCompetitionMenu(trigger,menu,[],chosen=>{
+    select.value=chosen;select.dispatchEvent(new win.Event('change',{bubbles:true}));refreshMenus();
+   },control);
+   selects.set(select,{trigger,menu,value,binding,fingerprint:null});
+   select.addEventListener('change',refreshMenus);
+   select.form?.addEventListener('reset',()=>win.queueMicrotask(refreshMenus));
+   refreshMenus();
+  }
   function links(){
    for(const a of doc.querySelectorAll('a[href]')){
     const href=new URL(a.getAttribute('href'),url);
@@ -46,12 +78,13 @@
    const select=doc.getElementById('account-language');if(select)select.value=language;
    const label=doc.getElementById('account-language-label');
    if(label)label.textContent={en:'Language',de:'Sprache',es:'Idioma',fr:'Langue',it:'Lingua'}[language];
-   links();for(const callback of callbacks)callback(language);
+   links();for(const callback of callbacks)callback(language);refreshMenus();
   }
   function ready(){
    const select=doc.getElementById('account-language');
    if(select)select.addEventListener('change',()=>choose(select.value));
    choose(language);
+   if(typeof win.faBindCompetitionMenu==='function')for(const select of doc.querySelectorAll('select[data-account-select]'))enhanceSelect(select);
    for(const link of doc.querySelectorAll('[data-account-home]')){
     const home=new URL('/',url);if(home.hostname.startsWith('app.'))home.hostname=home.hostname.slice(4);
     link.href=home.href;
@@ -68,7 +101,7 @@
     const index=previous.indexOf(node.textContent);if(index>=0)node.textContent=next[index];
    }
   }
-  return {get language(){return language},redirecting,bind(callback){callbacks.add(callback);callback(language)},translateStatus,choose};
+  return {get language(){return language},redirecting,bind(callback){callbacks.add(callback);callback(language)},translateStatus,choose,refreshMenus};
  }
  return {accountTarget,resolveLanguage,mount};
 });

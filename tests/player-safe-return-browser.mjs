@@ -16,7 +16,7 @@ const server=createServer((request,response)=>{
  if(pathname==='/assets/account-login.js'){
   response.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});response.end(js);return;
  }
- if(['/assets/account-ui.js','/assets/theme.js','/assets/landing.css','/assets/account.css','/favicon.svg'].includes(pathname)){
+ if(['/assets/competition-tabs.js','/assets/app.css','/assets/account-ui.js','/assets/theme.js','/assets/landing.css','/assets/account.css','/favicon.svg'].includes(pathname)){
   readFile(new URL('..'+pathname,import.meta.url)).then(bytes=>{
    response.writeHead(200,{'Content-Type':pathname.endsWith('.js')?'text/javascript':pathname.endsWith('.css')?'text/css':'image/svg+xml'});response.end(bytes);
   }).catch(()=>{response.writeHead(404);response.end();});return;

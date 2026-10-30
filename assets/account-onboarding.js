@@ -24,7 +24,7 @@ function renderCountries(locale){
  const selected=country.value,names=typeof Intl.DisplayNames==='function'?new Intl.DisplayNames([locale],{type:'region'}):null;
  country.replaceChildren(new Option(fields[locale][4],''));
  for(const [code,name] of codes.map(code=>[code,names?.of(code)||code]).sort((a,b)=>a[1].localeCompare(b[1],locale)))country.add(new Option(name,code));
- country.value=selected;
+ country.value=selected;ui.refreshMenus();
 }
 ui.bind(locale=>{
  const next=translations[locale],extra=fields[locale];ui.translateStatus(t,next);ui.translateStatus(f,extra);t=next;f=extra;
@@ -33,7 +33,7 @@ ui.bind(locale=>{
  button.textContent=t[submitting?5:3];renderCountries(locale);validateCity();document.title=t[0]+' — Football Architect';
 });
 country.disabled=true;
-fetch('/data/country-codes.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(value=>{if(!Array.isArray(value)||!value.every(c=>typeof c==='string'&&/^[A-Z]{2}$/.test(c)))return;codes=value;renderCountries(ui.language);country.disabled=false}).catch(()=>{/* Optional nationality stays empty if its static list is unavailable. */});
+fetch('/data/country-codes.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(value=>{if(!Array.isArray(value)||!value.every(c=>typeof c==='string'&&/^[A-Z]{2}$/.test(c)))return;codes=value;renderCountries(ui.language);country.disabled=false;ui.refreshMenus()}).catch(()=>{/* Optional nationality stays empty if its static list is unavailable. */});
 form.addEventListener('submit',async e=>{
  e.preventDefault();if(submitting)return;submitting=true;button.disabled=true;button.textContent=t[5];status.textContent=t[5];
  const values=new FormData(form);

@@ -14,6 +14,9 @@ function paint(){
  const pending={en:'International competition pages are being prepared.',de:'Die Seiten der internationalen Wettbewerbe werden vorbereitet.',es:'Las páginas de las competiciones internacionales están en preparación.',fr:'Les pages des compétitions internationales sont en préparation.',it:'Le pagine delle competizioni internazionali sono in preparazione.'};
  document.querySelectorAll('[data-nav01-pending]').forEach(el=>el.textContent=pending[locale]);
  const labels=baseLabels[locale];
+ const profileLabels={en:'Profile',de:'Profil',es:'Perfil',fr:'Profil',it:'Profilo'};
+ nav.querySelectorAll('[data-nav01-profile]').forEach(el=>el.textContent=profileLabels[locale]);
+ nav.querySelector('#app-nav-profile')?.setAttribute('aria-label',profileLabels[locale]);
  ['navHome','dashboard','calendar','settings'].forEach((key,i)=>nav.querySelectorAll('[data-app-i18n="'+key+'"]').forEach(el=>el.textContent=labels[i]));
  ['dashboard','calendar','settings'].forEach((key,i)=>nav.querySelector('[data-app-aria="'+key+'"]')?.setAttribute('aria-label',labels[i+1]));
  nav.setAttribute('aria-label',labels[4]);nav.querySelector('#app-nav-divisions').setAttribute('aria-label',lang[locale][6]);
