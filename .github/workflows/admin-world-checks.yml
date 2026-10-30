@@ -92,6 +92,9 @@ jobs:
         run: cd backend && npx vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
       # Focused phase two: historical full Worker suite plus local operator/restart checks.
       # This diagnostic runs before browser installation; failures stop immediately.
+      - name: Prepare-season unified session regression (fast fail)
+        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
+        run: cd backend && npx vitest run tests/prepare-runtime.test.ts
       - name: Full Worker D1 regression in focused Draft mode
         if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
         run: npm --prefix backend test
