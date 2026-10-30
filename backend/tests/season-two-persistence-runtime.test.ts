@@ -24,7 +24,7 @@ const count=async(table:string,season=2)=>(await db.prepare(`SELECT count(*) n F
 async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);
- session={actor:{id:'two-persistence',email:'two-persistence@example.invalid'},digest:await digestOpaqueToken('two-persistence-test-player-token'),credentialVersion:1,csrfDigest:await digestOpaqueToken('two-persistence-test-player-csrf'),unified:{playerId:'two-persistence-player',sessionDigest:await digestOpaqueToken('two-persistence-test-player-token'),csrfDigest:await digestOpaqueToken('two-persistence-test-player-csrf')}};
+ session={actor:{id:'two-persistence',email:'two-persistence@example.invalid'},digest:await digestOpaqueToken('b'.repeat(64)),credentialVersion:1,csrfDigest:await digestOpaqueToken('d'.repeat(64)),unified:{playerId:'two-persistence-player',sessionDigest:await digestOpaqueToken('b'.repeat(64)),csrfDigest:await digestOpaqueToken('d'.repeat(64))}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
   .bind('two-persistence-player',session.actor.email,'synthetic',1,now-10,'active',now-10,now-10).run();
