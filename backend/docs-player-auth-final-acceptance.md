@@ -2,6 +2,12 @@
 
 Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
 
+## Final gates consolidated (Draft/HOLD)
+- Canonical exact-head checklist: `backend/docs-player-auth-release-gates.md`. This is the pending acceptance matrix, **not a green report**.
+- Added Worker-level regression that rejects accidental Cloudflare sends in local mode even with a mock binding and opt-in flag. It was authored but not executed.
+- The cutover audit remains a library-level, explicitly local preflight. A proposed CLI wrapper was removed because `openLocalDatabase` may apply migrations; no supposedly read-only command may silently mutate persistence.
+- Full CI remains intentionally deferred under owner instructions. Checklist unchanged at **12/15**.
+
 ## Final code consolidation — 30 October 2026 (tests authored, not executed)
 - Cloudflare delivery callback injection in `src/index.ts` is now direct, without an intermediate inline function; the separately injected fake delivery remains authoritative in test environments and the real provider remains disabled unless explicitly configured.
 - `emailLocale` now parses bounded `Accept-Language` preference lists and rejects zero-weight or malformed preferences; the Account UI still sends the selected single language for registration/recovery.
