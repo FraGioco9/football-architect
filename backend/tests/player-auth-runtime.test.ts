@@ -48,17 +48,17 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const now=Math.floor(Date.now()/1000);
   await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('player-1',permission,now)));
   await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('linked-admin','player@example.invalid','synthetic',now).run();
-  await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')])).rejects.toBeDefined();
+  await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),db.prepare('UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'')])).rejects.toBeDefined();
   await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('player-1','linked-admin',now).run();
-  const original=(await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision;
+  const original=(await db.prepare('SELECT updated_at FROM player_accounts WHERE id='player-1'').first<{updated_at:number}>())!.updated_at;
   await db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),
-    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')]);
-  expect((await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision).toBe(original+1);
+    db.prepare('UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'')]);
+  expect((await db.prepare('SELECT updated_at FROM player_accounts WHERE id='player-1'').first<{updated_at:number}>())!.updated_at).toBe(original+1);
   await db.prepare("DELETE FROM account_permissions WHERE permission='admin.world.write'").run();
   await expect(db.batch([unifiedAdminMutationGuard(db,'player-1','linked-admin',digest,csrfDigest,now),
-    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1')])).rejects.toBeDefined();
-  expect((await db.prepare('SELECT revision FROM world_state WHERE id=1').first<{revision:number}>())!.revision).toBe(original+1);
-  await db.prepare('UPDATE world_state SET revision=? WHERE id=1').bind(original).run();
+    db.prepare('UPDATE player_accounts SET updated_at=updated_at+1 WHERE id='player-1'')])).rejects.toBeDefined();
+  expect((await db.prepare('SELECT updated_at FROM player_accounts WHERE id='player-1'').first<{updated_at:number}>())!.updated_at).toBe(original+1);
+  await db.prepare("UPDATE player_accounts SET updated_at=? WHERE id='player-1'").bind(original).run();
   await db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind('player-1').run();
   await db.prepare('DELETE FROM admin_accounts WHERE id=?').bind('linked-admin').run();
  });
@@ -104,6 +104,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   // Permissions without an approved historical operator link are insufficient.
   expect((await request('/api/player/admin/world',undefined,{Cookie:'fa_player_local='+token})).status).toBe(403);
   const now=Math.floor(Date.now()/1000);
+  await db.prepare("DELETE FROM admin_accounts WHERE email_normalized='player@example.invalid'").run();
   await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
    .bind('read-legacy','player@example.invalid','synthetic-audit-only',now).run();
   await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
@@ -161,7 +162,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const firstDigest=await digestOpaqueToken(firstCookie.split('=')[1]);
   const expired=await db.prepare('SELECT token_digest FROM player_sessions WHERE token_digest<>? LIMIT 1').bind(firstDigest).first<{token_digest:string}>();
   expect(expired).not.toBeNull();
-  await db.prepare('UPDATE player_sessions SET expires_at=? WHERE token_digest=?').bind(Math.floor(Date.now()/1000)-1,expired!.token_digest).run();
+  await db.prepare('UPDATE player_sessions SET created_at=created_at-86400,last_seen_at=last_seen_at-86400,expires_at=expires_at-86400 WHERE token_digest=?').bind(expired!.token_digest).run();
   const listed=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
   expect(listed.status).toBe(200);
   const sessions=(await listed.json() as any).sessions;
@@ -210,7 +211,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const digest=await digestOpaqueToken(c.split('=')[1]);
   await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592001 WHERE token_digest=?').bind(digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
-  await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592000,last_seen_at=created_at-1 WHERE token_digest=?').bind(digest).run();
+  await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592000,last_seen_at=created_at WHERE token_digest=?').bind(digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
   await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?').bind(now+30,digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
@@ -290,8 +291,8 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   await db.prepare('UPDATE player_accounts SET credential_version=credential_version+1').run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
   const next=await login(),current=cookie(next),now=Math.floor(Date.now()/1000);
-  await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=(SELECT token_digest FROM player_sessions ORDER BY created_at DESC LIMIT 1)')
-    .bind(now-7*86400-1).run();
+  await db.prepare('UPDATE player_sessions SET created_at=?,last_seen_at=? WHERE token_digest=(SELECT token_digest FROM player_sessions ORDER BY created_at DESC LIMIT 1)')
+    .bind(now-8*86400,now-7*86400-1).run();
   expect((await request('/api/player/session',undefined,{Cookie:current})).status).toBe(401);
  });
  it('rejects cross-origin writes, duplicate cookies and unknown Player routes',async()=>{
