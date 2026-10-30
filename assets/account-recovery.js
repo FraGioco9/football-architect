@@ -20,7 +20,7 @@ const url=new URL(location.href),token=url.searchParams.get('token'),valid=!!tok
 history.replaceState(null,'',location.pathname);
 const ask=document.getElementById('request-form'),finish=document.getElementById('complete-form'),message=document.getElementById('message');
 finish.hidden=!valid;ask.hidden=valid;
-const post=async(path,payload)=>{const res=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});return res;};
+const post=async(path,payload)=>{const res=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept-Language':ui.language},body:JSON.stringify(payload)});return res;};
 function showError(res){ui.feedback(message,res.status===400?t[8]:res.status===429?t[10]:t[9]);}
 ask.addEventListener('submit',async event=>{event.preventDefault();ui.nextStep(null);const button=document.getElementById('request-button');button.disabled=true;ui.feedback(message,t[11],'pending');try{
  const res=await post('/api/player/password-reset/request',{email:String(new FormData(ask).get('email')||'')});
