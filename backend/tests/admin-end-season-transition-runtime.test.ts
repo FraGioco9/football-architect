@@ -38,7 +38,11 @@ beforeAll(async()=>{
  for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(1,e.id,e.kind,e.scope,e.day,e.order,now).run();
  baseline=await captureTestWorld(db);
 },120000);
-beforeEach(async()=>{await restoreTestWorld(db,baseline);world=await readWorld(db)});
+beforeEach(async()=>{await restoreTestWorld(db,baseline);
+ // Resetting legacy audit operators cascades their bridge rows; restore the explicit test link.
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('end-season-player',session.actor.id,now-10).run();
+ world=await readWorld(db)});
 it('rejects close without archive and preserves the sporting world',async()=>{
  const before=world;
  await expect(closeSeason(db,session,input(),'admin-end-season-no-archive-0001',now)).rejects.toMatchObject({status:409});
