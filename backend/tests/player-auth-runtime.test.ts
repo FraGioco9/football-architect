@@ -162,7 +162,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const firstDigest=await digestOpaqueToken(firstCookie.split('=')[1]);
   const expired=await db.prepare('SELECT token_digest FROM player_sessions WHERE token_digest<>? LIMIT 1').bind(firstDigest).first<{token_digest:string}>();
   expect(expired).not.toBeNull();
-  await db.prepare('UPDATE player_sessions SET created_at=created_at-86400,last_seen_at=last_seen_at-86400,expires_at=expires_at-86400 WHERE token_digest=?').bind(expired!.token_digest).run();
+  await db.prepare('UPDATE player_sessions SET created_at=created_at-86400,last_seen_at=last_seen_at-86400,expires_at=created_at-1 WHERE token_digest=?').bind(expired!.token_digest).run();
   const listed=await request('/api/player/sessions',undefined,{Cookie:firstCookie});
   expect(listed.status).toBe(200);
   const sessions=(await listed.json() as any).sessions;
@@ -211,7 +211,7 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   const digest=await digestOpaqueToken(c.split('=')[1]);
   await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592001 WHERE token_digest=?').bind(digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
-  await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592000,last_seen_at=created_at WHERE token_digest=?').bind(digest).run();
+  await db.prepare('UPDATE player_sessions SET expires_at=created_at+2592000,last_seen_at=created_at+2592001 WHERE token_digest=?').bind(digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
   await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?').bind(now+30,digest).run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
@@ -291,8 +291,9 @@ describe('PLAYER-AUTH-01 Worker+D1 scoped login foundation',()=>{
   await db.prepare('UPDATE player_accounts SET credential_version=credential_version+1').run();
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(401);
   const next=await login(),current=cookie(next),now=Math.floor(Date.now()/1000);
-  await db.prepare('UPDATE player_sessions SET created_at=?,last_seen_at=? WHERE token_digest=(SELECT token_digest FROM player_sessions ORDER BY created_at DESC LIMIT 1)')
-    .bind(now-8*86400,now-7*86400-1).run();
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await db.prepare('UPDATE player_sessions SET created_at=?,last_seen_at=? WHERE token_digest=?')
+    .bind(now-8*86400,now-7*86400-1,await digestOpaqueToken(current.split('=')[1])).run();
   expect((await request('/api/player/session',undefined,{Cookie:current})).status).toBe(401);
  });
  it('rejects cross-origin writes, duplicate cookies and unknown Player routes',async()=>{
