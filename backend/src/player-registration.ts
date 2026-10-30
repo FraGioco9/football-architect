@@ -10,7 +10,7 @@ import {parseRegistrationProfile} from './player-profile.ts';
 /** Delivery is injected only by an explicitly configured server-side provider.
  * No public response, database row or log contains the raw verification token.
  */
-export type VerificationDelivery=(email:string,token:string)=>Promise<void>;
+export type VerificationDelivery=(email:string,token:string,locale?:string)=>Promise<void>;
 const generic={accepted:true,verificationRequired:true};
 async function throttle(db:Database,email:string,source:string,now:number){
  const sql=`INSERT INTO player_auth_throttles(throttle_key,window_start,attempts,expires_at)
@@ -24,7 +24,7 @@ async function throttle(db:Database,email:string,source:string,now:number){
  const accountResult=await reserve('registration-account:'+await hashText(email));
  if(!accountResult||accountResult.attempts>3)throw new ApiError(429,'registration_throttled');
 }
-export async function registerPlayer(db:Database,input:unknown,source:string,now:number,deliver:VerificationDelivery){
+export async function registerPlayer(db:Database,input:unknown,source:string,now:number,deliver:VerificationDelivery,locale='en'){
  if(!input||typeof input!=='object'||Array.isArray(input))throw new ApiError(422,'invalid_registration');
  const fields=input as Record<string,unknown>;
  if(Object.keys(fields).some(key=>!['email','password','username','nationality','city'].includes(key))||validatePasswordShape(fields.password)!==null)
@@ -56,7 +56,7 @@ export async function registerPlayer(db:Database,input:unknown,source:string,now
   if(duplicate)return generic;
   throw new ApiError(409,'username_unavailable');
  }
- try{await deliver(email,token)}catch{
+ try{await deliver(email,token,locale)}catch{
   // Don't leave an unrecoverable pending account if delivery fails.
   await db.prepare("DELETE FROM player_accounts WHERE id=? AND status='pending' AND email_verified_at IS NULL").bind(id).run();
   throw new ApiError(503,'verification_unavailable');
