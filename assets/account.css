@@ -64,3 +64,13 @@ html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
 .account-body .account-feedback[data-kind="success"]::before{content:"✓";color:var(--primary)}
 .account-body .account-feedback[data-kind="pending"]::before{content:"…"}
 .account-body input{font-weight:400}
+
+/* Match the shared top-bar search hover without altering focus, field geometry or account panels. */
+.account-body{--fa-box-hover-bg:#1a3738;--fa-box-hover-border:#506c64}
+html[data-theme="light"] .account-body{--fa-box-hover-bg:#E5F1E9;--fa-box-hover-border:#67917D}
+@media(hover:hover){
+ .account-body :is(input,select,.language-trigger):not(:disabled):hover{
+  background:var(--fa-box-hover-bg);border-color:var(--fa-box-hover-border);
+ }
+ .account-body .account-password-toggle:hover{background:transparent}
+}
