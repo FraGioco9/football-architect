@@ -2,6 +2,13 @@
 
 Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
 
+## Blocks 1–3 development batch — 30 October 2026 (unverified, Draft/HOLD)
+- Player verification now has an isolated synthetic full-path Worker+D1 regression: registration → pending denial → single-use verification → successful login → session restore. Recovery has an analogous synthetic path covering selected locale, one-time token and old-session revocation. These tests are **authored but not executed**; no PASS is claimed.
+- Selected Account language (EN/DE/ES/FR/IT) is explicitly sent as `Accept-Language` for registration and password recovery, rather than relying on browser language; a static regression ensures the field is retained. Cloudflare delivery stays production-only, disabled by default.
+- Cloudflare environment separation, no-email Local/Preview, opt-in Production binding, DNS/provider prerequisites, and STOP/rollback conditions are documented in `backend/docs-cloudflare-auth-environments.md`. **No active Wrangler binding, credential, DNS, remote D1, live operator link or deploy** was created.
+- Player/Admin production cutover is still blocked pending separate approval and full QA. Existing local operator preflight and reversal tests remain in place.
+- Per owner instruction, postpone manual/full CI runs until development finishes. GitHub may still schedule automatic workflows on branch pushes; do not call them verified success until exact-head evidence is inspected. Checklist remains **12/15 (80%)**.
+
 ## Operator cutover runbook
 - See `backend/docs-player-admin-cutover-runbook.md` for approval gates, disposable-D1 rehearsal, STOP conditions, privilege revocation, preservation of historical audit and separately approved backup/restore. This is documentation only; it **does not** authorize live cutover or release.
 
