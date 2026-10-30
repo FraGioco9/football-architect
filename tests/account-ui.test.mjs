@@ -35,3 +35,18 @@ test('public pages and templates emit internal links without trailing slashes',a
  }
  for(const name of ['account','calendar','dashboard','settings','clubs','competitions','guide','templates'])await check(new URL('../'+name+'/',import.meta.url));
 });
+
+test('login and register provide localized Go back links without obsolete arrow icons or return URL parameters',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ for(const page of ['login','register']){
+  const html=await readFile(new URL('../account/'+page+'/index.html',import.meta.url),'utf8');
+  assert.match(html,/<a class="account-go-back" id="account-go-back" href="\/dashboard"><span id="account-go-back-label">Go back<\/span><\/a>/);
+  assert.doesNotMatch(html,/<span aria-hidden="true">←<\/span>/);
+  assert.doesNotMatch(html,/[?&]next=/);
+ }
+ const shared=await readFile(new URL('../assets/account-ui.js',import.meta.url),'utf8');
+ for(const label of ['Go back','Torna indietro','Zurück','Volver','Retour'])assert.ok(shared.includes(label));
+ assert.match(shared,/faLoginReturn\?\.peek\?\.\(\)/);
+ const theme=await readFile(new URL('../assets/theme.js',import.meta.url),'utf8');
+ assert.match(theme,/peek\(\)/);
+});
