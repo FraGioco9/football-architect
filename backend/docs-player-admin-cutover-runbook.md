@@ -8,6 +8,13 @@ This is a planning and local validation artifact, **not permission to cut over**
 - Writes additionally require `admin.world.write`, valid Player CSRF and origin, and the existing atomic command/replay guard. `admin_operations` retain their historical legacy operator identity.
 - Local readiness does **not** establish permission for production provisioning.
 
+## New synthetic operator cutover rehearsal (Draft / unexecuted)
+- `backend/tools/operator-cutover-rehearsal.mts` provides explicit `rehearseLocalOperatorGrant` and `rehearseLocalOperatorRevoke` helpers for **disposable local D1 only**. They are library functions, have no CLI entry point or HTTP route, and must not be imported into a deployed Worker.
+- The grant rehearsal accepts a specific Player ID, legacy operator ID and normalized matching email; requires verified, active Player and enabled historic operator, refuses conflicting links, grants only the three known Admin permissions and checks postconditions through the read-only audit. It never creates Player accounts or replaces passwords.
+- The revoke rehearsal removes Player administrative grants and the link and revokes Player sessions, leaving the historic operator and sporting world intact. It is designed to fail closed.
+- `backend/tests/operator-local.test.mts` now exercises mismatch rejection, idempotent rehearsal, post-grant preflight, revocation and world-state immutability. **Tests authored, not executed** per owner deferred-CI instruction.
+- This is a dry-run model only, not an audited, approved or safe production cutover tool. Real #10 is still OPEN and requires independent owner approval, target/environment confirmation, backup, and exact-head QA.
+
 ## Stage 0 — freeze and independent approvals (mandatory)
 1. Keep PR #329 Draft/HOLD; require an explicit separate authorization naming the approved operator identity, environment and maintenance window before any live mutation.
 2. Confirm the Player email-verification and recovery delivery adapter is separately approved and configured, or **STOP**; there is no acceptable bypass of verification.
