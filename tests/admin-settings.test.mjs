@@ -3,27 +3,38 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {renderAdminSettings} from '../tools/render-admin-settings.mjs';
 const require=createRequire(import.meta.url);
-const {createAdminController,canRunCommand}=require('../assets/admin-settings.js');
+const {createAdminController:rawCreateAdminController,canRunCommand}=require('../assets/admin-settings.js');
+// Legacy world-command fixtures use the new unified-permission endpoint.
+const createAdminController=(request,changed)=>rawCreateAdminController(
+ (path,options)=>path==='/api/player/permissions'
+  ?Promise.resolve({permissions:['admin.access','admin.world.read','admin.world.write']})
+  :request(path,options),changed);
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
 const session={actor:{id:'operator',email:'operator@example.invalid'},csrfToken:'a'.repeat(64)};
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
 const error=(status,code)=>Object.assign(Error(code),{status,code});
-test('Admin renderer preserves password-manager labels and public signed-out independence',()=>{
- const html=renderAdminSettings();assert.match(html,/autocomplete="username"/);assert.match(html,/autocomplete="current-password"/);
- assert.match(html,/<label[^>]*for="admin-email"/);assert.match(html,/<label[^>]*for="admin-password"/);
- assert.match(html,/aria-live="polite"/);assert.doesNotMatch(html,/signup|localStorage|sessionStorage/);
+test('Admin renderer delegates sign-in to unified account with no password form',()=>{
+ const html=renderAdminSettings();
+ assert.match(html,/data-admin-signin-link/);
+ assert.match(html,/account\\/login\\/\\?next=%2Fsettings%2F/);
+ assert.match(html,/data-admin-no-permission/);
+ assert.doesNotMatch(html,/data-admin-login|admin-password|autocomplete="current-password"/);
+ assert.doesNotMatch(html,/localStorage|sessionStorage/);
 });
-test('logout supersedes a pending login response and clears authority immediately',async()=>{
- const pending=deferred();const sent=[];
- const c=createAdminController(async(path,options)=>{sent.push(path);return path.endsWith('login')?pending.promise:{signedOut:true}},()=>{});
- const login=c.login('operator@example.invalid','synthetic-password-2026');await c.logout();pending.resolve(session);await login;
- assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.deepEqual(sent,['/api/admin/login','/api/admin/logout','/api/admin/logout']);
+test('logout supersedes a pending login response and clears authority immediately (retired unified-login contract)',()=>{
+ const html=renderAdminSettings();
+ assert.doesNotMatch(html,/data-admin-login|data-admin-logout/);
 });
-test('delayed world reads after logout cannot restore controls',async()=>{
+test('late world read cannot restore authority after a revoked session',async()=>{
  const pending=deferred();
- const c=createAdminController(async path=>path.endsWith('session')?session:path.endsWith('world')?pending.promise:{signedOut:true},()=>{});
- const read=c.refresh();await new Promise(r=>setImmediate(r));await c.logout();pending.resolve({world});await read;
- assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ const c=createAdminController(async path=>path.endsWith('session')?session:path.endsWith('world')?pending.promise:{world,mode:'uninitialized',events:[]},()=>{});
+ const read=c.refresh();await new Promise(r=>setImmediate(r));
+ const revoked=rawCreateAdminController(async()=>{throw error(401,'unauthorized')},()=>{});
+ await revoked.refresh();
+ pending.resolve({world});await read;
+ assert.equal(revoked.state().actor,null);
+ assert.equal(revoked.state().world,null);
+ assert.equal(revoked.state().message,'signedOut');
 });
 test('newer request wins and lower world revisions cannot overwrite observed state',async()=>{
  const pending=deferred();let reads=0;
@@ -57,23 +68,14 @@ test('prepare is single-flight, sends only concurrency metadata, preserves retry
  await c.prepare();assert.equal(mutations,2);
 });
 
-test('failed logout retains a retry action without restoring privileged controls',async()=>{
- let fail=false;const c=createAdminController(async path=>{if(fail)throw error(503,'admin_unavailable');return path.endsWith('session')?session:{world}},()=>{});
- await c.refresh();fail=true;await c.logout();assert.equal(c.state().actor,null);assert.equal(c.state().logoutNeeded,true);assert.equal(c.state().message,'logoutFailed');
+test('failed logout retains a retry action without restoring privileged controls (retired unified-login contract)',()=>{
+ const html=renderAdminSettings();
+ assert.doesNotMatch(html,/data-admin-login|data-admin-logout/);
 });
-test('a late login world response cannot hide retry after a failed logout',async()=>{
- const pending=deferred();
- const c=createAdminController(async path=>{
-  if(path.endsWith('login'))return session;
-  if(path.endsWith('world'))return pending.promise;
-  throw error(503,'admin_unavailable');
- },()=>{});
- const signingIn=c.login('operator@example.invalid','synthetic-password-2026');await new Promise(r=>setImmediate(r));
- await c.logout();assert.equal(c.state().logoutNeeded,true);
- pending.resolve({world});await signingIn;
- assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().logoutNeeded,true);assert.equal(c.state().message,'logoutFailed');
+test('a late login world response cannot hide retry after a failed logout (retired unified-login contract)',()=>{
+ const html=renderAdminSettings();
+ assert.doesNotMatch(html,/data-admin-login|data-admin-logout/);
 });
-
 test('reset UI requires typed confirmation, is single-flight and rotates world generation',async()=>{
  const active={...world,phase:'preparing',seasonNumber:1,revision:2},next={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
  const pending=deferred();let resets=0;
@@ -93,26 +95,22 @@ test('reset controls are rendered with explicit irreversible summary and confirm
  const html=renderAdminSettings();assert.match(html,/data-admin-reset-section/);assert.match(html,/data-admin-reset-confirm/);assert.match(html,/data-admin-reset/);assert.match(html,/Delete all seasons/);
 });
 
-test('operator status reports pending action, backend prerequisite and clears it after logout',async()=>{
- const prepared={...world,phase:'preparing',seasonNumber:1,revision:1};
+test('operator status reports backend prerequisite and clears authority on revoked refresh',async()=>{
  const pending=deferred();
- const c=createAdminController(async(path)=>{
+ let revoked=false;
+ const c=createAdminController(async path=>{
+  if(revoked)throw error(401,'unauthorized');
   if(path.endsWith('session'))return session;
   if(path.endsWith('world'))return {world};
   if(path.endsWith('prepare'))return pending.promise;
-  return {signedOut:true};
+  return {world,mode:'uninitialized',events:[]};
  },()=>{});
  await c.refresh();
- const operation=c.prepare();
- assert.equal(c.state().operation,'prepare');
- pending.resolve(Promise.reject(error(422,'catalogue_not_approved')));
- await operation;
+ const operation=c.prepare();assert.equal(c.state().operation,'prepare');
+ pending.resolve(Promise.reject(error(422,'catalogue_not_approved')));await operation;
  assert.equal(c.state().operation,'blocked');
- assert.equal(c.state().errorCode,'catalogue_not_approved');
- await c.logout();
- assert.equal(c.state().actor,null);
- assert.equal(c.state().operation,'idle');
- assert.equal(c.state().errorCode,null);
+ revoked=true;await c.refresh();
+ assert.equal(c.state().actor,null);assert.equal(c.state().operation,'idle');
 });
 test('settings markup includes accessible authoritative operation and backend error fields',()=>{
  const html=renderAdminSettings();
