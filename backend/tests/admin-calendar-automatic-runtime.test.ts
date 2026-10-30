@@ -143,7 +143,7 @@ it('rechecks live credentials at commit and rolls back all planned artifacts on 
   if(statements.length>1)await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind(session.actor.id).run();
   return db.batch(statements);
  }};
- await expect(advanceAdministrativeClock(racingDb,session,'advance',cmd(),'automatic-revoked-day4',now)).rejects.toMatchObject({status:401});
+ await expect(advanceAdministrativeClock(racingDb,session,'advance',cmd(),'automatic-revoked-day4',now)).rejects.toMatchObject({status:403,code:'permission_denied'});
  expect(await readWorld(db)).toEqual(before);
  for(const table of ['season_draws','season_calendars','season_day_outcomes'])expect(await count(table)).toBe(0);
 });
