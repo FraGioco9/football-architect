@@ -67,6 +67,15 @@
    select.form?.addEventListener('reset',()=>win.queueMicrotask(refreshMenus));
    refreshMenus();
   }
+  function configureBack(){
+   const back=doc.getElementById('account-go-back');if(!back)return;
+   back.href=win.faLoginReturn?.peek?.()||'/dashboard';
+   back.addEventListener('click',event=>{
+    if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    // Navigation preserves the return destination for a later successful sign-in.
+    back.href=win.faLoginReturn?.peek?.()||'/dashboard';
+   });
+  }
   function links(){
    for(const a of doc.querySelectorAll('a[href]')){
     const href=new URL(a.getAttribute('href'),url);
@@ -85,6 +94,8 @@
    const label=doc.getElementById('account-language-label');
    if(label)label.textContent={en:'Language',de:'Sprache',es:'Idioma',fr:'Langue',it:'Lingua'}[language];
    links();for(const callback of callbacks)callback(language);refreshMenus();refreshAssistance();
+   const backLabel=doc.getElementById('account-go-back-label');
+   if(backLabel)backLabel.textContent={en:'Go back',it:'Torna indietro',de:'Zurück',es:'Volver',fr:'Retour'}[language];
    for(const message of doc.querySelectorAll('[data-validation]'))message.textContent=validation[language][Number(message.dataset.validation)];
   }
   function feedback(node,text,kind='error'){
@@ -196,6 +207,7 @@
    doc.addEventListener('pointermove',event=>setHovered(event.pointerType==='mouse'?event.target:null),{passive:true});
    doc.addEventListener('pointerout',event=>{if(!event.relatedTarget)setHovered(null)},{passive:true});
    doc.addEventListener('pointerdown',()=>setHovered(null),{passive:true});
+   configureBack();
    doc.documentElement.dataset.accountReady="true";
   }
   if(!redirecting){
