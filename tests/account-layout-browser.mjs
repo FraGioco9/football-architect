@@ -30,20 +30,24 @@ try{
    }
   }finally{await context.close();}
  }
- // Account return navigation is kept in this tab and is never exposed as a next query.
- for(const route of ['login','register']){
+ // Go back must preserve a valid hidden origin across login, register and locales.
+ const translations={en:'Go back',de:'Zurück',es:'Volver',fr:'Retour',it:'Torna indietro'};
+ for(const [language,label] of Object.entries(translations))for(const route of ['login','register']){
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try{
-   await context.addInitScript(()=>sessionStorage.setItem('football-architect:login-return','/calendar?season=2&view=week'));
+   await context.addInitScript(({language})=>{
+    localStorage.setItem('football-architect:language',language);
+    sessionStorage.setItem('football-architect:login-return','/calendar?season=2&view=week');
+   },{language});
    const page=await context.newPage();
    await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
    await page.goto('http://app.localhost:2000/account/'+route);
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
    const goBack=page.locator('#account-go-back');
-   assert.equal((await goBack.textContent()).trim(),'Go back');
-   const destination=new URL(await goBack.getAttribute('href'),'http://app.localhost:2000');
-   assert.equal(destination.pathname+destination.search,'/calendar?season=2&view=week');
+   assert.equal((await goBack.textContent()).trim(),label,route+' '+language+' back label');
+   assert.equal(await goBack.getAttribute('href'),'/calendar?season=2&view=week');
    assert.equal(new URL(page.url()).searchParams.has('next'),false);
+   assert.equal(await goBack.evaluate(el=>getComputedStyle(el).textDecorationLine.includes('underline')),true,'Go back uses the same underlined link treatment');
    await goBack.click();
    await page.waitForURL('**/calendar?season=2&view=week');
    checks++;
