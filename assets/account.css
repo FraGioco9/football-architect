@@ -69,15 +69,15 @@ html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
 .account-body{--fa-field-hover-bg:#1a3738;--fa-field-hover-border:#506c64;--fa-field-focus-border:#84b8a4}
 html[data-theme="light"] .account-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-border:#67917D;--fa-field-focus-border:#377F60}
 .account-body :is(input,select,textarea,.language-trigger){transition:border-color 160ms ease,box-shadow 180ms ease,background-color 160ms ease}
-@media(hover:hover){
- /* An input inside a wrapping label must not inherit a visual hover from the label text/help. */
- .account-body :is(input,select,textarea,.language-trigger):not(:disabled):not([aria-disabled="true"]):hover:not(:focus){background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
- .account-body label:has(> :is(span,small,.account-field-error):hover) > :is(input,select,textarea),
- .account-body label:has(> :is(span,small,.account-field-error):hover) > .language-control > .language-trigger{
-  background:var(--background);border-color:var(--border);
+/* Remove the inherited landing :hover rule; only direct pointer-hit fields may highlight. */
+.account-body .language-trigger:hover{background:var(--surface);border-color:var(--border)}
+html[data-theme="light"] .account-body .language-trigger:hover{background:var(--surface);border-color:var(--border)}
+@media(hover:hover) and (pointer:fine){
+ .account-body :is(input,select,textarea,.language-trigger)[data-field-pointer-hover]:not(:disabled):not(:focus){
+  background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border);
  }
- .account-body .account-password-toggle:hover{background:transparent}
 }
+.account-body .account-password-toggle:hover{background:transparent}
 .account-body :is(input,select,textarea,.language-trigger):focus-visible{
  border-color:var(--fa-field-focus-border);box-shadow:inset 0 0 0 1px var(--fa-field-focus-border);
 }
