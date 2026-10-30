@@ -21,20 +21,27 @@ test('Admin renderer delegates sign-in to unified account with no password form'
  assert.doesNotMatch(html,/data-admin-login|admin-password|autocomplete="current-password"/);
  assert.doesNotMatch(html,/localStorage|sessionStorage/);
 });
-test('logout supersedes a pending login response and clears authority immediately (retired unified-login contract)',()=>{
- const html=renderAdminSettings();
- assert.doesNotMatch(html,/data-admin-login|data-admin-logout/);
-});
 test('late world read cannot restore authority after a revoked session',async()=>{
- const pending=deferred();
- const c=createAdminController(async path=>path.endsWith('session')?session:path.endsWith('world')?pending.promise:{world,mode:'uninitialized',events:[]},()=>{});
- const read=c.refresh();await new Promise(r=>setImmediate(r));
- const revoked=rawCreateAdminController(async()=>{throw error(401,'unauthorized')},()=>{});
- await revoked.refresh();
+ const pending=deferred(),started=deferred();let revoked=false,writes=0;
+ const c=rawCreateAdminController(async(path,options)=>{
+  if(options?.body){writes++;throw Error('unexpected mutation');}
+  if(revoked)throw error(401,'unauthorized');
+  if(path.endsWith('/session'))return session;
+  if(path==='/api/player/permissions')return {permissions:['admin.access','admin.world.read','admin.world.write']};
+  if(path.endsWith('/world')){started.resolve();return pending.promise;}
+  return {world,mode:'uninitialized',events:[]};
+ },()=>{});
+ const read=c.refresh();await started.promise;
+ revoked=true;await c.refresh();
  pending.resolve({world});await read;
- assert.equal(revoked.state().actor,null);
- assert.equal(revoked.state().world,null);
- assert.equal(revoked.state().message,'signedOut');
+ assert.equal(c.state().actor,null);
+ assert.equal(c.state().world,null);
+ assert.equal(c.state().events,null);
+ assert.deepEqual(c.state().permissions,[]);
+ assert.equal(c.state().message,'signedOut');
+ assert.equal(c.state().busy,false);
+ await c.prepare();await c.reset('RESET SEASON 0');await c.command('advance');
+ assert.equal(writes,0);
 });
 test('newer request wins and lower world revisions cannot overwrite observed state',async()=>{
  const pending=deferred();let reads=0;
@@ -68,13 +75,41 @@ test('prepare is single-flight, sends only concurrency metadata, preserves retry
  await c.prepare();assert.equal(mutations,2);
 });
 
-test('failed logout retains a retry action without restoring privileged controls (retired unified-login contract)',()=>{
- const html=renderAdminSettings();
- assert.doesNotMatch(html,/data-admin-login|data-admin-logout/);
+test('unified account without both Admin read grants never reads or mutates the world',async()=>{
+ for(const permissions of [[],['admin.access'],['admin.world.read']]){
+  const calls=[];
+  const c=rawCreateAdminController(async path=>{
+   calls.push(path);
+   if(path==='/api/admin/session')return session;
+   if(path==='/api/player/permissions')return {permissions};
+   throw Error('unexpected privileged request');
+  },()=>{});
+  await c.refresh();await c.prepare();await c.command('advance');
+  assert.equal(c.state().message,'forbidden');
+  assert.equal(c.state().actor,null);
+  assert.equal(c.state().world,null);
+  assert.deepEqual(c.state().permissions,[]);
+  assert.deepEqual(calls,['/api/admin/session','/api/player/permissions']);
+ }
 });
-test('a late login world response cannot hide retry after a failed logout (retired unified-login contract)',()=>{
- const html=renderAdminSettings();
- assert.doesNotMatch(html,/data-admin-login|data-admin-logout/);
+test('permission lookup failure clears a previously authorized Admin snapshot',async()=>{
+ let denied=false,writes=0;
+ const c=rawCreateAdminController(async(path,options)=>{
+  if(options?.body){writes++;throw Error('unexpected mutation');}
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/player/permissions'){
+   if(denied)throw error(503,'permissions_unavailable');
+   return {permissions:['admin.access','admin.world.read','admin.world.write']};
+  }
+  if(path==='/api/admin/world')return {world};
+  return {world,mode:'uninitialized',events:[]};
+ },()=>{});
+ await c.refresh();assert.equal(c.state().actor.id,'operator');assert.deepEqual(c.state().world,world);
+ denied=true;await c.refresh();
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ assert.equal(c.state().events,null);assert.deepEqual(c.state().permissions,[]);
+ assert.equal(c.state().message,'unavailable');
+ await c.prepare();assert.equal(writes,0);
 });
 test('reset UI requires typed confirmation, is single-flight and rotates world generation',async()=>{
  const active={...world,phase:'preparing',seasonNumber:1,revision:2},next={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
