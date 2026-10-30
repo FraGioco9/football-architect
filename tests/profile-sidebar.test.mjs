@@ -8,5 +8,5 @@ test('shared sidebar renders Profile directly below Settings',()=>{
  assert.ok(profile>settings);
  assert.match(html.slice(settings,profile),/Settings<\/span>\s*<\/a>\s*<a class="fa-shell-link" $/);
  assert.equal((html.match(/id="app-nav-profile"/g)||[]).length,1);
- assert.match(html,/id="app-nav-profile" href="\/account\/"/);
+ assert.match(html,/id="app-nav-profile" href="\/account"/);
 });

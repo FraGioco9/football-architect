@@ -16,6 +16,7 @@ on:
       - 'assets/landing.css'
       - 'assets/clubs-directory.css'
       - 'tests/control-focus-browser.mjs'
+      - 'tests/competition-season-zero-club-links-browser.mjs'
       - 'tests/player-safe-return-browser.mjs'
       - 'tests/account-*'
       - 'tests/profile-*'
@@ -103,13 +104,17 @@ jobs:
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
       - name: Verify account pointer, keyboard and dropdown matrix in Chromium
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-interaction-browser.mjs
+      - name: Verify account spacing and viewport-aware dropdowns in Chromium
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-layout-browser.mjs
+      - name: Verify Season 0 club navigation in Chromium
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/competition-season-zero-club-links-browser.mjs
       - name: Verify complete isolated account UI suite in WebKit
         env:
           FA_AUTH_BROWSER: webkit
           FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
           FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
         run: |
-          for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction; do
+          for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction account-layout competition-season-zero-club-links; do
             node "tests/$suite-browser.mjs"
           done
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.

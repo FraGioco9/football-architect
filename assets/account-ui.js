@@ -61,7 +61,7 @@
    }
    const binding=win.faBindCompetitionMenu(trigger,menu,[],chosen=>{
     select.value=chosen;select.dispatchEvent(new win.Event('change',{bubbles:true}));refreshMenus();
-   },control);
+   },control,{fitViewport:true});
    selects.set(select,{trigger,menu,value,binding,fingerprint:null});
    select.addEventListener('change',refreshMenus);
    select.form?.addEventListener('reset',()=>win.queueMicrotask(refreshMenus));

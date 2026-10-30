@@ -7,13 +7,32 @@
     const {search,empty}=config;
     const visible=()=>options.filter(option=>!option.hidden);
     const normalize=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase(document.documentElement.lang).trim();
+    function position(){
+      if(!config.fitViewport||menu.hidden)return;
+      menu.style.maxHeight='';
+      const bounds=trigger.getBoundingClientRect(),viewport=window.visualViewport;
+      const top=viewport?.offsetTop||0,bottom=top+(viewport?.height||window.innerHeight),gap=6,edge=8;
+      const below=Math.max(0,bottom-bounds.bottom-gap-edge),above=Math.max(0,bounds.top-top-gap-edge);
+      const cssLimit=parseFloat(getComputedStyle(menu).maxHeight);
+      const desired=Math.min(menu.scrollHeight+menu.offsetHeight-menu.clientHeight,Number.isFinite(cssLimit)?cssLimit:Infinity);
+      const placement=desired<=below||below>=above?'below':'above';
+      menu.dataset.menuPlacement=placement;
+      menu.style.maxHeight=Math.max(0,Math.min(desired,placement==='below'?below:above))+'px';
+    }
     function highlight(){
       const choices=visible();active=Math.max(0,Math.min(active,choices.length-1));
       options.forEach(option=>delete option.dataset.active);
       for(const node of [trigger,search].filter(Boolean)){
         if(choices.length)node.setAttribute('aria-activedescendant',choices[active].id);else node.removeAttribute('aria-activedescendant');
       }
-      if(choices.length){choices[active].dataset.active='true';choices[active].scrollIntoView?.({block:'nearest'});}
+      if(choices.length){
+        const option=choices[active];option.dataset.active='true';
+        if(config.fitViewport){
+          const item=option.getBoundingClientRect(),box=menu.getBoundingClientRect();
+          if(item.top<box.top+menu.clientTop)menu.scrollTop-=box.top+menu.clientTop-item.top;
+          else if(item.bottom>box.top+menu.clientTop+menu.clientHeight)menu.scrollTop+=item.bottom-box.top-menu.clientTop-menu.clientHeight;
+        }else option.scrollIntoView?.({block:'nearest'});
+      }
     }
     function filter(){
       const query=normalize(search?.value||'');
@@ -25,15 +44,16 @@
       menu.hidden=true;trigger.setAttribute('aria-expanded','false');
       for(const node of [trigger,search].filter(Boolean))node.removeAttribute('aria-activedescendant');
       options.forEach(option=>delete option.dataset.active);
-      if(focus)trigger.focus();
+      if(focus)trigger.focus({preventScroll:!!config.fitViewport});
     }
     function open(){
       if(trigger.disabled)return;
       if(search){search.value='';filter();}
       const choices=visible();active=Math.max(0,choices.findIndex(option=>option.dataset.menuValue===trigger.value));
-      menu.hidden=false;trigger.setAttribute('aria-expanded','true');(search||trigger).focus();highlight();
+      menu.hidden=false;trigger.setAttribute('aria-expanded','true');(search||trigger).focus({preventScroll:!!config.fitViewport});position();highlight();
     }
     function select(){const option=visible()[active];if(option){choose(option.dataset.menuValue);close(true)}}
+    if(config.fitViewport){window.addEventListener('resize',position,{passive:true});window.addEventListener('scroll',position,{passive:true});window.visualViewport?.addEventListener('resize',position,{passive:true});window.visualViewport?.addEventListener('scroll',position,{passive:true});}
     trigger.addEventListener('click',()=>{if(menu.hidden)open();else{close();trigger.blur();}});
     function keydown(event){
       const key=event.key;

@@ -2,34 +2,34 @@
 html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body{min-height:100svh;display:flex;flex-direction:column}
 .account-body,.account-body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.account-header{width:100%;max-width:1440px;margin-inline:auto;padding:24px clamp(18px,4vw,56px);display:flex;align-items:center;justify-content:space-between;gap:20px}
+.account-header{width:100%;max-width:1440px;margin-inline:auto;padding:12px clamp(18px,4vw,56px);display:flex;align-items:center;justify-content:space-between;gap:20px}
 .account-brand{display:flex;align-items:center;min-width:0;width:230px;max-width:48%;min-height:44px}
-.account-brand img{display:block;width:100%;height:64px;object-fit:contain;object-position:left}
+.account-brand img{display:block;width:100%;height:48px;object-fit:contain;object-position:left}
 .account-brand .brand-image-symbol{display:none}
 .account-language{display:grid;gap:4px;font-size:12px;color:var(--muted);flex:none}
 .account-language .language-control{min-width:164px}
 .account-body form .language-control,.account-body form .language-trigger{width:100%;min-width:0}
 .account-body form .language-menu{width:100%;max-height:260px}
 .account-body .language-trigger{font-weight:400}
-.account-body main{width:calc(100% - 36px);max-width:460px;margin:clamp(24px,6vh,64px) auto 64px}
+.account-body main{width:calc(100% - 36px);max-width:460px;margin:16px auto}
 .account-body main.account-wide{max-width:660px}
-.account-body h1{margin:0 0 12px;font-size:28px;letter-spacing:-.035em;line-height:1.2}
+.account-body h1{margin:0 0 8px;font-size:28px;letter-spacing:-.035em;line-height:1.2}
 .account-body h2{font-size:18px;line-height:1.35}
-.account-body form{display:grid;gap:18px;margin-block:26px 18px}
-.account-body label{display:grid;gap:7px;font-size:14px;font-weight:600}
+.account-body form{display:grid;gap:12px;margin-block:16px 12px}
+.account-body label{display:grid;gap:5px;font-size:14px;font-weight:600}
 .account-body input,.account-body select{font:inherit;width:100%;min-width:0;min-height:44px;padding:10px 12px;background:var(--background);color:var(--text);border:1px solid var(--border);border-radius:10px}
 .account-body input:focus-visible,.account-body select:focus-visible,.account-body a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .account-body form>.cta{width:100%}
 .account-body .cta:disabled{opacity:.6;cursor:wait}
 .account-body a{color:var(--focus);text-underline-offset:3px}
-.account-body main>p{margin-block:12px}
+.account-body main>p{margin-block:8px}
 .account-body p{font-size:14px;overflow-wrap:anywhere}
 .account-body [role="status"]{min-height:1.6em;color:var(--muted)}
 .account-body small{display:block;color:var(--muted);font-size:12px;font-weight:400;line-height:1.5}
 .account-body section+section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .account-body [hidden]{display:none!important}
-.account-footer{margin-top:auto;text-align:center;color:var(--muted);padding:20px;font-size:12px}
-@media(max-width:480px){.account-header{padding-block:18px}.account-brand{width:44px;max-width:44px}.account-brand .brand-image-wide{display:none}.account-brand .brand-image-symbol{display:block;width:44px;height:44px}.account-body main{margin-top:20px}.account-body h1{font-size:25px}}
+.account-footer{margin-top:auto;text-align:center;color:var(--muted);padding:8px;font-size:12px}
+@media(max-width:480px){.account-header{padding-block:12px}.account-brand{width:44px;max-width:44px}.account-brand .brand-image-wide{display:none}.account-brand .brand-image-symbol{display:block;width:44px;height:44px}.account-body main{margin-top:12px}.account-body h1{font-size:25px}}
 
 /* Account containers do not receive decorative highlighting. Keyboard focus remains on controls. */
 .account-body main.app-panel,.account-body main.app-panel:hover,.account-body main.app-panel:focus-within{border-color:transparent;outline:none;box-shadow:none}
@@ -43,7 +43,7 @@ html:not([data-account-ready="true"]) .account-body{visibility:hidden}
 .account-body .account-feedback:empty{display:none}
 
 /* Account assistance reuses the same controls, spacing and restrained site colors. */
-.account-field{display:grid;gap:7px;min-width:0}
+.account-field{display:grid;gap:5px;min-width:0}
 .account-password{position:relative;min-width:0}
 .account-body .account-password input{padding-inline-end:52px}
 .account-password-toggle{position:absolute;inset-inline-end:1px;top:1px;display:grid;place-items:center;width:44px;height:42px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
@@ -53,7 +53,7 @@ html:not([data-account-ready="true"]) .account-body{visibility:hidden}
 html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
 .account-field-error:empty{display:none}
 .account-body [data-met="true"]{color:var(--primary)}
-.account-optional{display:grid;gap:18px;min-width:0;margin:4px 0 0;padding:18px 0 0;border:0;border-top:1px solid var(--line)}
+.account-optional{display:grid;gap:12px;min-width:0;margin:4px 0 0;padding:12px 0 0;border:0;border-top:1px solid var(--line)}
 .account-optional legend{padding:0 10px 0 0;color:var(--muted);font-size:12px;font-weight:400}
 .account-body #account-next-step{color:var(--muted);line-height:1.6}
 .account-body .account-feedback[data-kind="success"]::before{content:"✓";color:var(--primary)}
@@ -81,3 +81,9 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 .account-body #nationality-menu{width:100%;min-width:0;max-width:100%;max-height:min(260px,40svh);overflow-y:auto;box-sizing:border-box}
 #nationality-menu .language-option{overflow-wrap:anywhere}
 #nationality-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Compact entry pages keep full-size fields and reveal feedback only when present. */
+.account-body main.app-panel{padding:18px}
+.account-body [role="status"]:empty{display:none}
+@media(min-width:600px){.account-optional{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.account-body .language-menu[data-menu-placement="above"]{top:auto;bottom:calc(100% + 6px)}
