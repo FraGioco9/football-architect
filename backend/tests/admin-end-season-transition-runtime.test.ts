@@ -10,7 +10,8 @@ import {closeSeason} from '../src/season-close-command.ts';
 import {readClosedSeasonHistory} from '../src/season-archive-read.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {hashText,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
+import {digestOpaqueToken} from '../src/session-tokens.ts';
 import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>,baseline:Awaited<ReturnType<typeof captureTestWorld>>;
@@ -19,9 +20,16 @@ const receipts=()=>db.prepare('SELECT event_id,status,receipt_hash FROM season_a
 const count=async(table:string)=>(await db.prepare('SELECT count(*) n FROM '+table).first())!.n;
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);
- session={actor:{id:'end-season-operator',email:'end-season@example.invalid'},digest:await hashText('end-season-session'),credentialVersion:1,csrfDigest:await hashText('end-season-csrf')};
+ session={actor:{id:'end-season-operator',email:'end-season@example.invalid'},digest:await digestOpaqueToken('end-season-test-player-token'),credentialVersion:1,csrfDigest:await digestOpaqueToken('end-season-test-player-csrf'),unified:{playerId:'end-season-player',sessionDigest:await digestOpaqueToken('end-season-test-player-token'),csrfDigest:await digestOpaqueToken('end-season-test-player-csrf')}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-10,now-5,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+  .bind('end-season-player',session.actor.email,'synthetic',1,now-10,'active',now-10,now-10).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('end-season-player',session.actor.id,now-10).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+  .bind(session.digest,'end-season-player',1,session.csrfDigest,now-10,now-5,now+1000).run();
+ await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>
+  db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('end-season-player',permission,now-10)));
  world=await readWorld(db);
  world=(await prepareSeason(db,session,input(),'end-season-prepare',await loadApprovedSnapshot(),now)).world;
  world=(await generateSeasonCalendar(db,session,input(),'end-season-calendar',now)).world;
