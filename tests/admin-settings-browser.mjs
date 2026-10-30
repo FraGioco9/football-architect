@@ -1,110 +1,59 @@
-// Actual same-origin Settings → loopback bridge → Wrangler Worker → persisted D1.
+// Unified Admin Settings browser acceptance: no retired Admin password form.
+// Real Worker/D1 authorization and rollback are covered by backend Vitest suites.
 import assert from 'node:assert/strict';
-import {mkdtemp,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
-import {join} from 'node:path';
-import {fileURLToPath,pathToFileURL} from 'node:url';
-import {createRequire} from 'node:module';
-const backendRequire=createRequire(new URL('../backend/package.json',import.meta.url));
-import {createServer} from 'node:net';
-import {spawn} from 'node:child_process';
 import {once} from 'node:events';
-import {setTimeout as delay} from 'node:timers/promises';
-import {verifyAdminWorldLifecycle} from './admin-world-lifecycle-browser.mjs';
+import {createRequire} from 'node:module';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
-import {openLocalDatabase,manageAccount} from '../backend/tools/operator-local.mts';
-const playwright=await import(process.env.FA_ADMIN_PLAYWRIGHT||'playwright');
-// Fail before opening servers when a browser is missing; never count it as a skip.
+const require=createRequire(new URL('../backend/package.json',import.meta.url));
+const playwright=await import(process.env.FA_ADMIN_PLAYWRIGHT||require.resolve('playwright'));
 const browser=await playwright.chromium.launch({headless:true});
-const state=await mkdtemp(join(tmpdir(),'fa-admin-browser-'));
-let worker,preview,logs='',checks=0,preparedWorld=null;
-const freePort=async()=>{const s=createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const port=s.address().port;await new Promise(r=>s.close(r));return port};
-const password='browser-synthetic-password-2026';
+const preview=createPreviewServer({subdomains:true,devPreview:false});
+let checks=0;
 try{
- const workerPort=await freePort(),origin='http://localhost:2000';
- const handle=await openLocalDatabase(state);try{await manageAccount(handle.db,'create','operator@example.invalid',password)}finally{await handle.close()}
- worker=spawn(process.execPath,[fileURLToPath(new URL('../bin/wrangler.js',pathToFileURL(backendRequire.resolve('wrangler')).href)),'dev','--local','--inspector-port','0','--inspector-ip','127.0.0.1','--ip','127.0.0.1','--port',String(workerPort),'--persist-to',state,'--var','ADMIN_MODE:local','--var','ADMIN_ORIGIN:'+origin],{cwd:fileURLToPath(new URL('../backend/',import.meta.url)),env:{...process.env,WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});
- worker.stdout.on('data',x=>logs+=String(x));worker.stderr.on('data',x=>logs+=String(x));
- let ready=false;
- for(let i=0;i<100;i++){
-  if(worker.exitCode!==null)throw Error('Worker exited before readiness');
-  try{if((await fetch('http://127.0.0.1:'+workerPort+'/api/world')).ok){ready=true;break}}catch{}
-  await delay(150);
- }
- assert.ok(ready,'Worker readiness');
- process.env.FA_ADMIN_API_TARGET='http://127.0.0.1:'+workerPort;
- preview=createPreviewServer({subdomains:true,devPreview:false});preview.listen(2000,'127.0.0.1');await once(preview,'listening');
+ preview.listen(2000,'127.0.0.1');await once(preview,'listening');
  for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light'])for(const width of [320,390,1440]){
   const context=await browser.newContext({viewport:{width,height:900},locale:language});
   try{
-   await context.addInitScript(({language,theme})=>{localStorage.setItem('football-architect:language',language);localStorage.setItem('football-architect:theme',theme)},{language,theme});
-   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
-   await page.goto(origin+'/settings');await page.locator('[data-admin-login] button').waitFor();
-   await page.waitForFunction(()=>!document.querySelector('[data-admin-login] button').disabled);
-   assert.equal(await page.locator('#admin-email').getAttribute('autocomplete'),'username');
-   assert.equal(await page.locator('#admin-password').getAttribute('autocomplete'),'current-password');
-   for(const id of ['admin-reset-confirm','admin-next-season-confirm'])assert.equal(await page.locator(`label[for="${id}"]`).count(),1);
+   await context.addInitScript(({language,theme})=>{
+    localStorage.setItem('football-architect:language',language);
+    localStorage.setItem('football-architect:theme',theme);
+   },{language,theme});
+   const page=await context.newPage(),errors=[];
+   page.on('pageerror',e=>errors.push(e.message));
+   let adminCalls=0;
+   await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'});});
+   await page.route('**/api/player/permissions',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'}));
+   await page.goto('http://localhost:2000/settings');
+   const signIn=page.locator('[data-admin-signin-link] a');
+   await signIn.waitFor({state:'visible'});
+   assert.equal(await signIn.getAttribute('href'),'/account/login?next=%2Fsettings%2F');
+   assert.equal(await page.locator('[data-admin-login],#admin-email,#admin-password').count(),0);
+   assert.equal(await page.locator('[data-admin-signed-in]').isVisible(),false);
+   assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
+   assert.equal(await page.locator('[data-admin-command="nextPrepare"]').isEnabled(),false);
+   assert.equal(await page.locator('label[for="admin-reset-confirm"]').count(),1);
+   assert.equal(await page.locator('label[for="admin-next-season-confirm"]').count(),1);
    assert.equal(await page.locator('[data-admin-operation]').getAttribute('aria-live'),'polite');
-   assert.equal(await page.locator('[data-admin-command="nextPrepare"]').count(),1);
-   await page.locator('#admin-email').fill('operator@example.invalid');await page.locator('#admin-password').fill(password);
-   await page.locator('#admin-password').press('Enter');await page.locator('[data-admin-signed-in]').waitFor({state:'visible'});
-   assert.equal(await page.locator('#admin-password').inputValue(),'');
-   if(!preparedWorld){
-    await page.waitForFunction(()=>!document.querySelector('[data-admin-prepare]').disabled);
-    const completion=page.waitForResponse(r=>r.url().endsWith('/api/admin/seasons/prepare'));
-    await page.locator('[data-admin-prepare]').click();
-    const result=await completion;assert.equal(result.status(),200);const outcome=await result.json();preparedWorld=outcome.world;
-    assert.equal(preparedWorld.seasonNumber,1);assert.equal(preparedWorld.revision,1);assert.equal(preparedWorld.day,0);assert.equal(preparedWorld.phase,'preparing');
-   }
-   await page.waitForFunction(()=>document.querySelector('[data-admin-world]').textContent.includes('1')&&document.querySelector('[data-admin-prepare]').disabled);
-   assert.ok((await page.locator('[data-admin-status]').textContent()).length>0);
-   const nextLabels={en:'Prepare Season 2',it:'Prepara Stagione 2',de:'Saison 2 vorbereiten',es:'Preparar Temporada 2',fr:'Préparer la saison 2'};
-   assert.equal(await page.locator('[data-admin-command="nextPrepare"]').textContent(),nextLabels[language]);
-   const approvalLabels={en:'Approve Season 2 participants',it:'Approva partecipanti Stagione 2',de:'Teilnehmer für Saison 2 genehmigen',es:'Aprobar participantes de la temporada 2',fr:'Approuver les participants de la saison 2'};
-   assert.equal(await page.locator('[data-admin-next-season-approve]').textContent(),approvalLabels[language]);
-   assert.equal(await page.locator('label[for="admin-next-season-confirm"]').textContent().then(x=>x.includes('APPROVE SEASON 2')),true);
-   assert.equal(await page.locator('[data-admin-operations]').getAttribute('aria-labelledby'),'admin-heading');
-   const world=await page.evaluate(()=>fetch('/api/world').then(r=>r.json()));assert.deepEqual(world.world,preparedWorld);
-   await page.reload();await page.locator('[data-admin-signed-in]').waitFor({state:'visible'});
-   await page.waitForFunction(()=>document.querySelector('[data-admin-prepare]').disabled&&!document.querySelector('[data-admin-refresh]').disabled);
-   assert.deepEqual(await page.evaluate(()=>fetch('/api/world').then(r=>r.json())),{world:preparedWorld});
-   const secrets=await page.evaluate(()=>JSON.stringify({local:{...localStorage},session:{...sessionStorage},cookie:document.cookie}));
-   assert.ok(!secrets.includes(password));assert.ok(!secrets.includes('fa_admin_local'));assert.ok(!secrets.includes('csrf'));
-   // Final QA: verify native keyboard activation, labelled controls and live status in every locale/theme/width.
-   for(const id of ['admin-email','admin-password']){
-    const control=page.locator('#'+id);
-    assert.equal(await control.evaluate(el=>el.labels?.length>0),true,id+' requires a programmatic label');
-   }
-   assert.equal(await page.locator('[data-admin-operation]').getAttribute('aria-live'),'polite');
-   await page.locator('[data-admin-refresh]').focus();
-   assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-admin-refresh')),true);
-   const keyboardRefresh=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/world'&&r.request().method()==='GET');
+   await signIn.focus();
    await page.keyboard.press('Enter');
-   assert.equal((await keyboardRefresh).status(),200,'Keyboard refresh must use the protected Admin read');
-   await page.waitForFunction(()=>!document.querySelector('[data-admin-refresh]').disabled);
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+   await page.waitForURL(url=>url.pathname==='/account/login/'||url.pathname==='/account/login');
+   assert.equal(new URL(page.url()).searchParams.get('next'),'/settings/');
    assert.deepEqual(errors,[]);
-   await page.locator('[data-admin-logout]').focus();await page.keyboard.press('Enter');await page.locator('[data-admin-login]').waitFor({state:'visible'});
-   await page.waitForFunction(()=>!document.querySelector('[data-admin-login] button').disabled);
-   assert.equal(await page.evaluate(()=>fetch('/api/admin/session').then(r=>r.status)),401);
+   assert.equal(adminCalls>0,true,'Admin session is checked but never assumed');
    checks++;
-  }finally{await context.close()}
+  }finally{await context.close();}
  }
- const context=await browser.newContext();try{
-  const page=await context.newPage();let calls=0;await page.route('**/api/admin/**',route=>{calls++;return route.continue()});await page.goto(origin+'/dashboard');await page.waitForLoadState('networkidle');assert.equal(calls,0,'Public pages must not issue admin calls');
-  await page.route('**/api/admin/**',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"admin_unavailable"}}'}));
-  await page.goto(origin+'/settings');await page.waitForFunction(()=>!document.querySelector('[data-admin-login] button').disabled);assert.ok(await page.locator('[data-admin-login]').isVisible());checks++;
- }finally{await context.close()}
- // The independent30-login matrix has consumed the real source throttle budget.
- // Reset only disposable test throttle rows between scenarios; production policy stays enabled.
- const throttleState=await openLocalDatabase(state);try{await throttleState.db.prepare('DELETE FROM auth_throttles').run()}finally{await throttleState.close()}
- const lifecycle=await verifyAdminWorldLifecycle(browser,{origin:'http://localhost:2000',password});checks++;
- assert.ok(lifecycle.twoSeasonLifecycle&&lifecycle.staleResetProjection);
- assert.ok(!logs.includes(password));
- console.log(`Admin Settings actual Worker/D1 Chromium PASS: ${checks} cases (5 languages × 2 themes × 3 widths; public independence, API unavailable, two-season lifecycle and reset)`);
+ const context=await browser.newContext();
+ try{
+  const page=await context.newPage();let adminCalls=0;
+  await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"admin_unavailable"}}'});});
+  await page.goto('http://localhost:2000/dashboard');
+  await page.waitForLoadState('networkidle');
+  assert.equal(adminCalls,0,'Anonymous public browsing must not invoke Admin APIs');
+  checks++;
+ }finally{await context.close();}
+ console.log('Unified Admin Settings browser contracts PASS: '+checks+' cases');
 }finally{
- delete process.env.FA_ADMIN_API_TARGET;
- if(preview){preview.closeAllConnections();await new Promise(r=>preview.close(r))}
- if(worker&&worker.exitCode===null){const closed=once(worker,'close');worker.kill('SIGTERM');await closed}
- await browser.close();await rm(state,{recursive:true,force:true});
+ preview.closeAllConnections();await new Promise(resolve=>preview.close(resolve));
+ await browser.close();
 }
