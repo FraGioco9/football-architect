@@ -57,8 +57,15 @@ describe('Cloudflare Email Service delivery adapter (no real sends)',()=>{
    expect(message.html).toContain('token='+token);
    expect(message.text).toContain('token='+token);
   }
+  for(let i=0;i<10;i++){
+   const locale=['en','de','es','fr','it'][Math.floor(i/2)];
+   const link=new URL(received[i].text.match(/https:\/\/[^\s]+/)![0]);
+   expect(link.searchParams.get('lang')).toBe(locale==='en'?null:locale);
+   expect(link.searchParams.get('token')).toBe(token);
+  }
   await callbacks.verification!('player@example.invalid',token,'unknown');
   expect(received.at(-1).subject).toBe(received[0].subject);
+  expect(new URL(received.at(-1).text.match(/https:\/\/[^\s]+/)![0]).searchParams.has('lang')).toBe(false);
  });
  it('rejects malformed tokens before sending and propagates delivery failures',async()=>{
   let count=0;
