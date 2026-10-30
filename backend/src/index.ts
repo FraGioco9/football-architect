@@ -57,14 +57,14 @@ export default {
         return json(503,{error:{code:'sporting_data_unavailable'}});
       }
     }
-    if (url.pathname === '/api/player' || url.pathname.startsWith('/api/player/'))
+    if (url.pathname === '/api/player' || url.pathname.startsWith('/api/player/')) {
+      const delivery=cloudflareEmailDeliveries(env);
       return handlePlayer(request,{
         ...env,
-        ...(() => {const delivery=cloudflareEmailDeliveries(env);return {
-          PLAYER_VERIFICATION_DELIVERY: env.PLAYER_VERIFICATION_DELIVERY??delivery.verification,
-          PLAYER_RESET_DELIVERY: env.PLAYER_RESET_DELIVERY??delivery.reset
-        };})()
+        PLAYER_VERIFICATION_DELIVERY:env.PLAYER_VERIFICATION_DELIVERY??delivery.verification,
+        PLAYER_RESET_DELIVERY:env.PLAYER_RESET_DELIVERY??delivery.reset
       });
+    }
     // Admin access requires explicit configuration, durable authorization and CSRF.
     if (url.pathname === '/api/admin' || url.pathname.startsWith('/api/admin/'))
       return handleAdmin(request,env);
