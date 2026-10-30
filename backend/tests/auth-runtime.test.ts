@@ -50,6 +50,19 @@ describe('Unified Admin HTTP contract — replacement for the legacy login',()=>
   expect((await request('/api/admin/world',undefined,{Cookie:'fa_admin_local=old'})).status).toBe(401);
   expect((await request('/api/admin/signup',{})).status).toBe(404);
  });
+ it('fails closed when the historical operator identity no longer matches the Player account',async()=>{
+  await grant('admin.access','admin.world.read');
+  const signed=await login(),c=cookie(signed);
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(200);
+  await db.prepare('UPDATE admin_accounts SET email_normalized=? WHERE id=?').bind('different@example.invalid','operator-legacy').run();
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
+  expect((await request('/api/admin/session',undefined,{Cookie:c})).status).toBe(403);
+  await db.prepare('UPDATE admin_accounts SET email_normalized=? WHERE id=?').bind(email,'operator-legacy').run();
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(200);
+  await db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind('operator-player').run();
+  expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
+  expect((await request('/api/world')).status).toBe(200);
+ });
  it('authenticates via the Player cookie, restores CSRF and preserves anonymous reads',async()=>{
   await grant('admin.access','admin.world.read');
   const signed=await login();expect(signed.status).toBe(200);
