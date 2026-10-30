@@ -32,6 +32,13 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 .account-footer{margin-top:auto;text-align:center;color:var(--muted);padding:8px;font-size:12px}
 @media(max-width:480px){.account-header{padding-block:12px}.account-brand{width:44px;max-width:44px}.account-brand .brand-image-wide{display:none}.account-brand .brand-image-symbol{display:block;width:44px;height:44px}.account-body main{margin-top:12px}.account-body h1{font-size:25px}}
 
+/* Registration gains an extra navigation link without expanding the viewport. */
+.account-body main.app-panel:has(#register-form){margin-block:8px}
+.account-body main.app-panel:has(#register-form) .account-go-back{margin-bottom:8px}
+.account-body #register-form{gap:8px;margin-block:10px 8px}
+.account-body #register-form .account-optional{gap:8px;padding-top:8px;margin-top:0}
+.account-body main.app-panel:has(#register-form)>p{margin-block:4px}
+
 /* Account containers do not receive decorative highlighting. Keyboard focus remains on controls. */
 .account-body main.app-panel,.account-body main.app-panel:hover,.account-body main.app-panel:focus-within{border-color:transparent;outline:none;box-shadow:none}
 
