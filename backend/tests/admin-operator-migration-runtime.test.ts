@@ -1,10 +1,11 @@
+import type {Database} from '../src/database.ts';
 import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration,preflightAdminOperatorsBatch,migrateAdminOperatorsBatch,revokeMigratedAdminOperatorsBatch} from '../src/admin-operator-migration.ts';
 import {hashPassword} from '../src/passwords.ts';
 import {playerLogin} from '../src/player-auth.ts';
-const binding=env as any,db=binding.DB;
+const binding=env as any,db=binding.DB as Database;
 const email='migration-operator@example.invalid',password='migration-fixture-password-2026';
 let verifier:string;
 const now=()=>Math.floor(Date.now()/1000);
