@@ -58,3 +58,6 @@ Exact HEAD `34e07f1e9db66fc4f62d522461c571a490ffa32c`, GitHub Actions:
 - Site checks uses `tools/ci-opt-01-impact.mjs` to select FAST/TARGETED/FULL. FULL runs `tools/ci-opt-01-node-runner.mjs`, which already isolates fingerprint-audited tests with bounded concurrency=2 and other files serially. Additional unreviewed parallelism is intentionally not introduced.
 - Browser QA also uses the same impact router, executing both Chromium/WebKit in targeted/full modes and deferring them only for eligible fast Draft changes. The old Playwright cache key partitioned downloads by `targeted` versus `full`; PR #332 uses one version/OS cache key shared across those modes, avoiding redundant downloads on cache hits without dropping WebKit.
 - Current ordinary Draft runs are FULL because workflow-related files changed. Browser ~350 s, Site ~311 s, so no claim of achieving 2–4 minute full gate is made.
+
+## Final gate activation
+PR #332 remains Draft/HOLD and carries the explicit `<!-- admin-world-final-verification -->` marker. The next workflow run must include the **non-skipped** `operator-final` job plus full Worker and Chromium. A green ordinary Draft run with operator skipped is insufficient. Record the new exact-head commit and job outcomes before closing C07.
