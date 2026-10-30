@@ -41,7 +41,7 @@ try{
    assert.equal(await page.locator('[name=username]').inputValue(),'Francesco_9');
    assert.equal(await page.locator('[name=password]').inputValue(),'synthetic-test-password-2026');
    assert.equal(await page.locator('#nationality').inputValue(),'IT');
-   await page.locator('#submit').click();await page.waitForFunction(()=>document.getElementById('status').textContent.includes('username')||document.getElementById('status').textContent.includes('Benutzername'));
+   await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('[name=username]').getAttribute('aria-invalid')==='true');
    assert.deepEqual(payload,{email:'synthetic@example.invalid',password:'synthetic-test-password-2026',username:'Francesco_9',nationality:'IT',city:'Bologna'});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    await page.locator('#login-link').click();await page.waitForURL('**/account/login/**');

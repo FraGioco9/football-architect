@@ -35,13 +35,17 @@ ui.bind(locale=>{
 country.disabled=true;
 fetch('/data/country-codes.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(value=>{if(!Array.isArray(value)||!value.every(c=>typeof c==='string'&&/^[A-Z]{2}$/.test(c)))return;codes=value;renderCountries(ui.language);country.disabled=false;ui.refreshMenus()}).catch(()=>{/* Optional nationality stays empty if its static list is unavailable. */});
 form.addEventListener('submit',async e=>{
- e.preventDefault();if(submitting)return;submitting=true;button.disabled=true;button.textContent=t[5];ui.feedback(status,t[5],'pending');
+ e.preventDefault();if(submitting)return;ui.nextStep(null);submitting=true;button.disabled=true;button.textContent=t[5];ui.feedback(status,t[5],'pending');
  const values=new FormData(form);
  try{
   const result=await fetch('/api/player/register',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(values.get('email')||''),password:String(values.get('password')||''),username:String(values.get('username')||'').trim(),nationality:String(values.get('nationality')||''),city:String(values.get('city')||'').trim()})});
   const value=await result.json().catch(()=>({}));
-  ui.feedback(status,result.status===202?t[6]:result.status===409&&value?.error?.code==='username_unavailable'?f[5]:result.status===422?f[6]:result.status===503?t[7]:t[8],result.status===202?'success':'error');
-  if(result.status===202)form.reset();
+  if(result.status===409&&value?.error?.code==='username_unavailable'){
+   ui.feedback(status,'');ui.fieldError(form.elements.namedItem('username'),f[5]);form.elements.namedItem('username').focus();
+  }else{
+   ui.feedback(status,result.status===202?t[6]:result.status===422?f[6]:result.status===503?t[7]:t[8],result.status===202?'success':'error');
+   if(result.status===202){form.reset();ui.nextStep('registration');}
+  }
  }catch{ui.feedback(status,t[8]);}finally{submitting=false;button.disabled=false;button.textContent=t[3];}
 });
 })();

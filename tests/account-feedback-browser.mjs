@@ -22,9 +22,9 @@ try{
    const frames=await page.evaluate(()=>window.accountFrames);
    assert.ok(frames.every(row=>row.every((value,i)=>Math.abs(value-frames[0][i])<1)),'Language menu does not change geometry after first visible paint');
    await page.locator('#submit').click();
-   const message=page.locator('.account-feedback');await message.waitFor();
+   const message=page.locator('.account-field-error').first();await message.waitFor();
    assert.equal(await message.textContent(),required[lang]);assert.equal(writes,0);
-   assert.equal(await message.getAttribute('role'),'status');
+   assert.equal(await message.getAttribute('aria-live'),'polite');
    const field=page.locator(route==='login'?'[name=email]':'[name=username]');
    assert.equal(await field.evaluate(el=>getComputedStyle(el).outlineStyle),'none');
    assert.equal(await page.locator('h1').evaluate(el=>getComputedStyle(el).userSelect),'none');

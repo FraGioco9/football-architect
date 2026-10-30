@@ -58,9 +58,9 @@
    menu=doc.createElement('div');menu.id=select.id+'-menu';menu.className='language-menu';menu.hidden=true;menu.setAttribute('role','listbox');menu.setAttribute('aria-labelledby',label);
    select.before(control);control.append(select,trigger,menu);select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
    }
-   const binding=win.faBindCompetitionMenu(trigger,menu,[],chosen=>{
+   const binding=win.faBindCompetitionMenu(trigger,doc.getElementById(select.id+'-popover')||menu,[],chosen=>{
     select.value=chosen;select.dispatchEvent(new win.Event('change',{bubbles:true}));refreshMenus();
-   },control);
+   },control,{search:doc.getElementById(select.id+'-search'),empty:doc.getElementById(select.id+'-empty')});
    selects.set(select,{trigger,menu,value,binding,fingerprint:null});
    select.addEventListener('change',refreshMenus);
    select.form?.addEventListener('reset',()=>win.queueMicrotask(refreshMenus));
@@ -81,11 +81,63 @@
    const select=doc.getElementById('account-language');if(select)select.value=language;
    const label=doc.getElementById('account-language-label');
    if(label)label.textContent={en:'Language',de:'Sprache',es:'Idioma',fr:'Langue',it:'Lingua'}[language];
-   links();for(const callback of callbacks)callback(language);refreshMenus();
+   links();for(const callback of callbacks)callback(language);refreshMenus();refreshAssistance();
    for(const message of doc.querySelectorAll('[data-validation]'))message.textContent=validation[language][Number(message.dataset.validation)];
   }
   function feedback(node,text,kind='error'){
    if(!node)return;delete node.dataset.validation;node.classList.add('account-feedback');node.dataset.kind=kind;node.textContent=text;
+  }
+  const touched=new WeakSet();
+  const assistance={
+   en:['Show password','Hide password','At least 15 characters.','Optional information','Search countries','No countries found.','Check your inbox and spam folder. If you receive a verification link, open it, then sign in.','Check your inbox and spam folder. If you receive a recovery link, open it to choose a new password.','Sign in using your new password.'],
+   it:['Mostra password','Nascondi password','Almeno 15 caratteri.','Informazioni facoltative','Cerca paesi','Nessun paese trovato.','Controlla la posta in arrivo e lo spam. Se ricevi un link di verifica, aprilo e poi accedi.','Controlla la posta in arrivo e lo spam. Se ricevi un link di recupero, aprilo per scegliere una nuova password.','Accedi con la nuova password.'],
+   de:['Passwort anzeigen','Passwort verbergen','Mindestens 15 Zeichen.','Optionale Angaben','Länder suchen','Keine Länder gefunden.','Prüfe Posteingang und Spamordner. Falls du einen Bestätigungslink erhältst, öffne ihn und melde dich danach an.','Prüfe Posteingang und Spamordner. Falls du einen Wiederherstellungslink erhältst, öffne ihn und wähle ein neues Passwort.','Melde dich mit deinem neuen Passwort an.'],
+   es:['Mostrar contraseña','Ocultar contraseña','Al menos 15 caracteres.','Información opcional','Buscar países','No se encontraron países.','Revisa tu bandeja de entrada y el correo no deseado. Si recibes un enlace de verificación, ábrelo y después inicia sesión.','Revisa tu bandeja de entrada y el correo no deseado. Si recibes un enlace de recuperación, ábrelo para elegir una contraseña nueva.','Inicia sesión con tu nueva contraseña.'],
+   fr:['Afficher le mot de passe','Masquer le mot de passe','Au moins 15 caractères.','Informations facultatives','Rechercher des pays','Aucun pays trouvé.','Consultez votre boîte de réception et les indésirables. Si vous recevez un lien de vérification, ouvrez-le puis connectez-vous.','Consultez votre boîte de réception et les indésirables. Si vous recevez un lien de récupération, ouvrez-le pour choisir un nouveau mot de passe.','Connectez-vous avec votre nouveau mot de passe.']
+  };
+  function refreshAssistance(){
+   const t=assistance[language];
+   for(const button of doc.querySelectorAll('[data-password-toggle]')){
+    button.setAttribute('aria-label',t[button.getAttribute('aria-pressed')==='true'?1:0]);
+    const slash=button.querySelector('[data-password-slash]');if(slash)slash.toggleAttribute('hidden',button.getAttribute('aria-pressed')!=='true');
+   }
+   for(const help of doc.querySelectorAll('[data-password-help]')){
+    const field=doc.querySelector('[aria-describedby~="'+help.id+'"]');help.textContent=t[2];help.dataset.met=String(!!field&&field.value.length>=15);
+   }
+   const username=doc.querySelector('[name="username"]'),hint=doc.getElementById('username-help');if(hint&&username)hint.dataset.met=String(/^[A-Za-z0-9_]{3,24}$/.test(username.value));
+   for(const [id,index] of [['optional-title',3],['nationality-search-label',4],['nationality-empty',5]]){const node=doc.getElementById(id);if(node)node.textContent=t[index];}
+   const step=doc.getElementById('account-next-step');if(step?.dataset.step)step.textContent=t[{registration:6,recovery:7,reset:8}[step.dataset.step]];
+  }
+  function nextStep(kind){
+   const node=doc.getElementById('account-next-step');if(!node)return;
+   node.hidden=!kind;if(kind)node.dataset.step=kind;else delete node.dataset.step;
+   const link=doc.getElementById('login-link')||doc.getElementById('signin-link');
+   if(link){link.classList.toggle('cta',!!kind);link.classList.toggle('cta-secondary',!!kind);}
+   refreshAssistance();
+  }
+  function clearFieldError(field){
+   if(!field?.getAttribute)return;
+   const id=field.getAttribute('data-error-id');if(!id)return;
+   const error=doc.getElementById(id);if(error){error.textContent='';delete error.dataset.validation;}
+   field.removeAttribute('aria-invalid');delete field.dataset.remoteError;
+   const descriptions=(field.getAttribute('aria-describedby')||'').split(/\s+/).filter(value=>value&&value!==id);
+   if(descriptions.length)field.setAttribute('aria-describedby',descriptions.join(' '));else field.removeAttribute('aria-describedby');
+  }
+  function fieldError(field,text,index){
+   let id=field.getAttribute('data-error-id');
+   if(!id){id=field.id?field.id+'-error':field.form.id+'-'+field.name+'-error';field.setAttribute('data-error-id',id);}
+   let node=doc.getElementById(id);
+   if(!node){node=doc.createElement('small');node.id=id;node.className='account-field-error';node.setAttribute('aria-live','polite');(field.closest('.account-field')||field.closest('label')||field.parentElement).append(node);}
+   if(Number.isInteger(index))delete field.dataset.remoteError;else field.dataset.remoteError='true';
+   node.textContent=text;if(Number.isInteger(index))node.dataset.validation=String(index);else delete node.dataset.validation;
+   field.setAttribute('aria-invalid','true');
+   field.setAttribute('aria-describedby',[...new Set((field.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean).concat(id))].join(' '));
+  }
+  function validateField(field){
+   if(field.dataset.remoteError)return;
+   if(!field.willValidate||field.validity.valid){clearFieldError(field);return;}
+   const v=field.validity,index=v.valueMissing?0:v.typeMismatch?1:v.tooShort&&/password/i.test(field.name)?2:3;
+   fieldError(field,validation[language][index],index);
   }
   const validation={
    en:['Complete the required fields.','Enter a valid email address.','Use at least 15 characters for your password.','Check the format of your details.'],
@@ -98,19 +150,29 @@
    const select=doc.getElementById('account-language');
    if(select)select.addEventListener('change',()=>choose(select.value));
    choose(language);
+   for(const button of doc.querySelectorAll('[data-password-toggle]')){
+    const field=doc.getElementById(button.getAttribute('aria-controls'));
+    button.addEventListener('click',()=>{
+      const shown=field.type==='password';field.type=shown?'text':'password';button.setAttribute('aria-pressed',String(shown));refreshAssistance();
+    });
+   }
    for(const form of doc.querySelectorAll('form')){
     form.noValidate=true;
     form.addEventListener('submit',event=>{
      const invalid=[...form.elements].filter(field=>field.willValidate&&!field.validity.valid);
      if(!invalid.length)return;
      event.preventDefault();event.stopImmediatePropagation();
-     for(const field of invalid)field.setAttribute('aria-invalid','true');
-     const field=invalid[0],v=field.validity,index=v.valueMissing?0:v.typeMismatch?1:v.tooShort&&field.type==='password'?2:3;
-     const message=doc.querySelector('#message,#status');feedback(message,validation[language][index]);
-     if(message){message.dataset.validation=String(index);field.setAttribute('aria-describedby',message.id);}
-     field.focus();
+     feedback(doc.querySelector('#message,#status'),'');
+     for(const field of invalid){touched.add(field);validateField(field);}
+     invalid[0].focus();
     },true);
-    form.addEventListener('input',event=>event.target.removeAttribute?.('aria-invalid'));
+    form.addEventListener('focusout',event=>{if(event.target.willValidate){touched.add(event.target);validateField(event.target);}});
+    form.addEventListener('input',event=>{const field=event.target;if(field.dataset.remoteError)clearFieldError(field);if(touched.has(field))validateField(field);else clearFieldError(field);refreshAssistance();});
+    form.addEventListener('reset',()=>win.queueMicrotask(()=>{
+     for(const field of form.elements){clearFieldError(field);touched.delete(field);}
+     for(const button of form.querySelectorAll('[data-password-toggle]')){doc.getElementById(button.getAttribute('aria-controls')).type='password';button.setAttribute('aria-pressed','false');}
+     refreshAssistance();
+    }));
    }
    if(typeof win.faBindCompetitionMenu==='function')for(const select of doc.querySelectorAll('select[data-account-select]'))enhanceSelect(select);
    for(const link of doc.querySelectorAll('[data-account-home]')){
@@ -126,11 +188,11 @@
   }
   // Repaint status messages as well as labels, without touching user-entered values.
   function translateStatus(previous,next){
-   for(const node of doc.querySelectorAll('[role="status"],#status,#message,#sessions-summary')){
+   for(const node of doc.querySelectorAll('[role="status"],#status,#message,#sessions-summary,.account-field-error')){
     const index=previous.indexOf(node.textContent);if(index>=0)node.textContent=next[index];
    }
   }
-  return {get language(){return language},redirecting,bind(callback){callbacks.add(callback);callback(language)},translateStatus,choose,refreshMenus,feedback};
+  return {get language(){return language},redirecting,bind(callback){callbacks.add(callback);callback(language)},translateStatus,choose,refreshMenus,feedback,fieldError,nextStep};
  }
  return {accountTarget,resolveLanguage,mount};
 });

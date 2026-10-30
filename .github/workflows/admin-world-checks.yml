@@ -95,6 +95,8 @@ jobs:
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
       - name: Verify account feedback and stable first visible paint
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-feedback-browser.mjs
+      - name: Verify account password assistance, inline errors and searchable countries
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-usability-browser.mjs
       - name: Verify shared control focus and selectable text fields
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
       - name: Verify signed-out and authenticated Profile sidebar entry

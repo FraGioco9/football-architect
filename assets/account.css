@@ -41,3 +41,26 @@ html:not([data-account-ready="true"]) .account-body{visibility:hidden}
 .account-body .account-feedback[data-kind="error"]{border-inline-start:3px solid #B77878}
 .account-body .account-feedback[data-kind="success"]{border-inline-start:3px solid var(--primary)}
 .account-body .account-feedback:empty{display:none}
+
+/* Account assistance reuses the same controls, spacing and restrained site colors. */
+.account-field{display:grid;gap:7px;min-width:0}
+.account-password{position:relative;min-width:0}
+.account-body .account-password input{padding-inline-end:52px}
+.account-password-toggle{position:absolute;inset-inline-end:1px;top:1px;display:grid;place-items:center;width:44px;height:42px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.account-password-toggle:hover{color:var(--text);background:var(--surface-raised)}
+.account-password-toggle svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.account-body .account-field-error{color:#C68F8F;margin:0;font-weight:400}
+html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
+.account-field-error:empty{display:none}
+.account-body [data-met="true"]{color:var(--primary)}
+.account-optional{display:grid;gap:18px;min-width:0;margin:4px 0 0;padding:18px 0 0;border:0;border-top:1px solid var(--line)}
+.account-optional legend{padding:0 10px 0 0;color:var(--muted);font-size:12px;font-weight:400}
+.account-body .account-country-menu{padding:5px;max-height:none;overflow:visible}
+.account-body .account-country-search{display:grid;gap:6px;padding:6px;font-size:12px;color:var(--muted)}
+.account-body .account-country-search input{font-size:16px}
+#nationality-menu{max-height:min(192px,30svh);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+#nationality-empty{margin:8px 10px;color:var(--muted)}
+.account-body #account-next-step{color:var(--muted);line-height:1.6}
+.account-body .account-feedback[data-kind="success"]::before{content:"✓";color:var(--primary)}
+.account-body .account-feedback[data-kind="pending"]::before{content:"…"}
+.account-body input{font-weight:400}

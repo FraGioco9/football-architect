@@ -2,52 +2,67 @@
 (() => {
   "use strict";
   // Match the Settings language combobox interaction and shared CSS classes.
-  window.faBindCompetitionMenu=(trigger,menu,options,choose,control)=>{
+  window.faBindCompetitionMenu=(trigger,menu,options,choose,control,config={})=>{
     let active=0;
+    const {search,empty}=config;
+    const visible=()=>options.filter(option=>!option.hidden);
+    const normalize=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase(document.documentElement.lang).trim();
     function highlight(){
-      options.forEach((option,index)=>option.dataset.active=String(index===active));
-      trigger.setAttribute("aria-activedescendant",options[active].id);
-      options[active].scrollIntoView?.({block:"nearest"});
+      const choices=visible();active=Math.max(0,Math.min(active,choices.length-1));
+      options.forEach(option=>delete option.dataset.active);
+      for(const node of [trigger,search].filter(Boolean)){
+        if(choices.length)node.setAttribute('aria-activedescendant',choices[active].id);else node.removeAttribute('aria-activedescendant');
+      }
+      if(choices.length){choices[active].dataset.active='true';choices[active].scrollIntoView?.({block:'nearest'});}
+    }
+    function filter(){
+      const query=normalize(search?.value||'');
+      options.forEach(option=>option.hidden=!!query&&!normalize(option.textContent+' '+option.dataset.menuValue).includes(query));
+      if(empty)empty.hidden=visible().length>0;
+      active=0;if(!menu.hidden)highlight();
     }
     function close(focus=false){
-      menu.hidden=true;trigger.setAttribute("aria-expanded","false");
-      trigger.removeAttribute("aria-activedescendant");
+      menu.hidden=true;trigger.setAttribute('aria-expanded','false');
+      for(const node of [trigger,search].filter(Boolean))node.removeAttribute('aria-activedescendant');
       options.forEach(option=>delete option.dataset.active);
       if(focus)trigger.focus();
     }
     function open(){
       if(trigger.disabled)return;
-      active=Math.max(0,options.findIndex(option=>option.dataset.menuValue===trigger.value));
-      menu.hidden=false;trigger.focus();trigger.setAttribute("aria-expanded","true");highlight();
+      if(search){search.value='';filter();}
+      const choices=visible();active=Math.max(0,choices.findIndex(option=>option.dataset.menuValue===trigger.value));
+      menu.hidden=false;trigger.setAttribute('aria-expanded','true');(search||trigger).focus();highlight();
     }
-    function select(){choose(options[active].dataset.menuValue);close(true)}
-    trigger.addEventListener("click",()=>menu.hidden?open():close());
-    trigger.addEventListener("keydown",event=>{
+    function select(){const option=visible()[active];if(option){choose(option.dataset.menuValue);close(true)}}
+    trigger.addEventListener('click',()=>menu.hidden?open():close());
+    function keydown(event){
       const key=event.key;
-      if(["ArrowDown","ArrowUp","Home","End"].includes(key)){
+      if(['ArrowDown','ArrowUp','Home','End'].includes(key)&&!(event.target===search&&['Home','End'].includes(key))){
         event.preventDefault();if(trigger.disabled)return;if(menu.hidden)open();
-        active=key==="Home"?0:key==="End"?options.length-1:
-          (active+(key==="ArrowDown"?1:-1)+options.length)%options.length;
+        const choices=visible();if(!choices.length)return;
+        active=key==='Home'?0:key==='End'?choices.length-1:(active+(key==='ArrowDown'?1:-1)+choices.length)%choices.length;
         highlight();
-      }else if(key==="Enter"||key===" "){
+      }else if(key==='Enter'||(key===' '&&event.target!==search)){
         event.preventDefault();if(trigger.disabled)return;if(menu.hidden)open();else select();
-      }else if(key==="Escape"&&!menu.hidden){event.preventDefault();close(true)}
-      else if(key==="Tab")close();
-    });
+      }else if(key==='Escape'&&!menu.hidden){event.preventDefault();close(true)}
+      else if(key==='Tab')close();
+    }
+    trigger.addEventListener('keydown',keydown);
+    search?.addEventListener('keydown',keydown);search?.addEventListener('input',filter);
     const bound=new WeakSet();
     function bindOptions(){options.forEach(option=>{
       if(bound.has(option))return;bound.add(option);
-      option.addEventListener("click",()=>{const index=options.indexOf(option);if(index>=0){active=index;select()}});
-      option.addEventListener("pointermove",()=>{const index=options.indexOf(option);if(!menu.hidden&&index>=0){active=index;highlight()}});
+      option.addEventListener('click',()=>{const index=visible().indexOf(option);if(index>=0){active=index;select()}});
+      option.addEventListener('pointermove',()=>{const index=visible().indexOf(option);if(!menu.hidden&&index>=0){active=index;highlight()}});
     })}
     bindOptions();
-    document.addEventListener("pointerdown",event=>{
+    document.addEventListener('pointerdown',event=>{
       if(control.contains(event.target))return;
       if(!menu.hidden)close();
       if(document.activeElement===trigger)trigger.blur();
     },true);
-    document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!menu.hidden)close(true)});
-    return {close,update(next){close();options=next;active=0;bindOptions()},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute("aria-selected",String(option.dataset.menuValue===value)))}};
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden)close(true)});
+    return {close,update(next){close();options=next;active=0;bindOptions();if(search){search.value='';filter();}},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute('aria-selected',String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");
   if(!tablist)return;
