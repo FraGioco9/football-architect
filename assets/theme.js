@@ -39,6 +39,12 @@
   }
   window.faLoginReturn={
     remember(){try{sessionStorage.setItem(returnKey,location.pathname+location.search+location.hash)}catch{}},
+    peek(){
+      let raw;try{raw=sessionStorage.getItem(returnKey)}catch{}
+      if(!raw&&document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin&&!/^\/account(?:\/|$)/.test(ref.pathname))raw=ref.pathname+ref.search+ref.hash}catch{}}
+      const target=safeReturn(raw);
+      return target==='/account'?'/dashboard':target;
+    },
     take(){
       let raw;try{raw=sessionStorage.getItem(returnKey);sessionStorage.removeItem(returnKey)}catch{}
       if(!raw&&document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin)raw=ref.pathname+ref.search+ref.hash}catch{}}
