@@ -58,18 +58,11 @@ it('rolls back placement and revision on late audit failure; rejects revoked ses
 it('HTTP enforces unified Player origin, CSRF and read/write privileges',async()=>{
  const env={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:'http://localhost:2000'};
  const playerId='event-player',playerToken='e'.repeat(64),playerDigest=await digestOpaqueToken(playerToken);
- const {hashPassword}=await import('../src/passwords.ts');
- const verifier=await hashPassword('synthetic-admin-calendar-secret-2026');
- await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,status,email_verified_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
-  .bind(playerId,'event@example.invalid',verifier,1,'active',now-100,now-100,now-100).run();
- await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
-  .bind(playerId,session.actor.id,now-100).run();
+ // Account, operator link and permissions already exist from the shared setup.
  const {playerCsrfFor}=await import('../src/player-auth.ts');
  const playerCsrf=await playerCsrfFor(playerToken),playerCsrfDigest=await digestOpaqueToken(playerCsrf);
  await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
   .bind(playerDigest,playerId,1,playerCsrfDigest,now-100,now-1,now+1000).run();
- await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>
-  db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind(playerId,permission,now-100)));
  const req=(headers:Record<string,string>={},value:unknown=command())=>new Request('http://localhost:2000/api/admin/seasons/events/reschedule',{
   method:'POST',headers:{'Content-Type':'application/json',Origin:env.PLAYER_ORIGIN,Cookie:'fa_player_local='+playerToken,
   'X-CSRF-Token':playerCsrf,'Idempotency-Key':'event-http-reschedule-0001',...headers},body:JSON.stringify(value)});
