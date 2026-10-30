@@ -48,7 +48,9 @@ export function cloudflareEmailDeliveries(env:CloudflareDeliveryEnv):{verificati
   if(!/^[a-f0-9]{64}$/i.test(token))throw Error('invalid_delivery_token');
   const target=new URL(kind==='verification'?'/account/verify-email':'/account/recover',origin);
   target.searchParams.set('token',token);
-  const {subject,lead,ignore}=messages[emailLocale(requestedLocale)][kind];
+  const locale=emailLocale(requestedLocale);
+  if(locale!=='en')target.searchParams.set('lang',locale);
+  const {subject,lead,ignore}=messages[locale][kind];
   const url=target.toString();
   await env.EMAIL!.send({to:email,from,subject,
    text:lead+'\n'+url+'\n'+ignore,
