@@ -34,3 +34,14 @@ Prior #170 exact-head workflow run IDs (before optimization): Admin `41100209254
 ## New static regression contract
 - `tests/ci-opt-02-workflow-contract.test.mjs` verifies exact SHA, least-privilege checkout, full Worker, operator, D1 migration, typecheck and Chromium final gates, cached dependency installs and elimination of the duplicate Vitest invocation. No local/CI execution is claimed yet.
 - Workflow identity discovery constraint: GitHub Actions reports Site checks and Browser QA as separate workflow names with observed jobs, but their source filenames are not exposed by the currently accessible GitHub connector. Those files are not guessed or modified. C01 remains open until an authoritative file listing or workflow metadata resolves the filenames and complete matrix.
+
+## First observed optimized-run measurements — PR #332
+Exact HEAD `34e07f1e9db66fc4f62d522461c571a490ffa32c`, GitHub Actions:
+- Admin World foundation `41108131853`: **SUCCESS**; full main Admin contracts job log timestamps span approximately **20 seconds**. The independent `operator-final` job was **SKIPPED**, as intended for an ordinary Draft without final-verification opt-in. Therefore this is **not** evidence of the final operator gate.
+- Site checks `41108131600`: exact-head job SUCCESS (~4 seconds from log timestamps); landing still running when checked.
+- Browser QA `41108131696`: scope SUCCESS (~4 seconds from log timestamps); Chromium still running when checked.
+- These are approximate execution durations derived from available job log timestamp boundaries, **not** overall workflow elapsed time including runner queueing. No before/after comparable benchmark or full final-gate PASS has been established.
+
+## Outstanding blocks
+- **C01:** Site and Browser are independently identified by actual run IDs/jobs but their canonical workflow files are not confirmed by the available GitHub connector. Do not guess paths or edit unidentified YAML.
+- **C07:** Obtain completed comparable cold/warm workflow times, verify all mandatory exact-head jobs (including operator-final) and record a complete final cycle before claiming performance improvement.
