@@ -29,4 +29,4 @@ This is the **final execution checklist**, not evidence that gates have passed. 
 ## Stop conditions
 Any failing Worker, Site, Chromium or WebKit check; incomplete email setup; wrong D1 binding; link/grant mismatch; credential leak; unverified operator; or inability to revoke access: **STOP / HOLD**, do not deploy or start live cutover.
 
-Current standing at authoring: **#170 = 12/15 (80%)**. The three open items are actual operator cutover (#10), email end-to-end/activation acceptance (#12), and final full acceptance (#15). Technical code and newly authored tests are not equivalent to a verified release.
+Current standing: **#170 = 13/15 (86.7%)**. The approved Cloudflare Email Service software integration is complete under #12; no real provider resources or delivery are active. The two open checklist items are actual operator cutover (#10) and final full acceptance (#15). Live email onboarding and smoke testing remain separately approved prerequisites under #15, not proof of a completed production activation. Technical code and newly authored tests are not equivalent to a verified release.
