@@ -142,3 +142,27 @@ it('propagates recovery request language to simulated delivery without real emai
  expect(response.status).toBe(202);
  expect(deliveredLanguage).toBe('fr-FR,fr;q=0.9');
 });
+
+it('completes synthetic recovery with language handoff, single-use link and revoked previous session',async()=>{
+ const captured:{tokens:string[];locales:string[]}={tokens:[],locales:[]};
+ const config={...base,PLAYER_RESET_DELIVERY:async(_to:string,token:string,locale?:string)=>{
+  captured.tokens.push(token);captured.locales.push(locale??'');
+ }};
+ const signed=await request('/api/player/login',{email,password});
+ expect(signed.status).toBe(200);
+ const oldCookie=signed.headers.get('set-cookie')!.split(';')[0];
+ const requested=await worker.fetch(new Request(origin+'/api/player/password-reset/request',{
+  method:'POST',headers:{Origin:origin,'Content-Type':'application/json','Accept-Language':'de-DE'},
+  body:JSON.stringify({email})
+ }),config);
+ expect(requested.status).toBe(202);
+ expect(captured.locales).toEqual(['de-DE']);
+ expect(captured.tokens).toHaveLength(1);
+ const raw=captured.tokens[0];
+ expect((await request('/api/player/password-reset/complete',{token:raw,newPassword:'new-local-password-2026'})).status).toBe(200);
+ expect((await request('/api/player/password-reset/complete',{token:raw,newPassword:'new-local-password-2026'})).status).toBe(400);
+ const oldSession=await worker.fetch(new Request(origin+'/api/player/session',{headers:{Origin:origin,Cookie:oldCookie}}),base);
+ expect(oldSession.status).toBe(401);
+ expect((await request('/api/player/login',{email,password})).status).toBe(401);
+ expect((await request('/api/player/login',{email,password:'new-local-password-2026'})).status).toBe(200);
+});
