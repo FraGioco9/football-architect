@@ -39,7 +39,7 @@ it('purges all season state and retains admin access plus historical operation l
  for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_archives'])
   expect((await db.prepare('SELECT count(*) n FROM '+table).first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first()).n).toBe(1);
- expect((await db.prepare('SELECT count(*) n FROM admin_sessions').first()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM player_sessions').first()).n).toBe(1);
  expect((await db.prepare('SELECT count(*) n FROM admin_operations').first()).n).toBe(originalAudit+1);
  await expect(initializeAdministrativeEvents(db,session,{expectedGeneration:previousGeneration,expectedRevision:world.revision},'stale-event-command-00001',now)).rejects.toMatchObject({status:409});
  const prepared=await prepareSeason(db,session,{expectedGeneration:outcome.world.generation,expectedRevision:0},'new-generation-prepare-00001',await loadApprovedSnapshot(),now);
