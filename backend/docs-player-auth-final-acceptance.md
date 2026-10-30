@@ -2,6 +2,12 @@
 
 Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
 
+## Local operator cutover readiness preflight (read-only)
+- New `backend/tools/operator-cutover-audit.mts` implements a **read-only** check of a normalized email in disposable local D1. It returns only `ready` and finding codes (no identifiers, secrets or PII) and cannot create an operator link, permission or session.
+- Requires an enabled legacy audit operator, active verified Player with matching email, exact explicit Player/legacy link, and all three D1 permission grants. Missing or revoked prerequisites fail closed.
+- `backend/tests/operator-local.test.mts` covers missing identities, unverified pending accounts, explicit grants, permission removal and zero created sessions. The new test requires exact-head CI confirmation.
+- `ready:true` means only that the local data satisfies these prerequisites; it **does not authorize** live cutover. Actual operator provisioning, backup/rollback, credentials and remote D1 remain separately owner-approved #10 work.
+
 ## Latest focused acceptance evidence — 30 October 2026
 - Exact HEAD `0a0fc2b3b8233a89b3d584861253b7eb89b8bcc2`: Admin World foundation checks **SUCCESS**, including local auth, **213/213 full Worker D1 tests**, operator persistence/restart and Chromium login/register layout and safe return. This supersedes the historical 71-failure baseline described below.
 - Site checks and full Browser QA **SKIPPED intentionally** under Draft diagnostic conditions, **not passed** on that HEAD. WebKit and full exact-head acceptance remain open.
