@@ -13,6 +13,9 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body .language-trigger{font-weight:400}
 .account-body main{width:calc(100% - 36px);max-width:460px;margin:16px auto}
 .account-body main.account-wide{max-width:660px}
+.account-go-back{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;font-size:14px;font-weight:600;text-decoration:none;line-height:1.4}
+.account-go-back:hover{text-decoration:underline}
+.account-go-back span[aria-hidden="true"]{font-size:18px;line-height:1}
 .account-body h1{margin:0 0 8px;font-size:28px;letter-spacing:-.035em;line-height:1.2}
 .account-body h2{font-size:18px;line-height:1.35}
 .account-body form{display:grid;gap:12px;margin-block:16px 12px}
