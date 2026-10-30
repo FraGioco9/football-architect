@@ -6,8 +6,8 @@ Status: Draft/HOLD, not yet benchmarked. Owner wants full exact-head CI only at 
 | Workflow | Discovery | Expensive work | Change in PR #332 |
 | --- | --- | --- | --- |
 | Admin World foundation checks | `.github/workflows/admin-world-checks.yml` | Full backend Vitest, D1 operator, Chromium setup + browser | Cache npm and Chromium; reuse cached npm downloads; run historical Worker test files only once in full Vitest; run local operator persistence as a separate parallel final job with its own exact-head check |
-| Site checks | GitHub Actions run named `Site checks`; source path still to confirm | Head-exact and landing jobs observed | None; do not alter an unidentified workflow |
-| Football Architect Browser QA | GitHub Actions run named `Football Architect Browser QA`; source path still to confirm | Chromium and scope jobs observed | None; do not alter an unidentified workflow |
+| Site checks | GitHub Actions run named `Site checks`; `.github/workflows/landing-checks.yml` confirmed | Head-exact and landing jobs observed | Source identified; existing impact-based fast/targeted/full routing preserved |
+| Football Architect Browser QA | GitHub Actions run named `Football Architect Browser QA`; `.github/workflows/int24-browser-qa.yml` confirmed | Chromium and scope jobs observed | Playwright cache unified across targeted/full modes |
 
 ## Baseline
 Prior #170 exact-head workflow run IDs (before optimization): Admin `41100209254`, Site `41100209153`, Browser `41100209272`. These runs do **not** measure PR #332 improvement. Obtain queue, setup, dependency installation, browser download and test durations for comparable warm/cold runs before making speed claims.
@@ -52,3 +52,9 @@ Exact HEAD `34e07f1e9db66fc4f62d522461c571a490ffa32c`, GitHub Actions:
 - Football Architect Browser QA run `41108456675`: success; chromium job log duration ~350 s (5 min 50 s).
 - All three ordinary workflows succeed on the same exact HEAD. Execution times exclude runner queue and are not before/after controlled benchmark. The long critical path is now Site and Browser, not Admin. Because workflow paths for those two are unverified, do not alter them based on assumptions.
 - **Final full operator gate not tested.** A final opt-in on exact head is necessary before C07 can close.
+
+## Complete source discovery and bottleneck inspection
+- GitHub repository directory listing authoritatively confirms Site `.github/workflows/landing-checks.yml` and Browser `.github/workflows/int24-browser-qa.yml`; C01 discovery blocker resolved. Existing workflow list also includes `manual-debug-manifest-hash.yml`, `manual-public-debug-audit.yml`, `manual-vercel-preview.yml` and `render-01-perf.yml`; they are outside the ordinary three-check PR gate.
+- Site checks uses `tools/ci-opt-01-impact.mjs` to select FAST/TARGETED/FULL. FULL runs `tools/ci-opt-01-node-runner.mjs`, which already isolates fingerprint-audited tests with bounded concurrency=2 and other files serially. Additional unreviewed parallelism is intentionally not introduced.
+- Browser QA also uses the same impact router, executing both Chromium/WebKit in targeted/full modes and deferring them only for eligible fast Draft changes. The old Playwright cache key partitioned downloads by `targeted` versus `full`; PR #332 uses one version/OS cache key shared across those modes, avoiding redundant downloads on cache hits without dropping WebKit.
+- Current ordinary Draft runs are FULL because workflow-related files changed. Browser ~350 s, Site ~311 s, so no claim of achieving 2–4 minute full gate is made.
