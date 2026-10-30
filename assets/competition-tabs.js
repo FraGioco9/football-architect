@@ -34,7 +34,7 @@
       menu.hidden=false;trigger.setAttribute('aria-expanded','true');(search||trigger).focus();highlight();
     }
     function select(){const option=visible()[active];if(option){choose(option.dataset.menuValue);close(true)}}
-    trigger.addEventListener('click',()=>menu.hidden?open():close());
+    trigger.addEventListener('click',()=>{if(menu.hidden)open();else{close();trigger.blur();}});
     function keydown(event){
       const key=event.key;
       if(['ArrowDown','ArrowUp','Home','End'].includes(key)&&!(event.target===search&&['Home','End'].includes(key))){
