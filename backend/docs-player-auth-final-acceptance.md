@@ -41,3 +41,6 @@ Record exact SHA, each exit code, counts of PASS/FAIL/SKIP and first failed asse
 
 ## Hard boundaries
 PR #329 stays **Draft/HOLD**. No merge, deployment, remote D1, real email, credentials, or live operator cutover. #12 remains blocked on separately approved outbound email delivery; #10 remains blocked on authorized live migration. Checklist **12/15 = 80%** until independent acceptance evidence exists.
+
+## Draft-only full gate activation
+The PR body includes `<!-- admin-world-final-verification -->` to opt into the pre-existing Admin World CI gates (full Worker Vitest, operator persistence and lifecycle browser) without changing workflow logic or remote resources. A new exact-head CI run must be inspected before any success claim. Any failed full suite remains a blocker for criterion #15.
