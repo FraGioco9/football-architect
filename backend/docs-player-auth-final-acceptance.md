@@ -2,6 +2,9 @@
 
 Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
 
+## Operator cutover runbook
+- See `backend/docs-player-admin-cutover-runbook.md` for approval gates, disposable-D1 rehearsal, STOP conditions, privilege revocation, preservation of historical audit and separately approved backup/restore. This is documentation only; it **does not** authorize live cutover or release.
+
 ## Local operator cutover readiness preflight (read-only)
 - New `backend/tools/operator-cutover-audit.mts` implements a **read-only** check of a normalized email in disposable local D1. It returns only `ready` and finding codes (no identifiers, secrets or PII) and cannot create an operator link, permission or session.
 - Requires an enabled legacy audit operator, active verified Player with matching email, exact explicit Player/legacy link, and all three D1 permission grants. Missing or revoked prerequisites fail closed.
