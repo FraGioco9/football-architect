@@ -5,7 +5,7 @@
 })(typeof window==='undefined'?globalThis:window,()=>{
  'use strict';
  function profileDestination(authenticated,href,language){
-  const url=new URL(authenticated?'/account/':'/account/login/',href);
+  const url=new URL(authenticated?'/account':'/account/login',href);
   if(['de','es','fr','it'].includes(language))url.searchParams.set('lang',language);
   return url.href;
  }

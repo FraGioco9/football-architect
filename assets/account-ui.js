@@ -11,6 +11,7 @@
  function accountTarget(href,language){
   const url=new URL(href);
   if(!/^\/account(?:\/(?:login|register|recover|verify-email))?\/?(?:index\.html)?$/.test(url.pathname))throw Error('Invalid account route');
+  url.pathname=url.pathname.replace(/\/index\.html$/,'').replace(/\/+$/,'');
   const host=url.hostname.toLowerCase();
   if(host==='localhost')url.hostname='app.localhost';
   else if(!host.startsWith('app.')&&!/^(?:127\.0\.0\.1|\[::1\])$/.test(host)&&!host.endsWith('.vercel.app')&&!host.endsWith('.github.io'))url.hostname='app.'+host.replace(/^www\./,'');
@@ -58,9 +59,9 @@
    menu=doc.createElement('div');menu.id=select.id+'-menu';menu.className='language-menu';menu.hidden=true;menu.setAttribute('role','listbox');menu.setAttribute('aria-labelledby',label);
    select.before(control);control.append(select,trigger,menu);select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
    }
-   const binding=win.faBindCompetitionMenu(trigger,doc.getElementById(select.id+'-popover')||menu,[],chosen=>{
+   const binding=win.faBindCompetitionMenu(trigger,menu,[],chosen=>{
     select.value=chosen;select.dispatchEvent(new win.Event('change',{bubbles:true}));refreshMenus();
-   },control,{search:doc.getElementById(select.id+'-search'),empty:doc.getElementById(select.id+'-empty')});
+   },control);
    selects.set(select,{trigger,menu,value,binding,fingerprint:null});
    select.addEventListener('change',refreshMenus);
    select.form?.addEventListener('reset',()=>win.queueMicrotask(refreshMenus));
@@ -69,14 +70,16 @@
   function links(){
    for(const a of doc.querySelectorAll('a[href]')){
     const href=new URL(a.getAttribute('href'),url);
-    if(href.origin===url.origin&&href.pathname.startsWith('/account'))a.href=accountTarget(href.href,language);
+    if(href.origin!==url.origin)continue;
+    if(href.pathname.startsWith('/account'))a.href=accountTarget(href.href,language);
+    else{href.pathname=href.pathname.replace(/\/+$/,'')||'/';a.href=href.href;}
    }
   }
   function choose(value){
    language=resolveLanguage(value,null);doc.documentElement.lang=language;
    try{win.localStorage.setItem(key,language)}catch{/* Current document still changes language. */}
    // Keep reloads in the chosen language; one-time tokens are never reintroduced.
-   const current=new URL(win.location.href);current.searchParams.delete('next');if(language==='en')current.searchParams.delete('lang');else current.searchParams.set('lang',language);
+   const current=new URL(win.location.href);current.pathname=current.pathname.replace(/\/index\.html$/,'').replace(/\/+$/,'');current.searchParams.delete('next');if(language==='en')current.searchParams.delete('lang');else current.searchParams.set('lang',language);
    win.history.replaceState(null,'',current.pathname+current.search);
    const select=doc.getElementById('account-language');if(select)select.value=language;
    const label=doc.getElementById('account-language-label');
@@ -89,11 +92,11 @@
   }
   const touched=new WeakSet();
   const assistance={
-   en:['Show password','Hide password','At least 15 characters.','Optional information','Search countries','No countries found.','Check your inbox and spam folder. If you receive a verification link, open it, then sign in.','Check your inbox and spam folder. If you receive a recovery link, open it to choose a new password.','Sign in using your new password.'],
-   it:['Mostra password','Nascondi password','Almeno 15 caratteri.','Informazioni facoltative','Cerca paesi','Nessun paese trovato.','Controlla la posta in arrivo e lo spam. Se ricevi un link di verifica, aprilo e poi accedi.','Controlla la posta in arrivo e lo spam. Se ricevi un link di recupero, aprilo per scegliere una nuova password.','Accedi con la nuova password.'],
-   de:['Passwort anzeigen','Passwort verbergen','Mindestens 15 Zeichen.','Optionale Angaben','Länder suchen','Keine Länder gefunden.','Prüfe Posteingang und Spamordner. Falls du einen Bestätigungslink erhältst, öffne ihn und melde dich danach an.','Prüfe Posteingang und Spamordner. Falls du einen Wiederherstellungslink erhältst, öffne ihn und wähle ein neues Passwort.','Melde dich mit deinem neuen Passwort an.'],
-   es:['Mostrar contraseña','Ocultar contraseña','Al menos 15 caracteres.','Información opcional','Buscar países','No se encontraron países.','Revisa tu bandeja de entrada y el correo no deseado. Si recibes un enlace de verificación, ábrelo y después inicia sesión.','Revisa tu bandeja de entrada y el correo no deseado. Si recibes un enlace de recuperación, ábrelo para elegir una contraseña nueva.','Inicia sesión con tu nueva contraseña.'],
-   fr:['Afficher le mot de passe','Masquer le mot de passe','Au moins 15 caractères.','Informations facultatives','Rechercher des pays','Aucun pays trouvé.','Consultez votre boîte de réception et les indésirables. Si vous recevez un lien de vérification, ouvrez-le puis connectez-vous.','Consultez votre boîte de réception et les indésirables. Si vous recevez un lien de récupération, ouvrez-le pour choisir un nouveau mot de passe.','Connectez-vous avec votre nouveau mot de passe.']
+   en:['Show password','Hide password','At least 15 characters.','Optional information','Check your inbox and spam folder. If you receive a verification link, open it, then sign in.','Check your inbox and spam folder. If you receive a recovery link, open it to choose a new password.','Sign in using your new password.'],
+   it:['Mostra password','Nascondi password','Almeno 15 caratteri.','Informazioni facoltative','Controlla la posta in arrivo e lo spam. Se ricevi un link di verifica, aprilo e poi accedi.','Controlla la posta in arrivo e lo spam. Se ricevi un link di recupero, aprilo per scegliere una nuova password.','Accedi con la nuova password.'],
+   de:['Passwort anzeigen','Passwort verbergen','Mindestens 15 Zeichen.','Optionale Angaben','Prüfe Posteingang und Spamordner. Falls du einen Bestätigungslink erhältst, öffne ihn und melde dich danach an.','Prüfe Posteingang und Spamordner. Falls du einen Wiederherstellungslink erhältst, öffne ihn und wähle ein neues Passwort.','Melde dich mit deinem neuen Passwort an.'],
+   es:['Mostrar contraseña','Ocultar contraseña','Al menos 15 caracteres.','Información opcional','Revisa tu bandeja de entrada y el correo no deseado. Si recibes un enlace de verificación, ábrelo y después inicia sesión.','Revisa tu bandeja de entrada y el correo no deseado. Si recibes un enlace de recuperación, ábrelo para elegir una contraseña nueva.','Inicia sesión con tu nueva contraseña.'],
+   fr:['Afficher le mot de passe','Masquer le mot de passe','Au moins 15 caractères.','Informations facultatives','Consultez votre boîte de réception et les indésirables. Si vous recevez un lien de vérification, ouvrez-le puis connectez-vous.','Consultez votre boîte de réception et les indésirables. Si vous recevez un lien de récupération, ouvrez-le pour choisir un nouveau mot de passe.','Connectez-vous avec votre nouveau mot de passe.']
   };
   function refreshAssistance(){
    const t=assistance[language];
@@ -105,8 +108,8 @@
     const field=doc.querySelector('[aria-describedby~="'+help.id+'"]');help.textContent=t[2];help.dataset.met=String(!!field&&field.value.length>=15);
    }
    const username=doc.querySelector('[name="username"]'),hint=doc.getElementById('username-help');if(hint&&username)hint.dataset.met=String(/^[A-Za-z0-9_]{3,24}$/.test(username.value));
-   for(const [id,index] of [['optional-title',3],['nationality-search-label',4],['nationality-empty',5]]){const node=doc.getElementById(id);if(node)node.textContent=t[index];}
-   const step=doc.getElementById('account-next-step');if(step?.dataset.step)step.textContent=t[{registration:6,recovery:7,reset:8}[step.dataset.step]];
+   for(const [id,index] of [['optional-title',3]]){const node=doc.getElementById(id);if(node)node.textContent=t[index];}
+   const step=doc.getElementById('account-next-step');if(step?.dataset.step)step.textContent=t[{registration:4,recovery:5,reset:6}[step.dataset.step]];
   }
   function nextStep(kind){
    const node=doc.getElementById('account-next-step');if(!node)return;

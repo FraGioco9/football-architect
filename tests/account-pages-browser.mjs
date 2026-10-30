@@ -10,6 +10,7 @@ async function chooseMenu(page,id,value){
  assert.equal(await trigger.getAttribute('role'),'combobox');
  assert.equal(await trigger.getAttribute('class'),'language-trigger');
  await trigger.click();
+ if(id==='nationality'){const field=await trigger.boundingBox(),menu=await page.locator('#nationality-menu').boundingBox();assert.ok(Math.abs(field.width-menu.width)<1,'Nationality dropdown matches the field width');assert.ok(menu.x>=0&&menu.x+menu.width<=await page.evaluate(()=>innerWidth),'Dropdown stays within viewport');}
  await page.locator('#'+id+'-menu [data-menu-value="'+value+'"]').click();
  assert.equal(await trigger.getAttribute('aria-expanded'),'false');
 }
@@ -25,6 +26,7 @@ try{
    let payload;
    await page.route('**/api/player/register',r=>{payload=r.request().postDataJSON();return r.fulfill({status:409,contentType:'application/json',body:'{"error":{"code":"username_unavailable"}}'});});
    await page.goto('http://app.localhost:2000/account/register/');
+   assert.equal(await page.locator('#nationality-search').count(),0,'Nationality menu has no search field');
    assert.equal(await page.locator('html').getAttribute('lang'),language);
    if(language==='en')assert.equal(new URL(page.url()).searchParams.has('lang'),false);
    assert.equal(new URL(await page.locator('[data-account-home]').getAttribute('href'),page.url()).pathname,'/dashboard');
@@ -37,6 +39,8 @@ try{
    await page.locator('[name=email]').fill('synthetic@example.invalid');
    await page.locator('[name=password]').fill('synthetic-test-password-2026');
    await page.locator('[name=city]').fill('Bologna');await chooseMenu(page,'nationality','IT');
+   const longest=await page.locator('#nationality option').evaluateAll(options=>options.reduce((best,item)=>item.textContent.length>best.textContent.length?item:best).value);
+   await chooseMenu(page,'nationality',longest);await chooseMenu(page,'nationality','IT');
    const next=language==='it'?'de':'it';await chooseMenu(page,'account-language',next);
    assert.equal(await page.locator('[name=username]').inputValue(),'Francesco_9');
    assert.equal(await page.locator('[name=password]').inputValue(),'synthetic-test-password-2026');
@@ -44,7 +48,7 @@ try{
    await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('[name=username]').getAttribute('aria-invalid')==='true');
    assert.deepEqual(payload,{email:'synthetic@example.invalid',password:'synthetic-test-password-2026',username:'Francesco_9',nationality:'IT',city:'Bologna'});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-   await page.locator('#login-link').click();await page.waitForURL('**/account/login/**');
+   await page.locator('#login-link').click();await page.waitForURL(url=>url.pathname==='/account/login');
    assert.equal(await page.locator('html').getAttribute('lang'),next);
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close();}
@@ -55,7 +59,7 @@ try{
   const page=await context.newPage();let siteApi=0;
   await page.route('**/api/player/**',r=>{if(new URL(r.request().url()).hostname==='localhost')siteApi++;return r.fulfill({status:401,body:'{}',contentType:'application/json'});});
   await page.goto('http://localhost:2000/account/login/');
-  await page.waitForURL('http://app.localhost:2000/account/login/**');
+  await page.waitForURL(url=>url.hostname==='app.localhost'&&url.pathname==='/account/login');
   assert.equal(await page.locator('html').getAttribute('lang'),'fr');assert.equal(siteApi,0);checks++;
   let verified=0;
   await page.route('**/api/player/verify-email',r=>{verified++;return r.fulfill({status:200,body:'{"verified":true}',contentType:'application/json'});});

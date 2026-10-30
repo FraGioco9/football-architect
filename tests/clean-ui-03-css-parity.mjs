@@ -34,7 +34,9 @@ try{
     const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
      for(const selector of selectors){
-      const elements=[...document.querySelectorAll(selector)].slice(0,12);
+      // Inactive tab panels are intentionally hidden; their DEV hydration
+      // phase can differ without changing any rendered surface.
+      const elements=[...document.querySelectorAll(selector)].filter(e=>!e.closest('.app-competition-panel[hidden]')).slice(0,12);
       result[selector]=elements.map(e=>{
        const s=getComputedStyle(e);
        const props=Object.fromEntries(cssProperties.map(p=>[p,s.getPropertyValue(p)]));

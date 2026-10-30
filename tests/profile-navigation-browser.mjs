@@ -25,9 +25,9 @@ try{
    assert.equal(sessions,0,'Public page load does not probe player session');
    await profile.click();
    if(authenticated){
-    await page.waitForURL(url=>url.pathname==='/account/');await page.locator('#protected').waitFor();
+    await page.waitForURL(url=>url.pathname==='/account');await page.locator('#protected').waitFor();
    }else{
-    await page.waitForURL(url=>url.pathname==='/account/login/');
+    await page.waitForURL(url=>url.pathname==='/account/login');
     assert.equal(new URL(page.url()).searchParams.get('next'),null);
     await page.route('**/api/player/login',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
     await page.locator('[name=email]').fill('synthetic@example.invalid');
@@ -46,7 +46,7 @@ try{
   await page.route('**/api/player/login',r=>r.fulfill({status:++attempts===1?401:200,contentType:'application/json',body:'{}'}));
   await page.goto('http://app.localhost:2000/calendar?season=1&week=3');
   const previous=page.url();await page.locator('#app-nav-profile').click();
-  await page.waitForURL(url=>url.pathname==='/account/login/');
+  await page.waitForURL(url=>url.pathname==='/account/login');
   assert.equal(new URL(page.url()).searchParams.has('next'),false);
   await page.locator('#register-link').click();await page.locator('#login-link').click();
   await page.reload();
@@ -82,8 +82,8 @@ try{
   page.on('request',r=>{if(r.isNavigationRequest())visited.push(new URL(r.url()).pathname)});
   await page.route('**/api/player/session',r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}));
   await page.goto('http://app.localhost:2000/dashboard');await page.locator('#app-nav-profile').click();
-  await page.waitForURL(url=>url.pathname==='/account/login/');
-  assert.equal(visited.includes('/account/'),false);checks++;
+  await page.waitForURL(url=>url.pathname==='/account/login');
+  assert.equal(visited.includes('/account'),false);checks++;
  }finally{await fallback.close()}
  console.log('Profile sidebar browser matrix PASS: '+checks+' cases');
 }finally{preview.closeAllConnections();await new Promise(r=>preview.close(r));await browser.close();}

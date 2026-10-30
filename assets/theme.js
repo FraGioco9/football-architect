@@ -29,13 +29,13 @@
   // Login returns stay in this tab, never in an account URL or persistent storage.
   const returnKey='football-architect:login-return';
   function safeReturn(raw){
-    if(typeof raw!=='string'||!raw.startsWith('/')||raw.startsWith('//')||/[\\\x00-\x20]/.test(raw)||raw.split(/[?#]/)[0].includes('%'))return '/account/';
+    if(typeof raw!=='string'||!raw.startsWith('/')||raw.startsWith('//')||/[\\\x00-\x20]/.test(raw)||raw.split(/[?#]/)[0].includes('%'))return '/account';
     try{
       const url=new URL(raw,location.origin);
       const path=url.pathname.replace(/\/+$/,'')||'/';
-      if(url.origin!==location.origin||(path!=='/account'&&!window.faRoutesRegistry?.parseRoute(path)))return '/account/';
-      return url.pathname+url.search+url.hash;
-    }catch{return '/account/';}
+      if(url.origin!==location.origin||(path!=='/account'&&!window.faRoutesRegistry?.parseRoute(path)))return '/account';
+      return path+url.search+url.hash;
+    }catch{return '/account';}
   }
   window.faLoginReturn={
     remember(){try{sessionStorage.setItem(returnKey,location.pathname+location.search+location.hash)}catch{}},

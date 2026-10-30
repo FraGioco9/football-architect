@@ -25,6 +25,8 @@ try{
     await page.goto('http://app.localhost:2000/account/'+(route==='account'?'':route+'/'));
     await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
     if(route==='account')await page.locator('#protected').waitFor();
+    assert.equal(new URL(page.url()).pathname.endsWith('/'),false,'Account URL is canonical');
+    assert.deepEqual(await page.locator('a[href]').evaluateAll(links=>links.filter(a=>a.origin===location.origin&&a.pathname!=='/'&&a.pathname.endsWith('/')).map(a=>a.href)),[],'Internal links have no trailing slash');
     assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
     // Language sits inside a label: moving from the button to its label must clear hover.
@@ -48,7 +50,6 @@ try{
     await page.locator('h1').click();
     const fields=page.locator('input:not([type=hidden]):visible');
     for(const field of await fields.all()){
-     if(await field.getAttribute('id')==='nationality-search')continue;
      if(!mobile){
       await field.hover();assert.equal(await field.getAttribute('data-field-pointer-hover'),'');
       // Assert the settled hover tokens, not just the hit-test marker.
@@ -65,13 +66,16 @@ try{
      if(await copy.evaluate(el=>!!el.closest('.language-trigger'))||!await copy.isVisible()||!(await copy.textContent()).trim())continue;
      if(!mobile){await copy.hover();assert.equal(await page.locator('[data-field-pointer-hover]').count(),0,'Label/help/error does not highlight a field: '+await copy.evaluate(el=>el.outerHTML)+' hovered '+await page.locator('[data-field-pointer-hover]').evaluateAll(els=>els.map(el=>el.outerHTML)));}
     }
-    // Country search closes on ESC, keeps its value and resets its filter on reopen.
+    // Plain country menu preserves its selection on ESC and highlights it on reopening.
     if(route==='register'){
+     assert.equal(await page.locator('#nationality-search').count(),0);
      const country=page.locator('#nationality-trigger');await country.click();
-     await page.locator('#nationality-search').fill('IT');await page.locator('#nationality-menu [data-menu-value=IT]').click();
-     await country.click();await page.locator('#nationality-search').fill('zzzz');await page.keyboard.press('Escape');
-     assert.equal(await page.locator('#nationality').inputValue(),'IT');assert.equal(await page.locator('#nationality-search').evaluate(el=>el===document.activeElement),false);
-     await country.click();assert.equal(await page.locator('#nationality-search').inputValue(),'');await page.keyboard.press('Escape');
+     const bounds=await country.boundingBox(),menu=await page.locator('#nationality-menu').boundingBox();
+     assert.ok(Math.abs(bounds.width-menu.width)<1);assert.ok(menu.x>=0&&menu.x+menu.width<=await page.evaluate(()=>innerWidth));
+     await page.locator('#nationality-menu [data-menu-value=IT]').click();
+     await country.click();await page.keyboard.press('End');await page.keyboard.press('Escape');
+     assert.equal(await page.locator('#nationality').inputValue(),'IT');assert.equal(await country.evaluate(el=>el===document.activeElement),false);
+     await country.click();assert.equal(await page.locator('#nationality-menu [data-active=true]').getAttribute('data-menu-value'),'IT');await page.keyboard.press('Escape');
     }
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);checks++;console.log(engine,language,theme,mobile?'mobile':'desktop',route,'PASS');
    }
