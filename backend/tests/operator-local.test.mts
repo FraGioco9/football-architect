@@ -87,6 +87,16 @@ test('read-only cutover audit denies incomplete linking and accepts explicit ver
   await handle.db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
    .bind('audit-player',operator.id,now).run();
   assert.deepEqual(await auditOperatorCutover(handle.db,email),{ready:true,findings:[]});
+  await manageAccount(handle.db,'create','other-operator@example.invalid','synthetic-other-password-2026');
+  const other=await handle.db.prepare('SELECT id FROM admin_accounts WHERE email_normalized=?')
+   .bind('other-operator@example.invalid').first<{id:string}>();
+  assert.ok(other);
+  await handle.db.prepare('UPDATE player_admin_operator_links SET legacy_admin_account_id=? WHERE player_account_id=?')
+   .bind(other.id,'audit-player').run();
+  assert.deepEqual((await auditOperatorCutover(handle.db,email)).findings,['operator_link_conflict']);
+  await handle.db.prepare('UPDATE player_admin_operator_links SET legacy_admin_account_id=? WHERE player_account_id=?')
+   .bind(operator.id,'audit-player').run();
+  assert.deepEqual(await auditOperatorCutover(handle.db,email),{ready:true,findings:[]});
   assert.deepEqual(await handle.db.prepare('SELECT generation,revision FROM world_state').first(),before,'Preflight never changes sporting world');
   await handle.db.prepare('DELETE FROM account_permissions WHERE account_id=? AND permission=?').bind('audit-player','admin.world.write').run();
   assert.deepEqual((await auditOperatorCutover(handle.db,email)).findings,['missing_write']);
