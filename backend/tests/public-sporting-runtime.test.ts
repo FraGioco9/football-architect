@@ -1,3 +1,4 @@
+import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
@@ -13,7 +14,7 @@ import {resetWorld} from '../src/reset-world-command.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
-import {hashText,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
 import {rankLeagueTable} from '../src/league-standings.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
@@ -23,9 +24,7 @@ const request=(competition='IT-1',season='1',method='GET',database=db)=>worker.f
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
- session={actor:{id:'public-operator',email:'public@example.invalid'},digest:await hashText('public-session'),credentialVersion:1,csrfDigest:await hashText('public-csrf')};
- await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-10,now-5,now+1000).run();
+ session=(await seedUnifiedOperator(db,'public-operator','public@example.invalid',now,'a'.repeat(64))).session;
  world=await readWorld(db);
 });
 async function prepare(){world=(await prepareSeason(db,session,meta(),'public-prepare-0001',await loadApprovedSnapshot(),now)).world}
