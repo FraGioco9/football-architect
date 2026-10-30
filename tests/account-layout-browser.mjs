@@ -40,8 +40,9 @@ try{
    await page.goto('http://app.localhost:2000/account/'+route);
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
    const goBack=page.locator('#account-go-back');
-   assert.equal(await goBack.textContent(),route==='login'?'Go back':'Go back');
-   assert.equal(new URL(await goBack.getAttribute('href'),'http://app.localhost:2000').pathname+'/calendar?season=2&view=week','/calendar?season=2&view=week');
+   assert.equal((await goBack.textContent()).trim(),'Go back');
+   const destination=new URL(await goBack.getAttribute('href'),'http://app.localhost:2000');
+   assert.equal(destination.pathname+destination.search,'/calendar?season=2&view=week');
    assert.equal(new URL(page.url()).searchParams.has('next'),false);
    await goBack.click();
    await page.waitForURL('**/calendar?season=2&view=week');
