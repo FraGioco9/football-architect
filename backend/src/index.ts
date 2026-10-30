@@ -1,12 +1,13 @@
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
 import {handlePlayer,type PlayerEnv} from './http-player.ts';
+import {cloudflareEmailDeliveries,type CloudflareDeliveryEnv} from './cloudflare-email-delivery.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {readPublicSportingSeason,readPublicCalendarDay} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
-export interface Env extends AdminEnv, PlayerEnv {
+export interface Env extends AdminEnv, PlayerEnv, CloudflareDeliveryEnv {
   DB?: WorldDatabase;
 }
 
@@ -57,7 +58,13 @@ export default {
       }
     }
     if (url.pathname === '/api/player' || url.pathname.startsWith('/api/player/'))
-      return handlePlayer(request,env);
+      return handlePlayer(request,{
+        ...env,
+        ...(() => {const delivery=cloudflareEmailDeliveries(env);return {
+          PLAYER_VERIFICATION_DELIVERY: env.PLAYER_VERIFICATION_DELIVERY??delivery.verification,
+          PLAYER_RESET_DELIVERY: env.PLAYER_RESET_DELIVERY??delivery.reset
+        };})()
+      });
     // Admin access requires explicit configuration, durable authorization and CSRF.
     if (url.pathname === '/api/admin' || url.pathname.startsWith('/api/admin/'))
       return handleAdmin(request,env);
