@@ -44,7 +44,7 @@
         highlight();
       }else if(key==='Enter'||(key===' '&&event.target!==search)){
         event.preventDefault();if(trigger.disabled)return;if(menu.hidden)open();else select();
-      }else if(key==='Escape'&&!menu.hidden){event.preventDefault();close(true)}
+      }else if(key==='Escape'&&!menu.hidden){event.preventDefault();close();trigger.blur();search?.blur()}
       else if(key==='Tab')close();
     }
     trigger.addEventListener('keydown',keydown);
@@ -61,7 +61,7 @@
       if(!menu.hidden)close();
       if(document.activeElement===trigger)trigger.blur();
     },true);
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden)close(true)});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.preventDefault();close();trigger.blur();search?.blur()}});
     return {close,update(next){close();options=next;active=0;bindOptions();if(search){search.value='';filter();}},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute('aria-selected',String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");
