@@ -68,6 +68,9 @@ describe('Unified Admin HTTP contract — replacement for the legacy login',()=>
   expect((await authorized.json() as any).permissions).toEqual(['admin.access','admin.world.read','admin.world.write']);
   expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(200);
   await db.prepare("DELETE FROM account_permissions WHERE permission='admin.access'").run();
+  const revoked=await request('/api/player/permissions',undefined,{Cookie:c});
+  expect(revoked.status).toBe(200);
+  expect((await revoked.json() as any).permissions).toEqual([]);
   expect((await request('/api/admin/world',undefined,{Cookie:c})).status).toBe(403);
   expect((await request('/api/player/session',undefined,{Cookie:c})).status).toBe(200);
   expect((await request('/api/world')).status).toBe(200);
