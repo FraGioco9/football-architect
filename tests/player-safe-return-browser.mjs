@@ -36,7 +36,7 @@ try{
  server.listen(0,'127.0.0.1');await once(server,'listening');
  const origin='http://127.0.0.1:'+server.address().port;
  const playwright=await import(process.env.FA_PLAYER_PLAYWRIGHT||'playwright');
- browser=await playwright.chromium.launch({headless:true,...(process.env.FA_PLAYER_CHROME?{executablePath:process.env.FA_PLAYER_CHROME,args:['--no-sandbox']}: {})});
+ browser=await playwright[process.env.FA_AUTH_BROWSER||'chromium'].launch({headless:true,...(process.env.FA_PLAYER_CHROME&&process.env.FA_AUTH_BROWSER!=='webkit'?{executablePath:process.env.FA_PLAYER_CHROME,args:['--no-sandbox']}: {})});
  const cases=[
   ['/account/','/account/'],['/settings/','/settings/'],
   ['/calendar?season=1&week=3#round','/calendar?season=1&week=3#round'],

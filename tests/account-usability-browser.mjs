@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
-const {chromium}=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
-const browser=await chromium.launch({headless:true,...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
+const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
+const browser=await playwright[process.env.FA_AUTH_BROWSER||'chromium'].launch({headless:true,...(process.env.FA_ACCOUNT_CHROME&&process.env.FA_AUTH_BROWSER!=='webkit'?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
 const server=createPreviewServer({subdomains:true,devPreview:false});let checks=0;
 try{
  server.listen(2000,'127.0.0.1');await once(server,'listening');

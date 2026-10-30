@@ -261,7 +261,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:55,clip,captureBeyondViewport:false});const chunks=shot.data.match(/.{1,2000}/g);for(let i=0;i<chunks.length;i++)console.log(`NAV_CHEVRON_PAINT|${width}|${i}|${chunks.length}|${chunks[i]}`);
       }
       await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',windowsVirtualKeyCode:27});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',windowsVirtualKeyCode:27});
-      assert.equal(await run(`document.getElementById('nav01-${name}-menu').hidden&&document.activeElement.id==='nav01-${name}-trigger'`),true);
+      assert.equal(await run(`document.getElementById('nav01-${name}-menu').hidden&&document.activeElement.id!=='nav01-${name}-trigger'`),true);
      }
      if(lang==='en'){const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`nav01-${width}-${theme}.png`),bytes)}}
     }

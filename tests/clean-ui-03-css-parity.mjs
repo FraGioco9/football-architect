@@ -55,8 +55,16 @@ try{
    }finally{await context.close()}
   };
   const before=await run(true),after=await run(false);
+  // PLAYER-AUTH-01 deliberately adds the shared control transition. Preserve
+  // every other property/geometry comparison and require the exact new value.
+  const comparison=structuredClone(after.computed);
+  if(!reducedMotion)for(const [index,item] of comparison["#calendar-current-week"].entries()){
+   assert.equal(before.computed["#calendar-current-week"][index].props.transition,"none");
+   assert.equal(item.props.transition,"border-color 0.16s, box-shadow 0.18s, background-color 0.16s");
+   item.props.transition="none";
+  }
   for(const selector of selectors){
-   if(JSON.stringify(before.computed[selector])!==JSON.stringify(after.computed[selector])){
+   if(JSON.stringify(before.computed[selector])!==JSON.stringify(comparison[selector])){
     findings.push({route,width,theme:dark?"dark":"light",reducedMotion,selector,before:before.computed[selector],after:after.computed[selector]});
    }
   }

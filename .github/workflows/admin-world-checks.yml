@@ -88,7 +88,7 @@ jobs:
       - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium
+          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium webkit
       - name: Verify safe post-login return routes in Chromium
         run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
       - name: Verify account style, language, app entry and registration in Chromium
@@ -101,6 +101,17 @@ jobs:
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
       - name: Verify signed-out and authenticated Profile sidebar entry
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
+      - name: Verify account pointer, keyboard and dropdown matrix in Chromium
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-interaction-browser.mjs
+      - name: Verify complete isolated account UI suite in WebKit
+        env:
+          FA_AUTH_BROWSER: webkit
+          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+        run: |
+          for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction; do
+            node "tests/$suite-browser.mjs"
+          done
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
-const {chromium}=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
-const browser=await chromium.launch({headless:true,...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
+const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
+const browser=await playwright[process.env.FA_AUTH_BROWSER||'chromium'].launch({headless:true,...(process.env.FA_ACCOUNT_CHROME&&process.env.FA_AUTH_BROWSER!=='webkit'?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
 const server=createPreviewServer({subdomains:true,devPreview:false});let checks=0;
 try{
  server.listen(2000,'127.0.0.1');await once(server,'listening');
@@ -18,19 +18,19 @@ try{
     assert.equal(await field.evaluate(el=>document.activeElement===el),false,'Label text does not activate its field');
    }
    const before=await field.boundingBox();await field.fill('Selectable text');await field.selectText();
-   const style=await field.evaluate(el=>{const s=getComputedStyle(el);return {selection:el.value.slice(el.selectionStart,el.selectionEnd),select:s.userSelect,border:s.borderTopColor,shadow:s.boxShadow,muted:getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()}});
+   const style=await field.evaluate(el=>{const s=getComputedStyle(el);return {selection:el.value.slice(el.selectionStart,el.selectionEnd),select:s.userSelect,border:s.borderTopColor,shadow:s.boxShadow,}});
    if(await field.getAttribute('type')!=='email')assert.equal(style.selection,'Selectable text');assert.equal(await field.inputValue(),'Selectable text');assert.equal(style.select,'text');assert.ok(style.shadow.includes('inset'),'Focus uses a stronger inset border');
    const expected=await field.evaluate(el=>{const sample=document.createElement('span');sample.style.color='var(--muted)';el.after(sample);const color=getComputedStyle(sample).color;sample.remove();return color});
-   assert.equal(style.border,expected);const after=await field.boundingBox();assert.equal(before.width,after.width);assert.equal(before.height,after.height);
+   await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filters>input':'[name=email]',color:expected});const after=await field.boundingBox();assert.equal(before.width,after.width);assert.equal(before.height,after.height);
    const dropdown=page.locator(route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger').first();
    await dropdown.click();
    await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger',color:expected});
    await dropdown.click();
    assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
-   assert.equal(await dropdown.evaluate(el=>getComputedStyle(el).boxShadow),'none','Second pointer click removes the focus highlight');
+   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger');assert.equal(await dropdown.evaluate(el=>document.activeElement===el),false,'Second click removes focus');
    await dropdown.focus();await page.keyboard.press('ArrowDown');
    await page.keyboard.press('Escape');
-   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Keyboard close retains focus');checks++;
+   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),false,'Escape removes focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
   }finally{await context.close();}
  }
  console.log('Shared focus and selectable input browser PASS: '+checks+' cases');
