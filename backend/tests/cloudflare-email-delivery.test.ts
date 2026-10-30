@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {cloudflareEmailDeliveries} from '../src/cloudflare-email-delivery.ts';
+import {cloudflareEmailDeliveries,emailLocale} from '../src/cloudflare-email-delivery.ts';
 
 describe('Cloudflare Email Service delivery adapter (no real sends)',()=>{
  const origin='https://app.example.invalid',from='noreply@example.invalid',token='a'.repeat(64);
@@ -9,6 +9,14 @@ describe('Cloudflare Email Service delivery adapter (no real sends)',()=>{
   PLAYER_ORIGIN:origin,
   PLAYER_EMAIL_FROM:from,
   EMAIL:{send}
+ });
+ it('selects a safe supported locale from UI or browser header values',()=>{
+  expect(emailLocale('it')).toBe('it');
+  expect(emailLocale('de-DE,de;q=0.9')).toBe('de');
+  expect(emailLocale('ja-JP,fr-FR;q=0.8,en;q=0.5')).toBe('fr');
+  expect(emailLocale('es;q=0,en;q=1')).toBe('en');
+  expect(emailLocale('xx-YY,zz;q=0.5')).toBe('en');
+  expect(emailLocale('fr;q=NaN,it;q=0.8')).toBe('it');
  });
  it('remains disabled for absent opt-in, local mode, missing binding or sender and unsafe origin',()=>{
   const fake=async()=>{throw Error('must not send')};
