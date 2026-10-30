@@ -30,3 +30,7 @@ Prior #170 exact-head workflow run IDs (before optimization): Admin `41100209254
 - `operator-final` runs independently of the main Admin World test job, only for non-Draft or Draft with the existing explicit final-verification marker. This moves the local persistence/restart suite off the browser/Worker critical path while keeping it mandatory for the complete workflow conclusion.
 - Each job checks out and verifies the identical PR head SHA and uses the lockfile-keyed npm cache. Independent runner queue time and cold installs may outweigh any time saved; benchmark before claiming improvement.
 - Standard Draft checks still perform syntax, contracts, migration and typecheck in the primary job; the explicit final marker retains full Worker, Chromium and the now parallel operator suite. Other Site/Browser workflow conditions are not changed.
+
+## New static regression contract
+- `tests/ci-opt-02-workflow-contract.test.mjs` verifies exact SHA, least-privilege checkout, full Worker, operator, D1 migration, typecheck and Chromium final gates, cached dependency installs and elimination of the duplicate Vitest invocation. No local/CI execution is claimed yet.
+- Workflow identity discovery constraint: GitHub Actions reports Site checks and Browser QA as separate workflow names with observed jobs, but their source filenames are not exposed by the currently accessible GitHub connector. Those files are not guessed or modified. C01 remains open until an authoritative file listing or workflow metadata resolves the filenames and complete matrix.
