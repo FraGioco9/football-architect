@@ -86,7 +86,7 @@ describe('PLAYER-AUTH password recovery delivery contract (deferred acceptance)'
   expect((await request('/api/player/password-reset/complete',{
    token:'not-a-token',newPassword:'recovery-invalid-token-password-2026'
   })).status).toBe(400);
-  await db.prepare("UPDATE player_one_time_tokens SET expires_at=issued_at WHERE purpose='reset_password'")
+  await db.prepare("UPDATE player_one_time_tokens SET issued_at=issued_at-1800,expires_at=issued_at-1 WHERE purpose='reset_password'")
    .run();
   expect((await request('/api/player/password-reset/complete',{
    token,newPassword:'recovery-expired-token-password-2026'
