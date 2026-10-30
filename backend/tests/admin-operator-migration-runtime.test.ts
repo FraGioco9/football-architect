@@ -17,6 +17,7 @@ beforeEach(async()=>{
   db.prepare('DELETE FROM player_sessions WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
   db.prepare('DELETE FROM player_one_time_tokens WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
   db.prepare('DELETE FROM admin_sessions WHERE account_id IN (?,?)').bind('migration-legacy','migration-second-legacy'),
+  db.prepare('DELETE FROM player_auth_throttles'),
   db.prepare('DELETE FROM player_accounts WHERE id IN (?,?)').bind('migration-player','migration-second'),
   db.prepare('DELETE FROM admin_accounts WHERE id IN (?,?)').bind('migration-legacy','migration-second-legacy')
  ]);
@@ -143,7 +144,7 @@ describe('Trusted operator migration and rollback on disposable D1',()=>{
  it('revokes all other recovery links and old Admin sessions after a password reset',async()=>{
   const {completePasswordReset}=await import('../src/player-password-reset.ts');
   const {digestOpaqueToken}=await import('../src/session-tokens.ts');
-  const token='reset-fixture-token-with-adequate-entropy-2026';
+  const token='a'.repeat(64);
   const digest=await digestOpaqueToken(token);
   await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
   await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
