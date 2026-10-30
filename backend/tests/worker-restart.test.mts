@@ -9,7 +9,6 @@ import {once} from 'node:events';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath} from 'node:url';
 import {openLocalDatabase,manageAccount} from '../tools/operator-local.mts';
-import {hashPassword} from '../src/passwords.ts';
 
 test('real Wrangler canonical initialize/read and idempotent audit survive restart', {timeout:90000},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-world-restart-'));
@@ -31,11 +30,11 @@ test('real Wrangler canonical initialize/read and idempotent audit survive resta
   const handle=await openLocalDatabase(state);
   try{
    await manageAccount(handle.db,'create','operator@example.invalid',password);
-   const operator=await handle.db.prepare('SELECT id FROM admin_accounts WHERE email_normalized=?').bind('operator@example.invalid').first<{id:string}>();
+   const operator=await handle.db.prepare('SELECT id,password_verifier FROM admin_accounts WHERE email_normalized=?').bind('operator@example.invalid').first<{id:string;password_verifier:string}>();
    assert.ok(operator);
    const now=Math.floor(Date.now()/1000),playerId='restart-player';
    await handle.db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
-    .bind(playerId,'operator@example.invalid',await hashPassword(password),1,now,'active',now,now).run();
+    .bind(playerId,'operator@example.invalid',operator.password_verifier,1,now,'active',now,now).run();
    await handle.db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
     .bind(playerId,operator.id,now).run();
    await handle.db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>
