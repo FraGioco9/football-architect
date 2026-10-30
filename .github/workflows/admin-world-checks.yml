@@ -50,6 +50,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
       - name: Check current Admin and public JavaScript syntax before expensive tests
         run: |
           node --check assets/admin-settings.js
@@ -59,6 +61,8 @@ jobs:
           node --check tests/admin-settings-browser.mjs
           node --check tests/admin-world-lifecycle-browser.mjs
           node --check tests/season-two-navigation-browser.mjs
+      - name: Verify CI optimization safety contracts before dependency installation
+        run: node --test tests/ci-opt-02-workflow-contract.test.mjs
       - name: Test password and world contracts (no remote services)
         run: npm --prefix backend run test:contracts
       - name: Verify D1-compatible SQLite migration locally
@@ -66,19 +70,22 @@ jobs:
       - name: Install pinned Worker toolchain without remote credentials
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
-          npm --prefix backend ci --no-audit --no-fund
+          npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
-      - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: cd backend && npx vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
+      # The complete backend test command below already includes the historical
+      # archive/season suites. Avoid running those Vitest files twice.
       - name: Execute smoke tests in actual local Worker runtime
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend test
-      - name: Verify operator bootstrap, recovery and local persistence across restart
+      # Operator persistence runs in a separate independent final-gate job.
+      - name: Cache pinned Chromium browser binaries for final gate
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: npm --prefix backend run test:operator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-1.58.2
       - name: Install isolated pinned Chromium test tooling
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: |
@@ -88,3 +95,29 @@ jobs:
         timeout-minutes: 20
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs
+
+  operator-final:
+    name: Final local operator persistence and restart
+    if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install pinned Worker toolchain
+        run: |
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend ci --prefer-offline --no-audit --no-fund
+      - name: Verify operator bootstrap, recovery and local persistence across restart
+        run: npm --prefix backend run test:operator

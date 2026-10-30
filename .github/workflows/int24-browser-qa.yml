@@ -69,7 +69,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ needs.scope.outputs.mode }}-v2
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-shared-v3
       - name: Install isolated browser test dependency
         if: needs.scope.outputs.mode != 'fast'
         run: |
