@@ -18,7 +18,7 @@ try{
     assert.equal(await field.evaluate(el=>document.activeElement===el),false,'Label text does not activate its field');
    }
    const before=await field.boundingBox();await field.fill('Selectable text');await field.selectText();
-   const style=await field.evaluate(el=>{const s=getComputedStyle(el);return {selection:el.value.slice(el.selectionStart,el.selectionEnd),select:s.userSelect,border:s.borderTopColor,shadow:s.boxShadow,}});
+   const style=await field.evaluate(el=>{const s=getComputedStyle(el);return {selection:el.value.slice(el.selectionStart,el.selectionEnd),select:s.getPropertyValue('user-select')||s.getPropertyValue('-webkit-user-select'),border:s.borderTopColor,shadow:s.boxShadow,}});
    if(await field.getAttribute('type')!=='email')assert.equal(style.selection,'Selectable text');assert.equal(await field.inputValue(),'Selectable text');assert.equal(style.select,'text');assert.ok(style.shadow.includes('inset'),'Focus uses a stronger inset border');
    const expected=await field.evaluate(el=>{const sample=document.createElement('span');sample.style.color='var(--muted)';el.after(sample);const color=getComputedStyle(sample).color;sample.remove();return color});
    await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filters>input':'[name=email]',color:expected});const after=await field.boundingBox();assert.equal(before.width,after.width);assert.equal(before.height,after.height);

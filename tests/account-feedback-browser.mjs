@@ -28,7 +28,7 @@ try{
    assert.equal(await message.getAttribute('aria-live'),'polite');
    const field=page.locator(route==='login'?'[name=email]':'[name=username]');
    assert.equal(await field.evaluate(el=>getComputedStyle(el).outlineStyle),'none');
-   assert.equal(await page.locator('h1').evaluate(el=>getComputedStyle(el).userSelect),'none');
+   assert.equal(await page.locator('h1').evaluate(el=>(getComputedStyle(el).getPropertyValue('user-select')||getComputedStyle(el).getPropertyValue('-webkit-user-select'))),'none');
    await field.fill(route==='login'?'synthetic@example.invalid':'Synthetic_User');
    assert.ok((await field.inputValue()).length>0,'Fields remain editable');
    if(route==='login'){
