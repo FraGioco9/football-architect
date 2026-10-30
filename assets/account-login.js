@@ -23,12 +23,12 @@ const raw=new URL(location.href).searchParams.get('next')||'/account/';
 const safe=['/account/','/settings/'].includes(raw)?raw:'/account/';
 (async()=>{try{const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok)return;const value=await r.json();if(!submitting&&value?.authenticated===true&&typeof value?.actor?.id==='string')location.replace(safe);}catch{/* Restore failures leave the login available. */}})();
 form.addEventListener('submit',async e=>{
- e.preventDefault();if(submitting)return;submitting=true;button.disabled=true;button.textContent=t[4];message.textContent='';
+ e.preventDefault();if(submitting)return;submitting=true;button.disabled=true;button.textContent=t[4];ui.feedback(message,'');
  const values=new FormData(form),password=String(values.get('password')||'');
  try{
   const r=await fetch('/api/player/login',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(values.get('email')||''),password})});
-  if(!r.ok){message.textContent=r.status===401?t[5]:r.status===429?t[7]:t[6];return;}
+  if(!r.ok){ui.feedback(message,r.status===401?t[5]:r.status===429?t[7]:t[6]);return;}
   form.reset();location.replace(safe);
- }catch{message.textContent=t[6]}finally{submitting=false;button.disabled=false;button.textContent=t[3];}
+ }catch{ui.feedback(message,t[6]);}finally{submitting=false;button.disabled=false;button.textContent=t[3];}
 });
 })();

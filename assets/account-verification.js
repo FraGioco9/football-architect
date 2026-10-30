@@ -10,9 +10,9 @@ let t=translations[ui.language];
 ui.bind(lang=>{const next=translations[lang];ui.translateStatus(t,next);t=next;document.getElementById('title').textContent=t[0];document.getElementById('login-link').textContent=t[1];document.title=t[0]+' — Football Architect';});
 const status=document.getElementById('status'),url=new URL(location.href),token=url.searchParams.get('token');
 history.replaceState(null,'',location.pathname);
-if(!token||!/^[a-f0-9]{64}$/.test(token)){status.textContent=t[4];return;}
-status.textContent=t[2];
+if(!token||!/^[a-f0-9]{64}$/.test(token)){ui.feedback(status,t[4]);return;}
+ui.feedback(status,t[2],'pending');
 fetch('/api/player/verify-email',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})})
-.then(r=>{status.textContent=r.ok?t[3]:r.status===400||r.status===422?t[4]:t[5]})
-.catch(()=>{status.textContent=t[5]});
+.then(r=>{ui.feedback(status,r.ok?t[3]:r.status===400||r.status===422?t[4]:t[5],r.ok?'success':'error');})
+.catch(()=>{ui.feedback(status,t[5],'error');});
 })();

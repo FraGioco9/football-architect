@@ -21,13 +21,13 @@ history.replaceState(null,'',location.pathname);
 const ask=document.getElementById('request-form'),finish=document.getElementById('complete-form'),message=document.getElementById('message');
 finish.hidden=!valid;ask.hidden=valid;
 const post=async(path,payload)=>{const res=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});return res;};
-function showError(res){message.textContent=res.status===400?t[8]:res.status===429?t[10]:t[9];}
-ask.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('request-button');button.disabled=true;message.textContent=t[11];try{
+function showError(res){ui.feedback(message,res.status===400?t[8]:res.status===429?t[10]:t[9]);}
+ask.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('request-button');button.disabled=true;ui.feedback(message,t[11],'pending');try{
  const res=await post('/api/player/password-reset/request',{email:String(new FormData(ask).get('email')||'')});
- message.textContent=res.ok?t[6]:(res.status===429?t[10]:t[9]);
-}catch{message.textContent=t[9]}finally{button.disabled=false;button.textContent=t[2];}});
-finish.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('complete-button');button.disabled=true;message.textContent=t[11];try{
+ ui.feedback(message,res.ok?t[6]:(res.status===429?t[10]:t[9]),res.ok?'success':'error');
+}catch{ui.feedback(message,t[9]);}finally{button.disabled=false;button.textContent=t[2];}});
+finish.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('complete-button');button.disabled=true;ui.feedback(message,t[11],'pending');try{
  const res=await post('/api/player/password-reset/complete',{token,newPassword:String(new FormData(finish).get('newPassword')||'')});
- if(res.ok){message.textContent=t[7];finish.reset();finish.hidden=true;}else showError(res);
-}catch{message.textContent=t[9]}finally{button.disabled=false;button.textContent=t[4];}});
+ if(res.ok){ui.feedback(message,t[7],'success');finish.reset();finish.hidden=true;}else showError(res);
+}catch{ui.feedback(message,t[9]);}finally{button.disabled=false;button.textContent=t[4];}});
 })();

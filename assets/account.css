@@ -1,7 +1,7 @@
 /* Account pages share the site's Graphite & Petrol tokens and brand assets. */
 html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body{min-height:100svh;display:flex;flex-direction:column}
-.account-body input,.account-body select,.account-body p,.account-body h1,.account-body h2,.account-body label{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.account-body,.account-body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .account-header{width:100%;max-width:1440px;margin-inline:auto;padding:24px clamp(18px,4vw,56px);display:flex;align-items:center;justify-content:space-between;gap:20px}
 .account-brand{display:flex;align-items:center;min-width:0;width:230px;max-width:48%;min-height:44px}
 .account-brand img{display:block;width:100%;height:64px;object-fit:contain;object-position:left}
@@ -33,3 +33,13 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 
 /* Account containers do not receive decorative highlighting. Keyboard focus remains on controls. */
 .account-body main.app-panel,.account-body main.app-panel:hover,.account-body main.app-panel:focus-within{border-color:transparent;outline:none;box-shadow:none}
+
+/* Reveal only the fully localized, bound account layout; no native-select flash. */
+html:not([data-account-ready="true"]) .account-body{visibility:hidden}
+.account-body input:focus,.account-body input:focus-visible{outline:none;box-shadow:none;border-color:var(--border)}
+.account-body input::selection{background:transparent;color:inherit}
+.account-body .account-feedback{position:relative;margin-block:16px;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:10px;background:var(--background);color:var(--text);font-size:13px;line-height:1.5}
+.account-body .account-feedback::before{content:"!";position:absolute;left:14px;top:13px;display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:700;color:var(--muted)}
+.account-body .account-feedback[data-kind="error"]{border-inline-start:3px solid #B77878}
+.account-body .account-feedback[data-kind="success"]{border-inline-start:3px solid var(--primary)}
+.account-body .account-feedback:empty{display:none}

@@ -46,15 +46,19 @@
    }
   }
   function enhanceSelect(select){
-   const control=doc.createElement('div');control.className='language-control';
-   const trigger=doc.createElement('button');trigger.type='button';trigger.className='language-trigger';trigger.id=select.id+'-trigger';
+   let control=select.closest('[data-account-select-control]'),trigger,value,menu;
+   if(control){trigger=doc.getElementById(select.id+'-trigger');value=doc.getElementById(select.id+'-value');menu=doc.getElementById(select.id+'-menu');}
+   else{
+   control=doc.createElement('div');control.className='language-control';
+   trigger=doc.createElement('button');trigger.type='button';trigger.className='language-trigger';trigger.id=select.id+'-trigger';
    trigger.setAttribute('role','combobox');trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls',select.id+'-menu');
    const label=select.id==='account-language'?'account-language-label':'nationality-label';
    trigger.setAttribute('aria-labelledby',label+' '+select.id+'-value');
-   const value=doc.createElement('span');value.id=select.id+'-value';trigger.append(value);
+   value=doc.createElement('span');value.id=select.id+'-value';trigger.append(value);
    trigger.insertAdjacentHTML('beforeend','<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-   const menu=doc.createElement('div');menu.id=select.id+'-menu';menu.className='language-menu';menu.hidden=true;menu.setAttribute('role','listbox');menu.setAttribute('aria-labelledby',label);
+   menu=doc.createElement('div');menu.id=select.id+'-menu';menu.className='language-menu';menu.hidden=true;menu.setAttribute('role','listbox');menu.setAttribute('aria-labelledby',label);
    select.before(control);control.append(select,trigger,menu);select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
+   }
    const binding=win.faBindCompetitionMenu(trigger,menu,[],chosen=>{
     select.value=chosen;select.dispatchEvent(new win.Event('change',{bubbles:true}));refreshMenus();
    },control);
@@ -79,16 +83,42 @@
    const label=doc.getElementById('account-language-label');
    if(label)label.textContent={en:'Language',de:'Sprache',es:'Idioma',fr:'Langue',it:'Lingua'}[language];
    links();for(const callback of callbacks)callback(language);refreshMenus();
+   for(const message of doc.querySelectorAll('[data-validation]'))message.textContent=validation[language][Number(message.dataset.validation)];
   }
+  function feedback(node,text,kind='error'){
+   if(!node)return;delete node.dataset.validation;node.classList.add('account-feedback');node.dataset.kind=kind;node.textContent=text;
+  }
+  const validation={
+   en:['Complete the required fields.','Enter a valid email address.','Use at least 15 characters for your password.','Check the format of your details.'],
+   it:['Compila i campi obbligatori.','Inserisci un indirizzo email valido.','Usa almeno 15 caratteri per la password.','Controlla il formato dei dati inseriti.'],
+   de:['Fülle die Pflichtfelder aus.','Gib eine gültige E-Mail-Adresse ein.','Verwende mindestens 15 Zeichen für dein Passwort.','Prüfe das Format deiner Angaben.'],
+   es:['Completa los campos obligatorios.','Introduce un correo electrónico válido.','Usa al menos 15 caracteres para la contraseña.','Comprueba el formato de tus datos.'],
+   fr:['Remplissez les champs obligatoires.','Saisissez une adresse e-mail valide.','Utilisez au moins 15 caractères pour le mot de passe.','Vérifiez le format des informations saisies.']
+  };
   function ready(){
    const select=doc.getElementById('account-language');
    if(select)select.addEventListener('change',()=>choose(select.value));
    choose(language);
+   for(const form of doc.querySelectorAll('form')){
+    form.noValidate=true;
+    form.addEventListener('submit',event=>{
+     const invalid=[...form.elements].filter(field=>field.willValidate&&!field.validity.valid);
+     if(!invalid.length)return;
+     event.preventDefault();event.stopImmediatePropagation();
+     for(const field of invalid)field.setAttribute('aria-invalid','true');
+     const field=invalid[0],v=field.validity,index=v.valueMissing?0:v.typeMismatch?1:v.tooShort&&field.type==='password'?2:3;
+     const message=doc.querySelector('#message,#status');feedback(message,validation[language][index]);
+     if(message){message.dataset.validation=String(index);field.setAttribute('aria-describedby',message.id);}
+     field.focus();
+    },true);
+    form.addEventListener('input',event=>event.target.removeAttribute?.('aria-invalid'));
+   }
    if(typeof win.faBindCompetitionMenu==='function')for(const select of doc.querySelectorAll('select[data-account-select]'))enhanceSelect(select);
    for(const link of doc.querySelectorAll('[data-account-home]')){
     const home=new URL('/dashboard',url);
     link.href=home.href;
    }
+   doc.documentElement.dataset.accountReady="true";
   }
   if(!redirecting){
    doc.documentElement.lang=language;
@@ -101,7 +131,7 @@
     const index=previous.indexOf(node.textContent);if(index>=0)node.textContent=next[index];
    }
   }
-  return {get language(){return language},redirecting,bind(callback){callbacks.add(callback);callback(language)},translateStatus,choose,refreshMenus};
+  return {get language(){return language},redirecting,bind(callback){callbacks.add(callback);callback(language)},translateStatus,choose,refreshMenus,feedback};
  }
  return {accountTarget,resolveLanguage,mount};
 });
