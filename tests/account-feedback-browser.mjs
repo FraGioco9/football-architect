@@ -21,6 +21,7 @@ try{
    assert.equal(await page.locator('#account-language').isVisible(),false);
    const frames=await page.evaluate(()=>window.accountFrames);
    assert.ok(frames.every(row=>row.every((value,i)=>Math.abs(value-frames[0][i])<1)),'Language menu does not change geometry after first visible paint');
+   if(route==='login')assert.equal(await page.locator('#message').isVisible(),false,'An empty login status reserves no panel space');
    await page.locator('#submit').click();
    const message=page.locator('.account-field-error').first();await message.waitFor();
    assert.equal(await message.textContent(),required[lang]);assert.equal(writes,0);
@@ -30,6 +31,13 @@ try{
    assert.equal(await page.locator('h1').evaluate(el=>getComputedStyle(el).userSelect),'none');
    await field.fill(route==='login'?'synthetic@example.invalid':'Synthetic_User');
    assert.ok((await field.inputValue()).length>0,'Fields remain editable');
+   if(route==='login'){
+    await page.locator('[name=password]').fill('synthetic-password-2026');await page.locator('#submit').click();
+    await page.locator('#message').waitFor({state:'visible'});
+    assert.equal(await page.locator('#message').getAttribute('data-kind'),'error');
+    assert.equal(await page.locator('#message').isVisible(),true,'Server errors still expand the panel when present');
+    assert.equal(writes,1);
+   }
    checks++;
   }finally{await context.close();}
  }
