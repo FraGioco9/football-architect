@@ -131,3 +131,14 @@ describe('PLAYER-AUTH password recovery delivery contract (deferred acceptance)'
   })).status).toBe(200);
  });
 });
+
+it('propagates recovery request language to simulated delivery without real email',async()=>{
+ let deliveredLanguage='';
+ const config={...base,PLAYER_RESET_DELIVERY:async(_email:string,_token:string,locale?:string)=>{deliveredLanguage=locale??''}};
+ const response=await worker.fetch(new Request(origin+'/api/player/password-reset/request',{
+  method:'POST',headers:{Origin:origin,'Content-Type':'application/json','Accept-Language':'fr-FR,fr;q=0.9'},
+  body:JSON.stringify({email})
+ }),config);
+ expect(response.status).toBe(202);
+ expect(deliveredLanguage).toBe('fr-FR,fr;q=0.9');
+});
