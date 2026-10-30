@@ -61,6 +61,8 @@ jobs:
           node --check tests/admin-settings-browser.mjs
           node --check tests/admin-world-lifecycle-browser.mjs
           node --check tests/season-two-navigation-browser.mjs
+      - name: Verify CI optimization safety contracts before dependency installation
+        run: node --test tests/ci-opt-02-workflow-contract.test.mjs
       - name: Test password and world contracts (no remote services)
         run: npm --prefix backend run test:contracts
       - name: Verify D1-compatible SQLite migration locally
