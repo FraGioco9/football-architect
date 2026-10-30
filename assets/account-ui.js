@@ -179,6 +179,19 @@
     const home=new URL('/dashboard',url);
     link.href=home.href;
    }
+   // Hit-test the field itself, never the surrounding label, helper or feedback text.
+   // A direct pointer target avoids ancestor :hover matching on nested label markup.
+   let hoveredField=null;
+   const setHovered=target=>{
+    const next=target?.matches?.('input:not([type="checkbox"]):not([type="radio"]),textarea,select:not([hidden]),.language-trigger')&&!target.disabled&&!target.hasAttribute('aria-disabled')?target:null;
+    if(hoveredField===next)return;
+    hoveredField?.removeAttribute('data-field-pointer-hover');
+    hoveredField=next;
+    hoveredField?.setAttribute('data-field-pointer-hover','');
+   };
+   doc.addEventListener('pointermove',event=>setHovered(event.pointerType==='mouse'?event.target:null),{passive:true});
+   doc.addEventListener('pointerout',event=>{if(!event.relatedTarget)setHovered(null)},{passive:true});
+   doc.addEventListener('pointerdown',()=>setHovered(null),{passive:true});
    doc.documentElement.dataset.accountReady="true";
   }
   if(!redirecting){
