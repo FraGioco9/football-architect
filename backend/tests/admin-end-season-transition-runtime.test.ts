@@ -20,7 +20,7 @@ const receipts=()=>db.prepare('SELECT event_id,status,receipt_hash FROM season_a
 const count=async(table:string)=>(await db.prepare('SELECT count(*) n FROM '+table).first())!.n;
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);
- session={actor:{id:'end-season-operator',email:'end-season@example.invalid'},digest:await digestOpaqueToken('end-season-test-player-token'),credentialVersion:1,csrfDigest:await digestOpaqueToken('end-season-test-player-csrf'),unified:{playerId:'end-season-player',sessionDigest:await digestOpaqueToken('end-season-test-player-token'),csrfDigest:await digestOpaqueToken('end-season-test-player-csrf')}};
+ session={actor:{id:'end-season-operator',email:'end-season@example.invalid'},digest:await digestOpaqueToken('a'.repeat(64)),credentialVersion:1,csrfDigest:await digestOpaqueToken('c'.repeat(64)),unified:{playerId:'end-season-player',sessionDigest:await digestOpaqueToken('a'.repeat(64)),csrfDigest:await digestOpaqueToken('c'.repeat(64))}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
   .bind('end-season-player',session.actor.email,'synthetic',1,now-10,'active',now-10,now-10).run();
