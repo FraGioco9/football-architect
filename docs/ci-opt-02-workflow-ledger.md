@@ -45,3 +45,10 @@ Exact HEAD `34e07f1e9db66fc4f62d522461c571a490ffa32c`, GitHub Actions:
 ## Outstanding blocks
 - **C01:** Site and Browser are independently identified by actual run IDs/jobs but their canonical workflow files are not confirmed by the available GitHub connector. Do not guess paths or edit unidentified YAML.
 - **C07:** Obtain completed comparable cold/warm workflow times, verify all mandatory exact-head jobs (including operator-final) and record a complete final cycle before claiming performance improvement.
+
+## Latest ordinary Draft workflow results (HEAD ea9f335b, 30 October 2026)
+- Admin World run `41108456673`: success; foundation job log duration ~19 s; `operator-final` skipped (Draft; not final verification).
+- Site checks run `41108456670`: success; landing job log duration ~311 s (5 min 11 s).
+- Football Architect Browser QA run `41108456675`: success; chromium job log duration ~350 s (5 min 50 s).
+- All three ordinary workflows succeed on the same exact HEAD. Execution times exclude runner queue and are not before/after controlled benchmark. The long critical path is now Site and Browser, not Admin. Because workflow paths for those two are unverified, do not alter them based on assumptions.
+- **Final full operator gate not tested.** A final opt-in on exact head is necessary before C07 can close.
