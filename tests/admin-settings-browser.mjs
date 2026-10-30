@@ -29,7 +29,7 @@ try{
    const destination=new URL(await signIn.getAttribute('href'),'http://localhost:2000');
    assert.equal(destination.hostname,'app.localhost');
    assert.equal(destination.pathname,'/account/login');
-   assert.equal(destination.searchParams.get('next'),'/settings/');
+   assert.equal(destination.searchParams.get('next'),null);
    assert.equal(destination.searchParams.get('lang'),language==='en'?null:language);
    assert.equal(await page.locator('[data-admin-login],#admin-email,#admin-password').count(),0);
    assert.equal(await page.locator('[data-admin-signed-in]').isVisible(),false);
@@ -41,7 +41,7 @@ try{
    await signIn.focus();
    await page.keyboard.press('Enter');
    await page.waitForURL(url=>url.pathname==='/account/login/'||url.pathname==='/account/login');
-   assert.equal(new URL(page.url()).searchParams.get('next'),'/settings/');
+   assert.equal(new URL(page.url()).searchParams.get('next'),null);
    assert.deepEqual(errors,[]);
    assert.equal(adminCalls>0,true,'Admin session is checked but never assumed');
    checks++;

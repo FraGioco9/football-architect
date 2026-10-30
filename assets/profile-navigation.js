@@ -6,7 +6,6 @@
  'use strict';
  function profileDestination(authenticated,href,language){
   const url=new URL(authenticated?'/account/':'/account/login/',href);
-  if(!authenticated)url.searchParams.set('next','/account/');
   if(['de','es','fr','it'].includes(language))url.searchParams.set('lang',language);
   return url.href;
  }
@@ -19,10 +18,11 @@
    const destination=new URL(link.href,win.location.href);
    if(destination.origin!==win.location.origin)return;
    event.preventDefault();if(pending)return;pending=true;link.setAttribute('aria-busy','true');
+   const login=()=>{win.faLoginReturn?.remember();win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang))};
    const controller=new AbortController(),timer=win.setTimeout(()=>controller.abort(),8000);
    try{
     const response=await win.fetch('/api/player/session',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
-    if(response.status===401){win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang));return;}
+    if(response.status===401){login();return;}
     if(response.ok){
      const value=await response.json();
      if(value?.authenticated===true&&typeof value?.actor?.id==='string'){
@@ -30,8 +30,8 @@
      }
     }
     // Login restores a confirmed session if this preliminary check was unavailable.
-    win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang));
-   }catch{win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang))}finally{win.clearTimeout(timer);pending=false;link.removeAttribute('aria-busy');}
+    login();
+   }catch{login()}finally{win.clearTimeout(timer);pending=false;link.removeAttribute('aria-busy');}
   });
  }
  return {profileDestination,mount};

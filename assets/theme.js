@@ -26,6 +26,30 @@
     if(target.closest('input,textarea,select,button,a,[role="option"]'))return;
     event.preventDefault();
   },true);
+  // Login returns stay in this tab, never in an account URL or persistent storage.
+  const returnKey='football-architect:login-return';
+  function safeReturn(raw){
+    if(typeof raw!=='string'||!raw.startsWith('/')||raw.startsWith('//')||/[\\\x00-\x20]/.test(raw)||raw.split(/[?#]/)[0].includes('%'))return '/account/';
+    try{
+      const url=new URL(raw,location.origin);
+      const path=url.pathname.replace(/\/+$/,'')||'/';
+      if(url.origin!==location.origin||(path!=='/account'&&!window.faRoutesRegistry?.parseRoute(path)))return '/account/';
+      return url.pathname+url.search+url.hash;
+    }catch{return '/account/';}
+  }
+  window.faLoginReturn={
+    remember(){try{sessionStorage.setItem(returnKey,location.pathname+location.search+location.hash)}catch{}},
+    take(){
+      let raw;try{raw=sessionStorage.getItem(returnKey);sessionStorage.removeItem(returnKey)}catch{}
+      if(!raw&&document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin)raw=ref.pathname+ref.search+ref.hash}catch{}}
+      return safeReturn(raw);
+    }
+  };
+  document.addEventListener('click',event=>{
+    const link=event.target.closest?.('a[href]');if(!link||link.id==='app-nav-profile')return;
+    const target=new URL(link.href,location.href);
+    if(target.origin===location.origin&&/^\/account\/(?:login|register|recover)\/?$/.test(target.pathname)&&!/^\/account\/(?:login|register|recover|verify-email)\/?$/.test(location.pathname))window.faLoginReturn.remember();
+  },true);
   // Parser-blocking in <head>: theme is set before stylesheets are parsed.
   paint(theme);
   function ready() {

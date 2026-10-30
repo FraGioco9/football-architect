@@ -23,7 +23,7 @@ ui.bind(value=>{
 const status=document.getElementById('status'),protectedPanel=document.getElementById('protected'),login=document.getElementById('login-link'),loading=document.getElementById('loading');
 let csrf='';
 const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(body)});const value=await r.json().catch(()=>({}));if(!r.ok)throw {status:r.status,code:value?.error?.code};return value};
-function redirectToLogin(){location.replace('/account/login/?next=%2Faccount%2F')}
+function redirectToLogin(){window.faLoginReturn.remember();location.replace('/account/login/')}
 function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidden=false;loading.hidden=true;ui.feedback(status,message);}
 async function init(){try{
  const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[17]);return;}
@@ -36,9 +36,9 @@ async function init(){try{
 }catch{unauthenticated(t[17])}}
 async function refreshSessions(){try{const response=await fetch('/api/player/sessions',{credentials:'same-origin',cache:'no-store'});if(!response.ok)return;const data=await response.json();const active=Array.isArray(data.sessions)?data.sessions.length:0;document.getElementById('sessions-summary').textContent=sessionsText+': '+active;}catch{/* Session summary is non-authoritative UI only. */}}
 async function execute(button,fn){button.disabled=true;ui.feedback(status,'');try{await fn()}catch(error){if(error?.status===401){redirectToLogin();return;}ui.feedback(status,error?.code==='admin_transfer_required'?t[18]:t[17]);}finally{button.disabled=false}}
-document.getElementById('change-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('button'),async()=>{const fd=new FormData(form);await post('/api/player/account/change-password',{currentPassword:String(fd.get('currentPassword')),newPassword:String(fd.get('newPassword'))});form.reset();unauthenticated(t[14]);location.replace('/account/login/?next=%2Faccount%2F')})});
+document.getElementById('change-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('button'),async()=>{const fd=new FormData(form);await post('/api/player/account/change-password',{currentPassword:String(fd.get('currentPassword')),newPassword:String(fd.get('newPassword'))});form.reset();unauthenticated(t[14]);redirectToLogin()})});
 document.getElementById('revoke-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/account/revoke-other-sessions',{});ui.feedback(status,t[15],'success');await refreshSessions()}));
-document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[13]);location.replace('/account/login/?next=%2Faccount%2F')}));
-document.getElementById('delete-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('button'),async()=>{const fd=new FormData(form);await post('/api/player/account/delete',{password:String(fd.get('password')),confirmation:String(fd.get('confirmation'))});form.reset();unauthenticated(t[16]);location.replace('/account/login/?next=%2Faccount%2F')})});
+document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[13]);redirectToLogin()}));
+document.getElementById('delete-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('button'),async()=>{const fd=new FormData(form);await post('/api/player/account/delete',{password:String(fd.get('password')),confirmation:String(fd.get('confirmation'))});form.reset();unauthenticated(t[16]);redirectToLogin()})});
 init();
 })();

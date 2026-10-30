@@ -25,7 +25,12 @@ try{
    const dropdown=page.locator(route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger').first();
    await dropdown.click();
    await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger',color:expected});
-   await page.keyboard.press('Escape');checks++;
+   await dropdown.click();
+   assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
+   assert.equal(await dropdown.evaluate(el=>getComputedStyle(el).boxShadow),'none','Second pointer click removes the focus highlight');
+   await dropdown.focus();await page.keyboard.press('ArrowDown');
+   await page.keyboard.press('Escape');
+   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Keyboard close retains focus');checks++;
   }finally{await context.close();}
  }
  console.log('Shared focus and selectable input browser PASS: '+checks+' cases');

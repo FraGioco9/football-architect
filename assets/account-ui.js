@@ -14,9 +14,8 @@
   const host=url.hostname.toLowerCase();
   if(host==='localhost')url.hostname='app.localhost';
   else if(!host.startsWith('app.')&&!/^(?:127\.0\.0\.1|\[::1\])$/.test(host)&&!host.endsWith('.vercel.app')&&!host.endsWith('.github.io'))url.hostname='app.'+host.replace(/^www\./,'');
-  const next=url.searchParams.get('next'),token=url.searchParams.get('token');
+  const token=url.searchParams.get('token');
   url.search='';url.hash='';url.username='';url.password='';
-  if(['/account/','/settings/'].includes(next))url.searchParams.set('next',next);
   if((url.pathname.includes('/recover')||url.pathname.includes('/verify-email'))&&/^[a-f0-9]{64}$/.test(token||''))url.searchParams.set('token',token);
   const locale=resolveLanguage(language,null);if(locale!=='en')url.searchParams.set('lang',locale);
   return url.href;
@@ -77,7 +76,7 @@
    language=resolveLanguage(value,null);doc.documentElement.lang=language;
    try{win.localStorage.setItem(key,language)}catch{/* Current document still changes language. */}
    // Keep reloads in the chosen language; one-time tokens are never reintroduced.
-   const current=new URL(win.location.href);if(language==='en')current.searchParams.delete('lang');else current.searchParams.set('lang',language);
+   const current=new URL(win.location.href);current.searchParams.delete('next');if(language==='en')current.searchParams.delete('lang');else current.searchParams.set('lang',language);
    win.history.replaceState(null,'',current.pathname+current.search);
    const select=doc.getElementById('account-language');if(select)select.value=language;
    const label=doc.getElementById('account-language-label');

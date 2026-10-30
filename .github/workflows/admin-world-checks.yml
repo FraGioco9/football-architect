@@ -16,6 +16,7 @@ on:
       - 'assets/landing.css'
       - 'assets/clubs-directory.css'
       - 'tests/control-focus-browser.mjs'
+      - 'tests/player-safe-return-browser.mjs'
       - 'tests/account-*'
       - 'tests/profile-*'
       - 'assets/admin-settings.*'

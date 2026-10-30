@@ -101,6 +101,6 @@ html[data-theme="light"] .cta-secondary:hover{background:#EAF1ED;border-color:#7
 @media(prefers-reduced-motion:reduce){.language-chevron{transition:none}}
 
 /* Shared control focus: Clubs' neutral border, strengthened without changing layout. */
-html body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),textarea,.language-trigger):is(:focus,:focus-visible,[aria-expanded="true"]){outline:none!important;outline-offset:0;box-shadow:inset 0 0 0 1px var(--muted)!important;border-color:var(--muted)!important}
+html body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),textarea):is(:focus,:focus-visible),html body .language-trigger:is(:focus-visible,[aria-expanded="true"]){outline:none!important;outline-offset:0;box-shadow:inset 0 0 0 1px var(--muted)!important;border-color:var(--muted)!important}
 html body :is(input,textarea){-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}
 html body :is(input,textarea)::selection{background:var(--primary);color:#fff}
