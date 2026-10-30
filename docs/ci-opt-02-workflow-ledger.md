@@ -5,7 +5,7 @@ Status: Draft/HOLD, not yet benchmarked. Owner wants full exact-head CI only at 
 ## Confirmed workflow inventory (main at issue creation)
 | Workflow | Discovery | Expensive work | Change in PR #332 |
 | --- | --- | --- | --- |
-| Admin World foundation checks | `.github/workflows/admin-world-checks.yml` | Full backend Vitest, D1 operator, Chromium setup + browser | Cache npm and Chromium; reuse cached npm downloads; run historical Worker test files only once in full Vitest |
+| Admin World foundation checks | `.github/workflows/admin-world-checks.yml` | Full backend Vitest, D1 operator, Chromium setup + browser | Cache npm and Chromium; reuse cached npm downloads; run historical Worker test files only once in full Vitest; run local operator persistence as a separate parallel final job with its own exact-head check |
 | Site checks | GitHub Actions run named `Site checks`; source path still to confirm | Head-exact and landing jobs observed | None; do not alter an unidentified workflow |
 | Football Architect Browser QA | GitHub Actions run named `Football Architect Browser QA`; source path still to confirm | Chromium and scope jobs observed | None; do not alter an unidentified workflow |
 
@@ -25,3 +25,8 @@ Prior #170 exact-head workflow run IDs (before optimization): Admin `41100209254
 2. Verify no test suite moved out of the mandatory final path.
 3. Record baseline and optimized cold/warm executions on comparable exact heads.
 4. Require complete final gate PASS; keep Draft/HOLD and no merge/deploy until separately approved.
+
+## Parallel final operator gate
+- `operator-final` runs independently of the main Admin World test job, only for non-Draft or Draft with the existing explicit final-verification marker. This moves the local persistence/restart suite off the browser/Worker critical path while keeping it mandatory for the complete workflow conclusion.
+- Each job checks out and verifies the identical PR head SHA and uses the lockfile-keyed npm cache. Independent runner queue time and cold installs may outweigh any time saved; benchmark before claiming improvement.
+- Standard Draft checks still perform syntax, contracts, migration and typecheck in the primary job; the explicit final marker retains full Worker, Chromium and the now parallel operator suite. Other Site/Browser workflow conditions are not changed.
