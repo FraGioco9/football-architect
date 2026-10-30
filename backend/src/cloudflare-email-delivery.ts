@@ -21,8 +21,19 @@ const messages:Record<Locale,Record<'verification'|'reset',{subject:string;lead:
  it:{verification:{subject:'Verifica la tua email Football Architect',lead:'Conferma il tuo indirizzo email',ignore:'Se non hai richiesto questa operazione, ignora il messaggio.'},reset:{subject:'Reimposta la tua password Football Architect',lead:'Usa questo link per reimpostare la password',ignore:'Se non hai richiesto questa operazione, ignora il messaggio.'}}
 };
 export function emailLocale(value?:string|null):Locale{
- const lang=(value??'').split(',')[0].split(';')[0].trim().toLowerCase().split('-')[0];
- return lang==='de'||lang==='es'||lang==='fr'||lang==='it'?lang:'en';
+ // Explicit Account UI language has priority. For generic Accept-Language,
+ // select the first supported locale with a nonzero q-value.
+ for(const item of (value??'').slice(0,256).split(',').slice(0,12)){
+  const [tag,...parameters]=item.trim().toLowerCase().split(';');
+  const q=parameters.find(p=>p.trim().startsWith('q='));
+  if(q){
+   const weight=Number(q.trim().slice(2));
+   if(!Number.isFinite(weight)||weight<=0||weight>1)continue;
+  }
+  const primary=tag.trim().split('-')[0];
+  if(primary==='en'||primary==='de'||primary==='es'||primary==='fr'||primary==='it')return primary;
+ }
+ return 'en';
 }
 export function cloudflareEmailDeliveries(env:CloudflareDeliveryEnv):{verification?:VerificationDelivery;reset?:VerificationDelivery}{
  if(env.PLAYER_EMAIL_DELIVERY_ENABLED!=='cloudflare'||env.PLAYER_MODE!=='production'||!env.EMAIL||typeof env.EMAIL.send!=='function')return {};
