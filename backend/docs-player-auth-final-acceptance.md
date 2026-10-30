@@ -2,6 +2,12 @@
 
 Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
 
+## Final code consolidation — 30 October 2026 (tests authored, not executed)
+- Cloudflare delivery callback injection in `src/index.ts` is now direct, without an intermediate inline function; the separately injected fake delivery remains authoritative in test environments and the real provider remains disabled unless explicitly configured.
+- `emailLocale` now parses bounded `Accept-Language` preference lists and rejects zero-weight or malformed preferences; the Account UI still sends the selected single language for registration/recovery.
+- `tests/cloudflare-email-delivery.test.ts` includes locale negotiation checks. The earlier synthetic Worker+D1 registration, verification, login/restore and recovery/revocation paths remain authored.
+- **Do not close #10, #12 or #15 from these edits alone.** Production operator cutover and real Cloudflare onboarding remain unapproved; final exact-head full CI remains deferred by owner. No live email, credentials, DNS, remote D1 or deployment.
+
 ## Blocks 1–3 development batch — 30 October 2026 (unverified, Draft/HOLD)
 - Player verification now has an isolated synthetic full-path Worker+D1 regression: registration → pending denial → single-use verification → successful login → session restore. Recovery has an analogous synthetic path covering selected locale, one-time token and old-session revocation. These tests are **authored but not executed**; no PASS is claimed.
 - Selected Account language (EN/DE/ES/FR/IT) is explicitly sent as `Accept-Language` for registration and password recovery, rather than relying on browser language; a static regression ensures the field is retained. Cloudflare delivery stays production-only, disabled by default.
