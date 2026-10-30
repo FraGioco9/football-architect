@@ -38,7 +38,7 @@ form.addEventListener('submit',async e=>{
  e.preventDefault();if(submitting)return;ui.nextStep(null);submitting=true;button.disabled=true;button.textContent=t[5];ui.feedback(status,t[5],'pending');
  const values=new FormData(form);
  try{
-  const result=await fetch('/api/player/register',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(values.get('email')||''),password:String(values.get('password')||''),username:String(values.get('username')||'').trim(),nationality:String(values.get('nationality')||''),city:String(values.get('city')||'').trim()})});
+  const result=await fetch('/api/player/register',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept-Language':ui.language},body:JSON.stringify({email:String(values.get('email')||''),password:String(values.get('password')||''),username:String(values.get('username')||'').trim(),nationality:String(values.get('nationality')||''),city:String(values.get('city')||'').trim()})});
   const value=await result.json().catch(()=>({}));
   if(result.status===409&&value?.error?.code==='username_unavailable'){
    ui.feedback(status,'');ui.fieldError(form.elements.namedItem('username'),f[5]);form.elements.namedItem('username').focus();
