@@ -5,7 +5,8 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {hashText,csrfFor,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
+import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 import {rescheduleSeasonEvent} from '../src/admin-calendar-command.ts';
 import {proposeAdministrativeMilestones} from '../src/admin-calendar-policy.ts';
@@ -18,10 +19,13 @@ const run=(key='event-reschedule-synthetic-0001',input:unknown=command(),databas
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
- csrf=await csrfFor(token);
- session={actor:{id:'event-operator',email:'event@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
+ csrf=await playerCsrfFor(token);
+ session={actor:{id:'event-operator',email:'event@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await digestOpaqueToken(csrf),unified:{playerId:'event-player',sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf)}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic-not-login',now-100).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind('event-player',session.actor.email,'synthetic',1,now-100,'active',now-100,now-100).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('event-player',session.actor.id,now-100).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(session.digest,'event-player',1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('event-player',permission,now-100)));
  world=await readWorld(db);
  world=(await prepareSeason(db,session,{expectedGeneration:world.generation,expectedRevision:world.revision},'event-prepare-synthetic-0001',await loadApprovedSnapshot(),now)).world;
  // Explicitly stage the proposal in disposable D1. The production prepare
