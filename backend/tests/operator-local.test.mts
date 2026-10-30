@@ -121,6 +121,15 @@ test('synthetic cutover rehearsal grants only explicitly matched identities and 
   await assert.rejects(rehearseLocalOperatorGrant(handle.db,{...identity,legacyId:'different'},now));
   assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM account_permissions').first<{n:number}>())?.n,0);
   const worldBefore=await handle.db.prepare('SELECT generation,revision FROM world_state').first();
+  // Prevent silent privilege transfer if the historic identity already belongs to
+  // a different verified Player. Refusal must not grant the new Player anything.
+  await handle.db.prepare("INSERT INTO player_accounts(id,email_normalized,password_verifier,status,email_verified_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?)")
+   .bind('existing-player','other-player@example.invalid','synthetic','active',now,now,now).run();
+  await handle.db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+   .bind('existing-player',legacy.id,now).run();
+  await assert.rejects(rehearseLocalOperatorGrant(handle.db,identity,now),/rehearsal_link_conflict/);
+  assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM account_permissions').first<{n:number}>())?.n,0);
+  await handle.db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id=?').bind('existing-player').run();
   assert.deepEqual(await rehearseLocalOperatorGrant(handle.db,identity,now),{ready:true});
   assert.deepEqual(await rehearseLocalOperatorGrant(handle.db,identity,now),{ready:true});
   assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM account_permissions').first<{n:number}>())?.n,3);
