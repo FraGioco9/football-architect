@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {openLocalDatabase,manageAccount} from '../tools/operator-local.mts';
 import {auditOperatorCutover} from '../tools/operator-cutover-audit.mts';
+import {rehearseLocalOperatorGrant,rehearseLocalOperatorRevoke} from '../tools/operator-cutover-rehearsal.mts';
 import {requireStoredSession} from '../src/session-repository.ts';
 import {createOpaqueToken,digestOpaqueToken} from '../src/session-tokens.ts';
 
@@ -102,5 +103,36 @@ test('read-only cutover audit denies incomplete linking and accepts explicit ver
   assert.deepEqual((await auditOperatorCutover(handle.db,email)).findings,['missing_write']);
   assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM player_sessions').first<{n:number}>())?.n,0);
   await assert.rejects(auditOperatorCutover(handle.db,'invalid'));
+ }finally{await handle.close();await rm(dir,{recursive:true,force:true})}
+});
+
+test('synthetic cutover rehearsal grants only explicitly matched identities and revokes safely',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'fa-operator-rehearsal-'));
+ const handle=await openLocalDatabase(dir);
+ try{
+  const now=Math.floor(Date.now()/1000),email='rehearsal@example.invalid';
+  await manageAccount(handle.db,'create',email,'synthetic-operator-password-2026');
+  const legacy=await handle.db.prepare('SELECT id FROM admin_accounts WHERE email_normalized=?').bind(email).first<{id:string}>();
+  assert.ok(legacy);
+  await handle.db.prepare("INSERT INTO player_accounts(id,email_normalized,password_verifier,status,email_verified_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?)")
+   .bind('rehearsal-player',email,'synthetic','active',now,now,now).run();
+  const identity={playerId:'rehearsal-player',legacyId:legacy.id,email};
+  assert.deepEqual((await auditOperatorCutover(handle.db,email)).findings,['operator_link_missing','missing_access','missing_read','missing_write']);
+  await assert.rejects(rehearseLocalOperatorGrant(handle.db,{...identity,legacyId:'different'},now));
+  assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM account_permissions').first<{n:number}>())?.n,0);
+  const worldBefore=await handle.db.prepare('SELECT generation,revision FROM world_state').first();
+  assert.deepEqual(await rehearseLocalOperatorGrant(handle.db,identity,now),{ready:true});
+  assert.deepEqual(await rehearseLocalOperatorGrant(handle.db,identity,now),{ready:true});
+  assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM account_permissions').first<{n:number}>())?.n,3);
+  assert.deepEqual(await auditOperatorCutover(handle.db,email),{ready:true,findings:[]});
+  const token=await digestOpaqueToken(createOpaqueToken());
+  await handle.db.prepare("INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)")
+   .bind(token,'rehearsal-player',1,'a'.repeat(64),now,now,now+3600).run();
+  await rehearseLocalOperatorRevoke(handle.db,'rehearsal-player');
+  assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM player_sessions').first<{n:number}>())?.n,0);
+  assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM account_permissions').first<{n:number}>())?.n,0);
+  assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM admin_accounts').first<{n:number}>())?.n,1);
+  assert.deepEqual((await auditOperatorCutover(handle.db,email)).findings,['operator_link_missing','missing_access','missing_read','missing_write']);
+  assert.deepEqual(await handle.db.prepare('SELECT generation,revision FROM world_state').first(),worldBefore);
  }finally{await handle.close();await rm(dir,{recursive:true,force:true})}
 });
