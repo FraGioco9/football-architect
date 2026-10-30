@@ -2,6 +2,13 @@
 
 Date: 30 October 2026. Scope: registration verification and password recovery only. This document is a decision proposal, not approval for real delivery, secrets, DNS changes, remote D1 or deployment.
 
+## Approved provider / current Draft implementation — 30 October 2026
+- Owner approved **Cloudflare Email Service** as the provider **for implementation in Draft/HOLD only**, with no credentials, DNS, real email or deployment.
+- `src/cloudflare-email-delivery.ts` implements the documented native Workers binding `EMAIL.send({to,from,subject,html,text})`. The Worker injects the callbacks only when all gates are present: `PLAYER_EMAIL_DELIVERY_ENABLED=cloudflare`, `PLAYER_MODE=production`, a strict HTTPS `PLAYER_ORIGIN`, a valid `PLAYER_EMAIL_FROM`, and an `EMAIL` binding exposing `send`. **No binding or activation variables are added to local Wrangler configuration.**
+- The fake-binding suite `tests/cloudflare-email-delivery.test.ts` checks missing configuration, disallowed origins, canonical verification/recovery links, rejected malformed tokens and delivery failures. These tests must pass on exact HEAD; there are no real deliveries.
+- Existing explicitly injected test callbacks remain supported and take precedence. Live activation/onboarding, sender verification, DNS changes and real sends are **separate blocked work**. Implementation alone does not satisfy end-to-end #12 acceptance.
+- Security rule: email URLs derive solely from fixed `PLAYER_ORIGIN`, never request Host or user-supplied redirects. Avoid logging token-bearing URLs or provider responses.
+
 ## Recommendation
 **Preferred: Cloudflare Email Service (native Workers binding).** A Workers binding avoids introducing an external runtime SDK or API key for email delivery, and is naturally aligned with the existing Workers deployment. The service is beta as of 30 October 2026; arbitrary recipient sending requires Workers Paid, onboarded sender domain, and appropriate quotas.
 
