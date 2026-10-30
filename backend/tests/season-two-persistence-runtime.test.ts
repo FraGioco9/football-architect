@@ -112,7 +112,7 @@ it('allows exactly one snapshot/revision for competing prepare requests',async()
 it('rechecks operator authorization at the prepare commit boundary',async()=>{
  await approve();const before=world;
  const racing={prepare:db.prepare.bind(db),batch:async(statements:any[])=>{if(statements.length>1)await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind(session.actor.id).run();return db.batch(statements)}};
- await expect(prepareSeasonTwo(racing,session,meta(),'two-revoked-before-prepare',now)).rejects.toMatchObject({status:401});
+ await expect(prepareSeasonTwo(racing,session,meta(),'two-revoked-before-prepare',now)).rejects.toMatchObject({status:403,code:'permission_denied'});
  expect(await readWorld(db)).toEqual(before);expect(await count('seasons')).toBe(0);
 });
 
