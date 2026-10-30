@@ -19,6 +19,13 @@
         img.setAttribute("src", src.replace(/-(?:dark|light)\.svg$/, "-" + theme + ".svg"));
     }
   }
+  // Keep accessible label associations, but clicking label text does not focus/toggle controls.
+  document.addEventListener('click',event=>{
+    const target=event.target;
+    if(!target?.closest||!target.closest('label'))return;
+    if(target.closest('input,textarea,select,button,a,[role="option"]'))return;
+    event.preventDefault();
+  },true);
   // Parser-blocking in <head>: theme is set before stylesheets are parsed.
   paint(theme);
   function ready() {

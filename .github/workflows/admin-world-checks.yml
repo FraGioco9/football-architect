@@ -12,6 +12,10 @@ on:
       - 'assets/competition-tabs.js'
       - 'tools/render-sidebar.mjs'
       - 'assets/sidebar-first-paint.js'
+      - 'assets/theme.js'
+      - 'assets/landing.css'
+      - 'assets/clubs-directory.css'
+      - 'tests/control-focus-browser.mjs'
       - 'tests/account-*'
       - 'tests/profile-*'
       - 'assets/admin-settings.*'
@@ -90,6 +94,8 @@ jobs:
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
       - name: Verify account feedback and stable first visible paint
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-feedback-browser.mjs
+      - name: Verify shared control focus and selectable text fields
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
       - name: Verify signed-out and authenticated Profile sidebar entry
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
