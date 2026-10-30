@@ -13,6 +13,17 @@ beforeEach(async()=>{await db.batch([db.prepare('DELETE FROM player_one_time_tok
  db.prepare('DELETE FROM player_admin_operator_links'),db.prepare('DELETE FROM account_permissions'),
  db.prepare('DELETE FROM player_accounts'),db.prepare('DELETE FROM player_auth_throttles')])});
 describe('PLAYER-AUTH registration verification deferred final gate',()=>{
+ it('does not enable Cloudflare email automatically in local mode even when a fake binding and opt-in are supplied',async()=>{
+  let sends=0;
+  const unsafe={...base,PLAYER_EMAIL_DELIVERY_ENABLED:'cloudflare',PLAYER_EMAIL_FROM:'noreply@example.invalid',
+   EMAIL:{send:async()=>{sends++}}};
+  const response=await send('/api/player/register',{
+   email:'binding-local@example.invalid',password,username:'local_binding_user'
+  },unsafe);
+  expect(response.status).toBe(503);
+  expect(sends).toBe(0);
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_accounts').first<{n:number}>())?.n).toBe(0);
+ });
  it('fails closed before creating an account when email delivery is not configured',async()=>{
   const response=await send('/api/player/register',{email:'new@example.invalid',password,username:'new_player'});
   expect(response.status).toBe(503);
