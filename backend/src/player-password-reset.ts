@@ -21,7 +21,7 @@ async function reserve(db:Database,email:string,source:string,now:number){
  const accountRow=await call('reset-account:'+await hashText(email));
  if(!accountRow||accountRow.attempts>3)throw new ApiError(429,'reset_throttled');
 }
-export async function requestPasswordReset(db:Database,body:unknown,source:string,now:number,deliver:VerificationDelivery){
+export async function requestPasswordReset(db:Database,body:unknown,source:string,now:number,deliver:VerificationDelivery,locale='en'){
  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body as object).join(',')!=='email')throw new ApiError(422,'invalid_reset_request');
  let email:string;try{email=parseOperatorEmail((body as {email:unknown}).email)}catch{throw new ApiError(422,'invalid_reset_request')}
  await reserve(db,email,source,now);
@@ -31,7 +31,7 @@ export async function requestPasswordReset(db:Database,body:unknown,source:strin
  // A failed delivery never invalidates the previous working reset token.
  await db.prepare(`INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at)
  VALUES(?,?,'reset_password',?,?)`).bind(digest,account.id,now,now+1800).run();
- try{await deliver(email,token)}catch{
+ try{await deliver(email,token,locale)}catch{
   await db.prepare("DELETE FROM player_one_time_tokens WHERE token_digest=? AND purpose='reset_password' AND consumed_at IS NULL").bind(digest).run();
   throw new ApiError(503,'reset_unavailable');
  }
