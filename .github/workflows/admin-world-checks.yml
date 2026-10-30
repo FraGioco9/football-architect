@@ -86,29 +86,44 @@ jobs:
         run: npm --prefix backend run typecheck
       - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
         run: npm --prefix backend run test:auth-local
+      # Draft-only diagnostic mode: run the currently failing suites first, without browser downloads.
+      - name: Focused historical Worker D1 regressions (Draft diagnostic)
+        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        run: cd backend && npx vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
       - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium webkit
       - name: Verify safe post-login return routes in Chromium
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
       - name: Verify account style, language, app entry and registration in Chromium
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
       - name: Verify account feedback and stable first visible paint
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-feedback-browser.mjs
       - name: Verify account password assistance, inline errors and nationality selection
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-usability-browser.mjs
       - name: Verify shared control focus and selectable text fields
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
       - name: Verify signed-out and authenticated Profile sidebar entry
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
       - name: Verify account pointer, keyboard and dropdown matrix in Chromium
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-interaction-browser.mjs
       - name: Verify account spacing and viewport-aware dropdowns in Chromium
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-layout-browser.mjs
       - name: Verify Season 0 club navigation in Chromium
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/competition-season-zero-club-links-browser.mjs
       - name: Verify complete isolated account UI suite in WebKit
+        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
         env:
           FA_AUTH_BROWSER: webkit
           FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
