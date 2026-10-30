@@ -1134,17 +1134,20 @@ svg.site-chevron>path{translate:0 .5px}
 .app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}
 .app-world-flag{width:100%;height:100%;object-fit:contain}
 
-/* UI-HOVER-01: one hover treatment for framed boxes and field controls, matching the top-bar search.
- * Focus/selected/disabled states remain independent; borders are already allocated (no layout shift). */
-.app-body{--fa-box-hover-bg:#1a3738;--fa-box-hover-border:#506c64}
-html[data-theme="light"] .app-body{--fa-box-hover-bg:#E5F1E9;--fa-box-hover-border:#67917D}
+/* UI-HOVER-02: Search-derived hover applies only to actual editable fields, not cards, labels or feedback. */
+.app-body{--fa-field-hover-bg:#1a3738;--fa-field-hover-border:#506c64;--fa-field-focus-border:#84b8a4}
+html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-border:#67917D;--fa-field-focus-border:#377F60}
+.app-body :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select,.language-trigger){
+ transition:border-color 160ms ease,box-shadow 180ms ease,background-color 160ms ease;
+}
 @media(hover:hover){
- .app-body :is(.app-search-trigger,.language-trigger,.app-fixtures-trigger,.app-fixtures-arrow,.calendar-arrow,.calendar-day,.app-panel,.app-world-country,.world-calendar,.app-division-card):not(:disabled):not([aria-disabled="true"]):not([aria-pressed="true"]):hover{
-  background:var(--fa-box-hover-bg);border-color:var(--fa-box-hover-border);
+ .app-body :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select,.language-trigger):not(:disabled):not([aria-disabled="true"]):hover:not(:focus){
+  background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border);
  }
- .app-body :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select):not(:disabled):hover{
-  background:var(--fa-box-hover-bg);border-color:var(--fa-box-hover-border);
- }
- /* Account main is a non-interactive layout container, never a hover target. */
- .account-body main.app-panel:hover{background:var(--surface);border-color:transparent}
+}
+.app-body :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select,.language-trigger):focus-visible{
+ border-color:var(--fa-field-focus-border);box-shadow:inset 0 0 0 1px var(--fa-field-focus-border);
+}
+@media(prefers-reduced-motion:reduce){
+ .app-body :is(input,textarea,select,.language-trigger){transition:none}
 }
