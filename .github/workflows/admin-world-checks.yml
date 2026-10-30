@@ -71,6 +71,12 @@ jobs:
         run: npm --prefix backend run typecheck
       - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
         run: npm --prefix backend run test:auth-local
+      - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify safe post-login return routes in Chromium
+        run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
