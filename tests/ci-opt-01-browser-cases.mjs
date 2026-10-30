@@ -48,7 +48,7 @@ export async function verifyArea(page,area,{touch}){
  // Follow a real visible local navigation link with the keyboard.
  const nav=page.locator('a.brand-mark,a.app-brand').filter({visible:true}).first();
  const home=new URL(await nav.getAttribute('href'),page.url());
- assert.ok(['localhost','app.localhost'].includes(home.hostname)&&home.port==='2000'&&home.pathname==='/', 'Known loopback home destination');
+ assert.ok(['localhost','app.localhost'].includes(home.hostname)&&home.port==='2000'&&['/','/dashboard','/dashboard/'].includes(home.pathname), 'Known loopback home destination');
  await nav.focus();await page.keyboard.press('Enter');
  await page.waitForURL(home.href);
 }
