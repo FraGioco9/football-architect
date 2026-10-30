@@ -70,7 +70,12 @@ html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
 html[data-theme="light"] .account-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-border:#67917D;--fa-field-focus-border:#377F60}
 .account-body :is(input,select,textarea,.language-trigger){transition:border-color 160ms ease,box-shadow 180ms ease,background-color 160ms ease}
 @media(hover:hover){
+ /* An input inside a wrapping label must not inherit a visual hover from the label text/help. */
  .account-body :is(input,select,textarea,.language-trigger):not(:disabled):not([aria-disabled="true"]):hover:not(:focus){background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+ .account-body label:has(> :is(span,small,.account-field-error):hover) > :is(input,select,textarea),
+ .account-body label:has(> :is(span,small,.account-field-error):hover) > .language-control > .language-trigger{
+  background:var(--background);border-color:var(--border);
+ }
  .account-body .account-password-toggle:hover{background:transparent}
 }
 .account-body :is(input,select,textarea,.language-trigger):focus-visible{
