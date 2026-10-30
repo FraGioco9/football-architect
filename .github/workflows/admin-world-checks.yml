@@ -80,6 +80,12 @@ jobs:
       - name: Verify operator bootstrap, recovery and local persistence across restart
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend run test:operator
+      - name: Cache pinned Chromium browser binaries for final gate
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-1.58.2
       - name: Install isolated pinned Chromium test tooling
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: |
