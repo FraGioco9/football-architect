@@ -35,6 +35,23 @@ describe('Cloudflare Email Service delivery adapter (no real sends)',()=>{
    expect(msg.html).not.toContain('<script');
   }
  });
+ it('localizes both email types in all supported languages and falls back to English',async()=>{
+  const received:any[]=[];
+  const callbacks=cloudflareEmailDeliveries(ready(async message=>{received.push(message)}));
+  for(const locale of ['en','de','es','fr','it']){
+   await callbacks.verification!('player@example.invalid',token,locale);
+   await callbacks.reset!('player@example.invalid',token,locale);
+  }
+  expect(received).toHaveLength(10);
+  expect(new Set(received.filter((_,i)=>i%2===0).map(m=>m.subject)).size).toBe(5);
+  expect(new Set(received.filter((_,i)=>i%2===1).map(m=>m.subject)).size).toBe(5);
+  for(const message of received){
+   expect(message.html).toContain('token='+token);
+   expect(message.text).toContain('token='+token);
+  }
+  await callbacks.verification!('player@example.invalid',token,'unknown');
+  expect(received.at(-1).subject).toBe(received[0].subject);
+ });
  it('rejects malformed tokens before sending and propagates delivery failures',async()=>{
   let count=0;
   const callbacks=cloudflareEmailDeliveries(ready(async()=>{count++;throw Error('fake-outage')}));
