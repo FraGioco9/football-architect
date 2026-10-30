@@ -12,20 +12,28 @@ import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {csrfFor,hashText,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
+import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='6'.repeat(64),config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
 let world:Awaited<ReturnType<typeof readWorld>>,session:AdminSession,csrf:string;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
-const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_admin_local='+token,Origin:config.ADMIN_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
+const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_player_local='+token,Origin:config.ADMIN_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
 async function command(path:string){const r=await call(path,meta());expect(r.status).toBe(200);const data=await r.json() as any;world=data.world;return data}
 const publicRead=(path:string)=>worker.fetch(new Request('http://localhost:2000'+path),{DB:db});
 async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
 beforeAll(async()=>{
- await applyD1Migrations(db,bindings.TEST_MIGRATIONS);csrf=await csrfFor(token);
- session={actor:{id:'activation-operator',email:'activation@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
+ await applyD1Migrations(db,bindings.TEST_MIGRATIONS);csrf=await playerCsrfFor(token);
+ session={actor:{id:'activation-operator',email:'activation@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await digestOpaqueToken(csrf),unified:{playerId:'activation-player',sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf)}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-10,now-5,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+  .bind('activation-player',session.actor.email,'synthetic',1,now-10,'active',now-10,now-10).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('activation-player',session.actor.id,now-10).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+  .bind(session.digest,'activation-player',1,session.csrfDigest,now-10,now-5,now+1000).run();
+ await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>
+  db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('activation-player',permission,now-10)));
  world=await readWorld(db);world=(await prepareSeason(db,session,meta(),'activation-source-prepare',await loadApprovedSnapshot(),now)).world;
  world=(await generateSeasonCalendar(db,session,meta(),'activation-source-calendar',now)).world;world=(await executeLifecycle(db,session,'start',meta(),'activation-source-start',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'activation-source-day-'+(world.day+1),now)).world;
