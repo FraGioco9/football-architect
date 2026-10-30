@@ -1133,3 +1133,18 @@ svg.site-chevron>path{translate:0 .5px}
 .app-rules-metric dd{font-size:19px}
 .app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}
 .app-world-flag{width:100%;height:100%;object-fit:contain}
+
+/* UI-HOVER-01: one hover treatment for framed boxes and field controls, matching the top-bar search.
+ * Focus/selected/disabled states remain independent; borders are already allocated (no layout shift). */
+.app-body{--fa-box-hover-bg:#1a3738;--fa-box-hover-border:#506c64}
+html[data-theme="light"] .app-body{--fa-box-hover-bg:#E5F1E9;--fa-box-hover-border:#67917D}
+@media(hover:hover){
+ .app-body :is(.app-search-trigger,.language-trigger,.app-fixtures-trigger,.app-fixtures-arrow,.calendar-arrow,.calendar-day,.app-panel,.app-world-country,.world-calendar,.app-division-card):not(:disabled):not([aria-disabled="true"]):not([aria-pressed="true"]):hover{
+  background:var(--fa-box-hover-bg);border-color:var(--fa-box-hover-border);
+ }
+ .app-body :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select):not(:disabled):hover{
+  background:var(--fa-box-hover-bg);border-color:var(--fa-box-hover-border);
+ }
+ /* Account main is a non-interactive layout container, never a hover target. */
+ .account-body main.app-panel:hover{background:var(--surface);border-color:transparent}
+}
