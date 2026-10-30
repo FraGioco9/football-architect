@@ -18,6 +18,10 @@ export async function rehearseLocalOperatorGrant(db:Database,identity:Identity,n
  const already=await db.prepare('SELECT legacy_admin_account_id AS id FROM player_admin_operator_links WHERE player_account_id=?')
   .bind(identity.playerId).first<{id:string}>();
  if(already&&already.id!==identity.legacyId)throw Error('rehearsal_link_conflict');
+ // Rehearsal must never inherit a pre-existing foreign operator's grants.
+ const otherLink=await db.prepare('SELECT player_account_id AS id FROM player_admin_operator_links WHERE legacy_admin_account_id=?')
+  .bind(identity.legacyId).first<{id:string}>();
+ if(otherLink&&otherLink.id!==identity.playerId)throw Error('rehearsal_link_conflict');
  await db.batch([
   db.prepare(`INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at)
    SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM player_accounts p JOIN admin_accounts a ON a.email_normalized=p.email_normalized
