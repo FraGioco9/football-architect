@@ -65,6 +65,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
       - name: Check current Admin and public JavaScript syntax before expensive tests
         run: |
           node --check assets/admin-settings.js
@@ -74,81 +76,67 @@ jobs:
           node --check tests/admin-settings-browser.mjs
           node --check tests/admin-world-lifecycle-browser.mjs
           node --check tests/season-two-navigation-browser.mjs
-      - name: Install pinned Worker toolchain without remote credentials
-        run: |
-          npm install -g npm@11.6.2 --no-audit --no-fund
-          npm --prefix backend ci --no-audit --no-fund
+      - name: Verify CI optimization safety contracts before dependency installation
+        run: node --test tests/ci-opt-02-workflow-contract.test.mjs
       - name: Test password and world contracts (no remote services)
         run: npm --prefix backend run test:contracts
       - name: Verify D1-compatible SQLite migration locally
         run: python3 -m unittest discover -s backend/tests -p 'test_*migration.py' -v
+      - name: Install pinned Worker toolchain without remote credentials
+        run: |
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
       - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
+        if: ${{ github.event.pull_request.draft && !contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend run test:auth-local
-      # Draft-only diagnostic mode: run the currently failing suites first, without browser downloads.
-      - name: Focused historical Worker D1 regressions (Draft diagnostic)
-        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
-        run: cd backend && npx vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
-      # Focused phase two: historical full Worker suite plus local operator/restart checks.
-      # This diagnostic runs before browser installation; failures stop immediately.
-      - name: Prepare-season unified session regression (fast fail)
-        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
-        run: cd backend && npx vitest run tests/prepare-runtime.test.ts
-      - name: Full Worker D1 regression in focused Draft mode
-        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
+      # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
+      # The complete backend test command below already includes the historical
+      # archive/season suites. Avoid running those Vitest files twice.
+      - name: Execute smoke tests in actual local Worker runtime
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend test
-      - name: Operator persistence and restart in focused Draft mode
-        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
-        run: npm --prefix backend run test:operator
-      # Draft-only account QA: Chromium only, no WebKit or full site matrix.
-      - name: Install focused Account Chromium QA tooling
-        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
-        run: |
-          npm install --prefix "$RUNNER_TEMP/fa-account-focused" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-account-focused/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Verify Login Register Go back spacing and safe return (Draft)
-        if: ${{ github.event.pull_request.draft && contains(github.event.pull_request.body, '<!-- admin-world-focused-worker -->') }}
-        env:
-          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-account-focused/node_modules/playwright/index.mjs
-          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-account-focused/node_modules/playwright/index.mjs
-        run: |
-          node tests/account-layout-browser.mjs
-          node tests/player-safe-return-browser.mjs
+      - name: Cache pinned Chromium and WebKit account browser binaries
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-webkit-1.58.2
       - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium webkit
       - name: Verify safe post-login return routes in Chromium
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
       - name: Verify account style, language, app entry and registration in Chromium
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
       - name: Verify account feedback and stable first visible paint
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-feedback-browser.mjs
       - name: Verify account password assistance, inline errors and nationality selection
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-usability-browser.mjs
       - name: Verify shared control focus and selectable text fields
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
       - name: Verify signed-out and authenticated Profile sidebar entry
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
       - name: Verify account pointer, keyboard and dropdown matrix in Chromium
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-interaction-browser.mjs
       - name: Verify account spacing and viewport-aware dropdowns in Chromium
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-layout-browser.mjs
       - name: Verify Season 0 club navigation in Chromium
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/competition-season-zero-club-links-browser.mjs
       - name: Verify complete isolated account UI suite in WebKit
-        if: ${{ !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         env:
           FA_AUTH_BROWSER: webkit
           FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
@@ -157,22 +145,45 @@ jobs:
           for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction account-layout competition-season-zero-club-links; do
             node "tests/$suite-browser.mjs"
           done
-      # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
-      - name: Execute ADMIN-WORLD-02 archive/close and historical Worker D1 regressions
+      # Operator persistence runs in a separate independent final-gate job.
+      - name: Cache pinned Chromium browser binaries for final gate
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: cd backend && npx vitest run tests/admin-end-season-transition-runtime.test.ts tests/season-two-activation-runtime.test.ts tests/season-two-persistence-runtime.test.ts
-      - name: Execute smoke tests in actual local Worker runtime
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: npm --prefix backend test
-      - name: Verify operator bootstrap, recovery and local persistence across restart
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: npm --prefix backend run test:operator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-1.58.2
       - name: Install isolated pinned Chromium test tooling
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-admin-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-admin-browser/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Verify Settings and two-season lifecycle with real loopback Worker and D1
+      - name: Verify signed-out unified Settings and public-page isolation
         timeout-minutes: 20
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs
+
+  operator-final:
+    name: Final local operator persistence and restart
+    if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install pinned Worker toolchain
+        run: |
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend ci --prefer-offline --no-audit --no-fund
+      - name: Verify operator bootstrap, recovery and local persistence across restart
+        run: npm --prefix backend run test:operator

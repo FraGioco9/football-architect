@@ -1,80 +1,44 @@
-# PLAYER-AUTH-01 — #15 local acceptance execution plan (30 October 2026)
+# PLAYER-AUTH-01 — final acceptance status (30 October 2026)
 
-Status: **OPEN / not accepted**. This document is an evidence-based audit and execution plan, **not a successful test-run report**.
+**OPEN — PR #329 Draft/HOLD. Issue #170 remains 13/15 (86.7%).**
+No merge, deployment, remote D1, real email, DNS changes or production Cloudflare configuration is authorized.
 
-## Final gates consolidated (Draft/HOLD)
-- Canonical exact-head checklist: `backend/docs-player-auth-release-gates.md`. This is the pending acceptance matrix, **not a green report**.
-- Added Worker-level regression that rejects accidental Cloudflare sends in local mode even with a mock binding and opt-in flag. It was authored but not executed.
-- The cutover audit remains a library-level, explicitly local preflight. A proposed CLI wrapper was removed because `openLocalDatabase` may apply migrations; no supposedly read-only command may silently mutate persistence.
-- Full CI remains intentionally deferred under owner instructions. Checklist unchanged at **12/15**.
+## Current correction batch
 
-## Final code consolidation — 30 October 2026 (tests authored, not executed)
-- Cloudflare delivery callback injection in `src/index.ts` is now direct, without an intermediate inline function; the separately injected fake delivery remains authoritative in test environments and the real provider remains disabled unless explicitly configured.
-- `emailLocale` now parses bounded `Accept-Language` preference lists and rejects zero-weight or malformed preferences; the Account UI still sends the selected single language for registration/recovery.
-- `tests/cloudflare-email-delivery.test.ts` includes locale negotiation checks. The earlier synthetic Worker+D1 registration, verification, login/restore and recovery/revocation paths remain authored.
-- **Do not close #10, #12 or #15 from these edits alone.** Production operator cutover and real Cloudflare onboarding remain unapproved; final exact-head full CI remains deferred by owner. No live email, credentials, DNS, remote D1 or deployment.
+- Starting PR HEAD: `8a97aebbe9df7af0d24f45aa14b9e20aafae919d`.
+- Integrates current main `eaf3b4bbfced9543893a99be1569a92c65bc73bb`, including #332/#333 npm/browser caches, independent operator job, obsolete-run cancellation and deduplication. Conflicting Admin workflow edits retain all Player account/browser gates and exact-head checks.
+- The previous Site run 41100209153 passed 752 tests and failed only backend test discovery; Admin run 41100209254 failed for the same `Unclassified backend test: cloudflare-email-delivery.test.ts`. Browser run 41100209272 succeeded on that old HEAD.
+- The email adapter suite was a Vitest file outside the Worker include patterns. It now uses Node's test/assert APIs with all five original cases retained, so the existing contract runner actually executes it before dependency installation. Discovery explicitly requires this suite; unknown tests still fail closed.
+- Retired focused diagnostic workflow steps are removed. The final full Worker run includes the dedicated auth and historical suites once, before browser installation; ordinary Draft pushes retain the focused auth gate. Independent operator persistence remains required in final mode. Account Chromium/WebKit matrices remain intact.
+- The final Settings browser step is accurately named: it covers signed-out unified Settings/public isolation. It does not execute `verifyAdminWorldLifecycle`; the dormant exported two-season scenario still uses retired Admin form selectors. Do not claim this as real-browser two-season acceptance. Full Worker/operator lifecycle coverage is separate.
 
-## Blocks 1–3 development batch — 30 October 2026 (unverified, Draft/HOLD)
-- Player verification now has an isolated synthetic full-path Worker+D1 regression: registration → pending denial → single-use verification → successful login → session restore. Recovery has an analogous synthetic path covering selected locale, one-time token and old-session revocation. These tests are **authored but not executed**; no PASS is claimed.
-- Selected Account language (EN/DE/ES/FR/IT) is explicitly sent as `Accept-Language` for registration and password recovery, rather than relying on browser language; a static regression ensures the field is retained. Cloudflare delivery stays production-only, disabled by default.
-- Cloudflare environment separation, no-email Local/Preview, opt-in Production binding, DNS/provider prerequisites, and STOP/rollback conditions are documented in `backend/docs-cloudflare-auth-environments.md`. **No active Wrangler binding, credential, DNS, remote D1, live operator link or deploy** was created.
-- Player/Admin production cutover is still blocked pending separate approval and full QA. Existing local operator preflight and reversal tests remain in place.
-- Per owner instruction, postpone manual/full CI runs until development finishes. GitHub may still schedule automatic workflows on branch pushes; do not call them verified success until exact-head evidence is inspected. Checklist remains **12/15 (80%)**.
+## Executed local checks for this batch
 
-## Operator cutover runbook
-- See `backend/docs-player-admin-cutover-runbook.md` for approval gates, disposable-D1 rehearsal, STOP conditions, privilege revocation, preservation of historical audit and separately approved backup/restore. This is documentation only; it **does not** authorize live cutover or release.
+These checks were run against the combined working tree before the final commit; they are **not remote exact-head acceptance**.
 
-## Local operator cutover readiness preflight (read-only)
-- New `backend/tools/operator-cutover-audit.mts` implements a **read-only** check of a normalized email in disposable local D1. It returns only `ready` and finding codes (no identifiers, secrets or PII) and cannot create an operator link, permission or session.
-- Requires an enabled legacy audit operator, active verified Player with matching email, exact explicit Player/legacy link, and all three D1 permission grants. Missing or revoked prerequisites fail closed.
-- `backend/tests/operator-local.test.mts` covers missing identities, unverified pending accounts, explicit grants, permission removal and zero created sessions. The new test requires exact-head CI confirmation.
-- `ready:true` means only that the local data satisfies these prerequisites; it **does not authorize** live cutover. Actual operator provisioning, backup/rollback, credentials and remote D1 remain separately owner-approved #10 work.
+| Check | Result |
+| --- | --- |
+| Backend pure Node contracts, including simulated Cloudflare adapter | 75/75 PASS |
+| Worker/D1 Player auth, registration, recovery, Admin migration | 69/69 PASS |
+| Disposable local operator bootstrap, preflight, grant/revoke rehearsal | 5/5 PASS |
+| SQLite migration contracts | 38/38 PASS |
+| TypeScript | PASS |
+| Backend discovery and CI optimization contracts | 5/5 PASS |
 
-## Latest focused acceptance evidence — 30 October 2026
-- Exact HEAD `0a0fc2b3b8233a89b3d584861253b7eb89b8bcc2`: Admin World foundation checks **SUCCESS**, including local auth, **213/213 full Worker D1 tests**, operator persistence/restart and Chromium login/register layout and safe return. This supersedes the historical 71-failure baseline described below.
-- Site checks and full Browser QA **SKIPPED intentionally** under Draft diagnostic conditions, **not passed** on that HEAD. WebKit and full exact-head acceptance remain open.
-- A new isolated unified Admin regression exercises verified Player-to-legacy-operator email correspondence and link removal; test outcome must be confirmed on its own exact HEAD before claiming PASS.
-- No live operator cutover, credentials, remote D1, outgoing email, deployment or merge. Owner sign-off for actual #10 cutover and delivery provider #12 remains required. Checklist **12/15 (80%)**.
+Discovery was observed failing locally before the fix with the same error as both CI jobs. Full CI runs only after the final branch update. Record the final SHA, workflow URLs, conclusions and skipped gates before claiming acceptance.
 
-## Exact-head starting point
-- Baseline inspected: `fcdd1bcc01a37acbaac58bde4df7c6ad06bd98cd` (PR #329).
-- Baseline GitHub CI: Site checks, Browser QA and Admin World foundation all SUCCESS on this commit.
-- Existing account/Season 0 matrix and targeted Worker+D1 checks are documented in the PR description.
-- Historical full `backend/npm test` evidence: 127 passed, 71 failed, 15 skipped against implementation, with the same 71 failing signatures on pristine prior baseline (123 passed, 71 failed, 15 skipped). **These are not a PASS** and should be rechecked on exact HEAD.
-- Historical failing groups include Admin calendar, lifecycle, preparation, public sporting, reset world, season transition and persistence runtime suites.
+## Remaining #10 — authorized actual operator cutover
 
-## Observed migration mismatch
-`backend/tests/admin-calendar-command-runtime.test.ts` still constructs `AdminSession`, inserts into `admin_sessions` and calls lower-level world commands with the retired identity. Its HTTP test correctly creates a Player identity, explicit `player_admin_operator_links`, permissions and Player session. This mixed fixture model must be audited across all 15 historical failing suites. Do not restore legacy password login as a shortcut. Keep historical audit foreign-key ownership intact.
+Technical controls and disposable rehearsal are implemented. See `docs-player-admin-cutover-runbook.md` for identity matching, explicit linking/grants, audit preservation, revocation, backup and rollback.
 
-## Local operator procedure (disposable D1 only)
-From a clean checkout on the PR head, with pinned dependencies already installed:
+Actual provisioning/cutover requires separate owner authorization naming environment and operator identity, verified email delivery, an authorized restorable backup and maintenance window. A local `ready:true` or passing rehearsal does not authorize remote changes or complete #10.
 
-```powershell
-git fetch origin feat/player-auth-01-foundation
-git switch feat/player-auth-01-foundation
-git pull --ff-only
-git rev-parse HEAD
-git status --short
-cd backend
-npm run typecheck
-npm run test:contracts
-npm run test:auth-local
-npm run test:operator
-npm test
-```
+## Remaining #15 — final acceptance
 
-Record exact SHA, each exit code, counts of PASS/FAIL/SKIP and first failed assertion by file. Do not mark `npm test` PASS until 0 failures. If a fixture fails after the retired Admin login cutover, update it to provision a verified Player identity, **explicit** operator link and server-owned permissions with disposable local D1; retain race, audit, CSRF, revoke and rollback assertions. Avoid weakening production guards or deleting negative tests. Run affected suite first, then entire suite, followed by typecheck/contracts and exact-head CI.
+1. Require final exact-head Site checks (`landing`), Browser QA, complete Worker/D1, operator persistence/restart, typecheck, migrations and Chromium/WebKit account matrices. Skips are not passes.
+2. Review all failures and skips on the final HEAD; old green runs do not transfer. Do not waive historical failures without evidence.
+3. Keep the missing real-browser unified Admin two-season lifecycle explicit; the current Settings browser suite and Worker suites cannot be reported as that scenario.
+4. Real Cloudflare sender/binding onboarding, DNS, delivery smoke testing and live operator acceptance remain separately authorized prerequisites. Mock/injected delivery cannot prove live delivery.
+5. Preserve default-deny permissions, CSRF/origin/replay checks, public anonymity, historical audit and sporting data. No automatic release follows a green CI.
 
-## Acceptance evidence required before #15 is checked
-1. D1 migrations in order and repeatability/rollback behavior; no production/remote D1 writes.
-2. Token expiry, revoked sessions, credential version, multi-session revocation, login restore after Worker restart, CSRF/origin, anti-enumeration, one-time recovery and verification; delivery is injected/test-only.
-3. Admin denial by default, explicit operator link, rights granted/revoked on each request, atomic mutation/replay, concurrency, stale revision, audit preservation and group cutover rollback. **Actual operator cutover remains #10 and requires separate approval**.
-4. Full Worker runtime suite green, or each known failure explicitly classified with reproduced evidence and a separate acceptance decision; no blanket “pre-existing” waiver.
-5. Real-browser/mobile, five locales and two themes, anonymous public routing, trailing-slash/canonical links, login return, profile and Season 0 navigation.
-6. Check exact-head CI on the final commit; never transfer an old HEAD's green badge to a new commit.
-
-## Hard boundaries
-PR #329 stays **Draft/HOLD**. No merge, deployment, remote D1, real email, credentials, or live operator cutover. #12 remains blocked on separately approved outbound email delivery; #10 remains blocked on authorized live migration. Checklist **12/15 = 80%** until independent acceptance evidence exists.
-
-## Draft-only full gate activation
-The PR body includes `<!-- admin-world-final-verification -->` to opt into the pre-existing Admin World CI gates (full Worker Vitest, operator persistence and lifecycle browser) without changing workflow logic or remote resources. A new exact-head CI run must be inspected before any success claim. Any failed full suite remains a blocker for criterion #15.
+The approved Cloudflare provider software integration is complete under #12. Production activation is separate. #10 and #15 stay unchecked until their actual requirements are met.
