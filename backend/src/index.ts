@@ -1,3 +1,4 @@
+import {assertEnvironmentPool,resolveAccountConfiguration} from './environment-pool.ts';
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
 import {handlePlayer,type PlayerEnv} from './http-player.ts';
 import {cloudflareEmailDeliveries,type CloudflareDeliveryEnv} from './cloudflare-email-delivery.ts';
@@ -27,6 +28,20 @@ function json(status: number, payload: unknown): Response {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    // A Dev bridge cannot accidentally dispatch credentials or commands to Production.
+    const expected=request.headers.get('X-FA-Expected-Pool');
+    if(expected!==null&&(expected!=='dev-preview'||env.PLAYER_MODE!=='preview'))return json(503,{error:{code:'environment_unavailable'}});
+    if(url.pathname==='/api/environment'){
+      if(request.method!=='GET')return json(405,{error:{code:'method_not_allowed'}});
+      try{
+        if(env.PLAYER_MODE!=='preview'||url.search)throw new ApiError(503,'environment_unavailable');
+        const c=await resolveAccountConfiguration(request,env,'environment_unavailable');
+        return json(200,{schemaVersion:1,pool:'dev-preview',origin:c.origin,sharedWorld:true,separateSignIn:true});
+      }catch{return json(503,{error:{code:'environment_unavailable'}})}
+    }
+    if(url.pathname.startsWith('/api/')&&!url.pathname.startsWith('/api/player/')&&!url.pathname.startsWith('/api/admin/')){
+      try{await assertEnvironmentPool(env)}catch{return json(503,{error:{code:'environment_unavailable'}})}
+    }
     if (url.pathname === '/api/world') {
       if (request.method !== 'GET') return json(405, { error: { code: 'method_not_allowed' } });
       try {

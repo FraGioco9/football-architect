@@ -1,3 +1,4 @@
+import {resolveAccountConfiguration} from './environment-pool.ts';
 import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
@@ -44,34 +45,18 @@ async function input(request:Request){
  const data=new Uint8Array(total);let offset=0;for(const chunk of chunks){data.set(chunk,offset);offset+=chunk.length}
  try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(data)) as unknown}catch{throw new ApiError(400,'invalid_json')}
 }
-function configuration(request:Request,env:AdminEnv){
- const origin=env.PLAYER_ORIGIN??'',mode=env.PLAYER_MODE??'',url=new URL(request.url);
- if(!origin)throw new ApiError(503,'admin_unavailable');
- try{const configured=new URL(origin);if(configured.origin!==origin||configured.pathname!=='/'||configured.search||configured.hash||configured.username||configured.password)throw Error()}
- catch{throw new ApiError(503,'admin_unavailable')}
- if(mode==='local'){
-  if(url.origin!==origin||url.protocol!=='http:'||!['localhost','127.0.0.1','[::1]','app.localhost'].includes(url.hostname))
-   throw new ApiError(503,'admin_unavailable');
- }else{
-  if(mode!=='production'||env.PLAYER_TRUSTED_SOURCE!=='cloudflare'||url.origin!==origin||url.protocol!=='https:')
-   throw new ApiError(503,'admin_unavailable');
-  const ip=request.headers.get('CF-Connecting-IP');
-  if(!ip||ip.length>45||!/^[0-9a-fA-F:.]+$/.test(ip))throw new ApiError(503,'admin_unavailable');
- }
- return {origin};
-}
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
  if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
  try{
-  const config=configuration(request,env),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
+  const config=await resolveAccountConfiguration(request,env,'admin_unavailable'),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
   if(request.method==='POST'||request.headers.has('Origin'))requireMutationOrigin(request.headers.get('Origin'),config.origin);
   // One shared player identity. The legacy login and logout paths no longer
   // mint or revoke separate admin credentials.
   if(path==='/api/admin/login'||path==='/api/admin/logout')
    return json(410,{error:{code:'legacy_admin_login_retired'}});
-  const playerCookie=env.PLAYER_MODE==='production'?'__Host-fa_player':'fa_player_local';
+  const playerCookie=config.cookie;
   const playerToken=readCookie(request,playerCookie);
   const isWrite=request.method!=='GET';
   const player=await authorizeUnifiedAdmin(db,playerToken,now,

@@ -30,6 +30,8 @@ on:
       - 'calendar/index.html'
       - 'tools/render-admin-settings.mjs'
       - 'tools/dev-admin-api-proxy.mjs'
+      - 'tools/shared-nonproduction-proxy.mjs'
+      - 'tests/shared-nonproduction-proxy.test.mjs'
       - 'tools/dev-standings-preview.mjs'
       - 'tools/generate-app-pages.mjs'
       - 'settings/index.html'

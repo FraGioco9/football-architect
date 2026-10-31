@@ -105,6 +105,8 @@ async function safeFile(root, relativePath) {
 
 // Exported solely to test the server without opening a production or LAN socket.
 export function createPreviewServer({ root = ROOT, subdomains = false, devPreview = true } = {}) {
+  const sharedBackend=process.env.FA_ADMIN_API_POOL==='dev-preview';
+  devPreview=devPreview&&!sharedBackend;
   return createServer(async (req, res) => {
     try {
       const remote = req.socket.remoteAddress;
@@ -187,7 +189,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
         }
       }
-      if (devPreview && subdomains && type === TYPES[".html"]) {
+      if ((devPreview || sharedBackend) && subdomains && type === TYPES[".html"]) {
         const appOrigin = "http://app.localhost:2000", siteOrigin = "http://localhost:2000";
         const config = '<script>document.documentElement.dataset.faDevAppOrigin="' + appOrigin +
           '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';

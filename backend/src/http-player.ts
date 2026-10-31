@@ -1,3 +1,4 @@
+import {resolveAccountConfiguration} from './environment-pool.ts';
 import {ApiError} from './errors.ts';
 import {changePlayerPassword,revokeOtherSessions,deletePlayerAccount} from './player-account-management.ts';
 import {requestPasswordReset,completePasswordReset} from './player-password-reset.ts';
@@ -11,20 +12,6 @@ import {playerLogin,playerAuthenticate,playerRequireCsrf,playerCsrfFor} from './
 export interface PlayerEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string;PLAYER_VERIFICATION_DELIVERY?:VerificationDelivery;PLAYER_RESET_DELIVERY?:VerificationDelivery}
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow','Vary':'Cookie'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
-function config(request:Request,env:PlayerEnv){
- const url=new URL(request.url),origin=env.PLAYER_ORIGIN??'',mode=env.PLAYER_MODE??'';
- if(!origin)throw new ApiError(503,'player_unavailable');
- // Validate configured origin independent of a client Origin header.
- try{const trusted=new URL(origin);if(trusted.origin!==origin||trusted.pathname!=='/'||trusted.search||trusted.hash||trusted.username||trusted.password)throw Error()}catch{throw new ApiError(503,'player_unavailable')}
- if(mode==='local'){
-  if(url.protocol!=='http:'||url.origin!==origin||!['localhost','127.0.0.1','[::1]','app.localhost'].includes(url.hostname))throw new ApiError(503,'player_unavailable');
-  return {origin,source:'local-loopback',cookie:'fa_player_local',flags:'HttpOnly; SameSite=Strict; Path=/'};
- }
- if(mode!=='production'||env.PLAYER_TRUSTED_SOURCE!=='cloudflare'||url.protocol!=='https:'||url.origin!==origin)throw new ApiError(503,'player_unavailable');
- const source=request.headers.get('CF-Connecting-IP');
- if(!source||source.length>45||!/^[0-9a-fA-F:.]+$/.test(source))throw new ApiError(503,'player_unavailable');
- return {origin,source,cookie:'__Host-fa_player',flags:'Secure; HttpOnly; SameSite=Strict; Path=/'};
-}
 function cookie(request:Request,name:string){
  const values=(request.headers.get('Cookie')??'').split(';').map(v=>v.trim()).filter(v=>v.startsWith(name+'='));
  if(values.length>1)throw new ApiError(401,'unauthorized');
@@ -44,7 +31,7 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
  const method=methods[path];if(!method)return json(404,{error:{code:'not_found'}});
  if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
  try{
-  const c=config(request,env),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
+  const c=await resolveAccountConfiguration(request,env,'player_unavailable'),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
   if(method==='POST'||request.headers.has('Origin'))requireMutationOrigin(request.headers.get('Origin'),c.origin);
   const token=cookie(request,c.cookie);
   const set=(value:string,clear=false)=>`${c.cookie}=${value}; ${c.flags}; Max-Age=${clear?0:2592000}`;

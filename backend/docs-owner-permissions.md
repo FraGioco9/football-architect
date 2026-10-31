@@ -64,3 +64,6 @@ No production grant, remote D1, email, DNS, deployment or merge is authorized or
 Migration `0018_owner_permissions_insert_guards.sql` closes SQLite `REPLACE`/`INSERT OR REPLACE` bypasses for existing pool/receipt IDs. Reinitializing the same Dev/Preview pool remains idempotent; no existing pool or receipt is rewritten.
 
 Before opening an existing target, the helper derives the selected reserved local D1 backing path using the pinned runtime in temporary scratch state. It rejects missing, unrelated, symlinked or invalid-header targets before starting Miniflare on that target. Only 16 header bytes are read. Status/dry-run on an unrelated SQLite directory no longer creates a selected database/cache there. Temporary discovery state is removed even when runtime disposal fails.
+
+
+Shared account/world topology is now confirmed; see [Dev/Preview runtime setup](docs-shared-nonproduction.md). This command remains local only; it does not configure the hosted shared backend.
