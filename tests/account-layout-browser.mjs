@@ -37,7 +37,7 @@ try{
   try{
    await context.addInitScript(({language})=>{
     localStorage.setItem('football-architect:language',language);
-    sessionStorage.setItem('football-architect:login-return','/calendar?season=2&view=week');
+    sessionStorage.setItem('football-architect:login-return','/calendar?season=2&calendarView=week');
    },{language});
    const page=await context.newPage();
    await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
@@ -45,11 +45,13 @@ try{
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
    const goBack=page.locator('#account-go-back');
    assert.equal((await goBack.textContent()).trim(),label,route+' '+language+' back label');
-   assert.equal(await goBack.getAttribute('href'),'/calendar?season=2&view=week');
+   assert.equal(await goBack.getAttribute('href'),'/calendar?season=2&calendarView=week');
    assert.equal(new URL(page.url()).searchParams.has('next'),false);
    assert.equal(await goBack.evaluate(el=>getComputedStyle(el).textDecorationLine.includes('underline')),true,'Go back uses the same underlined link treatment');
    await goBack.click();
-   await page.waitForURL('**/calendar?season=2&view=week');
+   // Wait for Calendar hydration, so its canonicalization cannot race this assertion.
+   await page.waitForFunction(()=>document.documentElement.dataset.calendarView==='week'&&new URL(location.href).searchParams.get('calendarView')==='week');
+   await page.waitForURL('**/calendar?season=2&calendarView=week');
    checks++;
   }finally{await context.close();}
  }
