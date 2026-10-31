@@ -14,7 +14,8 @@ import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {prepareSeasonTwo} from '../src/season-two-prepare-command.ts';
 import {readSeasonArchives} from '../src/season-archive-read.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {hashText,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
+import {digestOpaqueToken} from '../src/session-tokens.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 let baseline:Awaited<ReturnType<typeof captureTestWorld>>;
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
@@ -23,9 +24,16 @@ const count=async(table:string,season=2)=>(await db.prepare(`SELECT count(*) n F
 async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
 beforeAll(async()=>{
  await applyD1Migrations(db,bindings.TEST_MIGRATIONS);
- session={actor:{id:'two-persistence',email:'two-persistence@example.invalid'},digest:await hashText('two-persistence-session'),credentialVersion:1,csrfDigest:await hashText('two-persistence-csrf')};
+ session={actor:{id:'two-persistence',email:'two-persistence@example.invalid'},digest:await digestOpaqueToken('b'.repeat(64)),credentialVersion:1,csrfDigest:await digestOpaqueToken('d'.repeat(64)),unified:{playerId:'two-persistence-player',sessionDigest:await digestOpaqueToken('b'.repeat(64)),csrfDigest:await digestOpaqueToken('d'.repeat(64))}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-10).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-10,now-5,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+  .bind('two-persistence-player',session.actor.email,'synthetic',1,now-10,'active',now-10,now-10).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('two-persistence-player',session.actor.id,now-10).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+  .bind(session.digest,'two-persistence-player',1,session.csrfDigest,now-10,now-5,now+1000).run();
+ await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>
+  db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('two-persistence-player',permission,now-10)));
  world=await readWorld(db);
  world=(await prepareSeason(db,session,meta(),'two-baseline-prepare',await loadApprovedSnapshot(),now)).world;
  world=(await generateSeasonCalendar(db,session,meta(),'two-baseline-calendar',now)).world;
@@ -36,7 +44,11 @@ beforeAll(async()=>{
  world=(await closeSeason(db,session,meta(),'two-baseline-close',now)).world;
  baseline=await captureTestWorld(db);
 },120000);
-beforeEach(async()=>{await restoreTestWorld(db,baseline);world=await readWorld(db)});
+beforeEach(async()=>{await restoreTestWorld(db,baseline);
+ // Resetting legacy audit operators cascades their bridge rows; restore the explicit test link.
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('two-persistence-player',session.actor.id,now-10).run();
+ world=await readWorld(db)});
 async function approve(){const c=await readSeasonTwoCandidate(db);world=(await approveSeasonTwoSnapshot(db,session,{...meta(),snapshotHash:c.snapshot.snapshotHash},'two-owner-approve',now)).world}
 it('requires actual durable membership approval and a closed source season',async()=>{
  const before=world;
@@ -100,7 +112,7 @@ it('allows exactly one snapshot/revision for competing prepare requests',async()
 it('rechecks operator authorization at the prepare commit boundary',async()=>{
  await approve();const before=world;
  const racing={prepare:db.prepare.bind(db),batch:async(statements:any[])=>{if(statements.length>1)await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind(session.actor.id).run();return db.batch(statements)}};
- await expect(prepareSeasonTwo(racing,session,meta(),'two-revoked-before-prepare',now)).rejects.toMatchObject({status:401});
+ await expect(prepareSeasonTwo(racing,session,meta(),'two-revoked-before-prepare',now)).rejects.toMatchObject({status:403,code:'permission_denied'});
  expect(await readWorld(db)).toEqual(before);expect(await count('seasons')).toBe(0);
 });
 

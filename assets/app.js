@@ -1214,7 +1214,7 @@
     const local = !host || host === "localhost" || host === "::1" ||
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
       host.endsWith(".localhost") || host.endsWith(".local") ||
-      host.endsWith(".vercel.app") || host.endsWith(".github.io");
+      host.endsWith(".vercel.app") || host.endsWith(".github.io") || host.endsWith(".workers.dev");
     if (local) return route.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1") || "/";
     const raw = route;
     const clean = raw === "/" ? raw : raw.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");
@@ -1232,6 +1232,14 @@
   }
   window.faAppHref = appHref;
   function rewriteAppLinks() {
+    for(const link of document.querySelectorAll('a[href*="/account"]')){
+      const original=new URL(link.getAttribute('href'),window.location.href);
+      if(!/^\/account(?:\/|$)/.test(original.pathname))continue;
+      if(original.origin!==window.location.origin&&original.hostname!=='app.'+window.location.hostname.replace(/^www\./,''))continue;
+      const target=new URL(appHref(original.pathname+original.search),window.location.href);
+      if(target.hostname==='localhost')target.hostname='app.localhost';
+      if(language()==='en')target.searchParams.delete('lang');else target.searchParams.set('lang',language());link.href=target.href;
+    }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
     let activeSeason=1;
@@ -1268,7 +1276,7 @@
       link.setAttribute("href",appHref(routes.divisions));
     }
     for (const link of document.querySelectorAll("a.app-brand")) {
-      link.setAttribute("href",siteHref("/"));
+      link.setAttribute("href",appHref("/dashboard"));
     }
     for (const link of document.querySelectorAll('[data-app-i18n="openGuide"]')) {
       link.setAttribute("href",siteHref("/guide"));

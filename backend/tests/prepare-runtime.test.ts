@@ -10,7 +10,7 @@ import type {Database} from '../src/database.ts';
 import {syntheticApproval} from './fixtures/synthetic-approval.ts';
 const binding=env as any,db=binding.DB;
 const now=1_800_000_000;
-const session:AdminSession={actor:{id:'synthetic-operator',email:'operator@example.invalid'},digest:'a'.repeat(64),credentialVersion:1,csrfDigest:'b'.repeat(64)};
+const session:AdminSession={actor:{id:'synthetic-operator',email:'operator@example.invalid'},digest:'a'.repeat(64),credentialVersion:1,csrfDigest:'b'.repeat(64),unified:{playerId:'synthetic-player',sessionDigest:'a'.repeat(64),csrfDigest:'b'.repeat(64)}};
 let world:Awaited<ReturnType<typeof readWorld>>;
 const key='synthetic-prepare-0001';
 const command=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
@@ -18,9 +18,12 @@ const approved=()=>syntheticApproval(snapshots);
 const prepare=async(k=key,cmd=command(),snapshot:any=approved(),database:Database=db)=>commands.prepareSeason(database,session,cmd,k,await snapshot,now);
 beforeAll(async()=>{await applyD1Migrations(db,binding.TEST_MIGRATIONS)});
 beforeEach(async()=>{
- await db.batch([db.prepare('DELETE FROM admin_operations'),db.prepare('DELETE FROM seasons'),db.prepare('DELETE FROM admin_sessions'),db.prepare('DELETE FROM admin_accounts'),db.prepare("UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'")]);
+ await db.batch([db.prepare('DELETE FROM admin_operations'),db.prepare('DELETE FROM seasons'),db.prepare('DELETE FROM admin_sessions'),db.prepare('DELETE FROM player_admin_operator_links'),db.prepare('DELETE FROM player_sessions'),db.prepare('DELETE FROM account_permissions'),db.prepare('DELETE FROM player_accounts'),db.prepare('DELETE FROM admin_accounts'),db.prepare("UPDATE world_state SET revision=0,season_number=0,day=0,phase='unstarted'")]);
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic-not-a-login-verifier',now-100).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind('synthetic-player',session.actor.email,'synthetic',1,now-100,'active',now-100,now-100).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('synthetic-player',session.actor.id,now-100).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(session.digest,'synthetic-player',1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('synthetic-player',permission,now-100)));
  world=await readWorld(db);
 });
 it('prepares exactly Season 1 with immutable trusted hashes, no active state or fabricated results',async()=>{
@@ -43,8 +46,14 @@ it('replays the saved outcome for concurrent identical keys with one durable mut
 it('rejects conflicting replay including another actor and does not change the saved outcome',async()=>{
  const first=await prepare();await expect(prepare(key,{...command(),expectedRevision:1})).rejects.toMatchObject({status:409});
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('other','other@example.invalid','synthetic',now-100).run();
- await db.prepare('UPDATE admin_sessions SET account_id=?').bind('other').run();
- await expect(commands.prepareSeason(db,{...session,actor:{id:'other',email:'other@example.invalid'}},command(),key,await approved(),now)).rejects.toMatchObject({status:409});
+ // A second distinct Player and operator must never replay the first actor's outcome.
+ const otherSession:AdminSession={...session,actor:{id:'other',email:'other@example.invalid'},digest:'c'.repeat(64),csrfDigest:'d'.repeat(64),
+  unified:{playerId:'other-player',sessionDigest:'c'.repeat(64),csrfDigest:'d'.repeat(64)}};
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind('other-player','other@example.invalid','synthetic',1,now-100,'active',now-100,now-100).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('other-player','other',now-100).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(otherSession.digest,'other-player',1,otherSession.csrfDigest,now-100,now-10,now+1000).run();
+ await db.batch(['admin.access','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('other-player',permission,now-100)));
+ await expect(commands.prepareSeason(db,otherSession,command(),key,await approved(),now)).rejects.toMatchObject({status:409});
  expect(await readWorld(db)).toEqual(first.world);
 });
 it('allows only one winner for concurrent different keys at the same revision',async()=>{
@@ -58,18 +67,26 @@ it('rejects stale world metadata and absent approval without any mutation',async
  await expect(prepare(key,command(),null)).rejects.toMatchObject({status:422,code:'catalogue_not_approved'});
  expect(await readWorld(db)).toEqual(world);expect((await db.prepare('SELECT COUNT(*) AS n FROM seasons').first()).n).toBe(0);
 });
-it('rechecks recovery, disable, logout and expiry at commit even after request authorization',async()=>{
- for(const sql of ['UPDATE admin_accounts SET credential_version=2','UPDATE admin_accounts SET enabled=0','UPDATE admin_sessions SET expires_at='+now,'UPDATE admin_sessions SET created_at='+(now-1900)+',last_seen_at='+(now-1800)]){
-  await db.prepare(sql).run();await expect(prepare()).rejects.toMatchObject({status:401});
-  await db.prepare('UPDATE admin_accounts SET credential_version=1,enabled=1').run();
-  await db.prepare('UPDATE admin_sessions SET created_at=?,expires_at=?,last_seen_at=?').bind(now-100,now+1000,now-10).run();
+it('rechecks Player recovery, operator disable, logout and expiry before mutation',async()=>{
+ for(const [sql,status] of [
+  ['UPDATE player_accounts SET credential_version=2',401],
+  ['UPDATE admin_accounts SET enabled=0',403],
+  ['UPDATE player_sessions SET expires_at='+now,401],
+  ['UPDATE player_sessions SET created_at='+(now-700000)+',last_seen_at='+(now-700000),401]
+ ] as const){
+  await db.prepare(sql).run();
+  await expect(prepare()).rejects.toMatchObject({status});
+  await db.prepare('UPDATE player_accounts SET credential_version=1').run();
+  await db.prepare('UPDATE admin_accounts SET enabled=1').run();
+  await db.prepare('UPDATE player_sessions SET created_at=?,expires_at=?,last_seen_at=?').bind(now-100,now+1000,now-10).run();
  }
- await db.prepare('DELETE FROM admin_sessions').run();await expect(prepare()).rejects.toMatchObject({status:401});
+ await db.prepare('DELETE FROM player_sessions').run();
+ await expect(prepare()).rejects.toMatchObject({status:401});
  expect(await readWorld(db)).toEqual(world);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM admin_operations').first()).n).toBe(0);
 });
 it('does not return an idempotent outcome to a revoked session',async()=>{
- await prepare();await db.prepare('UPDATE admin_accounts SET credential_version=2').run();
+ await prepare();await db.prepare('UPDATE player_accounts SET credential_version=2').run();
  await expect(prepare()).rejects.toMatchObject({status:401});
 });
 it('rolls back world, season and audit when a later audit insert fails',async()=>{
@@ -81,7 +98,7 @@ it('rolls back world, season and audit when a later audit insert fails',async()=
 });
 it('checks recovery inside the actual mutation batch rather than trusting an earlier read',async()=>{
  const raced:Database={prepare:db.prepare.bind(db),async batch(statements){
-  await db.prepare('UPDATE admin_accounts SET credential_version=2').run();return db.batch(statements);
+  await db.prepare('UPDATE player_accounts SET credential_version=2').run();return db.batch(statements);
  }};
  await expect(prepare(key,command(),approved(),raced)).rejects.toMatchObject({status:401});
  expect(await readWorld(db)).toEqual(world);expect((await db.prepare('SELECT COUNT(*) AS n FROM seasons').first()).n).toBe(0);

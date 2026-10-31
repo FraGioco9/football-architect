@@ -5,7 +5,7 @@ import {validatePasswordShape} from './password-policy.ts';
 import {createOpaqueToken,digestOpaqueToken,getSessionDeadlines} from './session-tokens.ts';
 import {requireActiveSession,type SessionRow} from './session-policy.ts';
 
-export interface AdminSession {actor:{id:string;email:string};digest:string;credentialVersion:number;csrfDigest:string}
+export interface AdminSession {actor:{id:string;email:string};digest:string;credentialVersion:number;csrfDigest:string;unified?:{playerId:string;sessionDigest:string;csrfDigest:string}}
 interface Account {id:string;email_normalized:string;password_verifier:string;credential_version:number;enabled:number}
 interface StoredSession extends SessionRow {email_normalized:string;csrf_digest:string}
 export async function hashText(value:string):Promise<string>{

@@ -1,0 +1,97 @@
+/* Account pages share the site's Graphite & Petrol tokens and brand assets. */
+html[data-account-redirecting="true"] body{visibility:hidden}
+.account-body{min-height:100svh;display:flex;flex-direction:column}
+.account-body,.account-body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.account-header{width:100%;max-width:1440px;margin-inline:auto;padding:12px clamp(18px,4vw,56px);display:flex;align-items:center;justify-content:space-between;gap:20px}
+.account-brand{display:flex;align-items:center;min-width:0;width:230px;max-width:48%;min-height:44px}
+.account-brand img{display:block;width:100%;height:48px;object-fit:contain;object-position:left}
+.account-brand .brand-image-symbol{display:none}
+.account-language{display:grid;gap:4px;font-size:12px;color:var(--muted);flex:none}
+.account-language .language-control{min-width:164px}
+.account-body form .language-control,.account-body form .language-trigger{width:100%;min-width:0}
+.account-body form .language-menu{width:100%;max-height:260px}
+.account-body .language-trigger{font-weight:400}
+.account-body main{width:calc(100% - 36px);max-width:460px;margin:16px auto}
+.account-body main.account-wide{max-width:660px}
+.account-go-back{display:inline-block;margin-bottom:14px;font-size:14px;font-weight:400;line-height:normal;text-decoration:underline}
+.account-body h1{margin:0 0 8px;font-size:28px;letter-spacing:-.035em;line-height:1.2}
+.account-body h2{font-size:18px;line-height:1.35}
+.account-body form{display:grid;gap:12px;margin-block:16px 12px}
+.account-body label{display:grid;gap:5px;font-size:14px;font-weight:600}
+.account-body input,.account-body select{font:inherit;width:100%;min-width:0;min-height:44px;padding:10px 12px;background:var(--background);color:var(--text);border:1px solid var(--border);border-radius:10px}
+.account-body input:focus-visible,.account-body select:focus-visible,.account-body a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.account-body form>.cta{width:100%}
+.account-body .cta:disabled{opacity:.6;cursor:wait}
+.account-body a{color:var(--focus);text-underline-offset:3px}
+.account-body main>p{margin-block:8px}
+.account-body p{font-size:14px;overflow-wrap:anywhere}
+.account-body [role="status"]{min-height:1.6em;color:var(--muted)}
+.account-body small{display:block;color:var(--muted);font-size:12px;font-weight:400;line-height:1.5}
+.account-body section+section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.account-body [hidden]{display:none!important}
+.account-footer{margin-top:auto;text-align:center;color:var(--muted);padding:8px;font-size:12px}
+@media(max-width:480px){.account-header{padding-block:12px}.account-brand{width:44px;max-width:44px}.account-brand .brand-image-wide{display:none}.account-brand .brand-image-symbol{display:block;width:44px;height:44px}.account-body main{margin-top:12px}.account-body h1{font-size:25px}}
+
+/* Registration gains an extra navigation link without expanding the viewport. */
+.account-body main.app-panel:has(#register-form){margin-block:8px}
+.account-body main.app-panel:has(#register-form) .account-go-back{margin-bottom:8px}
+.account-body #register-form{gap:8px;margin-block:10px 8px}
+.account-body #register-form .account-optional{gap:8px;padding-top:8px;margin-top:0}
+.account-body main.app-panel:has(#register-form)>p{margin-block:4px}
+
+/* Account containers do not receive decorative highlighting. Keyboard focus remains on controls. */
+.account-body main.app-panel,.account-body main.app-panel:hover,.account-body main.app-panel:focus-within{border-color:transparent;outline:none;box-shadow:none}
+
+/* Reveal only the fully localized, bound account layout; no native-select flash. */
+html:not([data-account-ready="true"]) .account-body{visibility:hidden}
+.account-body .account-feedback{position:relative;margin-block:16px;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:10px;background:var(--background);color:var(--text);font-size:13px;line-height:1.5}
+.account-body .account-feedback::before{content:"!";position:absolute;left:14px;top:13px;display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:700;color:var(--muted)}
+.account-body .account-feedback[data-kind="error"]{border-inline-start:3px solid #B77878}
+.account-body .account-feedback[data-kind="success"]{border-inline-start:3px solid var(--primary)}
+.account-body .account-feedback:empty{display:none}
+
+/* Account assistance reuses the same controls, spacing and restrained site colors. */
+.account-field{display:grid;gap:5px;min-width:0}
+.account-password{position:relative;min-width:0}
+.account-body .account-password input{padding-inline-end:52px}
+.account-password-toggle{position:absolute;inset-inline-end:1px;top:1px;display:grid;place-items:center;width:44px;height:42px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.account-password-toggle:hover{color:var(--text);background:var(--surface-raised)}
+.account-password-toggle svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.account-body .account-field-error{color:#C68F8F;margin:0;font-weight:400}
+html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
+.account-field-error:empty{display:none}
+.account-body [data-met="true"]{color:var(--primary)}
+.account-optional{display:grid;gap:12px;min-width:0;margin:4px 0 0;padding:12px 0 0;border:0;border-top:1px solid var(--line)}
+.account-optional legend{padding:0 10px 0 0;color:var(--muted);font-size:12px;font-weight:400}
+.account-body #account-next-step{color:var(--muted);line-height:1.6}
+.account-body .account-feedback[data-kind="success"]::before{content:"✓";color:var(--primary)}
+.account-body .account-feedback[data-kind="pending"]::before{content:"…"}
+.account-body input{font-weight:400}
+
+/* Only editable field surfaces respond to hover; labels, hints and feedback remain static. */
+.account-body{--fa-field-hover-bg:#1a3738;--fa-field-hover-border:#506c64;--fa-field-focus-border:#84b8a4}
+html[data-theme="light"] .account-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-border:#67917D;--fa-field-focus-border:#377F60}
+.account-body :is(input,select,textarea,.language-trigger){transition:border-color 160ms ease,box-shadow 180ms ease,background-color 160ms ease}
+/* Remove the inherited landing :hover rule; only direct pointer-hit fields may highlight. */
+.account-body .language-trigger:hover{background:var(--surface);border-color:var(--border)}
+html[data-theme="light"] .account-body .language-trigger:hover{background:var(--surface);border-color:var(--border)}
+@media(hover:hover) and (pointer:fine){
+ .account-body :is(input,select,textarea,.language-trigger)[data-field-pointer-hover]:not(:disabled):not(:focus){
+  background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border);
+ }
+}
+.account-body .account-password-toggle:hover{background:transparent}
+.account-body :is(input,select,textarea,.language-trigger):focus-visible{
+ border-color:var(--fa-field-focus-border);box-shadow:inset 0 0 0 1px var(--fa-field-focus-border);
+}
+@media(prefers-reduced-motion:reduce){.account-body :is(input,select,textarea,.language-trigger){transition:none}}
+
+.account-body #nationality-menu{width:100%;min-width:0;max-width:100%;max-height:min(260px,40svh);overflow-y:auto;box-sizing:border-box}
+#nationality-menu .language-option{overflow-wrap:anywhere}
+#nationality-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Compact entry pages keep full-size fields and reveal feedback only when present. */
+.account-body main.app-panel{padding:18px}
+.account-body [role="status"]:empty{display:none}
+@media(min-width:600px){.account-optional{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.account-body .language-menu[data-menu-placement="above"]{top:auto;bottom:calc(100% + 6px)}

@@ -2,9 +2,10 @@
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
 import {readD1Migrations} from '@cloudflare/vitest-plugin';
 import setupWasm from 'argon2id/lib/setup.js';
-import {readFile,mkdir,lstat,readdir} from 'node:fs/promises';
+import {readFile,mkdir,lstat,readdir,mkdtemp,rm,open} from 'node:fs/promises';
 import {isAbsolute,join,parse,relative,dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {tmpdir} from 'node:os';
 import {createPasswordService} from '../src/password-core.ts';
 import {parseOperatorEmail} from '../src/email-identity.ts';
 import type {Database} from '../src/database.ts';
@@ -30,14 +31,65 @@ async function rejectSubtreeLinks(path:string):Promise<void>{
   if(item.isDirectory())await rejectSubtreeLinks(next);
  }
 }
-export async function openLocalDatabase(persistTo:string){
- if(!isAbsolute(persistTo)||persistTo.startsWith('//')||persistTo.includes('://')||resolve(persistTo)===parse(persistTo).root)throw Error('explicit_local_directory_required');
+function localRuntime(persistTo:string){
+ return new Miniflare(convertV4MiniflareOptions({modules:true,script:'export default {fetch(){return new Response(null,{status:404})}}',compatibilityDate:'2026-10-26',d1Databases:{DB:LOCAL_DATABASE_ID},resourcePersistencePath:join(persistTo,'v3')}));
+}
+// Derive the pinned runtime's actual LOCAL_DATABASE_ID filename in disposable
+// scratch state. Never start the engine on an unverified user target to find it.
+let expectedLayout:Promise<string>|undefined;
+function expectedLocalDatabasePath():Promise<string>{
+ if(!expectedLayout)expectedLayout=(async()=>{
+  const probe=await mkdtemp(join(tmpdir(),'fa-d1-layout-'));let mf:Miniflare|undefined;
+  try{
+   mf=localRuntime(probe);
+   const db=await mf.getD1Database('DB');await db.prepare('SELECT 1').first();
+   const files:string[]=[];
+   const collect=async(path:string):Promise<void>=>{
+    for(const entry of await readdir(path,{withFileTypes:true})){
+     const child=join(path,entry.name);
+     if(entry.isDirectory())await collect(child);
+     else if(entry.isFile()&&entry.name.endsWith('.sqlite')&&entry.name!=='metadata.sqlite')files.push(relative(probe,child));
+    }
+   };
+   await collect(join(probe,'v3','d1'));
+   if(files.length!==1)throw Error('local_database_layout_unavailable');
+   return files[0];
+  }finally{
+   try{if(mf)await mf.dispose()}finally{await rm(probe,{recursive:true,force:true})}
+  }
+ })();
+ return expectedLayout;
+}
+export async function openLocalDatabase(persistTo:string,options:{migrate?:boolean;requireExisting?:boolean}={}){
+ if(!isAbsolute(persistTo)||/^[\\/]{2}/.test(persistTo)||persistTo.includes('://')||resolve(persistTo)===parse(persistTo).root)throw Error('explicit_local_directory_required');
  persistTo=resolve(persistTo);
+ if(options.requireExisting){
+  // Validate every ancestor and subtree before following any backing-file path.
+  const checkAncestors=async(path:string):Promise<void>=>{
+   const parent=dirname(path);if(parent!==path)await checkAncestors(parent);
+   const info=await lstat(path);if(info.isSymbolicLink()||!info.isDirectory())throw Error('unsafe_state_directory');
+  };
+  await checkAncestors(join(persistTo,'v3','d1'));
+  await rejectSubtreeLinks(join(persistTo,'v3','d1'));
+  const expected=join(persistTo,await expectedLocalDatabasePath());
+  let info;try{info=await lstat(expected)}catch{throw Error('existing_local_state_required')}
+  if(!info.isFile()||info.isSymbolicLink())throw Error('existing_local_state_required');
+  const handle=await open(expected,'r');
+  try{
+   const header=Buffer.alloc(16);const {bytesRead}=await handle.read(header,0,16,0);
+   if(bytesRead!==16||header.toString()!=='SQLite format 3\0')throw Error('existing_local_state_required');
+  }finally{await handle.close()}
+ }
  await ensureLocalDirectory(join(persistTo,'v3','d1'));
  await rejectSubtreeLinks(join(persistTo,'v3','d1'));
- const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:'export default {fetch(){return new Response(null,{status:404})}}',compatibilityDate:'2026-10-26',d1Databases:{DB:LOCAL_DATABASE_ID},resourcePersistencePath:join(persistTo,'v3')}));
+ const mf=localRuntime(persistTo);
  try{
   const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  if(options.migrate===false){
+   const schema=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='d1_migrations'").first();
+   if(!schema)throw Error('local_schema_not_initialized');
+   return {db,close:()=>mf.dispose()};
+  }
   await db.prepare("CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)").run();
   const applied=await db.prepare('SELECT name FROM d1_migrations').all<{name:string}>();
   for(const migration of await readD1Migrations(fileURLToPath(new URL('../migrations/',import.meta.url)))){
