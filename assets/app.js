@@ -1214,7 +1214,7 @@
     const local = !host || host === "localhost" || host === "::1" ||
       /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
       host.endsWith(".localhost") || host.endsWith(".local") ||
-      host.endsWith(".vercel.app") || host.endsWith(".github.io");
+      host.endsWith(".vercel.app") || host.endsWith(".github.io") || host.endsWith(".workers.dev");
     if (local) return route.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1") || "/";
     const raw = route;
     const clean = raw === "/" ? raw : raw.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");

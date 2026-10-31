@@ -32,6 +32,7 @@ on:
       - 'tools/dev-admin-api-proxy.mjs'
       - 'tools/shared-nonproduction-proxy.mjs'
       - 'tests/shared-nonproduction-proxy.test.mjs'
+      - 'tests/hosted-preview-origins.test.mjs'
       - 'tools/dev-standings-preview.mjs'
       - 'tools/generate-app-pages.mjs'
       - 'settings/index.html'

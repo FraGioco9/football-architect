@@ -14,7 +14,7 @@
   url.pathname=url.pathname.replace(/\/index\.html$/,'').replace(/\/+$/,'');
   const host=url.hostname.toLowerCase();
   if(host==='localhost')url.hostname='app.localhost';
-  else if(!host.startsWith('app.')&&!/^(?:127\.0\.0\.1|\[::1\])$/.test(host)&&!host.endsWith('.vercel.app')&&!host.endsWith('.github.io'))url.hostname='app.'+host.replace(/^www\./,'');
+  else if(!host.startsWith('app.')&&!/^(?:127\.0\.0\.1|\[::1\])$/.test(host)&&!host.endsWith('.vercel.app')&&!host.endsWith('.github.io')&&!host.endsWith('.workers.dev'))url.hostname='app.'+host.replace(/^www\./,'');
   const token=url.searchParams.get('token');
   url.search='';url.hash='';url.username='';url.password='';
   if((url.pathname.includes('/recover')||url.pathname.includes('/verify-email'))&&/^[a-f0-9]{64}$/.test(token||''))url.searchParams.set('token',token);

@@ -194,7 +194,7 @@
     preview.href = "/dashboard";
   } else if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
       !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(previewHost) &&
-      !/\.(?:local|localhost|vercel\.app|github\.io)$/.test(previewHost)) {
+      !/\.(?:local|localhost|vercel\.app|github\.io|workers\.dev)$/.test(previewHost)) {
     const host = previewHost.startsWith("www.") ? previewHost.slice(4) : previewHost;
     preview.href = (window.location.protocol || "https:") + "//app." + host + "/dashboard";
   }
