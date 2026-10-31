@@ -23,7 +23,7 @@ export async function initializeAccountPool(db:Database,environment:string,now:n
  const existing=await db.prepare('SELECT pool FROM account_environment_pool WHERE id=1').first<{pool:string}>();
  if(existing&&existing.pool!==pool)throw Error('account_pool_mismatch');
  await db.batch([
-  db.prepare('INSERT INTO account_environment_pool(id,pool,initialized_at) VALUES(1,?,?) ON CONFLICT(id) DO NOTHING').bind(pool,now),
+  db.prepare('INSERT INTO account_environment_pool(id,pool,initialized_at) SELECT 1,?,? WHERE NOT EXISTS(SELECT 1 FROM account_environment_pool WHERE id=1)').bind(pool,now),
   abortUnless(db,'SELECT 1 FROM account_environment_pool WHERE id=1 AND pool=?',[pool])
  ]);
  return {pool};

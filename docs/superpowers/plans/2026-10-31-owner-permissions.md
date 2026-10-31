@@ -48,3 +48,10 @@ Inline execution is authorized by the owner's request to proceed autonomously in
 - Ruling: this block supplies local owner management and target-pool guards only. Shared runtime Dev/Preview identity and a remote owner adapter need a later integration; claiming a shared service from matching metadata would be incorrect.
 - Final exact-head CI evidence is recorded on PR #329 / issue #170 after the consolidated branch update. No live operation is performed.
 - Final CI uncovered an obsolete account-back fixture: `view=week` was normalized by Calendar into `calendarView=week`, racing an exact-URL wait. Reproduced deterministically after actual Calendar hydration; corrected the fixture to the canonical parameter and asserted the visible Week mode before URL verification. Local Chromium layout/menu/back matrix: 70/70 PASS. No authentication or Calendar production code changed for this correction.
+
+## Hardening follow-up (31 October 2026)
+- Both previously deferred minors are resolved in this follow-up: exact selected backing-file validation happens before opening user state, and additive migration 0018 rejects duplicate-ID INSERT/REPLACE for pool metadata and permission receipts.
+- RED observed: unrelated SQLite produced new selected DB/cache paths; both Python REPLACE regressions failed because no IntegrityError was raised. GREEN: corrected target detection and insert guards pass; Dev/Preview init remains idempotent.
+- Independent patch review found no Important/Critical issue; scratch cleanup also now runs through a nested finally if runtime disposal fails.
+- Verification: full operator suite 23/23 (11 owner-tool cases); complete migration suite 44/44, including upgrade/reapplication preserving existing records; TypeScript PASS. Final exact-head CI evidence is recorded on PR #329/issue #170.
+- Account-sharing analysis is in backend/docs-account-pools-integration-decision.md. It records a product decision still needed: nonproduction world sharing versus account-only sharing. No runtime rebinding or cross-database authorization change has been implemented.

@@ -25,6 +25,8 @@ test('pool selection pins Dev/Preview together and rejects relabeling or unknown
  await assert.rejects(initializeAccountPool(db,'production',now),/account_pool_mismatch/);
  await assert.rejects(db.prepare("UPDATE account_environment_pool SET pool='production'").run());
  await assert.rejects(db.prepare('DELETE FROM account_environment_pool').run());
+ await assert.rejects(db.prepare("INSERT OR REPLACE INTO account_environment_pool VALUES(1,'production',?)").bind(now+1).run());
+ assert.equal((await db.prepare('SELECT pool FROM account_environment_pool').first()).pool,'dev-preview');
 }));
 test('explicit owner bootstrap grants current permissions, revokes old credentials and preserves the world',()=>fixture(async db=>{
  await initializeAccountPool(db,'dev',now);await player(db);
@@ -38,6 +40,9 @@ test('explicit owner bootstrap grants current permissions, revokes old credentia
  const principal=await db.prepare('SELECT * FROM admin_accounts').first();assert.equal(principal.password_verifier,'!unified-player-audit-only');
  assert.deepEqual(await db.prepare('SELECT * FROM world_state').first(),world);assert.equal(await count(db,'admin_operations'),0);
  await assert.rejects(db.prepare("DELETE FROM account_permission_events").run());
+ const receipt=await db.prepare('SELECT * FROM account_permission_events').first();
+ await assert.rejects(db.prepare("INSERT OR REPLACE INTO account_permission_events(id,action,pool,player_account_id,legacy_admin_account_id,approved_by,created_at) VALUES(?,'revoke','production','other',NULL,'local-owner-cli',?)").bind(receipt.id,now+1).run());
+ assert.deepEqual(await db.prepare('SELECT * FROM account_permission_events').first(),receipt);
  await db.prepare("UPDATE player_accounts SET email_verified_at=NULL WHERE id='player'").run();
  await db.prepare("UPDATE admin_accounts SET enabled=0,email_normalized='changed-legacy@example.invalid'").run();
  await changeAdminPermissions(db,request({action:'revoke'}),now+1);
@@ -122,3 +127,16 @@ test('same email in separate local pools remains independent and only the select
  await assert.rejects(changeAdminPermissions(production,request({expectedAccountId:'production-player'}),now),/account_pool_mismatch/);
  assert.equal(await count(production,'admin_accounts'),0);
 })));
+
+test('unrelated SQLite files never cause a selected database or cache to be created',async()=>{
+ const state=await mkdtemp(join(tmpdir(),'fa-owner-unrelated-'));
+ try{
+  const {writeFile}=await import('node:fs/promises');
+  await mkdir(join(state,'v3','d1','unrelated'),{recursive:true});
+  await writeFile(join(state,'v3','d1','unrelated','other.sqlite'),'unrelated file');
+  const before=(await readdir(state,{recursive:true})).sort();
+  await assert.rejects(openLocalDatabase(state,{migrate:false,requireExisting:true}));
+  assert.deepEqual((await readdir(state,{recursive:true})).sort(),before);
+  assert.equal(await (await import('node:fs/promises')).readFile(join(state,'v3','d1','unrelated','other.sqlite'),'utf8'),'unrelated file');
+ }finally{await rm(state,{recursive:true,force:true})}
+});

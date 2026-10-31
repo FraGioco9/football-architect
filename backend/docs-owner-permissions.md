@@ -57,3 +57,10 @@ Grant writes the explicit audit link and all three existing permissions (`admin.
 Late identity changes, link conflicts, audit errors and postcondition failures roll back the complete permission transaction. This is independent of the whole-roster historic cutover runbook; managing one future account does not declare that cutover complete.
 
 No production grant, remote D1, email, DNS, deployment or merge is authorized or executed by adding this command.
+
+
+## Hardening follow-up — 31 October 2026
+
+Migration `0018_owner_permissions_insert_guards.sql` closes SQLite `REPLACE`/`INSERT OR REPLACE` bypasses for existing pool/receipt IDs. Reinitializing the same Dev/Preview pool remains idempotent; no existing pool or receipt is rewritten.
+
+Before opening an existing target, the helper derives the selected reserved local D1 backing path using the pinned runtime in temporary scratch state. It rejects missing, unrelated, symlinked or invalid-header targets before starting Miniflare on that target. Only 16 header bytes are read. Status/dry-run on an unrelated SQLite directory no longer creates a selected database/cache there. Temporary discovery state is removed even when runtime disposal fails.
