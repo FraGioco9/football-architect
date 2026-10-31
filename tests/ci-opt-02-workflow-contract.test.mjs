@@ -31,3 +31,10 @@ test('CI-OPT-02 avoids duplicate historical Vitest and protects cached installs'
  assert.match(workflow,/playwright-chromium-1\.58\.2/);
  assert.match(workflow,/playwright\" install --with-deps chromium/);
 });
+test('pinned Playwright browser jobs use the supported Ubuntu 24.04 image instead of a moving latest alias',()=>{
+ const browser=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ for(const [source,name] of [[workflow,'password-policy'],[workflow,'operator-final'],[browser,'chromium']]){
+  const block=source.split('\n  '+name+':')[1]?.split(/\n  [a-z][a-z-]*:/)[0];assert.ok(block,name);
+  assert.match(block,/runs-on: ubuntu-24\.04\b/,name);
+ }
+});

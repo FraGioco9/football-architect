@@ -47,7 +47,7 @@ jobs:
   chromium:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
     needs: scope
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     concurrency:
       group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' && format('pr-{0}-{1}', github.event.pull_request.number, needs.scope.outputs.mode) || format('main-{0}', github.run_id) }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' }}

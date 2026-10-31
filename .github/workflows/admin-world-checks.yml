@@ -55,7 +55,7 @@ permissions:
 jobs:
   password-policy:
     name: Admin foundation contracts (Node 22)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout exact pull request head
         uses: actions/checkout@v4
@@ -170,7 +170,7 @@ jobs:
   operator-final:
     name: Final local operator persistence, restart and browser lifecycle
     if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout exact pull request head
         uses: actions/checkout@v4
