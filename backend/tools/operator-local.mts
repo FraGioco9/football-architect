@@ -30,14 +30,31 @@ async function rejectSubtreeLinks(path:string):Promise<void>{
   if(item.isDirectory())await rejectSubtreeLinks(next);
  }
 }
-export async function openLocalDatabase(persistTo:string){
- if(!isAbsolute(persistTo)||persistTo.startsWith('//')||persistTo.includes('://')||resolve(persistTo)===parse(persistTo).root)throw Error('explicit_local_directory_required');
+export async function openLocalDatabase(persistTo:string,options:{migrate?:boolean;requireExisting?:boolean}={}){
+ if(!isAbsolute(persistTo)||/^[\\/]{2}/.test(persistTo)||persistTo.includes('://')||resolve(persistTo)===parse(persistTo).root)throw Error('explicit_local_directory_required');
  persistTo=resolve(persistTo);
+ if(options.requireExisting){
+  const info=await lstat(join(persistTo,'v3','d1'));if(!info.isDirectory()||info.isSymbolicLink())throw Error('existing_local_state_required');
+  const hasState=async(path:string):Promise<boolean>=>{
+   for(const entry of await readdir(path,{withFileTypes:true})){
+    if(entry.isSymbolicLink())throw Error('symlink_state_directory_forbidden');
+    if(entry.isFile()&&entry.name.endsWith('.sqlite'))return true;
+    if(entry.isDirectory()&&await hasState(join(path,entry.name)))return true;
+   }
+   return false;
+  };
+  if(!await hasState(join(persistTo,'v3','d1')))throw Error('existing_local_state_required');
+ }
  await ensureLocalDirectory(join(persistTo,'v3','d1'));
  await rejectSubtreeLinks(join(persistTo,'v3','d1'));
  const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:'export default {fetch(){return new Response(null,{status:404})}}',compatibilityDate:'2026-10-26',d1Databases:{DB:LOCAL_DATABASE_ID},resourcePersistencePath:join(persistTo,'v3')}));
  try{
   const db=await mf.getD1Database('DB') as unknown as Database&{exec(sql:string):Promise<unknown>};
+  if(options.migrate===false){
+   const schema=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='d1_migrations'").first();
+   if(!schema)throw Error('local_schema_not_initialized');
+   return {db,close:()=>mf.dispose()};
+  }
   await db.prepare("CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)").run();
   const applied=await db.prepare('SELECT name FROM d1_migrations').all<{name:string}>();
   for(const migration of await readD1Migrations(fileURLToPath(new URL('../migrations/',import.meta.url)))){
