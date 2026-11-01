@@ -10,6 +10,8 @@ port = 8787
 [vars]
 PLAYER_MODE = "local"
 PLAYER_ORIGIN = "http://app.localhost:2000"
+# Explicit opt-in; this config is local-only and cannot send real mail.
+PLAYER_LOCAL_INBOX_ENABLED = "true"
 
 [[d1_databases]]
 binding = "DB"

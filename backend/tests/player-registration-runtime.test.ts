@@ -4,7 +4,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import worker from '../src/index.ts';
 const binding=env as any,db=binding.DB as Database,origin='http://localhost:2000';
-const base={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
+const base={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin,PLAYER_LOCAL_INBOX_ENABLED:'false'};
 const password='registration-synthetic-password-2026';
 const send=(path:string,body:unknown,config=base)=>worker.fetch(new Request(origin+path,{
  method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)}),config);

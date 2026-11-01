@@ -44,7 +44,7 @@ form.addEventListener('submit',async e=>{
    ui.feedback(status,'');ui.fieldError(form.elements.namedItem('username'),f[5]);form.elements.namedItem('username').focus();
   }else{
    ui.feedback(status,result.status===202?t[6]:result.status===422?f[6]:result.status===503?t[7]:t[8],result.status===202?'success':'error');
-   if(result.status===202){form.reset();ui.nextStep('registration');}
+   if(result.status===202){form.reset();ui.nextStep('registration');window.faLocalDevInbox?.show(status);}
   }
  }catch{ui.feedback(status,t[8]);}finally{submitting=false;button.disabled=false;button.textContent=t[3];}
 });
