@@ -6,6 +6,7 @@ import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
 import { createDevWorldClock, nationalProgress, DAY_KEY, readGlobalWorldProgress } from "./dev-world-clock.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
+const debugMode=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
 const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
 const devWorldClock=createDevWorldClock(sessionStorage,(name,detail)=>{
@@ -421,7 +422,7 @@ function setPreviewEnabled(enabled) {
 
 if(validPath||indexPath||clubPath){
  if(debugSeason===0){try{sessionStorage.removeItem(FLAG)}catch{}}
- if(clubPath&&debugSeason>0){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
+ if(clubPath&&debugMode()&&debugSeason>0){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
  syncCompetitionLinks();
  Promise.resolve().then(() => {
 
@@ -439,7 +440,7 @@ if(validPath||indexPath||clubPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(validPath)waitForRows().then(()=>setPreviewEnabled(debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  if(validPath)waitForRows().then(()=>setPreviewEnabled(debugMode()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   else reveal();
   let renderedSeason=renderKey();
   let seasonRefresh=Promise.resolve(true);
@@ -448,6 +449,7 @@ if(validPath||indexPath||clubPath){
    const routed=Number(window.faCompetitionRoute?.get?.().season);
    if(availablePreviewSeasons().includes(routed))routeSeasonOverride=routed;
    const next=renderKey();
+   if(!debugMode())return seasonRefresh;
    if(next===renderedSeason)return seasonRefresh;
    const request=++seasonRequest;
    renderedSeason=next;
@@ -980,7 +982,7 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
    }
   }
  };
- const publish=()=>{devWorldClock.publish();syncInputs();calendarWidget?.syncVisibility?.()};
+ const publish=()=>{if(debugMode())devWorldClock.publish();syncInputs();calendarWidget?.syncVisibility?.()};
  registerDebugControls('general',[{
   type:'range',id:'season',label:'Season',...DEBUG_CONTROL_LIMITS.season,scope:'general',
   value:season,onChange:n=>{const ok=devWorldClock.setSeason(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
