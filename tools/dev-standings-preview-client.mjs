@@ -3,7 +3,7 @@
 import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
-import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
+import { createDevWorldClock, nationalProgress, DAY_KEY, readGlobalWorldProgress } from "./dev-world-clock.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
 const SEASON_KEY = "football-architect:standings-dev-season";
@@ -109,12 +109,26 @@ async function setMatchdays(value){
  return setDebugProgress(ROUNDS_KEY,value);
 }
 async function resetPreview(){
- if(validPath&&previewState!=="OFF" && !await setPreviewEnabled(false))return false;
- try{sessionStorage.setItem(SEASON_KEY,'0');sessionStorage.setItem(ROUNDS_KEY,'0');sessionStorage.setItem('football-architect:calendar-dev-world-day','1')}catch{return false}
- progressRevision++;debugSeason=0;matchdays=0;
+ const global=await readGlobalWorldProgress();
+ if(!global)return false;
+ if(validPath&&previewState!=="OFF"&&!await setPreviewEnabled(false))return false;
+ const previous={season:debugSeason,matchdays,day:readWorldDay()??1};
+ const nextRounds=global.season===0?0:matchdaysForWorldDay(global.day);
+ try{
+  sessionStorage.setItem(SEASON_KEY,String(global.season));
+  sessionStorage.setItem(DAY_KEY,String(global.day));
+  sessionStorage.setItem(ROUNDS_KEY,String(nextRounds));
+ }catch{return false}
+ progressRevision++;debugSeason=global.season;matchdays=nextRounds;
  const ok=await refreshProgress();
- window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:1,season:0}}));
- return ok;
+ if(!ok){
+  try{sessionStorage.setItem(SEASON_KEY,String(previous.season));sessionStorage.setItem(DAY_KEY,String(previous.day));sessionStorage.setItem(ROUNDS_KEY,String(previous.matchdays))}catch{}
+  debugSeason=previous.season;matchdays=previous.matchdays;
+  await refreshProgress();return false;
+ }
+ devWorldClock.publish();
+ window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:global.day,season:global.season}}));
+ return true;
 }
 const DETAIL = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const LANG = {
@@ -975,7 +989,7 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
   value:day,onChange:n=>{const ok=devWorldClock.setDay(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  },{
   type:'button',id:'reset-global',label:'Reset',scope:'general',
-  onChange:()=>{const ok=devWorldClock.reset();if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
+  onChange:async()=>{const global=await readGlobalWorldProgress();if(!global)return false;const ok=devWorldClock.commit(global);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  }]);
  const calendarWidget=createDebugWidget({page:'calendar'});
  publish();
