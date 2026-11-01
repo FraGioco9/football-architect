@@ -24,7 +24,7 @@ const post=async(path,payload)=>{const res=await fetch(path,{method:'POST',crede
 function showError(res){ui.feedback(message,res.status===400?t[8]:res.status===429?t[10]:t[9]);}
 ask.addEventListener('submit',async event=>{event.preventDefault();ui.nextStep(null);const button=document.getElementById('request-button');button.disabled=true;ui.feedback(message,t[11],'pending');try{
  const res=await post('/api/player/password-reset/request',{email:String(new FormData(ask).get('email')||'')});
- ui.feedback(message,res.ok?t[6]:(res.status===429?t[10]:t[9]),res.ok?'success':'error');if(res.ok)ui.nextStep('recovery');
+ ui.feedback(message,res.ok?t[6]:(res.status===429?t[10]:t[9]),res.ok?'success':'error');if(res.ok){ui.nextStep('recovery');window.faLocalDevInbox?.show(message);}
 }catch{ui.feedback(message,t[9]);}finally{button.disabled=false;button.textContent=t[2];}});
 finish.addEventListener('submit',async event=>{event.preventDefault();ui.nextStep(null);const button=document.getElementById('complete-button');button.disabled=true;ui.feedback(message,t[11],'pending');try{
  const res=await post('/api/player/password-reset/complete',{token,newPassword:String(new FormData(finish).get('newPassword')||'')});
