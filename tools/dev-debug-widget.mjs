@@ -137,11 +137,8 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  };
  enabledSwitch.addEventListener("change",()=>{
   applyEnabled();
-  // Reinitialize the app with one authoritative source. Never clear rendered
-  // fixtures before the next document can hydrate the selected source.
+  // Consumers replace in-memory data; switching Debug never navigates or reloads.
   window.dispatchEvent(new CustomEvent("fa:debug-mode-change",{detail:{enabled:enabledSwitch.checked}}));
-  try{sessionStorage.setItem("football-architect:debug-source-transition","1")}catch{}
-  location.reload();
  });
  applyEnabled();
  const closeButton=element("button","fa-dev-widget-close","×");closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
