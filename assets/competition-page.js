@@ -996,7 +996,7 @@
         window.addEventListener('fa:debug-mode-change',event=>{
           if(window.faDevPreviewMode!==true)return;
           const enabled=event.detail?.enabled===true;
-          setDebugSeason(enabled?Number(document.documentElement.dataset.faDevCurrentSeason||1):null);
+          setDebugSeason(enabled?(()=>{try{const value=Number(sessionStorage.getItem('football-architect:standings-dev-season'));return Number.isInteger(value)&&value>=0&&value<=4?value:1}catch{return 1}})():null);
           if(!enabled){selection='';select();}
         });
         window.addEventListener('fa:competition-context-change',select);
