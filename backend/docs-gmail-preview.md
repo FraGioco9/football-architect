@@ -40,3 +40,7 @@ The owner must still name the recipient(s) and approve the exact new source/pack
 Gmail account sending limits and anti-abuse restrictions apply. This is a bounded initial Preview/test path, not a public transactional delivery guarantee. Keep Production isolated with its separately approved email configuration. Actual cutover and final live acceptance remain open: **#170 13/15 (86.7%)**, PR #329 Draft/HOLD.
 
 References checked 1 November 2026: [send MIME messages](https://developers.google.com/workspace/gmail/api/guides/sending), [send scope](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send), [refresh and Testing expiry](https://developers.google.com/identity/protocols/oauth2), [Playground own credentials](https://developers.google.com/oauthplayground/).
+
+## Planned hostname transition (1 November 2026)
+
+The planned replacement origin is `https://preview.football-architect.workers.dev`, with Cloudflare Worker name `preview` after the account subdomain is changed to `football-architect`. This origin is not yet active. For a future **separately approved** Gmail activation package, use `PLAYER_ORIGIN=https://preview.football-architect.workers.dev` instead of the historical `giocolifrancesco` origin shown above. Gmail delivery remains disabled on the currently published package. Never provision OAuth secrets against a new Worker before validating the exact name and host. Gmail account authorization, recipient approval and send acceptance are independent of this hostname change.
