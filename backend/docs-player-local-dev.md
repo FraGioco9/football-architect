@@ -45,3 +45,8 @@ node tools/dev-auth-admin.mjs revoke local-player@example.test
 First complete the LOCAL Player signup and verification, then stop `node tools/dev-auth-local.mjs`. Initialize the pool once with `init`, inspect the verified identity via `status` and explicitly confirm grant/revoke as prompted by the underlying owner CLI. Restart the launcher and sign in again after each grant/revoke because the CLI revokes prior sessions. Registration never assigns Admin automatically.
 
 **Important:** The Wrangler/Miniflare shared-file layout and real live browser grant/revoke flow are still subject to A07. Never use these commands with Preview/Production identities or while Wrangler is running on the same SQLite file.
+
+
+## Final CI gate for issue #334
+
+PR #335 can remain Draft/HOLD while its PR-body marker `<!-- admin-world-final-verification -->` opts the Admin World workflow into its full local-only final gate: `test:operator` persistence and restart; real Worker/D1 two-season lifecycle; browser account suites in Chromium and WebKit. Run only on exact PR head. This opt-in does not permit remote database access, emails, merges or deployments. A07 is accepted only after final jobs actually succeed, not when skipped.
