@@ -12,7 +12,7 @@
  };
  const t=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
- const dev=window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev';
+ const dev=Boolean((window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev')&&(()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'}catch{return false}})());
  const publicSeasonLimit=()=>Math.max(1,Math.min(2,window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber||1));
  const heading=root.querySelector('.calendar-heading');
  const selector=document.querySelector('#app-calendar > .calendar-season-picker')||document.createElement('div');
