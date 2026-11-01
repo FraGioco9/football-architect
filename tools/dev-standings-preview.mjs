@@ -157,14 +157,14 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.end();return;
       }
       const virtual = VIRTUAL[raw];
-      let body, type;
+      let body, type, file;
       if (virtual) {
         if(!devPreview)return reject(res,404);
         body = await safeFile(HERE, virtual);
         type = TYPES[".mjs"];
       } else {
         const appHost = subdomains && req.headers.host === "app.localhost:2000";
-        const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
+        file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
         if (!isAllowlistedPublicPath(file)) return reject(res, 404);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
