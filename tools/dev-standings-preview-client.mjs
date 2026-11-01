@@ -85,9 +85,9 @@ async function refreshProgress(){
  return true;
 }
 async function setDebugProgress(key,value){
- document.documentElement.dataset.faDevSwitching='true';
  const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay,savedRounds;
  try{saved=sessionStorage.getItem(key);savedDay=sessionStorage.getItem(DAY_KEY);savedRounds=sessionStorage.getItem(ROUNDS_KEY);sessionStorage.setItem(key,String(value));if(key===SEASON_KEY&&(value===0||previous.season===0)){sessionStorage.setItem(DAY_KEY,"1");sessionStorage.setItem(ROUNDS_KEY,"0")}}catch{try{if(saved===null)sessionStorage.removeItem(key);else if(saved!==undefined)sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else if(savedDay!==undefined)sessionStorage.setItem(DAY_KEY,savedDay);if(savedRounds===null)sessionStorage.removeItem(ROUNDS_KEY);else if(savedRounds!==undefined)sessionStorage.setItem(ROUNDS_KEY,savedRounds)}catch{}return false}
+ document.documentElement.dataset.faDevSwitching='true';
  const revision=++progressRevision;
  if(key===SEASON_KEY){debugSeason=value;if(value===0)matchdays=0}else matchdays=value;
  let ok=false;
