@@ -45,6 +45,7 @@ function selectedSeason(){
  return available[0];
 }
 function syncCompetitionLinks(){
+ if(!debugMode())return;
  for(const link of document.querySelectorAll('a.app-division-card')){
   const url=new URL(link.getAttribute('href'),location.href);
   url.searchParams.set('season',String(Math.max(1,debugSeason)));
@@ -53,7 +54,8 @@ function syncCompetitionLinks(){
  }
 }
 function syncDebugControls(){
- document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
+ if(debugMode())document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
+ else delete document.documentElement.dataset.faDevCurrentSeason;
  widgetRoot?.syncVisibility?.();
  syncCompetitionLinks();
  for(const [id,value] of [["season",debugSeason],["matchdays",matchdays],["world-day",readWorldDay()??1]])
