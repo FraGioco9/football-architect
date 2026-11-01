@@ -8,7 +8,8 @@ const repository=fileURLToPath(new URL('../../',import.meta.url));
 const target={accountId:'1'.repeat(32),databaseId:'11111111-1111-4111-8111-111111111111',origin:'https://football-architect-preview.example.workers.dev'};
 test('Preview target rejects Production/arbitrary origins, local UUIDs and incomplete provenance',()=>{
  assert.doesNotThrow(()=>validatePreviewTarget({...target,sourceSha:'a'.repeat(40)}));
- for(const extra of [{origin:'https://production.example.com'},{origin:target.origin+'/'},{origin:'http://football-architect-preview.example.workers.dev'},{origin:'https://user:pass@football-architect-preview.example.workers.dev'},{databaseId:'00000000-0000-4000-8000-000000000001'},{accountId:'bad'},{sourceSha:'HEAD'}])assert.throws(()=>validatePreviewTarget({...target,sourceSha:'a'.repeat(40),...extra}));
+ assert.doesNotThrow(()=>validatePreviewTarget({...target,origin:'https://preview.football-architect.workers.dev',sourceSha:'a'.repeat(40)}));
+ for(const extra of [{origin:'https://preview.football-architect.workers.dev.evil.invalid'},{origin:'https://production.example.com'},{origin:target.origin+'/'},{origin:'http://football-architect-preview.example.workers.dev'},{origin:'https://user:pass@football-architect-preview.example.workers.dev'},{databaseId:'00000000-0000-4000-8000-000000000001'},{accountId:'bad'},{sourceSha:'HEAD'}])assert.throws(()=>validatePreviewTarget({...target,sourceSha:'a'.repeat(40),...extra}));
 });
 test('offline exact-snapshot preparation compiles a standalone guarded package and detects tampering',{timeout:90000},async()=>{
  const temp=await mkdtemp(join(tmpdir(),'fa-preview-package-')),source=join(temp,'source'),output=join(temp,'package');
