@@ -85,6 +85,7 @@ async function refreshProgress(){
  return true;
 }
 async function setDebugProgress(key,value){
+ document.documentElement.dataset.faDevSwitching='true';
  const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay,savedRounds;
  try{saved=sessionStorage.getItem(key);savedDay=sessionStorage.getItem(DAY_KEY);savedRounds=sessionStorage.getItem(ROUNDS_KEY);sessionStorage.setItem(key,String(value));if(key===SEASON_KEY&&(value===0||previous.season===0)){sessionStorage.setItem(DAY_KEY,"1");sessionStorage.setItem(ROUNDS_KEY,"0")}}catch{try{if(saved===null)sessionStorage.removeItem(key);else if(saved!==undefined)sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else if(savedDay!==undefined)sessionStorage.setItem(DAY_KEY,savedDay);if(savedRounds===null)sessionStorage.removeItem(ROUNDS_KEY);else if(savedRounds!==undefined)sessionStorage.setItem(ROUNDS_KEY,savedRounds)}catch{}return false}
  const revision=++progressRevision;
@@ -92,13 +93,14 @@ async function setDebugProgress(key,value){
  let ok=false;
  try{ok=await refreshProgress()}catch(error){console.error("DEV progress refresh failed:",error)}
  if(revision!==progressRevision)return true;
- if(ok){if(key===SEASON_KEY&&value>0)devWorldClock.publish();return true;}
+ if(ok){if(key===SEASON_KEY&&value>0)devWorldClock.publish();delete document.documentElement.dataset.faDevSwitching;return true;}
  debugSeason=previous.season;matchdays=previous.matchdays;
  try{if(saved===null)sessionStorage.removeItem(key);else sessionStorage.setItem(key,saved);if(savedDay===null)sessionStorage.removeItem(DAY_KEY);else sessionStorage.setItem(DAY_KEY,savedDay);if(savedRounds===null)sessionStorage.removeItem(ROUNDS_KEY);else sessionStorage.setItem(ROUNDS_KEY,savedRounds)}catch{}
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(previousView)window.faCompetitionRoute?.set?.({season:previousView},{replace:true});
  syncDebugControls();
  window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:previous}));
+ delete document.documentElement.dataset.faDevSwitching;
  return false;
 }
 async function setSeason(value){
