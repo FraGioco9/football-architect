@@ -507,6 +507,16 @@ if(validPath||indexPath||clubPath){
   // A DEV module can initialize before the public router. Listen to its
   // explicit route event rather than relying on popstate (pushState does not
   // emit popstate), and handle browser back/forward navigation as well.
+  window.addEventListener("fa:debug-mode-change",event=>{
+    const enabled=event.detail?.enabled===true;
+    if(enabled){
+      document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
+      void setPreviewEnabled(debugSeason>0).then(()=>syncSeason());
+    }else{
+      delete document.documentElement.dataset.faDevCurrentSeason;
+      void setPreviewEnabled(false);
+    }
+  });
   window.addEventListener("fa:competition-route-change",syncSeason);
   window.addEventListener("fa:competition-route-change",syncHistoryPreview);
   window.addEventListener("popstate",syncSeason);
@@ -997,6 +1007,10 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
   type:'button',id:'reset-global',label:'Reset',scope:'general',
   onChange:async()=>{const global=await readGlobalWorldProgress();if(!global)return false;const ok=devWorldClock.commit(global);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  }]);
+ window.addEventListener('fa:debug-mode-change',event=>{
+  if(event.detail?.enabled===true)publish();
+  else window.dispatchEvent(new CustomEvent('fa:public-calendar-change'));
+ });
  const calendarWidget=createDebugWidget({page:'calendar'});
  publish();
 }
