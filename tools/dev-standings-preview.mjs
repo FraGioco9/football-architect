@@ -225,7 +225,11 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         "X-Frame-Options": "DENY"
       });
       res.end(req.method === "HEAD" ? undefined : body);
-    } catch {
+    } catch(error) {
+      // Only the loopback developer console receives diagnostics. Responses
+      // remain generic so local paths and error details are never exposed.
+      const pathname=typeof req.url==="string"?req.url.split("?")[0]:"(unknown)";
+      console.error("[FA DEV] Resource failed:",pathname,error?.code||error?.name||"Error",error?.message||"Unknown error");
       reject(res); // Fail closed: never serve a partial or unchecked artifact.
     }
   });
