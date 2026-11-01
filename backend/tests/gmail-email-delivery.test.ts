@@ -35,6 +35,10 @@ describe('Preview Gmail delivery without external requests',()=>{
   for(const text of textParts){assert.ok(text.includes(origin+'/account/verify-email?token='+token));assert.ok(text.includes('lang=it'))}
   assert.ok(!mime.includes('synthetic-secret'));assert.ok(!mime.includes('synthetic-refresh'));
  });
+ it('accepts only the new exact Preview host under the existing opt-in gates',()=>{
+  assert.equal(typeof gmailEmailDeliveries({...ready(),PLAYER_ORIGIN:'https://preview.football-architect.workers.dev'}).verification,'function');
+  assert.deepEqual(gmailEmailDeliveries({...ready(),PLAYER_ORIGIN:'https://preview.football-architect.workers.dev.evil.invalid'}),{});
+ });
  it('fails closed for incomplete, local, production, unsafe-origin and unrestricted configurations',()=>{
   const fail=async()=>{throw Error('unexpected_network')};
   const cases=[{PLAYER_MODE:'production'},{PLAYER_MODE:'local'},{PLAYER_EMAIL_DELIVERY_ENABLED:'cloudflare'},
