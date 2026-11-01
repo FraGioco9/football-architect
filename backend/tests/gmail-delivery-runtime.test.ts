@@ -4,7 +4,7 @@ import {applyD1Migrations} from 'cloudflare:test';
 import worker from '../src/index.ts';
 import type {Database} from '../src/database.ts';
 const binding=env as any,db=binding.DB as Database,origin='https://football-architect-preview.example.workers.dev';
-const config={...binding,PLAYER_MODE:'preview',PLAYER_TRUSTED_SOURCE:'cloudflare',PLAYER_ORIGIN:origin,
+const config={...binding,PLAYER_LOCAL_INBOX_ENABLED:'false',PLAYER_MODE:'preview',PLAYER_TRUSTED_SOURCE:'cloudflare',PLAYER_ORIGIN:origin,
  PLAYER_EMAIL_DELIVERY_ENABLED:'gmail-preview',PLAYER_EMAIL_FROM:'notifications@gmail.com',
  PLAYER_EMAIL_PREVIEW_RECIPIENTS:'tester@example.invalid',GMAIL_CLIENT_ID:'synthetic-client',
  GMAIL_CLIENT_SECRET:'synthetic-secret',GMAIL_REFRESH_TOKEN:'synthetic-refresh'};
