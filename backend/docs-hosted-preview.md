@@ -34,3 +34,17 @@ The separate Preview entry reuses the route registry and existing API handler. C
 Review the exact source CI, manifest/file hashes, nonproduction IDs, origin, static boundary and final Worker modules. A successful package check is not a deployment approval. Explicit owner authorization must name the proposed Worker/URL and existing D1. Publication must not apply migrations again, change pool metadata, generate/reset a season, grant Admin, configure email/DNS or touch Production. Keep PR #329 Draft/HOLD and do not merge.
 
 No hosted account exists yet. Preview verification/recovery delivery remains disabled and the owner grant tool is still local only. Publishing this package alone does not complete registration, actual operator cutover or live acceptance. Preserve the existing initialized Season 0 and recovery records during later smoke tests; destructive lifecycle scenarios stay on disposable local D1.
+
+## Namespace migration — planned target (1 November 2026)
+
+Target: `https://preview.football-architect.workers.dev` (Worker `preview`, account workers.dev subdomain `football-architect`). This is NOT yet live. The existing `football-architect-preview.giocolifrancesco.workers.dev` remains the only published origin until the controlled switch. Account subdomain changes affect the account's existing Workers routes; they are not a zero-downtime alias. Do **not** change the account subdomain first or rename/delete the live Worker in isolation.
+
+The prepare tool now selects the Worker name from the **exact** approved origin and retains the old source-target format for verification of existing packages. Migration sequence:
+
+1. Confirm `football-architect` subdomain availability and inventory all account Workers/routes. Preserve the current deployment/version and D1 recovery markers; never migrate/reset D1.
+2. Review a clean exact-source `preview:prepare` package targeting the new origin, with its Worker name `preview`, existing `dev-preview` D1 and no email settings/secrets. Inspect the manifest, hashes and bundle before publication.
+3. Plan the coordinated cutover: account subdomain switch followed by publishing the reviewed `preview` Worker; an interruption is possible while these changes propagate. Do not assume the old hostname continues to work. Publish only under the owner's approved nonproduction scope, never Production.
+4. Test HTTPS, `/api/environment`, anonymous pages, no-store/asset boundaries, login/register/logout, CSRF, Session/World isolation and redirects on the **new** exact origin. Existing sessions from the old hostname will not carry over; users may need to sign in again.
+5. Update Gmail OAuth/allowlist activation documentation and any external links to the new host; keep outbound mail disabled until separately approved. Record rollback steps and observed availability before claiming completion.
+
+The migration does not change issue #170 completion count (13/15), Admin permissions or Draft/HOLD status. No cutover, secrets, remote D1 write or merge is implied by this document.
