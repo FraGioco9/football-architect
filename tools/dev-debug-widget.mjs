@@ -270,7 +270,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  }
  root.syncVisibility=()=>{for(const control of controls){const row=panel.querySelector(`[data-dev-control-row="${control.id}"]`);if(row){row.hidden=typeof control.visible==="function"?!control.visible():control.visible===false;const disabled=typeof control.disabled==="function"?control.disabled():control.disabled===true;row.dataset.disabled=String(disabled);if(control.disabled!==undefined)for(const input of row.querySelectorAll("input,button,select"))input.disabled=disabled}}};
  function syncVisibility(){root.syncVisibility()}
- for(const details of sections.values())if(details.children.length>1)panel.append(details);
+ for(const details of sections.values())if(details.children.length>1)controlsContainer.append(details);
  syncVisibility();
  const backdrop=element("div","fa-dev-widget-backdrop");backdrop.hidden=true;
  root.append(button);
