@@ -823,8 +823,8 @@
     if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
   }
   function setDebugSeason(season){
-    if(activeDebugSeason===null)return false;
-    if(!Number.isInteger(season)||season<0||season>4)return false;
+    if(!window.faDevPreviewMode)return false;
+    if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
     if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
     if(season===0)selectSeason(1);
     return true;
@@ -977,7 +977,7 @@
       window.addEventListener('fa:competition-context-change',event=>stats.update(event.detail));
       window.addEventListener('fa:competition-route-change',()=>stats.update(window.faCompetitionContext));
     }
-    if(activeDebugSeason===null){
+    if(activeDebugSeason===null||window.faDevPreviewMode===true){
       try{
         const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
@@ -988,11 +988,17 @@
         const copy={en:['Loading season data…','Season data is unavailable.','No published season data yet.'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.']};
         const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
-        let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
+        let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=sourceState==='loading'||['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
           commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         let selection='';const select=()=>{const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(key===selection)return;selection=key;void loader.load()};
+        window.addEventListener('fa:debug-mode-change',event=>{
+          if(window.faDevPreviewMode!==true)return;
+          const enabled=event.detail?.enabled===true;
+          setDebugSeason(enabled?Number(document.documentElement.dataset.faDevCurrentSeason||1):null);
+          if(!enabled){selection='';select();}
+        });
         window.addEventListener('fa:competition-context-change',select);
         window.addEventListener('focus',()=>void loader.load());
         window.addEventListener('pageshow',event=>{if(event.persisted)void loader.load()});
