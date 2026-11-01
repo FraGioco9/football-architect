@@ -18,7 +18,6 @@ const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK;
 const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-settings.mjs": "dev-debug-settings.mjs",
-  "/__fa_dev__/debug-toggle.mjs": "dev-debug-toggle.mjs",
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
   "/__fa_dev__/dev-debug-config.mjs": "dev-debug-config.mjs",
   "/__fa_dev__/dev-world-clock.mjs": "dev-world-clock.mjs",
@@ -50,8 +49,6 @@ const INJECT = [
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
   // Only DEV navigation uses this; never suppress the public competition views.
   '<style>html[data-fa-dev-season-transition="true"] #competition-panel-standings,html[data-fa-dev-season-transition="true"] #competition-panel-fixtures{visibility:hidden!important}</style>',
-  '<style>html:not([data-fa-debug-enabled="true"]) .fa-dev-widget{display:none!important}</style>',
-  '<script type="module" data-fa-local-debug-toggle src="/__fa_dev__/debug-toggle.mjs"></script>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
   '<script type="module" data-fa-dev-stats src="/__fa_dev__/stats-client.mjs"></script>'
 ].join("\n");
