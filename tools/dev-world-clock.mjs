@@ -47,3 +47,16 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
   };
   return Object.freeze({read,revision:()=>revision,commit,setSeason:n=>commit({...read(),season:n}),setDay:n=>read().season===0?false:commit({...read(),day:n}),reset,nationalProgress:()=>read().season===0?0:nationalProgress(read().day),snapshot:()=>snapshot(read()),publish:()=>{const s=read();dispatch('fa:world-clock-snapshot',snapshot(s));dispatch('fa:dev-progress-change',{season:s.season,worldDay:s.day,matchdays:progress(s)})}});
 }
+
+/* Read the authoritative shared world, never a DEV override. Reset fails closed
+   if the source cannot be checked or exceeds the supported local control range. */
+export async function readGlobalWorldProgress(fetcher=fetch){
+ try{
+  const response=await fetcher('/api/world',{headers:{Accept:'application/json'},cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return null;
+  const payload=await response.json(),world=payload?.world;
+  if(!world||!valid(world.seasonNumber,0,4)||!valid(world.day,0,56))return null;
+  if(world.seasonNumber===0&&world.day!==0)return null;
+  return Object.freeze({season:world.seasonNumber,day:Math.max(1,world.day)});
+ }catch{return null}
+}
