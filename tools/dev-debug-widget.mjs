@@ -120,6 +120,23 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  panel.hidden=true;
  button.setAttribute("aria-controls",panel.id);
  panel.append(element("h2","fa-dev-widget-title","Debug Settings"));
+ const ENABLE_KEY="football-architect:local-debug-visible";
+ const toggleRow=element("label","fa-dev-widget-option");
+ toggleRow.style.cssText="padding:8px 0 12px;margin-bottom:10px;border-bottom:1px solid var(--border,#568378)";
+ const toggleText=element("span","","Enable Debug Settings");
+ const enabledSwitch=element("input");
+ enabledSwitch.type="checkbox";enabledSwitch.dataset.devEnabled="";enabledSwitch.setAttribute("aria-label","Enable Debug Settings");
+ try{enabledSwitch.checked=sessionStorage.getItem(ENABLE_KEY)==="1"}catch{}
+ toggleRow.append(toggleText,enabledSwitch);panel.append(toggleRow);
+ const controlsContainer=element("div","fa-dev-widget-controls");
+ panel.append(controlsContainer);
+ const applyEnabled=()=>{
+  controlsContainer.hidden=!enabledSwitch.checked;
+  document.documentElement.dataset.faDebugEnabled=enabledSwitch.checked?"true":"false";
+  try{if(enabledSwitch.checked)sessionStorage.setItem(ENABLE_KEY,"1");else sessionStorage.removeItem(ENABLE_KEY)}catch{}
+ };
+ enabledSwitch.addEventListener("change",applyEnabled);
+ applyEnabled();
  const closeButton=element("button","fa-dev-widget-close","×");closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
  const sections=new Map();
  for(const [id,label] of [["general","All settings"]]){
@@ -128,6 +145,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");if(typeof saved[id]==="boolean")details.open=saved[id]}catch{}
   details.addEventListener("toggle",()=>{try{const saved=JSON.parse(sessionStorage.getItem(SECTIONS_KEY)||"{}");saved[id]=details.open;sessionStorage.setItem(SECTIONS_KEY,JSON.stringify(saved))}catch{}});
   sections.set(id,details);
+  controlsContainer.append(details);
  }
  for(const control of controls){
   const target=sections.get("general");
