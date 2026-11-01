@@ -127,7 +127,7 @@
   for(const [lang,label] of Object.entries({en:'Authoritative world',it:'Mondo autorevole',de:'Verbindliche Welt',es:'Mundo oficial',fr:'Monde officiel'}))clockText[lang].push(label);
   // DEV presentation is enabled only by the isolated server-side HTML bootstrap.
   // Public pages must never accept a browser-dispatched fictional or authoritative clock.
-  const devClockEnabled=window.faDevCalendarClockSnapshot?.source?.kind==='dev'&&(()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'}catch{return false}})();
+  let devClockEnabled=window.faDevCalendarClockSnapshot?.source?.kind==='dev'&&(()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'}catch{return false}})();
   function updateClock(raw){
     try{clockSnapshot=devClockEnabled&&raw?.source?.kind==='dev'?clockAdapter?.normalize(raw)??null:null}catch{clockSnapshot=null}
     if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){
@@ -169,6 +169,7 @@
     updateClock({source:{kind:'dev',reference:'fictional calendar DEV control'},current:{season:1,day}});
   });
   window.addEventListener?.('fa:world-clock-snapshot',event=>updateClock(event.detail));
+  window.addEventListener?.('fa:debug-mode-change',event=>{devClockEnabled=event.detail?.enabled===true;updateClock(devClockEnabled?window.faDevWorldClockSnapshot:null);});
   updateClock(window.faDevCalendarClockSnapshot??null);
   const filterElement=get('filter'),divisionElement=get('division');
   const filters=['all','national','international','sovereign','federation'];
@@ -212,7 +213,7 @@
   window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),getPublicWorld:()=>publicWorld,setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});rememberWeek();return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
-  if(!devClockEnabled){
+  {
     pendingInitialWeek=state.view==='week';
     import('/assets/authoritative-calendar.mjs').then(({mountAuthoritativeCalendar})=>mountAuthoritativeCalendar({root:calendar,onWorld:world=>{
       publicWorld=world?Object.freeze({...world}):null;
