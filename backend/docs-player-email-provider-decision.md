@@ -2,6 +2,10 @@
 
 Date: 30 October 2026. Scope: registration verification and password recovery only. This document is a decision proposal, not approval for real delivery, secrets, DNS changes, remote D1 or deployment.
 
+## Preview Gmail choice — 1 November 2026
+
+The owner selected a dedicated Gmail sender to avoid a domain purchase for initial Preview testing. The separately gated `gmail-preview` adapter and [Google setup guide](docs-gmail-preview.md) prepare that path without activating it. It requires explicit Preview mode, the exact hosted origin, trusted Cloudflare transport, OAuth send-only credentials and a bounded exact recipient allowlist. It is disabled in local and Production modes. No Gmail password, OAuth credential or email activation setting is committed or added to a deployable package. The published Preview still uses the earlier approved package. Google authorization, exact recipient selection, secret provisioning, new deployment and real delivery require the next separately approved operation. The original Cloudflare Production adapter below remains gated and unchanged in scope; no automatic fallback is added.
+
 ## Approved provider / current Draft implementation — 30 October 2026
 - Owner approved **Cloudflare Email Service** as the provider **for implementation in Draft/HOLD only**, with no credentials, DNS, real email or deployment.
 - `src/cloudflare-email-delivery.ts` implements the documented native Workers binding `EMAIL.send({to,from,subject,html,text})`. The Worker injects the callbacks only when all gates are present: `PLAYER_EMAIL_DELIVERY_ENABLED=cloudflare`, `PLAYER_MODE=production`, a strict HTTPS `PLAYER_ORIGIN`, a valid `PLAYER_EMAIL_FROM`, and an `EMAIL` binding exposing `send`. **No binding or activation variables are added to local Wrangler configuration.**
