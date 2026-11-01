@@ -140,6 +140,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   // Reinitialize the app with one authoritative source. Never clear rendered
   // fixtures before the next document can hydrate the selected source.
   window.dispatchEvent(new CustomEvent("fa:debug-mode-change",{detail:{enabled:enabledSwitch.checked}}));
+  try{sessionStorage.setItem("football-architect:debug-source-transition","1")}catch{}
   location.reload();
  });
  applyEnabled();
