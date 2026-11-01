@@ -48,6 +48,7 @@ const INJECT = [
   '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
   '<style>html:not([data-fa-tabs-restored="true"]) .app-competition-tabs{visibility:hidden}</style>',
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
+  '<style>html[data-fa-dev-switching="true"] #competition-panel-fixtures,html[data-fa-dev-switching="true"] #competition-panel-standings,html[data-fa-dev-switching="true"] #competition-panel-history{visibility:hidden!important}</style>',
   // Only DEV navigation uses this; never suppress the public competition views.
   '<style>html[data-fa-dev-season-transition="true"] #competition-panel-standings,html[data-fa-dev-season-transition="true"] #competition-panel-fixtures{visibility:hidden!important}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
