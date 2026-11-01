@@ -135,7 +135,13 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   document.documentElement.dataset.faDebugEnabled=enabledSwitch.checked?"true":"false";
   try{if(enabledSwitch.checked)sessionStorage.setItem(ENABLE_KEY,"1");else sessionStorage.removeItem(ENABLE_KEY)}catch{}
  };
- enabledSwitch.addEventListener("change",()=>{applyEnabled();window.dispatchEvent(new CustomEvent("fa:debug-mode-change",{detail:{enabled:enabledSwitch.checked}}))});
+ enabledSwitch.addEventListener("change",()=>{
+  applyEnabled();
+  // Reinitialize the app with one authoritative source. Never clear rendered
+  // fixtures before the next document can hydrate the selected source.
+  window.dispatchEvent(new CustomEvent("fa:debug-mode-change",{detail:{enabled:enabledSwitch.checked}}));
+  location.reload();
+ });
  applyEnabled();
  const closeButton=element("button","fa-dev-widget-close","×");closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
  const sections=new Map();
