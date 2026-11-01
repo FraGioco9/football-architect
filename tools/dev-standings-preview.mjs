@@ -18,6 +18,7 @@ const HOST = LAN_ENABLED ? "0.0.0.0" : LOOPBACK;
 const PORT = 2000;
 const VIRTUAL = Object.freeze({
   "/__fa_dev__/debug-settings.mjs": "dev-debug-settings.mjs",
+  "/__fa_dev__/debug-global.mjs": "dev-debug-global.mjs",
   "/__fa_dev__/debug-widget.mjs": "dev-debug-widget.mjs",
   "/__fa_dev__/dev-debug-config.mjs": "dev-debug-config.mjs",
   "/__fa_dev__/dev-world-clock.mjs": "dev-world-clock.mjs",
@@ -202,6 +203,13 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
             return all;
           }), "utf8");
       }
+      // Every loopback DEV HTML page gets exactly one Debug launcher; competition
+      // and calendar pages already mount their specialized Debug widget.
+      if(devPreview&&type===TYPES[".html"]&&!(
+        DETAIL.test(raw)||CUP_DETAIL.test(raw)||file==="competitions/index.html"||
+        file==="calendar/index.html"||file==="clubs/_shared/index.html"
+      ))body=Buffer.from(body.toString("utf8").replace("</head>",
+        '<script type="module" src="/__fa_dev__/debug-global.mjs"></script>\\n</head>'),"utf8");
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
       if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",'<script>window.faDevPreviewMode=true</script>\n</head>'),"utf8");
       res.writeHead(200, {
