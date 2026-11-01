@@ -12,3 +12,20 @@ The merged #170 backend uses one `handlePlayer` for login, registration, verific
 
 ## Safety
 No Gmail credentials in local config, no copy of remote D1, no Production/Preview deploy or remote writes. PR Draft/HOLD; tests only at final phase. This initial document is planning/audit only and does not claim the inbox is already implemented.
+
+## Local launch (implementation pending final QA)
+
+Use Node.js 22 and install backend dependencies first. From the repository root:
+
+```powershell
+npm --prefix backend install
+node tools/dev-auth-local.mjs
+```
+
+Visit `http://app.localhost:2000/account/register`, register a throwaway LOCAL identity, then use the link shown in the form to open `http://app.localhost:2000/api/local-dev/inbox` and verify it. Login at `/account/login`; recover at `/account/recover`. The launcher starts the localhost static site plus the loopback Worker with `FA_ADMIN_API_TARGET=http://127.0.0.1:8787`. The proxy forwards only allowlisted API routes; the inbox remains restricted to `app.localhost`, exact `PLAYER_ORIGIN`, and local Worker mode. No remote D1 or Gmail connection is performed.
+
+**First-run database prerequisite:** local D1 migrations must have been initialized under the SAME Wrangler persistence directory used by the Worker. Owner-only `npm --prefix backend run admin:permissions -- init --apply` can initialize the local account pool, but its Miniflare layout must be verified against Wrangler before treating Admin grants as working. Never grant Admin via registration or public HTTP. Until that persistence compatibility is verified under A05/A07, Admin bootstrap is not accepted.
+
+The inbox endpoint serves HTML when browser navigation sends `Accept: text/html`, and JSON when called with `Accept: application/json`. This page contains one-time local tokens; do not take screenshots, forward its URL externally, or copy its database. Links are removed by token expiry; the inbox is not an outbound mailer.
+
+**Current limitation:** this guide describes the new code but is not evidence of completed local first-run DB setup or an end-to-end PASS. Those are part of the final gate.
