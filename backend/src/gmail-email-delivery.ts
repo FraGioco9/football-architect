@@ -43,7 +43,7 @@ export function gmailEmailDeliveries(env:GmailDeliveryEnv,transport:typeof fetch
  let origin:URL;
  try{origin=new URL(env.PLAYER_ORIGIN??'');
   if(origin.origin!==env.PLAYER_ORIGIN||origin.protocol!=='https:'||origin.port||origin.username||origin.password||
-   !/^football-architect-preview\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.workers\.dev$/.test(origin.hostname))return {};
+   !(/^(?:football-architect-preview\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|preview\.football-architect)\.workers\.dev$/.test(origin.hostname)))return {};
  }catch{return {}}
  const from=env.PLAYER_EMAIL_FROM??'',recipients=(env.PLAYER_EMAIL_PREVIEW_RECIPIENTS??'').split(',');
  if(!safeAddress(from)||!/^[a-z0-9._%+-]+@gmail\.com$/.test(from)||recipients.length>10||
