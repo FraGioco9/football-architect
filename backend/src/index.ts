@@ -3,13 +3,14 @@ import {handleAdmin,type AdminEnv} from './http-admin.ts';
 import {handlePlayer,type PlayerEnv} from './http-player.ts';
 import {cloudflareEmailDeliveries,type CloudflareDeliveryEnv} from './cloudflare-email-delivery.ts';
 import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery.ts';
+import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {readPublicSportingSeason,readPublicCalendarDay} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
-export interface Env extends AdminEnv, PlayerEnv, CloudflareDeliveryEnv, GmailDeliveryEnv {
+export interface Env extends AdminEnv, PlayerEnv, CloudflareDeliveryEnv, GmailDeliveryEnv, LocalInboxEnv {
   DB?: WorldDatabase;
 }
 
@@ -32,6 +33,7 @@ export default {
     // A Dev bridge cannot accidentally dispatch credentials or commands to Production.
     const expected=request.headers.get('X-FA-Expected-Pool');
     if(expected!==null&&(expected!=='dev-preview'||env.PLAYER_MODE!=='preview'))return json(503,{error:{code:'environment_unavailable'}});
+    if(url.pathname==='/api/local-dev/inbox')return handleLocalInbox(request,env);
     if(url.pathname==='/api/environment'){
       if(request.method!=='GET')return json(405,{error:{code:'method_not_allowed'}});
       try{
@@ -74,7 +76,7 @@ export default {
       }
     }
     if (url.pathname === '/api/player' || url.pathname.startsWith('/api/player/')) {
-      const delivery=env.PLAYER_EMAIL_DELIVERY_ENABLED==='gmail-preview'?gmailEmailDeliveries(env):cloudflareEmailDeliveries(env);
+      const delivery=env.PLAYER_MODE==='local'?localInboxDeliveries(env):env.PLAYER_EMAIL_DELIVERY_ENABLED==='gmail-preview'?gmailEmailDeliveries(env):cloudflareEmailDeliveries(env);
       return handlePlayer(request,{
         ...env,
         PLAYER_VERIFICATION_DELIVERY:env.PLAYER_VERIFICATION_DELIVERY??delivery.verification,
