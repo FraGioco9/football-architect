@@ -17,7 +17,7 @@ test('real Wrangler canonical initialize/read and idempotent audit survive resta
  let child:ReturnType<typeof spawn>|undefined,logs='';
  const stop=async()=>{if(child&&child.exitCode===null){const closed=once(child,'close');child.kill('SIGTERM');await closed}child=undefined};
  const start=async()=>{
-  child=spawn(process.execPath,[fileURLToPath(new URL('../bin/wrangler.js',import.meta.resolve('wrangler'))),'dev','--local','--inspector-port','0','--inspector-ip','127.0.0.1','--ip','127.0.0.1','--port',String(port),'--persist-to',state,'--var','ADMIN_MODE:local','--var','ADMIN_ORIGIN:'+origin],{cwd:fileURLToPath(new URL('../',import.meta.url)),env:{...process.env,WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});
+  child=spawn(process.execPath,[fileURLToPath(new URL('../bin/wrangler.js',import.meta.resolve('wrangler'))),'dev','--local','--inspector-port','0','--inspector-ip','127.0.0.1','--ip','127.0.0.1','--port',String(port),'--persist-to',state,'--var','PLAYER_MODE:local','--var','PLAYER_ORIGIN:'+origin],{cwd:fileURLToPath(new URL('../',import.meta.url)),env:{...process.env,WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});
   child.stdout!.on('data',x=>{logs+=String(x)});child.stderr!.on('data',x=>{logs+=String(x)});
   for(let i=0;i<100;i++){
    if(child.exitCode!==null)throw Error('Local Worker exited: '+logs.slice(-1200));
@@ -28,11 +28,22 @@ test('real Wrangler canonical initialize/read and idempotent audit survive resta
  };
  try{
   const handle=await openLocalDatabase(state);
-  try{await manageAccount(handle.db,'create','operator@example.invalid',password)}finally{await handle.close()}
+  try{
+   await manageAccount(handle.db,'create','operator@example.invalid',password);
+   const operator=await handle.db.prepare('SELECT id,password_verifier FROM admin_accounts WHERE email_normalized=?').bind('operator@example.invalid').first<{id:string;password_verifier:string}>();
+   assert.ok(operator);
+   const now=Math.floor(Date.now()/1000),playerId='restart-player';
+   await handle.db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+    .bind(playerId,'operator@example.invalid',operator.password_verifier,1,now,'active',now,now).run();
+   await handle.db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+    .bind(playerId,operator.id,now).run();
+   await handle.db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>
+    handle.db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind(playerId,permission,now)));
+  }finally{await handle.close()}
   const before=await start();
-  const logged=await fetch(origin+'/api/admin/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:'operator@example.invalid',password})});
+  const logged=await fetch(origin+'/api/player/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:'operator@example.invalid',password})});
   assert.equal(logged.status,200);const cookie=logged.headers.get('set-cookie')!.split(';')[0],auth=await logged.json() as any;
-  const session=await fetch(origin+'/api/admin/session',{headers:{Cookie:cookie}});assert.equal(session.status,200);
+  const session=await fetch(origin+'/api/player/session',{headers:{Cookie:cookie}});assert.equal(session.status,200);
   const command={expectedGeneration:before.world.generation,expectedRevision:before.world.revision};
   const prepare=()=>fetch(origin+'/api/admin/seasons/prepare',{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':auth.csrfToken,'Idempotency-Key':'canonical-restart-prepare-01'},body:JSON.stringify(command)});
   const initialized=await prepare();assert.equal(initialized.status,200);const outcome=await initialized.json() as any;

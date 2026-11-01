@@ -107,6 +107,14 @@
       try { window.localStorage.setItem(STORAGE_KEY, language); }
       catch { /* Language remains active if storage is unavailable. */ }
     }
+    // localStorage is origin-scoped: carry the supported language to trusted app links.
+    for(const link of typeof URL==='function'&&window.location?.href?document.querySelectorAll('a[href]'):[]){
+      const target=new URL(link.getAttribute('href'),window.location.href);
+      const host=(window.location.hostname||'').replace(/^www\./,'');
+      if(target.hostname==='app.'+host&&target.protocol===window.location.protocol){
+        if(language==='en')target.searchParams.delete('lang');else target.searchParams.set('lang',language);link.href=target.href;
+      }
+    }
   }
 
   function updateActive() {
@@ -186,7 +194,7 @@
     preview.href = "/dashboard";
   } else if (preview && previewHost && !/^(?:localhost|::1)$/.test(previewHost) &&
       !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(previewHost) &&
-      !/\.(?:local|localhost|vercel\.app|github\.io)$/.test(previewHost)) {
+      !/\.(?:local|localhost|vercel\.app|github\.io|workers\.dev)$/.test(previewHost)) {
     const host = previewHost.startsWith("www.") ? previewHost.slice(4) : previewHost;
     preview.href = (window.location.protocol || "https:") + "//app." + host + "/dashboard";
   }
@@ -216,5 +224,7 @@
   let initial = "en";
   try { initial = valid(window.localStorage.getItem(STORAGE_KEY)); }
   catch { /* Private browsing may deny storage. */ }
+  const carried=typeof URL==='function'&&window.location?.href?new URL(window.location.href).searchParams.get('lang'):null;
+  if(SUPPORTED.includes(carried)){initial=carried;try{window.localStorage.setItem(STORAGE_KEY,initial)}catch{}}
   translate(initial);
 })(); 

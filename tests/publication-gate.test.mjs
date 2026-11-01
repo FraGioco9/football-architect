@@ -6,6 +6,22 @@ import {join} from "node:path";
 import {tmpdir} from "node:os";
 import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact} from "../tools/publication-guard.mjs";
 
+test("PLAYER-AUTH public artifact includes only the approved account pages and scripts",()=>{
+ const files=planPublicFiles();
+ const pages=["account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html"];
+ const scripts=["account-login.js","account-onboarding.js","account-recovery.js","account-settings.js","account-verification.js"].map(name=>"assets/"+name);
+ for(const path of [...pages,...scripts])assert.ok(files.includes(path),"missing approved account asset: "+path);
+ for(const path of ["backend/src/http-player.ts","backend/src/player-auth.ts","backend/wrangler.toml","backend/migrations/0013_player_auth.sql"])
+  assert.ok(!files.includes(path),"backend data must stay private: "+path);
+ const routing=JSON.parse(readFileSync(join(repositoryRoot,"vercel.json"),"utf8"));
+ assert.deepEqual(routing.headers,[{source:"/account/:path*",headers:[
+  {key:"Cache-Control",value:"private, no-store, max-age=0"},
+  {key:"Referrer-Policy",value:"no-referrer"},
+  {key:"X-Robots-Tag",value:"noindex, nofollow"},
+  {key:"X-Content-Type-Options",value:"nosniff"}
+ ]}]);
+});
+
 test("INT24-PUBLIC: shared rules and stats are self-contained public dependencies",()=>{
  const publicFiles=planPublicFiles();
  const assets=["competition-model.js","competition-rules.js","competition-rules-view.js","competition-stats.js","competition-history.js","competition-page.js"];

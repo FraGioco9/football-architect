@@ -934,6 +934,16 @@
       row.querySelector(".app-world-club-name")?.textContent===(division.clubs[index].primaryName||division.clubs[index].abbr)&&
       row.querySelector("[data-club-crest]")?.dataset.clubCrest===expected[index]);
     if(!staticReady)tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
+    else preRendered.forEach((row,index)=>{
+      // Build-time names are plain text. Hydrate navigation even in Season 0,
+      // while preserving the verified rows, unknown statistics and crest hosts.
+      const club=division.clubs[index],name=row.querySelector(".app-world-club-name");
+      const link=name.tagName.toLowerCase()==="a"?name:document.createElement("a");
+      link.className="app-world-club-name app-world-standing-club-link";
+      link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});
+      link.textContent=club.primaryName||club.abbr;
+      if(link!==name)name.replaceWith(link);
+    });
     commitMobile();
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;

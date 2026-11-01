@@ -178,7 +178,7 @@ const writeOutput=(path,content)=>{
   content=content.replace('<head>\n','<head>\n'+routeTag);
  }
  if(path.endsWith(".html")&&!content.includes("/assets/sidebar-evolution.js"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
- if(path.endsWith('.html'))content=renderSidebar(content);
+ if(path.endsWith('.html'))content=normalizeRouteLinks(renderSidebar(content),path);
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");

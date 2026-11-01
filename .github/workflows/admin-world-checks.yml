@@ -5,6 +5,21 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - 'backend/**'
+      - 'account/**'
+      - 'assets/account-*'
+      - 'assets/account.css'
+      - 'assets/profile-navigation.js'
+      - 'assets/competition-tabs.js'
+      - 'tools/render-sidebar.mjs'
+      - 'assets/sidebar-first-paint.js'
+      - 'assets/theme.js'
+      - 'assets/landing.css'
+      - 'assets/clubs-directory.css'
+      - 'tests/control-focus-browser.mjs'
+      - 'tests/competition-season-zero-club-links-browser.mjs'
+      - 'tests/player-safe-return-browser.mjs'
+      - 'tests/account-*'
+      - 'tests/profile-*'
       - 'assets/admin-settings.*'
       - 'assets/authoritative-*'
       - 'assets/competition-page.js'
@@ -15,11 +30,15 @@ on:
       - 'calendar/index.html'
       - 'tools/render-admin-settings.mjs'
       - 'tools/dev-admin-api-proxy.mjs'
+      - 'tools/shared-nonproduction-proxy.mjs'
+      - 'tests/shared-nonproduction-proxy.test.mjs'
+      - 'tests/hosted-preview-origins.test.mjs'
       - 'tools/dev-standings-preview.mjs'
       - 'tools/generate-app-pages.mjs'
       - 'settings/index.html'
       - 'tests/admin-settings*'
       - 'tests/admin-world-lifecycle-browser.mjs'
+      - 'tests/admin-world-lifecycle-runner.mts'
       - 'tests/season-two-*'
       - 'tests/authoritative-*'
       - 'tests/backend-test-discovery.test.mjs'
@@ -36,7 +55,7 @@ permissions:
 jobs:
   password-policy:
     name: Admin foundation contracts (Node 22)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout exact pull request head
         uses: actions/checkout@v4
@@ -60,6 +79,7 @@ jobs:
           node --check assets/authoritative-history.mjs
           node --check tests/admin-settings-browser.mjs
           node --check tests/admin-world-lifecycle-browser.mjs
+          node --check tests/admin-world-lifecycle-runner.mts
           node --check tests/season-two-navigation-browser.mjs
       - name: Verify CI optimization safety contracts before dependency installation
         run: node --test tests/ci-opt-02-workflow-contract.test.mjs
@@ -73,12 +93,63 @@ jobs:
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
+      - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
+        if: ${{ github.event.pull_request.draft && !contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: npm --prefix backend run test:auth-local
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       # The complete backend test command below already includes the historical
       # archive/season suites. Avoid running those Vitest files twice.
       - name: Execute smoke tests in actual local Worker runtime
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend test
+      - name: Cache pinned Chromium and WebKit account browser binaries
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-webkit-1.58.2
+      - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium webkit
+      - name: Verify safe post-login return routes in Chromium
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
+      - name: Verify account style, language, app entry and registration in Chromium
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
+      - name: Verify account feedback and stable first visible paint
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-feedback-browser.mjs
+      - name: Verify account password assistance, inline errors and nationality selection
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-usability-browser.mjs
+      - name: Verify shared control focus and selectable text fields
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
+      - name: Verify signed-out and authenticated Profile sidebar entry
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
+      - name: Verify account pointer, keyboard and dropdown matrix in Chromium
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-interaction-browser.mjs
+      - name: Verify account spacing and viewport-aware dropdowns in Chromium
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-layout-browser.mjs
+      - name: Verify Season 0 club navigation in Chromium
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/competition-season-zero-club-links-browser.mjs
+      - name: Verify complete isolated account UI suite in WebKit
+        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+        env:
+          FA_AUTH_BROWSER: webkit
+          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+        run: |
+          for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction account-layout competition-season-zero-club-links; do
+            node "tests/$suite-browser.mjs"
+          done
       # Operator persistence runs in a separate independent final-gate job.
       - name: Cache pinned Chromium browser binaries for final gate
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
@@ -91,15 +162,15 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-admin-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-admin-browser/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Verify Settings and two-season lifecycle with real loopback Worker and D1
+      - name: Verify signed-out unified Settings and public-page isolation
         timeout-minutes: 20
         if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs
 
   operator-final:
-    name: Final local operator persistence and restart
+    name: Final local operator persistence, restart and browser lifecycle
     if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout exact pull request head
         uses: actions/checkout@v4
@@ -121,3 +192,15 @@ jobs:
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Verify operator bootstrap, recovery and local persistence across restart
         run: npm --prefix backend run test:operator
+      - name: Cache pinned lifecycle Chromium binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-1.58.2
+      - name: Install isolated lifecycle browser tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-lifecycle-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify unified Admin two-season lifecycle with real local Worker and D1
+        timeout-minutes: 10
+        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-lifecycle-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-world-lifecycle-runner.mts

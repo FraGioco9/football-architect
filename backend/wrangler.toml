@@ -8,8 +8,8 @@ ip = "127.0.0.1"
 port = 8787
 
 [vars]
-ADMIN_MODE = "local"
-ADMIN_ORIGIN = "http://app.localhost:2000"
+PLAYER_MODE = "local"
+PLAYER_ORIGIN = "http://app.localhost:2000"
 
 [[d1_databases]]
 binding = "DB"

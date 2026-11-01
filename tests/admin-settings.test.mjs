@@ -3,27 +3,45 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {renderAdminSettings} from '../tools/render-admin-settings.mjs';
 const require=createRequire(import.meta.url);
-const {createAdminController,canRunCommand}=require('../assets/admin-settings.js');
+const {createAdminController:rawCreateAdminController,canRunCommand}=require('../assets/admin-settings.js');
+// Legacy world-command fixtures use the new unified-permission endpoint.
+const createAdminController=(request,changed)=>rawCreateAdminController(
+ (path,options)=>path==='/api/player/permissions'
+  ?Promise.resolve({permissions:['admin.access','admin.world.read','admin.world.write']})
+  :request(path,options),changed);
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
 const session={actor:{id:'operator',email:'operator@example.invalid'},csrfToken:'a'.repeat(64)};
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
 const error=(status,code)=>Object.assign(Error(code),{status,code});
-test('Admin renderer preserves password-manager labels and public signed-out independence',()=>{
- const html=renderAdminSettings();assert.match(html,/autocomplete="username"/);assert.match(html,/autocomplete="current-password"/);
- assert.match(html,/<label[^>]*for="admin-email"/);assert.match(html,/<label[^>]*for="admin-password"/);
- assert.match(html,/aria-live="polite"/);assert.doesNotMatch(html,/signup|localStorage|sessionStorage/);
+test('Admin renderer delegates sign-in to unified account with no password form',()=>{
+ const html=renderAdminSettings();
+ assert.match(html,/data-admin-signin-link/);
+ assert.ok(html.includes('/account/login'));
+ assert.match(html,/data-admin-no-permission/);
+ assert.doesNotMatch(html,/data-admin-login|admin-password|autocomplete="current-password"/);
+ assert.doesNotMatch(html,/localStorage|sessionStorage/);
 });
-test('logout supersedes a pending login response and clears authority immediately',async()=>{
- const pending=deferred();const sent=[];
- const c=createAdminController(async(path,options)=>{sent.push(path);return path.endsWith('login')?pending.promise:{signedOut:true}},()=>{});
- const login=c.login('operator@example.invalid','synthetic-password-2026');await c.logout();pending.resolve(session);await login;
- assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.deepEqual(sent,['/api/admin/login','/api/admin/logout','/api/admin/logout']);
-});
-test('delayed world reads after logout cannot restore controls',async()=>{
- const pending=deferred();
- const c=createAdminController(async path=>path.endsWith('session')?session:path.endsWith('world')?pending.promise:{signedOut:true},()=>{});
- const read=c.refresh();await new Promise(r=>setImmediate(r));await c.logout();pending.resolve({world});await read;
- assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+test('late world read cannot restore authority after a revoked session',async()=>{
+ const pending=deferred(),started=deferred();let revoked=false,writes=0;
+ const c=rawCreateAdminController(async(path,options)=>{
+  if(options?.body){writes++;throw Error('unexpected mutation');}
+  if(revoked)throw error(401,'unauthorized');
+  if(path.endsWith('/session'))return session;
+  if(path==='/api/player/permissions')return {permissions:['admin.access','admin.world.read','admin.world.write']};
+  if(path.endsWith('/world')){started.resolve();return pending.promise;}
+  return {world,mode:'uninitialized',events:[]};
+ },()=>{});
+ const read=c.refresh();await started.promise;
+ revoked=true;await c.refresh();
+ pending.resolve({world});await read;
+ assert.equal(c.state().actor,null);
+ assert.equal(c.state().world,null);
+ assert.equal(c.state().events,null);
+ assert.deepEqual(c.state().permissions,[]);
+ assert.equal(c.state().message,'signedOut');
+ assert.equal(c.state().busy,false);
+ await c.prepare();await c.reset('RESET SEASON 0');await c.command('advance');
+ assert.equal(writes,0);
 });
 test('newer request wins and lower world revisions cannot overwrite observed state',async()=>{
  const pending=deferred();let reads=0;
@@ -57,23 +75,42 @@ test('prepare is single-flight, sends only concurrency metadata, preserves retry
  await c.prepare();assert.equal(mutations,2);
 });
 
-test('failed logout retains a retry action without restoring privileged controls',async()=>{
- let fail=false;const c=createAdminController(async path=>{if(fail)throw error(503,'admin_unavailable');return path.endsWith('session')?session:{world}},()=>{});
- await c.refresh();fail=true;await c.logout();assert.equal(c.state().actor,null);assert.equal(c.state().logoutNeeded,true);assert.equal(c.state().message,'logoutFailed');
+test('unified account without both Admin read grants never reads or mutates the world',async()=>{
+ for(const permissions of [[],['admin.access'],['admin.world.read']]){
+  const calls=[];
+  const c=rawCreateAdminController(async path=>{
+   calls.push(path);
+   if(path==='/api/admin/session')return session;
+   if(path==='/api/player/permissions')return {permissions};
+   throw Error('unexpected privileged request');
+  },()=>{});
+  await c.refresh();await c.prepare();await c.command('advance');
+  assert.equal(c.state().message,'forbidden');
+  assert.equal(c.state().actor,null);
+  assert.equal(c.state().world,null);
+  assert.deepEqual(c.state().permissions,[]);
+  assert.deepEqual(calls,['/api/admin/session','/api/player/permissions']);
+ }
 });
-test('a late login world response cannot hide retry after a failed logout',async()=>{
- const pending=deferred();
- const c=createAdminController(async path=>{
-  if(path.endsWith('login'))return session;
-  if(path.endsWith('world'))return pending.promise;
-  throw error(503,'admin_unavailable');
+test('permission lookup failure clears a previously authorized Admin snapshot',async()=>{
+ let denied=false,writes=0;
+ const c=rawCreateAdminController(async(path,options)=>{
+  if(options?.body){writes++;throw Error('unexpected mutation');}
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/player/permissions'){
+   if(denied)throw error(503,'permissions_unavailable');
+   return {permissions:['admin.access','admin.world.read','admin.world.write']};
+  }
+  if(path==='/api/admin/world')return {world};
+  return {world,mode:'uninitialized',events:[]};
  },()=>{});
- const signingIn=c.login('operator@example.invalid','synthetic-password-2026');await new Promise(r=>setImmediate(r));
- await c.logout();assert.equal(c.state().logoutNeeded,true);
- pending.resolve({world});await signingIn;
- assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().logoutNeeded,true);assert.equal(c.state().message,'logoutFailed');
+ await c.refresh();assert.equal(c.state().actor.id,'operator');assert.deepEqual(c.state().world,world);
+ denied=true;await c.refresh();
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ assert.equal(c.state().events,null);assert.deepEqual(c.state().permissions,[]);
+ assert.equal(c.state().message,'unavailable');
+ await c.prepare();assert.equal(writes,0);
 });
-
 test('reset UI requires typed confirmation, is single-flight and rotates world generation',async()=>{
  const active={...world,phase:'preparing',seasonNumber:1,revision:2},next={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
  const pending=deferred();let resets=0;
@@ -93,26 +130,22 @@ test('reset controls are rendered with explicit irreversible summary and confirm
  const html=renderAdminSettings();assert.match(html,/data-admin-reset-section/);assert.match(html,/data-admin-reset-confirm/);assert.match(html,/data-admin-reset/);assert.match(html,/Delete all seasons/);
 });
 
-test('operator status reports pending action, backend prerequisite and clears it after logout',async()=>{
- const prepared={...world,phase:'preparing',seasonNumber:1,revision:1};
+test('operator status reports backend prerequisite and clears authority on revoked refresh',async()=>{
  const pending=deferred();
- const c=createAdminController(async(path)=>{
+ let revoked=false;
+ const c=createAdminController(async path=>{
+  if(revoked)throw error(401,'unauthorized');
   if(path.endsWith('session'))return session;
   if(path.endsWith('world'))return {world};
   if(path.endsWith('prepare'))return pending.promise;
-  return {signedOut:true};
+  return {world,mode:'uninitialized',events:[]};
  },()=>{});
  await c.refresh();
- const operation=c.prepare();
- assert.equal(c.state().operation,'prepare');
- pending.resolve(Promise.reject(error(422,'catalogue_not_approved')));
- await operation;
+ const operation=c.prepare();assert.equal(c.state().operation,'prepare');
+ pending.resolve(Promise.reject(error(422,'catalogue_not_approved')));await operation;
  assert.equal(c.state().operation,'blocked');
- assert.equal(c.state().errorCode,'catalogue_not_approved');
- await c.logout();
- assert.equal(c.state().actor,null);
- assert.equal(c.state().operation,'idle');
- assert.equal(c.state().errorCode,null);
+ revoked=true;await c.refresh();
+ assert.equal(c.state().actor,null);assert.equal(c.state().operation,'idle');
 });
 test('settings markup includes accessible authoritative operation and backend error fields',()=>{
  const html=renderAdminSettings();
@@ -310,4 +343,41 @@ test('sporting closure readiness survives the authenticated calendar projection'
  assert.deepEqual(c.state().events.closure,closure);
  assert.equal(canRunCommand('archive',closedDay,c.state().events),true);
  assert.equal(canRunCommand('close',closedDay,c.state().events),false);
+});
+
+test('successful preparation hydrates event authority so initialization is enabled without manual refresh',async()=>{
+ let current=world;
+ const c=createAdminController(async(path,options)=>{
+  if(path.endsWith('/session'))return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path.endsWith('/events'))return {world:current,mode:current.seasonNumber===0?'uninitialized':'legacy',events:[],calendarReady:false};
+  assert.equal(path,'/api/admin/seasons/prepare');
+  assert.deepEqual(options.body,{expectedGeneration:world.generation,expectedRevision:0});
+  current={...world,revision:1,seasonNumber:1,phase:'preparing'};
+  return {world:current};
+ },()=>{});
+ await c.refresh();await c.prepare();
+ assert.deepEqual(c.state().world,current);
+ assert.equal(canRunCommand('initialize',c.state().world,c.state().events),true);
+ assert.equal(c.state().message,'prepared');
+});
+
+test('revocation while prepared events load cannot restore authority or prepared success',async()=>{
+ const pending=deferred(),started=deferred();let current=world,revoked=false;
+ const c=createAdminController(async(path)=>{
+  if(revoked)throw error(401,'unauthorized');
+  if(path.endsWith('/session'))return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path.endsWith('/events')){
+   if(current.seasonNumber===1){started.resolve();return pending.promise;}
+   return {world:current,mode:'uninitialized',events:[]};
+  }
+  assert.equal(path,'/api/admin/seasons/prepare');
+  current={...world,revision:1,seasonNumber:1,phase:'preparing'};return {world:current};
+ },()=>{});
+ await c.refresh();const preparing=c.prepare();await started.promise;
+ revoked=true;await c.refresh();
+ pending.resolve({world:current,mode:'legacy',events:[],calendarReady:false});await preparing;
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().events,null);
+ assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'signedOut');
 });

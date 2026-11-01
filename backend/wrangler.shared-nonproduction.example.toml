@@ -1,0 +1,19 @@
+# EXAMPLE ONLY — requires separately authorized resource selection/activation.
+# Do not deploy with placeholders. Active wrangler.toml remains local-only.
+name = "REPLACE-shared-nonproduction-worker"
+main = "src/index.ts"
+compatibility_date = "2026-10-26"
+
+[vars]
+PLAYER_MODE = "preview"
+PLAYER_ORIGIN = "https://REPLACE-shared-preview-app.invalid"
+PLAYER_TRUSTED_SOURCE = "cloudflare"
+# No email binding, sender, delivery opt-in or Production secrets.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "REPLACE-existing-approved-nonproduction-database"
+database_id = "REPLACE-with-approved-nonproduction-database-id"
+migrations_dir = "migrations"
+# The existing database must contain immutable pool metadata 'dev-preview'.
+# Migration alone does not stamp the pool, create an account or grant Admin.

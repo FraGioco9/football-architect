@@ -1,3 +1,4 @@
+import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
@@ -8,17 +9,14 @@ import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {csrfFor,hashText,type AdminSession} from '../src/auth.ts';
-import {digestOpaqueToken} from '../src/session-tokens.ts';
+import {type AdminSession} from '../src/auth.ts';
+
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='e'.repeat(64);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
- const csrf=await csrfFor(token);
- session={actor:{id:'initialize-operator',email:'initialize@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await hashText(csrf)};
- await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic',now-100).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
+ session=(await seedUnifiedOperator(db,'initialize-operator','initialize@example.invalid',now,token)).session;
  world=await readWorld(db);
  world=(await prepareSeason(db,session,{expectedGeneration:world.generation,expectedRevision:world.revision},'initialize-prepare-synthetic-0001',await loadApprovedSnapshot(),now)).world;
 });
@@ -41,7 +39,7 @@ it('purges all season state and retains admin access plus historical operation l
  for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_archives'])
   expect((await db.prepare('SELECT count(*) n FROM '+table).first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first()).n).toBe(1);
- expect((await db.prepare('SELECT count(*) n FROM admin_sessions').first()).n).toBe(1);
+ expect((await db.prepare('SELECT count(*) n FROM player_sessions').first()).n).toBe(1);
  expect((await db.prepare('SELECT count(*) n FROM admin_operations').first()).n).toBe(originalAudit+1);
  await expect(initializeAdministrativeEvents(db,session,{expectedGeneration:previousGeneration,expectedRevision:world.revision},'stale-event-command-00001',now)).rejects.toMatchObject({status:409});
  const prepared=await prepareSeason(db,session,{expectedGeneration:outcome.world.generation,expectedRevision:0},'new-generation-prepare-00001',await loadApprovedSnapshot(),now);

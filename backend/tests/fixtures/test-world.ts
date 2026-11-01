@@ -1,9 +1,12 @@
 // Disposable test-D1 reset only. Keep immutable production triggers enabled.
 import type {Database} from '../../src/database.ts';
-const tables=['admin_accounts','admin_sessions','auth_throttles','seasons','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_domestic_stages','season_admin_events','season_archives','season_archive_summaries','season_two_approvals','admin_operations'] as const;
+const tables=['player_accounts','account_permissions','player_sessions','admin_accounts','admin_sessions','auth_throttles','seasons','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_domestic_stages','season_admin_events','season_archives','season_archive_summaries','season_two_approvals','admin_operations'] as const;
 export async function clearTestWorld(db:Database){
  await db.batch([
   db.prepare("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted' WHERE id=1").bind(crypto.randomUUID()),
+  // The unified Player-to-legacy-operator bridge references admin_accounts.
+  // Clear links before deleting their historical operator rows in disposable test D1.
+  db.prepare('DELETE FROM player_admin_operator_links'),
   ...[...tables].reverse().map(table=>db.prepare('DELETE FROM '+table)),
  ]);
 }

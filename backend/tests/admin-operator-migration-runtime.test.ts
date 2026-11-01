@@ -1,0 +1,429 @@
+import type {Database} from '../src/database.ts';
+import {beforeAll,beforeEach,describe,expect,it} from 'vitest';
+import {env} from 'cloudflare:workers';
+import {applyD1Migrations} from 'cloudflare:test';
+import {linkExistingAdminOperator,revokeMigratedAdminOperator,adminOperatorMigrationInventory,adminOperatorMigrationReadiness,preflightAdminOperatorMigration,preflightAdminOperatorsBatch,migrateAdminOperatorsBatch,revokeMigratedAdminOperatorsBatch} from '../src/admin-operator-migration.ts';
+import {hashPassword} from '../src/passwords.ts';
+import {playerLogin} from '../src/player-auth.ts';
+const binding=env as any,db=binding.DB as Database;
+const email='migration-operator@example.invalid',password='migration-fixture-password-2026';
+let verifier:string;
+const now=()=>Math.floor(Date.now()/1000);
+beforeAll(async()=>{await applyD1Migrations(db,binding.TEST_MIGRATIONS);verifier=await hashPassword(password)});
+beforeEach(async()=>{
+ await db.batch([
+  db.prepare('DELETE FROM player_admin_operator_links WHERE player_account_id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM account_permissions WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM player_sessions WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM player_one_time_tokens WHERE account_id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM admin_sessions WHERE account_id IN (?,?)').bind('migration-legacy','migration-second-legacy'),
+  db.prepare('DELETE FROM player_auth_throttles'),
+  db.prepare('DELETE FROM player_accounts WHERE id IN (?,?)').bind('migration-player','migration-second'),
+  db.prepare('DELETE FROM admin_accounts WHERE id IN (?,?)').bind('migration-legacy','migration-second-legacy')
+ ]);
+ await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+  .bind('migration-legacy',email,'historical-verifier-do-not-use',now()).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)')
+  .bind('migration-player',email,verifier,1,now()-100,'active',now()-100,now()-100).run();
+});
+describe('Trusted operator migration and rollback on disposable D1',()=>{
+ it('migrates two explicitly mapped operators atomically and rejects a partial second mapping',async()=>{
+  const insert=async()=>{
+   await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+    .bind('migration-second-legacy','second-migration@example.invalid','historical-only',now()).run();
+   await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+    .bind('migration-second','second-migration@example.invalid',verifier,1,now()-100,'active',now()-100,now()-100).run();
+  };
+  await insert();
+  const mappings=[{playerAccountId:'migration-player',legacyAdminId:'migration-legacy'},
+   {playerAccountId:'migration-second',legacyAdminId:'migration-second-legacy'}];
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('mismatch@example.invalid','migration-second').run();
+  await expect(migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now())).rejects.toBeDefined();
+  const none=await db.prepare('SELECT COUNT(*) AS n FROM player_admin_operator_links WHERE player_account_id IN (?,?)')
+   .bind('migration-player','migration-second').first<{n:number}>();
+  expect(none?.n).toBe(0);
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('second-migration@example.invalid','migration-second').run();
+  expect(await migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now()))
+   .toEqual({linked:2,permissionsGranted:6});
+  const grants=await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id IN (?,?)')
+   .bind('migration-player','migration-second').first<{n:number}>();
+  expect(grants?.n).toBe(6);
+  await expect(migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now())).rejects.toBeDefined();
+ });
+ it('rejects duplicate operator and Player identities before any migration writes',async()=>{
+  await expect(migrateAdminOperatorsBatch(db,[
+   {playerAccountId:'migration-player',legacyAdminId:'migration-legacy'},
+   {playerAccountId:'migration-player',legacyAdminId:'migration-second-legacy'}
+  ],'trusted-local-operator',now())).rejects.toMatchObject({status:422});
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?')
+   .bind('migration-player').first()).toBeNull();
+ });
+ it('rolls back a migrated group atomically, preserving historic operators',async()=>{
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+   .bind('migration-second-legacy','second-migration@example.invalid','historical-only',now()).run();
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)')
+   .bind('migration-second','second-migration@example.invalid',verifier,1,now()-100,'active',now()-100,now()-100).run();
+  const ids=['migration-player','migration-second'];
+  await migrateAdminOperatorsBatch(db,[
+   {playerAccountId:ids[0],legacyAdminId:'migration-legacy'},
+   {playerAccountId:ids[1],legacyAdminId:'migration-second-legacy'}
+  ],'trusted-local-operator',now());
+  await playerLogin(db,{email,password},'local-loopback',now());
+  await expect(revokeMigratedAdminOperatorsBatch(db,['migration-player','missing-player'],now())).rejects.toBeDefined();
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_admin_operator_links WHERE player_account_id IN (?,?)')
+   .bind(...ids).first<{n:number}>())?.n).toBe(2);
+  const result=await revokeMigratedAdminOperatorsBatch(db,ids,now());
+  expect(result).toEqual({revoked:2,sessionsRevoked:1});
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id IN (?,?)')
+   .bind(...ids).first<{n:number}>())?.n).toBe(0);
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_admin_operator_links WHERE player_account_id IN (?,?)')
+   .bind(...ids).first<{n:number}>())?.n).toBe(0);
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM admin_accounts WHERE id IN (?,?)')
+   .bind('migration-legacy','migration-second-legacy').first<{n:number}>())?.n).toBe(2);
+ });
+ it('requires a complete explicit enabled-operator roster before cutover, with no D1 writes',async()=>{
+  const mapping={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
+  const good=await preflightAdminOperatorsBatch(db,[mapping]);
+  expect(good).toEqual({ready:true,totalEnabled:1,approved:1,blockers:[]});
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+   .bind('migration-second-legacy','second@example.invalid','historical-only',now()).run();
+  const partial=await preflightAdminOperatorsBatch(db,[mapping]);
+  expect(partial.ready).toBe(false);
+  expect(partial.blockers).toContainEqual({legacyAdminId:'migration-second-legacy',reason:'unmapped_operator'});
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first()).toBeNull();
+  await expect(preflightAdminOperatorsBatch(db,[mapping,mapping])).rejects.toMatchObject({status:422});
+ });
+ it('refuses a partial bulk cutover even without a separate preflight',async()=>{
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)')
+   .bind('migration-second-legacy','unmapped@example.invalid','historical-only',now()).run();
+  await expect(migrateAdminOperatorsBatch(db,[
+   {playerAccountId:'migration-player',legacyAdminId:'migration-legacy'}
+  ],'trusted-local-operator',now())).rejects.toBeDefined();
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?')
+   .bind('migration-player').first()).toBeNull();
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM account_permissions WHERE account_id=?')
+   .bind('migration-player').first<{n:number}>())?.n).toBe(0);
+ });
+ it('revokes historic Admin sessions in the same operation as unified cutover',async()=>{
+  await db.prepare(`INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at)
+   VALUES(?,?,?,?,?,?,?)`).bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?')
+   .bind('migration-legacy').first()).toBeNull();
+ });
+ it('invalidates outstanding one-time credentials during single-operator elevation',async()=>{
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,expires_at,issued_at) VALUES(?,?,?,?,?)')
+   .bind('f'.repeat(64),'migration-player','reset_password',now()+600,now()).run();
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const pending=await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?')
+   .bind('migration-player').first();
+  expect(pending).toBeNull();
+ });
+ it('invalidates every pre-cutover Player session when elevating an Admin identity',async()=>{
+  const first=await playerLogin(db,{email,password},'local-loopback',now());
+  expect(first.token).toBeTruthy();
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_sessions WHERE account_id=?')
+   .bind('migration-player').first<{n:number}>())?.n).toBe(1);
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect((await db.prepare('SELECT COUNT(*) AS n FROM player_sessions WHERE account_id=?')
+   .bind('migration-player').first<{n:number}>())?.n).toBe(0);
+  const next=await playerLogin(db,{email,password},'local-loopback',now());
+  expect(next.token).not.toBe(first.token);
+ });
+ it('revokes post-migration reset links during emergency Admin rollback',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind('d'.repeat(64),'migration-player','reset_password',now(),now()+600).run();
+  const result=await revokeMigratedAdminOperator(db,'migration-player',now());
+  expect(result.revoked).toBe(true);
+  expect(await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?')
+   .bind('migration-player').first()).toBeNull();
+ });
+ it('revokes all other recovery links and old Admin sessions after a password reset',async()=>{
+  const {completePasswordReset}=await import('../src/player-password-reset.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  const token='a'.repeat(64);
+  const digest=await digestOpaqueToken(token);
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind(digest,'migration-player','reset_password',now(),now()+600).run();
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind('c'.repeat(64),'migration-player','reset_password',now(),now()+600).run();
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  expect(await completePasswordReset(db,{token,newPassword:'a-new-valid-password-2026'},now()))
+   .toEqual({reset:true,sessionsRevoked:true});
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?')
+   .bind('migration-legacy').first()).toBeNull();
+  const remaining=await db.prepare('SELECT token_digest,consumed_at FROM player_one_time_tokens WHERE account_id=?')
+   .bind('migration-player').all<{token_digest:string;consumed_at:number|null}>();
+  expect(remaining.results).toHaveLength(1);
+  expect(remaining.results[0].token_digest).toBe(digest);
+  expect(remaining.results[0].consumed_at).not.toBeNull();
+ });
+ it('invalidates historical Admin sessions and all pending tokens after password change',async()=>{
+  const {changePlayerPassword}=await import('../src/player-account-management.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  const digest=await digestOpaqueToken(signed.token),csrfDigest=await digestOpaqueToken(signed.csrfToken);
+  await db.prepare('INSERT INTO player_one_time_tokens(token_digest,account_id,purpose,issued_at,expires_at) VALUES(?,?,?,?,?)')
+   .bind('e'.repeat(64),'migration-player','reset_password',now(),now()+600).run();
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const result=await changePlayerPassword(db,{actor:signed.actor,digest,csrfDigest},
+   {currentPassword:password,newPassword:'changed-valid-password-2026'},now());
+  expect(result.sessionsRevoked).toBe(true);
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?').bind('migration-legacy').first()).toBeNull();
+  expect(await db.prepare('SELECT 1 FROM player_sessions WHERE account_id=?').bind('migration-player').first()).toBeNull();
+  expect(await db.prepare('SELECT 1 FROM player_one_time_tokens WHERE account_id=?').bind('migration-player').first()).toBeNull();
+ });
+ it('revokes historical and other Player sessions without revoking the current Player session',async()=>{
+  const {revokeOtherSessions}=await import('../src/player-account-management.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const first=await playerLogin(db,{email,password},'local-loopback',now());
+  const second=await playerLogin(db,{email,password},'local-loopback',now());
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const digest=await digestOpaqueToken(first.token),csrfDigest=await digestOpaqueToken(first.csrfToken);
+  expect(await revokeOtherSessions(db,{actor:first.actor,digest,csrfDigest},now()))
+   .toEqual({otherSessionsRevoked:2});
+  expect(await db.prepare('SELECT 1 FROM player_sessions WHERE token_digest=?').bind(digest).first()).not.toBeNull();
+  expect(await db.prepare('SELECT 1 FROM player_sessions WHERE token_digest=?').bind(await digestOpaqueToken(second.token)).first()).toBeNull();
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?').bind('migration-legacy').first()).toBeNull();
+ });
+ it('never exposes orphan or identity-drift Admin permissions to account reads or authorization',async()=>{
+  const {readAccountPermissions,requireAccountPermission}=await import('../src/account-permissions.ts');
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('migration-player','admin.access',now()).run();
+  expect(await readAccountPermissions(db,'migration-player')).toEqual([]);
+  await expect(requireAccountPermission(db,'migration-player','admin.access'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-player').run();
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect(await readAccountPermissions(db,'migration-player')).toEqual(['admin.access','admin.world.read','admin.world.write']);
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  expect(await readAccountPermissions(db,'migration-player')).toEqual([]);
+  await expect(requireAccountPermission(db,'migration-player','admin.world.write'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+ });
+ it('uses the same verified Admin link for both read and write shared authorization',async()=>{
+  const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403});
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const fresh=await playerLogin(db,{email,password},'local-loopback',now());
+  const authorized=await authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.read');
+  expect(authorized.legacyOperatorId).toBe('migration-legacy');
+  await expect(authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.write','invalid-csrf'))
+   .rejects.toMatchObject({status:403});
+  const writable=await authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.write',fresh.csrfToken);
+  expect(writable.legacyOperatorId).toBe('migration-legacy');
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  await expect(authorizeUnifiedAdmin(db,fresh.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403});
+ });
+ it('requires both Admin access and the requested capability in one authorization snapshot',async()=>{
+  const {authorizeUnifiedAdmin}=await import('../src/unified-admin-authorization.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'")
+   .bind('migration-player').run();
+  expect((await authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read')).legacyOperatorId)
+   .toBe('migration-legacy');
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.write',signed.csrfToken))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.access'")
+   .bind('migration-player').run();
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+  await db.prepare("INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)")
+   .bind('migration-player','admin.access',now(),'trusted-local-operator').run();
+  await db.prepare('UPDATE admin_accounts SET email_normalized=? WHERE id=?')
+   .bind('changed-identity@example.invalid','migration-legacy').run();
+  await expect(authorizeUnifiedAdmin(db,signed.token,now(),'admin.world.read'))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+ });
+ it('reports cutover not ready while any historic Admin session remains',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const clean=await adminOperatorMigrationReadiness(db);
+  expect(clean.legacySessionsRemaining).toBe(0);
+  expect(clean.ready).toBe(true);
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const unsafe=await adminOperatorMigrationReadiness(db);
+  expect(unsafe.legacySessionsRemaining).toBe(1);
+  expect(unsafe.ready).toBe(false);
+ });
+ it('retires historical sessions of disabled operators during complete roster migration',async()=>{
+  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at,enabled) VALUES(?,?,?,?,?)')
+   .bind('migration-disabled-legacy','disabled@example.invalid','historical-only',now(),0).run();
+  await db.prepare('INSERT INTO admin_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+   .bind('a'.repeat(64),'migration-disabled-legacy',1,'b'.repeat(64),now(),now(),now()+600).run();
+  const mappings=[{playerAccountId:'migration-player',legacyAdminId:'migration-legacy'}];
+  expect(await migrateAdminOperatorsBatch(db,mappings,'trusted-local-operator',now()))
+   .toEqual({linked:1,permissionsGranted:3});
+  expect((await adminOperatorMigrationReadiness(db)).ready).toBe(true);
+  expect(await db.prepare('SELECT 1 FROM admin_sessions WHERE account_id=?')
+   .bind('migration-disabled-legacy').first()).toBeNull();
+  await db.prepare('DELETE FROM admin_accounts WHERE id=?').bind('migration-disabled-legacy').run();
+ });
+ it('rejects full-roster cutover if postcondition finds orphan Admin privileges',async()=>{
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,status,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+   .bind('migration-orphan','orphan@example.invalid',verifier,'active',now(),now()).run();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,?)')
+   .bind('migration-orphan','admin.access',now(),'fixture').run();
+  await expect(migrateAdminOperatorsBatch(db,[{playerAccountId:'migration-player',legacyAdminId:'migration-legacy'}],
+   'trusted-local-operator',now())).rejects.toBeDefined();
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?')
+   .bind('migration-player').first()).toBeNull();
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-orphan').run();
+  await db.prepare('DELETE FROM player_accounts WHERE id=?').bind('migration-orphan').run();
+ });
+ it('verifies zero privileged remnants after emergency single-operator rollback',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await playerLogin(db,{email,password},'local-loopback',now());
+  expect((await revokeMigratedAdminOperator(db,'migration-player',now())).revoked).toBe(true);
+  const checks=await db.batch([
+   db.prepare("SELECT COUNT(*) AS n FROM account_permissions WHERE account_id=? AND permission IN ('admin.access','admin.world.read','admin.world.write')").bind('migration-player'),
+   db.prepare('SELECT COUNT(*) AS n FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player'),
+   db.prepare('SELECT COUNT(*) AS n FROM player_sessions WHERE account_id=?').bind('migration-player'),
+   db.prepare('SELECT COUNT(*) AS n FROM player_one_time_tokens WHERE account_id=?').bind('migration-player')
+  ]);
+  expect(checks.every(x=>(x.results[0] as {n:number}).n===0)).toBe(true);
+ });
+ it('preflights an explicit operator mapping without creating grants or links',async()=>{
+  const plan={playerAccountId:'migration-player',legacyAdminId:'migration-legacy'};
+  expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:true,reason:'eligible'});
+  expect(await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind(plan.playerAccountId).first()).toBeNull();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind(plan.playerAccountId,'admin.access',now()).run();
+  expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:false,reason:'existing_grants'});
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind(plan.playerAccountId).run();
+  await linkExistingAdminOperator(db,{...plan,approvedBy:'trusted-local-operator'},now());
+  expect(await preflightAdminOperatorMigration(db,plan)).toEqual({eligible:false,reason:'already_linked'});
+ });
+ it('blocks cutover on a disabled operator still linked to Player privileges',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  const blocked=await adminOperatorMigrationReadiness(db);
+  expect(blocked.ready).toBe(false);
+  expect(blocked.blocked.find(row=>row.legacyAdminId==='migration-legacy')?.status).toBe('disabled_linked');
+  await revokeMigratedAdminOperator(db,'migration-player',now());
+  const clean=await adminOperatorMigrationReadiness(db);
+  expect(clean.blocked.find(row=>row.legacyAdminId==='migration-legacy')).toBeUndefined();
+  expect(clean.disabled).toBeGreaterThanOrEqual(1);
+ });
+ it('reports an unlinked enabled operator as rollout-blocking and a linked operator as ready',async()=>{
+  const initial=await adminOperatorMigrationReadiness(db);
+  const legacy=initial.blocked.find(x=>x.legacyAdminId==='migration-legacy');
+  expect(legacy?.status).toBe('unlinked');
+  expect(initial.ready).toBe(false);
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const final=await adminOperatorMigrationReadiness(db);
+  expect(final.blocked.some(x=>x.legacyAdminId==='migration-legacy')).toBe(false);
+  expect(final.linked).toBeGreaterThanOrEqual(1);
+  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind('migration-player').run();
+  const partial=await adminOperatorMigrationReadiness(db);
+  expect(partial.ready).toBe(false);
+  expect(partial.blocked.find(x=>x.legacyAdminId==='migration-legacy')?.status).toBe('missing_permissions');
+  await db.prepare("INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)")
+   .bind('migration-player','admin.world.write',now()).run();
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('changed-email@example.invalid','migration-player').run();
+  const mismatch=await adminOperatorMigrationReadiness(db);
+  expect(mismatch.ready).toBe(false);
+  expect(mismatch.blocked.find(x=>x.legacyAdminId==='migration-legacy')?.status).toBe('invalid_player');
+ });
+ it('blocks the migration gate when an unlinked Player owns orphan Admin grants',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)')
+   .bind('migration-second','orphan@example.invalid',verifier,1,now()-100,'active',now()-100,now()-100).run();
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('migration-second','admin.world.read',now()).run();
+  const unsafe=await adminOperatorMigrationReadiness(db);
+  expect(unsafe.ready).toBe(false);
+  expect(unsafe.orphanGrants).toContain('migration-second');
+  await db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind('migration-second').run();
+  const safe=await adminOperatorMigrationReadiness(db);
+  expect(safe.ready).toBe(true);
+  expect(safe.orphanGrants).toEqual([]);
+ });
+ it('rejects preexisting partial Admin grants before linking and preserves the original grant',async()=>{
+  await db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)')
+   .bind('migration-player','admin.access',now()).run();
+  await expect(linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now())).rejects.toBeDefined();
+  const rows=await db.prepare('SELECT permission FROM account_permissions WHERE account_id=?').bind('migration-player').all<{permission:string}>();
+  expect(rows.results.map(x=>x.permission)).toEqual(['admin.access']);
+  const link=await db.prepare('SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first();
+  expect(link).toBeNull();
+ });
+ it('grants all permissions and links the exact identity in one batch, without legacy login',async()=>{
+  const linked=await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  expect(linked).toEqual({linked:true,permissions:3});
+  const perms=await db.prepare('SELECT permission FROM account_permissions WHERE account_id=? ORDER BY permission').bind('migration-player').all<{permission:string}>();
+  expect(perms.results.map(p=>p.permission)).toEqual(['admin.access','admin.world.read','admin.world.write']);
+  const inventory=await adminOperatorMigrationInventory(db);
+  expect(inventory.find(x=>x.legacyAdminId==='migration-legacy')?.playerAccountId).toBe('migration-player');
+  await expect(linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now())).rejects.toBeDefined();
+  expect((await db.prepare('SELECT COUNT(*) n FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(1);
+ });
+ it('fails closed on unverified identities or mismatched emails without partial grants',async()=>{
+  await db.prepare('UPDATE player_accounts SET email_verified_at=NULL,status=? WHERE id=?').bind('pending','migration-player').run();
+  await expect(linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now())).rejects.toBeDefined();
+  await db.prepare('UPDATE player_accounts SET email_verified_at=?,status=? WHERE id=?').bind(now(),'active','migration-player').run();
+  await db.prepare('UPDATE admin_accounts SET email_normalized=? WHERE id=?').bind('someone-else@example.invalid','migration-legacy').run();
+  await expect(linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now())).rejects.toBeDefined();
+  expect((await db.prepare('SELECT COUNT(*) n FROM account_permissions WHERE account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(0);
+  expect((await db.prepare('SELECT COUNT(*) n FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(0);
+ });
+ it('revokes linked Admin authority immediately if the Player email diverges',async()=>{
+  const {linkedAuditOperator,unifiedAdminMutationGuard}=await import('../src/unified-admin-transaction.ts');
+  const {digestOpaqueToken}=await import('../src/session-tokens.ts');
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  const digest=await digestOpaqueToken(signed.token),csrfDigest=await digestOpaqueToken(signed.csrfToken);
+  expect(await linkedAuditOperator(db,'migration-player')).toBe('migration-legacy');
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('new-identity@example.invalid','migration-player').run();
+  expect(await linkedAuditOperator(db,'migration-player')).toBeNull();
+  await expect(db.batch([unifiedAdminMutationGuard(db,'migration-player','migration-legacy',digest,csrfDigest,now())])).rejects.toBeDefined();
+  const {replay}=await import('../src/command-guards.ts');
+  const state=await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>();
+  expect(state).not.toBeNull();
+  await expect(replay(db,{actor:{id:'migration-legacy',email},digest,credentialVersion:1,
+   csrfDigest,unified:{playerId:'migration-player',sessionDigest:digest,csrfDigest}},
+   {expectedGeneration:state!.generation} as any,'identity-drift-replay','request-hash',now()))
+   .rejects.toMatchObject({status:403,code:'permission_denied'});
+ });
+ it('keeps emergency rollback possible after identity drift and operator disablement',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  await db.prepare('UPDATE player_accounts SET email_normalized=? WHERE id=?')
+   .bind('altered@example.invalid','migration-player').run();
+  await db.prepare('UPDATE admin_accounts SET enabled=0 WHERE id=?').bind('migration-legacy').run();
+  const revoked=await revokeMigratedAdminOperator(db,'migration-player',now());
+  expect(revoked.revoked).toBe(true);
+  expect(revoked.sessionsRevoked).toBe(1);
+  const active=await db.prepare('SELECT token_digest FROM player_sessions WHERE account_id=?').bind('migration-player').first();
+  expect(active).toBeNull();
+  const grants=await db.prepare('SELECT permission FROM account_permissions WHERE account_id=?').bind('migration-player').all();
+  expect(grants.results).toHaveLength(0);
+  const historic=await db.prepare('SELECT id FROM admin_accounts WHERE id=?').bind('migration-legacy').first();
+  expect(historic).not.toBeNull();
+ });
+ it('rolls back permissions and unified sessions while preserving historical admin identity',async()=>{
+  await linkExistingAdminOperator(db,{playerAccountId:'migration-player',legacyAdminId:'migration-legacy',approvedBy:'trusted-local-operator'},now());
+  const signed=await playerLogin(db,{email,password},'local-loopback',now());
+  expect(signed.actor.id).toBe('migration-player');
+  const revoked=await revokeMigratedAdminOperator(db,'migration-player',now());
+  expect(revoked.revoked).toBe(true);expect(revoked.sessionsRevoked).toBe(1);
+  expect((await db.prepare('SELECT COUNT(*) n FROM player_admin_operator_links WHERE player_account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(0);
+  expect((await db.prepare('SELECT COUNT(*) n FROM account_permissions WHERE account_id=?').bind('migration-player').first<{n:number}>())!.n).toBe(0);
+  expect((await db.prepare('SELECT COUNT(*) n FROM admin_accounts WHERE id=?').bind('migration-legacy').first<{n:number}>())!.n).toBe(1);
+ });
+});

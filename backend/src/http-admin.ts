@@ -1,7 +1,10 @@
+import {resolveAccountConfiguration} from './environment-pool.ts';
 import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {adminCookiePolicy,requireMutationOrigin} from './origin-policy.ts';
-import {authenticate,csrfFor,login,requireCsrf} from './auth.ts';
+import {requireMutationOrigin} from './origin-policy.ts';
+import type {AdminSession} from './auth.ts';
+import {playerCsrfFor} from './player-auth.ts';
+import {authorizeUnifiedAdmin} from './unified-admin-authorization.ts';
 import {readWorld} from './world-repository.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
@@ -23,8 +26,8 @@ import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
-export interface AdminEnv {DB?:unknown;ADMIN_MODE?:string;ADMIN_ORIGIN?:string;ADMIN_TRUSTED_SOURCE?:string}
-const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
+export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
+const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow','Vary':'Cookie'};
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
 const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
 function readCookie(request:Request,name:string){
@@ -42,45 +45,30 @@ async function input(request:Request){
  const data=new Uint8Array(total);let offset=0;for(const chunk of chunks){data.set(chunk,offset);offset+=chunk.length}
  try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(data)) as unknown}catch{throw new ApiError(400,'invalid_json')}
 }
-function configuration(request:Request,env:AdminEnv){
- const origin=env.ADMIN_ORIGIN??'',mode=env.ADMIN_MODE??'';
- requireMutationOrigin(origin,origin);
- const policy=adminCookiePolicy(mode,origin);
- const url=new URL(request.url);
- let source:string;
- if(mode==='local'){
-  if(url.protocol!=='http:'||!['localhost','127.0.0.1','[::1]','app.localhost'].includes(url.hostname))throw new ApiError(503,'admin_unavailable');
-  source='local-loopback'; // Do not trust caller-supplied forwarded client addresses.
- }else{
-  if(mode!=='production'||env.ADMIN_TRUSTED_SOURCE!=='cloudflare'||url.origin!==origin||url.protocol!=='https:')throw new ApiError(503,'admin_unavailable');
-  const ip=request.headers.get('CF-Connecting-IP');if(!ip||ip.length>45||!/^[0-9a-fA-F:.]+$/.test(ip))throw new ApiError(503,'admin_unavailable');
-  source=ip;
- }
- return {origin,policy,source,name:policy.split(';')[0]};
-}
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
  if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
  try{
-  const config=configuration(request,env),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
+  const config=await resolveAccountConfiguration(request,env,'admin_unavailable'),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
   if(request.method==='POST'||request.headers.has('Origin'))requireMutationOrigin(request.headers.get('Origin'),config.origin);
-  const token=readCookie(request,config.name);
-  const setCookie=(value:string,expires=false)=>config.policy.replace(config.name,config.name+'='+value)+(expires?'; Max-Age=0':'; Max-Age=28800');
-  if(path==='/api/admin/login'){
-   const result=await login(db,await input(request),config.source,now,token);
-   return json(200,{actor:result.actor,csrfToken:result.csrfToken,expiresAt:result.expiresAt},{'Set-Cookie':setCookie(result.token)});
-  }
-  if(path==='/api/admin/logout'){
-   await input(request);
-   try{
-    const session=await authenticate(db,token,now);await requireCsrf(session,request.headers.get('X-CSRF-Token'));
-    await db.prepare('DELETE FROM admin_sessions WHERE token_digest=?').bind(session.digest).run();
-   }catch(error){if(!(error instanceof ApiError&&error.status===401))throw error}
-   return json(200,{signedOut:true},{'Set-Cookie':setCookie('',true)});
-  }
-  const session=await authenticate(db,token,now);
-  if(path==='/api/admin/session')return json(200,{actor:session.actor,csrfToken:await csrfFor(token)});
+  // One shared player identity. The legacy login and logout paths no longer
+  // mint or revoke separate admin credentials.
+  if(path==='/api/admin/login'||path==='/api/admin/logout')
+   return json(410,{error:{code:'legacy_admin_login_retired'}});
+  const playerCookie=config.cookie;
+  const playerToken=readCookie(request,playerCookie);
+  const isWrite=request.method!=='GET';
+  const player=await authorizeUnifiedAdmin(db,playerToken,now,
+   isWrite?'admin.world.write':'admin.world.read',
+   isWrite?request.headers.get('X-CSRF-Token'):null);
+  const legacyId=player.legacyOperatorId;
+  const legacy=await db.prepare('SELECT email_normalized AS email,credential_version FROM admin_accounts WHERE id=? AND enabled=1').bind(legacyId).first<{email:string;credential_version:number}>();
+  if(!legacy)throw new ApiError(403,'permission_denied');
+  const session:AdminSession={actor:{id:legacyId,email:player.actor.email},digest:player.digest,
+   credentialVersion:legacy.credential_version,csrfDigest:player.csrfDigest,
+   unified:{playerId:player.actor.id,sessionDigest:player.digest,csrfDigest:player.csrfDigest}};
+  if(path==='/api/admin/session')return json(200,{actor:player.actor,csrfToken:await playerCsrfFor(playerToken)});
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
   if(path==='/api/admin/seasons/next-candidate')return json(200,await readSeasonTwoCandidate(db));
   if(path==='/api/admin/seasons/archives')return json(200,await readSeasonArchives(db));
@@ -90,7 +78,6 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
    return json(200,await readClosedSeasonHistory(db,Number(raw)));
   }
   if(path==='/api/admin/seasons/events')return json(200,await readAdministrativeCalendar(db));
-  await requireCsrf(session,request.headers.get('X-CSRF-Token'));
   const rawCommand=await input(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/next-approve')return json(200,await approveSeasonTwoSnapshot(db,session,rawCommand,key,now));

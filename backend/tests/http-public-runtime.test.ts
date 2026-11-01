@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import {test} from 'vitest';
 import worker from '../src/index.ts';
 import type { Env } from '../src/index.ts';
 
@@ -30,4 +30,17 @@ test('no mutating or unauthenticated admin route is enabled', async () => {
   }
   assert.equal((await fetch('/api/world',{method:'POST'})).status,405);
   assert.equal((await fetch('/api/random')).status,404);
+});
+
+test('anonymous public world does not depend on unified Player configuration or cookie state',async()=>{
+ const plain=await fetch('/api/world');
+ const withInvalidPlayerCookie=await fetch('/api/world',{headers:{Cookie:'fa_player_local=invalid-session'}});
+ const withOldAdminCookie=await fetch('/api/world',{headers:{Cookie:'fa_admin_local=obsolete'}});
+ assert.equal(plain.status,200);
+ assert.equal(withInvalidPlayerCookie.status,200);
+ assert.equal(withOldAdminCookie.status,200);
+ assert.deepEqual(await plain.json(),await withInvalidPlayerCookie.json());
+ assert.deepEqual(await withOldAdminCookie.json(),{world:{schemaVersion:1,generation:row.generation,revision:0,seasonNumber:0,day:0,phase:'unstarted'}});
+ assert.equal((await fetch('/api/player/session')).status,503);
+ assert.equal((await fetch('/api/world')).status,200);
 });

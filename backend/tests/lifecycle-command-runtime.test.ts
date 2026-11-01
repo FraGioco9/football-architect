@@ -8,7 +8,8 @@ import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {csrfFor,type AdminSession} from '../src/auth.ts';
+import {type AdminSession} from '../src/auth.ts';
+import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import type {Database} from '../src/database.ts';
@@ -20,9 +21,12 @@ const step=async()=>{const r=await run('advance','advance-day-'+(world.day+1)+'-
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
- csrfToken=await csrfFor(token);session={actor:{id:'simulation-operator',email:'simulation@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await digestOpaqueToken(csrfToken)};
+ csrfToken=await playerCsrfFor(token);session={actor:{id:'simulation-operator',email:'simulation@example.invalid'},digest:await digestOpaqueToken(token),credentialVersion:1,csrfDigest:await digestOpaqueToken(csrfToken),unified:{playerId:'simulation-player',sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrfToken)}};
  await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind(session.actor.id,session.actor.email,'synthetic-not-login',now-100).run();
- await db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?,?,?,?)').bind(session.digest,session.actor.id,1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.prepare('INSERT INTO player_accounts(id,email_normalized,password_verifier,credential_version,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind('simulation-player',session.actor.email,'synthetic',1,now-100,'active',now-100,now-100).run();
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('simulation-player',session.actor.id,now-100).run();
+ await db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(session.digest,'simulation-player',1,session.csrfDigest,now-100,now-10,now+1000).run();
+ await db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('simulation-player',permission,now-100)));
  world=await readWorld(db);world=(await prepareSeason(db,session,command(),'simulation-prepare-0001',await loadApprovedSnapshot(),now)).world;
  world=(await generateSeasonCalendar(db,session,command(),'simulation-calendar-0001',now)).world;
 });
@@ -50,7 +54,7 @@ it('rolls back scores and day if the final audit fails, and rechecks revocation 
  await db.prepare("CREATE TRIGGER simulate_late_failure BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'synthetic late failure'); END").run();
  try{await expect(step()).rejects.toMatchObject({status:503})}finally{await db.prepare('DROP TRIGGER simulate_late_failure').run()}
  expect(await readWorld(db)).toEqual(world);expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=13').first()).toBeNull();
- const raced:Database={prepare:db.prepare.bind(db),async batch(statements){if(statements.length>1)await db.prepare('UPDATE admin_accounts SET credential_version=2').run();return db.batch(statements)}};
+ const raced:Database={prepare:db.prepare.bind(db),async batch(statements){if(statements.length>1)await db.prepare('UPDATE player_accounts SET credential_version=2').run();return db.batch(statements)}};
  await expect(run('advance','revoked-advance-0001',command(),raced)).rejects.toMatchObject({status:401});expect(await readWorld(db)).toEqual(world);
 },30000);
 it('rejects missing calendars/draws, corrupt immutable snapshots with correct hashes, and absent/forged receipts',async()=>{
@@ -87,8 +91,8 @@ it('atomically generates knockout ties,handles phase-day contention/rollback,and
  await expect(step()).rejects.toMatchObject({status:409});
 },120000);
 it('HTTP enforces auth, Origin, CSRF and server-owned input for start and advance',async()=>{
- const config={DB:db,ADMIN_MODE:'local',ADMIN_ORIGIN:'http://localhost:2000'};
- const req=(action:string,headers:Record<string,string>={},body:unknown=command())=>new Request('http://localhost:2000/api/admin/seasons/'+action,{method:'POST',headers:{'Content-Type':'application/json',Origin:config.ADMIN_ORIGIN,Cookie:'fa_admin_local='+token,'X-CSRF-Token':csrfToken,'Idempotency-Key':'http-'+action+'-synthetic-0001',...headers},body:JSON.stringify(body)});
+ const config={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:'http://localhost:2000'};
+ const req=(action:string,headers:Record<string,string>={},body:unknown=command())=>new Request('http://localhost:2000/api/admin/seasons/'+action,{method:'POST',headers:{'Content-Type':'application/json',Origin:config.PLAYER_ORIGIN,Cookie:'fa_player_local='+token,'X-CSRF-Token':csrfToken,'Idempotency-Key':'http-'+action+'-synthetic-0001',...headers},body:JSON.stringify(body)});
  for(const headers of [{Cookie:''},{Origin:'https://evil.example'},{'X-CSRF-Token':''}] as Record<string,string>[])expect((await handleAdmin(req('start',headers),config)).status).toBeGreaterThanOrEqual(400);
  expect((await handleAdmin(req('start',{}, {...command(),results:[]}),config)).status).toBe(422);
  const started=await handleAdmin(req('start'),config);expect(started.status).toBe(200);world=(await started.json() as any).world;

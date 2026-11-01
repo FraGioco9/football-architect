@@ -10,15 +10,20 @@ export function browserCases(){
 export async function verifyArea(page,area,{touch}){
  const activate=async locator=>touch?locator.tap():locator.click();
  if(area==='admin'){
-  const login=page.locator('[data-admin-login]');
+  const login=page.locator('[data-admin-signin-link] a');
   await login.waitFor({state:'visible'});
-  assert.equal(await page.locator('#admin-email').getAttribute('autocomplete'),'username');
-  assert.equal(await page.locator('#admin-password').getAttribute('autocomplete'),'current-password');
+  assert.equal(await page.locator('[data-admin-login],#admin-email,#admin-password').count(),0,'Retired Admin login stays removed');
+  assert.equal(new URL(await login.getAttribute('href'),page.url()).pathname,'/account/login');
   assert.equal(await page.locator('[data-admin-reset-section]').isVisible(),false);
   assert.equal(await page.locator('[data-admin-prepare]').isVisible(),false);
   assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
-  await page.locator('#admin-email').focus();
-  assert.equal(await page.locator('#admin-email').evaluate(el=>el===document.activeElement),true);
+  await activate(login);await page.waitForURL(url=>url.pathname==='/account/login');
+  const email=page.locator('[name=email]'),password=page.locator('[name=password]');
+  assert.equal(await email.getAttribute('autocomplete'),'username');
+  assert.equal(await password.getAttribute('autocomplete'),'current-password');
+  assert.equal(new URL(page.url()).searchParams.has('next'),false);
+  await email.focus();assert.equal(await email.evaluate(el=>el===document.activeElement),true);
+  await page.goBack({waitUntil:'networkidle'});await login.waitFor({state:'visible'});
  }else if(area==='calendar'){
   const picker=page.locator('#calendar-season-picker');
   await activate(picker);
@@ -48,7 +53,7 @@ export async function verifyArea(page,area,{touch}){
  // Follow a real visible local navigation link with the keyboard.
  const nav=page.locator('a.brand-mark,a.app-brand').filter({visible:true}).first();
  const home=new URL(await nav.getAttribute('href'),page.url());
- assert.ok(['localhost','app.localhost'].includes(home.hostname)&&home.port==='2000'&&home.pathname==='/', 'Known loopback home destination');
+ assert.ok(['localhost','app.localhost'].includes(home.hostname)&&home.port==='2000'&&['/','/dashboard','/dashboard/'].includes(home.pathname), 'Known loopback home destination');
  await nav.focus();await page.keyboard.press('Enter');
  await page.waitForURL(home.href);
 }
