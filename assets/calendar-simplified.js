@@ -12,7 +12,7 @@
  };
  const t=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
- const dev=Boolean((window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev')&&(()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'}catch{return false}})());
+ let dev=Boolean((window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev')&&(()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'}catch{return false}})());
  const publicSeasonLimit=()=>Math.max(1,Math.min(2,window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber||1));
  const heading=root.querySelector('.calendar-heading');
  const selector=document.querySelector('#app-calendar > .calendar-season-picker')||document.createElement('div');
@@ -55,6 +55,13 @@
   window.faCalendarSyncWeek?.();
  }
 
+ window.addEventListener('fa:debug-mode-change',event=>{
+  dev=event.detail?.enabled===true;
+  publicDefaultApplied=false;
+  updateSeason();
+  updateCurrentDay();
+  window.faCalendarSyncWeek?.();
+ });
  window.addEventListener('fa:dev-progress-change',updateSeason);
  window.addEventListener('popstate',()=>{publicDefaultApplied=true;updateSeason()});
  // A day is never a permanent route or selection.
