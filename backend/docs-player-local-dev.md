@@ -29,3 +29,19 @@ Visit `http://app.localhost:2000/account/register`, register a throwaway LOCAL i
 The inbox endpoint serves HTML when browser navigation sends `Accept: text/html`, and JSON when called with `Accept: application/json`. This page contains one-time local tokens; do not take screenshots, forward its URL externally, or copy its database. Links are removed by token expiry; the inbox is not an outbound mailer.
 
 **Current limitation:** this guide describes the new code but is not evidence of completed local first-run DB setup or an end-to-end PASS. Those are part of the final gate.
+
+## Local Admin commands (stop the Worker first)
+
+All commands are owner-only local processes. They use the *same explicit* persistence directory `backend/.wrangler/state` as the default local Wrangler config, and never accept a remote database URL.
+
+```powershell
+node tools/dev-auth-admin.mjs init
+node tools/dev-auth-admin.mjs status local-player@example.test
+node tools/dev-auth-admin.mjs grant local-player@example.test
+node tools/dev-auth-admin.mjs status local-player@example.test
+node tools/dev-auth-admin.mjs revoke local-player@example.test
+```
+
+First complete the LOCAL Player signup and verification, then stop `node tools/dev-auth-local.mjs`. Initialize the pool once with `init`, inspect the verified identity via `status` and explicitly confirm grant/revoke as prompted by the underlying owner CLI. Restart the launcher and sign in again after each grant/revoke because the CLI revokes prior sessions. Registration never assigns Admin automatically.
+
+**Important:** The Wrangler/Miniflare shared-file layout and real live browser grant/revoke flow are still subject to A07. Never use these commands with Preview/Production identities or while Wrangler is running on the same SQLite file.
