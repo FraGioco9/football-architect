@@ -135,6 +135,25 @@
     '</div><aside class="app-panel club-kits" aria-labelledby="club-kits-title"><h2 id="club-kits-title">'+escape(t.kitsLabel)+'</h2><p>'+escape(t.kitsPending)+'</p></aside>'+
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
     competitionCard+'</section></div>';
+  }else if(selected.view==='fixtures'&&localDebug&&Array.isArray(summary?.fixtures)){
+   const games=[...summary.fixtures].filter(g=>g.homeId&&g.awayId)
+    .sort((a,b)=>a.day-b.day||a.order-b.order);
+   const items=games.map(g=>{
+    const home=index.clubs.get(g.homeId),away=index.clubs.get(g.awayId);
+    if(!home||!away)return '';
+    const result=g.result?' · '+g.result.homeGoals+'–'+g.result.awayGoals:'';
+    return '<li><span>'+escape(g.competitionId+' · '+g.day+' · '+home.primaryName+' — '+away.primaryName+result)+'</span></li>';
+   }).filter(Boolean).join('');
+   content='<section class="app-panel club-empty"><h2>'+escape(t.fixtures)+'</h2>'+
+    (items?'<ol class="club-debug-fixtures">'+items+'</ol>':'<p>'+escape(t.emptyFixtures)+'</p>')+'</section>';
+  }else if(selected.view==='stats'&&localDebug&&summary?.statistics){
+   const stats=summary.statistics,metrics=[['P',stats.played],['W',stats.won],['D',stats.drawn],['L',stats.lost],
+    ['GF',stats.gf],['GA',stats.ga],['GD',stats.gd]];
+   const values=metrics.filter(([,value])=>Number.isSafeInteger(value));
+   content='<section class="app-panel club-empty"><h2>'+escape(t.stats)+'</h2>'+
+    (values.length===metrics.length?'<dl class="club-facts">'+values.map(([key,value])=>
+      '<div><dt>'+key+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>':
+      '<p>'+escape(t.emptyStats)+'</p>')+'</section>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
