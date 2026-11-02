@@ -16,8 +16,8 @@ function scenario({dev=false,preview=false,snapshot=false,season='3',mobile=fals
  const root={dataset:{...(dev?{faDevAppOrigin:'http://localhost:2000'}:{}),}};
  const document={documentElement:root,querySelectorAll:()=>[]};
  const window={faDevPreviewMode:preview,matchMedia:()=>({matches:mobile}),faDevCalendarClockSnapshot:snapshot?{source:{kind:'dev'}}:undefined};
- const sessionStorage={getItem:key=>key==='football-architect:standings-dev-season'?season:null};
- runInNewContext(snippet+';rewriteAppLinks();',{document,window,sessionStorage,links,appHref:x=>x,siteHref:x=>x});
+ const sessionStorage={getItem:key=>key==='football-architect:local-debug-visible'?'1':key==='football-architect:standings-dev-season'?season:null};
+ runInNewContext(snippet+';rewriteAppLinks();',{document,window,sessionStorage,links,globalWorld:{seasonNumber:1},appHref:x=>x,siteHref:x=>x});
  return {link,listeners,storage:sessionStorage};
 }
 for(const mobile of [false,true]){
@@ -65,7 +65,7 @@ test('Calendar season 0 keeps season 1 selectable without an inactive-season mes
   const trigger={disabled:false};
   const root={dataset:{}};
   const document={documentElement:{dataset:{}},getElementById:()=>null,createElement:()=>({dataset:{},setAttribute(){},addEventListener(){}})};
-  const window={dispatchEvent(){}};
+  const window={dispatchEvent(){},addEventListener(){}};
   const history={replaceState(state,title,url){href=String(url)}};
   const location={get href(){return href},pathname:'/calendar',get search(){return new URL(href).search}};
   runInNewContext(snippet+';updateSeason();',{document,window,history,location,URL,URLSearchParams,sessionStorage:{getItem:()=> '0'},seasonKey:'season',dev:true,publicDefaultApplied:false,CustomEvent:class{},menu,value,trigger,root,selector:{querySelector:()=>({})},t:()=>({season:'Season'}),closeMenu(){},chooseSeason(){}});

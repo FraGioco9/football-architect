@@ -472,7 +472,7 @@ test('Restoring debug waits for History before completing the first-paint releas
  let finishHistory,settled=false;
  const historyReady=new Promise(resolve=>{finishHistory=resolve});
  const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],
-  boot:async()=>()=>{},widgetRoot:{syncVisibility(){}},syncHistoryPreview:()=>historyReady,
+  boot:async()=>()=>{},debugMode:()=>true,document:{documentElement:{dataset:{}}},widgetRoot:{syncVisibility(){}},syncHistoryPreview:()=>historyReady,
   FLAG:'preview',sessionStorage:{setItem(){}},window:{dispatchEvent(){}},CustomEvent:class{},console};
  const toggle=runInNewContext(client.slice(start,end)+';setPreviewEnabled',context);
  const pending=toggle(true).then(value=>{settled=true;return value});
