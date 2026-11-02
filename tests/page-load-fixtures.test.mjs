@@ -43,3 +43,10 @@ test('source switching retains provenance and prevents stale selections',()=>{
  assert.match(loader,/ticket===epoch/);
  assert.match(loader,/getContext\(\)\?\.revision===context\.revision/);
 });
+
+test('fixtures never publish a provisional matchday=1 while current matchday is unresolved',()=>{
+ const source=read('assets/competition-fixtures.js');
+ assert.doesNotMatch(source,/navigation\.defaultMatchday\(currentMatchday\?\?1\)/);
+ assert.match(source,/if\(currentMatchday!==null\)navigation\.defaultMatchday\(currentMatchday\)/);
+ assert.match(source,/rounds!==null&&currentMatchday!==null&&committedSeason===route\.season/);
+});
