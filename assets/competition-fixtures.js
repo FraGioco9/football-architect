@@ -59,7 +59,7 @@
       const option=element('div','language-option');option.id='app-fixtures-round-option-'+choice.value;
       option.dataset.menuValue=String(choice.value);option.dataset.fixtureRoundChoice=String(choice.value);option.setAttribute('role','option');
       if(typeof choice.value==='number')option.append(word('fixturesMatchday','Matchday'),element('span','',' '+choice.round));
-      else{const label=element('span','',window.faCompetitionRulesView?.phaseLabel(choice.labelKey,document.documentElement.lang)||choice.labelKey);label.dataset.competitionPhase=choice.labelKey;option.append(label);if(choice.round&&choice.phaseId!=='final')option.append(element('span','',' '+choice.round+'/'+(knockoutPhases.find(p=>p.id===choice.phaseId)?.ties[0]?.legs||1)));}
+      else{const label=element('span','',window.faCompetitionRulesView?.phaseLabel(choice.labelKey,document.documentElement.lang)||choice.labelKey);label.dataset.competitionPhase=choice.labelKey;option.append(label);if(choice.round&&choice.phaseId!=='final'){option.append(' ',word(choice.round===1?'postseasonFirstLeg':'postseasonSecondLeg',choice.round===1?'First leg':'Second leg'));}}
       return option;
     });
     picker.replaceChildren(...choices);postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
@@ -245,7 +245,7 @@
     const label=document.getElementById('app-fixtures-round-label');
     if(label)label.hidden=isPostseason;
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.phaseLabel(selectedChoice.labelKey,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
-    if(isPostseason&&selectedChoice.round&&selectedChoice.phaseId!=='final')selectedLabel.textContent+=' '+selectedChoice.round+'/'+(knockoutPhases.find(p=>p.id===selectedChoice.phaseId)?.ties[0]?.legs||1);
+    if(isPostseason&&selectedChoice.round&&selectedChoice.phaseId!=='final')selectedLabel.append(' ',word(selectedChoice.round===1?'postseasonFirstLeg':'postseasonSecondLeg',selectedChoice.round===1?'First leg':'Second leg'));
     number.replaceChildren(selectedLabel);
     roundMenu.sync(String(selected));
     if(!available)roundMenu.close();
