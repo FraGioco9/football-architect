@@ -47,3 +47,22 @@ Added `tools/debug-data-i05-consumers.mjs`, a single candidate-only bridge that 
 ## Fourth I05 block — coordinator wiring
 
 The protected DEV source coordinator now imports `prepareProtectedConsumers`, validates the same protected projection for Calendar and club schedule consumers, publishes a `fa:protected-debug-consumers-ready` candidate event with source revision, and clears the cached consumer reference when the source resets, becomes unavailable, or enters Season 0. No public page renderer subscribes yet; activation remains withheld pending I06 acceptance. Tests were not run under the owner-approved deferment.
+
+## Fifth I05 block — Statistics, History and International candidates
+
+- Added pure `projectProtectedStandings`, `projectProtectedStats`,
+  `projectProtectedCompetitionHistory`, and `projectProtectedInternational`
+  to the protected consumer adapters. Each derives only from the already
+  day-redacted projection and retains Debug provenance and source coordinates.
+- Stats provides existing validated team standings fields only; player
+  statistics remain explicitly unavailable until supported by canonical data.
+- History exposes a candidate champion/final table only on a complete day-56
+  projection. This is not an official archive receipt or finalized Debug seal.
+- Cup consumer shares the same fixtures, redacted standings and provisional
+  history interface; no cup renderer has been activated.
+- The shared candidate bridge now exposes these consumers alongside Calendar
+  and club schedules. Failed or unavailable source requests clear the prior
+  consumer reference, avoiding retained cross-season candidates.
+
+No page integration, runtime activation, full test suite, public endpoint,
+remote D1 or deployment in this block. I05 remains **in progress**.
