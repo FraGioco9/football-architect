@@ -121,7 +121,9 @@ test('COMPETITION-URL: matchday is scoped to Fixtures URLs while tab changes ret
  const refreshed=setup(s.window.location.href);
  refreshed.tabs[2].events.click();
  assert.equal(refreshed.window.faCompetitionRoute.get().matchday,1);
- assert.equal(refreshed.window.location.search,'?season=1&matchday=1');
+ assert.equal(refreshed.window.location.search,'?season=1','provisional default must not enter URL');
+ refreshed.window.faCompetitionRoute.defaultMatchday(17);
+ assert.equal(refreshed.window.location.search,'?season=1&matchday=17');
  s.tabs[2].events.click();
  assert.equal(s.window.faCompetitionRoute.get().matchday,12);
  s.back();s.back();assert.equal(s.window.faCompetitionRoute.get().matchday,12);
@@ -331,4 +333,12 @@ test('Debug ON to OFF restores global season choices and can enable Debug again'
  assert.deepEqual(s.fields.get('app-competition-season-menu').options.map(o=>o.dataset.menuValue),['2','1']);
  assert.equal(s.window.faCompetitionRoute.setSeasonLimit(4),true);
  assert.deepEqual(s.fields.get('app-competition-season-menu').options.map(o=>o.dataset.menuValue),['4','3','2','1']);
+});
+
+test('A03: direct Fixtures load does not redirect through a provisional matchday=1',()=>{
+ const s=setup('/competitions/eng-1/fixtures?season=1');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,1,'internal placeholder remains available');
+ assert.equal(s.window.location.search,'?season=1','URL must not expose unresolved matchday');
+ s.window.faCompetitionRoute.defaultMatchday(14);
+ assert.equal(s.window.location.search,'?season=1&matchday=14');
 });
