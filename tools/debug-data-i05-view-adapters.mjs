@@ -29,3 +29,35 @@ export function projectProtectedClubSchedule(view,cursor,clubId){
  return {source:clone(view.source),clubId,seasonNumber:cursor.seasonNumber,worldDay:cursor.worldDay,
   competitionId:cursor.competitionId,events:clone(view.events.filter(e=>e.homeId===clubId||e.awayId===clubId))};
 }
+
+
+export function projectProtectedStandings(view,cursor){
+ validateProtectedView(view,cursor);
+ assert(Array.isArray(view.standings),"standings missing");
+ assert(view.standings.length===view.participants.length,"standings cardinality");
+ assert(view.standings.every(row=>view.participants.includes(row.clubId)),"unknown standings club");
+ return {source:clone(view.source),seasonNumber:cursor.seasonNumber,worldDay:cursor.worldDay,
+  competitionId:cursor.competitionId,rows:clone(view.standings)};
+}
+export function projectProtectedCompetitionHistory(view,cursor){
+ validateProtectedView(view,cursor);
+ const complete=view.completed===true&&cursor.worldDay===56&&view.events.every(e=>e.result!==null);
+ return {source:clone(view.source),seasonNumber:cursor.seasonNumber,competitionId:cursor.competitionId,
+  status:complete?"candidate-complete":"in-progress",champion:complete?view.champion??null:null,
+  finalTable:complete&&Array.isArray(view.finalTable)?clone(view.finalTable):null,
+  acceptance:"UNSEALED_NOT_FOR_RUNTIME"};
+}
+export function projectProtectedStats(view,cursor){
+ const standings=projectProtectedStandings(view,cursor);
+ return {source:standings.source,seasonNumber:cursor.seasonNumber,worldDay:cursor.worldDay,
+  competitionId:cursor.competitionId,teams:standings.rows,
+  players:null,playerStatisticsStatus:"unavailable-without-canonical-source"};
+}
+export function projectProtectedInternational(view,cursor){
+ assert(/^int-[12]$/.test(cursor.competitionId),"international competition required");
+ validateProtectedView(view,cursor);
+ return {source:clone(view.source),seasonNumber:cursor.seasonNumber,worldDay:cursor.worldDay,
+  competitionId:cursor.competitionId,standings:clone(view.standings??[]),
+  fixtures:clone(view.events),history:projectProtectedCompetitionHistory(view,cursor),
+  acceptance:"UNSEALED_NOT_FOR_RUNTIME"};
+}
