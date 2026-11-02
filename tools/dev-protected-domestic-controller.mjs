@@ -21,8 +21,8 @@ window.addEventListener("fa:protected-debug-domestic-presentation",event=>{
  }catch(error){try{next.rollback()}catch{}window.dispatchEvent(new CustomEvent("fa:protected-debug-render-failed",{detail:{revision,reason:"commit"}}))}
 });
 for(const name of ["fa:debug-mode-change","fa:competition-route-change","fa:protected-debug-source-unavailable","fa:dev-progress-change","fa:dev-world-day-change","fa:protected-debug-source-pending"]){
- window.addEventListener(name,()=>{if(restore)clear()});
+ window.addEventListener(name,event=>{const revision=event.detail?.revision;if(Number.isInteger(revision))latest=Math.max(latest,revision);if(restore)clear()});
 }
 window.addEventListener('fa:protected-debug-source-change',event=>{
- if(event.detail?.kind!=="protected-debug"&&restore)clear();
+ if(event.detail?.kind!=="protected-debug"){const revision=event.detail?.revision;if(Number.isInteger(revision))latest=Math.max(latest,revision);if(restore)clear();}
 });
