@@ -370,7 +370,9 @@
     const detail=event.detail,context=window.faCompetitionContext;
     if(!detail||!context||detail.season!==context.selectedSeason||detail.revision!==context.revision)return;
     if(detail.state==='loading'){
-      if(committedSeason!==null&&committedSeason!==String(detail.season)){render();return;}
+      // Keep the previous source's notice for same-season API/Debug transitions too.
+      const source=window.faCompetitionContext?.seasonData?.provenance?.kind||null;
+      if(committedSeason!==null&&(committedSeason!==String(detail.season)||(source!==null&&committedSource!==null&&source!==committedSource))){render();return;}
       fields.empty.hidden=true;
       return;
     }
