@@ -510,7 +510,14 @@ if(validPath||indexPath||clubPath){
   // emit popstate), and handle browser back/forward navigation as well.
   window.addEventListener("fa:debug-mode-change",event=>{
     const enabled=event.detail?.enabled===true;
+    if(!validPath){
+      if(enabled){syncDebugControls();void refreshProgress();}
+      else{delete document.documentElement.dataset.faDevCurrentSeason;try{sessionStorage.removeItem(FLAG)}catch{}}
+      window.dispatchEvent(new CustomEvent('fa:fictional-standings-change',{detail:{enabled}}));
+      return;
+    }
     if(enabled){
+      window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
       document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
       void setPreviewEnabled(debugSeason>0).then(()=>syncSeason());
     }else{

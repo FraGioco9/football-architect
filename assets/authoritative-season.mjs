@@ -149,3 +149,43 @@ export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJs
   }catch{return false}finally{if(!completed&&current())onState('unavailable')}
  },dispose(){disposed=true;epoch++;controller?.abort()}});
 }
+
+// Project only validated authoritative evidence; never synthesize sporting results.
+export function authoritativeClubSummary(source,clubId){
+ const d=source.data,id=source.competitionId.split('-')[0]+'-'+clubId;
+ if(!d||!d.participants.includes(id))return null;
+ const row=d.standings.rows.find(r=>r.clubId===id);
+ const next=d.fixtures.filter(f=>f.result===null&&f.day>viewedSeasonState(source).day&&[f.homeClubId,f.awayClubId].includes(id))
+  .sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id))[0];
+ const local=id=>Number(id.split('-')[1]);
+ return freeze({source:'authoritative',divisionId:source.competitionId,clubId,season:d.season,
+  position:row.played===0?null:row.rank,points:row.points,
+  nextMatch:next?{round:next.round,homeId:local(next.homeClubId),awayId:local(next.awayClubId)}:null});
+}
+export function createAuthoritativeClubLoader({route,manifest,fetchJson,isDev,commit}){
+ let epoch=0,disposed=false;
+ return Object.freeze({async load(){
+  const ticket=++epoch;if(disposed||isDev())return false;
+  const current=()=>!disposed&&!isDev()&&ticket===epoch;
+  try{
+   const before=(await fetchJson('/api/world')).world;
+   if(!current()||!validPublicWorld(before))return false;
+   let summary=null;
+   if(before.seasonNumber>0){
+    const definitions=manifest.competitions.filter(d=>d.category==='domestic'&&d.id.startsWith(route.countryId+'-'));
+    const sources=await Promise.all(definitions.map(async definition=>validateAuthoritativeSeason(
+     await fetchJson(`/api/competitions/${definition.id}/seasons/${before.seasonNumber}`),
+     {definition,selectedSeason:before.seasonNumber},manifest)));
+    if(sources.some(source=>!sameWorld(before,source.world)))return false;
+    // Both divisions must be known before resolving current membership.
+    if(sources.some(source=>source.status==='unavailable'))return false;
+    const memberships=sources.filter(source=>source.data?.participants.includes(route.countryId+'-'+route.clubId));
+    if(memberships.length>1)return false;
+    summary=memberships.length?authoritativeClubSummary(memberships[0],route.clubId):sources.every(source=>source.data)?{source:'authoritative',clubId:route.clubId,season:before.seasonNumber,divisionId:null}:null;
+   }
+   const after=(await fetchJson('/api/world')).world;
+   if(!current()||!sameWorld(before,after)||!validPublicWorld(after))return false;
+   commit(summary);return true;
+  }catch{return false}
+ },dispose(){disposed=true;epoch++}});
+}

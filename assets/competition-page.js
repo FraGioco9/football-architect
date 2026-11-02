@@ -979,7 +979,7 @@
     }
     if(activeDebugSeason===null||window.faDevPreviewMode===true){
       try{
-        const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
+        const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false,resumeGlobalDefault=false;
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
@@ -990,13 +990,15 @@
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
         let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=sourceState==='loading'||['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:resumeGlobalDefault||!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;resumeGlobalDefault=false;},onState:state=>{sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         let selection='';const select=()=>{if(activeDebugSeason!==null)return;const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(!c||key===selection)return;selection=key;void loader.load()};
         window.addEventListener('fa:debug-mode-change',event=>{
           if(window.faDevPreviewMode!==true)return;
           const enabled=event.detail?.enabled===true;
+          if(!enabled){publicDefaultApplied=false;resumeGlobalDefault=true;}
           setDebugSeason(enabled?(()=>{try{const value=Number(sessionStorage.getItem('football-architect:standings-dev-season'));return Number.isInteger(value)&&value>=0&&value<=4?value:1}catch{return 1}})():null);
+          if(!enabled){selection='';select();}
           // Wait for DEV preview teardown before fetching global data.
           // The completion event below starts the authoritative loader.
         });

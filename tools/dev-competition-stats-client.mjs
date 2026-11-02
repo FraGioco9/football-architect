@@ -2,13 +2,13 @@ import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPrevie
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 async function startClubSummary(){
-const enabled=()=>{try{return sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+const enabled=()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
 let catalogue,revision=0;
 const publish=snapshot=>window.dispatchEvent(new CustomEvent('fa:club-competition-summary',{detail:snapshot}));
 async function refresh(){
  const version=++revision;
  const route=window.faClubModel?.route(location.pathname);
- if(!enabled()||!route){publish(null);return;}
+ if(!enabled()||!route)return;
  try{
   catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'same-origin',cache:'no-store'}).then(async response=>{
    if(!response.ok)throw Error('Unavailable club competition data');
@@ -27,7 +27,7 @@ await new Promise(resolve=>{
  });
  observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-club-ready']});
 });
-for(const event of ['fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
+for(const event of ['fa:debug-mode-change','fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
 window.addEventListener('storage',event=>{if(event.key?.startsWith('football-architect:'))refresh();});
 await refresh();
 
@@ -37,7 +37,7 @@ if(document.getElementById('club-page'))await startClubSummary();
 // Data adapter only. Public presentation mounts from the generic competition context.
 function createStatsPreviewProvider(){
  let epoch=0,destroyed=false;
- const enabled=()=>{try{return sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+ const enabled=()=>{try{return sessionStorage.getItem('football-architect:local-debug-visible')==='1'&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
  const signature=statistics=>JSON.stringify(statistics?{overview:statistics.overview,teams:statistics.teams,players:statistics.players}:null);
  async function refresh(){
   const token=++epoch,context=window.faCompetitionContext,definition=context?.definition;

@@ -322,3 +322,13 @@ test('validated public world updates season choices without changing an explicit
  assert.equal(latest.window.faCompetitionRoute.get().season,'2','Reset keeps explicit viewed season unavailable');
  assert.equal(latest.fields.get('competition-panel-standings').hidden,true);
 });
+
+test('Debug ON to OFF restores global season choices and can enable Debug again',()=>{
+ const s=setup('/competitions/it-1/standings?season=3',3);
+ s.window.faDevPreviewMode=true;
+ assert.equal(s.window.faCompetitionRoute.setPublicSeasonLimit(2,{selectLatest:true}),true);
+ assert.equal(s.window.faCompetitionRoute.get().season,'2');
+ assert.deepEqual(s.fields.get('app-competition-season-menu').options.map(o=>o.dataset.menuValue),['2','1']);
+ assert.equal(s.window.faCompetitionRoute.setSeasonLimit(4),true);
+ assert.deepEqual(s.fields.get('app-competition-season-menu').options.map(o=>o.dataset.menuValue),['4','3','2','1']);
+});

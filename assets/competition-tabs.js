@@ -144,7 +144,7 @@
   if(calendarReturn&&returnHost){const a=document.createElement('a');a.href=calendarReturn;a.textContent='← Calendar';returnHost.append(a)}
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
-  const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
+  let devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
   let availableSeasons=[...new Set(["1",...devSeasons])];
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
   if(devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
@@ -237,12 +237,15 @@
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
   window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
-    if(devSeasons.length||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    if(!Number.isInteger(limit)||limit<0||limit>2)return false;
+    devSeasons=[];delete document.documentElement.dataset.faDevCurrentSeason;delete document.documentElement.dataset.faDevSeasons;
     availableSeasons=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));latestSeason=availableSeasons.at(-1);
     seasonPicker.update(seasonOptions());apply({...state,season:selectLatest?latestSeason:state.season},{replace:true});return true;
   };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
-    if(limit!==0&&!devSeasons.includes(String(limit)))return false;
+    if((window.faDevPreviewMode!==true&&!devSeasons.length)||!Number.isInteger(limit)||limit<0||limit>4)return false;
+    devSeasons=['1','2','3','4'];
+    document.documentElement.dataset.faDevSeasons=devSeasons.join(',');
     const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);
     document.documentElement.dataset.faDevCurrentSeason=String(limit);
     const next=[...new Set(["1",...devSeasons])].filter(id=>Number(id)<=Math.max(1,limit));

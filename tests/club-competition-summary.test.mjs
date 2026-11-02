@@ -85,3 +85,13 @@ test('A01-10 repeated rendering keeps identical competition snapshot output',asy
  assert.equal(model.render(clubs,selected,'en','?season=3&matchday=15',snap),html);
  assert.notEqual(model.render(clubs,selected,'en','?season=3&matchday=15',{...snap,clubId:2}),html);
 });
+
+test('club card accepts an authoritative summary using the same presentation as DEV',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const catalogue=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8'));
+ const selected=model.route('/clubs/it/1/overview');
+ const division=manifest.divisions.find(d=>d.id==='IT-1');
+ const snapshot=preview.createPreviewClubSummary(division,1,{season:1,matchdays:15});
+ const expected=model.render(catalogue,selected,'en','',snapshot);
+ assert.equal(model.render(catalogue,selected,'en','',{...snapshot,source:'authoritative'}),expected);
+});

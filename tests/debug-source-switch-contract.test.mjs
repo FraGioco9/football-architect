@@ -31,12 +31,12 @@ test('popup is enabled for all local HTML, including account, except specialized
  assert.match(server,/type===TYPES\["\.html"\]/);
  const widget=read('../tools/dev-debug-widget.mjs');
  assert.match(widget,/football-architect:local-debug-visible/);
- assert.match(widget,/debug-source-transition/);
+ assert.match(widget,/fa:debug-mode-change/);
 });
 test('public calendar depends on global state when Debug OFF',()=>{
  const calendar=read('../assets/calendar-simplified.js');
  const world=read('../assets/world-calendar.js');
  assert.match(calendar,/football-architect:local-debug-visible/);
  assert.match(world,/football-architect:local-debug-visible/);
- assert.match(world,/if\(!devClockEnabled\)/);
+ assert.match(world,/publicWorld\?\.seasonNumber>0/);
 });

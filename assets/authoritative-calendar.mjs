@@ -72,11 +72,11 @@ export async function mountAuthoritativeCalendar({root,document=globalThis.docum
      if(f.result?.penalties)row.append(make('span',' ('+f.result.penalties.home+'–'+f.result.penalties.away+')'));
      list.append(row);
     }section.append(list);
-   }else section.append(make('p',state==='loading'?t[0]:state==='empty'?t[2]:t[1]));
+   }else if(state!=='loading')section.append(make('p',state==='empty'?t[2]:t[1]));
    host.append(section);
   }
  };
- const loader=createCalendarLoader({manifest,getSelection,fetchJson,clear:()=>{payload=null;onWorld(null);render()},commit:data=>{payload=data;onWorld(data.world)},onState:s=>{state=s;render()}});
+ const loader=createCalendarLoader({manifest,getSelection,fetchJson,clear:()=>{payload=null;render()},commit:data=>{payload=data;onWorld(data.world)},onState:s=>{state=s;render()}});
  const reload=event=>{const s=getSelection(),next=s.season+':'+s.day;if(next===selectionKey&&!event?.detail?.refresh){render();return;}selectionKey=next;void loader.load()};
  window.addEventListener('fa:calendar-selection-change',reload);
  window.addEventListener('focus',()=>void loader.load());

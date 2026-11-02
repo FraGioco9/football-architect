@@ -26,3 +26,19 @@ Issue: #336. Draft/HOLD from main after #335.
 
 ## Acceptance
 - Generator parity, publication guard, exact-head, Player/Admin tests, screen and keyboard QA at 320/390/768/1440 and Chromium/WebKit; broad tests at final gate.
+
+## Global progress audit — 2026-11-02
+
+Authoritative progress is the durable `world_state` singleton projected by `GET /api/world`: `seasonNumber`, `day`, `phase`, `generation`, `revision`. Unstarted world is Season 0 / Day 0; preparing seasons use Day 0; active seasons use Days 1–56. Browser controls never advance this state. Debug OFF must ignore retained local progress and fictional-provider flags. Unavailable global data must not be replaced by simulated results.
+
+This block corrects navigation retaining local season/card metadata, competition season menus failing to return from Debug to global choices, and club summaries having no authoritative producer. Club summaries read and validate both national divisions at the current global season, then commit only if world generation/revision/day remain unchanged. Club position and next fixture use real published standings and the current day; a source toggle invalidates late responses. Club updates replace the competition summary and current-division label without reloading the document. Calendar retains its validated world clock while loading a different day's details and omits loading text.
+
+Audited paths: shared shell/sidebar and competition directory links; domestic/international competition contexts and downstream standings/fixtures/stats/history; calendar season/week/day selection; all club routes and the club overview summary; directory, Dashboard, Settings and account pages. Identity/catalogue-only pages have no sporting progress reader. Existing deliberate historic-season navigation remains supported; Debug OFF defaults to the global season, while an explicit historical selection is a view of that season, not a change to the global clock.
+
+Remaining functional limits discovered by the audit:
+- Club Roster, Fixtures, Stats and History panels are existing unavailable-data placeholders, not implemented authoritative views.
+- The club directory's division filters/labels still use provisional catalogue membership; they are not a live global-season membership projection. This block resolves current membership for individual club summaries when both global division payloads are published.
+- Public sporting projections currently support Seasons 1–2; unsupported/unpublished seasons remain explicit empty/unavailable states.
+- No live remote `seasonNumber` / `day` values were read or changed in this audit.
+
+Validation: 121 focused Node tests PASS, including authoritative season/calendar/history, club model, source toggles, global navigation, publication gate, API proxy and clock contracts. Updated obsolete assertions that expected cleared tables or a removed reload mechanism. Browser QA remains UNKNOWN: no browser binary was present and the Chromium download returned a truncated archive. Full exact-head CI remains deferred to the final gate; Draft/HOLD, no merge/deploy/remote D1/email changes.

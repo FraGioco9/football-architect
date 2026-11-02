@@ -62,7 +62,8 @@
   const index=getIndex(manifest),c=index.clubs.get(selected.countryId+'-'+selected.clubId);
   if(!c)throw Error('Unknown club identity');
   const country=countryNames[lang][countries.indexOf(c.countryId)];
-  const division=index.divisions.get(c.divisionId);
+  const authoritative=snapshot?.source==='authoritative'&&snapshot.clubId===c.clubId&&Number.isInteger(snapshot.season)&&snapshot.season>0;
+  const division=index.divisions.get(authoritative?snapshot.divisionId:c.divisionId);
   // Reuse generated competition artwork, scoping SVG IDs for both placements.
   const flag=placement=>manifest.countryFlags[c.countryId]
    .replace('class="app-world-flag"','class="app-world-flag club-country-flag"')
@@ -74,15 +75,15 @@
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
   const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
   const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
-  const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
+  const summary=division&&['dev','authoritative'].includes(snapshot?.source)&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
    Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
    (snapshot.position===null||Number.isInteger(snapshot.position)&&snapshot.position>=1&&snapshot.position<=16)&&
    Number.isInteger(snapshot.points)&&snapshot.points>=0&&snapshot.points<=90?snapshot:null;
   const next=summary?.nextMatch;
   const homeCandidate=next&&index.clubs.get(c.countryId+'-'+next.homeId);
-  const home=homeCandidate&&homeCandidate.divisionId===c.divisionId?homeCandidate:null;
+  const home=homeCandidate&&(authoritative||homeCandidate.divisionId===c.divisionId)?homeCandidate:null;
   const awayCandidate=next&&index.clubs.get(c.countryId+'-'+next.awayId);
-  const away=awayCandidate&&awayCandidate.divisionId===c.divisionId?awayCandidate:null;
+  const away=awayCandidate&&(authoritative||awayCandidate.divisionId===c.divisionId)?awayCandidate:null;
   const validNext=home&&away&&home.clubId!==away.clubId&&[home.clubId,away.clubId].includes(c.clubId)&&Number.isInteger(next.round)&&next.round>=1&&next.round<=33;
   const fixtureLink=validNext?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'fixtures'})+'?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
   const rank=summary?.position===null||!summary?'—':ordinal(summary.position,lang);

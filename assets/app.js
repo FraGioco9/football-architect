@@ -1231,6 +1231,21 @@
     return path === "/" ? origin : origin + path.replace(/^([^?#]*?)\/+(?=[?#]|$)/, "$1");
   }
   window.faAppHref = appHref;
+  let globalWorld=null,worldLinksRevision=0;
+  const refreshWorldLinks=async()=>{
+    const ticket=++worldLinksRevision;
+    try{
+      const {validPublicWorld}=await import('/assets/authoritative-season.mjs');
+      const response=await fetch('/api/world',{cache:'no-store',credentials:'omit',redirect:'error'});
+      if(!response.ok)return;
+      const payload=await response.json();if(ticket!==worldLinksRevision||!validPublicWorld(payload.world))return;
+      globalWorld=payload.world;rewriteAppLinks();
+    }catch{}
+  };
+  window.addEventListener('focus',refreshWorldLinks);
+  window.addEventListener('fa:debug-mode-change',()=>{rewriteAppLinks();void refreshWorldLinks()});
+  window.addEventListener('fa:dev-progress-change',()=>rewriteAppLinks());
+  void refreshWorldLinks();
   function rewriteAppLinks() {
     for(const link of document.querySelectorAll('a[href*="/account"]')){
       const original=new URL(link.getAttribute('href'),window.location.href);
@@ -1241,11 +1256,12 @@
       if(language()==='en')target.searchParams.delete('lang');else target.searchParams.set('lang',language());link.href=target.href;
     }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
-    // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
-    let activeSeason=1;
+    // Local overrides are considered only while the local Debug toggle is enabled.
+    let activeSeason=globalWorld?.seasonNumber>0?globalWorld.seasonNumber:null;
     const isDevCalendar=window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev";
-    if(isDevCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
-    const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
+    let debugEnabled=false;
+    if(isDevCalendar){try{debugEnabled=sessionStorage.getItem('football-architect:local-debug-visible')==='1';const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(debugEnabled)activeSeason=Number.isInteger(n)&&n>=1&&n<=4?n:null}catch{}}
+    const calendarRoute="/calendar?"+(activeSeason===null?"":"season="+activeSeason+"&")+"calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
     const calendarNav=links.calendar;
     if(calendarNav?.dataset&&!calendarNav.dataset.calendarSeasonLinkBound&&typeof calendarNav.addEventListener==="function"){
@@ -1268,8 +1284,8 @@
       const route = registry?.parseRoute(pathname) || registry?.parseRoute(pathname.replace(/\/$/, "")+"/standings");
       if (route && (route.kind === "competition" || route.kind === "cup")) {
         const id = route.base.slice("/competitions/".length);
-        const season = link.getAttribute("data-dev-latest-season") || String(activeSeason);
-        link.setAttribute("href", appHref(registry.buildRoute({kind:route.kind,id,view:"standings"})+"?season="+season));
+        const season = debugEnabled?(link.getAttribute("data-dev-latest-season") || activeSeason):activeSeason;
+        link.setAttribute("href", appHref(registry.buildRoute({kind:route.kind,id,view:"standings"})+(season===null?"":"?season="+season)));
       }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {

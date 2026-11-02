@@ -12,10 +12,10 @@ test('requires exact viewed identity and never treats missing/fictional response
  assert.equal(validateAuthoritativeSeason(empty(),ctx(),manifest).data,null);
  for(const change of [{providerId:'dev-fictional'},{competitionId:'IT-2'},{selectedSeason:2},{world:{...world,day:57}},{status:'available',data:{}}])assert.throws(()=>validateAuthoritativeSeason({...empty(),...change},ctx(),manifest));
 });
-test('a transport failure clears old supplied data and does not commit an invented response',async()=>{
+test('a transport failure preserves committed data and does not commit an invented response',async()=>{
  let context=ctx(),clears=0,commits=0;
  const loader=createAuthoritativeLoader({getContext:()=>context,clear:()=>{clears++;context={...context,revision:context.revision+1}},commit:()=>{commits++},isDev:()=>false,fetchJson:async()=>{throw Error('offline')},manifest});
- await loader.load();assert.equal(clears,1);assert.equal(commits,0);
+ await loader.load();assert.equal(clears,0);assert.equal(commits,0);
 });
 test('does not request or overwrite protected DEV data',async()=>{
  let calls=0;const loader=createAuthoritativeLoader({getContext:ctx,clear:()=>{calls++},commit:()=>{calls++},isDev:()=>true,fetchJson:async()=>{calls++},manifest});
@@ -103,4 +103,43 @@ test('viewed season state cannot disguise current-world time or unsealed histori
   r=>{r.world={...world,seasonNumber:2};delete r.data.seasonState},
  ];
  for(const alter of changes){const raw=source();alter(raw);assert.throws(()=>validateAuthoritativeSeason(raw,ctx(),manifest));}
+});
+
+test('club summary consumes validated global standings and future fixtures at the global day',async()=>{
+ const api=await import('../assets/authoritative-season.mjs');
+ assert.equal(typeof api.authoritativeClubSummary,'function');
+ const validated=validateAuthoritativeSeason(source(),ctx(),manifest);
+ const summary=api.authoritativeClubSummary(validated,clubs[0].clubId);
+ assert.equal(summary.source,'authoritative');assert.equal(summary.season,1);
+ assert.equal(summary.position,null);assert.equal(summary.points,0);
+ assert.equal(summary.nextMatch.round,1);
+ assert.ok([summary.nextMatch.homeId,summary.nextMatch.awayId].includes(clubs[0].clubId));
+ assert.equal(api.authoritativeClubSummary(validateAuthoritativeSeason(empty(),ctx(),manifest),1),null);
+});
+
+test('global club loader ignores browser progress, reads current world, and rejects late responses after Debug ON',async()=>{
+ const {createAuthoritativeClubLoader}=await import('../assets/authoritative-season.mjs');
+ let dev=false,hold=null;const commits=[],requests=[];
+ const loader=createAuthoritativeClubLoader({route:{countryId:'IT',clubId:1},manifest,isDev:()=>dev,commit:s=>commits.push(s),fetchJson:async path=>{
+  requests.push(path);if(path==='/api/world')return {world};
+  if(hold)await hold;
+  return path.includes('/IT-1/')?source():{...empty(),competitionId:'IT-2'};
+ }});
+ assert.equal(await loader.load(),true);assert.equal(commits[0].source,'authoritative');
+ assert.equal(commits[0].season,world.seasonNumber);assert.ok(requests.includes('/api/competitions/IT-2/seasons/1'));
+ let release;hold=new Promise(resolve=>release=resolve);
+ const pending=loader.load();await new Promise(resolve=>setImmediate(resolve));dev=true;release();
+ assert.equal(await pending,false);assert.equal(commits.length,1);
+ const count=requests.length;assert.equal(await loader.load(),false);assert.equal(requests.length,count);
+});
+test('Season 0 club view has no invented results and never queries a fictional Season 1',async()=>{
+ const {createAuthoritativeClubLoader}=await import('../assets/authoritative-season.mjs');
+ const zero={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'},requests=[],commits=[];
+ const loader=createAuthoritativeClubLoader({route:{countryId:'IT',clubId:1},manifest,isDev:()=>false,commit:s=>commits.push(s),fetchJson:async path=>{requests.push(path);return {world:zero}}});
+ assert.equal(await loader.load(),true);assert.deepEqual(commits,[null]);assert.deepEqual(requests,['/api/world','/api/world']);
+});
+test('a changed world generation prevents a club summary from committing',async()=>{
+ const {createAuthoritativeClubLoader}=await import('../assets/authoritative-season.mjs');let reads=0,commits=0;
+ const loader=createAuthoritativeClubLoader({route:{countryId:'IT',clubId:1},manifest,isDev:()=>false,commit:()=>commits++,fetchJson:async path=>path==='/api/world'?{world:++reads===1?world:{...world,revision:5}}:path.includes('/IT-1/')?source():{...empty(),competitionId:'IT-2'}});
+ assert.equal(await loader.load(),false);assert.equal(commits,0);
 });

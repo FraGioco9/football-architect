@@ -62,10 +62,13 @@
    });
    document.documentElement.dataset.clubReady='true';
   };
-  window.addEventListener('fa:club-competition-summary',event=>{
+  const receiveSummary=(incoming,{global=false}={})=>{
    // Provider envelopes are selected explicitly; legacy summary payloads keep
    // their established rendering path until the producer migrates.
-   const incoming=event.detail;
+   const debug=window.faDevPreviewMode===true&&document.documentElement.dataset.faDebugEnabled==='true';
+   if(incoming?.source==='dev'&&!debug)return;
+   if(!global&&!incoming&&!debug)return;
+   if(incoming?.source==='authoritative'&&debug)return;
    if(incoming?.schemaVersion===1){
     const selectors=window.faProviderSelectors;
     if(!selectors)return;
@@ -75,16 +78,35 @@
     if(!chosen)return;
     competitionSnapshot=chosen;
    }else competitionSnapshot=incoming;
+   const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
+   for(const link of staging.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   const currentDivision=host.querySelector('.club-header-division'),nextDivision=staging.querySelector('.club-header-division');
+   if(currentDivision&&nextDivision&&currentDivision.innerHTML!==nextDivision.innerHTML)currentDivision.replaceWith(nextDivision);
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
-   const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
    const replacement=staging.querySelector('.club-competition');
-   for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    panel.replaceWith(replacement);
    if(focused){const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);
     if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}}
-  });
+  };
+  window.addEventListener('fa:club-competition-summary',event=>receiveSummary(event.detail));
   paint();
+  void (async()=>{
+   const {createAuthoritativeClubLoader}=await import('/assets/authoritative-season.mjs');
+   const fetchJson=async path=>{const response=await fetch(path,{cache:'no-store',credentials:'omit',redirect:'error'});if(!response.ok)throw Error('World unavailable');return response.json()};
+   const sportingManifest=await fetchJson('/competitions/_shared/manifest.json');
+   const isDev=()=>window.faDevPreviewMode===true&&document.documentElement.dataset.faDebugEnabled==='true';
+   const globalLoader=createAuthoritativeClubLoader({route:selected,manifest:sportingManifest,fetchJson,isDev,
+    commit:summary=>receiveSummary(summary,{global:true})});
+   window.addEventListener('fa:debug-mode-change',()=>{
+    // Drop the previous source synchronously so a tab change cannot resurrect it.
+    receiveSummary(null,{global:true});void globalLoader.load();
+   });
+   window.addEventListener('focus',()=>void globalLoader.load());
+   window.addEventListener('pageshow',()=>void globalLoader.load());
+   window.addEventListener('pagehide',event=>{if(!event.persisted)globalLoader.dispose()});
+   void globalLoader.load();
+  })().catch(()=>{});
   // The app shell observes the same lang attribute; paint last to preserve the club title.
   new MutationObserver(()=>paint()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
