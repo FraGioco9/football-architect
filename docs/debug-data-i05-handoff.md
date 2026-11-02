@@ -39,3 +39,7 @@ not treated as acceptance evidence. No merge, deploy, remote D1 or mail.
 ## Second I05 block
 
 Created `tools/debug-data-i05-view-adapters.mjs`, pure candidate-only Calendar and club-schedule projections. These consume an already validated protected competition view, preserve provenance, reject cursor mismatches and future score/knockout leaks, and never modify the input. They are deliberately **not injected or activated** in Calendar or Club UI yet. Full view integration, dedicated tests and I06 regression remain open.
+
+## Third I05 block
+
+Added `tools/debug-data-i05-consumers.mjs`, a single candidate-only bridge that validates one protected view and exposes Calendar and per-club projections with a common source identity and cursor. The bridge is not injected in runtime. An attempted integration into the DEV source coordinator could not be committed; it remains open and no page activation is claimed. Full regressions stay deferred to I06.
