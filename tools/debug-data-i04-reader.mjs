@@ -22,9 +22,9 @@ const freeze=value=>{
 export function createProtectedDebugSeasonReader({loadCorpus,divisions,cupCatalog,seed="debug-data-v1-fresh"}){
  requireValue(typeof loadCorpus==="function","loadCorpus callback required");
  requireValue(Array.isArray(divisions)&&Array.isArray(cupCatalog),"canonical rule catalogs required");
- let epoch=0, identity=null, loaded=null, loading=null;
+ let epoch=0, identity=null, loaded=null, loading=null,verifiedPlan=null;
  const projected=new Map();
- const close=()=>{epoch++;identity=null;loaded=null;loading=null;projected.clear();};
+ const close=()=>{epoch++;identity=null;loaded=null;loading=null;verifiedPlan=null;projected.clear();};
  function activate({datasetId}){
   requireValue(safeKey(datasetId),"invalid dataset identifier");
   close();
@@ -44,13 +44,14 @@ export function createProtectedDebugSeasonReader({loadCorpus,divisions,cupCatalo
     requireValue(corpus?.status==="UNSEALED_NOT_FOR_RUNTIME","candidate seal status changed");
     const plan=planProtectedDebugExport(corpus);
     requireValue(plan.manifest.datasetId===requested,"manifest identity mismatch");
-    if(current(token,requested))loaded=corpus;
+    if(current(token,requested)){loaded=corpus;verifiedPlan=plan;}
     return corpus;
    });
    loading=pending;
    pending.finally(()=>{if(loading===pending)loading=null;}).catch(()=>{});
   }
-  return loading;
+  const result=await loading;
+  return current(token,requested)?result:null;
  }
  async function read({seasonNumber,worldDay,competitionId}){
   requireValue(identity!==null,"source not activated");
@@ -63,7 +64,7 @@ export function createProtectedDebugSeasonReader({loadCorpus,divisions,cupCatalo
   const key=[requested,seasonNumber,worldDay,competitionId].join(":");
   let projection=projected.get(key);
   if(!projection){
-   projection=freeze(projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competitionId,divisions,cupCatalog,seed}));
+   projection=freeze(projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competitionId,divisions,cupCatalog,seed,verifiedPlan}));
    if(!current(token,requested))return {status:"stale",epoch:token};
    projected.set(key,projection);
   }
