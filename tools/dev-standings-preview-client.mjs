@@ -457,8 +457,8 @@ if(validPath||indexPath||clubPath){
    if(next===renderedSeason)return seasonRefresh;
    const request=++seasonRequest;
    renderedSeason=next;
+   // Preserve the rendered rows until the new preview transaction commits.
    window.faCompetitionContextApi?.selectSeason(selectedSeason());
-   window.faCompetitionContextApi?.clearSeasonData();
    // Prevent even one frame of previous-season data while DEV hydration is pending.
    if(previewState!=="ON"){
     delete document.documentElement.dataset.faDevSeasonTransition;
