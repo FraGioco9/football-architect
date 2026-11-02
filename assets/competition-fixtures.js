@@ -328,7 +328,9 @@
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
-    if(!data){if(fields.list.dataset.fixturesState==="pending")return;rounds=null;postseason=[];currentMatchday=null;render();return;}
+    // An unresolved context must not tear down a previously committed fixture presentation.
+    // Confirmed empty contexts are handled by the separate committed event below.
+    if(!data)return;
     const previous=clubs;
     try{
       clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
@@ -336,9 +338,16 @@
       const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
       const current=data.provenance?.kind==='authoritative'?data.currentMatchday:calendar?rules.currentFixtureChoice(definition,calendar,window.faDevWorldClockSnapshot||window.faWorldClockSnapshot):null;
       window.faFixtures.prepare(data.fixtures,{currentMatchday:current,postseason:data.postseason||[],definition})();
-    }catch{clubs=previous;rounds=null;postseason=[];currentMatchday=null;render();}
+    }catch{clubs=previous;/* Keep the last verified fixtures until a final source outcome. */}
   }
   window.addEventListener('fa:competition-context-change',contextChanged);
+  window.addEventListener('fa:competition-context-committed',event=>{
+    if(event.detail?.seasonData!==null)return;
+    rounds=null;postseason=[];currentMatchday=null;
+    fields.list.dataset.fixturesState='ready';
+    fields.toolbar.dataset.fixturesState='ready';
+    render();
+  });
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
