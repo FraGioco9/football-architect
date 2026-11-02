@@ -458,7 +458,7 @@
   new MutationObserver(()=>{if(rounds)render()}).observe(document.documentElement,
     {attributes:true,attributeFilter:["lang"]});
   function contextChanged(){
-    if(window.faCompetitionContext?.presentationOwner==='protected-domestic')return;
+    if(['protected-domestic','protected-international'].includes(window.faCompetitionContext?.presentationOwner))return;
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
