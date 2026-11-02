@@ -241,7 +241,18 @@
     }else{
       for(let index=0;index<definition.capacity/2;index++)pending.push(row(1,index));
     }
-    fields.list.replaceChildren(...pending);
+    // The generated first-paint shell already has the correct stage/slot geometry.
+    // Do not tear it down just because the deferred controller has initialized.
+    const existing=[...fields.list.children];
+    const sameGeometry=existing.length===pending.length&&existing.every((node,index)=>{
+      const next=pending[index];
+      if(node.classList.contains('app-fixture-stage')||next.classList.contains('app-fixture-stage'))
+        return node.classList.contains('app-fixture-stage')&&next.classList.contains('app-fixture-stage')&&
+          node.querySelector('[data-app-i18n]')?.dataset.appI18n===next.querySelector('[data-app-i18n]')?.dataset.appI18n;
+      return node.dataset.fixtureSlot===next.dataset.fixtureSlot;
+    });
+    if(!sameGeometry)fields.list.replaceChildren(...pending);
+    fields.list.hidden=false;
   }
   function showPendingFixtures(){
     const template=fields.list.querySelector('.app-fixture-pending-row');
