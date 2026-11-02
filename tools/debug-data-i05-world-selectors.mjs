@@ -33,5 +33,8 @@ export function selectProtectedClubSummary(snapshot,clubId){
  const nextMatch=upcoming?{homeId:Number(upcoming.homeId.split("-")[1]),
   awayId:Number(upcoming.awayId.split("-")[1]),round:Number(upcoming.roundId)}:null;
  return {source:"dev",divisionId:division.competitionId,clubId:Number(clubId.split("-")[1]),
-  season:snapshot.seasonNumber,position:rank+1,points:row.pts??row.points,nextMatch};
+  season:snapshot.seasonNumber,worldDay:snapshot.worldDay,position:rank+1,points:row.pts??row.points,nextMatch,
+  fixtures:selectProtectedClubFixtures(snapshot,clubId),
+  statistics:{played:row.played,won:row.won??row.wins,drawn:row.drawn,lost:row.lost,
+   gf:row.gf??row.goalsFor,ga:row.ga??row.goalsAgainst,gd:row.gd??row.goalDifference}};
 }
