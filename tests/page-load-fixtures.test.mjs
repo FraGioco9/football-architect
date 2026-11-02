@@ -50,3 +50,17 @@ test('fixtures never publish a provisional matchday=1 while current matchday is 
  assert.match(source,/if\(currentMatchday!==null\)navigation\.defaultMatchday\(currentMatchday\)/);
  assert.match(source,/rounds!==null&&currentMatchday!==null&&committedSeason===route\.season/);
 });
+
+test('A04: international and domestic competition headers expose the same metadata slots',()=>{
+ for(const id of ids){
+  const html=read('competitions/'+id+'/index.html');
+  assert.match(html,/class="app-world-detail-meta"/,id);
+  assert.match(html,/id="app-competition-country"/,id);
+  assert.match(html,/id="app-competition-tier"/,id);
+  assert.match(html,/id="app-competition-season"/,id);
+  if(id.startsWith('int-')){
+   assert.match(html,/id="app-competition-country" data-cup-copy="category"/,id);
+   assert.match(html,/id="app-competition-tier" data-cup-copy="summary"/,id);
+  }
+ }
+});
