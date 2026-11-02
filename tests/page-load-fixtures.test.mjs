@@ -77,3 +77,14 @@ test('A04: season selector reserves its geometry without showing provisional Sea
  const router=read('assets/competition-tabs.js');
  assert.match(router,/seasonValue\.textContent=available\?state\.season/);
 });
+
+test('A04: shared competition heading reserves metadata and season value line geometry',()=>{
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-world-detail-meta\{[^}]*min-height:1\.4em/);
+ assert.match(css,/#app-competition-season-value\{[^}]*min-width:1ch;min-height:1em/);
+ for(const id of ids){
+  const html=read('competitions/'+id+'/index.html');
+  assert.match(html,/class="app-world-detail-meta"/,id);
+  assert.match(html,/<span id="app-competition-season-value"><\/span>/,id);
+ }
+});
