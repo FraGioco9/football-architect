@@ -30,7 +30,8 @@ const VIRTUAL = Object.freeze({
   "/__fa_dev__/dev-international-preview.mjs": "dev-international-preview.mjs",
   "/__fa_dev__/stats-data.mjs": "dev-competition-stats-data.mjs",
   "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs",
-  "/__fa_dev__/protected-debug-source.mjs": "dev-protected-debug-source.mjs"
+  "/__fa_dev__/protected-debug-source.mjs": "dev-protected-debug-source.mjs",
+  "/__fa_dev__/protected-domestic-context.mjs": "dev-protected-domestic-context.mjs"
 });
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -157,7 +158,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.writeHead(308,{"Location":viewSlash.canonical+query,"Cache-Control":"no-store"});
         res.end();return;
       }
-      if(raw==="/__fa_dev__/protected-debug-source.mjs" && (process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.FA_DEBUG_I03_BROWSER_BRIDGE!=="1"||!devPreview))return reject(res,404);
+      if((raw==="/__fa_dev__/protected-debug-source.mjs"||raw==="/__fa_dev__/protected-domestic-context.mjs") && (process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.FA_DEBUG_I03_BROWSER_BRIDGE!=="1"||!devPreview))return reject(res,404);
       const virtual = VIRTUAL[raw];
       let body, type, file;
       if (virtual) {

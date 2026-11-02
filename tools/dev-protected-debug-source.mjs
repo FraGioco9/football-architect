@@ -1,5 +1,6 @@
 // I03: isolated, opt-in shared source coordinator; NEVER loaded by public build.
 // No bearer token is stored in browser code or storage.
+import {prepareProtectedDomesticContext} from "./protected-domestic-context.mjs";
 const state={enabled:false,revision:0,abort:null,view:null};
 const key="football-architect:local-debug-visible";
 const readEnabled=()=>{try{return sessionStorage.getItem(key)==="1"}catch{return false}};
@@ -29,8 +30,14 @@ export async function refreshDebugSource(){
   const view=await response.json();
   if(revision!==state.revision)return;
   if(view.kind!=="protected-debug-projection"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
+  let prepared=null;
+  if(!competitionId.startsWith("int-")){
+   try{prepared=prepareProtectedDomesticContext(view,{competitionId,season,day});}
+   catch(error){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"invalid-domestic-context"});return;}
+  }
   state.view=view;
   emit("fa:protected-debug-source-change",{kind:"protected-debug",enabled:true,revision,view});
+  if(prepared)emit("fa:protected-debug-domestic-prepared",{revision,competitionId,season,day,prepared});
  }catch(error){if(revision===state.revision&&error?.name!=="AbortError"){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:0});}}
 }
 for(const name of ["fa:debug-mode-change","fa:dev-progress-change","fa:dev-world-day-change","fa:competition-route-change","pageshow"])window.addEventListener(name,()=>{void refreshDebugSource()});
