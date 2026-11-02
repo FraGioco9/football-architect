@@ -144,7 +144,7 @@ test('A04-E4-History: pending manifest renders only the latest route and never a
   const panel={dataset:{},querySelector(selector){return {'[data-history-empty]':status,'[data-history-error]':error,'[data-history-record-controls]':controls,'[data-history-player-records]':players,'.app-history-dev':roots.at(-1)}[selector]},append(root){roots.push(root);appends++}};
   const route={view:'history',season:'1'},errors=[];
   const context={enabled:true,debugSeason:1,matchdays:15,validPath:['','it-1'],competitionModel:model,createPreviewHistory,
-   isPreviewEnabled:()=>context.enabled,
+   isPreviewEnabled:()=>context.enabled,debugMode:()=>context.enabled,
    window:{faCompetitionRoute:{get:()=>({...route})},faAppRenderLanguage(){}},
    document:{documentElement:{dataset:{}},getElementById:()=>panel,createElement(tag){created++;return element(tag)},createTextNode(text){return {...element('#text'),textContent:text}}},
    fetch:()=>new Promise(resolve=>release=resolve),console:{error(...args){errors.push(args.map(String).join(' '))}}};
