@@ -45,8 +45,35 @@ export function buildCupPreview(manifest,definition,season,day){
  }
  const standings=[...map.values()].map(row=>({...row,gd:row.gf-row.ga,recent:row.recent.slice(0,5)}))
   .sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||b.won-a.won||key(a.club).localeCompare(key(b.club)));
+ const completedTies=[];
+ const knockoutDays={I07:36,I08:38,I09:41,I10:43,I11:46,I12:48,'FEDERATION-FINAL':53,'SOVEREIGN-FINAL':54};
+ const rank=new Map(standings.map((row,index)=>[key(row.club),index]));
+ const resolved=new Map();
+ if(day>=ROUND_DAYS[5])for(const phase of definition.rules.phases.filter(p=>p.type==='knockout')){
+  for(const tie of phase.ties){
+   const pair=tie.participants.map(ref=>ref.tieId?resolved.get(ref.tieId)?.winner||null:standings[ref.rank-1]?.club||null);
+   if(pair.some(club=>!club))continue;
+   const ordered=tie.homePolicy==='neutral'?[...pair]:[...pair].sort((a,b)=>rank.get(key(b))-rank.get(key(a)));
+   const legs=[];
+   let winner=null;
+   for(let leg=0;leg<tie.legs;leg++){
+    const scheduledDay=knockoutDays[phase.calendarEvents[leg]];
+    if(day<scheduledDay)break;
+    const [home,away]=leg===1?[ordered[1],ordered[0]]:ordered;
+    const [hg,ag]=score(season,phase.id+':'+tie.id+':'+leg,key(home),key(away));
+    legs.push({phaseId:phase.id,tieId:tie.id,leg:leg+1,homeId:key(home),awayId:key(away),homeGoals:hg,awayGoals:ag,kickoff:null});
+   }
+   if(legs.length===tie.legs){
+    const goals=club=>legs.reduce((n,g)=>n+(g.homeId===key(club)?g.homeGoals:g.awayGoals),0);
+    const a=goals(pair[0]),b=goals(pair[1]);
+    winner=a===b?[...pair].sort((a,b)=>rank.get(key(a))-rank.get(key(b)))[0]:a>b?pair[0]:pair[1];
+   }
+   resolved.set(tie.id,{winner});
+   if(legs.length)completedTies.push({id:tie.id,legs,winnerId:winner?key(winner):null});
+  }
+ }
  return {season,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,participants,fixtures:full,
-  results:full.filter(g=>g.homeGoals!==null),statistics:{standings},status:'partial'};
+  results:[...full.filter(g=>g.homeGoals!==null),...completedTies],statistics:{standings},status:'partial'};
 }
 export function mountCupDebugPreview({getContext,commit,enabled,readSeason,readDay}){
  let epoch=0;
