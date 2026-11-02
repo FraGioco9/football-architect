@@ -16,3 +16,10 @@ Reference: issue #341, building on #324 / #331; base main `9c73dd049e708054b3443
 
 ## Rollout / pending
 Keep existing workflows and required `landing` unchanged until the new selection and final gate are demonstrated. A03–A07 remain open; current FULL is not yet a verified required merge check. No deployment, DB remote, or publication guard modifications.
+
+## 2026-11-03 staging and enforcement constraints
+- Existing Site/Browser workflows now share the conservative selector; their suites and main behavior remain unchanged. Draft changes to CI itself intentionally fall back to full, making this rollout more expensive during initial validation.
+- The optional evidence verifier is `.github/workflows/ci-opt-03-full-gate.yml`; it requires successful manual `workflow_dispatch` Site and Browser FULL workflows on the exact live PR HEAD, and full Admin contracts plus operator persistence when Admin/Auth/backend are modified. It rejects SHA drift and is not cancelable.
+- **Critical:** workflows newly introduced only on a feature branch may not be manually dispatchable until they exist on the default branch. The verifier must be registered, tested with real workflow runs and added as an actual required check before it can enforce merges. The existing ruleset currently requires only `landing`. Therefore the release gate is **not yet configured**; no merge safety claim is permitted.
+- We have not switched off any automatic existing CI. Workflow-dispatch and ruleset-change access are not exposed by the present GitHub connector. These steps require a separately authorized route capable of updating the repository ruleset, with post-change readback and negative tests.
+- A07 must record full SHA-pinned real job status and time measurements; interrupted/cancelled runs are not PASS. The failed PR #340 results must remain red and out of this PR.
