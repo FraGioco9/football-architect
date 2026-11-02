@@ -49,7 +49,7 @@ function randomSource(key) {
 }
 
 export function createPreviewStandings(division, matchdays = 15, season = 1) {
-  if (!Number.isInteger(season) || season < 1 || season > 4) throw Error("Invalid DEV season");
+  if (!Number.isInteger(season) || season < 1 || season > 5) throw Error("Invalid DEV season");
   assertDivision(division);
   const definition=previewDefinition(division),phase=definition.rules.phases.find(p=>p.type==='roundRobin');
   const {rounds,matchesPerRound,matches}=definition.metrics.phases[phase.id];
@@ -156,8 +156,8 @@ export function previewCurrentMatchday(season,progress) {
 }
 
 export function previewSeasonProgress(season,progress) {
-  if(!Number.isInteger(season)||season<1||season>4||
-    !Number.isInteger(progress?.season)||progress.season<0||progress.season>4||
+  if(!Number.isInteger(season)||season<1||season>5||
+    !Number.isInteger(progress?.season)||progress.season<0||progress.season>5||
     !Number.isInteger(progress.matchdays)||progress.matchdays<0||progress.matchdays>DEBUG_MAX_MATCHDAY)
     throw Error("Invalid DEV progress");
   return season<progress.season?DEBUG_MAX_MATCHDAY:season===progress.season?progress.matchdays:0;
