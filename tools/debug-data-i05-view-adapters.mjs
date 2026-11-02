@@ -59,6 +59,8 @@ export function projectProtectedInternational(view,cursor){
  validateProtectedView(view,cursor);
  return {source:clone(view.source),seasonNumber:cursor.seasonNumber,worldDay:cursor.worldDay,
   competitionId:cursor.competitionId,standings:clone(view.standings??[]),
-  fixtures:clone(view.events),history:projectProtectedCompetitionHistory(view,cursor),
+  participants:clone(view.participants),clubs:clone(view.clubs),
+  fixtures:clone(view.events),resolvedTies:clone(view.resolvedTies??[]),
+  history:projectProtectedCompetitionHistory(view,cursor),
   acceptance:"UNSEALED_NOT_FOR_RUNTIME"};
 }
