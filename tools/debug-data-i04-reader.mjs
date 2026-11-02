@@ -38,6 +38,8 @@ export function createProtectedDebugSeasonReader({loadCorpus,divisions,cupCatalo
   if(loaded)return loaded;
   if(!loading){
    const pending=Promise.resolve().then(()=>loadCorpus(requested)).then(corpus=>{
+    // A replaced source must not validate or publish its stale payload.
+    if(!current(token,requested))return null;
     requireValue(corpus?.datasetId===requested,"dataset identity mismatch");
     requireValue(corpus?.status==="UNSEALED_NOT_FOR_RUNTIME","candidate seal status changed");
     const plan=planProtectedDebugExport(corpus);
