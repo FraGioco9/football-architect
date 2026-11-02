@@ -3,6 +3,7 @@
 import {prepareProtectedDomesticContext} from "./dev-protected-domestic-context.mjs";
 import {createProtectedDomesticPresentation} from "./dev-protected-domestic-presentation.mjs";
 import {prepareProtectedConsumers} from "./debug-data-i05-consumers.mjs";
+import {acceptProtectedCandidates,invalidateProtectedCandidates} from "./dev-protected-consumer-registry.mjs";
 const state={enabled:false,revision:0,abort:null,view:null,consumers:null};
 const key="football-architect:local-debug-visible";
 const readEnabled=()=>{try{return sessionStorage.getItem(key)==="1"}catch{return false}};
@@ -19,6 +20,7 @@ export async function refreshDebugSource(){
  const competitionId=routeCompetition();
  // Invalidate the outgoing candidate immediately, before any async fetch.
  state.view=null;state.consumers=null;
+ invalidateProtectedCandidates(revision);
  if(!state.enabled||season===0||!competitionId){
   state.view=null;state.consumers=null;
   emit("fa:protected-debug-source-change",{kind:!state.enabled?"global":"debug-unstarted",enabled:state.enabled,revision});
@@ -47,6 +49,7 @@ export async function refreshDebugSource(){
    state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"future-result-leak"});return;
   }
   state.view=view;state.consumers=consumers;
+  acceptProtectedCandidates({revision,competitionId,season,day,consumers});
   emit("fa:protected-debug-consumers-ready",{revision,competitionId,season,day,consumers});
   emit("fa:protected-debug-source-change",{kind:"protected-debug",enabled:true,revision,view});
   if(prepared){emit("fa:protected-debug-domestic-prepared",{revision,competitionId,season,day,prepared});
