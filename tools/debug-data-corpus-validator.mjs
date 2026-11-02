@@ -13,6 +13,8 @@ export function validateFiveSeasonCandidate(corpus){
     const id=country+"-"+tier,fragment=season.domestic?.[id];
     if(fragment?.participants?.length!==16||fragment.events?.length!==240)throw Error("domestic fixture count "+id);
     if(fragment.events.some(e=>e.day<1||e.day>56||e.result===null))throw Error("unfinished domestic schedule "+id);
+    const post=season.domesticPostseasonEvents?.[id],outcome=season.domesticOutcomes?.[id];
+    if(post?.length!==(tier===1?2:5)||post.some(e=>e.day<52||e.day>54||e.result===null)||outcome?.ties?.length!==(tier===1?1:3))throw Error("invalid postseason "+id);
    }
   }
   for(const id of ["int-1","int-2"]){
@@ -20,6 +22,7 @@ export function validateFiveSeasonCandidate(corpus){
    if(cup?.participants?.length!==24||cup.events?.length!==93||cup.ties?.length!==11)throw Error("invalid INT24 tournament "+id);
    if(cup.events.some(e=>e.day<1||e.day>56||e.result===null))throw Error("invalid INT24 calendar "+id);
    if(!cup.participants.includes(cup.winner))throw Error("invalid cup winner "+id);
+   if(cup.pots?.length!==3||cup.pots.some(p=>p.length!==8))throw Error("invalid cup pots "+id);
   }
   prior=season;
  }

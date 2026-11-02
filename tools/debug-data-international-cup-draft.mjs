@@ -19,7 +19,7 @@ export function buildInternationalCupDraft({seasonNumber,cupId,participants,seed
  ensure(new Set(events.map(e=>e.eventId)).size===events.length,"duplicate cup event IDs");
  const winners=new Set(elimination.ties.map(t=>t.winner));
  ensure(winners.has(elimination.winner),"cup final winner absent");
- return {schemaVersion:1,kind:"unsealed-international-cup-draft",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,competitionId:cupId,participants:[...participants],ranking,leagueEvents:league.events,ties:elimination.ties,events,winner:elimination.winner,contentsHash:hash({events,ranking,winner:elimination.winner}),limitations:["season-wide knockout and holder lineage not yet sealed"]};
+ return {schemaVersion:1,kind:"unsealed-international-cup-draft",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,competitionId:cupId,participants:[...participants],pots:league.pots,ranking,leagueEvents:league.events,ties:elimination.ties,events,winner:elimination.winner,contentsHash:hash({events,ranking,winner:elimination.winner}),limitations:["season-wide knockout and holder lineage not yet sealed"]};
 }
 export function selectCupBaseline(approved,cupId){
  const names=approved.get(cupId);
