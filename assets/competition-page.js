@@ -602,7 +602,7 @@
       }
       const data=context.seasonData;
       if(!data&&document.querySelector('.app-world-standings')?.dataset?.standingsState==='pending')return;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){if(data&&data.provenance?.kind!=='authoritative')return;if(suppliedOwned||activeDebugSeason===0||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){if(data&&data.provenance?.kind!=='authoritative')return;if(suppliedOwned||activeDebugSeason===0||document.querySelector('.app-world-standings')?.dataset?.standingsState==='empty'||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));

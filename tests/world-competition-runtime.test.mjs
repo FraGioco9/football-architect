@@ -713,3 +713,11 @@ test('PAGE-LOAD: manifest failure keeps the generated layout and ends loading wi
  assert.ok(r.fields.get('competition-panel-standings').children.some(node=>node.attrs.role==='status'));
  assert.equal(r.fields.get('main-content').children.length,0);
 });
+
+test('PAGE-LOAD: a committed empty source replaces retained DEV rows even without supplied statistics',async()=>{
+ const r=await simulate({division:manifest.divisions[0],devSeason:1,pending:true});
+ const retained=node('tr');retained.dataset.worldClub='old-dev-result';retained.textContent='3';
+ r.fields.get('app-standings-body').replaceChildren(retained);
+ r.window.faCompetitionContextApi.clearSeasonData({committed:true});
+ assert.ok(!r.fields.get('app-standings-body').children.includes(retained));
+});
