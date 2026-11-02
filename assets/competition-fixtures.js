@@ -249,7 +249,8 @@
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.phaseLabel(selectedChoice.labelKey,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
     
     number.replaceChildren(selectedLabel);
-    roundMenu.sync(String(international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected));
+    const visibleChoice=international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected;
+    roundMenu.sync(String(visibleChoice));
     if(!available)roundMenu.close();
     const navigationChoices=international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured;
     const choiceIndex=navigationChoices.findIndex(c=>c.value===(international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected));
@@ -263,11 +264,11 @@
         const legs=Math.max(...phase.ties.map(t=>t.legs));
         for(let leg=1;leg<=legs;leg++){
           const games=postseason.filter(g=>g.phaseId===phase.id&&g.leg===leg);
-          const title=element('li','app-fixture-stage'),heading=element('h3');
-          heading.append(word(legs===1?'postseasonFinal':leg===1?'postseasonFirstLeg':'postseasonSecondLeg',legs===1?'Final':leg===1?'First leg':'Second leg'));
-          title.append(heading);
+          const title=legs===1?null:element('li','app-fixture-stage');
+          if(title){const heading=element('h3');heading.append(word(leg===1?'postseasonFirstLeg':'postseasonSecondLeg',leg===1?'First leg':'Second leg'));title.append(heading);}
           const display=games.length?games:Array.from({length:phase.ties.length},()=>({phaseId:phase.id,leg,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null}));
-          matches.push(title,...display.map(matchRow));
+          if(title)matches.push(title);
+          matches.push(...display.map(matchRow));
         }
       }
       else if(isPostseason)for(const round of [31,32,33]){
