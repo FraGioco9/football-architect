@@ -1171,3 +1171,7 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 .app-world-standing-table tbody tr>*:not(:nth-child(10)){font-weight:400}
 .app-world-standing-table tbody tr>*:nth-child(10){font-weight:800}
 .app-world-mobile-points{font-weight:850}
+
+/* PAGE-LOAD A03: identity-free fixtures first paint reserves final match rows. */
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row{min-height:60px;box-sizing:border-box;pointer-events:none}
+@media(max-width:620px){.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row{min-height:96px}}
