@@ -156,7 +156,8 @@ try {
   const revision=await page.evaluate(()=>window.faCompetitionContext.revision);
   await page.evaluate(()=>window.faCompetitionRoute.set({matchday:'quarterfinals:2'}));
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.revision),revision,'fixture browsing must not change simulation/data progress');
-  assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),0);
+  assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),await page.evaluate(()=>window.faCompetitionContext.definition.rules.phases.find(p=>p.id==='quarterfinals').ties.length*2),'unsupplied quarterfinals preserve the two-leg fixture geometry');
+  assert.equal(await page.locator('#app-fixtures-list .app-fixture-score-home').count(),0,'unsupplied quarterfinals must not invent scores');
   await page.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
   assert.equal(await page.locator('#app-standings-body tr').count(),1);
   assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
