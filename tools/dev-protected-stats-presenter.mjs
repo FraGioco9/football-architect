@@ -20,9 +20,9 @@ function summarize(payload){
   const club=clubs.get(row.clubId),metric=metrics.get(row.clubId);
   if(!club||!metric)throw Error("I05 Stats missing canonical club");
   return {clubKey:row.clubId,clubName:club.primaryName||club.fullName||row.clubId,
-   mp:row.played,w:numeric(row.wins),gf:numeric(row.goalsFor),ga:numeric(row.goalsAgainst),
-   gd:numeric(row.goalDifference),cs:metric.cs,unbeatenStreak:metric.streak,
-   ppg:row.played?numeric(row.points)/row.played:0};
+   mp:row.played,w:numeric(row.wins),gf:numeric(row.goalsFor??row.gf),ga:numeric(row.goalsAgainst??row.ga),
+   gd:numeric(row.goalDifference??row.gd),cs:metric.cs,unbeatenStreak:metric.streak,
+   ppg:row.played?numeric(row.points??row.pts)/row.played:0};
  });
 }
 export function attachProtectedStatsPresenter({panel,definition,baseContext}){
