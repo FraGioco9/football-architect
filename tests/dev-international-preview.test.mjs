@@ -100,7 +100,7 @@ test('A04 international Fixtures phase label is identical in menu and selected b
 });
 test('A04 cup stage headings are per-leg only and do not repeat Final',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
- assert.match(source,/const title=legs===1\?null:element\('li','app-fixture-stage'\)/);
+ assert.match(source,/const section=element\('li','app-fixture-stage'\),heading=element\('h3'\)/);
  assert.match(source,/target\.push\(\.\.\.display\.map\(renderRow\)\)/);
  assert.match(source,/for\(let leg=1;leg<=legs;leg\+\+\)/);
 });
@@ -118,7 +118,7 @@ test('A04 Fixtures atomically replaces old stage headings on Debug changes',()=>
 
 test('A04 domestic and international two-leg Fixtures use one shared stage builder',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
- assert.match(source,/function appendStage\(target,labelKey,fallback,games,count,placeholder\)/);
+ assert.match(source,/function appendStage\(target,labelKey,fallback,games,count,placeholder,renderRow=matchRow\)/);
  assert.match(source,/appendStage\(matches,legs===1\?null/);
  assert.match(source,/appendStage\(matches,round===31\?'postseasonFirstLeg'/);
  assert.match(source,/phase\.ties\.length,index=>\(\{/);
