@@ -26,11 +26,14 @@ test('CONFIG-PHASES: fixture choices derive domestic and international phase len
  assert.equal(rules.fixtureChoices(definitions.find(d=>d.id==='IT-2')).at(-1).value,'playoffs');
  for(const d of definitions.filter(d=>d.category==='international')){
   const choices=rules.fixtureChoices(d);
-  assert.deepEqual(choices.map(c=>c.value),[1,2,3,4,5,6,'playoffs:1','playoffs:2','quarterfinals:1','quarterfinals:2','semifinals:1','semifinals:2','final:1']);
+  const expected=d.rules.phases.flatMap(phase=>phase.type==='knockout'
+   ?Array.from({length:Math.max(...phase.ties.map(t=>t.legs))},(_,i)=>phase.id+':'+(i+1))
+   :Array.from({length:d.metrics.phases[phase.id].rounds},(_,i)=>i+1));
+  assert.deepEqual(choices.map(c=>c.value),expected);
   const html=read('competitions/'+d.slug+'/index.html');
-  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,6);
+  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,d.metrics.phases.league.rounds);
   assert.ok(html.includes('data-fixture-round-choice="final:1"'));
-  assert.equal((html.match(/data-postseason-config-tie=/g)||[]).length,11);
+  assert.equal((html.match(/data-postseason-config-tie=/g)||[]).length,d.rules.phases.reduce((sum,phase)=>sum+(phase.ties?.length||0),0));
   assert.ok(!html.includes('data-standing-outcome="promoted"'));
  }
 });
