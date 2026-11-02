@@ -13,5 +13,5 @@ export async function readProtectedWorldCandidates(reader,seasonNumber,worldDay)
  if(results.some((r,i)=>r.projection?.seasonNumber!==seasonNumber||r.projection?.worldDay!==worldDay||r.projection?.competitionId!==DEBUG_COMPETITIONS[i]||!Array.isArray(r.projection.events)))throw Error("Inconsistent world coordinates");
  return {kind:"protected-debug-world",status:"UNSEALED_NOT_FOR_RUNTIME",
   seasonNumber,worldDay,source:first.source,
-  competitions:results.map(r=>({competitionId:r.projection.competitionId,events:r.projection.events}))};
+  competitions:results.map(r=>({competitionId:r.projection.competitionId,participants:r.projection.participants,standings:r.projection.standings,events:r.projection.events}))};
 }
