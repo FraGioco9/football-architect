@@ -310,7 +310,7 @@
   }
   navigation.subscribe(route=>{
     selected=route.matchday;
-    if(route.view==="fixtures"&&rounds!==null){
+    if(route.view==="fixtures"&&rounds!==null&&committedSeason===route.season){
       navigation.defaultMatchday(currentMatchday??1);
       selected=navigation.get().matchday;
     }
@@ -367,6 +367,7 @@
     const detail=event.detail,context=window.faCompetitionContext;
     if(!detail||!context||detail.season!==context.selectedSeason||detail.revision!==context.revision)return;
     if(detail.state==='loading'){
+      if(committedSeason!==null&&committedSeason!==String(detail.season)){render();return;}
       fields.empty.hidden=true;
       return;
     }
