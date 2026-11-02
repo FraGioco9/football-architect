@@ -928,7 +928,7 @@
   }
   function setDebugSeason(season){
     if(!window.faDevPreviewMode)return false;
-    if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
+    if(season!==null&&(!Number.isInteger(season)||season<0||season>5))return false;
     if(activeDebugSeason!==season){activeDebugSeason=season;}
     if(season===0)selectSeason(1);
     return true;
@@ -1018,7 +1018,7 @@
     if(required.some(id=>!document.getElementById(id)))throw Error("Incomplete generated page");
     const dataset=document.documentElement?.dataset||{};
     activeDebugSeason=dataset.faDevCurrentSeason===undefined?null:Number(dataset.faDevCurrentSeason);
-    const devSeasons=(dataset.faDevSeasons||"").split(",").map(Number).filter(n=>n>=1&&n<=4);
+    const devSeasons=(dataset.faDevSeasons||"").split(",").map(Number).filter(n=>n>=1&&n<=5);
     const seasons=devSeasons.length?devSeasons.filter(n=>activeDebugSeason===null||n<=activeDebugSeason):[1];
     if(!seasons.includes(1))seasons.push(1);
     const raw=new URL(window.location.href).searchParams.get("season");
@@ -1148,7 +1148,7 @@
           if(window.faDevPreviewMode!==true)return;
           const enabled=event.detail?.enabled===true;
           if(!enabled){publicDefaultApplied=false;resumeGlobalDefault=true;}
-          setDebugSeason(enabled?(()=>{try{const value=Number(sessionStorage.getItem('football-architect:standings-dev-season'));return Number.isInteger(value)&&value>=0&&value<=4?value:1}catch{return 1}})():null);
+          setDebugSeason(enabled?(()=>{try{const value=Number(sessionStorage.getItem('football-architect:standings-dev-season'));return Number.isInteger(value)&&value>=0&&value<=5?value:1}catch{return 1}})():null);
           if(!enabled){selection='';select();}
           // Wait for DEV preview teardown before fetching global data.
           // The completion event below starts the authoritative loader.
