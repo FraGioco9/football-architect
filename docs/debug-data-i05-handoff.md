@@ -81,3 +81,16 @@ remote D1 or deployment in this block. I05 remains **in progress**.
 - Tightened the gated Domestic controller's revision guard: old asynchronous presentation events cannot restore an earlier dataset after source invalidation, while the successfully prepared presentation for the current pending revision is still permitted.
 - The registry does not render DOM, load public assets or activate the I03 renderer. Calendar/Clubs/Stats/History/International renderer subscriptions remain to be implemented and validated.
 - No broad tests were run. Full I06 verification and publication security gates remain outstanding.
+
+## Eighth I05 block — reversible DEV page presenter bridge
+
+Added `tools/dev-protected-page-bridge.mjs` with `attachProtectedPresenter`
+for calendar, stats, history, international and club candidate projections.
+Each explicitly opted-in page presenter supplies prepare, commit and rollback
+callbacks. Subscription follows the shared revisioned registry; invalidation
+releases the previous presenter transaction. Exceptions from prepare or rollback
+are contained, and obsolete prepared candidate transactions are discarded.
+
+This module is **not injected or auto-mounted**. No public page is yet rendered
+from the new corpus; specific DOM presenter adapters and owner-approved I06
+acceptance are still necessary. No full regression test run.
