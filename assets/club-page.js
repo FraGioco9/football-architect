@@ -93,6 +93,7 @@
     if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}}
   };
   window.addEventListener('fa:club-competition-summary',event=>receiveSummary(event.detail));
+  window.dispatchEvent(new CustomEvent('fa:club-summary-listener-ready'));
   paint();
   void (async()=>{
    const {createAuthoritativeClubLoader}=await import('/assets/authoritative-season.mjs');
