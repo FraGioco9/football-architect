@@ -159,7 +159,7 @@ try {
   assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),await page.evaluate(()=>window.faCompetitionContext.definition.rules.phases.find(p=>p.id==='quarterfinals').ties.length*2),'unsupplied quarterfinals preserve the two-leg fixture geometry');
   assert.equal(await page.locator('#app-fixtures-list .app-fixture-goals').count(),0,'unsupplied quarterfinals must not invent scores');
   await page.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
-  assert.equal(await page.locator('#app-standings-body tr').count(),1);
+  assert.equal(await page.locator('#app-standings-body tr').count(),await page.evaluate(()=>window.faCompetitionContext.definition.capacity),'empty published season keeps all standings slots reserved');
   assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
     assert.equal(await page.locator('#app-fixtures-previous').isDisabled(),true);
     assert.equal(await page.locator('#app-fixtures-next').isDisabled(),true);
