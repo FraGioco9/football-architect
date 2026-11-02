@@ -123,7 +123,8 @@ try {
    const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
    const teams=participants.map(club=>({clubKey:club.countryId+'-'+club.clubId,clubName:club.primaryName,mp:6,gf:5,ga:5,w:2,cs:1,ppg:8/6,gd:0,unbeatenStreak:2}));
    const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0}]}],statistics:{standings,overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]},status:'partial'};
-   if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))throw Error('QA supplied data rejected');
+   if(window.faDevPreviewMode!==true||!window.faCompetitionContextApi.setDebugSeason(1))throw Error('INT24 fixture injection requires the explicit local Debug boundary');
+   if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))throw Error('QA supplied data rejected in the local Debug boundary');
   });
   assert.equal(await page.locator('#app-standings-body tr').count(),await page.evaluate(()=>window.faCompetitionContext.definition.capacity));
   assert.equal(await page.locator('[data-postseason-config-slot="q1:0"]').innerText(),'QA Club 1');
