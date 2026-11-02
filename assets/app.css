@@ -1173,6 +1173,10 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 .app-world-standing-table tbody tr>*:nth-child(10){font-weight:800}
 .app-world-mobile-points{font-weight:850}
 
+/* PAGE-LOAD: the generated Fixtures panel carries hidden until its inline selector
+   runs at the end of the document. Expose its reserved geometry immediately
+   for an explicit Fixtures route, but never expose an unavailable season. */
+html[data-competition-view="fixtures"][data-competition-season-unavailable="false"] #competition-panel-fixtures[hidden]:has(#app-fixtures-list[data-fixtures-state="pending"]){display:block}
 /* PAGE-LOAD A03: identity-free fixtures first paint reserves final match rows. */
 .app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-label,
 .app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-number{visibility:hidden}
