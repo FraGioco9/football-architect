@@ -66,7 +66,8 @@ try {
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);
    }
    if(view==='fixtures'){
-    assert.equal(await page.locator('[data-fixture-round-choice]').count(),10); // 6 league rounds + 4 collapsed knockout stages
+    const expectedChoices=await page.evaluate(()=>{const definition=window.faCompetitionContext.definition;return definition.rules.phases.reduce((total,phase)=>total+(phase.type==='knockout'?1:definition.metrics.phases[phase.id].rounds),0)});
+    assert.equal(await page.locator('[data-fixture-round-choice]').count(),expectedChoices,'fixture stages must match the shared competition rules');
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
    }
