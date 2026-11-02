@@ -45,7 +45,7 @@ test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an h
   const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.includes('id="app-fixtures-round"'),d.id);
   assert.ok(html.includes('aria-controls="app-fixtures-picker"'),d.id);
-  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,d.metrics.phases[d.rules.phases.find(phase=>phase.type!=='knockout').id].rounds,d.id);
+  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,definitions.find(def=>def.id===d.id).metrics.phases.league.rounds,d.id);
   assert.ok(html.includes('id="app-fixtures-list"'),d.id);
   assert.ok(html.includes('id="app-fixtures-empty"'),d.id);
   assert.ok(html.includes('aria-live="polite"'),d.id);
