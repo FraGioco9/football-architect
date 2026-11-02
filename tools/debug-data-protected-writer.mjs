@@ -4,10 +4,11 @@ import {mkdir,open,rename,rm,realpath,lstat} from "node:fs/promises";
 import {resolve,join,relative,sep,basename} from "node:path";
 import {randomUUID} from "node:crypto";
 import {hash} from "./debug-data-schema.mjs";
+import {repositoryRoot} from "./publication-guard.mjs";
 import {planProtectedDebugExport} from "./debug-data-export-plan.mjs";
 const fail=msg=>{throw new Error("DEBUG-DATA-01 protected writer: "+msg)};
 const safeSegment=value=>typeof value==="string"&&/^[a-z0-9][a-z0-9._-]{0,100}$/.test(value)&&value!=="."&&value!=="..";
-const within=(root,path)=>{const rel=relative(root,path);return rel!==""&&!rel.startsWith(".."+sep)&&rel!==".."&&!resolve(rel).startsWith("//")};
+const within=(root,path)=>{const rel=relative(root,path);return rel!==""&&rel!==".."&&!rel.startsWith(".."+sep)&&!rel.startsWith(sep)};
 export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevApproval=false}){
  if(!explicitDevApproval||process.env.NODE_ENV==="production"||process.env.CI==="true")fail("explicit local DEV approval required");
  if(!protectedRoot||typeof protectedRoot!=="string")fail("protected root required");
@@ -20,6 +21,8 @@ export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevA
  if(!rootInfo?.isDirectory()||rootInfo.isSymbolicLink())fail("protected root must be existing real directory");
  const canonical=await realpath(base);
  if(canonical!==base)fail("protected root alias forbidden");
+ const repoRoot=await realpath(repositoryRoot);
+ if(base===repoRoot||base.startsWith(repoRoot+sep))fail("private dataset root must be OUTSIDE repository and static build roots");
  const destination=join(base,corpus.datasetId);
  if(!within(base,destination))fail("unsafe destination");
  if(await lstat(destination).catch(()=>null))fail("immutable candidate already exists");
