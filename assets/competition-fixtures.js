@@ -75,9 +75,10 @@
     const seen=new Set();
     const next=games.map(g=>{
       if(!g||![roundCount+1,roundCount+2,...(hasFinal?[roundCount+3]:[])].includes(g.round)||
-         !clubs.has(g.homeId)||!clubs.has(g.awayId)||g.homeId===g.awayId||!validKickoff(g.kickoff)||
+         !(g.pendingParticipants===true&&g.homeId===null&&g.awayId===null||clubs.has(g.homeId)&&clubs.has(g.awayId)&&g.homeId!==g.awayId)||!validKickoff(g.kickoff)||
          (g.homeGoals===null?g.awayGoals!==null:!Number.isSafeInteger(g.homeGoals)||g.homeGoals<0||!Number.isSafeInteger(g.awayGoals)||g.awayGoals<0))throw Error('Invalid post-season fixture');
-      const key=g.round+':'+g.homeId+':'+g.awayId;
+      if(g.pendingParticipants===true&&(g.homeId!==null||g.awayId!==null||g.homeGoals!==null||g.awayGoals!==null||g.afterExtraTime||g.penalties!==null))throw Error('Invalid pending knockout slot');
+      const key=g.pendingParticipants===true?g.round+':pending:'+g.slot:g.round+':'+g.homeId+':'+g.awayId;
       if(seen.has(key)||typeof g.afterExtraTime!=='boolean'||(g.round===31&&g.afterExtraTime)||
          (g.homeGoals===null&&g.afterExtraTime))throw Error('Invalid post-season result');
       seen.add(key);
@@ -87,12 +88,14 @@
       return {...g,penalties:p?{...p}:null};
     });
     const legs=[31,32].map(round=>next.filter(g=>g.round===round));
-    if(legs.some(games=>games.length!==size||new Set(games.flatMap(g=>[g.homeId,g.awayId])).size!==size*2)||
-       legs[0].some(g=>!legs[1].some(r=>r.homeId===g.awayId&&r.awayId===g.homeId))||
+    if(legs.some(games=>games.length!==size||new Set(games.filter(g=>!g.pendingParticipants).flatMap(g=>[g.homeId,g.awayId])).size!==games.filter(g=>!g.pendingParticipants).length*2)||
+       legs[0].some(g=>!g.pendingParticipants&&!legs[1].some(r=>r.pendingParticipants||r.homeId===g.awayId&&r.awayId===g.homeId))||
        (next.length===5&&next.filter(g=>g.round===33).length!==1))throw Error('Invalid post-season pairing');
     const final=next.find(g=>g.round===33);
     const winners=legs[0].map(first=>{
-      const second=legs[1].find(g=>g.homeId===first.awayId&&g.awayId===first.homeId);
+      if(first.pendingParticipants)return null;
+      const second=legs[1].find(g=>g.pendingParticipants||g.homeId===first.awayId&&g.awayId===first.homeId);
+      if(!second||second.pendingParticipants)return null;
       if(second.homeGoals!==null&&first.homeGoals===null)throw Error('Unplayed first leg');
       if(second.homeGoals===null)return null;
       const home=first.awayGoals+second.homeGoals,away=first.homeGoals+second.awayGoals;
@@ -100,7 +103,7 @@
       if(!second.penalties)throw Error('Unresolved post-season tie');
       return second.penalties.homeGoals>second.penalties.awayGoals?second.homeId:second.awayId;
     });
-    if(final&&(winners.includes(null)||!winners.includes(final.homeId)||!winners.includes(final.awayId)))throw Error('Unknown post-season finalists');
+    if(final&&!final.pendingParticipants&&(winners.includes(null)||!winners.includes(final.homeId)||!winners.includes(final.awayId)))throw Error('Unknown post-season finalists');
     return next.sort((a,b)=>a.round-b.round);
   }
   function validKickoff(value){
