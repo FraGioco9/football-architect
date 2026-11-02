@@ -85,6 +85,7 @@
       const extra=g.extraTime??null;
       if(extra!==null&&(!g.afterExtraTime||!Number.isSafeInteger(extra.homeGoals)||extra.homeGoals<0||!Number.isSafeInteger(extra.awayGoals)||extra.awayGoals<0))throw Error('Invalid extra-time score');
       if(g.afterExtraTime&&!extra)throw Error('Missing extra-time score');
+      if(extra!==null&&g.homeGoals===null)throw Error('Unplayed match has extra time');
       const p=g.penalties;
       if(p!==null&&(!p||!g.afterExtraTime||p.homeId!==g.homeId||p.awayId!==g.awayId||
          !Number.isSafeInteger(p.homeGoals)||p.homeGoals<0||!Number.isSafeInteger(p.awayGoals)||p.awayGoals<0||p.homeGoals===p.awayGoals))throw Error('Invalid post-season penalties');
