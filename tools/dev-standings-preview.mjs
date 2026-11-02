@@ -26,6 +26,7 @@ const VIRTUAL = Object.freeze({
   "/__fa_dev__/standings-data.mjs": "dev-standings-preview-data.mjs",
   "/__fa_dev__/dev-standings-preview-data.mjs": "dev-standings-preview-data.mjs",
   "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs",
+  "/__fa_dev__/dev-international-preview.mjs": "dev-international-preview.mjs",
   "/__fa_dev__/stats-data.mjs": "dev-competition-stats-data.mjs",
   "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs"
 });
