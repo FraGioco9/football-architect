@@ -1,5 +1,7 @@
 name: CI-OPT-03 FULL evidence gate
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -25,8 +27,8 @@ jobs:
       - name: Verify exact PR head and complete FULL workflow evidence
         uses: actions/github-script@v7
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
-          EXPECTED_HEAD: ${{ inputs.expected_head }}
+          PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
+          EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.expected_head }}
         with:
           script: |
             const prNumber=Number(process.env.PR_NUMBER);
