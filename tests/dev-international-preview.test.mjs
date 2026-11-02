@@ -101,7 +101,7 @@ test('A04 international Fixtures phase label is identical in menu and selected b
 test('A04 cup stage headings are per-leg only and do not repeat Final',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
  assert.match(source,/const title=legs===1\?null:element\('li','app-fixture-stage'\)/);
- assert.match(source,/target\.push\(\.\.\.display\.map\(matchRow\)\)/);
+ assert.match(source,/target\.push\(\.\.\.display\.map\(renderRow\)\)/);
  assert.match(source,/for\(let leg=1;leg<=legs;leg\+\+\)/);
 });
 test('A04 fixtures chevron follows aria-expanded menu state',()=>{
@@ -122,4 +122,13 @@ test('A04 domestic and international two-leg Fixtures use one shared stage build
  assert.match(source,/appendStage\(matches,legs===1\?null/);
  assert.match(source,/appendStage\(matches,round===31\?'postseasonFirstLeg'/);
  assert.match(source,/phase\.ties\.length,index=>\(\{/);
+});
+
+test('A04 pending cup stage uses the same stage builder as domestic and loaded cup fixtures',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/function renderPendingCupStage\(\)/);
+ assert.match(source,/appendStage\(pending,label,leg===1\?'First leg':'Second leg'/);
+ assert.match(source,/appendStage\(matches,round===31\?'postseasonFirstLeg'/);
+ assert.match(source,/renderPendingCupStage\(\);return;/);
+ assert.match(source,/fields\.list\.replaceChildren\(\.\.\.pending\)/);
 });
