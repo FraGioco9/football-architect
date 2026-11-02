@@ -184,8 +184,17 @@ const writeOutput=(path,content)=>{
   const current=readFileSync(file,"utf8");
   // Existing Windows checkouts may still use CRLF from before LF attributes were added.
   // Compare exact generated content except for CRLF-to-LF conversion.
-  if(content!==current.replace(/\r\n/g,"\n"))
-   throw Error("Generated output differs from checked-in file: "+path);
+  const actual=current.replace(/\r\n/g,"\n");
+  if(content!==actual){
+   let offset=0;
+   while(offset<Math.min(content.length,actual.length)&&content[offset]===actual[offset])offset++;
+   const line=content.slice(0,offset).split("\n").length;
+   const column=offset-content.lastIndexOf("\n",offset-1);
+   const excerpt=value=>JSON.stringify(value.slice(Math.max(0,offset-90),offset+160));
+   throw Error("Generated output differs from checked-in file: "+path+" at line "+line+", column "+column+
+    " (generated length "+content.length+", checked-in length "+actual.length+")"+
+    "\nGenerated: "+excerpt(content)+"\nChecked-in: "+excerpt(actual));
+  }
  }else{
   mkdirSync(new URL("./",file),{recursive:true});
   writeFileSync(file,content,"utf8");
