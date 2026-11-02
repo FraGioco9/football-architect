@@ -7,6 +7,8 @@ const apply=()=>{
  for(const link of document.querySelectorAll('a[href="/competitions/int-1"],a[href="/competitions/int-2"]')){const small=link.querySelector("small");if(small)small.textContent=t[1];}
  for(const node of document.querySelectorAll('[data-cup-copy="category"]'))node.textContent=t[0];
  for(const node of document.querySelectorAll('[data-cup-copy="summary"]'))node.textContent=t[1];
+ const type={en:"International",it:"Internazionale",de:"International",es:"Internacional",fr:"International"};
+ for(const node of document.querySelectorAll('[data-cup-copy="type"]'))node.textContent=type[lang];
 
 };
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply,{once:true});else apply();
