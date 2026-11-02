@@ -641,7 +641,9 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(!data&&document.querySelector('.app-world-standings')?.dataset?.standingsState==='pending')return;
+      // A missing snapshot during season/source transition is pending, not confirmed empty.
+      // Preserve the last validated desktop/mobile rows and knockout slots until commit.
+      if(!data&&document.querySelector('.app-world-standings')?.dataset?.standingsState!=='empty')return;
       if(definition.category==='domestic'&&!data?.statistics?.standings){if(data&&data.provenance?.kind!=='authoritative')return;if(suppliedOwned||activeDebugSeason===0||document.querySelector('.app-world-standings')?.dataset?.standingsState==='empty'||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
@@ -707,7 +709,7 @@
           const value=metric==='aggregate'?games.length?games.reduce((sum,g)=>sum+goals(g),0):null:game?goals(game):null;
           score.textContent=value===null?'—':String(value);
         }
-      }catch{empty();resetBracket();}
+      }catch{/* Rejected/incomplete source must not erase the previously verified view. */}
       window.faAppRenderLanguage?.();
     }
     window.addEventListener('fa:competition-context-change',refresh);refresh();
