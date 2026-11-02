@@ -116,3 +116,7 @@ Added `tools/dev-protected-stats-presenter.mjs`, an optional DEV integration usi
 - Added `tools/dev-protected-international-presenter.mjs` and `tools/dev-protected-international-controller.mjs`: a manually imported, two-gate DEV-only readout inside the existing International fixture panel. It accepts only validated `int-1` or `int-2` candidates and displays completed fixtures through the selected day, with reversible restoration.
 - This is **not** a replacement for the International fixture cards and does not change matchday selectors, header geometry, leg boxes, or official fixture data. No public script imports or automatic activation were added.
 - The actual /calendar and /clubs route viewers still require route-aware protected aggregation; the existing source coordinator currently serves only /competitions/:id. Do not claim those pages integrated. Tests remain deferred to I06.
+
+## I05 world aggregation
+
+Added protected world reader and authenticated loopback `world-view` endpoint for a shared S1-S5/day cursor across all 18 competitions. Added browser-safe day and club fixture selectors. Calendar and Club DOM renderers are not yet connected; test acceptance remains deferred to I06.
