@@ -15,11 +15,11 @@ export function buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,se
   const seasonNumber=season.seasonNumber,cups={};
   const placements=Object.fromEntries(DEBUG_COUNTRIES.map(country=>[country,season.sportingOutcomes[country+"-1"].rankedClubs]));
   const previous=seasons.at(-1);
-  const internationalAllocations=seasonNumber===1?null:allocateInternationalEntrants({previousPlacements:previous.domesticPlacements,previousWinners:previous.internationalWinners});
+  const holderAllocation=seasonNumber===1?null:allocateInternationalEntrants({previousPlacements:previous.domesticPlacements,previousWinners:previous.internationalWinners});
   for(const cupId of cupIds){
    // Season 1 uses the owner-approved initial cup baseline. Later seasons
    // use the *previous* sealed domestic results, never current-year finishes.
-   const qualification=seasonNumber===1?selectCupBaseline(approved,cupId):internationalAllocations[cupId];
+   const qualification=seasonNumber===1?selectCupBaseline(approved,cupId):holderAllocation.allocations[cupId];
    const rules=cupCatalog.find(c=>c.id===cupId).rules;
    cups[cupId]=buildInternationalCupDraft({seasonNumber,cupId,participants:qualification,seed:seed+":"+datasetId, datasetId,rules});
   }
@@ -27,9 +27,9 @@ export function buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,se
   requireValid(competitionIds.length===18,"18 competitions required");
   const local={schemaVersion:1,kind:"unsealed-world-season-candidate",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,
    domestic:season.fragments,domesticOutcomes:season.sportingOutcomes,domesticPlacements:placements,cups,
-   internationalWinners:Object.fromEntries(cupIds.map(id=>[id,cups[id].winner])),
+   internationalWinners:Object.fromEntries(cupIds.map(id=>[id,cups[id].winner])),holderMoves:holderAllocation?.moves??[],
    predecessorHash:seasons.at(-1)?.candidateHash??null,
-   unresolved:["champion-aware qualification","INT24 approved pots","domestic and international full tie-breakers","postseason canonical event mapping","seeded penalties model"]};
+   unresolved:["INT24 approved pots","domestic and international full tie-breakers","postseason canonical event mapping","seeded penalties model"]};
   local.candidateHash=hash(local);seasons.push(local);
  }
  return {schemaVersion:1,kind:"protected-debug-corpus-candidate",status:"UNSEALED_NOT_FOR_RUNTIME",datasetId,seedHash:hash(seed),seasons,unresolved:["no official D1 provenance","no publication","all sporting gates before sealing"]};

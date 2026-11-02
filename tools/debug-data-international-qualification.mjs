@@ -1,30 +1,33 @@
-// DEBUG-DATA-01: explicit, fail-closed championship-aware INT24 allocation.
-// The sporting policy for replacing a domestic slot must be supplied by a
-// canonical rules adapter; we must not silently invent a holder exception.
+// DEBUG-DATA-01: local implementation of approved ChampionAwareV1 policy.
+// Mirrors docs/admin-world-int24-holder-policy.md; never calls D1.
 import {DEBUG_COUNTRIES} from "./debug-data-schema.mjs";
-const cups=["int-1","int-2"];
+const IDS=["int-1","int-2"];
 const country=id=>id.split("-")[0];
-export function allocateInternationalEntrants({previousPlacements,previousWinners,holderReplacementPolicy}){
- if(!previousPlacements||!previousWinners)throw Error("previous season closure required");
- const allocations={};
- for(const cupId of cups){
-  const index=cupId==="int-1"?0:3,participants=[];
-  for(const c of DEBUG_COUNTRIES){
-   const order=previousPlacements[c];
-   if(!Array.isArray(order)||order.length!==16||new Set(order).size!==16||order.some(id=>country(id)!==c))throw Error("invalid previous top division "+c);
-   participants.push(...order.slice(index,index+3));
-  }
-  const holder=previousWinners[cupId];
-  if(typeof holder!=="string"||!holder)throw Error("missing titleholder "+cupId);
-  if(!participants.includes(holder)){
-   if(typeof holderReplacementPolicy!=="function")throw Error("titleholder exception requires approved policy for "+cupId);
-   const proposal=holderReplacementPolicy({cupId,holder,baseParticipants:[...participants],previousPlacements});
-   if(!Array.isArray(proposal)||proposal.length!==24||!proposal.includes(holder))throw Error("invalid holder resolution "+cupId);
-   participants.splice(0,participants.length,...proposal);
-  }
-  if(new Set(participants).size!==24||DEBUG_COUNTRIES.some(c=>participants.filter(id=>country(id)===c).length!==3))throw Error("international quotas invalid after holder resolution "+cupId);
-  allocations[cupId]=participants;
+export function allocateInternationalEntrants({previousPlacements,previousWinners}){
+ if(!previousPlacements||!previousWinners)throw Error("previous closed season required");
+ const cups=new Map(IDS.map(id=>[id,[]])),moves=[];
+ for(const c of DEBUG_COUNTRIES){
+  const ranks=previousPlacements[c];
+  if(!Array.isArray(ranks)||ranks.length!==16||new Set(ranks).size!==16||ranks.some(id=>country(id)!==c))throw Error("invalid country closure "+c);
+  cups.get("int-1").push(...ranks.slice(0,3));
+  cups.get("int-2").push(...ranks.slice(3,6));
  }
- if(new Set([...allocations["int-1"],...allocations["int-2"]]).size!==48)throw Error("overlapping cup allocations");
- return allocations;
+ const holders=IDS.map(cup=>({cup,clubId:previousWinners[cup]}));
+ if(holders.some(h=>typeof h.clubId!=="string"||!DEBUG_COUNTRIES.includes(country(h.clubId)))||new Set(holders.map(h=>h.clubId)).size!==2)throw Error("invalid holders");
+ const protectedHolders=new Set(holders.map(h=>h.clubId));
+ for(const {cup,clubId} of holders){
+  const target=cups.get(cup);
+  if(target.includes(clubId)){moves.push({cup,holder:clubId,removed:null,sourceCup:null});continue;}
+  const oldCup=cup==="int-1"?"int-2":"int-1",other=cups.get(oldCup),c=country(clubId);
+  const displaced=target.filter(id=>country(id)===c&&!protectedHolders.has(id)).at(-1);
+  if(!displaced)throw Error("no valid unprotected holder replacement "+cup);
+  const oldIndex=other.indexOf(clubId);
+  target[target.indexOf(displaced)]=clubId;
+  if(oldIndex!==-1)other[oldIndex]=displaced;
+  moves.push({cup,holder:clubId,removed:displaced,sourceCup:oldIndex!==-1?oldCup:null});
+ }
+ const allocations=Object.fromEntries(IDS.map(id=>[id,[...cups.get(id)]]));
+ const all=IDS.flatMap(id=>allocations[id]);
+ if(new Set(all).size!==48||IDS.some(id=>DEBUG_COUNTRIES.some(c=>allocations[id].filter(x=>country(x)===c).length!==3))||holders.some(h=>!allocations[h.cup].includes(h.clubId)))throw Error("holder allocation invalid");
+ return {allocations,moves,policyId:"int24ChampionAwareV1"};
 }
