@@ -16,7 +16,7 @@ test('Debug OFF never exposes local Season 3 or DEV season options to competitio
  const data=bootstrap(false);assert.equal(data.faDevCurrentSeason,undefined);assert.equal(data.faDevSeasons,undefined);
 });
 test('Debug ON enables local Season 3 and DEV season selector before first paint',()=>{
- const data=bootstrap(true);assert.equal(data.faDevCurrentSeason,'3');assert.equal(data.faDevSeasons,'1,2,3,4');
+ const data=bootstrap(true);assert.equal(data.faDevCurrentSeason,'3');assert.equal(data.faDevSeasons,'1,2,3,4,5');
 });
 test('local fixture changes are guarded while the new source hydrates',()=>{
  const dev=read('../tools/dev-standings-preview-client.mjs');

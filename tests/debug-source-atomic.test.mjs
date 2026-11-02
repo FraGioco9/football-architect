@@ -12,7 +12,7 @@ test('pending source context does not clear visible panels before a committed re
  sandbox.publish({selectedSeason:1,seasonData:null});
  assert.deepEqual(events,['fa:competition-context-pending']);
  sandbox.publish({selectedSeason:1,seasonData:{provenance:{kind:'authoritative'}}},true);
- assert.deepEqual(events,['fa:competition-context-pending','fa:competition-context-change']);
+ assert.deepEqual(events,['fa:competition-context-pending','fa:competition-context-change','fa:competition-context-committed']);
  assert.equal(document.documentElement.dataset.faSourceTransition,undefined);
 });
 test('DEV teardown can release listeners while retaining the last visible rows and fixtures',()=>{
