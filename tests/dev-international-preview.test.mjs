@@ -132,3 +132,10 @@ test('A04 pending cup stage uses the same stage builder as domestic and loaded c
  assert.match(source,/renderPendingCupStage\(\);return;/);
  assert.match(source,/fields\.list\.replaceChildren\(\.\.\.pending\)/);
 });
+
+test('A04 unresolved international ties and domestic playout slots retain distinct keys',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/game\.tieId\?\?game\.slot\?\?""/);
+ assert.match(source,/tieId:phase\.ties\[index\]\.id/);
+ assert.match(source,/round,slot:index,homeId:null/);
+});
