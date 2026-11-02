@@ -22,13 +22,13 @@ export async function refreshDebugSource(){
   emit("fa:protected-debug-source-change",{kind:!state.enabled?"global":"debug-unstarted",enabled:state.enabled,revision});
   return;
  }
- if(season<1||season>5||day<1||day>56){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:400});return;}
+ if(season<1||season>5||day<1||day>56){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:400});return;}
  // Request only via HttpOnly local session. Never send the owner bearer token.
  try{
   const query=new URLSearchParams({season:String(season),day:String(day),competition:competitionId});
   const response=await fetch("/__fa_dev_private__/season-view?"+query,{credentials:"same-origin",cache:"no-store",signal:state.abort.signal});
   if(revision!==state.revision)return;
-  if(!response.ok){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:response.status});return;}
+  if(!response.ok){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:response.status});return;}
   const view=await response.json();
   if(revision!==state.revision)return;
   if(view.kind!=="protected-debug-projection"||view.status!=="UNSEALED_NOT_FOR_RUNTIME"||view.source?.kind!=="debug"||view.source?.namespace!=="local-debug"||view.source?.datasetId!=="debug-corpus-v1"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId||!Array.isArray(view.events)||!Array.isArray(view.standings)){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
@@ -38,10 +38,10 @@ export async function refreshDebugSource(){
   let prepared=null,presentation=null;
   if(!competitionId.startsWith("int-")){
    try{prepared=prepareProtectedDomesticContext(view,{competitionId,season,day});presentation=createProtectedDomesticPresentation(prepared);}
-   catch(error){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"invalid-domestic-context"});return;}
+   catch(error){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"invalid-domestic-context"});return;}
   }
   if(view.events.some(event=>event.day>day&&event.result!==null)){
-   state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"future-result-leak"});return;
+   state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"future-result-leak"});return;
   }
   state.view=view;state.consumers=consumers;
   emit("fa:protected-debug-consumers-ready",{revision,competitionId,season,day,consumers});
