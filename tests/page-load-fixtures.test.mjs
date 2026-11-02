@@ -59,8 +59,8 @@ test('A04: international and domestic competition headers expose the same metada
   assert.match(html,/id="app-competition-tier"/,id);
   assert.match(html,/id="app-competition-season"/,id);
   if(id.startsWith('int-')){
-   assert.match(html,/id="app-competition-country" data-cup-copy="category"/,id);
-   assert.match(html,/id="app-competition-tier" data-cup-copy="summary"/,id);
+   assert.match(html,/id="app-competition-country" data-cup-copy="type">International<\/span>/,id);
+   assert.doesNotMatch(html,/data-cup-copy="summary"/,id);
   }
  }
 });
@@ -103,4 +103,15 @@ test('A04: pending source does not mutate knockout graph before data commit',()=
  const knockout=source.indexOf('const nextGraph=JSON.stringify(',refresh);
  const bracket=source.indexOf('replacePostseason(definition)',refresh);
  assert.ok(refresh>=0&&pending>refresh&&knockout>pending&&bracket>knockout);
+});
+
+test('A04 international first-paint shell reserves knockout legs and correct match slots',()=>{
+ for(const id of ['int-1','int-2']){
+  const html=read('competitions/'+id+'/index.html');
+  assert.match(html,/<script data-fixtures-first-paint>/);
+  assert.match(html,/const ties=\{playoffs:4,quarterfinals:4,semifinals:2,final:1\}/);
+  assert.match(html,/const legs=phase==='final'\?1:2/);
+  assert.match(html,/if\(legs===2\)\{const section=document\.createElement\('li'\)/);
+  assert.match(html,/list\.replaceChildren\(\.\.\.rows\)/);
+ }
 });
