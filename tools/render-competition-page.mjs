@@ -122,7 +122,7 @@ const detailContent = function detailContent(d,neutral=false){
  if(!c&&d.category!=="international")throw Error("unknown detail "+d.id);
  const level=d.tier===1?"divisionTier1":"divisionTier2";
  const identityMeta=d.category==="international"
-  ?'<span id="app-competition-country" data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span id="app-competition-tier" data-cup-copy="summary">24 clubs · 8 countries</span>'
+  ?'<span id="app-competition-country" data-cup-copy="type">International</span>'
   :inlineCountryFlag(c,"app-competition-flag")+' <span id="app-competition-country" data-world-country="'+(neutral?"":d.countryId)+'">'+(neutral?"Country":encode(c.name.en))+'</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span>';
  return '          <header class="app-competition-header">\n'+
  '            '+(neutral?'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>':renderLogo(d))+'\n'+
