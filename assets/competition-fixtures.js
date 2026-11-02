@@ -209,7 +209,8 @@
   function render(){
     if(rounds===null&&fields.list.dataset.fixturesState==="pending")return;
     // The visible match rows belong to their committed season, not a pending route.
-    if(rounds!==null&&committedSeason!==null&&committedSeason!==navigation.get().season){
+    const incomingSource=window.faCompetitionContext?.seasonData?.provenance?.kind||null;
+    if(rounds!==null&&committedSeason!==null&&(committedSeason!==navigation.get().season||(incomingSource!==null&&committedSource!==null&&incomingSource!==committedSource))){
       // Keep prior matches visible, but do not describe them as the selected season.
       fields.list.dataset.presentedSeason=committedSeason;
       fields.round.disabled=true;
@@ -220,7 +221,7 @@
       const language=document.documentElement.lang||'en';
       const titles={en:'Showing previously loaded Season ',it:'Visualizzazione della stagione precedente ',de:'Anzeige der zuvor geladenen Saison ',es:'Mostrando la temporada cargada anteriormente ',fr:'Affichage de la saison précédemment chargée '};
       fields.empty.removeAttribute('data-app-i18n');
-      fields.empty.textContent=(titles[language]||titles.en)+committedSeason;
+      fields.empty.textContent=(titles[language]||titles.en)+committedSeason+(incomingSource!==null&&incomingSource!==committedSource?' ('+(committedSource==='authoritative'?'API':'Debug')+')':'');
       fields.empty.hidden=false;
       return;
     }
