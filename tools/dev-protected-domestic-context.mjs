@@ -45,6 +45,7 @@ export function prepareProtectedDomesticContext(view,{competitionId,season,day,k
   tiebreak:e.tiebreak??null
  }));
  ensure(postseason.every(e=>e.day<=day||e.homeGoals===null&&e.awayGoals===null),"future postseason leakage");
- return {season,worldDay:day,rulesVersion:null,participants:[...participants],clubs:participants.map(id=>identities.get(id)),fixtures,results,statistics:null,
+ ensure(view.source?.kind==="debug"&&view.source.namespace==="local-debug"&&typeof view.source.datasetId==="string"&&view.source.datasetId,"missing protected provenance");
+ return {source:{...view.source},competitionId,season,worldDay:day,rulesVersion:null,participants:[...participants],clubs:participants.map(id=>identities.get(id)),fixtures,results,statistics:null,
   status:view.completed?"complete":"partial",standings:view.standings.map(r=>({...r})),postseason};
 }

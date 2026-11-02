@@ -67,7 +67,7 @@
   }
   // Generated HTML includes the full round set; collapse international legs at initial mount.
   if(international)updateDefinition(definition,true);
-  function validatePostseason(games){
+  function validatePostseason(games,registry=clubs){
     if(!Array.isArray(games))throw Error('Invalid post-season fixtures');
     if(!games.length)return [];
     const size=firstTies.length;
@@ -75,7 +75,7 @@
     const seen=new Set();
     const next=games.map(g=>{
       if(!g||![roundCount+1,roundCount+2,...(hasFinal?[roundCount+3]:[])].includes(g.round)||
-         !(g.pendingParticipants===true&&g.homeId===null&&g.awayId===null||clubs.has(g.homeId)&&clubs.has(g.awayId)&&g.homeId!==g.awayId)||!validKickoff(g.kickoff)||
+         !(g.pendingParticipants===true&&g.homeId===null&&g.awayId===null||registry.has(g.homeId)&&registry.has(g.awayId)&&g.homeId!==g.awayId)||!validKickoff(g.kickoff)||
          (g.homeGoals===null?g.awayGoals!==null:!Number.isSafeInteger(g.homeGoals)||g.homeGoals<0||!Number.isSafeInteger(g.awayGoals)||g.awayGoals<0))throw Error('Invalid post-season fixture');
       if(g.pendingParticipants===true&&(g.homeId!==null||g.awayId!==null||g.homeGoals!==null||g.awayGoals!==null||g.afterExtraTime||g.penalties!==null))throw Error('Invalid pending knockout slot');
       const key=g.pendingParticipants===true?g.round+':pending:'+g.slot:g.round+':'+g.homeId+':'+g.awayId;
@@ -123,14 +123,14 @@
     const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
     return month>=1&&month<=12&&day>=1&&day<=days[month-1]&&hour<24&&minute<60&&second<60;
   }
-  function validate(fixtures){
+  function validate(fixtures,registry=clubs){
     if(fixtures===null)return null;
-    if(international)return validateInternational(fixtures);
+    if(international)return validateInternational(fixtures,registry);
     if(!Array.isArray(fixtures)||fixtures.length!==matchCount)throw Error("Incomplete competition schedule");
     const byRound=new Map(Array.from({length:roundCount},(_,i)=>[i+1,[]])),pairs=new Set();
     for(const game of fixtures){
       if(!game||!Number.isInteger(game.round)||!byRound.has(game.round)||
-         !clubs.has(game.homeId)||!clubs.has(game.awayId)||game.homeId===game.awayId)
+         !registry.has(game.homeId)||!registry.has(game.awayId)||game.homeId===game.awayId)
         throw Error("Invalid fixture identity");
         const pair=game.homeId+":"+game.awayId;
       if(pairs.has(pair))throw Error("Repeated home/away pairing");
@@ -150,18 +150,18 @@
     }
     return byRound;
   }
-  function validateInternational(fixtures){
-    if(!Array.isArray(fixtures)||clubs.size!==capacity)throw Error('Invalid supplied cup schedule');
+  function validateInternational(fixtures,registry=clubs){
+    if(!Array.isArray(fixtures)||registry.size!==capacity)throw Error('Invalid supplied cup schedule');
     const byRound=new Map(Array.from({length:roundCount},(_,i)=>[i+1,[]])),post=[],seen=new Set(),pairs=new Set(),tieLegs=new Set();
     for(const g of fixtures){
       const phase=definition.rules.phases.find(p=>p.id===g?.phaseId);
-      if(!phase||!clubs.has(g.homeId)||!clubs.has(g.awayId)||g.homeId===g.awayId||!validKickoff(g.kickoff)||
+      if(!phase||!registry.has(g.homeId)||!registry.has(g.awayId)||g.homeId===g.awayId||!validKickoff(g.kickoff)||
         (g.homeGoals===null?g.awayGoals!==null:!Number.isSafeInteger(g.homeGoals)||g.homeGoals<0||!Number.isSafeInteger(g.awayGoals)||g.awayGoals<0))throw Error('Invalid supplied fixture');
       const key=[g.phaseId,g.round,g.tieId,g.leg,g.homeId,g.awayId].join(':');if(seen.has(key))throw Error('Duplicate fixture');seen.add(key);
       if(phase.type!=='knockout'){
         if(!byRound.has(g.round))throw Error('Invalid league round');
         const pair=[g.homeId,g.awayId].sort().join(':');
-        if(pairs.has(pair)||clubs.get(g.homeId).countryId===clubs.get(g.awayId).countryId)throw Error('Invalid cup opponent');pairs.add(pair);
+        if(pairs.has(pair)||registry.get(g.homeId).countryId===registry.get(g.awayId).countryId)throw Error('Invalid cup opponent');pairs.add(pair);
         byRound.get(g.round).push({...g});
       }else{
         const tie=phase.ties.find(t=>t.id===g.tieId);
@@ -209,9 +209,9 @@
     }
     const score=element("strong","app-fixture-score");
     if(played)score.append(
-      element("span","app-fixture-goals",String(game.homeGoals)),
+      element("span","app-fixture-goals",String(game.homeGoals+(game.extraTime?.homeGoals??0))),
       element("span","app-fixture-separator"," – "),
-      element("span","app-fixture-goals",String(game.awayGoals)));
+      element("span","app-fixture-goals",String(game.awayGoals+(game.extraTime?.awayGoals??0))));
     else score.append(element("span","app-fixture-pending","—"));
     result.append(status,score,
       element("span","app-fixture-stadium",clubs.get(game.homeId)?.stadiumName||"—"));
@@ -426,14 +426,19 @@
   fields.next.addEventListener("click",()=>{if(!fields.next.disabled)select((international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured)[(international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured).findIndex(c=>c.value===selected)+1].value)});
   // Validate before returning a commit function; rejected input leaves the view intact.
   window.faFixtures={
-    prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition}={}){
-      updateDefinition(applicable);
-      const next=validate(fixtures);
-      const post=international?next?.postseason||[]:validatePostseason(games);
+    prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition,participants=null}={}){
+      // Preparation is detached: reject rule remounts and invalid identities before mutation.
+      if(participants===null)updateDefinition(applicable);
+      else if(applicable?.id!==definition.id||JSON.stringify(applicable.rules)!==JSON.stringify(definition.rules))throw Error('Fixture rules must be installed before preparation');
+      const registry=participants===null?clubs:new Map(participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
+      if(participants!==null&&(participants.length!==capacity||registry.size!==capacity||[...registry.values()].some(club=>!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40||!club.primaryName||!international&&club.countryId!==definition.countryId)))throw Error('Invalid seasonal fixture catalog');
+      const next=validate(fixtures,registry);
+      const post=international?next?.postseason||[]:validatePostseason(games,registry);
       if(!next&&post.length)throw Error('Post-season requires a league schedule');
       if(current!==null&&!validChoice(current))throw Error("Invalid current matchday");
        // The stage is selectable before participating clubs are known.
       return ()=>{
+        clubs=registry;
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
         committedSeason=String(window.faCompetitionContext?.selectedSeason??navigation.get().season);
         committedSource=window.faCompetitionContext?.seasonData?.provenance?.kind||'debug';
@@ -447,12 +452,13 @@
         render();
       };
     },
-    snapshot(){const previous=rounds,current=currentMatchday,post=postseason,season=committedSeason,source=committedSource;return ()=>{
-      rounds=previous;postseason=post;currentMatchday=current;committedSeason=season;committedSource=source;selected=navigation.get().matchday;render()};}
+    snapshot(){const previous=rounds,current=currentMatchday,post=postseason,season=committedSeason,source=committedSource,registry=clubs;return ()=>{
+      clubs=registry;rounds=previous;postseason=post;currentMatchday=current;committedSeason=season;committedSource=source;selected=navigation.get().matchday;render()};}
   };
   new MutationObserver(()=>{if(rounds)render()}).observe(document.documentElement,
     {attributes:true,attributeFilter:["lang"]});
   function contextChanged(){
+    if(window.faCompetitionContext?.presentationOwner==='protected-domestic')return;
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().

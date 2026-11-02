@@ -21,6 +21,6 @@ export function createProtectedDomesticPresentation(payload){
  const gamesPlayed=fixtures.filter(g=>g.homeGoals!==null&&g.awayGoals!==null).length;
  if(standings.reduce((n,row)=>n+row.played,0)!==gamesPlayed*2)fail("played totals disagree");
  const postseason=prepareProtectedPostseason(payload.postseason,{tier:payload.postseason.length===2?1:2,day:payload.worldDay,participants:payload.participants});
- return Object.freeze({season:payload.season,participants:payload.participants.slice(),standings,fixtures,postseason,
+ return Object.freeze({source:{...payload.source},competitionId:payload.competitionId,worldDay:payload.worldDay,season:payload.season,participants:payload.participants.slice(),standings,fixtures,postseason,
    status:payload.status,gameCount:gamesPlayed});
 }

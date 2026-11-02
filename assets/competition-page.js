@@ -228,7 +228,7 @@
         if(typeof requestAnimationFrame==="function")requestAnimationFrame(alignLine);
       }
     }
-    const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+    let clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
     const closeTips=bindPostseasonTips();
     let current={rows:null,results:null};
     const tieId=id=>id.replace(/^postseason-/,"");
@@ -299,7 +299,7 @@
       const data=JSON.parse(JSON.stringify(input));
       const invalid=()=>{throw Error("Invalid postseason results")};
       const count=value=>Number.isInteger(value)&&value>=0&&value<=30;
-      if(!rows||data.divisionId!==division.id||!Number.isInteger(data.season)||data.season<1||data.season>4||
+      if(!rows||data.divisionId!==division.id||!Number.isInteger(data.season)||data.season<1||data.season>5||
          !Number.isInteger(data.matchday)||data.matchday<0||data.matchday>33||!Array.isArray(data.ties))invalid();
       const qualified=rows.every(row=>row.played===roundCount);
       if(qualified!==(data.matchday>=roundCount))invalid();
@@ -339,22 +339,25 @@
       return data;
     }
     window.faPostseason=Object.freeze({
-      prepare(rows,results=null,applicable=window.faCompetitionContext?.definition) {
+      prepare(rows,results=null,applicable=window.faCompetitionContext?.definition,{participants=null}={}) {
         if(applicable&&JSON.stringify(applicable.rules.phases.filter(p=>p.type==='knockout'))!==mountedPostseasonGraph){
-          replacePostseason(applicable);return window.faPostseason.prepare(rows,results,applicable);
+          if(participants!==null)throw Error("Postseason rules must be installed before protected preparation");
+          replacePostseason(applicable);return window.faPostseason.prepare(rows,results,applicable,{participants});
         }
         if(rows===null){if(results!==null)throw Error("Invalid postseason standings");return()=>render(null,null)}
         if(!Array.isArray(rows)||rows.length!==definition.capacity)throw Error("Invalid postseason standings");
+        const nextClubs=participants===null?clubs:new Map(participants.map(club=>[club.clubId,club]));
+        if(nextClubs.size!==definition.capacity||[...nextClubs.values()].some(club=>club.countryId!==division.countryId||!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40||!club.primaryName))throw Error("Invalid seasonal postseason catalog");
         const seen=new Set();
         const next=rows.map(row=>{
-          const club=clubs.get(row?.club?.clubId);
+          const club=nextClubs.get(row?.club?.clubId);
           if(!club||row.club.countryId!==division.countryId||seen.has(club.clubId)||!Number.isInteger(row.played)||row.played<0||row.played>roundCount)throw Error("Invalid postseason participant");
           seen.add(club.clubId);return{club,played:row.played};
         });
         const prepared=validateResults(results,next);
-        return()=>render(next,prepared);
+        return()=>{clubs=nextClubs;render(next,prepared)};
       },
-      snapshot(){const previous=current;return()=>render(previous.rows,previous.results)},
+      snapshot(){const previous=current,previousClubs=clubs;return()=>{clubs=previousClubs;render(previous.rows,previous.results)}},
       destroy(){closeTips.destroy();for(const release of releases)release();}
     });
     render(null,null);
@@ -469,7 +472,7 @@
         return li;
       });
       if (identities.size !== definition.capacity) throw Error("Invalid mobile standings size");
-      const commit=(incremental=false) => {
+      const commit=(incremental=false,{reuseCrests=true}={}) => {
         if(incremental && list.children.length===items.length){
           // Reuse club cards, expanded details and crest hosts across DEV progress changes.
           const existing=new Map([...list.children].map(item=>[item.dataset.worldClub,item]));
@@ -496,7 +499,7 @@
             sync(current,item);
             list.appendChild(current);
           }
-        }else{reuseCrestHosts(list,items);list.replaceChildren(...items);}
+        }else{if(reuseCrests)reuseCrestHosts(list,items);list.replaceChildren(...items);}
         updateVisibility();
         window.faAppRenderLanguage?.();
       };
@@ -608,7 +611,7 @@
     separator.textContent='–';element.append(home,separator,away);
     return {element,update(homeGoals,awayGoals){home.textContent=String(homeGoals);away.textContent=String(awayGoals)}};
   }
-  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard,createFormScore});
+  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard,createFormScore,attachFormTooltips,suspendFormTooltips});
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
@@ -632,7 +635,7 @@
     };
     const resetBracket=()=>{slots.forEach((slot,i)=>{slot.innerHTML=initialSlots[i]});for(const home of initialHomeLabels)if(home){home.label.dataset.appI18n=home.key;home.label.textContent=home.text}if(definition.category==='international')scores.forEach(score=>score.textContent='—');if(bracketEmpty)bracketEmpty.hidden=false};
     function refresh(){
-      const context=window.faCompetitionContext;if(!context)return;
+      const context=window.faCompetitionContext;if(!context||context.presentationOwner==='protected-domestic')return;
       // Abort before touching rules, slots or DOM while the next season is unresolved.
       if(!context.seasonData&&document.querySelector('.app-world-standings')?.dataset?.standingsState!=='empty')return;
       const definition=context.definition,league=definition.rules.phases.find(p=>p.rankOutcomes),roundCount=definition.metrics.phases[league.id].rounds;
@@ -716,12 +719,25 @@
 
   // Form tooltips are regression-tested against isolated Node fixtures.
   // A fixed, document-level tooltip stays visible above both nested scroll regions.
+  let formTooltipSequence=0;
+  const formTooltipBindings=new Set();
+  function suspendFormTooltips(){
+    const bindings=[...formTooltipBindings];
+    for(const binding of bindings){binding.suspended++;binding.close();}
+    let resumed=false;
+    return ()=>{if(resumed)return;resumed=true;for(const binding of bindings)binding.suspended--;};
+  }
   function attachFormTooltips(clubs,entries=demoFormTriggers) {
     if (!entries.length) return;
-    const controller=typeof AbortController==='function'?new AbortController():null;
-    const listen=(target,type,fn,options={})=>target?.addEventListener(type,fn,controller?{...options,signal:controller.signal}:options);
+    const releases=[],binding={suspended:0,close:()=>{close();tooltip.hidden=true;}};
+    const listen=(target,type,fn,options={})=>{
+      if(!target?.addEventListener)return;
+      const guarded=event=>{if(!binding.suspended)fn(event)};
+      target.addEventListener(type,guarded,options);
+      releases.push(()=>target.removeEventListener(type,guarded,options));
+    };
     const tooltip = document.createElement("div");
-    tooltip.id = "app-world-form-tooltip";
+    tooltip.id = "app-world-form-tooltip-"+(++formTooltipSequence);
     tooltip.className = "app-world-form-tooltip";
     tooltip.setAttribute("role","tooltip");
     tooltip.hidden = true;
@@ -846,7 +862,7 @@
       });
     }
     listen(document,"pointerdown",event => {
-      if (active && event.target !== active) close();
+      if (active && !active.contains(event.target) && !tooltip.contains(event.target)) close();
     });
     listen(document,"keydown",event => {
       if (event.key === "Escape" && active) {
@@ -858,7 +874,8 @@
     listen(window,"scroll",place,{passive:true});
     listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
     listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
-    return ()=>{close();controller?.abort();tooltip.remove?.();};
+    formTooltipBindings.add(binding);
+    return ()=>{close();formTooltipBindings.delete(binding);for(const release of releases.splice(0))release();tooltip.remove?.();};
   }
   function loadScript(url,asModule=false) {
     return new Promise((resolve,reject) => {
@@ -936,6 +953,46 @@
     }
     nextContext(current.selectedSeason,data,true);return true;
   }
+  function prepareProtectedSeasonData(data,expectedRevision){
+    const previous=window.faCompetitionContext;
+    if(!window.faDevPreviewMode||document.documentElement.dataset.faI03Renderer!=="1"||
+       !previous||previous.revision!==expectedRevision||definition.category!=="domestic"||
+       data?.provenance?.kind!=="debug"||data.provenance.namespace!=="local-debug"||
+       typeof data.provenance.datasetId!=="string"||!data.provenance.datasetId||
+       data.season!==previous.selectedSeason||data.season<1||data.season>5||
+       !["partial","available"].includes(data.status)||!model.resolveSeasonRules(definition,data)||
+       !Array.isArray(data.participants)||data.participants.length!==definition.capacity||
+       !Array.isArray(data.fixtures)||!Array.isArray(data.results)||!Array.isArray(data.statistics?.standings))
+      throw Error("Invalid protected season context");
+    const ids=new Set();
+    for(const club of data.participants){
+      const id=club?.countryId+"-"+club?.clubId;
+      if(club?.countryId!==definition.countryId||!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40||ids.has(id)||!club.primaryName)throw Error("Invalid protected seasonal club");
+      ids.add(id);
+    }
+    const next=freeze({...createContext(definition,data.season,data,previous.revision+1),presentationOwner:"protected-domestic"});
+    const host=document.querySelector('.app-world-standings');
+    const previousState=host?.getAttribute('data-standings-state'),previousBusy=host?.getAttribute('aria-busy');
+    let committed=false;
+    return Object.freeze({
+      isCurrent:()=>window.faCompetitionContext===(committed?next:previous),
+      commit(){
+        if(committed||window.faCompetitionContext!==previous)throw Error("Stale protected season context");
+        window.faCompetitionContext=next;committed=true;
+      },
+      publish(){
+        if(!committed||window.faCompetitionContext!==next)throw Error("Stale protected season publication");
+        publishCompetitionContext(next,true);
+      },
+      rollback(){
+        if(!committed||window.faCompetitionContext!==next)return;
+        window.faCompetitionContext=previous;committed=false;
+        if(host)for(const [name,value] of [['data-standings-state',previousState],['aria-busy',previousBusy]]){
+          if(value===null)host.removeAttribute(name);else host.setAttribute(name,value);
+        }
+      }
+    });
+  }
   function replaceSeasonData(data,expectedRevision){return acceptSeasonData(data,expectedRevision,false);}
   async function start() {
     if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-1|int-2)$/.test(routeId)) throw Error("Invalid route identity");
@@ -964,7 +1021,7 @@
     if(!seasons.includes(1))seasons.push(1);
     const raw=new URL(window.location.href).searchParams.get("season");
     const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
-    window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
+    window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason,prepareProtectedSeasonData});
     nextContext(activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
     await loadScript('world-calendar-model.js');
     await loadScript('competition-rules.js');
