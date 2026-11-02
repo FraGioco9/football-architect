@@ -1,6 +1,6 @@
 // I05 DEV-only world coordinator. Explicit import only; never public runtime.
 import {selectProtectedWorldDay,selectProtectedClubFixtures,selectProtectedClubSummary} from "./debug-data-i05-world-selectors.mjs";
-let revision=0,abort=null,snapshot=null;
+let revision=0,abort=null,snapshot=null,clubSummary=null;
 const enabled=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
 const selected=(key,fallback)=>{try{const raw=sessionStorage.getItem(key);if(raw===null||raw.trim()==="")return fallback;const v=Number(raw);return Number.isInteger(v)?v:fallback}catch{return fallback}};
 const clubRoute=()=>{const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)(?:\/|$)/i);return match?match[1].toUpperCase()+"-"+match[2]:null};
@@ -8,7 +8,7 @@ const emit=(name,detail)=>window.dispatchEvent(new CustomEvent(name,{detail}));
 export function currentProtectedWorld(){return snapshot;}
 export async function refreshProtectedWorld(){
  const token=++revision;
- abort?.abort();abort=new AbortController();snapshot=null;
+ abort?.abort();abort=new AbortController();snapshot=null;clubSummary=null;
  const season=selected("football-architect:standings-dev-season",1);
  const day=selected("football-architect:calendar-dev-world-day",1);
  const clubId=clubRoute(),calendar=location.pathname==="/calendar";
@@ -29,11 +29,12 @@ export async function refreshProtectedWorld(){
   emit("fa:protected-world-ready",snapshot);
   if(clubId){
    const summary=selectProtectedClubSummary(data,clubId);
-   if(token===revision)emit("fa:club-competition-summary",summary);
+   if(token===revision){clubSummary=summary;emit("fa:club-competition-summary",summary);}
   }
  }catch(error){if(token===revision&&error?.name!=="AbortError")emit("fa:protected-world-unavailable",{revision:token,status:0});}
 }
 for(const name of ["fa:debug-mode-change","fa:dev-progress-change","fa:dev-world-day-change","fa:competition-route-change","pageshow"]){
  window.addEventListener(name,()=>{void refreshProtectedWorld()});
 }
+window.addEventListener("fa:club-summary-listener-ready",()=>{if(snapshot?.kind==="club"&&clubSummary)emit("fa:club-competition-summary",clubSummary)});
 void refreshProtectedWorld();
