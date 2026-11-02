@@ -55,11 +55,11 @@
     stageKey=stage==='playout'?'competitionTabPlayout':'competitionTabPlayoffs';
     knockoutPhases=next.rules.phases.filter(p=>p.type==='knockout');firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
     hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
-    choices=configured.map(choice=>{
+    choices=(international?configured.filter(choice=>!choice.round||typeof choice.value==='number'||choice.round===1):configured).map(choice=>{
       const option=element('div','language-option');option.id='app-fixtures-round-option-'+choice.value;
       option.dataset.menuValue=String(choice.value);option.dataset.fixtureRoundChoice=String(choice.value);option.setAttribute('role','option');
       if(typeof choice.value==='number')option.append(word('fixturesMatchday','Matchday'),element('span','',' '+choice.round));
-      else{const label=element('span','',window.faCompetitionRulesView?.phaseLabel(choice.labelKey,document.documentElement.lang)||choice.labelKey);label.dataset.competitionPhase=choice.labelKey;option.append(label);if(choice.round&&choice.phaseId!=='final'){option.append(' ',word(choice.round===1?'postseasonFirstLeg':'postseasonSecondLeg',choice.round===1?'First leg':'Second leg'));}}
+      else{const label=element('span','',window.faCompetitionRulesView?.phaseLabel(choice.labelKey,document.documentElement.lang)||choice.labelKey);label.dataset.competitionPhase=choice.labelKey;option.append(label);}
       return option;
     });
     picker.replaceChildren(...choices);postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
@@ -245,17 +245,29 @@
     const label=document.getElementById('app-fixtures-round-label');
     if(label)label.hidden=isPostseason;
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.phaseLabel(selectedChoice.labelKey,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
-    if(isPostseason&&selectedChoice.round&&selectedChoice.phaseId!=='final')selectedLabel.append(' ',word(selectedChoice.round===1?'postseasonFirstLeg':'postseasonSecondLeg',selectedChoice.round===1?'First leg':'Second leg'));
+    
     number.replaceChildren(selectedLabel);
-    roundMenu.sync(String(selected));
+    roundMenu.sync(String(international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected));
     if(!available)roundMenu.close();
-    const choiceIndex=configured.findIndex(c=>c.value===selected);
-    fields.previous.disabled=!available||choiceIndex===0;
-    fields.next.disabled=!available||choiceIndex===configured.length-1;
+    const navigationChoices=international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured;
+    const choiceIndex=navigationChoices.findIndex(c=>c.value===(international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected));
+    fields.previous.disabled=!available||choiceIndex<=0;
+    fields.next.disabled=!available||choiceIndex===navigationChoices.length-1;
     fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=[];
     if(available){
-      if(international&&isPostseason)matches.push(...(postseason.filter(g=>g.phaseId===selectedChoice.phaseId&&g.leg===selectedChoice.round).map(matchRow)));
+      if(international&&isPostseason){
+        const phase=knockoutPhases.find(p=>p.id===selectedChoice.phaseId);
+        const legs=Math.max(...phase.ties.map(t=>t.legs));
+        for(let leg=1;leg<=legs;leg++){
+          const games=postseason.filter(g=>g.phaseId===phase.id&&g.leg===leg);
+          const title=element('li','app-fixture-stage'),heading=element('h3');
+          heading.append(word(legs===1?'postseasonFinal':leg===1?'postseasonFirstLeg':'postseasonSecondLeg',legs===1?'Final':leg===1?'First leg':'Second leg'));
+          title.append(heading);
+          const display=games.length?games:Array.from({length:phase.ties.length},()=>({phaseId:phase.id,leg,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null}));
+          matches.push(title,...display.map(matchRow));
+        }
+      }
       else if(isPostseason)for(const round of [31,32,33]){
         const games=postseason.filter(g=>g.round===round);
         if(round===33&&!hasFinal)continue;
@@ -319,8 +331,8 @@
     roundMenu.close();render();
   });
   fields.current.addEventListener("click",()=>{if(!fields.current.hidden){select(currentMatchday);fields.round.focus()}});
-  fields.previous.addEventListener("click",()=>{if(!fields.previous.disabled)select(configured[configured.findIndex(c=>c.value===selected)-1].value)});
-  fields.next.addEventListener("click",()=>{if(!fields.next.disabled)select(configured[configured.findIndex(c=>c.value===selected)+1].value)});
+  fields.previous.addEventListener("click",()=>{if(!fields.previous.disabled)select((international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured)[(international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured).findIndex(c=>c.value===selected)-1].value)});
+  fields.next.addEventListener("click",()=>{if(!fields.next.disabled)select((international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured)[(international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured).findIndex(c=>c.value===selected)+1].value)});
   // Validate before returning a commit function; rejected input leaves the view intact.
   window.faFixtures={
     prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition}={}){
