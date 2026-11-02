@@ -6,6 +6,7 @@ import {timingSafeEqual,randomBytes,createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
 import {buildFiveSeasonCorpusCandidate} from "./debug-data-five-season-corpus.mjs";
 import {createProtectedDebugSeasonReader} from "./debug-data-i04-reader.mjs";
+import {readProtectedWorldCandidates} from "./debug-data-i05-world-reader.mjs";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const headers={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store, max-age=0","X-Robots-Tag":"noindex, nofollow","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"};
 const reply=(res,status,data,head=false)=>{res.writeHead(status,headers);res.end(head?"":JSON.stringify(data));};
@@ -29,7 +30,7 @@ const load=async()=>{
 };
 export async function respondProtectedDebugProjection(req,res){
  const url=new URL(req.url??"/","http://localhost");
- if(!["/__fa_dev_private__/season-view","/__fa_dev_private__/session"].includes(url.pathname))return false;
+ if(!["/__fa_dev_private__/season-view","/__fa_dev_private__/world-view","/__fa_dev_private__/session"].includes(url.pathname))return false;
  const deny=(status,code)=>{reply(res,status,{error:{code}},req.method==="HEAD");return true;};
  if(process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.NODE_ENV==="production"||process.env.CI==="true")return deny(404,"not_found");
  const remote=req.socket.remoteAddress;
@@ -52,6 +53,11 @@ export async function respondProtectedDebugProjection(req,res){
  const supplied=req.headers.authorization?.match(/^Bearer ([a-zA-Z0-9_-]{32,128})$/)?.[1];
  if(!validSession(req)&&(!secret||!supplied||secret.length!==supplied.length||!timingSafeEqual(Buffer.from(secret),Buffer.from(supplied))))return deny(401,"unauthorized");
  const params=url.searchParams;
+ if(url.pathname==="/__fa_dev_private__/world-view"){
+  if(params.size!==2||[...params.keys()].some(k=>!["season","day"].includes(k))||!/^[1-5]$/.test(params.get("season")??"")||!/^([1-9]|[1-4][0-9]|5[0-6])$/.test(params.get("day")??""))return deny(400,"invalid_query");
+  try{const {reader}=await load();const value=await readProtectedWorldCandidates(reader,Number(params.get("season")),Number(params.get("day")));reply(res,200,value,req.method==="HEAD");}catch(error){console.error("[FA DEBUG I05] Protected world unavailable:",error?.message??"unknown");return deny(503,"world_unavailable");}
+  return true;
+ }
  if([...params.keys()].some(k=>!["season","day","competition"].includes(k))||params.size!==3)return deny(400,"invalid_query");
  const season=Number(params.get("season")),day=Number(params.get("day")),competitionId=params.get("competition");
  if(!/^[1-5]$/.test(params.get("season")??"")||!/^([1-9]|[1-4][0-9]|5[0-6])$/.test(params.get("day")??"")||!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$|^int-[12]$/.test(competitionId??""))return deny(400,"invalid_query");
