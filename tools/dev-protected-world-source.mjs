@@ -2,7 +2,7 @@
 import {selectProtectedWorldDay,selectProtectedClubFixtures} from "./debug-data-i05-world-selectors.mjs";
 let revision=0,abort=null,snapshot=null;
 const enabled=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
-const selected=(key,fallback)=>{try{const v=Number(sessionStorage.getItem(key));return Number.isInteger(v)?v:fallback}catch{return fallback}};
+const selected=(key,fallback)=>{try{const raw=sessionStorage.getItem(key);if(raw===null||raw.trim()==="")return fallback;const v=Number(raw);return Number.isInteger(v)?v:fallback}catch{return fallback}};
 const clubRoute=()=>{const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)(?:\/|$)/i);return match?match[1].toUpperCase()+"-"+match[2]:null};
 const emit=(name,detail)=>window.dispatchEvent(new CustomEvent(name,{detail}));
 export function currentProtectedWorld(){return snapshot;}
