@@ -89,8 +89,24 @@ jobs:
           fi
           npx playwright install chromium
           npx playwright install --with-deps webkit
+      - name: Start isolated local Admin Worker for manual FULL network audit
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          npm --prefix backend ci --no-audit --no-fund
+          cd backend
+          ./node_modules/.bin/wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/fa-admin-ci-worker.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -sS -o /dev/null http://127.0.0.1:8787/api/admin/session; then break; fi
+            sleep 1
+          done
+          CODE=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/admin/session)
+          test "$CODE" != 000
+          test "$CODE" != 404
+          test "$CODE" != 503
       - name: Run loopback preview and browser checks
         if: needs.scope.outputs.mode != 'fast'
+        env:
+          FA_ADMIN_API_TARGET: ${{ github.event_name == 'workflow_dispatch' && 'http://127.0.0.1:8787' || '' }}
         run: |
           node tools/dev-standings-preview.mjs > /tmp/int24-preview.log 2>&1 &
           for i in $(seq 1 30); do
