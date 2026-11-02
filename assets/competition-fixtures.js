@@ -318,6 +318,9 @@
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
         committedSeason=String(window.faCompetitionContext?.selectedSeason??navigation.get().season);
         fields.list.dataset.fixturesState="ready";
+        delete fields.list.dataset.presentedSeason;
+        fields.empty.dataset.appI18n='competitionFixturesEmpty';
+        fields.empty.textContent='No scheduled matches or results are available.';
         fields.toolbar.dataset.fixturesState="ready";
         navigation.defaultMatchday(currentMatchday??1);
         render();
@@ -344,6 +347,26 @@
       window.faFixtures.prepare(data.fixtures,{currentMatchday:current,postseason:data.postseason||[],definition})();
     }catch{clubs=previous;/* Keep the last verified fixtures until a final source outcome. */}
   }
+  // The authoritative loader rejects stale responses; apply only its current terminal state.
+  window.addEventListener('fa:competition-source-state',event=>{
+    if(window.faDevPreviewMode===true&&document.documentElement.dataset.faSourceTransition==='true')return;
+    const detail=event.detail,context=window.faCompetitionContext;
+    if(!detail||!context||detail.season!==context.selectedSeason||detail.revision!==context.revision)return;
+    if(detail.state==='loading'){
+      fields.empty.hidden=true;
+      return;
+    }
+    if(detail.state!=='unavailable')return;
+    fields.list.dataset.fixturesState='unavailable';
+    fields.toolbar.dataset.fixturesState='unavailable';
+    fields.empty.dataset.appI18n='competitionSeasonUnavailable';
+    fields.empty.textContent='Season unavailable';
+    fields.empty.hidden=false;
+    if(rounds===null){fields.list.hidden=true;fields.summary.hidden=true;}
+    // A retained match list still belongs to its committed season, never the failed selection.
+    if(committedSeason!==null)fields.list.dataset.presentedSeason=committedSeason;
+    window.faAppRenderLanguage?.();
+  });
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:competition-context-committed',event=>{
     if(event.detail?.seasonData!==null)return;
