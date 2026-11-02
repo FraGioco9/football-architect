@@ -208,6 +208,15 @@
     item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;
   }
+  // One stage builder for domestic playout and all international two-leg ties.
+  function appendStage(target,labelKey,fallback,games,count,placeholder){
+    if(labelKey){
+      const section=element('li','app-fixture-stage'),heading=element('h3');
+      heading.append(word(labelKey,fallback));section.append(heading);target.push(section);
+    }
+    const display=games.length?games:Array.from({length:count},(_,index)=>placeholder(index));
+    target.push(...display.map(matchRow));
+  }
   function render(){
     if(rounds===null&&fields.list.dataset.fixturesState==="pending")return;
     // The visible match rows belong to their committed season, not a pending route.
@@ -264,21 +273,21 @@
         const legs=Math.max(...phase.ties.map(t=>t.legs));
         for(let leg=1;leg<=legs;leg++){
           const games=postseason.filter(g=>g.phaseId===phase.id&&g.leg===leg);
-          const title=legs===1?null:element('li','app-fixture-stage');
-          if(title){const heading=element('h3');heading.append(word(leg===1?'postseasonFirstLeg':'postseasonSecondLeg',leg===1?'First leg':'Second leg'));title.append(heading);}
-          const display=games.length?games:Array.from({length:phase.ties.length},()=>({phaseId:phase.id,leg,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null}));
-          if(title)matches.push(title);
-          matches.push(...display.map(matchRow));
+          appendStage(matches,legs===1?null:leg===1?'postseasonFirstLeg':'postseasonSecondLeg',
+            leg===1?'First leg':'Second leg',games,phase.ties.length,index=>({
+              phaseId:phase.id,leg,tieId:phase.ties[index].id,
+              round:phase.id+':'+leg,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null
+            }));
         }
       }
       else if(isPostseason)for(const round of [31,32,33]){
         const games=postseason.filter(g=>g.round===round);
         if(round===33&&!hasFinal)continue;
         const count=round===33?1:firstTies.length;
-        const display=games.length?games:Array.from({length:count},()=>({round,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null}));
-        const heading=element('li','app-fixture-stage');
-        const title=element('h3');title.append(word(round===31?'postseasonFirstLeg':round===32?'postseasonSecondLeg':'postseasonFinal',round===31?'First leg':round===32?'Second leg':'Final'));
-        heading.append(title);matches.push(heading,...display.map(matchRow));
+        appendStage(matches,round===31?'postseasonFirstLeg':round===32?'postseasonSecondLeg':'postseasonFinal',
+          round===31?'First leg':round===32?'Second leg':'Final',games,count,()=>({
+            round,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null
+          }));
       }
       else matches.push(...(rounds.get(selected)||[]).map(matchRow));
     }
