@@ -171,7 +171,8 @@
     url.search="";url.hash="";
     if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
     url.searchParams.set("season",state.season);
-    if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
+    // The internal 1 is provisional until Fixtures resolves the actual current day.
+    if(state.view==="fixtures"&&!pendingDefaultMatchday)url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
     season.disabled=false;
