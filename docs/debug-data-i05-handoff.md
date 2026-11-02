@@ -35,3 +35,7 @@ Do not claim that pages now display S1–S5 from the new corpus.
 Per owner instruction, the broad failing regression suite is deferred to I06.
 No new tests were run for this block; existing targeted workflow results are
 not treated as acceptance evidence. No merge, deploy, remote D1 or mail.
+
+## Second I05 block
+
+Created `tools/debug-data-i05-view-adapters.mjs`, pure candidate-only Calendar and club-schedule projections. These consume an already validated protected competition view, preserve provenance, reject cursor mismatches and future score/knockout leaks, and never modify the input. They are deliberately **not injected or activated** in Calendar or Club UI yet. Full view integration, dedicated tests and I06 regression remain open.
