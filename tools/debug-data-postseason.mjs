@@ -26,8 +26,8 @@ export function resolveTie({seasonNumber,competitionId,tieId,participants,legs,s
  const winner=aggregate.get(first)===aggregate.get(second)?choose(seed,tieId,first,second):aggregate.get(first)>aggregate.get(second)?first:second;
  return {tieId,participants:[...participants],legs,fixtures,winner,loser:winner===first?second:first,aggregate:Object.fromEntries(aggregate),resolution:aggregate.get(first)===aggregate.get(second)?"deterministic-tiebreak-placeholder":"aggregate"};
 }
-export function resolveDomesticPostseason({seasonNumber,competitionId,fragment,seed}){
- const order=tableForClosure(fragment,arguments[0].rules,seed).map(x=>x.clubId);
+export function resolveDomesticPostseason({seasonNumber,competitionId,fragment,rules,seed}){
+ const order=tableForClosure(fragment,rules,seed).map(x=>x.clubId);
  const tier=Number(competitionId.split("-")[1]);
  requireRule(tier===1||tier===2,"invalid tier");
  if(tier===1){
