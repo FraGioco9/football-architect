@@ -17,12 +17,15 @@ export async function refreshDebugSource(){
  const season=getNumber("football-architect:standings-dev-season",1);
  const day=getNumber("football-architect:calendar-dev-world-day",1);
  const competitionId=routeCompetition();
+ // Invalidate the outgoing candidate immediately, before any async fetch.
+ state.view=null;state.consumers=null;
  if(!state.enabled||season===0||!competitionId){
   state.view=null;state.consumers=null;
   emit("fa:protected-debug-source-change",{kind:!state.enabled?"global":"debug-unstarted",enabled:state.enabled,revision});
   return;
  }
  if(season<1||season>5||day<1||day>56){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:400});return;}
+ emit("fa:protected-debug-source-pending",{revision,season,day,competitionId});
  // Request only via HttpOnly local session. Never send the owner bearer token.
  try{
   const query=new URLSearchParams({season:String(season),day:String(day),competition:competitionId});
@@ -31,7 +34,7 @@ export async function refreshDebugSource(){
   if(!response.ok){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:response.status});return;}
   const view=await response.json();
   if(revision!==state.revision)return;
-  if(view.kind!=="protected-debug-projection"||view.status!=="UNSEALED_NOT_FOR_RUNTIME"||view.source?.kind!=="debug"||view.source?.namespace!=="local-debug"||view.source?.datasetId!=="debug-corpus-v1"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId||!Array.isArray(view.events)||!Array.isArray(view.standings)){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
+  if(view.kind!=="protected-debug-projection"||view.status!=="UNSEALED_NOT_FOR_RUNTIME"||view.source?.kind!=="debug"||view.source?.namespace!=="local-debug"||view.source?.datasetId!=="debug-corpus-v1"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId||!Array.isArray(view.events)||!Array.isArray(view.standings)){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
   let consumers;
   try{consumers=prepareProtectedConsumers(view,{seasonNumber:season,worldDay:day,competitionId});}
   catch{state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"invalid-shared-view"});return;}
@@ -48,7 +51,7 @@ export async function refreshDebugSource(){
   emit("fa:protected-debug-source-change",{kind:"protected-debug",enabled:true,revision,view});
   if(prepared){emit("fa:protected-debug-domestic-prepared",{revision,competitionId,season,day,prepared});
    emit("fa:protected-debug-domestic-presentation",{revision,competitionId,season,day,presentation});}
- }catch(error){if(revision===state.revision&&error?.name!=="AbortError"){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:0});}}
+ }catch(error){if(revision===state.revision&&error?.name!=="AbortError"){state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:0});}}
 }
 for(const name of ["fa:debug-mode-change","fa:dev-progress-change","fa:dev-world-day-change","fa:competition-route-change","pageshow"])window.addEventListener(name,()=>{void refreshDebugSource()});
 void refreshDebugSource();
