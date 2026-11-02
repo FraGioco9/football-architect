@@ -123,7 +123,7 @@ try {
    const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0}]}],statistics:{standings,overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]},status:'partial'};
    if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))throw Error('QA supplied data rejected');
   });
-  assert.equal(await page.locator('#app-standings-body tr').count(),24);
+  assert.equal(await page.locator('#app-standings-body tr').count(),await page.evaluate(()=>window.faCompetitionContext.definition.capacity));
   assert.equal(await page.locator('[data-postseason-config-slot="q1:0"]').innerText(),'QA Club 1');
   assert.equal(await page.locator('[data-postseason-config-slot="q1:1"]').innerText(),'QA Club 9');
   assert.equal(await page.locator('[data-postseason-score="q1:0:aggregate"]').innerText(),'2');
@@ -138,7 +138,7 @@ try {
   const expand=page.locator('.fa-dev-stats-expand').first();
   await expand.focus();await page.keyboard.press('Enter');
   await page.waitForSelector('dialog.fa-dev-stats-dialog[open]');
-  assert.equal(await page.locator('dialog .fa-dev-stats-top>li').count(),24);
+  assert.equal(await page.locator('dialog .fa-dev-stats-top>li').count(),await page.evaluate(()=>window.faCompetitionContext.definition.capacity));
   assert.equal(await page.locator('dialog .fa-dev-stats-rank').evaluateAll(nodes=>nodes.every(node=>node.textContent==='1')),true);
   await screenshot(page,cup+'-'+width+'-stats-dialog.png');
   await page.keyboard.press('Escape');await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
@@ -149,7 +149,7 @@ try {
   await page.waitForSelector('dialog.fa-dev-stats-dialog',{state:'detached'});
   checks+=3;
   await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:1}));
-  assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),12);
+  assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),await page.evaluate(()=>window.faCompetitionContext.definition.metrics.phases.league.matchesPerRound));
   const revision=await page.evaluate(()=>window.faCompetitionContext.revision);
   await page.evaluate(()=>window.faCompetitionRoute.set({matchday:'quarterfinals:2'}));
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.revision),revision,'fixture browsing must not change simulation/data progress');
