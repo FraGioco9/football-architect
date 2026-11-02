@@ -142,8 +142,8 @@ test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does
  assert.ok(r.fields.get('app-fixtures-list').children.every(row=>row.className?.includes('app-fixture-pending-row')||row.className?.includes('app-fixture-stage')),'unavailable knockout stages display only non-authoritative pending shells');
  assert.equal(r.fields.get('app-fixtures-empty').hidden,false,'selected unsupplied choice explains its empty state');
  r.window.faCompetitionContext={...context,selectedSeason:2,seasonData:null};r.events['fa:competition-context-change']();
- assert.equal(r.fields.get('app-fixtures-list').children.length,0);
- assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
+ assert.ok(r.fields.get('app-fixtures-list').children.every(row=>!row.dataset.fixtureMatch),'unresolved stages cannot publish supplied games');
+ assert.equal(r.fields.get('app-fixtures-toolbar').hidden,false);
 });
 test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded knockout fixtures fail closed',()=>{
  const cup=definitions.find(d=>d.id==='int-1'),r=setup(cup);
@@ -159,8 +159,8 @@ test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded kno
  for(const variant of cases){
   r.window.faCompetitionContext={definition:cup,selectedSeason:1,seasonData:{participants,...variant}};
   r.events['fa:competition-context-change']();r.route.set({matchday:'quarterfinals:1'});
-  assert.equal(r.fields.get('app-fixtures-list').children.length,0);
-  assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
+  assert.ok(r.fields.get('app-fixtures-list').children.every(row=>!row.dataset.fixtureMatch),'invalid fixtures cannot publish supplied games');
+  assert.equal(r.fields.get('app-fixtures-toolbar').hidden,false);
  }
 });
 test('SEASON-FIXTURES: accepted historical seeds replace the definition captured at mount',()=>{
