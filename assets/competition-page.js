@@ -633,6 +633,8 @@
     const resetBracket=()=>{slots.forEach((slot,i)=>{slot.innerHTML=initialSlots[i]});for(const home of initialHomeLabels)if(home){home.label.dataset.appI18n=home.key;home.label.textContent=home.text}if(definition.category==='international')scores.forEach(score=>score.textContent='—');if(bracketEmpty)bracketEmpty.hidden=false};
     function refresh(){
       const context=window.faCompetitionContext;if(!context)return;
+      // Abort before touching rules, slots or DOM while the next season is unresolved.
+      if(!context.seasonData&&document.querySelector('.app-world-standings')?.dataset?.standingsState!=='empty')return;
       const definition=context.definition,league=definition.rules.phases.find(p=>p.rankOutcomes),roundCount=definition.metrics.phases[league.id].rounds;
       const nextGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
       const panel=document.getElementById('competition-panel-postseason');
@@ -641,9 +643,6 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      // A missing snapshot during season/source transition is pending, not confirmed empty.
-      // Preserve the last validated desktop/mobile rows and knockout slots until commit.
-      if(!data&&document.querySelector('.app-world-standings')?.dataset?.standingsState!=='empty')return;
       if(definition.category==='domestic'&&!data?.statistics?.standings){if(data&&data.provenance?.kind!=='authoritative')return;if(suppliedOwned||activeDebugSeason===0||document.querySelector('.app-world-standings')?.dataset?.standingsState==='empty'||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
