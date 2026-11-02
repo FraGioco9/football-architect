@@ -995,6 +995,38 @@
       }
     });
   }
+  // I05: separate DEV-only transaction for International candidates.
+  // Never permits unsealed Debug data through the authoritative provider.
+  function prepareProtectedInternationalSeasonData(data,expectedRevision){
+    const previous=window.faCompetitionContext;
+    if(!window.faDevPreviewMode||document.documentElement.dataset.faI03Renderer!=="1"||
+       !previous||previous.revision!==expectedRevision||definition.category!=="international"||
+       data?.provenance?.kind!=="debug"||data.provenance.namespace!=="local-debug"||
+       typeof data.provenance.datasetId!=="string"||
+       data.season!==previous.selectedSeason||data.season<1||data.season>5||
+       !["partial","available"].includes(data.status)||!model.resolveSeasonRules(definition,data)||
+       !Array.isArray(data.participants)||data.participants.length!==definition.capacity||
+       !Array.isArray(data.fixtures)||!Array.isArray(data.results)||
+       !Array.isArray(data.statistics?.standings))
+      throw Error("Invalid protected international context");
+    const ids=new Set(),national=new Map();
+    for(const club of data.participants){
+      const id=club?.countryId+"-"+club?.clubId;
+      if(!["IT","ENG","ES","DE","FR","PT","NL","BR"].includes(club?.countryId)||
+         !Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40||ids.has(id)||!club.primaryName)
+        throw Error("Invalid international club identity");
+      ids.add(id);national.set(club.countryId,(national.get(club.countryId)||0)+1);
+    }
+    if([...national.values()].some(n=>n!==3)||national.size!==8)throw Error("Invalid INT24 membership");
+    const next=freeze({...createContext(definition,data.season,data,previous.revision+1),presentationOwner:"protected-international"});
+    let committed=false;
+    return Object.freeze({
+      isCurrent:()=>window.faCompetitionContext===(committed?next:previous),
+      commit(){if(committed||window.faCompetitionContext!==previous)throw Error("Stale INT candidate");window.faCompetitionContext=next;committed=true;},
+      publish(){if(!committed||window.faCompetitionContext!==next)throw Error("Stale INT publication");publishCompetitionContext(next,true);},
+      rollback(){if(committed&&window.faCompetitionContext===next){window.faCompetitionContext=previous;committed=false;}}
+    });
+  }
   function replaceSeasonData(data,expectedRevision){return acceptSeasonData(data,expectedRevision,false);}
   async function start() {
     if (!sourceUrl || !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-1|int-2)$/.test(routeId)) throw Error("Invalid route identity");
@@ -1023,7 +1055,7 @@
     if(!seasons.includes(1))seasons.push(1);
     const raw=new URL(window.location.href).searchParams.get("season");
     const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
-    window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason,prepareProtectedSeasonData});
+    window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason,prepareProtectedSeasonData,prepareProtectedInternationalSeasonData});
     nextContext(activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
     await loadScript('world-calendar-model.js');
     await loadScript('competition-rules.js');
