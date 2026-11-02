@@ -28,6 +28,7 @@ export function validateFiveSeasonCandidate(corpus){
     if(fragment.events.some(e=>e.day<1||e.day>56||e.result===null))throw Error("unfinished domestic schedule "+id);
     const post=season.domesticPostseasonEvents?.[id],outcome=season.domesticOutcomes?.[id];
     if(post?.length!==(tier===1?2:5)||post.some(e=>e.day<52||e.day>54||e.result===null)||outcome?.ties?.length!==(tier===1?1:3))throw Error("invalid postseason "+id);
+    for(const tie of outcome.ties){const final=tie.fixtures.at(-1);if(!final?.tiebreak||final.tiebreak.winner!==tie.winner||!tie.participants.includes(tie.winner)||!tie.participants.includes(tie.loser)||tie.winner===tie.loser)throw Error("domestic knockout outcome mismatch "+id);}
    }
   }
   for(const id of ["int-1","int-2"]){
@@ -35,6 +36,7 @@ export function validateFiveSeasonCandidate(corpus){
    if(cup?.participants?.length!==24||cup.events?.length!==93||cup.ties?.length!==11)throw Error("invalid INT24 tournament "+id);
    if(cup.events.some(e=>e.day<1||e.day>56||e.result===null))throw Error("invalid INT24 calendar "+id);
    if(!cup.participants.includes(cup.winner))throw Error("invalid cup winner "+id);
+   for(const tie of cup.ties){const final=tie.fixtures.at(-1);if(!final?.tiebreak||final.tiebreak.winner!==tie.winner||!tie.participants.includes(tie.winner)||!tie.participants.includes(tie.loser)||tie.winner===tie.loser)throw Error("international knockout outcome mismatch "+id);}
    if(cup.pots?.length!==3||cup.pots.some(p=>p.length!==8))throw Error("invalid cup pots "+id);
    validateInternationalPotDraw({participants:cup.participants,pots:cup.pots,events:cup.leagueEvents});
   }
