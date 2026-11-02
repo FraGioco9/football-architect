@@ -6,10 +6,11 @@ import {rankDomesticLeague} from "./debug-data-domestic-ranking.mjs";
 import {rankInternationalLeague} from "./debug-data-international-ranking.mjs";
 const assert=(ok,msg)=>{if(!ok)throw Error("DEBUG-DATA-01 projection: "+msg)};
 const clone=value=>JSON.parse(JSON.stringify(value));
-export function projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competitionId,divisions,cupCatalog,seed="debug-data-v1-fresh"}){
+export function projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competitionId,divisions,cupCatalog,seed="debug-data-v1-fresh",verifiedPlan=null}){
  assert(DEBUG_SEASONS.includes(seasonNumber)&&Number.isInteger(worldDay)&&worldDay>=1&&worldDay<=56,"invalid world position");
  assert(DEBUG_COMPETITIONS.includes(competitionId),"unknown competition");
- const plan=planProtectedDebugExport(corpus);
+ const plan=verifiedPlan??planProtectedDebugExport(corpus);
+ assert(plan.manifest?.datasetId===corpus.datasetId&&plan.manifest?.status==="UNSEALED_NOT_FOR_RUNTIME","unverified export plan");
  const path="season-"+String(seasonNumber).padStart(2,"0")+"/"+competitionId+".json";
  const file=plan.files.find(f=>f.path===path);
  assert(file,"missing season fragment");
