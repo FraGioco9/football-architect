@@ -33,7 +33,7 @@ let routeSeasonOverride=null;
 window.addEventListener('fa:debug-reset',()=>{progressRevision++;debugSeason=readPreviewProgress(sessionStorage).season;matchdays=readMatchdays();routeSeasonOverride=null;syncDebugControls()});
 function availablePreviewSeasons(){
  const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
-  .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
+  .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=5);
  return seasons.length?seasons:[1];
 }
 function selectedSeason(){
@@ -107,7 +107,7 @@ async function setDebugProgress(key,value){
  return false;
 }
 async function setSeason(value){
- if(!Number.isInteger(value)||value<0||value>4)return false;
+ if(!Number.isInteger(value)||value<0||value>5)return false;
  if(value===debugSeason)return true;
  return setDebugProgress(SEASON_KEY,value);
 }
