@@ -234,7 +234,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
-          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + (enableI05 ? I05_LOCAL_BOOTSTRAP : '') + (process.env.FA_DEBUG_I03_PROTECTED==="1"&&process.env.FA_DEBUG_I03_BROWSER_BRIDGE==="1"&&(DETAIL.test(raw)||CUP_DETAIL.test(raw))?'<script type="module" src="/__fa_dev__/protected-debug-source.mjs"></script>':"") + "\n</head>"), "utf8");
+          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + (enableI05 ? I05_LOCAL_BOOTSTRAP : '') + (!enableI05&&process.env.FA_DEBUG_I03_PROTECTED==="1"&&process.env.FA_DEBUG_I03_BROWSER_BRIDGE==="1"&&(DETAIL.test(raw)||CUP_DETAIL.test(raw))?'<script type="module" src="/__fa_dev__/protected-debug-source.mjs"></script>':"") + "\n</head>"), "utf8");
         }
       }
       if ((devPreview || sharedBackend) && subdomains && type === TYPES[".html"]) {
