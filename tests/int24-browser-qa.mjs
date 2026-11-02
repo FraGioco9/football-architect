@@ -66,7 +66,7 @@ try {
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);
    }
    if(view==='fixtures'){
-    const expectedChoices=await page.evaluate(()=>{const definition=window.faCompetitionContext.definition;return definition.rules.phases.reduce((total,phase)=>total+(phase.type==='knockout'?1:definition.metrics.phases[phase.id].rounds),0)});
+    const expectedChoices=await page.evaluate(()=>window.faCompetitionRules.fixtureChoices(window.faCompetitionContext.definition).length);
     assert.equal(await page.locator('[data-fixture-round-choice]').count(),expectedChoices,'fixture stages must match the shared competition rules');
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
