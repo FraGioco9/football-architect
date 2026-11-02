@@ -1,5 +1,5 @@
 // I05 DEV-only world coordinator. Explicit import only; never public runtime.
-import {selectProtectedWorldDay,selectProtectedClubFixtures} from "./debug-data-i05-world-selectors.mjs";
+import {selectProtectedWorldDay,selectProtectedClubFixtures,selectProtectedClubSummary} from "./debug-data-i05-world-selectors.mjs";
 let revision=0,abort=null,snapshot=null;
 const enabled=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
 const selected=(key,fallback)=>{try{const raw=sessionStorage.getItem(key);if(raw===null||raw.trim()==="")return fallback;const v=Number(raw);return Number.isInteger(v)?v:fallback}catch{return fallback}};
@@ -27,6 +27,10 @@ export async function refreshProtectedWorld(){
   const events=calendar?selectProtectedWorldDay(data,day):selectProtectedClubFixtures(data,clubId);
   snapshot=Object.freeze({revision:token,season,day,clubId,kind:calendar?"calendar":"club",events,source:data.source,acceptance:"UNSEALED_NOT_FOR_RUNTIME"});
   emit("fa:protected-world-ready",snapshot);
+  if(clubId){
+   const summary=selectProtectedClubSummary(data,clubId);
+   if(token===revision)emit("fa:club-competition-summary",summary);
+  }
  }catch(error){if(token===revision&&error?.name!=="AbortError")emit("fa:protected-world-unavailable",{revision:token,status:0});}
 }
 for(const name of ["fa:debug-mode-change","fa:dev-progress-change","fa:dev-world-day-change","fa:competition-route-change","pageshow"]){
