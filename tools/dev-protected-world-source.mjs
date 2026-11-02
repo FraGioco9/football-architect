@@ -1,6 +1,6 @@
 // I05 DEV-only world coordinator. Explicit import only; never public runtime.
 import {selectProtectedWorldDay,selectProtectedClubFixtures,selectProtectedClubSummary} from "./debug-data-i05-world-selectors.mjs";
-let revision=0,abort=null,snapshot=null,clubSummary=null;
+let revision=0,abort=null,snapshot=null,clubSummary=null,world=null;
 const enabled=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
 const selected=(key,fallback)=>{try{const raw=sessionStorage.getItem(key);if(raw===null||raw.trim()==="")return fallback;const v=Number(raw);return Number.isInteger(v)?v:fallback}catch{return fallback}};
 const clubRoute=()=>{const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)(?:\/|$)/i);return match?match[1].toUpperCase()+"-"+match[2]:null};
@@ -8,7 +8,7 @@ const emit=(name,detail)=>window.dispatchEvent(new CustomEvent(name,{detail}));
 export function currentProtectedWorld(){return snapshot;}
 export async function refreshProtectedWorld(){
  const token=++revision;
- abort?.abort();abort=new AbortController();snapshot=null;clubSummary=null;
+ abort?.abort();abort=new AbortController();snapshot=null;clubSummary=null;world=null;
  const season=selected("football-architect:standings-dev-season",1);
  const day=selected("football-architect:calendar-dev-world-day",1);
  const clubId=clubRoute(),calendar=location.pathname==="/calendar";
@@ -24,8 +24,10 @@ export async function refreshProtectedWorld(){
   if(token!==revision)return;
   if(data.seasonNumber!==season||data.worldDay!==day||data.source?.kind!=="debug"||data.source?.namespace!=="local-debug"||data.source?.datasetId!=="debug-corpus-v1")throw Error("I05 world identity");
   if(data.competitions.some(c=>c.events.some(e=>e.day>day&&e.result!==null)))throw Error("I05 future score leak");
-  const events=calendar?selectProtectedWorldDay(data,day):selectProtectedClubFixtures(data,clubId);
-  snapshot=Object.freeze({revision:token,season,day,clubId,kind:calendar?"calendar":"club",events,source:data.source,acceptance:"UNSEALED_NOT_FOR_RUNTIME"});
+  world=data;
+  const selectedDay=calendar?Number(document.documentElement.dataset.calendarDay)||day:day;
+  const events=calendar?selectProtectedWorldDay(data,selectedDay):selectProtectedClubFixtures(data,clubId);
+  snapshot=Object.freeze({revision:token,season,day,selectedDay,clubId,kind:calendar?"calendar":"club",events,source:data.source,acceptance:"UNSEALED_NOT_FOR_RUNTIME"});
   emit("fa:protected-world-ready",snapshot);
   if(clubId){
    const summary=selectProtectedClubSummary(data,clubId);
@@ -36,5 +38,12 @@ export async function refreshProtectedWorld(){
 for(const name of ["fa:debug-mode-change","fa:dev-progress-change","fa:dev-world-day-change","fa:competition-route-change","pageshow"]){
  window.addEventListener(name,()=>{void refreshProtectedWorld()});
 }
+window.addEventListener("fa:calendar-selection-change",()=>{
+ if(!world||snapshot?.kind!=="calendar")return;
+ const selectedDay=Number(document.documentElement.dataset.calendarDay);
+ if(!Number.isInteger(selectedDay)||selectedDay<1||selectedDay>56)return;
+ snapshot=Object.freeze({...snapshot,selectedDay,events:selectProtectedWorldDay(world,selectedDay)});
+ emit("fa:protected-world-ready",snapshot);
+});
 window.addEventListener("fa:club-summary-listener-ready",()=>{if(snapshot?.kind==="club"&&clubSummary)emit("fa:club-competition-summary",clubSummary)});
 void refreshProtectedWorld();
