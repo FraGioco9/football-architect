@@ -77,7 +77,17 @@ test('A04 fixture knockout labels do not include middle dot and Final has no leg
 
 test('A04 shared fixture picker keeps full knockout round labels on one line',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
- assert.match(css,/\.app-fixtures-select\{width:214px;flex:0 0 214px/);
+ assert.match(css,/\.app-fixtures-select\{width:250px;flex:0 0 250px/);
  assert.match(css,/#app-fixtures-round-number,\.app-fixtures-picker \.language-option\{white-space:nowrap\}/);
- assert.match(css,/@media\(max-width:360px\)\{\.app-fixtures-select\{width:190px;flex-basis:190px/);
+ assert.match(css,/@media\(max-width:360px\)\{\.app-fixtures-select\{width:230px;flex-basis:230px/);
+});
+
+test('A04 menu and selected knockout labels use identical translated leg names',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/word\(choice\.round===1\?'postseasonFirstLeg':'postseasonSecondLeg'/);
+ assert.match(source,/word\(selectedChoice\.round===1\?'postseasonFirstLeg':'postseasonSecondLeg'/);
+ assert.doesNotMatch(source,/choice\.round\+'\/'/);
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-fixtures-trigger\{[^}]*justify-content:center/);
+ assert.match(css,/\.app-fixtures-trigger>\.language-chevron\{position:absolute/);
 });
