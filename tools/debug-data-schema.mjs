@@ -42,7 +42,7 @@ export function validateSeasonFragment(fragment){
    ensure(typeof event.eventId==="string"&&!ids.has(event.eventId),"duplicate/invalid event ID");
    ids.add(event.eventId);
    ensure(Number.isInteger(event.day)&&event.day>=1&&event.day<=56,"day out of range");
-   ensure(Number.isInteger(event.order)&&event.order>=0,"event order invalid");
+   ensure(Number.isInteger(event.order)&&event.order>=0,"event order invalid: "+fragment.seasonNumber+"/"+fragment.competitionId+"/"+event.eventId+" value="+String(event.order));
    ensure(fragment.participants.includes(event.homeId)&&fragment.participants.includes(event.awayId)&&event.homeId!==event.awayId,"invalid fixture participants");
    if(event.result!==null){ensure(Number.isInteger(event.result?.homeGoals)&&event.result.homeGoals>=0&&Number.isInteger(event.result.awayGoals)&&event.result.awayGoals>=0,"invalid score");}
  }
