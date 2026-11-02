@@ -1,0 +1,25 @@
+name: Debug I04 targeted reader QA
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "tools/debug-data-*.mjs"
+      - "tests/debug-data-i04-*.test.mjs"
+      - ".github/workflows/debug-data-i04-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  i04:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.number == 340
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify isolated reader, source epochs and 90 per-day fragments
+        run: node --test tests/debug-data-i04-reader.test.mjs tests/debug-data-i04-integration.test.mjs
