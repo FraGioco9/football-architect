@@ -5,7 +5,7 @@ import {resolve,join} from "node:path";
 import {timingSafeEqual,randomBytes,createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
 import {buildFiveSeasonCorpusCandidate} from "./debug-data-five-season-corpus.mjs";
-import {projectDebugWorldAtDay} from "./debug-data-projection.mjs";
+import {createProtectedDebugSeasonReader} from "./debug-data-i04-reader.mjs";
 const root=resolve(fileURLToPath(new URL("../",import.meta.url)));
 const headers={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store, max-age=0","X-Robots-Tag":"noindex, nofollow","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"};
 const reply=(res,status,data,head=false)=>{res.writeHead(status,headers);res.end(head?"":JSON.stringify(data));};
@@ -22,7 +22,9 @@ const load=async()=>{
  const read=async name=>JSON.parse(await readFile(join(root,name),"utf8"));
  const [baseline,divisions,cupCatalog,clubCatalog]=await Promise.all([read("backend/catalogues/season-1.participants.json"),read("data/divisions.json"),read("data/international-competitions.json"),read("data/clubs.json")]);
  const corpus=buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,seed:"debug-data-v1-fresh",datasetId:"debug-corpus-v1"});
- cached={corpus,divisions,cupCatalog,clubCatalog};
+ const reader=createProtectedDebugSeasonReader({loadCorpus:async()=>corpus,divisions,cupCatalog});
+ reader.activate({datasetId:corpus.datasetId});
+ cached={corpus,divisions,cupCatalog,clubCatalog,reader};
  return cached;
 };
 export async function respondProtectedDebugProjection(req,res){
@@ -54,8 +56,10 @@ export async function respondProtectedDebugProjection(req,res){
  const season=Number(params.get("season")),day=Number(params.get("day")),competitionId=params.get("competition");
  if(!/^[1-5]$/.test(params.get("season")??"")||!/^([1-9]|[1-4][0-9]|5[0-6])$/.test(params.get("day")??"")||!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$|^int-[12]$/.test(competitionId??""))return deny(400,"invalid_query");
  try{
-  const {corpus,divisions,cupCatalog,clubCatalog}=await load();
-  const projection=projectDebugWorldAtDay(corpus,{seasonNumber:season,worldDay:day,competitionId,divisions,cupCatalog});
+  const {reader,clubCatalog}=await load();
+  const result=await reader.read({seasonNumber:season,worldDay:day,competitionId});
+  if(result.status!=="candidate"||result.acceptance!=="UNSEALED_NOT_FOR_RUNTIME")return deny(503,"projection_unavailable");
+  const projection=result.projection;
   const byId=new Map(clubCatalog.map(club=>[club.countryId+"-"+club.clubId,club]));
   const clubs=projection.participants.map(id=>{const club=byId.get(id);if(!club)throw Error("Missing canonical club identity "+id);return {...club,canonicalId:id};});
   reply(res,200,{kind:"protected-debug-projection",status:"UNSEALED_NOT_FOR_RUNTIME",...projection,clubs},req.method==="HEAD");
