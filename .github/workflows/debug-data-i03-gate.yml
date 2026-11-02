@@ -1,0 +1,30 @@
+name: Debug I03 targeted isolation gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "tools/dev-protected-*.mjs"
+      - "tools/debug-data-private-adapter.mjs"
+      - "tools/dev-standings-preview.mjs"
+      - "tests/debug-data-i03-targeted.test.mjs"
+      - ".github/workflows/debug-data-i03-gate.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  i03:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.number == 340
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse protected I03/I05 module entry points
+        run: |
+          for f in tools/dev-protected-*.mjs tools/debug-data-i05-*.mjs tools/debug-data-private-adapter.mjs tools/dev-standings-preview.mjs; do node --check "$f"; done
+      - name: I03 protected endpoint denial and private import smoke
+        run: node --test tests/debug-data-i03-targeted.test.mjs
