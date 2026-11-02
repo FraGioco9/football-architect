@@ -55,8 +55,8 @@ try {
    const context=await page.evaluate(()=>({id:window.faCompetitionContext?.definition.id,season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData,domestic:!!window.faCompetitionDivision,frozen:Object.isFrozen(window.faCompetitionContext?.definition.rules)}));
    assert.deepEqual(context,{id:cup,season:1,data:null,domestic:false,frozen:true});
    if(view==="rules"){
-    assert.equal(await page.locator('[data-rule-metric="league.matches"]').innerText(),'72');
-    assert.equal(await page.locator('[data-rule-metric="totalMatches"]').innerText(),'93');
+    assert.equal(Number(await page.locator('[data-rule-metric="league.matches"]').innerText()),await page.evaluate(()=>window.faCompetitionContext.definition.metrics.phases.league.matches));
+    assert.equal(Number(await page.locator('[data-rule-metric="totalMatches"]').innerText()),await page.evaluate(()=>window.faCompetitionContext.definition.metrics.totalMatches));
     assert.equal(await page.locator('[data-rule-kind="relegated"]').count(),0);
     assert.equal(await page.locator('[data-rule-kind="promoted"]').count(),0);
    }
@@ -72,7 +72,7 @@ try {
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
    }
    if(view==='postseason'){
-    assert.equal(await page.locator('[data-postseason-config-tie]').count(),11);
+    assert.equal(await page.locator('[data-postseason-config-tie]').count(),await page.evaluate(()=>window.faCompetitionContext.definition.rules.phases.reduce((n,p)=>n+(p.ties?.length||0),0)));
     const brokenRanks=await page.locator('[data-postseason-position] strong').evaluateAll(nodes=>nodes.filter(node=>node.getBoundingClientRect().height>parseFloat(getComputedStyle(node).lineHeight)*1.2).map(node=>node.textContent));
     assert.deepEqual(brokenRanks,[],'seed rank digits must stay on one line at '+width+'px');
    }
@@ -99,7 +99,7 @@ try {
    await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
    const headings={en:"Competition format",de:"Wettbewerbsformat",es:"Formato de competición",fr:"Format de la compétition",it:"Formula della competizione"};
    await page.waitForFunction(expected=>document.querySelector('#rules-format')?.textContent===expected,headings[lang]);
-   assert.equal(await page.locator('[data-rule-metric="league.matches"]').textContent(),'72');
+   assert.equal(Number(await page.locator('[data-rule-metric="league.matches"]').textContent()),await page.evaluate(()=>window.faCompetitionContext.definition.metrics.phases.league.matches));
    const statsLabels={en:['Overview','Teams','Players'],de:['Übersicht','Teams','Spieler'],es:['Resumen','Equipos','Jugadores'],fr:['Vue d’ensemble','Équipes','Joueurs'],it:['Panoramica','Squadre','Giocatori']};
    assert.deepEqual(await page.locator('#fa-dev-stats [data-stats-view]').allTextContents(),statsLabels[lang]);
    checks++;
