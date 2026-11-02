@@ -91,7 +91,16 @@ test('A04: shared competition heading reserves metadata and season value line ge
 
 test('A04: unresolved competition source retains verified standings and knockout rows',()=>{
  const source=read('assets/competition-page.js');
- assert.match(source,/if\(!data&&document\.querySelector\('\.app-world-standings'\)\?\.dataset\?\.standingsState!=='empty'\)return/);
+ assert.match(source,/if\(!context\.seasonData&&document\.querySelector\('\.app-world-standings'\)\?\.dataset\?\.standingsState!=='empty'\)return/);
  assert.match(source,/catch\{\/\* Rejected\/incomplete source must not erase the previously verified view\. \*\/\}/);
  assert.match(source,/if\(!data\)\{empty\(\);resetBracket\(\);return;\}/);
+});
+
+test('A04: pending source does not mutate knockout graph before data commit',()=>{
+ const source=read('assets/competition-page.js');
+ const refresh=source.indexOf('    function refresh(){',source.indexOf('  function bindSuppliedPanels('));
+ const pending=source.indexOf("if(!context.seasonData&&document.querySelector",refresh);
+ const knockout=source.indexOf('const nextGraph=JSON.stringify(',refresh);
+ const bracket=source.indexOf('replacePostseason(definition)',refresh);
+ assert.ok(refresh>=0&&pending>refresh&&knockout>pending&&bracket>knockout);
 });
