@@ -1,7 +1,7 @@
 // I05 protected Stats presenter: opt-in DEV-only bridge to the existing
 // faCompetitionStats.mount/update API. Never auto-imported into public pages.
 import {attachProtectedPresenter} from "./dev-protected-page-bridge.mjs";
-const numeric=(x)=>Number.isFinite(x)?x:0;
+const numeric=(x)=>{if(!Number.isFinite(x))throw Error("I05 Stats missing metric");return x};
 function summarize(payload){
  const clubs=new Map(payload.clubs.map(c=>[c.canonicalId,c]));
  const played=[...payload.fixtures].sort((a,b)=>a.day-b.day||a.order-b.order||a.eventId.localeCompare(b.eventId));
@@ -37,7 +37,8 @@ export function attachProtectedStatsPresenter({panel,definition,baseContext}){
    const matches=Math.floor(teams.reduce((s,r)=>s+r.mp,0)/2);
    const goals=teams.reduce((s,r)=>s+r.gf,0);
    const participants=teams.map(r=>({countryId:r.clubKey.split("-")[0],clubId:Number(r.clubKey.split("-")[1])}));
-   const context={...original,revision,definition,selectedSeason:cursor.seasonNumber,
+   const effectiveRevision=Math.max(revision,Number.isSafeInteger(original.revision)?original.revision+1:revision);
+   const context={...original,revision:effectiveRevision,definition,selectedSeason:cursor.seasonNumber,
     seasonData:{season:cursor.seasonNumber,rulesVersion:definition.rules?.version,
      participants,provenance:{kind:"debug",namespace:"local-debug",datasetId:payload.source.datasetId},
      status:"partial",statistics:{overview:{matchesPlayed:matches,totalGoals:goals,goalsPerMatch:matches?goals/matches:0},
