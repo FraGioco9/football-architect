@@ -337,7 +337,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-club-identity{display:flex;align-items:center;gap:8px;min-width:0}
 .app-world-club-crest-placeholder{display:grid;place-items:center;position:relative;flex:0 0 48px;width:48px;height:48px;border:1px dashed #567970;border-radius:7px;background:rgba(100,203,169,.05);color:#83a79b}
 .app-world-club-crest-placeholder::before{content:"";display:block;width:13px;height:16px;background:currentColor;clip-path:polygon(50% 0%,90% 13%,87% 70%,50% 98%,13% 70%,10% 13%);opacity:.6}
-.app-world-club-name{min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;font-weight:650;line-height:1.35}
+.app-world-club-name{min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;font-weight:400;line-height:1.35}
 .app-world-stat-unknown{color:var(--muted)}
 @media(max-width:1024px){.app-world-countries{grid-template-columns:1fr}}
 @media(max-width:620px){.app-competition-header{gap:10px;--app-competition-heading-size:clamp(20px,6vw,26px)}.app-competition-logo-placeholder-large{font-size:12px}.app-competition-identity{flex:1 1 calc(100% - var(--app-competition-logo-size) - 10px)}.app-competition-return{display:none}.app-world-country{padding:12px}.app-division-card{padding:3px 8px;gap:8px}.app-world-grid .app-competition-logo-placeholder{width:40px;height:40px;font-size:9px}.app-world-standing-table{min-width:696px}.app-world-standing-table tr>*{padding:3px 4px}.app-world-standing-table tbody tr>*{height:64px}.app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:50px;min-width:50px;max-width:50px}.app-world-standing-table tr>*:first-child{width:30px;min-width:30px;max-width:30px}.app-world-standing-table tr>*:nth-child(2){left:30px;min-width:126px}.app-world-club-identity{gap:7px}.app-world-club-crest-placeholder{flex-basis:40px;width:40px;height:40px}.app-world-club-crest-placeholder::before{width:12px;height:15px}.app-world-club-name{font-size:10.5px}}
@@ -355,7 +355,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-mobile-summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:8px}
 .app-world-mobile-details[open]>.app-world-mobile-summary,.app-world-mobile-summary:hover{background:rgba(100,203,169,.065)}
 .app-world-mobile-position{grid-area:position;padding-left:4px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
-.app-world-mobile-name{grid-area:name;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.35;font-weight:700}
+.app-world-mobile-name{grid-area:name;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.35;font-weight:400}
 .app-world-mobile-points{grid-area:points;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border-radius:7px;background:#26473e;color:#effff4;font-size:16px;font-weight:850;font-variant-numeric:tabular-nums}
 .app-world-mobile-form{grid-area:form;display:flex;align-items:center;gap:3px;min-width:0}
 .app-world-mobile-form .app-world-form-dot{width:16px;height:16px;cursor:default}
@@ -364,8 +364,8 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-mobile-panel{padding:6px 9px}
 .app-world-mobile-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0}
 .app-world-mobile-stat{min-width:0;padding:7px 2px;text-align:center;background:rgba(100,203,169,.045);border:1px solid var(--line);border-radius:7px;font-variant-numeric:tabular-nums}
-.app-world-mobile-stat dt{color:var(--muted);font-size:10px;font-weight:700}
-.app-world-mobile-stat dd{margin:4px 0 0;font-size:13px;font-weight:750}
+.app-world-mobile-stat dt{color:var(--muted);font-size:10px;font-weight:400}
+.app-world-mobile-stat dd{margin:4px 0 0;font-size:13px;font-weight:400}
 @media(min-width:621px){.app-world-compact{display:none!important}}
 @media(max-width:620px){.app-world-standing-scroll{display:none!important}.app-world-standings{overflow:hidden}.app-world-mobile-name{font-size:12px}}
 @media(max-width:360px){.app-world-mobile-summary{grid-template-columns:21px minmax(0,1fr) 36px;column-gap:4px;padding:8px 5px}.app-world-mobile-points{font-size:15px}.app-world-mobile-name{font-size:11.5px}}
@@ -1166,3 +1166,8 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 .app-world-standings[data-standings-state="pending"] .app-world-club-crest-placeholder,
 .app-world-standings [data-standings-slot] .app-world-club-crest-placeholder{border-color:transparent;background:transparent}
 .app-world-standings [data-standings-slot] .app-world-club-crest-placeholder::before{display:none}
+
+/* Standings body typography: points are the sole emphasized sporting value. */
+.app-world-standing-table tbody tr>*:not(:nth-child(10)){font-weight:400}
+.app-world-standing-table tbody tr>*:nth-child(10){font-weight:800}
+.app-world-mobile-points{font-weight:850}
