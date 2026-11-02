@@ -40,19 +40,24 @@ jobs:
               core.setFailed('PR closed, foreign head, or stale HEAD');return;
             }
             if(pr.base.ref!=='main'){core.setFailed('Unexpected target branch');return;}
+            const changed=await github.paginate(github.rest.pulls.listFiles,{owner,repo,pull_number:prNumber,per_page:100});
+            if(changed.length>=3000){core.setFailed('PR diff too large to trust; manual audit required');return;}
+            const needsAdmin=changed.some(f=>/^(?:backend\/|account\/|assets\/(?:account-|profile-|admin-settings|authoritative-)|tools\/(?:dev-admin-|shared-nonproduction-|render-admin-)|\.github\/workflows\/admin-world-checks\.yml)/.test(f.filename));
             const required=['landing-checks.yml','int24-browser-qa.yml'];
+            if(needsAdmin)required.push('admin-world-checks.yml');
             const evidence=[];
             for(const workflow_id of required){
               const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:expected,per_page:100});
-              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&run.event==='workflow_dispatch'&&run.conclusion==='success'&&run.run_attempt>=1);
+              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&run.event===(workflow_id==='admin-world-checks.yml'?'pull_request':'workflow_dispatch')&&run.conclusion==='success'&&run.run_attempt>=1);
               if(!matches.length){core.setFailed('Missing successful manually dispatched FULL '+workflow_id+' for '+expected);return;}
               const selected=matches.sort((a,b)=>b.id-a.id)[0];
               const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:selected.id,per_page:100});
               const names=jobs.filter(j=>j.conclusion==='success').map(j=>j.name);
-              const expectedJob=workflow_id==='landing-checks.yml'?'landing':'chromium';
+              const expectedJob=workflow_id==='landing-checks.yml'?'landing':workflow_id==='int24-browser-qa.yml'?'chromium':'operator-final';
               if(!names.some(n=>n===expectedJob||n.endsWith(' / '+expectedJob))){
                 core.setFailed('Missing completed FULL job '+expectedJob+' in '+workflow_id);return;
               }
+              if(workflow_id==='admin-world-checks.yml' && !names.some(n=>n==='password-policy'||n.endsWith(' / password-policy'))){core.setFailed('Missing Admin foundation FULL contracts');return;}
               evidence.push(workflow_id+': '+selected.html_url+' ('+selected.head_sha+')');
             }
             const {data:fresh}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
