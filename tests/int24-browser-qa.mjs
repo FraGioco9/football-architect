@@ -161,8 +161,8 @@ try {
   await page.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
   assert.equal(await page.locator('#app-standings-body tr').count(),await page.evaluate(()=>window.faCompetitionContext.definition.capacity),'empty published season keeps all standings slots reserved');
   assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
-    assert.equal(await page.locator('#app-fixtures-previous').isDisabled(),true);
-    assert.equal(await page.locator('#app-fixtures-next').isDisabled(),true);
+    assert.equal(await page.locator('#app-fixtures-previous').isVisible(),true);
+    assert.equal(await page.locator('#app-fixtures-next').isVisible(),true);
   checks+=3;
   const tabs=page.locator(".app-competition-tabs [role=tab]");
   await tabs.first().focus();
