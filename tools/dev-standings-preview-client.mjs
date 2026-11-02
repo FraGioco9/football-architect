@@ -64,6 +64,7 @@ function syncDebugControls(){
   }
 }
 async function refreshProgress(){
+ if(!debugMode())return true; // Global world owns progress while Debug is OFF.
  window.faCompetitionContextApi?.setDebugSeason(debugSeason);
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
  if(debugSeason===0){
