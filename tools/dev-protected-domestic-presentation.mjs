@@ -1,6 +1,6 @@
 // I03 prepare one coherent rendering model; no DOM side effects.
 // Consumers must commit standings, fixtures and postseason together.
-import {prepareProtectedPostseason} from "./protected-domestic-postseason.mjs";
+import {prepareProtectedPostseason} from "./dev-protected-domestic-postseason.mjs";
 const fail=message=>{throw new Error("Protected domestic view: "+message)};
 export function createProtectedDomesticPresentation(payload){
  if(payload?.clubs?.length!==16||payload?.standings?.length!==16||payload?.fixtures?.length!==240)fail("wrong dimensions");
