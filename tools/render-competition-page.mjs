@@ -44,7 +44,7 @@ ${preRenderedRows}
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const fixtureOption=c=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'">'+(typeof c.value==='number'?'<span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+c.round:'<span data-competition-phase="'+c.labelKey+'">'+rulesView.phaseLabel(c.labelKey)+'</span>'+(c.round?' · '+c.round:''))+'</div>';
 const fixturesContent = (d)=>`
-            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
+            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar">
               <div class="app-fixtures-navigation">
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 <div class="language-control app-fixtures-select">
@@ -58,8 +58,8 @@ ${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
               <button type="button" class="language-trigger app-fixtures-current" id="app-fixtures-current" data-app-aria="fixturesCurrent" aria-label="Current matchday" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg><span data-app-i18n="fixturesCurrent">Current matchday</span></button>
               <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             </div>
-            <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
-            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>`;
+            <p id="app-fixtures-empty" hidden class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" data-fixtures-state="pending">${Array.from({length:Math.floor((d.capacity||16)/2)},(_,i)=>`<li class="app-fixture-match app-fixture-pending-row" data-fixture-slot="${i}" aria-hidden="true"></li>`).join("")}</ol>`;
 const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">
