@@ -51,7 +51,8 @@ export function projectProtectedStats(view,cursor){
  const standings=projectProtectedStandings(view,cursor);
  return {source:standings.source,seasonNumber:cursor.seasonNumber,worldDay:cursor.worldDay,
   competitionId:cursor.competitionId,teams:standings.rows,
-  players:null,playerStatisticsStatus:"unavailable-without-canonical-source"};
+  fixtures:clone(view.events.filter(e=>e.phaseId==="league"&&e.result!==null&&e.day<=cursor.worldDay)),
+  clubs:clone(view.clubs),players:null,playerStatisticsStatus:"unavailable-without-canonical-source"};
 }
 export function projectProtectedInternational(view,cursor){
  assert(/^int-[12]$/.test(cursor.competitionId),"international competition required");
