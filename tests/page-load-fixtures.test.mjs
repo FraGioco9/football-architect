@@ -64,3 +64,16 @@ test('A04: international and domestic competition headers expose the same metada
   }
  }
 });
+
+test('A04: season selector reserves its geometry without showing provisional Season 1',()=>{
+ for(const id of ids.concat(['_shared'])){
+  const html=read('competitions/'+id+'/index.html');
+  assert.match(html,/<span id="app-competition-season-value"><\/span>/,id);
+  assert.doesNotMatch(html,/<span id="app-competition-season-value">1<\/span>/,id);
+ }
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-competition-season \.language-control\{width:88px\}/);
+ assert.match(css,/\.app-competition-season \.language-trigger\{width:100%;min-width:0;height:44px\}/);
+ const router=read('assets/competition-tabs.js');
+ assert.match(router,/seasonValue\.textContent=available\?state\.season/);
+});
