@@ -30,7 +30,7 @@ export function buildInternationalCupDraft({seasonNumber,cupId,participants,seed
  const ranking=rankLeague(participants,league.events);
  const elimination=resolveCatalogKnockout({seasonNumber,competitionId:cupId,rules,rankedClubs:ranking.map(row=>row.clubId),seed});
  ensure(elimination.ties.length===11,"11 INT24 elimination ties required");
- ensure(elimination.events.length===19,"19 knockout legs required");
+ ensure(elimination.events.length===21,"21 knockout legs required");
  const events=[...league.events,...elimination.events].sort((a,b)=>a.day-b.day||a.order-b.order||a.eventId.localeCompare(b.eventId));
  ensure(new Set(events.map(e=>e.eventId)).size===events.length,"duplicate cup event IDs");
  const winners=new Set(elimination.ties.map(t=>t.winner));
