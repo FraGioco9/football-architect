@@ -997,7 +997,8 @@
           if(window.faDevPreviewMode!==true)return;
           const enabled=event.detail?.enabled===true;
           setDebugSeason(enabled?(()=>{try{const value=Number(sessionStorage.getItem('football-architect:standings-dev-season'));return Number.isInteger(value)&&value>=0&&value<=4?value:1}catch{return 1}})():null);
-          if(!enabled){selection='';select();}
+          // Wait for DEV preview teardown before fetching global data.
+          // The completion event below starts the authoritative loader.
         });
         // DEV preview cleanup is asynchronous. It can restore the previous
         // standings DOM after the global loader's first attempt; rehydrate
