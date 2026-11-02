@@ -6,7 +6,7 @@ const start=()=>{
  const clock=createDevWorldClock(sessionStorage,(name,detail)=>window.dispatchEvent(new CustomEvent(name,{detail})));
  let widget;
  registerDebugControls('general',[
-  {type:'range',id:'season',label:'Season',min:0,max:4,step:1,scope:'general',value:()=>clock.read().season,onChange:n=>clock.setSeason(n)},
+  {type:'range',id:'season',label:'Season',min:0,max:5,step:1,scope:'general',value:()=>clock.read().season,onChange:n=>clock.setSeason(n)},
   {type:'range',id:'world-day',label:'Day',min:1,max:56,step:1,scope:'general',value:()=>clock.read().day,disabled:()=>clock.read().season===0,onChange:n=>clock.setDay(n)},
   {type:'button',id:'reset-global',label:'Reset',scope:'general',onChange:()=>widget?.resetAllSettings()}
  ]);
