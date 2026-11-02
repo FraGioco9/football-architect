@@ -20,8 +20,13 @@ export function buildFiveSeasonDomesticDraft({baseline,divisions,seed="debug-dat
    fragments[competitionId]=fragment;
    outcomes.set(competitionId,resolveDomesticPostseason({seasonNumber,competitionId,fragment,rules:rules.get(competitionId),seed:seed+":"+datasetId}));
   }
+  const postseasonEvents=Object.fromEntries([...outcomes].map(([id,outcome])=>[id,outcome.ties.flatMap(t=>t.fixtures)]));
+  for(const [id,events] of Object.entries(postseasonEvents)){
+   const tier=Number(id.split("-")[1]);
+   if(events.length!==(tier===1?2:5)||events.some(e=>e.day<52||e.day>54))throw Error("postseason event structure invalid: "+id);
+  }
   const sportingOutcomes=Object.fromEntries([...outcomes].map(([id,outcome])=>[id,duplicate(outcome)]));
-  const snapshot={schemaVersion:1,kind:"unsealed-domestic-draft",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,fragments,sportingOutcomes,contentsHash:hash({fragments,sportingOutcomes})};
+  const snapshot={schemaVersion:1,kind:"unsealed-domestic-draft",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,fragments,postseasonEvents,sportingOutcomes,contentsHash:hash({fragments,postseasonEvents,sportingOutcomes})};
   seasons.push(snapshot);
   if(seasonNumber<5)participants=nextDomesticMembership(participants,outcomes);
  }

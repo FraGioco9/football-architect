@@ -26,7 +26,7 @@ export function buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,se
   const competitionIds=[...Object.keys(season.fragments),...cupIds];
   requireValid(competitionIds.length===18,"18 competitions required");
   const local={schemaVersion:1,kind:"unsealed-world-season-candidate",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,
-   domestic:season.fragments,domesticOutcomes:season.sportingOutcomes,domesticPlacements:placements,cups,
+   domestic:season.fragments,domesticPostseasonEvents:season.postseasonEvents,domesticOutcomes:season.sportingOutcomes,domesticPlacements:placements,cups,
    internationalWinners:Object.fromEntries(cupIds.map(id=>[id,cups[id].winner])),holderMoves:holderAllocation?.moves??[],
    predecessorHash:seasons.at(-1)?.candidateHash??null,
    unresolved:["INT24 approved pots","domestic and international full tie-breakers","postseason canonical event mapping","seeded penalties model"]};
