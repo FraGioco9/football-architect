@@ -14,12 +14,16 @@ export function mapKnownDomesticPostseason(model){
   if(pending){ensure(e.homeGoals===null&&e.awayGoals===null,"pending slot has result");
    return {round,slot:e.eventId??String(index),pendingParticipants:true,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null,afterExtraTime:false,penalties:null};}
   const extra=e.tiebreak?.extraTime??null,pen=e.tiebreak?.penalties??null;
-  // Existing shared validator requires a fully resolved two-leg aggregate
-  // and a specific penalties shape; refuse ambiguous resolutions.
-  ensure(!extra&&!pen,"extra-time/penalty mapping requires score-contract audit");
+  const method=e.tiebreak?.method??"aggregate";
+  ensure(["aggregate","extraTime","penalties"].includes(method),"unknown tiebreak method");
+  ensure(method==="aggregate"?!extra&&!pen:extra!==null,"tiebreak method mismatch");
+  ensure(method==="penalties"===Boolean(pen),"penalty method mismatch");
+  if(extra)ensure(Number.isInteger(extra.homeGoals)&&extra.homeGoals>=0&&Number.isInteger(extra.awayGoals)&&extra.awayGoals>=0,"invalid extra-time score");
+  if(pen)ensure(Number.isInteger(pen.homeGoals)&&pen.homeGoals>=0&&Number.isInteger(pen.awayGoals)&&pen.awayGoals>=0&&pen.homeGoals!==pen.awayGoals,"invalid shootout");
   return {round,homeId:ids.get(e.homeId),awayId:ids.get(e.awayId),
     homeGoals:e.homeGoals,awayGoals:e.awayGoals,kickoff:null,
-    afterExtraTime:false,penalties:null};
+    afterExtraTime:extra!==null,extraTime:extra?{...extra}:null,
+    penalties:pen?{homeId:ids.get(e.homeId),awayId:ids.get(e.awayId),...pen}:null};
  });
  return {ready:true,fixtures,reason:null};
 }

@@ -82,10 +82,13 @@
       if(seen.has(key)||typeof g.afterExtraTime!=='boolean'||(g.round===31&&g.afterExtraTime)||
          (g.homeGoals===null&&g.afterExtraTime))throw Error('Invalid post-season result');
       seen.add(key);
+      const extra=g.extraTime??null;
+      if(extra!==null&&(!g.afterExtraTime||!Number.isSafeInteger(extra.homeGoals)||extra.homeGoals<0||!Number.isSafeInteger(extra.awayGoals)||extra.awayGoals<0))throw Error('Invalid extra-time score');
+      if(g.afterExtraTime&&!extra)throw Error('Missing extra-time score');
       const p=g.penalties;
       if(p!==null&&(!p||!g.afterExtraTime||p.homeId!==g.homeId||p.awayId!==g.awayId||
          !Number.isSafeInteger(p.homeGoals)||p.homeGoals<0||!Number.isSafeInteger(p.awayGoals)||p.awayGoals<0||p.homeGoals===p.awayGoals))throw Error('Invalid post-season penalties');
-      return {...g,penalties:p?{...p}:null};
+      return {...g,extraTime:extra?{...extra}:null,penalties:p?{...p}:null};
     });
     const legs=[31,32].map(round=>next.filter(g=>g.round===round));
     if(legs.some(games=>games.length!==size||new Set(games.filter(g=>!g.pendingParticipants).flatMap(g=>[g.homeId,g.awayId])).size!==games.filter(g=>!g.pendingParticipants).length*2)||
@@ -99,7 +102,10 @@
       if(second.homeGoals!==null&&first.homeGoals===null)throw Error('Unplayed first leg');
       if(second.homeGoals===null)return null;
       const home=first.awayGoals+second.homeGoals,away=first.homeGoals+second.awayGoals;
-      if(home!==away){if(second.penalties)throw Error('Unneeded post-season penalties');return home>away?second.homeId:second.awayId}
+      if(home!==away){if(second.afterExtraTime||second.penalties)throw Error('Unneeded extra-time/penalties');return home>away?second.homeId:second.awayId}
+      if(!second.afterExtraTime||!second.extraTime)throw Error('Missing extra time for aggregate draw');
+      const extraHome=home+second.extraTime.homeGoals,extraAway=away+second.extraTime.awayGoals;
+      if(extraHome!==extraAway){if(second.penalties)throw Error('Unneeded penalties');return extraHome>extraAway?second.homeId:second.awayId}
       if(!second.penalties)throw Error('Unresolved post-season tie');
       return second.penalties.homeGoals>second.penalties.awayGoals?second.homeId:second.awayId;
     });
