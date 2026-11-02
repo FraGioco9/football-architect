@@ -5,8 +5,8 @@ const numeric=(x)=>Number.isFinite(x)?x:0;
 function summarize(payload){
  const teams=payload.teams.map(row=>({
   clubKey:row.clubId,clubName:row.clubId,mp:row.played,w:numeric(row.wins),gf:numeric(row.goalsFor),
-  ga:numeric(row.goalsAgainst),gd:numeric(row.goalDifference),cs:0,
-  ppg:row.played?numeric(row.points)/row.played:0,unbeatenStreak:0
+  ga:numeric(row.goalsAgainst),gd:numeric(row.goalDifference),
+  ppg:row.played?numeric(row.points)/row.played:0
  }));
  return teams;
 }
@@ -18,7 +18,11 @@ export function attachProtectedStatsPresenter({panel,definition,baseContext}){
    if(cursor.competitionId!==definition.id)throw Error("I05 Stats route mismatch");
    const original=baseContext();
    if(!original||!window.faCompetitionStats?.mount)throw Error("I05 Stats renderer unavailable");
-   const teams=summarize(payload),matches=Math.floor(teams.reduce((s,r)=>s+r.mp,0)/2);
+   // The existing Stats renderer requires clean-sheet and streak metrics.
+   // Candidate rows do not supply them yet: fail closed, never invent zeros.
+   const teams=summarize(payload);
+   if(teams.some(row=>!Number.isSafeInteger(row.cs)||!Number.isSafeInteger(row.unbeatenStreak)))throw Error("I05 Stats metrics unavailable");
+   const matches=Math.floor(teams.reduce((s,r)=>s+r.mp,0)/2);
    const goals=teams.reduce((s,r)=>s+r.gf,0);
    const participants=teams.map(r=>({countryId:r.clubKey.split("-")[0],clubId:Number(r.clubKey.split("-")[1])}));
    const context={...original,revision,definition,selectedSeason:cursor.seasonNumber,
