@@ -53,11 +53,11 @@ jobs:
               const selected=matches.sort((a,b)=>b.id-a.id)[0];
               const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:selected.id,per_page:100});
               const names=jobs.filter(j=>j.conclusion==='success').map(j=>j.name);
-              const expectedJob=workflow_id==='landing-checks.yml'?'landing':workflow_id==='int24-browser-qa.yml'?'chromium':'operator-final';
+              const expectedJob=workflow_id==='landing-checks.yml'?'landing':workflow_id==='int24-browser-qa.yml'?'chromium':'Final local operator persistence, restart and browser lifecycle';
               if(!names.some(n=>n===expectedJob||n.endsWith(' / '+expectedJob))){
                 core.setFailed('Missing completed FULL job '+expectedJob+' in '+workflow_id);return;
               }
-              if(workflow_id==='admin-world-checks.yml' && !names.some(n=>n==='password-policy'||n.endsWith(' / password-policy'))){core.setFailed('Missing Admin foundation FULL contracts');return;}
+              if(workflow_id==='admin-world-checks.yml' && !names.some(n=>n==='Admin foundation contracts (Node 22)'||n.endsWith(' / Admin foundation contracts (Node 22)'))){core.setFailed('Missing Admin foundation FULL contracts');return;}
               evidence.push(workflow_id+': '+selected.html_url+' ('+selected.head_sha+')');
             }
             const {data:fresh}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
