@@ -63,7 +63,8 @@
   if(!c)throw Error('Unknown club identity');
   const country=countryNames[lang][countries.indexOf(c.countryId)];
   const authoritative=snapshot?.source==='authoritative'&&snapshot.clubId===c.clubId&&Number.isInteger(snapshot.season)&&snapshot.season>0;
-  const division=index.divisions.get(authoritative?snapshot.divisionId:c.divisionId);
+  const localDebug=typeof window!=="undefined"&&window.faDevPreviewMode===true&&document.documentElement.dataset.faDebugEnabled==="true"&&snapshot?.source==="dev";
+  const division=index.divisions.get(authoritative||localDebug?snapshot.divisionId:c.divisionId);
   // Reuse generated competition artwork, scoping SVG IDs for both placements.
   const flag=placement=>manifest.countryFlags[c.countryId]
    .replace('class="app-world-flag"','class="app-world-flag club-country-flag"')
@@ -76,14 +77,14 @@
   const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
   const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
   const summary=division&&['dev','authoritative'].includes(snapshot?.source)&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
-   Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
+   Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=5&&
    (snapshot.position===null||Number.isInteger(snapshot.position)&&snapshot.position>=1&&snapshot.position<=16)&&
    Number.isInteger(snapshot.points)&&snapshot.points>=0&&snapshot.points<=90?snapshot:null;
   const next=summary?.nextMatch;
   const homeCandidate=next&&index.clubs.get(c.countryId+'-'+next.homeId);
-  const home=homeCandidate&&(authoritative||homeCandidate.divisionId===c.divisionId)?homeCandidate:null;
+  const home=homeCandidate&&(authoritative||localDebug||homeCandidate.divisionId===c.divisionId)?homeCandidate:null;
   const awayCandidate=next&&index.clubs.get(c.countryId+'-'+next.awayId);
-  const away=awayCandidate&&(authoritative||awayCandidate.divisionId===c.divisionId)?awayCandidate:null;
+  const away=awayCandidate&&(authoritative||localDebug||awayCandidate.divisionId===c.divisionId)?awayCandidate:null;
   const validNext=home&&away&&home.clubId!==away.clubId&&[home.clubId,away.clubId].includes(c.clubId)&&Number.isInteger(next.round)&&next.round>=1&&next.round<=33;
   const fixtureLink=validNext?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'fixtures'})+'?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
   const rank=summary?.position===null||!summary?'—':ordinal(summary.position,lang);
