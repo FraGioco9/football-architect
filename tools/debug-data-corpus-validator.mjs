@@ -1,7 +1,7 @@
 // DEBUG-DATA-01: structural validation of five-season unsealed candidates.
 // This is a guard, not a completion seal. It does not certify unimplemented
 // pot, tie-break or titleholder rules.
-import {DEBUG_COUNTRIES,DEBUG_SEASONS,hash} from "./debug-data-schema.mjs";
+import {DEBUG_COUNTRIES,DEBUG_SEASONS,hash,validateSeasonFragment} from "./debug-data-schema.mjs";
 import {nextDomesticMembership} from "./debug-data-postseason.mjs";
 import {validateInternationalPotDraw} from "./debug-data-international-pots.mjs";
 import {allocateInternationalEntrants} from "./debug-data-international-qualification.mjs";
@@ -25,9 +25,12 @@ export function validateFiveSeasonCandidate(corpus){
    for(const tier of [1,2]){
     const id=country+"-"+tier,fragment=season.domestic?.[id];
     if(fragment?.participants?.length!==16||fragment.events?.length!==240)throw Error("domestic fixture count "+id);
+    validateSeasonFragment(fragment);
     if(fragment.events.some(e=>e.day<1||e.day>56||e.result===null))throw Error("unfinished domestic schedule "+id);
     const post=season.domesticPostseasonEvents?.[id],outcome=season.domesticOutcomes?.[id];
     if(post?.length!==(tier===1?2:5)||post.some(e=>e.day<52||e.day>54||e.result===null)||outcome?.ties?.length!==(tier===1?1:3))throw Error("invalid postseason "+id);
+    if(!fragment.participants.includes(outcome.champion)||outcome.rankedClubs?.length!==16||new Set(outcome.rankedClubs).size!==16)throw Error("domestic closure invalid "+id);
+    if(outcome.ties.flatMap(t=>t.fixtures).map(e=>e.eventId).join("|")!==post.map(e=>e.eventId).join("|"))throw Error("postseason fixture provenance mismatch "+id);
     for(const tie of outcome.ties){const final=tie.fixtures.at(-1);if(!final?.tiebreak||final.tiebreak.winner!==tie.winner||!tie.participants.includes(tie.winner)||!tie.participants.includes(tie.loser)||tie.winner===tie.loser)throw Error("domestic knockout outcome mismatch "+id);}
    }
   }
@@ -36,6 +39,7 @@ export function validateFiveSeasonCandidate(corpus){
    if(cup?.participants?.length!==24||cup.events?.length!==93||cup.ties?.length!==11)throw Error("invalid INT24 tournament "+id);
    if(cup.events.some(e=>e.day<1||e.day>56||e.result===null))throw Error("invalid INT24 calendar "+id);
    if(!cup.participants.includes(cup.winner))throw Error("invalid cup winner "+id);
+   if(cup.ties.at(-1)?.winner!==cup.winner||cup.leagueEvents?.length!==72||cup.events.length!==cup.leagueEvents.length+cup.ties.reduce((n,t)=>n+t.fixtures.length,0))throw Error("cup bracket closure invalid "+id);
    for(const tie of cup.ties){const final=tie.fixtures.at(-1);if(!final?.tiebreak||final.tiebreak.winner!==tie.winner||!tie.participants.includes(tie.winner)||!tie.participants.includes(tie.loser)||tie.winner===tie.loser)throw Error("international knockout outcome mismatch "+id);}
    if(cup.pots?.length!==3||cup.pots.some(p=>p.length!==8))throw Error("invalid cup pots "+id);
    validateInternationalPotDraw({participants:cup.participants,pots:cup.pots,events:cup.leagueEvents});
