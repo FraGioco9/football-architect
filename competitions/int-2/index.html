@@ -399,6 +399,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           <section id="competition-panel-awards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-awards" tabindex="0" hidden>
           </section>
         </section>
+          <script data-competition-view-first-paint>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const panel of document.querySelectorAll(".app-competition-panel"))panel.hidden=panel.id!=="competition-panel-"+view;})()</script>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
       </div>
