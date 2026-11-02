@@ -65,3 +65,14 @@ These are implementation guards, **not a passing acceptance report**. Broad
 Node/browser failures from I03 remain deferred to I06 by owner decision;
 targeted real-corpus projection verification is still required before I04
 can be marked complete. No runtime cutover.
+
+## Fourth block — focused reader regression cases
+
+The isolated reader test suite now additionally checks invalid historical
+boundaries, retry following a failed local load, and a history promise that
+resolves after Debug OFF. These tests are committed as regression coverage,
+but have **not been executed in this block**; no PASS claim is made.
+
+The next remaining gate is a targeted execution against actual generated
+S1–S5 corpus artifacts, plus transport integration and formal closure
+semantics. The deferred I06 full suite is unchanged.
