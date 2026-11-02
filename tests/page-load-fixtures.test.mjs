@@ -115,3 +115,20 @@ test('A04 international first-paint shell reserves knockout legs and correct mat
   assert.match(html,/list\.replaceChildren\(\.\.\.rows\)/);
  }
 });
+
+test('International fixtures first paint exposes navigation shell and stage label without :1',()=>{
+ const router=read('assets/competition-tabs.js');
+ assert.match(router,/const toUrlRound=value=>/);
+ assert.match(router,/return phase\[1\]/);
+ assert.match(router,/const fromUrlRound=value=>/);
+ for(const id of ['int-1','int-2']){
+  const html=read('competitions/'+id+'/index.html');
+  assert.match(html,/data-fixtures-category="international"/);
+  assert.match(html,/id="app-fixtures-previous"/);
+  assert.match(html,/id="app-fixtures-next"/);
+  assert.match(html,/const display=\{playoffs:/);
+  assert.match(html,/if\(number\)number\.textContent=display\[phase\]/);
+ }
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-fixtures-toolbar\[data-fixtures-category="international"\]\[data-fixtures-state="pending"\] #app-fixtures-round-number\{visibility:visible\}/);
+});
