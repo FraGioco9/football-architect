@@ -12,7 +12,7 @@ export function subscribeProtectedCandidates(listener){
 }
 export function acceptProtectedCandidates(detail){
  const revision=detail?.revision;
- if(!isRevision(revision)||revision<=lastRevision)return false;
+ if(!isRevision(revision)||revision<lastRevision||(revision===lastRevision&&snapshot!==null))return false;
  const consumers=detail.consumers;
  if(consumers?.acceptance!=="UNSEALED_NOT_FOR_RUNTIME"||
   consumers.source?.kind!=="debug"||consumers.source.namespace!=="local-debug"||
