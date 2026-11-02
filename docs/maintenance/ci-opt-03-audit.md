@@ -23,3 +23,6 @@ Keep existing workflows and required `landing` unchanged until the new selection
 - **Critical:** workflows newly introduced only on a feature branch may not be manually dispatchable until they exist on the default branch. The verifier must be registered, tested with real workflow runs and added as an actual required check before it can enforce merges. The existing ruleset currently requires only `landing`. Therefore the release gate is **not yet configured**; no merge safety claim is permitted.
 - We have not switched off any automatic existing CI. Workflow-dispatch and ruleset-change access are not exposed by the present GitHub connector. These steps require a separately authorized route capable of updating the repository ruleset, with post-change readback and negative tests.
 - A07 must record full SHA-pinned real job status and time measurements; interrupted/cancelled runs are not PASS. The failed PR #340 results must remain red and out of this PR.
+
+## PR-trigger registration check
+Bootstrap PR #344 merged as `c179b227` on main, registering `pull_request` trigger. An existing PR opened before that registration may need a synchronize event to start the newly registered workflow. The gate must remain red without FULL evidence; the required-check ruleset has not been changed.
