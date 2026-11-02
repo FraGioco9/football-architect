@@ -45,7 +45,7 @@ try {
    const response=await page.goto(url,{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,url);
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
-   assert.equal(await page.locator("#competition-panel-"+view).isVisible(),true);
+   await page.locator("#competition-panel-"+view).waitFor({state:'visible',timeout:5000});
    assert.equal(await page.locator(".app-competition-header").count(),1);
    assert.equal(await page.locator("#division-detail-name").innerText(),cup==="int-1"?"Sovereign Cup":"Federation Cup");
    assert.equal(await page.locator(".app-competition-tabs [role=tab]").count(),7);
