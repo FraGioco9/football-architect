@@ -2,13 +2,14 @@
 // No bearer token is stored in browser code or storage.
 import {prepareProtectedDomesticContext} from "./dev-protected-domestic-context.mjs";
 import {createProtectedDomesticPresentation} from "./dev-protected-domestic-presentation.mjs";
-const state={enabled:false,revision:0,abort:null,view:null};
+import {prepareProtectedConsumers} from "./debug-data-i05-consumers.mjs";
+const state={enabled:false,revision:0,abort:null,view:null,consumers:null};
 const key="football-architect:local-debug-visible";
 const readEnabled=()=>{try{return sessionStorage.getItem(key)==="1"}catch{return false}};
 const getNumber=(key,defaultValue)=>{try{const raw=sessionStorage.getItem(key);if(raw===null||raw.trim()==="")return defaultValue;const n=Number(raw);return Number.isInteger(n)?n:defaultValue}catch{return defaultValue}};
 const routeCompetition=()=>location.pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12]|int-[12])(?:\/|$)/i)?.[1]?.toUpperCase().replace(/^INT-/,"int-")??null;
 const emit=(name,detail)=>window.dispatchEvent(new CustomEvent(name,{detail}));
-export function currentDebugSource(){return Object.freeze({enabled:state.enabled,revision:state.revision,view:state.view});}
+export function currentDebugSource(){return Object.freeze({enabled:state.enabled,revision:state.revision,view:state.view,consumers:state.consumers});}
 export async function refreshDebugSource(){
  const revision=++state.revision;
  state.abort?.abort();state.abort=new AbortController();
@@ -17,7 +18,7 @@ export async function refreshDebugSource(){
  const day=getNumber("football-architect:calendar-dev-world-day",1);
  const competitionId=routeCompetition();
  if(!state.enabled||season===0||!competitionId){
-  state.view=null;
+  state.view=null;state.consumers=null;
   emit("fa:protected-debug-source-change",{kind:!state.enabled?"global":"debug-unstarted",enabled:state.enabled,revision});
   return;
  }
@@ -31,6 +32,9 @@ export async function refreshDebugSource(){
   const view=await response.json();
   if(revision!==state.revision)return;
   if(view.kind!=="protected-debug-projection"||view.status!=="UNSEALED_NOT_FOR_RUNTIME"||view.source?.kind!=="debug"||view.source?.namespace!=="local-debug"||view.source?.datasetId!=="debug-corpus-v1"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId||!Array.isArray(view.events)||!Array.isArray(view.standings)){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
+  let consumers;
+  try{consumers=prepareProtectedConsumers(view,{seasonNumber:season,worldDay:day,competitionId});}
+  catch{state.view=null;state.consumers=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"invalid-shared-view"});return;}
   let prepared=null,presentation=null;
   if(!competitionId.startsWith("int-")){
    try{prepared=prepareProtectedDomesticContext(view,{competitionId,season,day});presentation=createProtectedDomesticPresentation(prepared);}
@@ -39,7 +43,8 @@ export async function refreshDebugSource(){
   if(view.events.some(event=>event.day>day&&event.result!==null)){
    state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"future-result-leak"});return;
   }
-  state.view=view;
+  state.view=view;state.consumers=consumers;
+  emit("fa:protected-debug-consumers-ready",{revision,competitionId,season,day,consumers});
   emit("fa:protected-debug-source-change",{kind:"protected-debug",enabled:true,revision,view});
   if(prepared){emit("fa:protected-debug-domestic-prepared",{revision,competitionId,season,day,prepared});
    emit("fa:protected-debug-domestic-presentation",{revision,competitionId,season,day,presentation});}
