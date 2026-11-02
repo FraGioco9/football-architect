@@ -104,3 +104,9 @@ Added `tools/dev-protected-stats-presenter.mjs`, an optional DEV integration usi
 - Added `tools/dev-protected-stats-controller.mjs` as an **explicitly gated** connector to the existing competition Stats panel and its `faCompetitionStats.mount` API. It requires both `data-fa-i03-renderer=1` and `data-fa-i05-stats=1`, and is **not added to any public HTML**. It resets its reversible subscription on route/debug changes.
 - Hardened the Stats presenter to reject missing numerical values rather than treat missing source metrics as zero, and to use a revision newer than the existing Stats context before update.
 - This is integration code, **not page activation**. The module is not injected and has no verified browser acceptance; remaining Calendar, Clubs, International and History renderer work is open. Full regression remains deferred to I06.
+
+## Eleventh I05 block — gated History panel connection
+
+- Added `tools/dev-protected-history-presenter.mjs` and `tools/dev-protected-history-controller.mjs`. An explicit two-gate DEV opt-in attaches a hidden candidate-only text outlet within the existing History panel, with reversible commit/rollback through the shared I05 presenter bridge.
+- Unfinished candidate seasons produce no champion display; complete candidate-only values are intentionally not marked official. Source invalidation clears the outlet, and disabling the gate removes it.
+- Not injected into public page bundles; no historical archive replacement, automated activation or acceptance is claimed. Full History integration and I06 QA remain outstanding.
