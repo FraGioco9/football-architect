@@ -42,3 +42,9 @@ Remaining functional limits discovered by the audit:
 - No live remote `seasonNumber` / `day` values were read or changed in this audit.
 
 Validation: 121 focused Node tests PASS, including authoritative season/calendar/history, club model, source toggles, global navigation, publication gate, API proxy and clock contracts. Updated obsolete assertions that expected cleared tables or a removed reload mechanism. Browser QA remains UNKNOWN: no browser binary was present and the Chromium download returned a truncated archive. Full exact-head CI remains deferred to the final gate; Draft/HOLD, no merge/deploy/remote D1/email changes.
+
+### Source-switch presentation correction
+
+Debug ON/OFF retains the last committed panel while the replacement source loads. Removed live transition CSS that hid competition/calendar panels, stopped blanking club summaries, and separated pending competition contexts from committed presentation updates. DEV teardown disposes listeners without restoring placeholders; statistics wait for their aggregate and History for its replacement. Obsolete DEV loads cannot repaint after Debug OFF. A confirmed empty Season 0 still commits its real empty state, rather than retaining scored standings.
+
+Validation for this follow-up: 103 focused Node tests PASS, including pending/committed context behavior, non-destructive teardown, aggregate readiness and completed Season 0 publication. Real-browser QA remains pending as above.

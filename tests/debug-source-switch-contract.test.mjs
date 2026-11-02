@@ -22,8 +22,8 @@ test('local fixture changes are guarded while the new source hydrates',()=>{
  const dev=read('../tools/dev-standings-preview-client.mjs');
  const server=read('../tools/dev-standings-preview.mjs');
  assert.match(dev,/faDevSwitching/);
- assert.match(server,/data-fa-dev-switching/);
- assert.match(server,/data-fa-dev-source-pending/);
+ assert.doesNotMatch(server,/<style>html\[data-fa-dev-switching/);
+ assert.doesNotMatch(server,/<style>html\[data-fa-dev-source-pending/);
 });
 test('popup is enabled for all local HTML, including account, except specialized pages',()=>{
  const server=read('../tools/dev-standings-preview.mjs');

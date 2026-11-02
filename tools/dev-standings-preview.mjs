@@ -47,9 +47,7 @@ const INJECT = [
   DEBUG_SEASON_BOOTSTRAP,
   '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
   '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
-  '<style>html[data-fa-dev-switching="true"] #competition-panel-fixtures,html[data-fa-dev-switching="true"] #competition-panel-standings,html[data-fa-dev-switching="true"] #competition-panel-history{visibility:hidden!important}</style>',
   // Only DEV navigation uses this; never suppress the public competition views.
-  '<style>html[data-fa-dev-season-transition="true"] #competition-panel-standings,html[data-fa-dev-season-transition="true"] #competition-panel-fixtures{visibility:hidden!important}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
   '<script type="module" data-fa-dev-stats src="/__fa_dev__/stats-client.mjs"></script>'
 ].join("\n");
@@ -206,7 +204,6 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       // Switching sources is a document-level transaction: never show interim
       // "No scheduled matches" while the new fixtures/world are hydrating.
       if(devPreview&&type===TYPES[".html"])body=Buffer.from(body.toString("utf8").replace("</head>",
-        '<style>html[data-fa-dev-source-pending="true"] #competition-panel-fixtures,html[data-fa-dev-source-pending="true"] #competition-panel-standings,html[data-fa-dev-source-pending="true"] #competition-panel-history,html[data-fa-dev-source-pending="true"] #world-calendar{visibility:hidden!important}</style>'+
         '<script>(()=>{const key="football-architect:debug-source-transition";try{if(sessionStorage.getItem(key)!=="1")return;sessionStorage.removeItem(key)}catch{return}document.documentElement.dataset.faDevSourcePending="true";const release=()=>{delete document.documentElement.dataset.faDevSourcePending;clearTimeout(timeout)};const eligible=()=>{const context=window.faCompetitionContext;return Boolean(context?.seasonData)};window.addEventListener("fa:competition-context-change",()=>{if(eligible())release()});window.addEventListener("fa:fictional-standings-change",e=>{if(e.detail?.enabled)release()});window.addEventListener("fa:public-calendar-change",release);window.addEventListener("fa:calendar-ui-ready",()=>{if(!/^\\/calendar(?:\\/|$)/.test(location.pathname))release()});document.addEventListener("DOMContentLoaded",()=>{if(!/^\\/(?:competitions|calendar|clubs)(?:\\/|$)/.test(location.pathname))release()},{once:true});const timeout=setTimeout(release,6000)})();</script>\n</head>'),"utf8");
       // Every loopback DEV HTML page gets exactly one Debug launcher; competition
       // and calendar pages already mount their specialized Debug widget.

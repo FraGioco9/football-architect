@@ -136,6 +136,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   try{if(enabledSwitch.checked)sessionStorage.setItem(ENABLE_KEY,"1");else sessionStorage.removeItem(ENABLE_KEY)}catch{}
  };
  enabledSwitch.addEventListener("change",()=>{
+  document.documentElement.dataset.faSourceTransition='true';
   applyEnabled();
   // Consumers replace in-memory data; switching Debug never navigates or reloads.
   window.dispatchEvent(new CustomEvent("fa:debug-mode-change",{detail:{enabled:enabledSwitch.checked}}));

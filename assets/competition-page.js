@@ -576,7 +576,7 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){if(data&&data.provenance?.kind!=='authoritative')return;if(suppliedOwned||activeDebugSeason===0||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
@@ -805,13 +805,17 @@
     if(!applicable)throw Error('Unavailable season rules');
     return freeze(JSON.parse(JSON.stringify({definition:applicable,currentDefinition:definition,selectedSeason,seasonData,revision})));
   }
-  function publishCompetitionContext(context){
+  function publishCompetitionContext(context,committed=false){
     window.faCompetitionContext=context;
+    if(document.documentElement.dataset.faSourceTransition==='true'&&!committed&&!context.seasonData){
+      window.dispatchEvent(new CustomEvent('fa:competition-context-pending',{detail:context}));return;
+    }
+    if(committed&&(context.seasonData===null||context.seasonData.provenance?.kind==='authoritative'))delete document.documentElement.dataset.faSourceTransition;
     window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
   }
-  function nextContext(season,data=null){
+  function nextContext(season,data=null,committed=false){
     const current=window.faCompetitionContext;
-    publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
+    publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1),committed);
   }
   function selectSeason(season){
     const current=window.faCompetitionContext;
@@ -819,8 +823,8 @@
     if(current.selectedSeason!==season)nextContext(season);
     return true;
   }
-  function clearSeasonData(){
-    if(window.faCompetitionContext?.seasonData)nextContext(window.faCompetitionContext.selectedSeason);
+  function clearSeasonData({committed=false}={}){
+    if(window.faCompetitionContext&&(window.faCompetitionContext.seasonData||committed))nextContext(window.faCompetitionContext.selectedSeason,null,committed);
   }
   function setDebugSeason(season){
     if(!window.faDevPreviewMode)return false;
@@ -833,7 +837,7 @@
     const current=window.faCompetitionContext;
     if(authoritative){
       if(activeDebugSeason!==null||!current||current.revision!==expectedRevision)return false;
-      if(data===null){nextContext(current.selectedSeason);return true;}
+      if(data===null){nextContext(current.selectedSeason,null,true);return true;}
       if(data?.provenance?.kind!=='authoritative')return false;
     }else if(!Number.isInteger(activeDebugSeason)||activeDebugSeason<1)return false;
     if(!current||current.revision!==expectedRevision||!data||
@@ -849,7 +853,7 @@
       if(ids.has(id)||!authoritative&&division&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId))return false;
       ids.add(id);
     }
-    nextContext(current.selectedSeason,data);return true;
+    nextContext(current.selectedSeason,data,true);return true;
   }
   function replaceSeasonData(data,expectedRevision){return acceptSeasonData(data,expectedRevision,false);}
   async function start() {
@@ -974,8 +978,13 @@
     const statsPanel=document.getElementById('competition-panel-stats');
     if(statsPanel&&window.faCompetitionStats){
       const stats=window.faCompetitionStats.mount(statsPanel,window.faCompetitionContext);
-      window.addEventListener('fa:competition-context-change',event=>stats.update(event.detail));
-      window.addEventListener('fa:competition-route-change',()=>stats.update(window.faCompetitionContext));
+      const updateStats=context=>{
+        if(document.documentElement.dataset.faSourceTransition==='true'&&!context?.seasonData)return;
+        if(context?.seasonData&&context.seasonData.provenance?.kind!=='authoritative'&&!context.seasonData.statistics?.overview)return;
+        stats.update(context);
+      };
+      window.addEventListener('fa:competition-context-change',event=>updateStats(event.detail));
+      window.addEventListener('fa:competition-route-change',()=>updateStats(window.faCompetitionContext));
     }
     if(activeDebugSeason===null||window.faDevPreviewMode===true){
       try{
@@ -983,7 +992,7 @@
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
-        if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});window.addEventListener('fa:competition-context-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
+        if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});const renderHistory=()=>{if(document.documentElement.dataset.faSourceTransition!=='true')history.render()};window.addEventListener('fa:competition-context-change',renderHistory);window.addEventListener('fa:source-transition-complete',renderHistory);new MutationObserver(renderHistory).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
 
         const copy={en:['Loading season data…','Season data is unavailable.','No published season data yet.'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.']};
         const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
@@ -1010,6 +1019,7 @@
           selection='';select();
         });
         window.addEventListener('fa:competition-context-change',select);
+        window.addEventListener('fa:competition-context-pending',select);
         window.addEventListener('focus',()=>void loader.load());
         window.addEventListener('pageshow',event=>{if(event.persisted)void loader.load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});

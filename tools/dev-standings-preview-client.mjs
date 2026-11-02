@@ -70,7 +70,7 @@ async function refreshProgress(){
  if(debugSeason===0){
   if(validPath&&!await setPreviewEnabled(false))return false;
   try{sessionStorage.removeItem(FLAG)}catch{return false}
-  clearHistoryPreview();syncDebugControls();devWorldClock.publish();
+  delete document.documentElement.dataset.faSourceTransition;window.faCompetitionContextApi?.clearSeasonData({committed:true});clearHistoryPreview();syncDebugControls();devWorldClock.publish();
   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
   window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:{season:0,matchdays:0}}));
   return true;
@@ -270,7 +270,7 @@ async function renderHistoryPreview(){
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
  if(!isPreviewEnabled()){clearHistoryPreview();return}
  if(route?.view!=="history")return;
- const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
+ const current=()=>version===historyRenderVersion&&debugMode()&&isPreviewEnabled()&&
   debugSeason===progressSeason&&matchdays===progressDay&&window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
@@ -377,6 +377,7 @@ function syncHistoryPreview(){
  if(route?.view==="history")return renderHistoryPreview();else historyRenderVersion++;
 }
 
+window.addEventListener('fa:competition-context-change',()=>{if(!debugMode())clearHistoryPreview()});
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
  transition=transition.catch(()=>false).then(async()=>{
@@ -392,7 +393,7 @@ function setPreviewEnabled(enabled) {
   if(enabled===(previewState==="ON"))return true;
   if(enabled){
    if(activePreview){activePreview();activePreview=null;}
-   const cleanup=await boot(validPath[1].toUpperCase());
+   const cleanup=await boot(validPath[1].toUpperCase(),null,()=>debugMode());
    if(typeof cleanup!=="function")return false;
    activePreview=cleanup;
    previewState="ON";
@@ -401,11 +402,14 @@ function setPreviewEnabled(enabled) {
    // Real router events are handled by syncSeason after initialization.
    widgetRoot?.syncVisibility();
    await syncHistoryPreview();
+   if(!debugMode())return false;
+   delete document.documentElement.dataset.faSourceTransition;
+   window.dispatchEvent(new CustomEvent('fa:source-transition-complete'));
    try{sessionStorage.setItem(FLAG,"on")}catch{}
    window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:true}}));
    return true;
   }
-  try{activePreview()}
+  try{activePreview?.({preservePresentation:true})}
   catch(error){
    previewState="ERROR";
    console.error("DEV preview restore failed:",error);
@@ -416,7 +420,7 @@ function setPreviewEnabled(enabled) {
   activePreview=null;
   previewState="OFF";
   widgetRoot?.syncVisibility();
-  clearHistoryPreview();
+  if(document.documentElement.dataset.faSourceTransition!=='true')clearHistoryPreview();
   delete document.documentElement.dataset.faDevSeasonTransition;
   try{sessionStorage.removeItem(FLAG)}catch{}
   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
@@ -511,7 +515,7 @@ if(validPath||indexPath||clubPath){
   window.addEventListener("fa:debug-mode-change",event=>{
     const enabled=event.detail?.enabled===true;
     if(!validPath){
-      if(enabled){syncDebugControls();void refreshProgress();}
+      if(enabled){syncDebugControls();void refreshProgress().then(()=>{delete document.documentElement.dataset.faSourceTransition;window.dispatchEvent(new CustomEvent('fa:source-transition-complete'))})}
       else{delete document.documentElement.dataset.faDevCurrentSeason;try{sessionStorage.removeItem(FLAG)}catch{}}
       window.dispatchEvent(new CustomEvent('fa:fictional-standings-change',{detail:{enabled}}));
       return;
@@ -519,7 +523,7 @@ if(validPath||indexPath||clubPath){
     if(enabled){
       window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
       document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
-      void setPreviewEnabled(debugSeason>0).then(()=>syncSeason());
+      if(debugSeason===0)void refreshProgress();else void setPreviewEnabled(true).then(()=>syncSeason());
     }else{
       delete document.documentElement.dataset.faDevCurrentSeason;
       void setPreviewEnabled(false);
@@ -831,14 +835,14 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const languageObserver=new MutationObserver(translate);
     let committed=false;
     let restored=false;
-    function restore(){
+    function restore({preservePresentation=false}={}){
       if(restored)return;
       const failures=[];
       const attempt=fn=>{try{fn()}catch(error){failures.push(error)}};
       attempt(()=>listeners.abort());
       attempt(()=>languageObserver.disconnect());
       attempt(()=>tooltip.remove());
-      if(committed){
+      if(committed&&!preservePresentation){
        if(restoreFixtures)attempt(restoreFixtures);
        if(restorePostseason)attempt(restorePostseason);
        attempt(()=>tbody.replaceChildren(...canonicalRows));

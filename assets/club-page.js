@@ -78,6 +78,7 @@
     if(!chosen)return;
     competitionSnapshot=chosen;
    }else competitionSnapshot=incoming;
+   delete document.documentElement.dataset.faSourceTransition;
    const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
    for(const link of staging.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    const currentDivision=host.querySelector('.club-header-division'),nextDivision=staging.querySelector('.club-header-division');
@@ -99,8 +100,8 @@
    const globalLoader=createAuthoritativeClubLoader({route:selected,manifest:sportingManifest,fetchJson,isDev,
     commit:summary=>receiveSummary(summary,{global:true})});
    window.addEventListener('fa:debug-mode-change',()=>{
-    // Drop the previous source synchronously so a tab change cannot resurrect it.
-    receiveSummary(null,{global:true});void globalLoader.load();
+    // Keep the current summary visible until the new source commits.
+    void globalLoader.load();
    });
    window.addEventListener('focus',()=>void globalLoader.load());
    window.addEventListener('pageshow',()=>void globalLoader.load());
