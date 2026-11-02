@@ -25,7 +25,7 @@ for(const mobile of [false,true]){
  test('CAL-SEASON-LINK-01 current DEV season from sidebar '+view,()=>{
   const {link,listeners,storage}=scenario({dev:true,season:'3',mobile});
   assert.equal(link.href,'/calendar?season=3&calendarView='+view);
-  storage.getItem=()=> '4';
+  storage.getItem=key=>key==='football-architect:local-debug-visible'?'1':key==='football-architect:standings-dev-season'?'4':null;
   listeners.click();
   assert.equal(link.href,'/calendar?season=4&calendarView='+view);
   assert.ok(listeners.focus);

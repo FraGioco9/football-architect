@@ -1260,7 +1260,7 @@
     let activeSeason=globalWorld?.seasonNumber>0?globalWorld.seasonNumber:null;
     const isDevCalendar=window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev";
     let debugEnabled=false;
-    if(isDevCalendar){try{debugEnabled=sessionStorage.getItem('football-architect:local-debug-visible')==='1';const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(debugEnabled)activeSeason=Number.isInteger(n)&&n>=1&&n<=4?n:null}catch{}}
+    if(isDevCalendar){try{debugEnabled=sessionStorage.getItem('football-architect:local-debug-visible')==='1';const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(debugEnabled)activeSeason=Number.isInteger(n)&&n>=1&&n<=5?n:(globalWorld?.seasonNumber>0?globalWorld.seasonNumber:1)}catch{}}
     const calendarRoute="/calendar?"+(activeSeason===null?"":"season="+activeSeason+"&")+"calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
     const calendarNav=links.calendar;
