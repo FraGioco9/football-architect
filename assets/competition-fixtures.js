@@ -227,7 +227,7 @@
     const pending=[];
     const row=(leg,index)=>{
       const copy=template.cloneNode(true);
-      copy.dataset.fixtureSlot=phase.id+':'+leg+':'+index;
+      copy.dataset.fixtureSlot=(phase?.id||'league')+':'+leg+':'+index;
       return copy;
     };
     if(phase){
