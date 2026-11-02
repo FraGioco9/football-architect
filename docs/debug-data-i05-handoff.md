@@ -74,3 +74,10 @@ remote D1 or deployment in this block. I05 remains **in progress**.
 - The source coordinator clears both previous candidate view and consumers synchronously at the start of every refresh, before awaiting the network request. It emits an explicit pending event and continues to reject stale responses by revision.
 - Debug OFF and Season 0 continue to emit source-change events and clear all candidate ownership. No consumer is injected into the public site; activation remains disabled.
 - No test run or acceptance is claimed. Review final pending/rollback appearance and source-epoch race cases during I06.
+
+## Seventh I05 block — DEV subscriber lifecycle
+
+- Introduced `tools/dev-protected-consumer-registry.mjs` with revision-checked subscriptions, current snapshot and explicit invalidation. The coordinator publishes protected candidate projections to this registry and invalidates the previous snapshot synchronously before every fetch.
+- Tightened the gated Domestic controller's revision guard: old asynchronous presentation events cannot restore an earlier dataset after source invalidation, while the successfully prepared presentation for the current pending revision is still permitted.
+- The registry does not render DOM, load public assets or activate the I03 renderer. Calendar/Clubs/Stats/History/International renderer subscriptions remain to be implemented and validated.
+- No broad tests were run. Full I06 verification and publication security gates remain outstanding.
