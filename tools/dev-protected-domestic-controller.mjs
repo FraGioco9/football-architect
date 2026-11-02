@@ -6,7 +6,7 @@ const clear=()=>{const previous=restore;restore=null;previous?.rollback()};
 window.addEventListener("fa:protected-debug-domestic-presentation",event=>{
  if(!active())return;
  const {revision,competitionId,season,presentation}=event.detail??{};
- if(!Number.isInteger(revision)||revision<=latest||!presentation||!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(competitionId))return;
+ if(!Number.isInteger(revision)||revision<latest||(revision===latest&&restore!==null)||!presentation||!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(competitionId))return;
  if(!new RegExp('^/competitions/'+competitionId.toLowerCase()+'(?:/|$)').test(location.pathname.toLowerCase()))return;
  if(Number(window.faCompetitionRoute?.get?.().season)!==season)return;
  // Release before preparing: a new transaction must snapshot the restored base,
