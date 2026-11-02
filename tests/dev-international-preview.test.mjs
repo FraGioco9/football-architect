@@ -1,0 +1,50 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {buildCupPreview} from '../tools/dev-international-preview.mjs';
+import competitionModel from '../assets/competition-model.js';
+const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+for(const id of ['int-1','int-2']){
+ test('A04 international DEV '+id+' follows world day and season with valid INT-24 league fixtures',()=>{
+  const definition=competitionModel.competitionById(manifest,id);
+  const pending=buildCupPreview(manifest,definition,1,1);
+  const partial=buildCupPreview(manifest,definition,1,19);
+  const complete=buildCupPreview(manifest,definition,1,31);
+  const nextSeason=buildCupPreview(manifest,definition,2,19);
+  for(const snapshot of [pending,partial,complete,nextSeason]){
+   assert.equal(snapshot.participants.length,24);
+   assert.equal(new Set(snapshot.participants.map(c=>c.countryId+'-'+c.clubId)).size,24);
+   assert.equal(snapshot.fixtures.length,72);
+   assert.equal(snapshot.statistics.standings.length,24);
+   assert.deepEqual([...new Set(snapshot.fixtures.map(g=>g.round))],[1,2,3,4,5,6]);
+   for(let round=1;round<=6;round++){
+    const games=snapshot.fixtures.filter(g=>g.round===round);
+    assert.equal(games.length,12);
+    assert.equal(new Set(games.flatMap(g=>[g.homeId,g.awayId])).size,24);
+   }
+   const clubs=new Map(snapshot.participants.map(c=>[c.countryId+'-'+c.clubId,c]));
+   const home=new Map(),away=new Map(),rivals=new Map();
+   for(const game of snapshot.fixtures){
+    assert.notEqual(clubs.get(game.homeId).countryId,clubs.get(game.awayId).countryId);
+    home.set(game.homeId,(home.get(game.homeId)||0)+1);
+    away.set(game.awayId,(away.get(game.awayId)||0)+1);
+    for(const [one,two] of [[game.homeId,game.awayId],[game.awayId,game.homeId]]){
+     const set=rivals.get(one)||new Set();assert.ok(!set.has(two));set.add(two);rivals.set(one,set);
+    }
+   }
+   for(const club of clubs.keys()){assert.equal(home.get(club),3);assert.equal(away.get(club),3);assert.equal(rivals.get(club).size,6)}
+  }
+  assert.equal(pending.results.length,0);
+  assert.equal(partial.results.length,24);
+  assert.equal(complete.results.length,72);
+  assert.notDeepEqual(partial.results,nextSeason.results);
+ });
+}
+test('A04 cup preview is linked to Debug source events, not just popup visibility',()=>{
+ const source=readFileSync(new URL('../tools/dev-standings-preview-client.mjs',import.meta.url),'utf8');
+ assert.match(source,/const cupPath=/);
+ assert.match(source,/mountCupDebugPreview\(/);
+ assert.match(source,/fa:dev-world-day-change/);
+ assert.match(source,/fa:debug-mode-change/);
+ assert.match(source,/fa:competition-route-change/);
+});
