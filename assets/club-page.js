@@ -86,6 +86,8 @@
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const replacement=staging.querySelector('.club-competition');
+   const logo=panel.querySelector('.club-competition-logo'),nextLogo=replacement.querySelector('.club-competition-logo');
+   if(logo&&nextLogo&&logo.getAttribute('src')===nextLogo.getAttribute('src'))nextLogo.replaceWith(logo);
    panel.replaceWith(replacement);
    if(focused){const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);
     if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}}

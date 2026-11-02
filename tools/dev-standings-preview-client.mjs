@@ -3,7 +3,7 @@
 import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
-import { createDevWorldClock, nationalProgress, DAY_KEY, readGlobalWorldProgress } from "./dev-world-clock.mjs";
+import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
 const debugMode=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
@@ -29,6 +29,7 @@ let refreshSeason=async()=>true;
 let progressRevision=0;
 const renderKey=()=>[selectedSeason(),debugSeason,matchdays].join(":");
 let routeSeasonOverride=null;
+window.addEventListener('fa:debug-reset',()=>{progressRevision++;debugSeason=readPreviewProgress(sessionStorage).season;matchdays=readMatchdays();routeSeasonOverride=null;syncDebugControls()});
 function availablePreviewSeasons(){
  const seasons=(document.documentElement.dataset.faDevSeasons||"1").split(",")
   .map(Number).filter(season=>Number.isInteger(season)&&season>=1&&season<=4);
@@ -113,28 +114,6 @@ async function setMatchdays(value){
  if(!Number.isInteger(value)||value<0||value>DEBUG_MAX_MATCHDAY)return false;
  if(value===matchdays)return true;
  return setDebugProgress(ROUNDS_KEY,value);
-}
-async function resetPreview(){
- const global=await readGlobalWorldProgress();
- if(!global)return false;
- if(validPath&&previewState!=="OFF"&&!await setPreviewEnabled(false))return false;
- const previous={season:debugSeason,matchdays,day:readWorldDay()??1};
- const nextRounds=global.season===0?0:matchdaysForWorldDay(global.day);
- try{
-  sessionStorage.setItem(SEASON_KEY,String(global.season));
-  sessionStorage.setItem(DAY_KEY,String(global.day));
-  sessionStorage.setItem(ROUNDS_KEY,String(nextRounds));
- }catch{return false}
- progressRevision++;debugSeason=global.season;matchdays=nextRounds;
- const ok=await refreshProgress();
- if(!ok){
-  try{sessionStorage.setItem(SEASON_KEY,String(previous.season));sessionStorage.setItem(DAY_KEY,String(previous.day));sessionStorage.setItem(ROUNDS_KEY,String(previous.matchdays))}catch{}
-  debugSeason=previous.season;matchdays=previous.matchdays;
-  await refreshProgress();return false;
- }
- devWorldClock.publish();
- window.dispatchEvent(new CustomEvent("fa:dev-world-day-change",{detail:{day:global.day,season:global.season}}));
- return true;
 }
 const DETAIL = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])(?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const LANG = {
@@ -440,10 +419,9 @@ if(validPath||indexPath||clubPath){
    value:()=>debugSeason,onChange:setSeason
   },{type:"range",id:"world-day",label:"Day",...DEBUG_CONTROL_LIMITS.worldDay,scope:"general",disabled:()=>debugSeason===0,
    value:()=>{try{const n=Number(sessionStorage.getItem("football-architect:calendar-dev-world-day"));return Number.isInteger(n)&&n>=1&&n<=56?n:1}catch{return 1}},
-   onChange:async n=>{if(debugSeason===0||!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n),previousMatchdays=matchdays;if(!await setMatchdays(target))return false;if(!devWorldClock.setDay(n)){if(target!==previousMatchdays)await setMatchdays(previousMatchdays);return false}syncDebugControls();return true}
+   onChange:async n=>{if(debugSeason===0||!Number.isInteger(n)||n<1||n>56)return false;const target=matchdaysForWorldDay(n),previousMatchdays=matchdays;const pending=setMatchdays(target),revision=progressRevision;if(!await pending)return false;if(!debugMode()||revision!==progressRevision)return false;if(!devWorldClock.setDay(n)){if(target!==previousMatchdays)await setMatchdays(previousMatchdays);return false}syncDebugControls();return true}
   },{type:"button",id:"reset-global",label:"Reset all",scope:"general",onChange:async()=>{
-   if(!await resetPreview())return false;
-   widgetRoot?.resetWidgetState();syncDebugControls();return true;
+   return widgetRoot?.resetAllSettings();
   }}]);
   widgetRoot=createDebugWidget({page:validPath?"standings":clubPath?"clubs":"competitions"});
   // Keep the canonical placeholders invisible until DEV results are ready.
@@ -1017,7 +995,7 @@ if(/^\/calendar(?:\/|\/index\.html)?$/.test(window.location.pathname)){
   value:day,onChange:n=>{const ok=devWorldClock.setDay(n);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
  },{
   type:'button',id:'reset-global',label:'Reset',scope:'general',
-  onChange:async()=>{const global=await readGlobalWorldProgress();if(!global)return false;const ok=devWorldClock.commit(global);if(ok){syncInputs();calendarWidget?.syncVisibility?.()}return ok}
+  onChange:()=>calendarWidget?.resetAllSettings()
  }]);
  window.addEventListener('fa:debug-mode-change',event=>{
   if(event.detail?.enabled===true)publish();

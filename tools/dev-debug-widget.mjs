@@ -1,6 +1,8 @@
 // Reusable local-only Debug Settings. Loaded only by the loopback DEV server.
 const POSITION_KEY = "football-architect:dev-debug-widget-position";
 const SECTIONS_KEY = "football-architect:dev-debug-sections";
+const DEBUG_KEYS=['football-architect:local-debug-visible','football-architect:standings-dev-season','football-architect:standings-dev-matchdays','football-architect:calendar-dev-world-day','football-architect:standings-dev-preview','football-architect:debug-source-transition',POSITION_KEY,SECTIONS_KEY];
+export function clearDebugSettings(storage){for(const key of DEBUG_KEYS)storage.removeItem(key);}
 const REGISTRY = new Map();
 export function registerDebugControls(namespace, controls) {
  if(typeof namespace!=="string"||!namespace||!Array.isArray(controls))throw Error("Invalid DEV registry");
@@ -121,11 +123,12 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  button.setAttribute("aria-controls",panel.id);
  panel.append(element("h2","fa-dev-widget-title","Debug Settings"));
  const ENABLE_KEY="football-architect:local-debug-visible";
- const toggleRow=element("label","fa-dev-widget-option");
+ const toggleRow=element("label","fa-dev-widget-option fa-dev-enable-row");
  toggleRow.style.cssText="padding:8px 0 12px;margin-bottom:10px;border-bottom:1px solid var(--border,#568378)";
  const toggleText=element("span","","Enable Debug Settings");
+ toggleText.style.cssText="white-space:nowrap;overflow-wrap:normal;flex:1 0 auto";
  const enabledSwitch=element("input");
- enabledSwitch.type="checkbox";enabledSwitch.dataset.devEnabled="";enabledSwitch.setAttribute("aria-label","Enable Debug Settings");
+ enabledSwitch.checked=false;enabledSwitch.type="checkbox";enabledSwitch.dataset.devEnabled="";enabledSwitch.setAttribute("aria-label","Enable Debug Settings");
  try{enabledSwitch.checked=sessionStorage.getItem(ENABLE_KEY)==="1"}catch{}
  toggleRow.append(toggleText,enabledSwitch);panel.append(toggleRow);
  const controlsContainer=element("div","fa-dev-widget-controls");
@@ -373,6 +376,15 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   setTimeout(finish,180);
  }
  root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}for(const section of sections.values())section.open=true;move(innerWidth-SIZE-16,innerHeight-SIZE-16);panel.scrollTop=0;placePanel();return true};
+ root.resetAllSettings=()=>{
+  try{clearDebugSettings(sessionStorage)}catch{return false}
+  enabledSwitch.checked=false;applyEnabled();root.resetWidgetState();
+  document.documentElement.dataset.faSourceTransition='true';
+  window.dispatchEvent(new CustomEvent('fa:debug-reset'));
+  window.dispatchEvent(new CustomEvent('fa:debug-mode-change',{detail:{enabled:false}}));
+  for(const control of controls)if(typeof control.value==='function')for(const input of panel.querySelectorAll(`[data-dev-control="${control.id}"],[data-dev-control="${control.id}-number"]`)){input.value=String(control.value());input.dataset.previous=input.value;}
+  root.syncVisibility();return true;
+ };
  closeButton.addEventListener("click",()=>setOpen(false));
  backdrop.addEventListener("click",()=>setOpen(false));
  let touchStart=null;

@@ -57,6 +57,16 @@
     return crest;
   }
 
+  function reuseCrestHosts(current,replacements){
+    const saved=new Map();
+    for(const host of current.querySelectorAll('[data-club-crest]')){
+      const id=host.dataset.clubCrest;if(!saved.has(id))saved.set(id,[]);saved.get(id).push(host);
+    }
+    for(const node of replacements)for(const host of node.querySelectorAll('[data-club-crest]')){
+      const previous=saved.get(host.dataset.clubCrest)?.shift();if(previous)host.replaceWith(previous);
+    }
+  }
+
   // Presentation only: indicate the Rules bands without changing league ranking.
   function standingOutcome(position) {
     const selected=window.faCompetitionContext?.definition||definition;
@@ -459,6 +469,7 @@
             }
             if(target.nodeType===Node.TEXT_NODE){if(target.nodeValue!==source.nodeValue)target.nodeValue=source.nodeValue;return target}
             if(target.nodeType!==Node.ELEMENT_NODE)return target;
+            if(target.dataset?.clubCrest&&target.dataset.clubCrest===source.dataset?.clubCrest)return target;
             for(const attr of [...target.attributes])if(!source.hasAttribute(attr.name)&&attr.name!=="open")target.removeAttribute(attr.name);
             for(const attr of [...source.attributes])if(target.getAttribute(attr.name)!==attr.value)target.setAttribute(attr.name,attr.value);
             const oldChildren=[...target.childNodes],newChildren=[...source.childNodes];
@@ -475,7 +486,7 @@
             sync(current,item);
             list.appendChild(current);
           }
-        }else list.replaceChildren(...items);
+        }else{reuseCrestHosts(list,items);list.replaceChildren(...items);}
         updateVisibility();
         window.faAppRenderLanguage?.();
       };
@@ -559,7 +570,7 @@
     const empty=()=>{
       if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        tbody.replaceChildren(...division.clubs.map(club=>createStandingsRow(club)));mobile.prepare(rows)();window.faPostseason?.prepare(null)();suppliedOwned=false;return;
+        const desktop=division.clubs.map(club=>createStandingsRow(club));reuseCrestHosts(tbody,desktop);tbody.replaceChildren(...desktop);mobile.prepare(rows)();window.faPostseason?.prepare(null)();suppliedOwned=false;return;
       }
       const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=11;
       cell.className='app-competition-empty-row';cell.dataset.appI18n='competitionStandingsEmpty';cell.textContent='No standings available yet.';row.appendChild(cell);tbody.replaceChildren(row);
@@ -621,7 +632,7 @@
           const [id,side]=slot.dataset.postseasonConfigSlot.split(':');return {slot,club:resolved.get(id)?.[Number(side)]||null};
         });
         const commitDomestic=definition.category==='domestic'?window.faPostseason?.prepare(rows):null;
-        tbody.replaceChildren(...desktop);commitMobile();commitDomestic?.();suppliedOwned=true;resetBracket();
+        reuseCrestHosts(tbody,desktop);tbody.replaceChildren(...desktop);commitMobile();commitDomestic?.();suppliedOwned=true;resetBracket();
         if(bracketEmpty)bracketEmpty.hidden=completed.some(t=>t.legs?.some(Boolean));
         for(const {slot,club} of updates)if(club){
           const name=document.createElement('a');name.className='app-world-standing-club-link';name.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});name.textContent=club.primaryName;

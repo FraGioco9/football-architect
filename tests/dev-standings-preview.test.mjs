@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
 import { runInNewContext } from "node:vm";
-const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33,DEBUG_CONTROL_LIMITS}));
+const runWithModel=(source,context={})=>{context.debugMode??=()=>true;context.document??={documentElement:{dataset:{}}};return runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33,DEBUG_CONTROL_LIMITS}));};
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -57,7 +57,7 @@ test("DEBUG-DEFAULTS: fresh, invalid and blocked storage start at Matchday 0",()
 });
 test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",async()=>{
  const from=client.includes('async function setDebugProgress(')?client.indexOf('async function setDebugProgress('):client.indexOf('async function setSeason(');
- const source=client.slice(from,client.indexOf('async function resetPreview('));
+ const source=client.slice(from,client.indexOf('const DETAIL ='));
  const stored=new Map([['days','7'],['season','2']]);
  const context={devWorldClock:{publish(){}},debugSeason:2,matchdays:7,progressRevision:0,ROUNDS_KEY:'days',SEASON_KEY:'season',DAY_KEY:'world-day',
   sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},
@@ -70,7 +70,7 @@ test("DEBUG-PROGRESS-ROLLBACK: a failed refresh restores the saved progress",asy
 });
 
 test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed route; invalid values are rejected",async()=>{
- const source=client.slice(client.indexOf('async function setDebugProgress('),client.indexOf('async function resetPreview('));
+ const source=client.slice(client.indexOf('async function setDebugProgress('),client.indexOf('const DETAIL ='));
  assert.ok(source,'Season control must update the shared competition route');
  const changes=[],stored=new Map();
  const context={devWorldClock:{publish(){}},debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',DAY_KEY:'world-day',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
@@ -536,7 +536,7 @@ test("DEV-M03: matchday slider visibility, first paint value and matchdays 0–4
  }
  assert.ok(client.includes('id:"world-day"'));
  assert.ok(client.includes("widgetRoot?.syncVisibility()"));
- assert.ok(client.includes("matchdays=0;"));
+ assert.ok(client.includes("resetAllSettings()"));
  assert.ok(widget.includes("root.syncVisibility=()=>"));
  assert.ok(client.includes('activePreview=replacement;'));
  for(const days of [1,2,3,4]){
@@ -563,7 +563,7 @@ test("DEV-MATCHDAYS-TEXT: number input shares 0–33 validation, visibility and 
  assert.ok(widget.includes('!Number.isInteger(value)||value<Number(input.min)||value>Number(input.max)'));
  assert.ok(widget.includes('number.dataset.devControl=control.id+"-number"'));
  assert.ok(client.includes("function syncDebugControls()"));
- assert.ok(client.includes("matchdays=0;"));
+ assert.ok(client.includes("resetAllSettings()"));
  assert.ok(client.includes('id:"world-day"'));
  assert.ok(client.includes('return setDebugProgress(ROUNDS_KEY,value)'));
  for(const invalid of [-1,34,1.5,NaN]) assert.equal(Number.isInteger(invalid)&&invalid>=0&&invalid<=33,false);
@@ -686,8 +686,8 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
 });
 
 test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and rejects stale commits",async()=>{
- assert.ok(serverSource.includes('html[data-fa-dev-season-transition="true"] #competition-panel-standings'),
-  "The DEV server must install its visibility rule before the route changes");
+ assert.ok(!serverSource.includes('html[data-fa-dev-season-transition="true"] #competition-panel-standings'),
+  "Live transitions must retain the last visible standings");
  const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath){'),client.indexOf('\nfunction strings()'));
  const events={},dataset={},pending=[],cleanups=[];
  let season=4;

@@ -143,3 +143,26 @@ test('a changed world generation prevents a club summary from committing',async(
  const loader=createAuthoritativeClubLoader({route:{countryId:'IT',clubId:1},manifest,isDev:()=>false,commit:()=>commits++,fetchJson:async path=>path==='/api/world'?{world:++reads===1?world:{...world,revision:5}}:path.includes('/IT-1/')?source():{...empty(),competitionId:'IT-2'}});
  assert.equal(await loader.load(),false);assert.equal(commits,0);
 });
+
+test('played global standings expose fixture metadata required by the mobile table',()=>{
+ const raw=source();raw.world={...world,day:13};
+ const rows=raw.data.standings.rows,teams=raw.data.statistics.teams;
+ for(const f of raw.data.fixtures.filter(f=>f.day===13)){
+  f.result={homeGoals:1,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:f.homeClubId};
+  for(const list of [rows,teams]){
+   const home=list.find(r=>r.clubId===f.homeClubId),away=list.find(r=>r.clubId===f.awayClubId);
+   Object.assign(home,{played:1,won:1,goalsFor:1,goalDifference:1});
+   Object.assign(away,{played:1,lost:1,goalsAgainst:1,goalDifference:-1});
+   if(list===rows)home.points=3;else home.cleanSheets=1;
+  }
+ }
+ raw.data.statistics.matchesPlayed=8;raw.data.statistics.totalGoals=8;raw.data.statistics.goalsPerMatch=1;
+ raw.data.calendar[12].played=8;
+ const data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,ctx(),manifest),ctx(),manifest);
+ const ids=new Set(data.participants.map(c=>c.clubId));
+ for(const row of data.statistics.standings){
+  assert.equal(row.recent.length,1);const game=row.recent[0];
+  assert.ok(['W','D','L'].includes(game.result));assert.equal(game.round,1);
+  assert.ok(ids.has(game.homeId)&&ids.has(game.awayId));
+ }
+});

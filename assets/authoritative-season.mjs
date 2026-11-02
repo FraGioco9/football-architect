@@ -115,11 +115,11 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  }
  const recent=(id,all=false)=>d.fixtures.filter(f=>(all||f.phaseId==='league')&&f.result!==null&&[f.homeClubId,f.awayClubId].includes(id)).sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id)).map(f=>{
   const home=f.homeClubId===id,own=home?f.result.homeGoals:f.result.awayGoals,other=home?f.result.awayGoals:f.result.homeGoals;
-  return own>other?'W':own<other?'L':'D';
+  return {result:own>other?'W':own<other?'L':'D',round:f.round,homeId:club(f.homeClubId),awayId:club(f.awayClubId),homeGoals:f.result.homeGoals,awayGoals:f.result.awayGoals,kickoff:null};
  });
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
-  standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recent(r.clubId).slice(-5)})),
-  teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),players:[]};
+  standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recent(r.clubId).slice(-5).reverse()})),
+  teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true).map(game=>game.result),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),players:[]};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,

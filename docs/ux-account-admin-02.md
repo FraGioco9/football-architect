@@ -48,3 +48,13 @@ Validation: 121 focused Node tests PASS, including authoritative season/calendar
 Debug ON/OFF retains the last committed panel while the replacement source loads. Removed live transition CSS that hid competition/calendar panels, stopped blanking club summaries, and separated pending competition contexts from committed presentation updates. DEV teardown disposes listeners without restoring placeholders; statistics wait for their aggregate and History for its replacement. Obsolete DEV loads cannot repaint after Debug OFF. A confirmed empty Season 0 still commits its real empty state, rather than retaining scored standings.
 
 Validation for this follow-up: 103 focused Node tests PASS, including pending/committed context behavior, non-destructive teardown, aggregate readiness and completed Season 0 publication. Real-browser QA remains pending as above.
+
+### Reset, logo reuse and played global standings
+
+Reset now clears all local Debug overrides and widget preferences, unchecks Enable Debug Settings, and returns to the authoritative source without first rendering a simulated reset world. The toggle remains off by default in a fresh session; its label is kept on one line. Pending Day changes are invalidated across Reset. Language/theme preferences and global world state are untouched.
+
+Standings and club-summary updates retain matching loaded logo nodes. The local server now caches allowlisted image assets privately for five minutes with content ETags; HTML, scripts and API responses retain their existing no-store policy. New asset content is revalidated on browser reload.
+
+Fixed the actual played-world standings failure: authoritative recent form supplied strings, while the shared mobile renderer requires match objects with result, round and both club IDs. That mismatch caused the renderer to discard the table whenever played fixtures existed, including desktop pages that prepare mobile data before committing. The adapter now supplies complete metadata in latest-first order.
+
+Validation: 151 focused Node tests PASS, covering a validated day-13 global payload with played fixtures, reset lifecycle and pending-Day invalidation, retained crest-node identity, real HTTP image cache/ETag behavior, competition/club rendering and publication boundaries. Updated stale DEV test harnesses to provide the explicit Debug gate and assert the current no-hide/reset behavior. Browser visual QA remains pending.

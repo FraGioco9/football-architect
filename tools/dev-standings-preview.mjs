@@ -3,6 +3,7 @@ import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
 import {resolveSubpage,clubViews} from "../assets/subpage-routes.mjs";
 import {parseRoute,buildRoute} from "../assets/routes-registry.mjs";
 import { createServer } from "node:http";
+import {createHash} from "node:crypto";
 import { readFile, realpath, lstat } from "node:fs/promises";
 import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -214,9 +215,13 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         '<script type="module" src="/__fa_dev__/debug-global.mjs"></script>\n</head>'),"utf8");
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
       if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",'<script>window.faDevPreviewMode=true</script>\n</head>'),"utf8");
+      const cacheImage=type?.startsWith('image/');
+      const etag=cacheImage?'"'+createHash('sha256').update(body).digest('hex')+'"':null;
+      if(etag&&req.headers['if-none-match']===etag){res.writeHead(304,{'Cache-Control':'private, max-age=300',ETag:etag});res.end();return;}
       res.writeHead(200, {
+        ...(etag?{ETag:etag}:{}),
         "Content-Type": type,
-        "Cache-Control": "no-store",
+        "Cache-Control": cacheImage?'private, max-age=300':'no-store',
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY"
       });
