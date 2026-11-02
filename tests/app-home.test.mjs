@@ -307,12 +307,12 @@ test("COMPETITION-LINK: DEV season metadata preserves canonical division path",(
   assert.ok(match,name);return match[0];
  }).join("\n");
  runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{
-  window:{location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},
+  window:{faDevPreviewMode:true,location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},globalWorld:{seasonNumber:1},language:()=>"en",sessionStorage:{getItem:key=>key==="football-architect:local-debug-visible"?"1":key==="football-architect:standings-dev-season"?"1":null},
   document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}
  });
  assert.equal(hrefs.href,"/competitions/it-1/standings?season=2");
  const cup={href:"/competitions/int-1/standings","data-dev-latest-season":"4"};
  card.getAttribute=key=>cup[key];card.setAttribute=(key,value)=>{cup[key]=value;};
- runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{window:{location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
+ runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{window:{faDevPreviewMode:true,location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},globalWorld:{seasonNumber:1},language:()=>"en",sessionStorage:{getItem:key=>key==="football-architect:local-debug-visible"?"1":key==="football-architect:standings-dev-season"?"1":null},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
  assert.equal(cup.href,"/competitions/int-1/standings?season=4");
 });
