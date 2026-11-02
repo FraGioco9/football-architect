@@ -243,23 +243,54 @@
     }
     fields.list.replaceChildren(...pending);
   }
+  function showPendingFixtures(){
+    const template=fields.list.querySelector('.app-fixture-pending-row');
+    const createRow=()=>{
+      const row=element('li','app-fixture-match app-fixture-pending-row');
+      row.setAttribute('aria-hidden','true');
+      const home=element('span','app-fixture-club app-fixture-home');
+      const away=element('span','app-fixture-club');
+      for(const club of [home,away])club.append(element('span','app-world-club-crest-placeholder'),element('span','app-fixture-name'));
+      const result=element('div','app-fixture-result');
+      result.append(element('span','app-fixture-status'),element('strong','app-fixture-score'),element('span','app-fixture-stadium'));
+      row.append(home,result,away);
+      return row;
+    };
+    const shell=template||createRow();
+    const pending=[];
+    const stage=(key,label,count,stageId)=>{
+      if(key){const item=element('li','app-fixture-stage'),heading=element('h3');heading.append(word(key,label));item.append(heading);pending.push(item);}
+      for(let n=0;n<count;n++){const row=shell.cloneNode(true);row.dataset.fixtureSlot=stageId+':'+n;pending.push(row);}
+    };
+    const selected=navigation.get().matchday;
+    if(international&&typeof selected==='string'){
+      const phase=knockoutPhases.find(p=>p.id===selected.split(':')[0]);
+      if(phase){const legs=Math.max(...phase.ties.map(t=>t.legs));
+        for(let leg=1;leg<=legs;leg++)stage(legs===1?null:leg===1?'postseasonFirstLeg':'postseasonSecondLeg',
+          leg===1?'First leg':'Second leg',phase.ties.length,phase.id+':'+leg);
+      }
+    }else if(!international&&typeof selected==='string'){
+      for(const round of [31,32,...(hasFinal?[33]:[])]){
+        stage(round===31?'postseasonFirstLeg':round===32?'postseasonSecondLeg':'postseasonFinal',
+          round===31?'First leg':round===32?'Second leg':'Final',round===33?1:firstTies.length,String(round));
+      }
+    }
+    if(!pending.length)stage(null,'',international?12:8,'league');
+    fields.list.replaceChildren(...pending);
+    fields.list.dataset.fixturesState='pending';
+    fields.toolbar.dataset.fixturesState='pending';
+    fields.list.hidden=false;fields.summary.hidden=true;fields.empty.hidden=true;
+    delete fields.list.dataset.presentedSeason;
+    fields.round.disabled=true;fields.previous.disabled=true;fields.next.disabled=true;fields.current.hidden=true;
+    roundMenu.close();
+  }
   function render(){
     if(rounds===null&&fields.list.dataset.fixturesState==="pending"){renderPendingCupStage();return;}
     // The visible match rows belong to their committed season, not a pending route.
     const incomingSource=window.faCompetitionContext?.seasonData?.provenance?.kind||null;
-    if(rounds!==null&&committedSeason!==null&&(committedSeason!==navigation.get().season||(incomingSource!==null&&committedSource!==null&&incomingSource!==committedSource))){
-      // Keep prior matches visible, but do not describe them as the selected season.
-      fields.list.dataset.presentedSeason=committedSeason;
-      fields.round.disabled=true;
-      fields.previous.disabled=true;
-      fields.next.disabled=true;
-      fields.current.hidden=true;
-      roundMenu.close();
-      const language=document.documentElement.lang||'en';
-      const titles={en:'Showing previously loaded Season ',it:'Visualizzazione della stagione precedente ',de:'Anzeige der zuvor geladenen Saison ',es:'Mostrando la temporada cargada anteriormente ',fr:'Affichage de la saison précédemment chargée '};
-      fields.empty.removeAttribute('data-app-i18n');
-      fields.empty.textContent=(titles[language]||titles.en)+committedSeason+(incomingSource!==null&&incomingSource!==committedSource?' ('+(committedSource==='authoritative'?'API':'Debug')+')':'');
-      fields.empty.hidden=false;
+    if(rounds!==null&&committedSeason!==null&&(committedSeason!==navigation.get().season||
+      (incomingSource!==null&&committedSource!==null&&incomingSource!==committedSource))){
+      showPendingFixtures();
       return;
     }
     const supplied=window.faCompetitionContext?.seasonData;
@@ -420,10 +451,7 @@
     const detail=event.detail,context=window.faCompetitionContext;
     if(!detail||!context||detail.season!==context.selectedSeason||detail.revision!==context.revision)return;
     if(detail.state==='loading'){
-      // Keep the previous source's notice for same-season API/Debug transitions too.
-      const source=window.faCompetitionContext?.seasonData?.provenance?.kind||null;
-      if(committedSeason!==null&&(committedSeason!==String(detail.season)||(source!==null&&committedSource!==null&&source!==committedSource))){render();return;}
-      fields.empty.hidden=true;
+      showPendingFixtures();
       return;
     }
     if(detail.state!=='unavailable')return;
