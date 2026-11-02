@@ -77,6 +77,11 @@ const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview
 const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
+const I05_LOCAL_BOOTSTRAP = [
+  '<script>document.documentElement.dataset.faI03Renderer="1";document.documentElement.dataset.faI05Enable="1";document.documentElement.dataset.faI05Stats="1";document.documentElement.dataset.faI05History="1";document.documentElement.dataset.faI05International="1";document.documentElement.dataset.faI05World="1"</script>',
+  '<script type="module" src="/__fa_dev__/dev-protected-i05-bootstrap.mjs"></script>'
+].join("\n");
+
 const INJECT = [
   DEBUG_SEASON_BOOTSTRAP,
   '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
@@ -192,6 +197,11 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         raw.startsWith("/__fa_dev__/debug-data-i05-");
       if(protectedI05 && (process.env.FA_DEBUG_I03_PROTECTED!=="1"||
         process.env.FA_DEBUG_I03_BROWSER_BRIDGE!=="1"||!devPreview))return reject(res,404);
+      const enableI05=devPreview&&isLoopback(remote)&&
+        (req.headers.host==="localhost:2000"||req.headers.host==="app.localhost:2000"||req.headers.host==="127.0.0.1:2000")&&
+        process.env.FA_DEBUG_I03_PROTECTED==="1"&&process.env.FA_DEBUG_I03_BROWSER_BRIDGE==="1"&&
+        process.env.FA_DEBUG_I05_BROWSER_BRIDGE==="1"&&
+        new URL(req.url,"http://localhost").searchParams.get("faI05")==="1";
       const virtual = VIRTUAL[raw];
       let body, type, file;
       if (virtual) {
@@ -205,7 +215,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return reject(res, 404);
-        if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
+        if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+(enableI05?'\n'+I05_LOCAL_BOOTSTRAP:'')+'\n</head>'),'utf8');
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
           const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
@@ -224,7 +234,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
-          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + (process.env.FA_DEBUG_I03_PROTECTED==="1"&&process.env.FA_DEBUG_I03_BROWSER_BRIDGE==="1"&&(DETAIL.test(raw)||CUP_DETAIL.test(raw))?'<script type="module" src="/__fa_dev__/protected-debug-source.mjs"></script>':"") + "\n</head>"), "utf8");
+          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + (enableI05 ? I05_LOCAL_BOOTSTRAP : '') + (process.env.FA_DEBUG_I03_PROTECTED==="1"&&process.env.FA_DEBUG_I03_BROWSER_BRIDGE==="1"&&(DETAIL.test(raw)||CUP_DETAIL.test(raw))?'<script type="module" src="/__fa_dev__/protected-debug-source.mjs"></script>':"") + "\n</head>"), "utf8");
         }
       }
       if ((devPreview || sharedBackend) && subdomains && type === TYPES[".html"]) {
