@@ -28,6 +28,7 @@
   let firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
+  let committedSeason=null;
   let menuHasPostseason=false;
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
@@ -207,6 +208,8 @@
   }
   function render(){
     if(rounds===null&&fields.list.dataset.fixturesState==="pending")return;
+    // The visible match rows belong to their committed season, not a pending route.
+    if(rounds!==null&&committedSeason!==null&&committedSeason!==navigation.get().season)return;
     const supplied=window.faCompetitionContext?.seasonData;
     const authoritative=supplied?.provenance?.kind==='authoritative'&&String(supplied.season)===navigation.get().season;
     const available=rounds!==null&&(authoritative||availableSeasons.has(navigation.get().season));
@@ -220,7 +223,7 @@
     }
     const isPostseason=typeof selected==='string';
     const selectedChoice=configured.find(c=>c.value===selected);
-    fields.toolbar.hidden=!available;
+    fields.toolbar.hidden=false;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
     fields.round.value=String(selected);fields.round.disabled=!available;
     const label=document.getElementById('app-fixtures-round-label');
@@ -313,14 +316,15 @@
        // The stage is selectable before participating clubs are known.
       return ()=>{
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
+        committedSeason=String(window.faCompetitionContext?.selectedSeason??navigation.get().season);
         fields.list.dataset.fixturesState="ready";
         fields.toolbar.dataset.fixturesState="ready";
         navigation.defaultMatchday(currentMatchday??1);
         render();
       };
     },
-    snapshot(){const previous=rounds,current=currentMatchday,post=postseason;return ()=>{
-      rounds=previous;postseason=post;currentMatchday=current;selected=navigation.get().matchday;render()};}
+    snapshot(){const previous=rounds,current=currentMatchday,post=postseason,season=committedSeason;return ()=>{
+      rounds=previous;postseason=post;currentMatchday=current;committedSeason=season;selected=navigation.get().matchday;render()};}
   };
   new MutationObserver(()=>{if(rounds)render()}).observe(document.documentElement,
     {attributes:true,attributeFilter:["lang"]});
@@ -343,7 +347,7 @@
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:competition-context-committed',event=>{
     if(event.detail?.seasonData!==null)return;
-    rounds=null;postseason=[];currentMatchday=null;
+    rounds=null;postseason=[];currentMatchday=null;committedSeason=null;
     fields.list.dataset.fixturesState='ready';
     fields.toolbar.dataset.fixturesState='ready';
     render();
