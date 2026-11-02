@@ -23,6 +23,8 @@ export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevA
  if(canonical!==base)fail("protected root alias forbidden");
  const repoRoot=await realpath(repositoryRoot);
  if(base===repoRoot||base.startsWith(repoRoot+sep))fail("private dataset root must be OUTSIDE repository and static build roots");
+ const sourceRoot=await realpath(resolve(repoRoot,".."));
+ if(base===sourceRoot)fail("private dataset root cannot be repository parent");
  const destination=join(base,corpus.datasetId);
  if(!within(base,destination))fail("unsafe destination");
  if(await lstat(destination).catch(()=>null))fail("immutable candidate already exists");
