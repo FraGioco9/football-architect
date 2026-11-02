@@ -69,7 +69,9 @@ try {
     const expectedChoices=await page.evaluate(()=>{const definition=window.faCompetitionContext.definition;return definition.rules.phases.reduce((total,phase)=>total+(phase.type==='knockout'?1:definition.metrics.phases[phase.id].rounds),0)});
     assert.equal(await page.locator('[data-fixture-round-choice]').count(),expectedChoices,'fixture stages must match the shared competition rules');
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
-    assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
+    assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
+    assert.equal(await page.locator('#app-fixtures-previous').isDisabled(),true);
+    assert.equal(await page.locator('#app-fixtures-next').isDisabled(),true);
    }
    if(view==='postseason'){
     assert.equal(await page.locator('[data-postseason-config-tie]').count(),await page.evaluate(()=>window.faCompetitionContext.definition.rules.phases.reduce((n,p)=>n+(p.ties?.length||0),0)));
@@ -156,7 +158,9 @@ try {
   assert.equal(await page.locator('#app-fixtures-list [data-fixture-match]').count(),0);
   await page.evaluate(()=>window.faCompetitionContextApi.clearSeasonData());
   assert.equal(await page.locator('#app-standings-body tr').count(),1);
-  assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
+  assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
+    assert.equal(await page.locator('#app-fixtures-previous').isDisabled(),true);
+    assert.equal(await page.locator('#app-fixtures-next').isDisabled(),true);
   checks+=3;
   const tabs=page.locator(".app-competition-tabs [role=tab]");
   await tabs.first().focus();
