@@ -12,7 +12,7 @@ function fixture(id='IT-1'){
  assert.ok(start>=0&&end>start,'protected Stats provider must be separate from public presentation');
  const division=manifest.divisions.find(d=>d.id==='IT-1'),definition=loadCompetitionCatalogue().find(d=>d.id===id);
  const results=createPreviewStandings(division,15).fixtures;
- const stored=new Map([['football-architect:standings-dev-season','1'],['football-architect:standings-dev-matchdays','15'],['football-architect:standings-dev-preview','on']]);
+ const stored=new Map([['football-architect:standings-dev-season','1'],['football-architect:standings-dev-matchdays','15'],['football-architect:standings-dev-preview','on'],['football-architect:local-debug-visible','1']]);
  const sessionStorage={getItem:key=>stored.get(key)??null};
  const window={faCompetitionDivision:division,events:{},faCompetitionContext:{definition,selectedSeason:1,revision:1,seasonData:{season:1,rulesVersion:definition.rules.version,participants:division.clubs,fixtures:null,results,statistics:{standings:[]},status:'partial'}},
   addEventListener(name,fn){this.events[name]=fn},removeEventListener(name){delete this.events[name]}};
