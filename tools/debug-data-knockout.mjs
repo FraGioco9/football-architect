@@ -12,6 +12,7 @@ export function resolveKnockoutTie({seasonNumber,competitionId,tie,participants,
  const higher=ranking?.get(a)<=ranking?.get(b)?a:b;
  const neutral=tie.homePolicy==="neutral";
  assert(neutral||tie.homePolicy==="higherOriginalTableRank","home policy");
+ assert(neutral||ranking?.has(a)&&ranking?.has(b),"missing original ranking for knockout home assignment");
  const fixtures=days.map((day,i)=>{
   const homeId=neutral?a:tie.legs===2?(i===0?(higher===a?b:a):higher):higher;
   const awayId=homeId===a?b:a;
@@ -35,6 +36,8 @@ export function resolveKnockoutTie({seasonNumber,competitionId,tie,participants,
    winner=decidedHome>decidedAway?final.homeId:final.awayId;
   }
  }
+ const decider=fixtures.at(-1);
+ decider.tiebreak={extraTime,penalties,winner,method:penalties?"penalties":extraTime?"extraTime":"aggregate"};
  return {tieId:tie.id,participants:[...participants],fixtures,aggregate:Object.fromEntries(aggregate),extraTime,penalties,winner,loser:winner===a?b:a,resolution:penalties?"penalties":extraTime?"extraTime":"aggregate"};
 }
 export function resolveCatalogKnockout({seasonNumber,competitionId,rules,rankedClubs,seed}){
