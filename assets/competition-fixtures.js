@@ -314,6 +314,7 @@
       return ()=>{
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
         fields.list.dataset.fixturesState="ready";
+        fields.toolbar.dataset.fixturesState="ready";
         navigation.defaultMatchday(currentMatchday??1);
         render();
       };
