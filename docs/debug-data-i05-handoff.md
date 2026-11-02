@@ -66,3 +66,11 @@ The protected DEV source coordinator now imports `prepareProtectedConsumers`, va
 
 No page integration, runtime activation, full test suite, public endpoint,
 remote D1 or deployment in this block. I05 remains **in progress**.
+
+## Sixth I05 block — candidate source transitions and rollback
+
+- Fixed the I03 protected Domestic controller's presenter import to the actual DEV-only module path.
+- Cursor change (day/season), route change, source-unavailable and pending-fetch notifications now release protected DOM ownership in the gated controller.
+- The source coordinator clears both previous candidate view and consumers synchronously at the start of every refresh, before awaiting the network request. It emits an explicit pending event and continues to reject stale responses by revision.
+- Debug OFF and Season 0 continue to emit source-change events and clear all candidate ownership. No consumer is injected into the public site; activation remains disabled.
+- No test run or acceptance is claimed. Review final pending/rollback appearance and source-epoch race cases during I06.
