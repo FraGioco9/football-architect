@@ -148,3 +148,20 @@ test('A04 domestic postseason first paint reserves playout and playoff stages in
  const generator=read('tools/render-competition-page.mjs');
  assert.match(generator,/d\.category==='domestic'\?'<script data-fixtures-first-paint>/);
 });
+
+test('domestic first paint sets Matchday and Season labels without waiting for data',()=>{
+ const generator=read('tools/render-competition-page.mjs');
+ assert.match(generator,/data-competition-season-first-paint/);
+ for(const id of ['it-1','it-2','eng-1','eng-2','es-1','es-2','de-1','de-2','fr-1','fr-2','pt-1','pt-2','nl-1','nl-2','br-1','br-2']){
+  const html=read('competitions/'+id+'/index.html');
+  assert.match(html,/data-competition-season-first-paint/,id);
+  assert.match(html,/number\.textContent=stage/,id);
+ }
+});
+test('fixtures source switch shows pending match geometry rather than previously loaded season notice',()=>{
+ const source=read('assets/competition-fixtures.js');
+ assert.doesNotMatch(source,/Showing previously loaded Season/);
+ assert.match(source,/function showPendingFixtures\(\)/);
+ assert.match(source,/if\(detail\.state==='loading'\)\{\s*showPendingFixtures\(\)/);
+ assert.match(source,/fields\.list\.dataset\.fixturesState='pending'/);
+});
