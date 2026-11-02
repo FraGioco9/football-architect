@@ -383,7 +383,7 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
  assert.equal(metadata.children[0].children[1].textContent,"15");
- assert.match(scoreline.children[1].textContent,/^(?:1 – 2|2 – 1|1 – 1)$/);
+ assert.match(scoreline.children[1].children.map(node=>node.textContent).join(" "),/^(?:1 – 2|2 – 1|1 – 1)$/);
  assert.ok(scoreline.children[0].textContent);
  assert.ok(scoreline.children[2].textContent);
  assert.notEqual(scoreline.children[0].textContent,scoreline.children[2].textContent);
@@ -726,6 +726,13 @@ test('STANDINGS-SHARED: API and Debug use one desktop row/form builder with late
  const division=manifest.divisions[0],r=await simulate({division,devSeason:1});
  const rows=createPreviewStandings(division,8,1).rows;
  assert.ok(r.window.faStandingsView,'shared presentation API');
+ const score=r.window.faStandingsView.createFormScore(),separator=score.element.children[1];
+ for(const [home,away] of [[1,10],[10,1],[0,0],[123,4]]){
+  score.update(home,away);
+  assert.deepEqual(Array.from(score.element.children,node=>node.textContent),[String(home),'–',String(away)]);
+  assert.equal(score.element.children[1],separator,'score updates preserve the separator node');
+ }
+
  const built=r.window.faStandingsView.createRow(rows[0],1);
  assert.equal(built.element.children.length,11);
  assert.equal(built.entries.length,5);
@@ -741,7 +748,7 @@ test('STANDINGS-SHARED: API and Debug use one desktop row/form builder with late
  control.emit('focus');
  const tooltip=r.body.children.find(node=>node.attrs.role==='tooltip');assert.ok(tooltip);
  const match=rows[0].recent[0];
- assert.equal(tooltip.children[1].children[1].textContent,match.homeGoals+' – '+match.awayGoals,'tooltip shows actual scores');
+ assert.equal(tooltip.children[1].children[1].children.map(node=>node.textContent).join(' '),match.homeGoals+' – '+match.awayGoals,'tooltip shows actual scores');
  r.document.emit('keydown',{key:'Escape',stopPropagation(){}});assert.equal(tooltip.attrs['aria-hidden'],'true');
 });
 

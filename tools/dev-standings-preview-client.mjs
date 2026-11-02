@@ -694,7 +694,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     meta.append(round,date);
     const scoreline = node("div", "app-world-form-tooltip-scoreline");
     const homeName = node("span", "app-world-form-tooltip-team");
-    const score = node("strong", "app-world-form-tooltip-score");
+    const scoreView = window.faStandingsView.createFormScore(), score = scoreView.element;
     const awayName = node("span", "app-world-form-tooltip-team");
     scoreline.append(homeName, score, awayName);
     const context = node("div", "app-world-form-tooltip-context");
@@ -766,7 +766,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       const game = entry.game;
       homeName.textContent = lookup.get(game.homeId).primaryName;
       awayName.textContent = lookup.get(game.awayId).primaryName;
-      score.textContent = game.homeGoals + " – " + game.awayGoals;
+      scoreView.update(game.homeGoals,game.awayGoals);
       roundNumber.textContent = String(game.round);
       stadium.textContent = lookup.get(game.homeId).stadiumName;
       tooltip.hidden = false;

@@ -602,7 +602,13 @@
     element.children[10].replaceChildren(strip);
     return {element,entries};
   }
-  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard});
+  function createFormScore(){
+    const element=document.createElement('strong');element.className='app-world-form-tooltip-score';
+    const home=document.createElement('span'),separator=document.createElement('span'),away=document.createElement('span');
+    separator.textContent='–';element.append(home,separator,away);
+    return {element,update(homeGoals,awayGoals){home.textContent=String(homeGoals);away.textContent=String(awayGoals)}};
+  }
+  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard,createFormScore});
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
@@ -733,7 +739,7 @@
     header.appendChild(round);
     const match = item("div","app-world-form-tooltip-scoreline","");
     const homeName = item("span","app-world-form-tooltip-team","");
-    const score = item("strong","app-world-form-tooltip-score","");
+    const scoreView = createFormScore(), score = scoreView.element;
     const awayName = item("span","app-world-form-tooltip-team","");
     match.append(homeName,score,awayName);
     const footer = item("div","app-world-form-tooltip-context","");
@@ -794,7 +800,7 @@
         const game=entry.game,homeClub=clubs.get(game.homeId),awayClub=clubs.get(game.awayId);
         if(!homeClub||!awayClub||!Number.isInteger(game.homeGoals)||!Number.isInteger(game.awayGoals))return;
         homeName.textContent=homeClub.primaryName;awayName.textContent=awayClub.primaryName;
-        score.textContent=game.homeGoals+' – '+game.awayGoals;number.textContent=String(game.round);
+        scoreView.update(game.homeGoals,game.awayGoals);number.textContent=String(game.round);
         const isHome=game.homeId===entry.ownId;home.hidden=!isHome;away.hidden=isHome;
       }else{
       const others = opponents.filter(c => c.clubId !== entry.club.clubId);
@@ -804,7 +810,7 @@
       const against = entry.result === "W" ? 1 : entry.result === "D" ? 1 : 2;
       homeName.textContent = (isHome ? entry.club : opponent).primaryName;
       awayName.textContent = (isHome ? opponent : entry.club).primaryName;
-      score.textContent = (isHome ? own : against)+" – "+(isHome ? against : own);
+      scoreView.update(isHome ? own : against,isHome ? against : own);
       number.textContent = String(entry.round);
       home.hidden = !isHome;
       away.hidden = isHome;

@@ -309,7 +309,9 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:clamp(6px,2.3vw,10px);min-height:clamp(26px,9vw,40px)}
 .app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:700}
 .app-world-form-tooltip-team:last-child{text-align:right}
-.app-world-form-tooltip-score{font-size:clamp(15px,4.5vw,20.3px);font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+.app-world-form-tooltip-score{font-size:clamp(15px,4.5vw,20.3px);font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums;display:grid;grid-template-columns:minmax(2ch,1fr) auto minmax(2ch,1fr);column-gap:.25ch;text-align:center}
+.app-world-form-tooltip-score>:first-child{text-align:right}
+.app-world-form-tooltip-score>:last-child{text-align:left}
 .app-world-form-tooltip-context{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;margin-top:0;padding-top:clamp(6px,2.05vw,9px);border-top:1px solid #34524d;color:#b5c9c1;font-size:clamp(9px,2.5vw,11.3px)}
 .app-world-form-tooltip-stadium,.app-world-form-tooltip-date{max-width:100%;overflow-wrap:anywhere}
 .app-world-form-tooltip-context [hidden]{display:none}
