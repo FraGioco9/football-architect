@@ -12,3 +12,9 @@ Invoke-RestMethod "http://app.localhost:2000/__fa_dev_private__/season-view?seas
 ```
 
 This is a **development-only API exploration boundary**, not a ready UI integration. It does not connect to D1 or replace `/api/world`; source is unsealed, and existing Debug settings remain untouched. I03 still needs a controlled browser-side delivery strategy that does not expose a shared secret and a comprehensive security/visual QA gate in I06.
+
+## Explicit browser session (I03 experimental)
+
+The dedicated `POST /__fa_dev_private__/session` accepts the owner token **only when explicitly supplied** from a same-origin local request with `Content-Type: application/json`. On successful authorization, it sets a host-only, path-scoped, `HttpOnly; SameSite=Strict` session cookie with a one-hour lifetime. Sessions exist only in server memory, are bound to the requesting host, and are not written to D1 or static assets. Subsequent browser `GET /__fa_dev_private__/season-view?season=1&day=16&competition=IT-1` can use this cookie without injecting the original bearer token into page JavaScript.
+
+The session handshake is **not automatic** and there is no UI login flow in this block. Public client code never receives the bearer token. This adapter remains DEV-only, disabled unless `FA_DEBUG_I03_PROTECTED=1`, and is not wired to active Debug pages. Its security properties and browser flow require I06 tests; do not enable remotely.

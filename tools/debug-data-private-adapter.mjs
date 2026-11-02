@@ -16,7 +16,7 @@ const tokenHash=value=>createHash("sha256").update(value).digest("hex");
 const allowedHost=host=>["localhost:2000","app.localhost:2000","127.0.0.1:2000"].includes(host);
 const sameOrigin=req=>{const origin=req.headers.origin;return origin===`http://${req.headers.host}`&&req.headers["sec-fetch-site"]!=="cross-site";};
 const sessionCookie=req=>(req.headers.cookie??"").split(";").map(p=>p.trim()).find(x=>x.startsWith(SESSION_COOKIE+"="))?.slice(SESSION_COOKIE.length+1)??"";
-const validSession=req=>{const value=sessionCookie(req);return /^[a-f0-9]{64}$/.test(value)&&sessions.get(tokenHash(value))===req.headers.host;};
+const validSession=req=>{const value=sessionCookie(req);return /^[a-f0-9]{64}$/.test(value)&&sessions.get(tokenHash(value))?.host===req.headers.host&&sessions.get(tokenHash(value))?.expires>Date.now();};
 const load=async()=>{
  if(cached)return cached;
  const read=async name=>JSON.parse(await readFile(join(root,name),"utf8"));
@@ -41,7 +41,7 @@ export async function respondProtectedDebugProjection(req,res){
   const supplied=req.headers.authorization?.match(/^Bearer ([a-zA-Z0-9_-]{32,128})$/)?.[1];
   if(!secret||!supplied||secret.length!==supplied.length||!timingSafeEqual(Buffer.from(secret),Buffer.from(supplied)))return deny(401,"unauthorized");
   const value=randomBytes(32).toString("hex");
-  sessions.set(tokenHash(value),req.headers.host);
+  sessions.set(tokenHash(value),{host:req.headers.host,expires:Date.now()+3600_000});
   if(sessions.size>128)sessions.delete(sessions.keys().next().value);
   res.writeHead(204,{...headers,"Set-Cookie":`${SESSION_COOKIE}=${value}; Path=/__fa_dev_private__/; HttpOnly; SameSite=Strict; Max-Age=3600`});res.end();return true;
  }
