@@ -53,6 +53,7 @@ const VIRTUAL = Object.freeze({
   "/__fa_dev__/dev-protected-stats-presenter.mjs": "dev-protected-stats-presenter.mjs",
   "/__fa_dev__/dev-protected-stats-controller.mjs": "dev-protected-stats-controller.mjs",
   "/__fa_dev__/dev-protected-history-presenter.mjs": "dev-protected-history-presenter.mjs",
+  "/__fa_dev__/dev-protected-history-archive.mjs": "dev-protected-history-archive.mjs",
   "/__fa_dev__/dev-protected-history-controller.mjs": "dev-protected-history-controller.mjs",
   "/__fa_dev__/dev-protected-international-presenter.mjs": "dev-protected-international-presenter.mjs",
   "/__fa_dev__/dev-protected-international-controller.mjs": "dev-protected-international-controller.mjs",
