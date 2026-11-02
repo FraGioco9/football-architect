@@ -12,6 +12,7 @@ import {stageProtectedDebugArtifact,assertProtectedDebugArtifact,CLUB_SUMMARY_IN
 const DEBUG_PATHS=[
   "__fa_dev__/debug-settings.mjs",
   "__fa_dev__/standings-client.mjs",
+  "__fa_dev__/dev-international-preview.mjs",
   "__fa_dev__/debug-widget.mjs",
   "__fa_dev__/dev-world-clock.mjs",
   "__fa_dev__/standings-data.mjs",
@@ -22,7 +23,7 @@ const DEBUG_PATHS=[
 ].sort();
 const fields=(object,expected)=>assert.deepEqual(Object.keys(object).sort(),[...expected].sort());
 
-test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{timeout:20000},()=>{
+test("G10-PUBLIC-02: staged Debug adds all allowlisted protected-only paths",{timeout:20000},()=>{
  const root=mkdtempSync(join(tmpdir(),"fa-g10-content-"));
  try{
   const pubDir=join(root,"public"),debugDir=join(root,"debug");

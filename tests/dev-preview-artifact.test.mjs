@@ -168,10 +168,10 @@ test('DEBUG-FIRST-PAINT: DEV defaults are gated synchronously and failure cannot
  release();assert.equal(document.documentElement.dataset.faDebugPending,undefined);
 });
 
-test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons without changing public bytes",()=>{
+test("DEBUG-SEASONS-01: protected Preview supports five fictional seasons without changing public bytes",()=>{
  const {root,debugRoot,protectedPath,publicPath}=sandbox();
  try{
-  assert.deepEqual(DEBUG_SEASONS,[1,2,3,4]);
+  assert.deepEqual(DEBUG_SEASONS,[1,2,3,4,5]);
   const staged=stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
   assert.deepEqual(assertProtectedDebugArtifact(protectedPath,{sourceRoot:repositoryRoot,debugRoot}),staged);
   stagePublicArtifact(repositoryRoot,publicPath);
