@@ -3,7 +3,7 @@
 import {currentProtectedWorld} from "./dev-protected-world-source.mjs";
 let outlet=null,restore=null,latest=0;
 const active=()=>document.documentElement.dataset.faI03Renderer==="1"&&document.documentElement.dataset.faI05World==="1";
-const parent=kind=>kind==="calendar"?document.getElementById("world-calendar"):document.querySelector("[data-club-overview], #club-overview, #club-panel-fixtures");
+const parent=kind=>kind==="calendar"?document.getElementById("calendar-details-content"):document.querySelector("[data-club-overview], #club-overview, #club-panel-fixtures");
 const clear=()=>{outlet?.remove();outlet=null;restore=null};
 const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=value;return e};
 function commit(detail){
