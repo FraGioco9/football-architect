@@ -13,7 +13,10 @@ window.addEventListener("fa:protected-debug-domestic-presentation",event=>{
  try{next=prepareSharedDomesticUpdate(presentation)}catch(error){
   window.dispatchEvent(new CustomEvent("fa:protected-debug-render-failed",{detail:{revision,reason:"prepare"}}));return;
  }
- try{clear();next.commit();restore=next;latest=revision;
+ try{next.commit();const previous=restore;restore=next;latest=revision;
+  // Old presentation may be released only after the next commit succeeds.
+  // A separate shared renderer is still required before this gate is enabled.
+  if(previous&&previous!==next)previous.rollback();
   window.dispatchEvent(new CustomEvent("fa:protected-debug-render-committed",{detail:{revision,competitionId,season}}));
  }catch(error){try{next.rollback()}catch{}window.dispatchEvent(new CustomEvent("fa:protected-debug-render-failed",{detail:{revision,reason:"commit"}}))}
 });
