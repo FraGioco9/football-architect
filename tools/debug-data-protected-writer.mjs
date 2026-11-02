@@ -11,7 +11,7 @@ const allowTemporaryCiQa=()=>process.env.GITHUB_ACTIONS==="true"&&process.env.DE
 const safeSegment=value=>typeof value==="string"&&/^[a-z0-9][a-z0-9._-]{0,100}$/.test(value)&&value!=="."&&value!=="..";
 const within=(root,path)=>{const rel=relative(root,path);return rel!==""&&rel!==".."&&!rel.startsWith(".."+sep)&&!rel.startsWith(sep)};
 export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevApproval=false}){
- if(!explicitDevApproval||process.env.NODE_ENV==="production"||process.env.CI==="true")fail("explicit local DEV approval required");
+ if(!explicitDevApproval||process.env.NODE_ENV==="production"||(process.env.CI==="true"&&!allowTemporaryCiQa()))fail("explicit local DEV approval required");
  if(!protectedRoot||typeof protectedRoot!=="string")fail("protected root required");
  if(!safeSegment(corpus?.datasetId))fail("unsafe dataset identity");
  const plan=planProtectedDebugExport(corpus);
