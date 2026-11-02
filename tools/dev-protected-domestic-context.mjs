@@ -8,6 +8,14 @@ export function prepareProtectedDomesticContext(view,{competitionId,season,day,k
  ensure(view?.kind==="protected-debug-projection"&&view.competitionId===competitionId&&view.seasonNumber===season&&view.worldDay===day,"stale or mismatched projection");
  ensure(Array.isArray(view.participants)&&view.participants.length===16&&new Set(view.participants).size===16,"invalid participants");
  const participants=view.participants;
+ ensure(Array.isArray(view.clubs)&&view.clubs.length===16,"missing season-aware club identities");
+ const identities=new Map();
+ for(const club of view.clubs){
+  const id=club?.canonicalId;
+  ensure(participants.includes(id)&&!identities.has(id)&&club.countryId+"-"+club.clubId===id&&typeof club.primaryName==="string"&&club.primaryName.trim(),"unresolvable club identity");
+  identities.set(id,{...club});
+ }
+ ensure(identities.size===16,"incomplete seasonal club registry");
  if(knownClubIds){
   const known=new Set(knownClubIds);
   ensure(known.size===16&&participants.every(id=>known.has(id)),"club identity catalog mismatch; requires full-season registry integration");
@@ -37,6 +45,6 @@ export function prepareProtectedDomesticContext(view,{competitionId,season,day,k
   tiebreak:e.tiebreak??null
  }));
  ensure(postseason.every(e=>e.day<=day||e.homeGoals===null&&e.awayGoals===null),"future postseason leakage");
- return {season,rulesVersion:null,participants:[...participants],fixtures,results,statistics:null,
+ return {season,rulesVersion:null,participants:[...participants],clubs:participants.map(id=>identities.get(id)),fixtures,results,statistics:null,
   status:view.completed?"complete":"partial",standings:view.standings.map(r=>({...r})),postseason};
 }

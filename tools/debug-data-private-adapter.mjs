@@ -20,9 +20,9 @@ const validSession=req=>{const value=sessionCookie(req);return /^[a-f0-9]{64}$/.
 const load=async()=>{
  if(cached)return cached;
  const read=async name=>JSON.parse(await readFile(join(root,name),"utf8"));
- const [baseline,divisions,cupCatalog]=await Promise.all([read("backend/catalogues/season-1.participants.json"),read("data/divisions.json"),read("data/international-competitions.json")]);
+ const [baseline,divisions,cupCatalog,clubCatalog]=await Promise.all([read("backend/catalogues/season-1.participants.json"),read("data/divisions.json"),read("data/international-competitions.json"),read("data/clubs.json")]);
  const corpus=buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,seed:"debug-data-v1-fresh",datasetId:"debug-corpus-v1"});
- cached={corpus,divisions,cupCatalog};
+ cached={corpus,divisions,cupCatalog,clubCatalog};
  return cached;
 };
 export async function respondProtectedDebugProjection(req,res){
@@ -54,9 +54,11 @@ export async function respondProtectedDebugProjection(req,res){
  const season=Number(params.get("season")),day=Number(params.get("day")),competitionId=params.get("competition");
  if(!/^[1-5]$/.test(params.get("season")??"")||!/^([1-9]|[1-4][0-9]|5[0-6])$/.test(params.get("day")??"")||!/^(IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$|^int-[12]$/.test(competitionId??""))return deny(400,"invalid_query");
  try{
-  const {corpus,divisions,cupCatalog}=await load();
+  const {corpus,divisions,cupCatalog,clubCatalog}=await load();
   const projection=projectDebugWorldAtDay(corpus,{seasonNumber:season,worldDay:day,competitionId,divisions,cupCatalog});
-  reply(res,200,{kind:"protected-debug-projection",status:"UNSEALED_NOT_FOR_RUNTIME",...projection},req.method==="HEAD");
+  const byId=new Map(clubCatalog.map(club=>[club.countryId+"-"+club.clubId,club]));
+  const clubs=projection.participants.map(id=>{const club=byId.get(id);if(!club)throw Error("Missing canonical club identity "+id);return {...club,canonicalId:id};});
+  reply(res,200,{kind:"protected-debug-projection",status:"UNSEALED_NOT_FOR_RUNTIME",...projection,clubs},req.method==="HEAD");
  }catch(error){
   console.error("[FA DEBUG I03] Protected projection unavailable:",error?.message??"unknown");
   return deny(503,"projection_unavailable");
