@@ -891,6 +891,7 @@
     }
     if(committed&&(context.seasonData===null||context.seasonData.provenance?.kind==='authoritative'))delete document.documentElement.dataset.faSourceTransition;
     window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
+    if(committed)window.dispatchEvent(new CustomEvent("fa:competition-context-committed",{detail:context}));
   }
   function nextContext(season,data=null,committed=false){
     const current=window.faCompetitionContext;
