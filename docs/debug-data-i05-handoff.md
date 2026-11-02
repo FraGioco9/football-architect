@@ -120,3 +120,7 @@ Added `tools/dev-protected-stats-presenter.mjs`, an optional DEV integration usi
 ## I05 world aggregation
 
 Added protected world reader and authenticated loopback `world-view` endpoint for a shared S1-S5/day cursor across all 18 competitions. Added browser-safe day and club fixture selectors. Calendar and Club DOM renderers are not yet connected; test acceptance remains deferred to I06.
+
+## I05 protected Calendar and Club source coordinator
+
+Created `tools/dev-protected-world-source.mjs`, an explicit-import DEV-only source adapter for `/calendar` and `/clubs/<country>/<clubId>`. It consumes the authenticated `world-view` candidate endpoint, checks the selected world cursor and dataset, derives the selected calendar-day events or club fixtures, and dispatches `fa:protected-world-ready`, `fa:protected-world-reset`, and unavailable events. Requests are aborted and invalidated on source changes, including Debug OFF and Season 0. No public import, DOM renderer integration, completed test acceptance or cutover is claimed.
