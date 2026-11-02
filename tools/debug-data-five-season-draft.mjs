@@ -5,9 +5,11 @@ import {assertApprovedBaseline,DEBUG_SEASONS,DEBUG_COUNTRIES,hash} from "./debug
 import {buildDomesticLeague} from "./debug-data-domestic-generator.mjs";
 import {resolveDomesticPostseason,nextDomesticMembership} from "./debug-data-postseason.mjs";
 const duplicate=value=>JSON.parse(JSON.stringify(value));
-export function buildFiveSeasonDomesticDraft({baseline,seed="debug-data-new-v1",datasetId="debug-five-season-v1"}){
+export function buildFiveSeasonDomesticDraft({baseline,divisions,seed="debug-data-new-v1",datasetId="debug-five-season-v1"}){
  if(!seed||!datasetId)throw new TypeError("Seed and dataset ID required");
  const approved=assertApprovedBaseline(baseline);
+ if(!Array.isArray(divisions)||divisions.length!==16)throw Error("Canonical domestic rules required");
+ const rules=new Map(divisions.map(d=>[d.id,d.rules]));
  let participants=new Map([...approved].filter(([id])=>!id.startsWith("int-")).map(([id,clubs])=>[id,[...clubs]]));
  const seasons=[];
  for(const seasonNumber of DEBUG_SEASONS){
@@ -16,7 +18,7 @@ export function buildFiveSeasonDomesticDraft({baseline,seed="debug-data-new-v1",
    const competitionId=country+"-"+tier;
    const fragment=buildDomesticLeague({datasetId,seasonNumber,competitionId,participants:participants.get(competitionId),seed:seed+":"+datasetId});
    fragments[competitionId]=fragment;
-   outcomes.set(competitionId,resolveDomesticPostseason({seasonNumber,competitionId,fragment,seed:seed+":"+datasetId}));
+   outcomes.set(competitionId,resolveDomesticPostseason({seasonNumber,competitionId,fragment,rules:rules.get(competitionId),seed:seed+":"+datasetId}));
   }
   const sportingOutcomes=Object.fromEntries([...outcomes].map(([id,outcome])=>[id,duplicate(outcome)]));
   const snapshot={schemaVersion:1,kind:"unsealed-domestic-draft",source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,fragments,sportingOutcomes,contentsHash:hash({fragments,sportingOutcomes})};

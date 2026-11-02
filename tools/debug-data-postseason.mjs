@@ -1,12 +1,12 @@
 // DEBUG-DATA-01: deterministic postseason and cross-season domestic membership.
 // DEV-only offline exporter domain module; no network, official APIs or D1 writes.
 import {hash,DEBUG_COUNTRIES} from "./debug-data-schema.mjs";
-import {projectDomesticLeague} from "./debug-data-domestic-generator.mjs";
+import {rankDomesticLeague} from "./debug-data-domestic-ranking.mjs";
 const requireRule=(ok,message)=>{if(!ok)throw new Error("DEBUG-DATA-01: "+message);};
 const score=(seed,id)=>parseInt(hash(seed+":"+id).slice(0,8),16)%5;
 const choose=(seed,id,first,second)=>parseInt(hash(seed+":decision:"+id).slice(0,8),16)%2?first:second;
-export function tableForClosure(fragment){
- const table=projectDomesticLeague(fragment,56).standings;
+export function tableForClosure(fragment,rules,seed){
+ const table=rankDomesticLeague(fragment,rules,seed);
  requireRule(table.length===16&&table.every(x=>x.played===30),"incomplete league");
  // This provisional ranking is NOT the complete approved head-to-head tiebreak rule.
  return table;
@@ -27,7 +27,7 @@ export function resolveTie({seasonNumber,competitionId,tieId,participants,legs,s
  return {tieId,participants:[...participants],legs,fixtures,winner,loser:winner===first?second:first,aggregate:Object.fromEntries(aggregate),resolution:aggregate.get(first)===aggregate.get(second)?"deterministic-tiebreak-placeholder":"aggregate"};
 }
 export function resolveDomesticPostseason({seasonNumber,competitionId,fragment,seed}){
- const order=tableForClosure(fragment).map(x=>x.clubId);
+ const order=tableForClosure(fragment,arguments[0].rules,seed).map(x=>x.clubId);
  const tier=Number(competitionId.split("-")[1]);
  requireRule(tier===1||tier===2,"invalid tier");
  if(tier===1){

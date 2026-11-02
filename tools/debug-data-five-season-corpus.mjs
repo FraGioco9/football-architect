@@ -6,10 +6,10 @@ import {deriveInternationalParticipants,buildInternationalLeagueCandidate} from 
 import {buildInternationalCupDraft,selectCupBaseline} from "./debug-data-international-cup-draft.mjs";
 const requireValid=(ok,msg)=>{if(!ok)throw new Error("DEBUG-DATA-01: "+msg)};
 const cupIds=["int-1","int-2"];
-export function buildFiveSeasonCorpusCandidate({baseline,cupCatalog,seed="debug-data-v1-fresh",datasetId="debug-corpus-v1"}){
+export function buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,seed="debug-data-v1-fresh",datasetId="debug-corpus-v1"}){
  const approved=assertApprovedBaseline(baseline);
  requireValid(Array.isArray(cupCatalog)&&cupIds.every(id=>cupCatalog.some(c=>c.id===id&&c.rules?.version==="international-int24-v1")),"canonical INT24 cup rules");
- const domestic=buildFiveSeasonDomesticDraft({baseline,seed,datasetId});
+ const domestic=buildFiveSeasonDomesticDraft({baseline,divisions,seed,datasetId});
  const seasons=[],priorWinners={};
  for(const season of domestic.seasons){
   const seasonNumber=season.seasonNumber,cups={};
