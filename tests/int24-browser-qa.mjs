@@ -66,7 +66,7 @@ try {
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);
    }
    if(view==='fixtures'){
-    assert.equal(await page.locator('[data-fixture-round-choice]').count(),13);
+    assert.equal(await page.locator('[data-fixture-round-choice]').count(),10); // 6 league rounds + 4 collapsed knockout stages
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
    }
