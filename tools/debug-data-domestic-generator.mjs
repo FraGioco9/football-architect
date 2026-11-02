@@ -13,7 +13,8 @@ export function buildDomesticLeague({datasetId,seasonNumber,competitionId,partic
      const a=seats[slot],b=seats[15-slot];
      for(let leg=0;leg<2;leg++){
        const roundNumber=round+1+15*leg;
-       const homeId=(round+slot+leg)%2===0?a:b,awayId=homeId===a?b:a;
+       const firstHome=(round+slot)%2===0?a:b;
+       const homeId=leg===0?firstHome:firstHome===a?b:a,awayId=homeId===a?b:a;
        const eventId=datasetId+":"+seasonNumber+":"+competitionId+":league:"+roundNumber+":"+slot;
        events.push({eventId,competitionId,phaseId:"league",roundId:String(roundNumber),day:NATIONAL_DAYS[roundNumber-1],order:100+slot,homeId,awayId,result:{homeGoals:score(seed,eventId+":h"),awayGoals:score(seed,eventId+":a")}});
      }
@@ -24,6 +25,8 @@ export function buildDomesticLeague({datasetId,seasonNumber,competitionId,partic
  const fragment={schemaVersion:1,source:{kind:"debug",namespace:"local-debug",datasetId},seasonNumber,competitionId,participants:[...participants],events};
  validateSeasonFragment(fragment);
  if(events.length!==240||new Set(events.map(e=>e.eventId)).size!==240)throw Error("invalid league size");
+ const pairs=new Map();for(const e of events){const ids=[e.homeId,e.awayId].sort().join("|");const list=pairs.get(ids)??[];list.push(e);pairs.set(ids,list);}
+ if(pairs.size!==120||[...pairs.values()].some(g=>g.length!==2||g[0].homeId!==g[1].awayId||g[0].awayId!==g[1].homeId))throw Error("home/away round-robin parity violated");
  return fragment;
 }
 export function projectDomesticLeague(fragment,worldDay){

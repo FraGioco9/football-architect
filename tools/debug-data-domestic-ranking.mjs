@@ -3,7 +3,8 @@
 import {hash} from "./debug-data-schema.mjs";
 const sortFallback=(a,b,seed)=>b.gd-a.gd||b.gf-a.gf||b.wins-a.wins||hash(seed+":"+a.clubId).localeCompare(hash(seed+":"+b.clubId));
 export function rankDomesticLeague(fragment,rules,seed){
- if(rules?.phases?.[0]?.type!=="roundRobin")throw Error("domestic rules missing");
+ const policy=["points","headToHeadPointsReapply","headToHeadGoalDifferenceReapply","headToHeadGoalsForReapply","goalDifference","goalsFor","wins","reproducibleDraw"];
+ if(rules?.phases?.[0]?.type!=="roundRobin"||JSON.stringify(rules.phases[0].tiebreakers)!==JSON.stringify(policy))throw Error("unsupported domestic ranking rules");
  const matches=fragment.events.filter(e=>e.phaseId==="league"&&e.result);
  const rows=new Map(fragment.participants.map(clubId=>[clubId,{clubId,played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,wins:0}]));
  for(const e of matches){const h=rows.get(e.homeId),a=rows.get(e.awayId);if(!h||!a)throw Error("foreign club");h.played++;a.played++;h.gf+=e.result.homeGoals;h.ga+=e.result.awayGoals;a.gf+=e.result.awayGoals;a.ga+=e.result.homeGoals;

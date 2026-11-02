@@ -29,8 +29,8 @@ export function buildFiveSeasonCorpusCandidate({baseline,divisions,cupCatalog,se
    domestic:season.fragments,domesticPostseasonEvents:season.postseasonEvents,domesticOutcomes:season.sportingOutcomes,domesticPlacements:placements,cups,
    internationalWinners:Object.fromEntries(cupIds.map(id=>[id,cups[id].winner])),holderMoves:holderAllocation?.moves??[],
    predecessorHash:seasons.at(-1)?.candidateHash??null,
-   unresolved:["INT24 approved pots","domestic and international full tie-breakers","postseason canonical event mapping","seeded penalties model"]};
+   unresolved:["end-stage sports-model audit","I06 complete fixture/season QA"]};
   local.candidateHash=hash(local);seasons.push(local);
  }
- return {schemaVersion:1,kind:"protected-debug-corpus-candidate",status:"UNSEALED_NOT_FOR_RUNTIME",datasetId,seedHash:hash(seed),seasons,unresolved:["no official D1 provenance","no publication","all sporting gates before sealing"]};
+ return {schemaVersion:1,kind:"protected-debug-corpus-candidate",status:"UNSEALED_NOT_FOR_RUNTIME",datasetId,seedHash:hash(seed),seasons,unresolved:["I06 full validation not executed","no runtime activation or publication"]};
 }
