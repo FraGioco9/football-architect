@@ -132,3 +132,19 @@ test('International fixtures first paint exposes navigation shell and stage labe
  const css=read('assets/app.css');
  assert.match(css,/\.app-fixtures-toolbar\[data-fixtures-category="international"\]\[data-fixtures-state="pending"\] #app-fixtures-round-number\{visibility:visible\}/);
 });
+
+test('A04 domestic postseason first paint reserves playout and playoff stages in all divisions',()=>{
+ const countries=['it','eng','es','de','fr','pt','nl','br'];
+ for(const country of countries)for(const tier of [1,2]){
+  const html=read('competitions/'+country+'-'+tier+'/index.html');
+  assert.match(html,/<script data-fixtures-first-paint>/);
+  assert.match(html,new RegExp("const tier='"+tier+"'"));
+  assert.match(html,/stage!==\(tier==='1'\?'playout':'playoffs'\)/);
+  assert.match(html,/\['postseasonFirstLeg','First leg',1\]/);
+  assert.match(html,/\['postseasonSecondLeg','Second leg',1\]/);
+  assert.match(html,/\['postseasonFinal','Final',1\]/);
+  assert.match(html,/list\.replaceChildren\(\.\.\.entries\)/);
+ }
+ const generator=read('tools/render-competition-page.mjs');
+ assert.match(generator,/d\.category==='domestic'\?'<script data-fixtures-first-paint>/);
+});
