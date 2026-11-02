@@ -32,9 +32,11 @@ export async function verifyArea(page,area,{touch}){
  }else if(area==='competitions'){
   const tab=page.locator('#competition-tab-fixtures');
   await activate(tab);
-  assert.equal(await tab.getAttribute('aria-selected'),'true');
+  await page.waitForURL(url=>url.pathname.endsWith('/fixtures'));
+  await page.waitForFunction(()=>document.querySelector('#competition-tab-fixtures')?.getAttribute('aria-selected')==='true');
   await tab.focus();await page.keyboard.press('Home');
-  assert.equal(await page.locator('#competition-tab-standings').getAttribute('aria-selected'),'true');
+  await page.waitForURL(url=>url.pathname.endsWith('/standings'));
+  await page.waitForFunction(()=>document.querySelector('#competition-tab-standings')?.getAttribute('aria-selected')==='true');
  }else if(area==='clubs'){
   const tab=page.locator('.club-tabs a[href$="/history"]');
   await activate(tab);
