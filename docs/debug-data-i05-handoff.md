@@ -138,3 +138,20 @@ Added `tools/dev-protected-world-presenter.mjs` for reversible candidate-only Ca
 A local-only manual bootstrap now imports protected competition and world controllers behind two DEV gates, and a reversible world readout is attached to the existing Calendar details host. World source checks now reject namespace mismatches and future-score leaks. Corrected additional broken relative imports in the protected Domestic presenter and presentation modules. These are commits on PR #340, not verified runtime acceptance.
 
 **Status: I05 not yet complete.** The experimental candidate readouts are not equivalent to wiring the primary Calendar, Club and International widgets; Stats still requires renderer contract acceptance and Season 0–5 selector reconciliation. Do not mark the work package closed before those changes, and do not merge/cut over before I06.
+
+## I05 implementation integration milestone — 2026-11-02
+
+The protected local implementation now contains the following concrete paths:
+
+- A strict two-flag, explicit `?faI05=1` localhost-only DEV bootstrap behind `FA_DEBUG_I03_PROTECTED=1`, `FA_DEBUG_I03_BROWSER_BRIDGE=1`, and `FA_DEBUG_I05_BROWSER_BRIDGE=1`. Its module graph is allowlisted under `/__fa_dev__/`. No public HTML or production deploy is changed.
+- S0–S5 DEV controls, first-paint season bootstrapping and legacy preview guard ranges updated to include S5.
+- Domestic candidate presentation through the existing shared standings/fixtures/postseason transaction, with corrected DEV module imports.
+- International: separate guarded context transaction; candidate league standings mapped to the shared table shape, progressive completed knockout tie receipts; native `faFixtures.prepare` commit/rollback replacing the former supplemental INT readout.
+- Calendar: world aggregation at a single source epoch across 18 competitions; on-day event rendering in the existing Calendar details region, including future fixture shells with hidden scores; selection updates without re-fetching or remounting the Calendar grid.
+- Clubs: canonical dynamic division membership, position/points/next match, plus candidate fixtures and team stats in the existing Club tabs; replay after page listener initialization.
+- Stats: existing renderer adapter using only sourced played fixtures and league totals; no fabricated player statistics.
+- History: existing panel candidate current-season presentation and authenticated prior-season candidate archive. No unsealed candidate is claimed as an official historical record.
+- All protected sources invalidate on Debug OFF, Season 0, route/cursor change and failed source reads; source revision checks reject old async responses.
+
+**Implementation milestone, NOT QA acceptance**: this is not an approved I07 cutover. In I06 validate the actual UI transitions, INT knockout phases, Calendar geometry, Club tabs, History and Stats, accessibility, iPhone Safari, locale coverage, all existing failing tests, source-epoch races, and publication guards before any readiness/completion declaration. Do not merge, deploy or touch remote DB.
+
