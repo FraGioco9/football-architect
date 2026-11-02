@@ -999,6 +999,13 @@
           setDebugSeason(enabled?(()=>{try{const value=Number(sessionStorage.getItem('football-architect:standings-dev-season'));return Number.isInteger(value)&&value>=0&&value<=4?value:1}catch{return 1}})():null);
           if(!enabled){selection='';select();}
         });
+        // DEV preview cleanup is asynchronous. It can restore the previous
+        // standings DOM after the global loader's first attempt; rehydrate
+        // only when the preview confirms that the source is fully disabled.
+        window.addEventListener('fa:fictional-standings-change',event=>{
+          if(window.faDevPreviewMode!==true||event.detail?.enabled!==false||activeDebugSeason!==null)return;
+          selection='';select();
+        });
         window.addEventListener('fa:competition-context-change',select);
         window.addEventListener('focus',()=>void loader.load());
         window.addEventListener('pageshow',event=>{if(event.persisted)void loader.load()});
