@@ -124,3 +124,11 @@ Added protected world reader and authenticated loopback `world-view` endpoint fo
 ## I05 protected Calendar and Club source coordinator
 
 Created `tools/dev-protected-world-source.mjs`, an explicit-import DEV-only source adapter for `/calendar` and `/clubs/<country>/<clubId>`. It consumes the authenticated `world-view` candidate endpoint, checks the selected world cursor and dataset, derives the selected calendar-day events or club fixtures, and dispatches `fa:protected-world-ready`, `fa:protected-world-reset`, and unavailable events. Requests are aborted and invalidated on source changes, including Debug OFF and Season 0. No public import, DOM renderer integration, completed test acceptance or cutover is claimed.
+
+## Fourteenth I05 block — gated route bootstrap and world readouts
+
+Added `tools/dev-protected-i05-bootstrap.mjs` as a manually imported **local-only**, double-gated entrypoint for competition and world routes. When both `data-fa-i03-renderer=1` and `data-fa-i05-enable=1` are present, it imports the protected source and appropriate controller modules. No public HTML import was added.
+
+Added `tools/dev-protected-world-presenter.mjs` for reversible candidate-only Calendar/Club played-match readouts. It preserves the underlying page geometry and existing widgets, clearing its output on source reset or errors. This is **not** a complete Calendar or Club UI data replacement. The protected world reader additionally rejects cursor/competition mismatches across its 18 projections.
+
+**Remaining for genuine I05 completion:** replacing the readout outlets with actual Calendar and Club renderer data transactions, integrating full International fixtures/history rather than supplemental outlets, completing Stats data compatibility, and resolving the known I03 DOM/renderer regressions. I06 still owns broad QA. The DEV bootstrap is not injected, so visual behavior is not live. Do not mark I05 closed or the PR ready to merge.
