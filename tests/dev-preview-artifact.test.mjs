@@ -19,6 +19,7 @@ function sandbox() {
   ["dev-debug-config.mjs","export const DEBUG_CONTROL_LIMITS = {};\n"],
   ["dev-debug-settings.mjs","export const enabled = false;\n"],
   ["dev-standings-preview-client.mjs","export const client = true;\n"],
+  ["dev-international-preview.mjs","export const mountCupDebugPreview = () => {};\n"],
   ["dev-standings-preview-data.mjs","export const data = [];\n"],
   ["dev-debug-widget.mjs","export const widget = true;\n"],
   ["dev-world-clock.mjs","export const devClock = true;\n"],
