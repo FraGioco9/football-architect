@@ -45,6 +45,6 @@ export function attachProtectedStatsPresenter({panel,definition,baseContext}){
    return {context,original};
   },
   commit(tx){tx.api=window.faCompetitionStats.mount(panel,tx.context)},
-  rollback(tx){if(tx.api&&tx.original)tx.api.update(tx.original)}
+  rollback(tx){if(tx.api&&tx.original)tx.api.update({...tx.original,revision:tx.context.revision+1})}
  });
 }
