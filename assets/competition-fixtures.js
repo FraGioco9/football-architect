@@ -312,10 +312,9 @@
         usedCrests.add(placeholder);
       }
     }
-    if(typeof fields.list.insertBefore==="function"){
-      for(let i=0;i<next.length;i++)if(fields.list.children[i]!==next[i])fields.list.insertBefore(next[i],fields.list.children[i]||null);
-      while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
-    }else fields.list.replaceChildren(...matches);
+    // Atomic ordered commit: remove obsolete stage headings from the first-paint shell
+    // and prior Debug renders, while reusing existing match rows and crest hosts.
+    fields.list.replaceChildren(...next);
     fields.summary.replaceChildren(element('span','',selectedLabel.textContent),element('strong','',String(matches.filter(item=>item.dataset.fixtureMatch).length)),word('fixturesMatches','matches'));
     window.faAppRenderLanguage?.();
   }
