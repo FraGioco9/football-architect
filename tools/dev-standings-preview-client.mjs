@@ -4,6 +4,7 @@ import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPre
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
 import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
+import {mountCupDebugPreview} from "./dev-international-preview.mjs";
 
 const FLAG = "football-architect:standings-dev-preview";
 const debugMode=()=>{try{return sessionStorage.getItem("football-architect:local-debug-visible")==="1"}catch{return false}};
@@ -139,6 +140,7 @@ const LANG = {
     recent: "ultima partita" }
 };
 const validPath = location.pathname.match(DETAIL);
+const cupPath=/^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
 const clubPath=/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)$/.test(location.pathname);
 // Index and cup routes use global Debug controls without domestic simulation.
 const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname)||/^\/competitions\/(?:int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
@@ -408,6 +410,22 @@ function setPreviewEnabled(enabled) {
  return transition;
 }
 
+if(cupPath){
+ const cupProvider=mountCupDebugPreview({
+  getContext:()=>window.faCompetitionContext,
+  commit:(snapshot,revision)=>window.faCompetitionContextApi?.replaceSeasonData(snapshot,revision),
+  enabled:()=>debugMode()&&debugSeason>0,
+  readSeason:()=>debugSeason,
+  readDay:()=>devWorldClock.read().day
+ });
+ const syncCup=()=>{if(debugMode()&&debugSeason>0)void cupProvider.refresh();else cupProvider.invalidate()};
+ window.addEventListener('fa:competition-context-change',event=>{
+  if(!event.detail?.seasonData)syncCup();
+ });
+ for(const name of ['fa:dev-progress-change','fa:dev-world-day-change','fa:competition-route-change','fa:debug-mode-change','pageshow'])window.addEventListener(name,syncCup);
+ // Delay initial publication until the canonical competition context API is ready.
+ if(window.faCompetitionContextApi)syncCup();
+}
 if(validPath||indexPath||clubPath){
  if(debugSeason===0){try{sessionStorage.removeItem(FLAG)}catch{}}
  if(clubPath&&debugMode()&&debugSeason>0){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
