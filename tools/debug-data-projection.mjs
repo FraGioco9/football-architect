@@ -14,7 +14,10 @@ export function projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competition
  const path="season-"+String(seasonNumber).padStart(2,"0")+"/"+competitionId+".json";
  const file=plan.files.find(f=>f.path===path);
  assert(file,"missing season fragment");
- const source=file.content,isCup=competitionId.startsWith("int-"),complete=worldDay===56;
+ const source=file.content,isCup=competitionId.startsWith("int-");
+ assert(source.seasonNumber===seasonNumber&&source.competitionId===competitionId,"fragment coordinate mismatch");
+ assert(Array.isArray(source.events)&&source.events.every(event=>Number.isInteger(event.day)&&event.day>=1&&event.day<=56),"invalid fixture day");
+ const complete=worldDay===56&&source.events.every(event=>event.result!==null);
  const events=source.events.map(entry=>{
   const event=clone(entry);
   if(event.day>worldDay){
