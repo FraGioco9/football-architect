@@ -1,7 +1,7 @@
 // DEBUG-DATA-01: protected local candidate writer, deliberately non-activating.
 // Only explicitly invoked by an offline DEV operator, never by builds or HTTP routes.
 import {mkdir,open,rename,rm,realpath,lstat} from "node:fs/promises";
-import {resolve,join,relative,sep} from "node:path";
+import {resolve,join,relative,sep,basename} from "node:path";
 import {randomUUID} from "node:crypto";
 import {hash} from "./debug-data-schema.mjs";
 import {planProtectedDebugExport} from "./debug-data-export-plan.mjs";
@@ -15,6 +15,7 @@ export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevA
  const plan=planProtectedDebugExport(corpus);
  if(plan.manifest.status!=="UNSEALED_NOT_FOR_RUNTIME")fail("candidate must stay unsealed");
  const base=resolve(protectedRoot);
+ if(basename(base)!=="debug-data-private")fail("only dedicated debug-data-private root allowed");
  const rootInfo=await lstat(base).catch(()=>null);
  if(!rootInfo?.isDirectory()||rootInfo.isSymbolicLink())fail("protected root must be existing real directory");
  const canonical=await realpath(base);
