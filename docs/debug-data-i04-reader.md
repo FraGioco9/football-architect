@@ -49,3 +49,19 @@ No public endpoints, deployment, remote D1, mail, or merge in this block.
 formal season completion/receipt semantics and complete temporal redaction
 coverage, integration with protected transport, and final I06 regression.
 The unsealed corpus remains non-runtime and does not feed public pages.
+
+## Third block — defensive temporal and history boundaries
+
+- A fragment must match the exact requested season and competition; every
+  fixture day must be an integer within the 56-day world calendar.
+- Day 56 alone is insufficient for a completed projection: every recorded
+  fixture must have a result before final standings, champion and knockout
+  tie summaries are exposed. Earlier days continue to redact future results
+  and knockout participants.
+- Historical summaries reject incomplete prior-season sequences. History is
+  still **candidate-only**, never an authoritative historical seal or D1 receipt.
+
+These are implementation guards, **not a passing acceptance report**. Broad
+Node/browser failures from I03 remain deferred to I06 by owner decision;
+targeted real-corpus projection verification is still required before I04
+can be marked complete. No runtime cutover.
