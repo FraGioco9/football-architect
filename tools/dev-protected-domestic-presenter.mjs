@@ -2,6 +2,7 @@
 // Explicit opt-in only. No rendering side effects until commit().
 import {prepareProtectedDomesticTransaction} from "./protected-domestic-transaction.mjs";
 import {prepareProtectedForm} from "./protected-domestic-form.mjs";
+import {mapKnownDomesticPostseason} from "./protected-domestic-knockout-bridge.mjs";
 const requireOk=(ok,message)=>{if(!ok)throw Error("I03 presenter: "+message)};
 function createRows(model){
  const games=prepareProtectedForm(model.fixtures,model.participants);
@@ -23,7 +24,11 @@ export function createSharedDomesticPresenter({context=()=>window.faCompetitionC
   const fixtureData=model.fixtures.map(g=>({round:g.round,homeId:g.home.clubId,awayId:g.away.clubId,homeGoals:g.homeGoals,awayGoals:g.awayGoals,kickoff:null}));
   const definition=context()?.definition;
   requireOk(definition,"missing shared competition definition");
-  const fixtureCommit=fixtures.prepare(fixtureData,{definition,currentMatchday:null,postseason:[]});
+  const knockout=mapKnownDomesticPostseason(model);
+  // The old component cannot render an unknown entrant. Reject the transaction
+  // instead of mixing real regular fixtures with invented knockout teams.
+  requireOk(knockout.ready,"postseason participants are not yet renderable by shared fixtures");
+  const fixtureCommit=fixtures.prepare(fixtureData,{definition,currentMatchday:null,postseason:knockout.fixtures});
   requireOk(typeof fixtureCommit==="function","fixture renderer missing");
   const oldRows=[...tbody.childNodes],oldMobile=[...list.childNodes],restoreFixtures=fixtures.snapshot();
   let committed=false;
