@@ -132,3 +132,9 @@ Added `tools/dev-protected-i05-bootstrap.mjs` as a manually imported **local-onl
 Added `tools/dev-protected-world-presenter.mjs` for reversible candidate-only Calendar/Club played-match readouts. It preserves the underlying page geometry and existing widgets, clearing its output on source reset or errors. This is **not** a complete Calendar or Club UI data replacement. The protected world reader additionally rejects cursor/competition mismatches across its 18 projections.
 
 **Remaining for genuine I05 completion:** replacing the readout outlets with actual Calendar and Club renderer data transactions, integrating full International fixtures/history rather than supplemental outlets, completing Stats data compatibility, and resolving the known I03 DOM/renderer regressions. I06 still owns broad QA. The DEV bootstrap is not injected, so visual behavior is not live. Do not mark I05 closed or the PR ready to merge.
+
+## I05 continued integration corrections
+
+A local-only manual bootstrap now imports protected competition and world controllers behind two DEV gates, and a reversible world readout is attached to the existing Calendar details host. World source checks now reject namespace mismatches and future-score leaks. Corrected additional broken relative imports in the protected Domestic presenter and presentation modules. These are commits on PR #340, not verified runtime acceptance.
+
+**Status: I05 not yet complete.** The experimental candidate readouts are not equivalent to wiring the primary Calendar, Club and International widgets; Stats still requires renderer contract acceptance and Season 0–5 selector reconciliation. Do not mark the work package closed before those changes, and do not merge/cut over before I06.
