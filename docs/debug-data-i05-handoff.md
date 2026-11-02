@@ -98,3 +98,9 @@ acceptance are still necessary. No full regression test run.
 ## Ninth I05 block — actual Stats renderer adapter
 
 Added `tools/dev-protected-stats-presenter.mjs`, an optional DEV integration using the existing `faCompetitionStats.mount`/`update` API via the reversible page bridge. The protected Stats projection now carries played league events and canonical club metadata. Team metrics (clean sheets and current unbeaten streak included) are derived exclusively from events whose result is visible at the selected world day, not invented player data. The presenter can restore the previous Stats context on rollback. It is not injected or automatically enabled; browser/display acceptance is deferred and it must not be called complete.
+
+## Tenth I05 block — gated existing Stats renderer connection
+
+- Added `tools/dev-protected-stats-controller.mjs` as an **explicitly gated** connector to the existing competition Stats panel and its `faCompetitionStats.mount` API. It requires both `data-fa-i03-renderer=1` and `data-fa-i05-stats=1`, and is **not added to any public HTML**. It resets its reversible subscription on route/debug changes.
+- Hardened the Stats presenter to reject missing numerical values rather than treat missing source metrics as zero, and to use a revision newer than the existing Stats context before update.
+- This is integration code, **not page activation**. The module is not injected and has no verified browser acceptance; remaining Calendar, Clubs, International and History renderer work is open. Full regression remains deferred to I06.
