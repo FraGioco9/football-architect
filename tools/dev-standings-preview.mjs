@@ -47,7 +47,7 @@ const defaultDevSeason = "1";
 const INJECT = [
   DEBUG_SEASON_BOOTSTRAP,
   '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
-  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
+  '<style>html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
   // Only DEV navigation uses this; never suppress the public competition views.
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
   '<script type="module" data-fa-dev-stats src="/__fa_dev__/stats-client.mjs"></script>'

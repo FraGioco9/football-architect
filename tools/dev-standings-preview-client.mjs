@@ -427,7 +427,7 @@ if(validPath||indexPath||clubPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(validPath)waitForRows().then(()=>setPreviewEnabled(debugMode()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  if(validPath)waitForRows().then(()=>debugMode()&&debugSeason===0?refreshProgress():setPreviewEnabled(debugMode()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   else reveal();
   let renderedSeason=renderKey();
   let seasonRefresh=Promise.resolve(true);

@@ -13,6 +13,7 @@
     delete window.faCompetitionContext;
     delete window.faCompetitionDivision;
     delete window.faCompetitionContextApi;
+    if(document.querySelector?.('.app-world-standings')?.dataset?.standingsState==='pending'){showStandingsLoadFailure();return;}
     const main = document.createElement("main");
     main.className = "app-main";
     main.setAttribute("role", "alert");
@@ -55,6 +56,19 @@
     // Reserve a blank slot before initial rows paint or the image renderer loads.
     if(Object.hasOwn(window.faClubCrests||{},id))crest.dataset.clubCrestPending="true";
     return crest;
+  }
+
+  function setStandingsLoadState(state){
+    const host=document.querySelector('.app-world-standings');if(!host)return;
+    host.setAttribute('aria-busy',String(state==='loading'));
+    if(state!=='loading')host.dataset.standingsState=state;
+  }
+  function showStandingsLoadFailure(){
+    setStandingsLoadState('unavailable');
+    const panel=document.getElementById('competition-panel-standings');if(!panel)return;
+    const message=document.createElement('p');message.className='app-competition-status';
+    message.dataset.appI18n='competitionSeasonUnavailable';message.setAttribute('role','status');message.textContent='Season unavailable';
+    panel.prepend(message);window.faAppRenderLanguage?.();
   }
 
   function reuseCrestHosts(current,replacements){
@@ -568,7 +582,7 @@
     let graph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
     let suppliedOwned=false;
     const empty=()=>{
-      if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
+      if(definition.category==='domestic'&&!(activeDebugSeason===null&&(window.faCompetitionContext?.selectedSeason>1||authoritativeWorld?.seasonNumber>0))){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         const desktop=division.clubs.map(club=>createStandingsRow(club));reuseCrestHosts(tbody,desktop);tbody.replaceChildren(...desktop);mobile.prepare(rows)();window.faPostseason?.prepare(null)();suppliedOwned=false;return;
       }
@@ -587,6 +601,7 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
+      if(!data&&document.querySelector('.app-world-standings')?.dataset?.standingsState==='pending')return;
       if(definition.category==='domestic'&&!data?.statistics?.standings){if(data&&data.provenance?.kind!=='authoritative')return;if(suppliedOwned||activeDebugSeason===0||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
@@ -808,7 +823,7 @@
     }
     return value;
   };
-  let definition,division,activeDebugSeason,mountedPostseasonGraph;
+  let definition,division,activeDebugSeason,mountedPostseasonGraph,authoritativeWorld=null;
   function createContext(definition,selectedSeason,seasonData,revision){
     if(!Number.isSafeInteger(selectedSeason)||selectedSeason<1||!Number.isSafeInteger(revision)||revision<1)
       throw Error("Invalid competition context");
@@ -818,6 +833,7 @@
   }
   function publishCompetitionContext(context,committed=false){
     window.faCompetitionContext=context;
+    if(committed){const host=document.querySelector?.('.app-world-standings');if(host){host.dataset.standingsState=context.seasonData?'ready':'empty';host.setAttribute('aria-busy','false')}}
     if(document.documentElement.dataset.faSourceTransition==='true'&&!committed&&!context.seasonData){
       window.dispatchEvent(new CustomEvent('fa:competition-context-pending',{detail:context}));return;
     }
@@ -914,7 +930,7 @@
     // Only standings are enhanced; the original inline logo DOM is never replaced.
     const standings=document.querySelector(".app-world-standings");
     if(!standings)throw Error("Missing standings");
-    standings.outerHTML=withMobileShell(standings.outerHTML);
+    if(!document.getElementById("app-standings-compact"))standings.outerHTML=withMobileShell(standings.outerHTML);
     document.getElementById("division-detail-name").textContent=division.name;
     window.faThemeRebind?.(); // Rebind unrelated branding/theme controls.
     const flag = document.getElementById("app-competition-flag");
@@ -938,17 +954,19 @@
       club,position:null,played:null,won:null,drawn:null,lost:null,
       gf:null,ga:null,gd:null,pts:null,recent:[]
     }));
-    const commitMobile = mobile.prepare(provisional);
+    const initialPending=standings.dataset?.standingsState==='pending';
+    const commitMobile = initialPending?()=>{}:mobile.prepare(provisional);
     // Public statistics remain unknown in both presentations.
     // RENDER-01: keep verified build-time rows in place instead of rebuilding them.
     // Fall back to the canonical renderer for older or incomplete HTML.
     const preRendered=[...(tbody.rows||tbody.children||[])];
     const expected=division.clubs.map(club=>club.countryId+"-"+club.clubId);
-    const staticReady=preRendered.length===expected.length&&preRendered.every((row,index)=>
+    const staticReady=!initialPending&&preRendered.length===expected.length&&preRendered.every((row,index)=>
       row.dataset.worldClub===expected[index]&&row.cells.length===11&&
       row.querySelector(".app-world-club-name")?.textContent===(division.clubs[index].primaryName||division.clubs[index].abbr)&&
       row.querySelector("[data-club-crest]")?.dataset.clubCrest===expected[index]);
-    if(!staticReady)tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
+    if(initialPending){/* Keep generated blank rows and responsive layout until source validation. */}
+    else if(!staticReady)tbody.replaceChildren(...division.clubs.map(club => createStandingsRow(club)));
     else preRendered.forEach((row,index)=>{
       // Build-time names are plain text. Hydrate navigation even in Season 0,
       // while preserving the verified rows, unknown statistics and crest hosts.
@@ -967,7 +985,7 @@
       delete window.faCompetitionDivision;
       const standings=document.querySelector('.app-world-standings');
       if(!standings)throw Error('Missing standings');
-      standings.outerHTML=withMobileShell(standings.outerHTML);
+      if(!document.getElementById("app-standings-compact"))standings.outerHTML=withMobileShell(standings.outerHTML);
       suppliedMobile=createMobileStandings();window.faStandingsMobile=suppliedMobile;
       window.faPostseasonTips=bindPostseasonTips();
       mountedPostseasonGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
@@ -975,7 +993,7 @@
       cell.colSpan=11;cell.className="app-competition-empty-row";
       cell.dataset.appI18n="competitionStandingsEmpty";
       cell.textContent="No standings available yet.";empty.appendChild(cell);
-      document.getElementById("app-standings-body").replaceChildren(empty);
+      if(standings.dataset?.standingsState!=='pending')document.getElementById("app-standings-body").replaceChildren(empty);
     }
     bindSuppliedPanels(suppliedMobile);
     const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
@@ -1010,7 +1028,7 @@
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
         let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=sourceState==='loading'||['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:resumeGlobalDefault||!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;resumeGlobalDefault=false;},onState:state=>{sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{authoritativeWorld=world;window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:resumeGlobalDefault||!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;resumeGlobalDefault=false;},onState:state=>{sourceState=state;setStandingsLoadState(['loading','empty','unavailable'].includes(state)?state:'ready');renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         let selection='';const select=()=>{if(activeDebugSeason!==null)return;const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(!c||key===selection)return;selection=key;void loader.load()};
         window.addEventListener('fa:debug-mode-change',event=>{
@@ -1036,7 +1054,7 @@
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
         new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
         select();
-      }catch{clearSeasonData();}
+      }catch{showStandingsLoadFailure();}
     }
   }
   start().catch(fail);

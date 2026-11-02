@@ -154,7 +154,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
   "standingsTooltipRound","standingsTooltipHome","standingsTooltipAway"]){
   assert.equal((app.match(new RegExp("\\b"+key+":","g"))||[]).length,5,key);
  }
- assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="standingsCaption"'));
+ assert.ok(shared.includes('id="app-standings-caption" data-app-i18n="competitionTabStandings"'));
  assert.ok(!renderer.includes('routeId === "IT-1"'));
  assert.ok(!renderer.includes("it1Demo"));
  assert.ok(!renderer.includes("__faFixtureHooks"));
@@ -276,13 +276,13 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(read("assets/competition-page.js").includes('createCrestHost(tr.dataset.worldClub)'));
- assert.ok(!page.includes("app-world-club-crest-placeholder"));
+ assert.ok(page.includes("app-world-club-crest-placeholder"));
  assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
   const html=read(file);
   assert.ok(html.includes('data-division-variant="compact"'),division.id);
-  assert.equal((html.match(/<tr data-world-club=/g)||[]).length,16,division.id);
-  assert.equal((html.match(/class="app-world-club-crest-placeholder"/g)||[]).length,16,division.id);
+  assert.equal((html.match(/<tr [^>]*data-world-club=/g)||[]).length,16,division.id);
+  assert.equal((html.match(/class="app-world-club-crest-placeholder"/g)||[]).length,32,division.id);
  }
 });
 

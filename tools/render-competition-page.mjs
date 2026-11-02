@@ -8,7 +8,13 @@ export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
- const preRenderedRows=neutral||d.category==="international"?"":clubsByDivision.get(d.id).map(club=>`                  <tr data-world-club="${encode(club.countryId)}-${club.clubId}"><td class="app-world-stat-unknown">—</td><th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" data-club-crest="${encode(club.countryId)}-${club.clubId}"${Object.hasOwn(crestCatalog,club.countryId+"-"+club.clubId)?' data-club-crest-pending="true"':""} aria-hidden="true"></span><span class="app-world-club-name">${encode(club.primaryName||club.abbr)}</span></span></th>${Array(9).fill('<td class="app-world-stat-unknown">—</td>').join("")}</tr>`).join("\n");
+ const slots=Array.from({length:d.capacity||16},(_,i)=>i);
+ const preRenderedRows=slots.map(i=>{
+  const club=!neutral&&d.category==='domestic'?clubsByDivision.get(d.id)?.[i]:null;
+  const identity=club?` data-world-club="${encode(club.countryId)}-${club.clubId}"`:'';
+  return `                  <tr data-standings-slot="${i}"${identity}><td class="app-world-stat-pending"></td><th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" aria-hidden="true"></span><span class="app-world-club-name"></span></span></th>${Array(9).fill('<td class="app-world-stat-pending"></td>').join('')}</tr>`;
+ }).join('\n');
+ const mobileRows=slots.map(i=>`<li class="app-world-mobile-item" data-standings-slot="${i}"><div class="app-world-mobile-summary" aria-hidden="true"><span class="app-world-mobile-position"></span><span class="app-world-mobile-name"><span class="app-world-club-crest-placeholder"></span><span class="app-world-mobile-club-name"></span></span><span class="app-world-mobile-points"></span><span class="app-world-mobile-form"></span></div></li>`).join('');
  const bands=neutral&&d.category!=='international'?[]:rulesView.standingsOutcomes(d).map(o=>[o.from===o.to?String(o.from):o.from+'–'+o.to,rules.outcomeStyle(o.kind),o.kind,rulesView.outcomeLabel(d,o),o]);
  const legend=bands.length?`
           <div class="app-standings-legend">
@@ -18,20 +24,21 @@ ${bands.map(([range,outcome,key,label,o])=>`              <li data-standing-outc
             </ul>
           </div>`:"";
  return `
-          <div class="app-world-standings">
-            <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
+          <div class="app-world-standings" data-standings-state="pending" aria-busy="true">
+            <div class="app-world-standing-scroll" id="app-standings-full" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
-                <caption class="sr-only" id="app-standings-caption" data-app-i18n="standingsCaption">Provisional club list; no active league standings yet.</caption>
+                <caption class="sr-only" id="app-standings-caption" data-app-i18n="competitionTabStandings">Standings</caption>
                 <thead>
                   <tr>
 ${cols}
                   </tr>
                 </thead>
                 <tbody id="app-standings-body">
-${d.category==="international"?'<tr><td colspan="11" class="app-competition-empty-row" data-app-i18n="competitionStandingsEmpty">No standings available yet.</td></tr>':preRenderedRows}
+${preRenderedRows}
                 </tbody>
               </table>
             </div>
+            <div class="app-world-compact" id="app-standings-compact" hidden><ol class="app-world-mobile-list" id="app-standings-compact-list">${mobileRows}</ol></div>
           </div>${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';

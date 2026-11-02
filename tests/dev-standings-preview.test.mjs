@@ -377,7 +377,7 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   const css = read("assets/app.css").toString();
   const localization = read("assets/app.js").toString();
   // The shared HTML remains generator-owned and byte-identical.
-  assert.ok(!html.includes('id="app-standings-compact-list"'));
+  assert.ok(html.includes('id="app-standings-compact-list"'));
   for (const id of ["app-standings-compact-list","app-standings-full"])
     assert.ok(runtime.includes('id="'+id+'"'),id);
   assert.ok(runtime.includes("withMobileShell(standings.outerHTML)"));
@@ -398,7 +398,7 @@ test("UX-01A: mobile compact-only and desktop full table share one validated mod
   }
   assert.ok(!localization.includes("standingsMobileMatches:"));
   assert.ok(runtime.includes("window.faStandingsMobile = mobile"));
-  assert.ok(runtime.includes("const commitMobile = mobile.prepare(provisional)"));
+  assert.ok(runtime.includes("initialPending?()=>{}:mobile.prepare(provisional)"));
   assert.ok(client.includes("const commitMobile = mobile.prepare(rows)"));
   assert.ok(client.indexOf("const commitMobile = mobile.prepare(rows)") <
     client.indexOf("tbody.replaceChildren(fragment)"));

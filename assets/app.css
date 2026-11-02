@@ -1151,3 +1151,11 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 @media(prefers-reduced-motion:reduce){
  .app-body :is(input,textarea,select,.language-trigger){transition:none}
 }
+
+/* PAGE-LOAD-01: definitive standings geometry is available before any script/API. */
+.app-world-standings[data-standings-state="pending"] .app-world-club-crest-placeholder::before{display:none}
+.app-world-standings[data-standings-state="pending"] .app-world-mobile-form{min-height:14px}
+@media(max-width:620px){
+ .app-world-standings[data-standings-state="pending"] #app-standings-full{display:none!important}
+ .app-world-standings[data-standings-state="pending"] #app-standings-compact{display:block!important}
+}

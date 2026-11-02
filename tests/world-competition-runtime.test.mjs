@@ -91,7 +91,7 @@ test('CONFIG-CUP-HELP: configured score help works with keyboard focus and Escap
  button.focus();assert.equal(tip.hidden,false);
  r.document.emit('keydown',{key:'Escape',preventDefault(){},stopPropagation(){}});assert.equal(tip.hidden,true);
 });
-const ids=["app-divisions","app-competition-badge","app-competition-flag",
+const ids=["competition-panel-standings","app-divisions","app-competition-badge","app-competition-flag",
  "app-competition-country","app-competition-tier","app-competition-capacity",
  "app-competition-level","app-standings-body","app-standings-caption",
  "app-standings-compact","app-standings-compact-list","app-standings-full",
@@ -100,11 +100,12 @@ const ids=["app-divisions","app-competition-badge","app-competition-flag",
 function node(tag){
  const children=[],attrs={};
  const n={
-  tagName:tag,children,attrs,dataset:{},className:"",textContent:"",style:{},
+  tagName:tag,children,attrs,dataset:{},className:"",textContent:"",style:{},querySelectorAll(){return[]},
   offsetWidth:300,offsetHeight:124,events:{},
   appendChild(item){children.push(item);return item},
   removeAttribute(name){delete attrs[name]},
   append(...items){children.push(...items)},
+  prepend(...items){children.unshift(...items)},
   replaceChildren(...items){children.splice(0,children.length,...items)},
   setAttribute(name,value){attrs[name]=value},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
@@ -114,7 +115,7 @@ function node(tag){
  return n;
 }
 
-async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false,metadata=undefined,devSeason=null,onLoad=null}){
+async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false,metadata=undefined,devSeason=null,onLoad=null,pending=false}){
  const loaded=[],requested=[],fields=new Map(),contexts=[];
  const selected=division?.id??"IT-1";
  shell??=read("competitions/"+selected.toLowerCase()+"/index.html");
@@ -147,7 +148,15 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  body.className="app-body";
  for(const id of ids)if(!shell.includes('id="'+id+'"')&&!id.startsWith('app-standings-compact')&&id!=='app-standings-full')fields.delete(id);
  const standings=node("div");
- let standingsMarkup=shell.match(/<div class="app-world-standings">[\s\S]*?<\/table>\s*<\/div>\s*<\/div>/)?.[0];
+ if(pending){
+  standings.dataset.standingsState='pending';standings.setAttribute('aria-busy','true');
+  for(let i=0;i<(division?.capacity||16);i++){
+   const row=node('tr');row.dataset.standingsSlot=String(i);for(let j=0;j<11;j++)row.appendChild(node(j===1?'th':'td'));
+   fields.get('app-standings-body').appendChild(row);fields.get('app-standings-compact-list').appendChild(node('li'));
+  }
+ }
+
+ let standingsMarkup=shell.match(/<div class="app-world-standings"[^>]*>[\s\S]*?<\/table>/)?.[0];
  Object.defineProperty(standings,"outerHTML",{get(){return standingsMarkup},set(value){standingsMarkup=value;for(const id of ['app-standings-compact','app-standings-compact-list','app-standings-full'])fields.set(id,node('div'));}});
  const document={
   events:{},activeElement:null,
@@ -194,7 +203,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    return {ok:true,json:async()=>data};
   return {ok:false};
  };
- const window={faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,faCompetitionRulesView:competitionRulesView,location,innerWidth:390,innerHeight:600,events:{},
+ const window={faDevPreviewMode:devSeason!==null,faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,faCompetitionRulesView:competitionRulesView,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
@@ -659,7 +668,7 @@ test('CONTEXT: a world-day change with unchanged domestic progress retains suppl
  const client=read('tools/dev-standings-preview-client.mjs');
  const refresh=client.slice(client.indexOf('async function refreshProgress()'),client.indexOf('async function setDebugProgress('));
  r.window.faCompetitionRoute={setSeasonLimit(){}};
- const run=runInNewContext(refresh+';refreshProgress',{window:r.window,debugSeason:1,matchdays:0,validPath:true,clubPath:false,setPreviewEnabled:async()=>true,refreshSeason:async()=>true,syncHistoryPreview(){},syncDebugControls(){},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ const run=runInNewContext(refresh+';refreshProgress',{window:r.window,debugMode:()=>true,debugSeason:1,matchdays:0,validPath:true,clubPath:false,setPreviewEnabled:async()=>true,refreshSeason:async()=>true,syncHistoryPreview(){},syncDebugControls(){},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  await run();
  assert.equal(r.window.faCompetitionContext,before,'no new domestic data or season means no invalidation');
  assert.equal(r.window.faCompetitionContext.seasonData.season,1);
@@ -682,4 +691,25 @@ test('PUBLIC-AUTHORITY: untrusted provider application cannot populate public co
  const payload={season:1,rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants:division.clubs,fixtures:null,results:[],statistics:null,status:'partial'};
  assert.equal(r.window.faCompetitionContextApi.replaceSeasonData(payload,r.window.faCompetitionContext.revision),false);
  assert.equal(r.window.faCompetitionContext.seasonData,null);
+});
+
+test('PAGE-LOAD: runtime preserves generated blank rows while a provider is pending',async()=>{
+ const r=await simulate({division:manifest.divisions[0],devSeason:1,pending:true});
+ assert.ok(r.window.faCompetitionContextApi);
+ const desktop=r.fields.get('app-standings-body').children,mobile=r.fields.get('app-standings-compact-list').children;
+ assert.equal(desktop.length,16);assert.equal(mobile.length,16);
+ assert.ok(desktop.every(row=>row.dataset.standingsSlot!==undefined&&row.children.every(cell=>cell.textContent==='')));
+ assert.equal(r.fields.get('app-standings-full').hidden,true,'mobile layout chosen without replacing its rows');
+ assert.equal(r.fields.get('app-standings-compact').hidden,false);
+ r.window.faCompetitionContextApi.clearSeasonData({committed:true});
+ assert.equal(r.document.querySelector('.app-world-standings').attrs['aria-busy'],'false');
+});
+
+test('PAGE-LOAD: manifest failure keeps the generated layout and ends loading with an error',async()=>{
+ const r=await simulate({division:manifest.divisions[0],pending:true,fetchFailure:true});
+ const host=r.document.querySelector('.app-world-standings');
+ assert.equal(host.dataset.standingsState,'unavailable');assert.equal(host.attrs['aria-busy'],'false');
+ assert.equal(r.fields.get('app-standings-body').children.length,16);
+ assert.ok(r.fields.get('competition-panel-standings').children.some(node=>node.attrs.role==='status'));
+ assert.equal(r.fields.get('main-content').children.length,0);
 });
