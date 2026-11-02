@@ -1,20 +1,13 @@
 // DEBUG-DATA-01 I03: DEV-only transaction using the site's shared presenters.
 // Explicit opt-in only. No rendering side effects until commit().
 import {prepareProtectedDomesticTransaction} from "./protected-domestic-transaction.mjs";
+import {prepareProtectedForm} from "./protected-domestic-form.mjs";
 const requireOk=(ok,message)=>{if(!ok)throw Error("I03 presenter: "+message)};
 function createRows(model){
- const byId=new Map(model.standings.map(r=>[r.club.canonicalId,r]));
- const games=new Map(model.standings.map(r=>[r.club.canonicalId,[]]));
- for(const game of model.fixtures){
-  if(game.homeGoals===null||game.awayGoals===null)continue;
-  const home=game.home.canonicalId,away=game.away.canonicalId;
-  const result=game.homeGoals>game.awayGoals?"W":game.homeGoals===game.awayGoals?"D":"L";
-  games.get(home)?.push({round:game.round,homeId:game.home.clubId,awayId:game.away.clubId,homeGoals:game.homeGoals,awayGoals:game.awayGoals,isHome:true,result});
-  games.get(away)?.push({round:game.round,homeId:game.home.clubId,awayId:game.away.clubId,homeGoals:game.homeGoals,awayGoals:game.awayGoals,isHome:false,result:result==="W"?"L":result==="L"?"W":"D"});
- }
+ const games=prepareProtectedForm(model.fixtures,model.participants);
  return model.standings.map(r=>({
   club:{...r.club},played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.gf,ga:r.ga,gd:r.gd,pts:r.pts,
-  recent:(games.get(r.club.canonicalId)??[]).sort((a,b)=>b.round-a.round).slice(0,5)
+  recent:games.get(r.club.canonicalId)??[]
  }));
 }
 export function createSharedDomesticPresenter({context=()=>window.faCompetitionContext}={}){
