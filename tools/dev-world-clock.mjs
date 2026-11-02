@@ -13,7 +13,7 @@ export const nationalProgress=day=>{
 };
 export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
   let revision=0;
-  const read=()=>{const season=stored(storage,SEASON_KEY,0,4,1);return Object.freeze({season,day:season===0?1:stored(storage,DAY_KEY,1,56,1)})};
+  const read=()=>{const season=stored(storage,SEASON_KEY,0,5,1);return Object.freeze({season,day:season===0?1:stored(storage,DAY_KEY,1,56,1)})};
   const snapshot=s=>s.season===0?null:({source:{kind:'dev',reference:'fictional DEV clock'},current:{season:s.season,day:s.day}});
   const progress=s=>s.season===0?0:nationalProgress(s.day);
   const emit=(s,previous)=>{
@@ -22,7 +22,7 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
     if(s.day!==previous.day)dispatch('fa:dev-world-day-change',{season:s.season,day:s.day});
   };
   const commit=(next)=>{
-    if(!valid(next.season,0,4)||!valid(next.day,1,56))return false;
+    if(!valid(next.season,0,5)||!valid(next.day,1,56))return false;
     if(next.season===0)next={season:0,day:1};
     const before=read();
     if(before.season===next.season&&before.day===next.day)return true;
@@ -55,7 +55,7 @@ export async function readGlobalWorldProgress(fetcher=fetch){
   const response=await fetcher('/api/world',{headers:{Accept:'application/json'},cache:'no-store',credentials:'same-origin'});
   if(!response.ok)return null;
   const payload=await response.json(),world=payload?.world;
-  if(!world||!valid(world.seasonNumber,0,4)||!valid(world.day,0,56))return null;
+  if(!world||!valid(world.seasonNumber,0,5)||!valid(world.day,0,56))return null;
   if(world.seasonNumber===0&&world.day!==0)return null;
   return Object.freeze({season:world.seasonNumber,day:Math.max(1,world.day)});
  }catch{return null}
