@@ -55,3 +55,22 @@ test('A04: DEV virtual modules expose all cup preview imports so Debug Settings 
  assert.match(client,/from "\.\/dev-international-preview\.mjs"/);
  assert.match(server,/"\/__fa_dev__\/dev-international-preview\.mjs": "dev-international-preview\.mjs"/);
 });
+
+for(const id of ['int-1','int-2']){
+ test('A04 '+id+' completes configured knockout rounds and its final on world schedule',()=>{
+  const definition=competitionModel.competitionById(manifest,id);
+  const count=day=>buildCupPreview(manifest,definition,2,day).results.filter(result=>result.id);
+  const checkpoints=[[31,0],[36,4],[38,4],[41,8],[43,8],[46,10],[48,10],[id==='int-1'?53:54,id==='int-1'?10:11]];
+  for(const [day,min] of checkpoints)assert.ok(count(day).length>=min,id+' day '+day);
+  const final=count(id==='int-1'?54:53);
+  assert.equal(final.length,11);
+  assert.ok(final.every(tie=>tie.winnerId));
+  assert.equal(final.reduce((n,tie)=>n+tie.legs.length,0),21);
+ });
+}
+test('A04 fixture knockout labels do not include middle dot and Final has no leg suffix',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/textContent\+=' · '\+selectedChoice\.round/);
+ assert.match(source,/choice\.phaseId!=='final'/);
+ assert.match(source,/selectedChoice\.phaseId!=='final'/);
+});
