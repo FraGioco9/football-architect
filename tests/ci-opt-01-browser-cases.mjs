@@ -30,6 +30,7 @@ export async function verifyArea(page,area,{touch}){
   assert.equal(await page.locator('#calendar-season-menu [role=option]').count(),1);
   await activate(picker);
  }else if(area==='competitions'){
+  await page.waitForFunction(()=>Boolean(window.faCompetitionRoute&&window.faCompetitionContext?.definition),'competition route must initialize before interaction');
   const tab=page.locator('#competition-tab-fixtures');
   await activate(tab);
   await page.waitForURL(url=>url.pathname.endsWith('/fixtures'));
