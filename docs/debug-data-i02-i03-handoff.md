@@ -8,7 +8,9 @@ This module is a **pure read-model reference**, not an API or runtime integratio
 - Season 1–5, day 1–56, require explicit versioned local Debug data.
 - Every request must validate the complete corpus lineage before selecting one competition.
 - Fixture structural shell may be visible early, but future results and deciding-fixture tie-break metadata stay hidden.
-- Full-season final tables, champion and bracket outcome metadata appear only after day 56 in this conservative first implementation.
+- Standings are computed from only the league results played by the selected day, using the canonical domestic or INT24 ordering rules. Full-season champions, final tables and bracket outcome metadata remain hidden until day 56.
+- Future knockout slots retain their scheduled round/day box, but participant IDs are hidden until their event day to avoid leaking results of preceding ties.
+- A projection requires canonical `divisions` and `cupCatalog` inputs; it cannot silently fall back to stale Debug ranking rules.
 - All projections clone data and do not mutate the immutable archived corpus.
 - The existing live Debug source stays unchanged through I02.
 - During I03, an authenticated local-only data adapter will be required before any page can read these projections; never expose private JSON through the static host or `/api/world`.
