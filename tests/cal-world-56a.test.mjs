@@ -18,7 +18,7 @@ test('W56-03 rejects invalid writes and corrupt storage',()=>{
  const {s,clock}=make({[SEASON_KEY]:'',[DAY_KEY]:'0'});
  assert.deepEqual(clock.read(),{season:1,day:1});
  for(const day of [-1,0,57,2.5,NaN,Infinity])assert.equal(clock.setDay(day),false);
- for(const season of [-1,5,1.5,NaN])assert.equal(clock.setSeason(season),false);
+ for(const season of [-1,6,1.5,NaN])assert.equal(clock.setSeason(season),false);
  assert.deepEqual(clock.read(),{season:1,day:1});
 });
 test('W56-04 56-day mapping matches the frozen calendar model including N31–N33',()=>{
@@ -123,7 +123,7 @@ test('W56-21 first-paint Debug bootstrap distinguishes an explicit 0 from absent
  const source=DEBUG_SEASON_BOOTSTRAP.slice('<script>'.length,-'</script>'.length);
  for(const raw of [null,'','bad','0','1','3']){
   const document={documentElement:{dataset:{}}};
-  runInNewContext(source,{document,sessionStorage:{getItem:()=>raw}});
+  runInNewContext(source,{document,sessionStorage:{getItem:key=>key==='football-architect:local-debug-visible'?'1':raw}});
   assert.equal(document.documentElement.dataset.faDevCurrentSeason,raw==='0'?'0':raw==='3'?'3':'1');
  }
 });
