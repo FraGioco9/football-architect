@@ -22,7 +22,8 @@ export async function refreshProtectedWorld(){
   if(!response.ok){emit("fa:protected-world-unavailable",{revision:token,status:response.status});return;}
   const data=await response.json();
   if(token!==revision)return;
-  if(data.seasonNumber!==season||data.worldDay!==day||data.source?.kind!=="debug"||data.source?.datasetId!=="debug-corpus-v1")throw Error("I05 world identity");
+  if(data.seasonNumber!==season||data.worldDay!==day||data.source?.kind!=="debug"||data.source?.namespace!=="local-debug"||data.source?.datasetId!=="debug-corpus-v1")throw Error("I05 world identity");
+  if(data.competitions.some(c=>c.events.some(e=>e.day>day&&e.result!==null)))throw Error("I05 future score leak");
   const events=calendar?selectProtectedWorldDay(data,day):selectProtectedClubFixtures(data,clubId);
   snapshot=Object.freeze({revision:token,season,day,clubId,kind:calendar?"calendar":"club",events,source:data.source,acceptance:"UNSEALED_NOT_FOR_RUNTIME"});
   emit("fa:protected-world-ready",snapshot);
