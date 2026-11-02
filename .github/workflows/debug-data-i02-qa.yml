@@ -25,3 +25,25 @@ jobs:
         run: node --test tests/debug-data-i02-integration.test.mjs
       - name: Run no-write command entrypoint
         run: node tools/debug-data-build.mjs --dataset-id debug-i02-ci
+      - name: Materialize protected unsealed candidate in runner temporary directory only
+        env:
+          PROTECTED_ROOT: ${{ runner.temp }}/debug-data-private
+        run: |
+          mkdir -p "$PROTECTED_ROOT"
+          node tools/debug-data-build.mjs --dataset-id debug-i02-private-ci --write-private --private-root "$PROTECTED_ROOT"
+          node --input-type=module -e '
+            import {readFile,readdir} from "node:fs/promises";
+            import {createHash} from "node:crypto";
+            import {join} from "node:path";
+            const root=join(process.env.PROTECTED_ROOT,"debug-i02-private-ci");
+            const manifest=JSON.parse(await readFile(join(root,"manifest.json"),"utf8"));
+            if(manifest.status!=="UNSEALED_NOT_FOR_RUNTIME"||manifest.files.length!==90)throw Error("invalid protected manifest");
+            for(const f of manifest.files){
+              const contents=await readFile(join(root,...f.path.split("/")));
+              if(contents.length!==f.bytes||createHash("sha256").update(contents).digest("hex")!==f.sha256)throw Error("protected artifact integrity mismatch: "+f.path);
+            }
+            const entries=(await readdir(root)).sort();
+            if(entries.length!==6)throw Error("wrong protected directory count");
+            console.log("I02 90 protected temporary files verified; no upload, no activation");
+          '
+          rm -rf "$PROTECTED_ROOT"
