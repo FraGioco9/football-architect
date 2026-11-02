@@ -71,8 +71,7 @@ for(const id of ['int-1','int-2']){
 test('A04 fixture knockout labels do not include middle dot and Final has no leg suffix',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/textContent\+=' · '\+selectedChoice\.round/);
- assert.match(source,/choice\.phaseId!=='final'/);
- assert.match(source,/selectedChoice\.phaseId!=='final'/);
+ assert.match(source,/legs===1\?'postseasonFinal'/);
 });
 
 test('A04 shared fixture picker keeps full knockout round labels on one line',()=>{
@@ -82,10 +81,11 @@ test('A04 shared fixture picker keeps full knockout round labels on one line',()
  assert.match(css,/@media\(max-width:360px\)\{\.app-fixtures-select\{width:230px;flex-basis:230px/);
 });
 
-test('A04 menu and selected knockout labels use identical translated leg names',()=>{
+test('A04 international picker groups two legs into one phase selection',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
- assert.match(source,/word\(choice\.round===1\?'postseasonFirstLeg':'postseasonSecondLeg'/);
- assert.match(source,/word\(selectedChoice\.round===1\?'postseasonFirstLeg':'postseasonSecondLeg'/);
+ assert.match(source,/configured\.filter\(choice=>!choice\.round\|\|typeof choice\.value==='number'\|\|choice\.round===1\)/);
+ assert.match(source,/for\(let leg=1;leg<=legs;leg\+\+\)/);
+ assert.match(source,/postseasonFirstLeg':'postseasonSecondLeg'/);
  assert.doesNotMatch(source,/choice\.round\+'\/'/);
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(css,/\.app-fixtures-trigger\{[^}]*justify-content:center/);
