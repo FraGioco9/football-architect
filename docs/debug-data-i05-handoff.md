@@ -43,3 +43,7 @@ Created `tools/debug-data-i05-view-adapters.mjs`, pure candidate-only Calendar a
 ## Third I05 block
 
 Added `tools/debug-data-i05-consumers.mjs`, a single candidate-only bridge that validates one protected view and exposes Calendar and per-club projections with a common source identity and cursor. The bridge is not injected in runtime. An attempted integration into the DEV source coordinator could not be committed; it remains open and no page activation is claimed. Full regressions stay deferred to I06.
+
+## Fourth I05 block — coordinator wiring
+
+The protected DEV source coordinator now imports `prepareProtectedConsumers`, validates the same protected projection for Calendar and club schedule consumers, publishes a `fa:protected-debug-consumers-ready` candidate event with source revision, and clears the cached consumer reference when the source resets, becomes unavailable, or enters Season 0. No public page renderer subscribes yet; activation remains withheld pending I06 acceptance. Tests were not run under the owner-approved deferment.
