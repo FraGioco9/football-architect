@@ -110,3 +110,9 @@ Added `tools/dev-protected-stats-presenter.mjs`, an optional DEV integration usi
 - Added `tools/dev-protected-history-presenter.mjs` and `tools/dev-protected-history-controller.mjs`. An explicit two-gate DEV opt-in attaches a hidden candidate-only text outlet within the existing History panel, with reversible commit/rollback through the shared I05 presenter bridge.
 - Unfinished candidate seasons produce no champion display; complete candidate-only values are intentionally not marked official. Source invalidation clears the outlet, and disabling the gate removes it.
 - Not injected into public page bundles; no historical archive replacement, automated activation or acceptance is claimed. Full History integration and I06 QA remain outstanding.
+
+## Twelfth I05 block — protected International fixture outlet
+
+- Added `tools/dev-protected-international-presenter.mjs` and `tools/dev-protected-international-controller.mjs`: a manually imported, two-gate DEV-only readout inside the existing International fixture panel. It accepts only validated `int-1` or `int-2` candidates and displays completed fixtures through the selected day, with reversible restoration.
+- This is **not** a replacement for the International fixture cards and does not change matchday selectors, header geometry, leg boxes, or official fixture data. No public script imports or automatic activation were added.
+- The actual /calendar and /clubs route viewers still require route-aware protected aggregation; the existing source coordinator currently serves only /competitions/:id. Do not claim those pages integrated. Tests remain deferred to I06.
