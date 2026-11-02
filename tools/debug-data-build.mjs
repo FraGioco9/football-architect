@@ -9,6 +9,7 @@ import {buildFiveSeasonCorpusCandidate} from "./debug-data-five-season-corpus.mj
 import {planProtectedDebugExport} from "./debug-data-export-plan.mjs";
 import {writeProtectedCandidate} from "./debug-data-protected-writer.mjs";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
+const allowTemporaryCiQa=()=>process.env.GITHUB_ACTIONS==="true"&&process.env.DEBUG_I02_PRIVATE_CI_QA==="1"&&Boolean(process.env.RUNNER_TEMP);
 const args=process.argv.slice(2);
 const known=new Set(["--seed","--dataset-id","--private-root","--write-private"]);
 const options=new Map();
@@ -21,7 +22,7 @@ for(let i=0;i<args.length;i++){
  options.set(name,value);
 }
 if(options.has("--private-root")&&!options.has("--write-private"))throw Error("--private-root requires --write-private");
-if(options.has("--write-private")&&(!options.get("--private-root")||process.env.CI==="true"||process.env.NODE_ENV==="production"))throw Error("explicit private root and local DEV required");
+if(options.has("--write-private")&&(!options.get("--private-root")||(process.env.CI==="true"&&!allowTemporaryCiQa())||process.env.NODE_ENV==="production"))throw Error("explicit private root and local DEV required");
 const seed=options.get("--seed")??"debug-data-v1-fresh",datasetId=options.get("--dataset-id")??"debug-corpus-v1";
 const read=async path=>JSON.parse(await readFile(join(root,path),"utf8"));
 const [baseline,divisions,cupCatalog]=await Promise.all([

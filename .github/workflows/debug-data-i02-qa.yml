@@ -28,6 +28,7 @@ jobs:
       - name: Materialize protected unsealed candidate in runner temporary directory only
         env:
           PROTECTED_ROOT: ${{ runner.temp }}/debug-data-private
+          DEBUG_I02_PRIVATE_CI_QA: "1"
         run: |
           mkdir -p "$PROTECTED_ROOT"
           node tools/debug-data-build.mjs --dataset-id debug-i02-private-ci --write-private --private-root "$PROTECTED_ROOT"

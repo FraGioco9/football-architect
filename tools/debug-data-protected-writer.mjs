@@ -7,6 +7,7 @@ import {hash} from "./debug-data-schema.mjs";
 import {repositoryRoot} from "./publication-guard.mjs";
 import {planProtectedDebugExport} from "./debug-data-export-plan.mjs";
 const fail=msg=>{throw new Error("DEBUG-DATA-01 protected writer: "+msg)};
+const allowTemporaryCiQa=()=>process.env.GITHUB_ACTIONS==="true"&&process.env.DEBUG_I02_PRIVATE_CI_QA==="1"&&Boolean(process.env.RUNNER_TEMP);
 const safeSegment=value=>typeof value==="string"&&/^[a-z0-9][a-z0-9._-]{0,100}$/.test(value)&&value!=="."&&value!=="..";
 const within=(root,path)=>{const rel=relative(root,path);return rel!==""&&rel!==".."&&!rel.startsWith(".."+sep)&&!rel.startsWith(sep)};
 export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevApproval=false}){
@@ -19,6 +20,7 @@ export async function writeProtectedCandidate({corpus,protectedRoot,explicitDevA
  if(basename(base)!=="debug-data-private")fail("only dedicated debug-data-private root allowed");
  const rootInfo=await lstat(base).catch(()=>null);
  if(!rootInfo?.isDirectory()||rootInfo.isSymbolicLink())fail("protected root must be existing real directory");
+ if(process.env.CI==="true"&&allowTemporaryCiQa()&&base!==resolve(process.env.RUNNER_TEMP,"debug-data-private"))fail("CI QA can only use runner temporary root");
  const canonical=await realpath(base);
  if(canonical!==base)fail("protected root alias forbidden");
  const repoRoot=await realpath(repositoryRoot);
