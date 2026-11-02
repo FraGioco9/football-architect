@@ -31,6 +31,10 @@ export function createSharedDomesticPresenter({context=()=>window.faCompetitionC
   const fixtureCommit=fixtures.prepare(fixtureData,{definition,currentMatchday:null,postseason:knockout.fixtures});
   requireOk(typeof fixtureCommit==="function","fixture renderer missing");
   const oldRows=[...tbody.childNodes],oldMobile=[...list.childNodes],restoreFixtures=fixtures.snapshot();
+  const focused=document.activeElement;
+  const scrollHosts=[document.scrollingElement,document.querySelector(".fa-shell-content-scroll"),document.querySelector(".app-world-standing-scroll")].filter(Boolean);
+  const scroll=scrollHosts.map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
+  const restorePosition=()=>{for(const {el,top,left} of scroll){el.scrollTop=top;el.scrollLeft=left;}if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});};
   let committed=false;
   return {participants:model.participants,commit(){
    if(committed)throw Error("I03 presenter already committed");
@@ -38,11 +42,13 @@ export function createSharedDomesticPresenter({context=()=>window.faCompetitionC
     fixtureCommit();
     tbody.replaceChildren(...built.map(b=>b.element));
     mobileCommit();
+    restorePosition();
     committed=true;
    }catch(error){
     restoreFixtures();
     tbody.replaceChildren(...oldRows);
     list.replaceChildren(...oldMobile);
+    restorePosition();
     throw error;
    }
   },rollback(){
@@ -50,6 +56,7 @@ export function createSharedDomesticPresenter({context=()=>window.faCompetitionC
    restoreFixtures();
    tbody.replaceChildren(...oldRows);
    list.replaceChildren(...oldMobile);
+   restorePosition();
    committed=false;
   }};
  }};
