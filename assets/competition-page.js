@@ -904,11 +904,12 @@
   }
   function publishCompetitionContext(context,committed=false){
     window.faCompetitionContext=context;
-    if(committed){const host=document.querySelector?.('.app-world-standings');if(host){host.dataset.standingsState=context.seasonData?'ready':'empty';host.setAttribute('aria-busy','false')}}
-    if(document.documentElement.dataset.faSourceTransition==='true'&&!committed&&!context.seasonData){
+    const doc=typeof document==='undefined'?null:document;
+    if(committed){const host=doc?.querySelector?.('.app-world-standings');if(host){host.dataset.standingsState=context.seasonData?'ready':'empty';host.setAttribute('aria-busy','false')}}
+    if(doc?.documentElement?.dataset?.faSourceTransition==='true'&&!committed&&!context.seasonData){
       window.dispatchEvent(new CustomEvent('fa:competition-context-pending',{detail:context}));return;
     }
-    if(committed&&(context.seasonData===null||context.seasonData.provenance?.kind==='authoritative'))delete document.documentElement.dataset.faSourceTransition;
+    if(committed&&(context.seasonData===null||context.seasonData.provenance?.kind==='authoritative'))if(doc?.documentElement?.dataset)delete doc.documentElement.dataset.faSourceTransition;
     window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
     if(committed)window.dispatchEvent(new CustomEvent("fa:competition-context-committed",{detail:context}));
   }
