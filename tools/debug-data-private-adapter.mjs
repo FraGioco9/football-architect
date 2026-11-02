@@ -30,7 +30,7 @@ const load=async()=>{
 };
 export async function respondProtectedDebugProjection(req,res){
  const url=new URL(req.url??"/","http://localhost");
- if(!["/__fa_dev_private__/season-view","/__fa_dev_private__/world-view","/__fa_dev_private__/session"].includes(url.pathname))return false;
+ if(!["/__fa_dev_private__/season-view","/__fa_dev_private__/world-view","/__fa_dev_private__/history-view","/__fa_dev_private__/session"].includes(url.pathname))return false;
  const deny=(status,code)=>{reply(res,status,{error:{code}},req.method==="HEAD");return true;};
  if(process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.NODE_ENV==="production"||process.env.CI==="true")return deny(404,"not_found");
  const remote=req.socket.remoteAddress;
@@ -53,6 +53,17 @@ export async function respondProtectedDebugProjection(req,res){
  const supplied=req.headers.authorization?.match(/^Bearer ([a-zA-Z0-9_-]{32,128})$/)?.[1];
  if(!validSession(req)&&(!secret||!supplied||secret.length!==supplied.length||!timingSafeEqual(Buffer.from(secret),Buffer.from(supplied))))return deny(401,"unauthorized");
  const params=url.searchParams;
+ if(url.pathname==="/__fa_dev_private__/history-view"){
+  if(params.size!==1||params.get("season")===null||!/^[1-5]$/.test(params.get("season")))return deny(400,"invalid_query");
+  try{
+   const {reader}=await load();
+   const result=await reader.history({beforeSeasonNumber:Number(params.get("season"))});
+   if(result.status!=="candidate"||result.acceptance!=="UNSEALED_NOT_FOR_RUNTIME")return deny(503,"history_unavailable");
+   reply(res,200,{kind:"protected-debug-history",seasonNumber:Number(params.get("season")),
+    status:"UNSEALED_NOT_FOR_RUNTIME",source:result.source,records:result.records},req.method==="HEAD");
+  }catch(error){console.error("[FA DEBUG I05] Candidate history unavailable:",error?.message??"unknown");return deny(503,"history_unavailable");}
+  return true;
+ }
  if(url.pathname==="/__fa_dev_private__/world-view"){
   if(params.size!==2||[...params.keys()].some(k=>!["season","day"].includes(k))||!/^[1-5]$/.test(params.get("season")??"")||!/^([1-9]|[1-4][0-9]|5[0-6])$/.test(params.get("day")??""))return deny(400,"invalid_query");
   try{const {reader}=await load();const value=await readProtectedWorldCandidates(reader,Number(params.get("season")),Number(params.get("day")));reply(res,200,value,req.method==="HEAD");}catch(error){console.error("[FA DEBUG I05] Protected world unavailable:",error?.message??"unknown");return deny(503,"world_unavailable");}
