@@ -820,12 +820,12 @@
     return true;
   }
   function clearSeasonData(){
-    if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
+    if(window.faCompetitionContext?.seasonData)nextContext(window.faCompetitionContext.selectedSeason);
   }
   function setDebugSeason(season){
     if(!window.faDevPreviewMode)return false;
     if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
-    if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
+    if(activeDebugSeason!==season){activeDebugSeason=season;}
     if(season===0)selectSeason(1);
     return true;
   }
@@ -992,7 +992,7 @@
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
           commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
-        let selection='';const select=()=>{const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(key===selection)return;selection=key;void loader.load()};
+        let selection='';const select=()=>{if(activeDebugSeason!==null)return;const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(!c||key===selection)return;selection=key;void loader.load()};
         window.addEventListener('fa:debug-mode-change',event=>{
           if(window.faDevPreviewMode!==true)return;
           const enabled=event.detail?.enabled===true;
