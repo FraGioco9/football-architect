@@ -535,7 +535,8 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-fixtures-arrow{width:32px;min-width:32px!important;min-height:32px;height:32px;padding:0;justify-content:center}
 .app-fixtures-select{width:250px;flex:0 0 250px;font-size:13px}
 .app-fixtures-trigger{position:relative;width:100%;min-width:0!important;min-height:32px;height:32px;padding:5px 25px 5px 8px;gap:3px;font-size:inherit;white-space:nowrap;justify-content:center}
-.app-fixtures-trigger>.language-chevron{position:absolute;inset-inline-end:7px;top:50%;transform:translateY(-50%);margin:0;flex:none}
+.app-fixtures-trigger>.language-chevron{position:absolute;inset-inline-end:7px;top:50%;transform:translateY(-50%) rotate(0deg);margin:0;flex:none;transition:transform .18s ease}
+.app-fixtures-trigger[aria-expanded="true"]>.language-chevron{transform:translateY(-50%) rotate(180deg)}
 #app-fixtures-round-number,.app-fixtures-picker .language-option{white-space:nowrap}
 .app-fixtures-navigation :disabled{opacity:.45;cursor:default}
 .app-fixtures-arrow:disabled{pointer-events:none}
