@@ -29,6 +29,12 @@ export function projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competition
   }
   return event;
  });
+ // Only completed ties are visible at this cursor; unresolved later ties
+ // must not disclose future participants, scores or winning clubs.
+ const resolvedTies=(source.ties??source.postseason??[]).filter(tie=>
+  Array.isArray(tie.fixtures)&&tie.fixtures.length>0&&
+  tie.fixtures.every(f=>Number.isInteger(f.day)&&f.day<=worldDay&&f.result!==null))
+  .map(tie=>clone(tie));
  const played=events.filter(e=>e.phaseId==="league"&&e.result!==null);
  let standings;
  if(isCup){
@@ -44,6 +50,6 @@ export function projectDebugWorldAtDay(corpus,{seasonNumber,worldDay,competition
   participants:[...source.participants],events,standings,playedRegularMatches:played.length,completed:complete,
   finalTable:complete&&source.finalTable?[...source.finalTable]:null,
   champion:complete?source.champion:null,
-  ties:complete?clone(source.ties??source.postseason??[]):[],
+  ties:complete?clone(source.ties??source.postseason??[]):[],resolvedTies,
   pots:source.pots?clone(source.pots):null};
 }
