@@ -105,7 +105,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   stats:"Competition statistics are not available before matches are played."
  };
  const panels=views.map(({id,key,label},i)=>{
-  const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
+  const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0||id==="fixtures"?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
   if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
