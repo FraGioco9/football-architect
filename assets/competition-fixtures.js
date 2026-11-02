@@ -206,6 +206,7 @@
     return item;
   }
   function render(){
+    if(rounds===null&&fields.list.dataset.fixturesState==="pending")return;
     const supplied=window.faCompetitionContext?.seasonData;
     const authoritative=supplied?.provenance?.kind==='authoritative'&&String(supplied.season)===navigation.get().season;
     const available=rounds!==null&&(authoritative||availableSeasons.has(navigation.get().season));
@@ -312,6 +313,7 @@
        // The stage is selectable before participating clubs are known.
       return ()=>{
         rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
+        fields.list.dataset.fixturesState="ready";
         navigation.defaultMatchday(currentMatchday??1);
         render();
       };
@@ -325,7 +327,7 @@
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
-    if(!data){rounds=null;postseason=[];currentMatchday=null;render();return;}
+    if(!data){if(fields.list.dataset.fixturesState==="pending")return;rounds=null;postseason=[];currentMatchday=null;render();return;}
     const previous=clubs;
     try{
       clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
