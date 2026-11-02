@@ -34,3 +34,18 @@ is unchanged; the experimental I03 renderer is still not injected.
 - [ ] Full I06 Node/browser/regression/performance gates remain deferred.
 
 No public endpoints, deployment, remote D1, mail, or merge in this block.
+
+## Second implementation block — concurrent loads and cached verification
+
+- The source epoch now invalidates pending loads before they can be accepted
+  into a newer dataset session, including changes between two Debug IDs.
+- The manifest/export plan is validated once per successfully loaded dataset
+  epoch, then reused by per-day projections instead of generating the 90-file
+  plan for every day/competition request.
+- A focused race regression covers old- and new-dataset pending promises.
+- Failed loads do not publish data and can be retried on the next request.
+
+**Still pending:** source-integrity tests against real generated S1–S5 data,
+formal season completion/receipt semantics and complete temporal redaction
+coverage, integration with protected transport, and final I06 regression.
+The unsealed corpus remains non-runtime and does not feed public pages.
