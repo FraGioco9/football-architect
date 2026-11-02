@@ -471,7 +471,7 @@ test('Restoring debug waits for History before completing the first-paint releas
  const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nif(validPath||indexPath||clubPath){',start);
  let finishHistory,settled=false;
  const historyReady=new Promise(resolve=>{finishHistory=resolve});
- const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],
+ const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],cupPath:false,indexPath:false,clubPath:false,
   boot:async()=>()=>{},debugMode:()=>true,document:{documentElement:{dataset:{}}},widgetRoot:{syncVisibility(){}},syncHistoryPreview:()=>historyReady,
   FLAG:'preview',sessionStorage:{setItem(){}},window:{dispatchEvent(){}},CustomEvent:class{},console};
  const toggle=runInNewContext(client.slice(start,end)+';setPreviewEnabled',context);

@@ -130,7 +130,7 @@ test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
  const {root,debugRoot,protectedPath}=sandbox();
  try{
   for(const name of ["dev-debug-config.mjs","dev-debug-settings.mjs","dev-standings-preview-client.mjs","dev-standings-preview-data.mjs",
-   "dev-debug-widget.mjs","dev-world-clock.mjs","dev-competition-stats-client.mjs","dev-competition-stats-data.mjs"])
+   "dev-debug-widget.mjs","dev-world-clock.mjs","dev-international-preview.mjs","dev-competition-stats-client.mjs","dev-competition-stats-data.mjs"])
    writeFileSync(join(debugRoot,"tools",name),readFileSync(join(repositoryRoot,"tools",name)));
   stageProtectedDebugArtifact(repositoryRoot,protectedPath,{debugRoot});
   const directory=join(protectedPath,"__fa_dev__");
@@ -139,7 +139,7 @@ test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
   const config=bundled.match(/const DEBUG_CONTROL_LIMITS=Object.freeze\([\s\S]*?\n\}\);/)?.[0];
   assert.ok(config,'configured limits must reach protected client');
   const limits=runInNewContext(config+';DEBUG_CONTROL_LIMITS');
-  assert.equal(limits.season.min,0);assert.equal(limits.season.max,4);
+  assert.equal(limits.season.min,0);assert.equal(limits.season.max,5);
   assert.equal(limits.worldDay.min,1);assert.equal(limits.worldDay.max,56);
   assert.equal(limits.matchdays.max,30);assert.equal(Object.isFrozen(limits.worldDay),true);
 
@@ -189,7 +189,7 @@ test("DEBUG-SEASONS-01: protected Preview supports five fictional seasons withou
     const path=join(directory,division+"-"+tier,"index.html");
     const html=readFileSync(join(protectedPath,path),"utf8");
     const original=readFileSync(join(publicPath,path),"utf8");
-    const season='document.documentElement.dataset.faDevSeasons="1,2,3,4"';
+    const season='document.documentElement.dataset.faDevSeasons="1,2,3,4,5"';
     assert.ok(html.includes(season),path+" must bootstrap DEV seasons");
     assert.ok(html.indexOf(season)<html.indexOf('src="/__fa_dev__/debug-settings.mjs"'),
       path+" must bootstrap seasons before Debug modules");
