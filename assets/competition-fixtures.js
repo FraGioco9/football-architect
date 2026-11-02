@@ -180,7 +180,7 @@
   }
   function matchRow(game){
     const item=element("li","app-fixture-match");
-    item.dataset.fixtureMatch=game.round+":"+game.homeId+":"+game.awayId;
+    item.dataset.fixtureMatch=game.round+":"+(game.tieId||game.slot??"")+":"+game.homeId+":"+game.awayId;
     item.dataset.fixtureRound=String(game.round);
     const result=element("div","app-fixture-result"),played=game.homeGoals!==null;
     let status;
@@ -311,8 +311,8 @@
         if(round===33&&!hasFinal)continue;
         const count=round===33?1:firstTies.length;
         appendStage(matches,round===31?'postseasonFirstLeg':round===32?'postseasonSecondLeg':'postseasonFinal',
-          round===31?'First leg':round===32?'Second leg':'Final',games,count,()=>({
-            round,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null
+          round===31?'First leg':round===32?'Second leg':'Final',games,count,index=>({
+            round,slot:index,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null
           }));
       }
       else matches.push(...(rounds.get(selected)||[]).map(matchRow));
