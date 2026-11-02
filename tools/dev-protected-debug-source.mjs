@@ -1,7 +1,7 @@
 // I03: isolated, opt-in shared source coordinator; NEVER loaded by public build.
 // No bearer token is stored in browser code or storage.
-import {prepareProtectedDomesticContext} from "./protected-domestic-context.mjs";
-import {createProtectedDomesticPresentation} from "./protected-domestic-presentation.mjs";
+import {prepareProtectedDomesticContext} from "./dev-protected-domestic-context.mjs";
+import {createProtectedDomesticPresentation} from "./dev-protected-domestic-presentation.mjs";
 const state={enabled:false,revision:0,abort:null,view:null};
 const key="football-architect:local-debug-visible";
 const readEnabled=()=>{try{return sessionStorage.getItem(key)==="1"}catch{return false}};
