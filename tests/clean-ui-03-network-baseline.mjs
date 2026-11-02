@@ -24,4 +24,8 @@ try{
 }finally{await browser.close()}
 mkdirSync("int24-browser-artifacts",{recursive:true});
 writeFileSync("int24-browser-artifacts/clean-ui-03-network-baseline.json",JSON.stringify({measurement:"Chromium loopback DEV, cold context per route; transferSize may be 0 due to browser timing restrictions/cache",results},null,2));
-for(const x of results){assert.deepEqual(x.failed,[],x.route);assert.ok(x.requests>=1,x.route);console.log(`${x.route}: ${x.requests} responses, ${x.transferBytes} transfer bytes, ${x.decodedBytes} decoded bytes, unknown transfer: ${x.unknownTransfer}`)}
+for(const x of results){
+ // An unauthenticated Admin session is a valid 401 response from the real local Worker.
+ // All 404, 5xx, and unrelated HTTP failures remain test failures.
+ const unexpected=x.failed.filter(r=>!(x.route==='/settings'&&new URL(r.url).pathname==='/api/admin/session'&&r.status===401));
+ assert.deepEqual(unexpected,[],x.route);assert.ok(x.requests>=1,x.route);console.log(`${x.route}: ${x.requests} responses, ${x.transferBytes} transfer bytes, ${x.decodedBytes} decoded bytes, unknown transfer: ${x.unknownTransfer}`)}
