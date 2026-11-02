@@ -30,11 +30,14 @@ export async function refreshDebugSource(){
   if(!response.ok){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:response.status});return;}
   const view=await response.json();
   if(revision!==state.revision)return;
-  if(view.kind!=="protected-debug-projection"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
+  if(view.kind!=="protected-debug-projection"||view.status!=="UNSEALED_NOT_FOR_RUNTIME"||view.source?.kind!=="debug"||view.source?.namespace!=="local-debug"||view.source?.datasetId!=="debug-corpus-v1"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId||!Array.isArray(view.events)||!Array.isArray(view.standings)){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
   let prepared=null,presentation=null;
   if(!competitionId.startsWith("int-")){
    try{prepared=prepareProtectedDomesticContext(view,{competitionId,season,day});presentation=createProtectedDomesticPresentation(prepared);}
    catch(error){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"invalid-domestic-context"});return;}
+  }
+  if(view.events.some(event=>event.day>day&&event.result!==null)){
+   state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422,reason:"future-result-leak"});return;
   }
   state.view=view;
   emit("fa:protected-debug-source-change",{kind:"protected-debug",enabled:true,revision,view});
