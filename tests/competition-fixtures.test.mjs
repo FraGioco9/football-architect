@@ -57,7 +57,10 @@ function node(tag='div'){
  const n={tagName:tag,children:[],dataset:{},attrs:{},events:{},textContent:'',value:'1',disabled:true,hidden:false,
   append(...items){this.children.push(...items)},appendChild(item){this.children.push(item);return item},
   replaceChildren(...items){this.children=[...items]},removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=String(v)},
-  focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
+  focus(){this.focused=true},contains(){return false},
+  querySelector(selector){return this.children.find(child=>selector.startsWith('.')&&child.className?.split(' ').includes(selector.slice(1)))||null},
+  cloneNode(deep=false){const copy=node(tag);copy.className=this.className;copy.dataset={...this.dataset};copy.attrs={...this.attrs};copy.textContent=this.textContent;if(deep)copy.children=this.children.map(child=>child.cloneNode?.(true)||child);return copy},
+  addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
  return n;
 }
 function setup(d=divisions[0],registry=routeRegistry){
