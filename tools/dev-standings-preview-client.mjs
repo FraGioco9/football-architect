@@ -358,7 +358,7 @@ function syncHistoryPreview(){
  if(route?.view==="history")return renderHistoryPreview();else historyRenderVersion++;
 }
 
-window.addEventListener('fa:competition-context-change',()=>{if(!debugMode())clearHistoryPreview()});
+window.addEventListener?.('fa:competition-context-change',()=>{if(!debugMode())clearHistoryPreview()});
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
  transition=transition.catch(()=>false).then(async()=>{
